@@ -226,6 +226,12 @@ int main(void)
         printf("FW request successful\r\n");
     }
 
+    if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_get_bluetooth_address(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+	{
+		/* "system_ping" response packet received */
+		printf("BT address request successful\r\n");
+	}
+
 
   /* USER CODE END 2 */
 
@@ -584,7 +590,7 @@ static void MX_USART2_UART_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_UARTEx_DisableFifoMode(&huart2) != HAL_OK)
+  if (HAL_UARTEx_EnableFifoMode(&huart2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -653,6 +659,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(UART2_RTS_SW_GPIO_Port, UART2_RTS_SW_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, UCPD_DBn_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : USER_BUTTON_Pin */
@@ -680,6 +689,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GREEN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : UART2_CTS_SW_Pin */
+  GPIO_InitStruct.Pin = UART2_CTS_SW_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(UART2_CTS_SW_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : UART2_RTS_SW_Pin */
+  GPIO_InitStruct.Pin = UART2_RTS_SW_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(UART2_RTS_SW_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : UCPD_DBn_Pin LED_BLUE_Pin */
   GPIO_InitStruct.Pin = UCPD_DBn_Pin|LED_BLUE_Pin;
@@ -787,6 +809,15 @@ void ezsHandler(ezs_packet_t *packet)
             printHex8(packet->payload.evt_p_cyspp_status.status);
             break;
 
+
+            /* Shimmer added start */
+        case EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS:
+            printf("RX: rsp_system_query_firmware_version: Address=");
+            printHexMac(packet->payload.rsp_system_get_bluetooth_address.address);
+            break;
+
+            /* Shimmer added end */
+
         default:
             printf("RX: unhandled packet: ");
             printHex8(packet->header.group);
@@ -812,7 +843,7 @@ void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator)
 
         if (!reverse) data++;
         bytes--;
-        if (bytes && separator) printf(separator);
+        if (bytes && separator) printf("%c", separator);
     }
 }
 
