@@ -1,0 +1,4 @@
+../Core/Src/handlers.c:65:6:appHandler	4
+../Core/Src/handlers.c:90:21:appOutput	2
+../Core/Src/handlers.c:146:20:appInput	2
+../Core/Src/handlers.c:158:6:setBtUartInstance	1
