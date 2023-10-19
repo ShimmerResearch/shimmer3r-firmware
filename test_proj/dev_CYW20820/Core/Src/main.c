@@ -232,6 +232,12 @@ int main(void)
 		printf("BT address request successful\r\n");
 	}
 
+    uint8_t nameAry[] = {14, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X'};
+	if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+	{
+		 /*"system_ping" response packet received*/
+		printf("Device name set successful\r\n");
+	}
 
   /* USER CODE END 2 */
 
@@ -816,6 +822,10 @@ void ezsHandler(ezs_packet_t *packet)
             printHexMac(packet->payload.rsp_system_get_bluetooth_address.address);
             break;
 
+        case EZS_IDX_RSP_GAP_SET_DEVICE_NAME:
+        	printf("RX: rsp_gap_set_device_name: Result=");
+        	printHex16(packet->payload.rsp_gap_set_device_name.result);
+        	break;
             /* Shimmer added end */
 
         default:
