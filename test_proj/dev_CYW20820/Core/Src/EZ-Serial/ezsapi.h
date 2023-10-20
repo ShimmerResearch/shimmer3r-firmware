@@ -3063,7 +3063,7 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
 
 #define ezs_cmd_gap_set_device_name(type, name) \
     ezs_cmd_va(EZS_IDX_CMD_GAP_SET_DEVICE_NAME, 0, type, name)
-#define ezs_fcmd_gap_set_device_name(name, type) \
+#define ezs_fcmd_gap_set_device_name(type, name) \
     ezs_cmd_va(EZS_IDX_CMD_GAP_SET_DEVICE_NAME, 1, type, name)
 
 //-------------- Fix 01 End -------------------------//
