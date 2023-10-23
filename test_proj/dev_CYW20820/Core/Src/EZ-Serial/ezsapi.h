@@ -1281,6 +1281,9 @@ __PACKDEF(ezs_rsp_gap_set_device_name_t,
 
 __PACKDEF(ezs_cmd_gap_get_device_name_t,
 {
+	//-------------- Fix 02 Start -------------------------//
+	uint8_t type;
+	//-------------- Fix 02 End -------------------------//
 });
 
 __PACKDEF(ezs_rsp_gap_get_device_name_t,
@@ -3068,10 +3071,20 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
 
 //-------------- Fix 01 End -------------------------//
 
+//-------------- Fix 02 Start -------------------------//
+/*
 #define ezs_cmd_gap_get_device_name() \
     ezs_cmd_va(EZS_IDX_CMD_GAP_GET_DEVICE_NAME, 0)
 #define ezs_fcmd_gap_get_device_name() \
     ezs_cmd_va(EZS_IDX_CMD_GAP_GET_DEVICE_NAME, 1)
+*/
+
+#define ezs_cmd_gap_get_device_name(type) \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_GET_DEVICE_NAME, 0, type)
+#define ezs_fcmd_gap_get_device_name(type) \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_GET_DEVICE_NAME, 1, type)
+//-------------- Fix 02 End -------------------------//
+
 #define ezs_cmd_gap_set_device_appearance(appearance) \
     ezs_cmd_va(EZS_IDX_CMD_GAP_SET_DEVICE_APPEARANCE, 0, appearance)
 #define ezs_fcmd_gap_set_device_appearance(appearance) \
