@@ -8,6 +8,8 @@
 #ifndef SRC_CYW20820_H_
 #define SRC_CYW20820_H_
 
+#include "stdbool.h"
+
 enum BT_SET_COMMAND_STAGES
 {
   WAIT_FOR_BOOT,
@@ -30,7 +32,8 @@ enum BLUETOOTH_DEVICE_TYPE
 
 void btInit(void);
 void btSetCommands(void);
-
-void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator);
+bool isBtIsInitialised(void);
+void setBtConnectionState(bool state);
+void setBtCysppState(bool state);
 
 #endif /* SRC_CYW20820_H_ */

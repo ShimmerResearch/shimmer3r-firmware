@@ -31,7 +31,7 @@ static char advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-'
 
 uint8_t btSetCommandsStart, btSetCommandsStep;
 uint8_t btNameTypeBeingRead;
-uint8_t btIsInitialised;
+bool btIsInitialised, btConnected, btCysppState;
 
 static char hexdigit2int(uint8_t xd)
 {
@@ -52,16 +52,34 @@ static char hexdigit2int(uint8_t xd)
   return '0';
 }
 
+static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator)
+{
+    if (reverse) data += bytes;
+    while (bytes)
+    {
+        if (reverse) data--;
+//        printf(((*data >> 4) & 0xF) < 10 ? ('0' + ((*data >> 4) & 0xF)) : ('A' - 10 + ((*data >> 4) & 0xF)));
+//        printf(( *data       & 0xF) < 10 ? ('0' + ( *data       & 0xF)) : ('A' - 10 + ( *data       & 0xF)));
+
+        printf("%c", ((*data >> 4) & 0xF) < 10 ? ('0' + ((*data >> 4) & 0xF)) : ('A' - 10 + ((*data >> 4) & 0xF)));
+        printf("%c", ( *data       & 0xF) < 10 ? ('0' + ( *data       & 0xF)) : ('A' - 10 + ( *data       & 0xF)));
+
+        if (!reverse) data++;
+        bytes--;
+        if (bytes && separator) printf("%c", separator);
+    }
+}
+
 void btInit(void)
 {
   btSetCommandsStart = 1;
   btSetCommandsStep = PING;
-  btIsInitialised = 0;
+  btIsInitialised = false;
 
   /* packet pointer for working with response/event data */
 //  ezs_packet_t *packet;
 
-  printf("\r\nEZ-Serial API communication demo started\r\n");
+//  printf("\r\nEZ-Serial API communication demo started\r\n");
 
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
@@ -186,6 +204,7 @@ void btSetCommands(void)
     return;
   }
 
+  //TODO BLE advertising name won't update on-the-fly, need to either stop adv before name change and then start again or use F cmd and reset module.
   if(btSetCommandsStep == SET_DEVICE_NAME_BLE)
   {
     btSetCommandsStep++;
@@ -200,7 +219,8 @@ void btSetCommands(void)
   if(btSetCommandsStep == FINISH)
   {
     btSetCommandsStart = 0;
-    btIsInitialised = 1;
+    btIsInitialised = true;
+    setDmaRx(1);
     return;
   }
 
@@ -356,29 +376,36 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
           break;
     }
 
-    printf("\r\n");
+//    printf("\r\n");
 
     if(btSetCommandsStart && rspParsed)
     {
         btSetCommands();
     }
-
 }
 
-void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator)
+bool isBtIsInitialised(void)
 {
-    if (reverse) data += bytes;
-    while (bytes)
-    {
-        if (reverse) data--;
-//        printf(((*data >> 4) & 0xF) < 10 ? ('0' + ((*data >> 4) & 0xF)) : ('A' - 10 + ((*data >> 4) & 0xF)));
-//        printf(( *data       & 0xF) < 10 ? ('0' + ( *data       & 0xF)) : ('A' - 10 + ( *data       & 0xF)));
-
-        printf("%c", ((*data >> 4) & 0xF) < 10 ? ('0' + ((*data >> 4) & 0xF)) : ('A' - 10 + ((*data >> 4) & 0xF)));
-        printf("%c", ( *data       & 0xF) < 10 ? ('0' + ( *data       & 0xF)) : ('A' - 10 + ( *data       & 0xF)));
-
-        if (!reverse) data++;
-        bytes--;
-        if (bytes && separator) printf("%c", separator);
-    }
+  return btIsInitialised;
 }
+
+void setBtConnectionState(bool state)
+{
+  btConnected = state;
+}
+
+bool isBtConnected(void)
+{
+  return btConnected;
+}
+
+void setBtCysppState(bool state)
+{
+  btCysppState = state;
+}
+
+bool getBtCysppState(void)
+{
+  return btCysppState;
+}
+

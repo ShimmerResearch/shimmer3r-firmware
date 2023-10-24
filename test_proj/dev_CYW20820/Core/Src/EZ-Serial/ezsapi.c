@@ -686,6 +686,7 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...)
 
 ezs_packet_t *ezs_parseSingleByte(uint8_t b)
 {
+  //TODO don't hard code type
   ezs_packet_type_t type = EZS_PACKET_TYPE_RESPONSE;
 
     /* byte read, send it to parser */

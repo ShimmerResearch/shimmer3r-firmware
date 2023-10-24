@@ -163,7 +163,17 @@ int main(void)
 
   /* --------------------------------------------------------------------- */
 
-    btInit();
+  printf("\r\nBT init start\r\n");
+  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, GPIO_PIN_SET);
+  btInit();
+
+  while (!isBtIsInitialised())
+  {
+    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+    /* Insert delay 300 ms */
+    HAL_Delay(100);
+  }
+  printf("BT init end\r\n");
 
 
   /* USER CODE END 2 */
@@ -175,24 +185,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
-  /* Insert delay 300 ms */
-  HAL_Delay(300);
-
-//    /**********************************************************/
-//    /*** This method demonstrates a non-blocking check for  ***/
-//    /*** new packets. If there is any data available from   ***/
-//    /*** the configured module serial interface, the API    ***/
-//    /*** library will automatically parse it and, if a full ***/
-//    /*** packet has arrived, trigger a callback to handle   ***/
-//    /*** the packet via the "ezsHandler" function.          ***/
-//    /**********************************************************/
-//
-//    /* non-blocking test for incoming data */
-//    EZS_CHECK_FOR_PACKET();
-
-    /* see appHandler() function in "handlers.c" for API response/event handler */
-    /* (handles internal response count tracking and then passes to ezsHandler() below) */
+    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+    /* Insert delay 300 ms */
+    HAL_Delay(300);
 
   }
   /* USER CODE END 3 */
@@ -745,11 +740,13 @@ void usart2UartUpdate(void)
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin) {
-  case BT_CYSPP_Pin:
-    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
-    break;
   case BT_CONNECTION_Pin:
-    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
+    setBtConnectionState(false);
+    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+    break;
+  case BT_CYSPP_Pin:
+    setBtCysppState(false);
+    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
     break;
   default:
     break;
@@ -760,10 +757,12 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin) {
   case BT_CONNECTION_Pin:
-    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+    setBtConnectionState(true);
+    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
     break;
   case BT_CYSPP_Pin:
-    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+    setBtCysppState(true);
+    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
     break;
   default:
     break;
