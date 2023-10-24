@@ -76,6 +76,8 @@ void Error_Handler(void);
 #define BT_CONNECTION_Pin GPIO_PIN_5
 #define BT_CONNECTION_GPIO_Port GPIOE
 #define BT_CONNECTION_EXTI_IRQn EXTI5_IRQn
+#define BT_CP_ROLE_Pin GPIO_PIN_6
+#define BT_CP_ROLE_GPIO_Port GPIOE
 #define USER_BUTTON_Pin GPIO_PIN_13
 #define USER_BUTTON_GPIO_Port GPIOC
 #define VBUS_SENSE_Pin GPIO_PIN_2

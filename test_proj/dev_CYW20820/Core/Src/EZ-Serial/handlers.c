@@ -113,7 +113,7 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data) {
 //    ret_val = HAL_UART_Transmit_IT(huart, (uint8_t *)data, length);
 
     if(ret_val != HAL_OK){
-    	printf("DMA problem in appOutput\r\n");
+      printf("DMA problem in appOutput\r\n");
     }
 
     return EZS_OUTPUT_RESULT_DATA_WRITTEN;
@@ -153,24 +153,24 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data) {
 
 ezs_input_result_t appInput(uint8_t *inByte, uint16_t timeout) {
 
-	inBytePtr = inByte;
+  inBytePtr = inByte;
 
     /* attempt to read a byte from UART */
-//	HAL_StatusTypeDef status = HAL_UART_Receive(huart, inByte, 1, timeout);
+//  HAL_StatusTypeDef status = HAL_UART_Receive(huart, inByte, 1, timeout);
 
-	setDmaRx(1);
+  setDmaRx(1);
 
 //    return EZS_INPUT_RESULT_NO_DATA;
 }
 
 HAL_StatusTypeDef setDmaRx(uint16_t length) {
-	expectedByteCount = length;
-	HAL_StatusTypeDef status = HAL_UART_Receive_DMA(huart, &rxBuf[0], expectedByteCount);
-	return status;
+  expectedByteCount = length;
+  HAL_StatusTypeDef status = HAL_UART_Receive_DMA(huart, &rxBuf[0], expectedByteCount);
+  return status;
 }
 
 void setBtUartInstance(UART_HandleTypeDef *huartToUse) {
-	huart = huartToUse;
+  huart = huartToUse;
 
   HAL_UART_RegisterCallback(huart, HAL_UART_RX_COMPLETE_CB_ID, btUartDmaRxCpltCallback);
 //  HAL_DMA_RegisterCallback(huart->, HAL_DMA_XFER_CPLT_CB_ID, btUartDmaRxCpltCallback);
@@ -179,46 +179,46 @@ void setBtUartInstance(UART_HandleTypeDef *huartToUse) {
 }
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 {
-//	printf("byte received\r\n");
-//	printf("%c", rxBuf[0]);
+//  printf("byte received\r\n");
+//  printf("%c", rxBuf[0]);
 
-	// if start byte is CYW header byte or if in middle of waiting for full CYW response
-//	if(!waitingForArgs
-//			&& (ezs_rx_packet_length != 0 || (b & EZS_BINARY_SOF_MASK) != 0)) {
+  // if start byte is CYW header byte or if in middle of waiting for full CYW response
+//  if(!waitingForArgs
+//      && (ezs_rx_packet_length != 0 || (b & EZS_BINARY_SOF_MASK) != 0)) {
 //
-//		ezs_input_result_t result = EZSerial_Parse(b);
-//		if(result == EZS_INPUT_RESULT_IN_PROGRESS
-//				|| result == EZS_INPUT_RESULT_PACKET_COMPLETE) {
+//    ezs_input_result_t result = EZSerial_Parse(b);
+//    if(result == EZS_INPUT_RESULT_IN_PROGRESS
+//        || result == EZS_INPUT_RESULT_PACKET_COMPLETE) {
 //
-//		}
-//	} else {
-//		//Assume Shimmer command
-//	}
+//    }
+//  } else {
+//    //Assume Shimmer command
+//  }
 
-//	ezs_packet_t *result = ezs_parseSingleByte(rxBuf[0]);
-//	if(result!=0){
-//		ezsHandlerShimmer(result);
-//	}
-//	HAL_StatusTypeDef status = setDmaRx(1);
+//  ezs_packet_t *result = ezs_parseSingleByte(rxBuf[0]);
+//  if(result!=0){
+//    ezsHandlerShimmer(result);
+//  }
+//  HAL_StatusTypeDef status = setDmaRx(1);
 
-	for(uint8_t i=0;i<expectedByteCount;i++)
-	{
-		ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
-		if(result!=0){
-			ezsHandlerShimmer(result);
-		}
-	}
+  for(uint8_t i=0;i<expectedByteCount;i++)
+  {
+    ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
+    if(result!=0){
+      ezsHandlerShimmer(result);
+    }
+  }
 
-	uint16_t count = getRemainingByteCount();
-	if(count!=0)
-	{
-		HAL_StatusTypeDef status = setDmaRx(count);
-	}
+  uint16_t count = getRemainingByteCount();
+  if(count!=0)
+  {
+    HAL_StatusTypeDef status = setDmaRx(count);
+  }
 
 }
 
 //void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 //{
-////	HAL_UART_Transmit_DMA(&huart1,(uint8_t *) "Message Received!\r\n", sizeof("Message Received!\r\n"));
-////	HAL_UART_Receive_DMA(&huart1, pRxBuff, 10);
+////  HAL_UART_Transmit_DMA(&huart1,(uint8_t *) "Message Received!\r\n", sizeof("Message Received!\r\n"));
+////  HAL_UART_Receive_DMA(&huart1, pRxBuff, 10);
 //}

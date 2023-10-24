@@ -143,25 +143,25 @@ int main(void)
   MX_USB_OTG_HS_HCD_Init();
   /* USER CODE BEGIN 2 */
 
-	/* -1- Enable GPIO Clock (to be able to program the configuration registers) */
-//	LED1_GPIO_CLK_ENABLE();
-//	__HAL_RCC_GPIOC_CLK_ENABLE();
-//	LED2_GPIO_CLK_ENABLE();
-//	__HAL_RCC_GPIOB_CLK_ENABLE();
+  /* -1- Enable GPIO Clock (to be able to program the configuration registers) */
+//  LED1_GPIO_CLK_ENABLE();
+//  __HAL_RCC_GPIOC_CLK_ENABLE();
+//  LED2_GPIO_CLK_ENABLE();
+//  __HAL_RCC_GPIOB_CLK_ENABLE();
 
-	/* -2- Configure IO in output push-pull mode to drive external LEDs */
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  /* -2- Configure IO in output push-pull mode to drive external LEDs */
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 
-	GPIO_InitStruct.Pin = LED_RED_Pin;
-	HAL_GPIO_Init(LED_RED_GPIO_Port, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = LED_BLUE_Pin;
-	HAL_GPIO_Init(LED_BLUE_GPIO_Port, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = LED_GREEN_Pin;
-	HAL_GPIO_Init(LED_GREEN_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin = LED_RED_Pin;
+  HAL_GPIO_Init(LED_RED_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin = LED_BLUE_Pin;
+  HAL_GPIO_Init(LED_BLUE_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin = LED_GREEN_Pin;
+  HAL_GPIO_Init(LED_GREEN_GPIO_Port, &GPIO_InitStruct);
 
-	/* --------------------------------------------------------------------- */
+  /* --------------------------------------------------------------------- */
 
     btInit();
 
@@ -175,15 +175,15 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
-	/* Insert delay 100 ms */
-	HAL_Delay(100);
-	HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
-	/* Insert delay 100 ms */
-	HAL_Delay(100);
-	HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
-	/* Insert delay 100 ms */
-	HAL_Delay(100);
+  HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+  /* Insert delay 100 ms */
+  HAL_Delay(100);
+  HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
+  /* Insert delay 100 ms */
+  HAL_Delay(100);
+  HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+  /* Insert delay 100 ms */
+  HAL_Delay(100);
 
 //    /**********************************************************/
 //    /*** This method demonstrates a non-blocking check for  ***/
@@ -624,6 +624,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(BT_CP_ROLE_GPIO_Port, BT_CP_ROLE_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -635,12 +638,12 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, UCPD_DBn_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : BT_LP_MODE_Pin */
-  GPIO_InitStruct.Pin = BT_LP_MODE_Pin;
+  /*Configure GPIO pins : BT_LP_MODE_Pin BT_CP_ROLE_Pin */
+  GPIO_InitStruct.Pin = BT_LP_MODE_Pin|BT_CP_ROLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(BT_LP_MODE_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BT_CYSPP_Pin BT_CONNECTION_Pin */
   GPIO_InitStruct.Pin = BT_CYSPP_Pin|BT_CONNECTION_Pin;
@@ -714,7 +717,7 @@ static void MX_GPIO_Init(void)
   */
 void usart2UartUpdate(void)
 {
-	HAL_UART_DeInit(&huart2);
+  HAL_UART_DeInit(&huart2);
 
   huart2.Instance = USART2;
   huart2.Init.BaudRate = 1000000;
@@ -747,7 +750,7 @@ void usart2UartUpdate(void)
 
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
-	switch (GPIO_Pin)
+  switch (GPIO_Pin)
     {
     case BT_CYSPP_Pin:
         break;
@@ -760,7 +763,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
-	switch (GPIO_Pin)
+  switch (GPIO_Pin)
     {
     case BT_CYSPP_Pin:
         break;

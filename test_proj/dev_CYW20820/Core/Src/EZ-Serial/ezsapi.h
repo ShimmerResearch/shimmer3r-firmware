@@ -112,7 +112,7 @@
 #define EZS_BINARY_LENGTH_MSB_WIDTH_BITS                        (3u)
 #define EZS_BINARY_MAX_POSSIBLE_PAYLOAD_LENGTH                  ((1 << 11) - 1)
 
-#define EZS_BINARY_COMMAND_SCOPE_MASK							(0x30u)
+#define EZS_BINARY_COMMAND_SCOPE_MASK              (0x30u)
 #define EZS_BINARY_COMMAND_SCOPE_RAM                            (0x00u)
 #define EZS_BINARY_COMMAND_SCOPE_FLASH                          (0x10u)
 
@@ -1269,9 +1269,9 @@ __PACKDEF(ezs_rsp_gap_query_whitelist_t,
 
 __PACKDEF(ezs_cmd_gap_set_device_name_t,
 {
-	//-------------- Fix 01 Start -------------------------//
-	uint8_t type;
-	//-------------- Fix 01 End -------------------------//
+  //-------------- Fix 01 Start -------------------------//
+  uint8_t type;
+  //-------------- Fix 01 End -------------------------//
     uint8a_t name;
 });
 
@@ -1282,9 +1282,9 @@ __PACKDEF(ezs_rsp_gap_set_device_name_t,
 
 __PACKDEF(ezs_cmd_gap_get_device_name_t,
 {
-	//-------------- Fix 02 Start -------------------------//
-	uint8_t type;
-	//-------------- Fix 02 End -------------------------//
+  //-------------- Fix 02 Start -------------------------//
+  uint8_t type;
+  //-------------- Fix 02 End -------------------------//
 });
 
 __PACKDEF(ezs_rsp_gap_get_device_name_t,

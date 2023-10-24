@@ -140,10 +140,10 @@ const uint8_t ezs_tbl_cmd[] =
     0x02,0x17,  0x01,   0x01,T_U8,                              /*  69 | S  7, ST (system_set_transport) */
     0x02,0x19,  0x0A,   0x07,T_U32,T_U8,T_U8,T_U8,T_U8,T_U8,T_U8,
                                                                 /*  70 | S  8, STU (system_set_uart_parameters) */
-	//-------------- Fix 01 Start -------------------------//
+  //-------------- Fix 01 Start -------------------------//
 //    0x04,0x0F,  0x81,   0x01,T_STR,                             /*  71 | S  9, SDN (gap_set_device_name) */
     0x04,0x0F,  0x82,   0x02,T_U8,T_STR,                             /*  71 | S  9, SDN (gap_set_device_name) */
-	//-------------- Fix 01 End -------------------------//
+  //-------------- Fix 01 End -------------------------//
     0x04,0x11,  0x02,   0x01,T_U16,                             /*  72 | S 10, SDA (gap_set_device_appearance) */
     0x04,0x13,  0x81,   0x01,T_U8A,                             /*  73 | S 11, SAD (gap_set_adv_data) */
     0x04,0x15,  0x81,   0x01,T_U8A,                             /*  74 | S 12, SSRD (gap_set_sr_data) */
@@ -172,10 +172,10 @@ const uint8_t ezs_tbl_cmd[] =
     0x02,0x16,  0x00,   0x00,                                   /*  94 | G  6, GTXP (system_get_tx_power) */
     0x02,0x18,  0x00,   0x00,                                   /*  95 | G  7, GT (system_get_transport) */
     0x02,0x1A,  0x00,   0x00,                                   /*  96 | G  8, GTU (system_get_uart_parameters) */
-	//-------------- Fix 02 Start -------------------------//
-	//0x04,0x10,  0x00,   0x00,                                   /*  97 | G  9, GDN (gap_get_device_name) */
+  //-------------- Fix 02 Start -------------------------//
+  //0x04,0x10,  0x00,   0x00,                                   /*  97 | G  9, GDN (gap_get_device_name) */
     0x04,0x10,  0x01,   0x01,T_U8,                                  /*  97 | G  9, GDN (gap_get_device_name) */
-	//-------------- Fix 02 End -------------------------//
+  //-------------- Fix 02 End -------------------------//
     0x04,0x12,  0x00,   0x00,                                   /*  98 | G 10, GDA (gap_get_device_appearance) */
     0x04,0x14,  0x00,   0x00,                                   /*  99 | G 11, GAD (gap_get_adv_data) */
     0x04,0x16,  0x00,   0x00,                                   /* 100 | G 12, GSRD (gap_get_sr_data) */
@@ -686,10 +686,10 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...)
 
 ezs_packet_t *ezs_parseSingleByte(uint8_t b)
 {
-	ezs_packet_type_t type = EZS_PACKET_TYPE_RESPONSE;
+  ezs_packet_type_t type = EZS_PACKET_TYPE_RESPONSE;
 
     /* byte read, send it to parser */
-	ezs_input_result_t result = EZSerial_Parse(b);
+  ezs_input_result_t result = EZSerial_Parse(b);
 
     /* check for completion and type */
     if (result == EZS_INPUT_RESULT_PACKET_COMPLETE &&
@@ -719,14 +719,14 @@ ezs_packet_t *ezs_parseSingleByte(uint8_t b)
 
 uint16_t getRemainingByteCount(void)
 {
-	if(ezs_rx_packet_length!=0 && ezs_rx_packet_length_expected!=0)
-	{
-		return ezs_rx_packet_length_expected - ezs_rx_packet_length;
-	}
-	else
-	{
-		return 0;
-	}
+  if(ezs_rx_packet_length!=0 && ezs_rx_packet_length_expected!=0)
+  {
+    return ezs_rx_packet_length_expected - ezs_rx_packet_length;
+  }
+  else
+  {
+    return 0;
+  }
 }
 
 /**************************** Shimmer End *************************************/
