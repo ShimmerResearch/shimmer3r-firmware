@@ -175,15 +175,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
-  /* Insert delay 100 ms */
-  HAL_Delay(100);
-  HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
-  /* Insert delay 100 ms */
-  HAL_Delay(100);
   HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
-  /* Insert delay 100 ms */
-  HAL_Delay(100);
+  /* Insert delay 300 ms */
+  HAL_Delay(300);
 
 //    /**********************************************************/
 //    /*** This method demonstrates a non-blocking check for  ***/
@@ -750,28 +744,30 @@ void usart2UartUpdate(void)
 
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
-  switch (GPIO_Pin)
-    {
-    case BT_CYSPP_Pin:
-        break;
-    case BT_CONNECTION_Pin:
-        break;
-    default:
-        break;
-    }
+  switch (GPIO_Pin) {
+  case BT_CYSPP_Pin:
+    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+    break;
+  case BT_CONNECTION_Pin:
+    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
+    break;
+  default:
+    break;
+  }
 }
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
-  switch (GPIO_Pin)
-    {
-    case BT_CYSPP_Pin:
-        break;
-    case BT_CONNECTION_Pin:
-        break;
-    default:
-        break;
-    }
+  switch (GPIO_Pin) {
+  case BT_CONNECTION_Pin:
+    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+    break;
+  case BT_CYSPP_Pin:
+    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+    break;
+  default:
+    break;
+  }
 }
 
 /* USER CODE END 4 */

@@ -9,6 +9,8 @@
 
 #include "CYW20820.h"
 
+#include "string.h"
+
 #include "EZ-Serial/ezsapi.h"
 #include "EZ-Serial/handlers.h"
 
@@ -24,8 +26,8 @@ ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
 
-static uint8_t advNameBt[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
-static uint8_t advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
+static char advNameBt[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
+static char advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
 
 uint8_t btSetCommandsStart, btSetCommandsStep;
 uint8_t btNameTypeBeingRead;
@@ -128,7 +130,7 @@ void btSetCommands(void)
   if(btSetCommandsStep == GET_FIRMWARE_VERSION)
   {
     btSetCommandsStep++;
-  status = setDmaRx(5);
+    status = setDmaRx(5);
     ezs_cmd_system_query_firmware_version();
     return;
   }
@@ -136,7 +138,7 @@ void btSetCommands(void)
   if(btSetCommandsStep == GET_BLUETOOTH_ADDRESS)
   {
     btSetCommandsStep++;
-  status = setDmaRx(5);
+    status = setDmaRx(5);
     ezs_cmd_system_get_bluetooth_address();
     return;
   }
@@ -159,7 +161,7 @@ void btSetCommands(void)
   {
     btSetCommandsStep++;
     btNameTypeBeingRead = DEVICE_TYPE_BT;
-  status = setDmaRx(5);
+    status = setDmaRx(5);
     ezs_cmd_gap_get_device_name(DEVICE_TYPE_BT);
     return;
   }
@@ -167,12 +169,11 @@ void btSetCommands(void)
   if(btSetCommandsStep == SET_DEVICE_NAME_BT)
   {
     btSetCommandsStep++;
-    //TODO get working, sets name every time
-    if(strstr(rsp_gap_get_device_name_bt.name.data, &advNameBt[1]))
+    if(!strstr((char *)&rsp_gap_get_device_name_bt.name.data[0], &advNameBt[1]))
     {
       status = setDmaRx(1);
-        ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BT, &advNameBt[0]);
-        return;
+      ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BT, &advNameBt[0]);
+      return;
     }
   }
 
@@ -180,7 +181,7 @@ void btSetCommands(void)
   {
     btSetCommandsStep++;
     btNameTypeBeingRead = DEVICE_TYPE_BLE;
-  status = setDmaRx(5);
+    status = setDmaRx(5);
     ezs_cmd_gap_get_device_name(DEVICE_TYPE_BLE);
     return;
   }
@@ -188,12 +189,11 @@ void btSetCommands(void)
   if(btSetCommandsStep == SET_DEVICE_NAME_BLE)
   {
     btSetCommandsStep++;
-    //TODO get working, sets name every time
-    if(strstr(rsp_gap_get_device_name_ble.name.data, &advNameBle[1]))
+    if(!strstr((char *)&rsp_gap_get_device_name_ble.name.data[0], &advNameBle[1]))
     {
-    status = setDmaRx(1);
-    ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BLE, &advNameBle[0]);
-    return;
+      status = setDmaRx(1);
+      ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BLE, &advNameBle[0]);
+      return;
     }
   }
 
