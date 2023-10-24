@@ -18,15 +18,43 @@
 #define printHex32(VARIABLE)    printHex((uint8_t *)&VARIABLE, 4, 1, 0)
 #define printHexMac(VARIABLE)   printHex((uint8_t *)&VARIABLE, 6, 1, ':')
 
-static uint8_t nameAry[] = {14, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X'};
+ezs_rsp_system_ping_t rsp_system_ping;
+ezs_rsp_system_query_firmware_version_t rsp_system_query_firmware_version;
+ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
+ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
+ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
 
-uint8_t btSetCommandsStep;
-uint8_t btSetCommandsStart;
+static uint8_t advNameBt[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
+static uint8_t advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
+
+uint8_t btSetCommandsStart, btSetCommandsStep;
+uint8_t btNameTypeBeingRead;
+uint8_t btIsInitialised;
+
+static char hexdigit2int(uint8_t xd)
+{
+  if (xd <= 9)
+    return xd + '0';
+  if (xd == 10)
+    return 'A';
+  if (xd == 11)
+    return 'B';
+  if (xd == 12)
+    return 'C';
+  if (xd == 13)
+    return 'D';
+  if (xd == 14)
+    return 'E';
+  if (xd == 15)
+    return 'F';
+  return '0';
+}
 
 void btInit(void)
 {
   btSetCommandsStart = 1;
-  btSetCommandsStep = 1;
+  btSetCommandsStep = PING;
+  btIsInitialised = 0;
 
   /* packet pointer for working with response/event data */
 //  ezs_packet_t *packet;
@@ -40,13 +68,13 @@ void btInit(void)
 
 //  if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_query_firmware_version(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) == 0)
 //  {
-//	  /* "system_ping" response packet not received */
-//	  printf("FW request timed out, check communication settings and reset module\r\n");
+//    /* "system_ping" response packet not received */
+//    printf("FW request timed out, check communication settings and reset module\r\n");
 //  }
 //  else
 //  {
-//	  /* "system_ping" response packet received */
-//	  printf("FW request successful\r\n");
+//    /* "system_ping" response packet received */
+//    printf("FW request successful\r\n");
 //  }
 //
 //  if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_get_bluetooth_address(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
@@ -57,80 +85,122 @@ void btInit(void)
 //
 //if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
 //{
-//	 /*"system_ping" response packet received*/
-//	printf("Device name set successful\r\n");
+//   /*"system_ping" response packet received*/
+//  printf("Device name set successful\r\n");
 //}
 
 /*
   uint8_t nameAry[] = {14, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', '7', '4', '6', '2'};
-	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-	{
-		printf("Device name set successful\r\n");
-	}
+  if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+  {
+    printf("Device name set successful\r\n");
+  }
 
-	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(0U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-	{
-		printf("Device name set successful\r\n");
-	}
+  if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(0U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+  {
+    printf("Device name set successful\r\n");
+  }
 
-	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_get_device_name(1U), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-	{
-		printf("Device name get successful\r\n");
-	}
+  if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_get_device_name(1U), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+  {
+    printf("Device name get successful\r\n");
+  }
 
-	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_appearance(0x0540), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-	{
-		printf("Device Appearance set successful\r\n");
-	}
+  if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_appearance(0x0540), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+  {
+    printf("Device Appearance set successful\r\n");
+  }
 */
 
 }
 
 void btSetCommands(void)
 {
-  if(btSetCommandsStep == 1)
+  HAL_StatusTypeDef status;
+  if(btSetCommandsStep == PING)
   {
     btSetCommandsStep++;
-	HAL_StatusTypeDef status = setDmaRx(13);
+    status = setDmaRx(13);
     ezs_cmd_system_ping();
     return;
   }
 
-  if(btSetCommandsStep == 2)
+  if(btSetCommandsStep == GET_FIRMWARE_VERSION)
   {
     btSetCommandsStep++;
-	HAL_StatusTypeDef status = setDmaRx(5);
+  status = setDmaRx(5);
     ezs_cmd_system_query_firmware_version();
     return;
   }
 
-  if(btSetCommandsStep == 3)
+  if(btSetCommandsStep == GET_BLUETOOTH_ADDRESS)
   {
     btSetCommandsStep++;
-	HAL_StatusTypeDef status = setDmaRx(5);
+  status = setDmaRx(5);
     ezs_cmd_system_get_bluetooth_address();
     return;
   }
 
-  if(btSetCommandsStep == 4)
+  if(btSetCommandsStep == UPDATE_LOCAL_ADVERTISING_NAMES)
   {
     btSetCommandsStep++;
-	HAL_StatusTypeDef status = setDmaRx(5);
-    ezs_cmd_gap_get_device_name();
+    advNameBt[11] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]>>4)&0x0F);
+    advNameBt[12] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4])&0x0F);
+    advNameBt[13] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]>>4)&0x0F);
+    advNameBt[14] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5])&0x0F);
+
+    advNameBle[11] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]>>4)&0x0F);
+    advNameBle[12] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4])&0x0F);
+    advNameBle[13] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]>>4)&0x0F);
+    advNameBle[14] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5])&0x0F);
+  }
+
+  if(btSetCommandsStep == GET_DEVICE_NAME_BT)
+  {
+    btSetCommandsStep++;
+    btNameTypeBeingRead = DEVICE_TYPE_BT;
+  status = setDmaRx(5);
+    ezs_cmd_gap_get_device_name(DEVICE_TYPE_BT);
     return;
   }
 
-  if(btSetCommandsStep == 5)
+  if(btSetCommandsStep == SET_DEVICE_NAME_BT)
   {
     btSetCommandsStep++;
-	HAL_StatusTypeDef status = setDmaRx(1);
-    ezs_cmd_gap_set_device_name(1U, &nameAry[0]);
+    //TODO get working, sets name every time
+    if(strstr(rsp_gap_get_device_name_bt.name.data, &advNameBt[1]))
+    {
+      status = setDmaRx(1);
+        ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BT, &advNameBt[0]);
+        return;
+    }
+  }
+
+  if(btSetCommandsStep == GET_DEVICE_NAME_BLE)
+  {
+    btSetCommandsStep++;
+    btNameTypeBeingRead = DEVICE_TYPE_BLE;
+  status = setDmaRx(5);
+    ezs_cmd_gap_get_device_name(DEVICE_TYPE_BLE);
     return;
   }
 
-  if(btSetCommands == 6)
+  if(btSetCommandsStep == SET_DEVICE_NAME_BLE)
+  {
+    btSetCommandsStep++;
+    //TODO get working, sets name every time
+    if(strstr(rsp_gap_get_device_name_ble.name.data, &advNameBle[1]))
+    {
+    status = setDmaRx(1);
+    ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BLE, &advNameBle[0]);
+    return;
+    }
+  }
+
+  if(btSetCommandsStep == FINISH)
   {
     btSetCommandsStart = 0;
+    btIsInitialised = 1;
     return;
   }
 
@@ -143,24 +213,24 @@ void ezsHandler(ezs_packet_t *packet)
 
 void ezsHandlerShimmer(ezs_packet_t *packet)
 {
+  uint8_t rspParsed = 1;
+
     switch (packet->tbl_index)
     {
         case EZS_IDX_RSP_SYSTEM_PING:
+            rsp_system_ping = packet->payload.rsp_system_ping;
+
 //            printf("RX: rsp_system_ping: result=");
 //            printHex16(packet->payload.rsp_system_ping.result);
 //            printf(", runtime=");
 //            printHex32(packet->payload.rsp_system_ping.runtime);
 //            printf(", fraction=");
 //            printHex16(packet->payload.rsp_system_ping.fraction);
-
-            if(btSetCommandsStart)
-            {
-                btSetCommands();
-            }
-
             break;
 
         case EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION:
+          rsp_system_query_firmware_version = packet->payload.rsp_system_query_firmware_version;
+
 //            printf("RX: rsp_system_query_firmware_version: app=");
 //            printHex32(packet->payload.rsp_system_query_firmware_version.app);
 //            printf(", stack=");
@@ -175,12 +245,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 //            {
 //                printf("\r\n*** PLEASE UPDATE TARGET MODULE TO LATEST VERISON OF EZ-SERIAL FIRMWARE");
 //            }
-
-            if(btSetCommandsStart)
-            {
-                btSetCommands();
-            }
-
             break;
 
         case EZS_IDX_RSP_SYSTEM_REBOOT:
@@ -249,49 +313,56 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
             /* Shimmer added start */
         case EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS:
+          rsp_system_get_bluetooth_address = packet->payload.rsp_system_get_bluetooth_address;
 //            printf("RX: rsp_system_query_firmware_version: Address=");
 //            printHexMac(packet->payload.rsp_system_get_bluetooth_address.address);
-
-            if(btSetCommandsStart)
-            {
-                btSetCommands();
-            }
-
             break;
 
         case EZS_IDX_RSP_GAP_SET_DEVICE_NAME:
-//        	printf("RX: rsp_gap_set_device_name: Result=");
-//        	printHex16(packet->payload.rsp_gap_set_device_name.result);
-
-            if(btSetCommandsStart)
-            {
-                btSetCommands();
-            }
-
-        	break;
+//          printf("RX: rsp_gap_set_device_name: Result=");
+//          printHex16(packet->payload.rsp_gap_set_device_name.result);
+          break;
             /* Shimmer added end */
 
         case EZS_IDX_RSP_GAP_GET_DEVICE_NAME:
-        	printf("RX: rsp_gap_get_device_name: name=");
-        	printHexMac(packet->payload.rsp_gap_get_device_name.name);
-        	break;
+
+          if(btNameTypeBeingRead==DEVICE_TYPE_BLE)
+          {
+              rsp_gap_get_device_name_ble = packet->payload.rsp_gap_get_device_name;
+          }
+          else
+          {
+              rsp_gap_get_device_name_bt = packet->payload.rsp_gap_get_device_name;
+          }
+
+//          printf("RX: rsp_gap_get_device_name: name=");
+//          printHexMac(packet->payload.rsp_gap_get_device_name.name);
+          break;
 
         case EZS_IDX_RSP_GAP_SET_DEVICE_APPEARANCE:
-        	printf("RX: rsp_gap_set_device_appearance: Result=");
-        	printHex16(packet->payload.rsp_gap_set_device_appearance.result);
-        	break;
+          printf("RX: rsp_gap_set_device_appearance: Result=");
+          printHex16(packet->payload.rsp_gap_set_device_appearance.result);
+          break;
             /* Shimmer added end */
 
 
         default:
-            printf("RX: unhandled packet: ");
-            printHex8(packet->header.group);
-            printf("/");
-            printHex8(packet->header.id);
-            break;
+          rspParsed = 0;
+
+          printf("RX: unhandled packet: ");
+          printHex8(packet->header.group);
+          printf("/");
+          printHex8(packet->header.id);
+          break;
     }
 
     printf("\r\n");
+
+    if(btSetCommandsStart && rspParsed)
+    {
+        btSetCommands();
+    }
+
 }
 
 void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator)

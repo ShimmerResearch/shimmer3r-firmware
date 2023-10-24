@@ -165,6 +165,7 @@ int main(void)
 
     btInit();
 
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -611,12 +612,16 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
@@ -629,6 +634,19 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, UCPD_DBn_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : BT_LP_MODE_Pin */
+  GPIO_InitStruct.Pin = BT_LP_MODE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(BT_LP_MODE_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BT_CYSPP_Pin BT_CONNECTION_Pin */
+  GPIO_InitStruct.Pin = BT_CYSPP_Pin|BT_CONNECTION_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : USER_BUTTON_Pin */
   GPIO_InitStruct.Pin = USER_BUTTON_Pin;
@@ -676,6 +694,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI5_IRQn);
+
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
@@ -718,6 +743,32 @@ void usart2UartUpdate(void)
   {
     Error_Handler();
   }
+}
+
+void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
+{
+	switch (GPIO_Pin)
+    {
+    case BT_CYSPP_Pin:
+        break;
+    case BT_CONNECTION_Pin:
+        break;
+    default:
+        break;
+    }
+}
+
+void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
+{
+	switch (GPIO_Pin)
+    {
+    case BT_CYSPP_Pin:
+        break;
+    case BT_CONNECTION_Pin:
+        break;
+    default:
+        break;
+    }
 }
 
 /* USER CODE END 4 */

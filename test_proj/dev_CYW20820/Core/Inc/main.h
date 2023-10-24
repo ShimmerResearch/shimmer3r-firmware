@@ -68,6 +68,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define BT_LP_MODE_Pin GPIO_PIN_2
+#define BT_LP_MODE_GPIO_Port GPIOE
+#define BT_CYSPP_Pin GPIO_PIN_4
+#define BT_CYSPP_GPIO_Port GPIOE
+#define BT_CYSPP_EXTI_IRQn EXTI4_IRQn
+#define BT_CONNECTION_Pin GPIO_PIN_5
+#define BT_CONNECTION_GPIO_Port GPIOE
+#define BT_CONNECTION_EXTI_IRQn EXTI5_IRQn
 #define USER_BUTTON_Pin GPIO_PIN_13
 #define USER_BUTTON_GPIO_Port GPIOC
 #define VBUS_SENSE_Pin GPIO_PIN_2
