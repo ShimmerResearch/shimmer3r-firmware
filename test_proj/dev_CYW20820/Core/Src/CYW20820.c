@@ -61,6 +61,29 @@ void btInit(void)
 //	printf("Device name set successful\r\n");
 //}
 
+/*
+  uint8_t nameAry[] = {14, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', '7', '4', '6', '2'};
+	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+	{
+		printf("Device name set successful\r\n");
+	}
+
+	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(0U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+	{
+		printf("Device name set successful\r\n");
+	}
+
+	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_get_device_name(1U), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+	{
+		printf("Device name get successful\r\n");
+	}
+
+	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_appearance(0x0540), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+	{
+		printf("Device Appearance set successful\r\n");
+	}
+*/
+
 }
 
 void btSetCommands(void)
@@ -247,6 +270,18 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
         	break;
             /* Shimmer added end */
+
+        case EZS_IDX_RSP_GAP_GET_DEVICE_NAME:
+        	printf("RX: rsp_gap_get_device_name: name=");
+        	printHexMac(packet->payload.rsp_gap_get_device_name.name);
+        	break;
+
+        case EZS_IDX_RSP_GAP_SET_DEVICE_APPEARANCE:
+        	printf("RX: rsp_gap_set_device_appearance: Result=");
+        	printHex16(packet->payload.rsp_gap_set_device_appearance.result);
+        	break;
+            /* Shimmer added end */
+
 
         default:
             printf("RX: unhandled packet: ");

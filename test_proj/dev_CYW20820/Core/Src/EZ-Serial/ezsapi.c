@@ -172,7 +172,10 @@ const uint8_t ezs_tbl_cmd[] =
     0x02,0x16,  0x00,   0x00,                                   /*  94 | G  6, GTXP (system_get_tx_power) */
     0x02,0x18,  0x00,   0x00,                                   /*  95 | G  7, GT (system_get_transport) */
     0x02,0x1A,  0x00,   0x00,                                   /*  96 | G  8, GTU (system_get_uart_parameters) */
-    0x04,0x10,  0x00,   0x00,                                   /*  97 | G  9, GDN (gap_get_device_name) */
+	//-------------- Fix 02 Start -------------------------//
+	//0x04,0x10,  0x00,   0x00,                                   /*  97 | G  9, GDN (gap_get_device_name) */
+    0x04,0x10,  0x01,   0x01,T_U8,                                  /*  97 | G  9, GDN (gap_get_device_name) */
+	//-------------- Fix 01 End -------------------------//
     0x04,0x12,  0x00,   0x00,                                   /*  98 | G 10, GDA (gap_get_device_appearance) */
     0x04,0x14,  0x00,   0x00,                                   /*  99 | G 11, GAD (gap_get_adv_data) */
     0x04,0x16,  0x00,   0x00,                                   /* 100 | G 12, GSRD (gap_get_sr_data) */
