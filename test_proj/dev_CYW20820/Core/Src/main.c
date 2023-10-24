@@ -165,46 +165,6 @@ int main(void)
 
     btInit();
 
-//    if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_query_firmware_version(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) == 0)
-//    {
-//        /* "system_ping" response packet not received */
-//        printf("FW request timed out, check communication settings and reset module\r\n");
-//    }
-//    else
-//    {
-//        /* "system_ping" response packet received */
-//        printf("FW request successful\r\n");
-//    }
-//
-//    if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_get_bluetooth_address(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-//	{
-//		/* "system_ping" response packet received */
-//		printf("BT address request successful\r\n");
-//	}
-//
-//    uint8_t nameAry[] = {14, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X'};
-//	if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-//	{
-//		 /*"system_ping" response packet received*/
-//		printf("Device name set successful\r\n");
-//	}
-
-	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(0U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-	{
-		printf("Device name set successful\r\n");
-	}
-
-	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_get_device_name(1U), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-	{
-		printf("Device name get successful\r\n");
-	}
-
-	if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_appearance(0x0540), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-	{
-		printf("Device Appearance set successful\r\n");
-	}
-
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
