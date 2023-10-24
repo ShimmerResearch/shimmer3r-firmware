@@ -82,10 +82,10 @@ void Error_Handler(void);
 #define T_VCP_TX_GPIO_Port GPIOA
 #define T_VCP_RX_Pin GPIO_PIN_10
 #define T_VCP_RX_GPIO_Port GPIOA
-#define UART2_CTS_SW_Pin GPIO_PIN_3
-#define UART2_CTS_SW_GPIO_Port GPIOD
-#define UART2_RTS_SW_Pin GPIO_PIN_4
-#define UART2_RTS_SW_GPIO_Port GPIOD
+#define USART2_CTS_SW_Pin GPIO_PIN_3
+#define USART2_CTS_SW_GPIO_Port GPIOD
+#define USART_RTS_SW_Pin GPIO_PIN_4
+#define USART_RTS_SW_GPIO_Port GPIOD
 #define UCPD_DBn_Pin GPIO_PIN_5
 #define UCPD_DBn_GPIO_Port GPIOB
 #define LED_BLUE_Pin GPIO_PIN_7

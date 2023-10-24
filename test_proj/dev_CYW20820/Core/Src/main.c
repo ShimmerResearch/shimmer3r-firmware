@@ -21,8 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ezsapi.h"
-#include "handlers.h"
+#include "CYW20820.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,12 +48,6 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
-/* convenience functions for pretty-printing binary data as zero-padded hexadecimal */
-#define printHex8(VARIABLE)     printHex((uint8_t *)&VARIABLE, 1, 1, 0)
-#define printHex16(VARIABLE)    printHex((uint8_t *)&VARIABLE, 2, 1, 0)
-#define printHex32(VARIABLE)    printHex((uint8_t *)&VARIABLE, 4, 1, 0)
-#define printHexMac(VARIABLE)   printHex((uint8_t *)&VARIABLE, 6, 1, ':')
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -62,6 +55,8 @@ ADC_HandleTypeDef hadc1;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
+DMA_HandleTypeDef handle_GPDMA1_Channel0;
 
 HCD_HandleTypeDef hhcd_USB_OTG_HS;
 
@@ -74,16 +69,17 @@ static GPIO_InitTypeDef  GPIO_InitStruct;
 void SystemClock_Config(void);
 static void SystemPower_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_ADC1_Init(void);
+static void MX_GPDMA1_Init(void);
 static void MX_ICACHE_Init(void);
 static void MX_UCPD1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_USB_OTG_HS_HCD_Init(void);
+static void MX_ADC1_Init(void);
 static void MX_MEMORYMAP_Init(void);
+static void MX_USB_OTG_HS_HCD_Init(void);
 /* USER CODE BEGIN PFP */
 
-void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator);
+void usart2UartUpdate(void);
 
 /* USER CODE END PFP */
 
@@ -137,13 +133,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ADC1_Init();
+  MX_GPDMA1_Init();
   MX_ICACHE_Init();
   MX_UCPD1_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
-  MX_USB_OTG_HS_HCD_Init();
+  MX_ADC1_Init();
   MX_MEMORYMAP_Init();
+  MX_USB_OTG_HS_HCD_Init();
   /* USER CODE BEGIN 2 */
 
 	/* -1- Enable GPIO Clock (to be able to program the configuration registers) */
@@ -166,78 +163,31 @@ int main(void)
 
 	/* --------------------------------------------------------------------- */
 
-    /* packet pointer for working with response/event data */
-    ezs_packet_t *packet;
+    btInit();
 
-    /* enable global interrupts */
-//    CyGlobalIntEnable;
-
-    /* initialize software serial connection to host */
-//    UDEBUG_Start();
-    printf("\r\nEZ-Serial API communication demo started\r\n");
-
-    /* initialize hardware serial connection to module */
-//    UART_Start();
-
-    /* initialize timer interrupt handler */
-//    TIMERINT_StartEx(TimerInterruptHandler);
-
-    /* initialize EZ-Serial interface and callbacks */
-    setBtUartInstance(&huart2);
-    EZSerial_Init(appHandler, appOutput, appInput);
-
-    /**********************************************************/
-    /*** This method demonstrates a blocking send-and-wait  ***/
-    /*** call for transmitting a command packet and then    ***/
-    /*** waiting for a response packet to come back before  ***/
-    /*** proceeding. This approach can be convenient for    ***/
-    /*** command/response cycles, but cannot be used for    ***/
-    /*** events.                                            ***/
-    /***                                                    ***/
-    /*** NOTE: response packets will also cause a callback  ***/
-    /*** to be triggered via the "ezsHandler" function. You ***/
-    /*** do not need to process it there, but you can if    ***/
-    /*** needed.                                            ***/
-    /**********************************************************/
-
-    /* send "system_ping" command to test module connectivity */
-    if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_ping(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) == 0)
-    {
-        /* "system_ping" response packet not received */
-        printf("Ping test timed out, check communication settings and reset module\r\n");
-    }
-    else
-    {
-        /* "system_ping" response packet received */
-        printf("Ping test successful, getting firmware version\r\n");
-
-        /* send "system_query_firmware_version" command, then wait for response in loop below */
-//        ezs_cmd_system_query_firmware_version();
-    }
-
-    if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_query_firmware_version(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) == 0)
-    {
-        /* "system_ping" response packet not received */
-        printf("FW request timed out, check communication settings and reset module\r\n");
-    }
-    else
-    {
-        /* "system_ping" response packet received */
-        printf("FW request successful\r\n");
-    }
-
-    if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_get_bluetooth_address(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-	{
-		/* "system_ping" response packet received */
-		printf("BT address request successful\r\n");
-	}
-
-    uint8_t nameAry[] = {14, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X'};
-	if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-	{
-		 /*"system_ping" response packet received*/
-		printf("Device name set successful\r\n");
-	}
+//    if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_query_firmware_version(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) == 0)
+//    {
+//        /* "system_ping" response packet not received */
+//        printf("FW request timed out, check communication settings and reset module\r\n");
+//    }
+//    else
+//    {
+//        /* "system_ping" response packet received */
+//        printf("FW request successful\r\n");
+//    }
+//
+//    if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_get_bluetooth_address(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+//	{
+//		/* "system_ping" response packet received */
+//		printf("BT address request successful\r\n");
+//	}
+//
+//    uint8_t nameAry[] = {14, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X'};
+//	if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
+//	{
+//		 /*"system_ping" response packet received*/
+//		printf("Device name set successful\r\n");
+//	}
 
   /* USER CODE END 2 */
 
@@ -250,26 +200,25 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
 	/* Insert delay 100 ms */
-//	HAL_Delay(100);
+	HAL_Delay(100);
 	HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
 	/* Insert delay 100 ms */
-//	HAL_Delay(100);
+	HAL_Delay(100);
 	HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
 	/* Insert delay 100 ms */
-//	HAL_Delay(100);
+	HAL_Delay(100);
 
-
-    /**********************************************************/
-    /*** This method demonstrates a non-blocking check for  ***/
-    /*** new packets. If there is any data available from   ***/
-    /*** the configured module serial interface, the API    ***/
-    /*** library will automatically parse it and, if a full ***/
-    /*** packet has arrived, trigger a callback to handle   ***/
-    /*** the packet via the "ezsHandler" function.          ***/
-    /**********************************************************/
-
-    /* non-blocking test for incoming data */
-    EZS_CHECK_FOR_PACKET();
+//    /**********************************************************/
+//    /*** This method demonstrates a non-blocking check for  ***/
+//    /*** new packets. If there is any data available from   ***/
+//    /*** the configured module serial interface, the API    ***/
+//    /*** library will automatically parse it and, if a full ***/
+//    /*** packet has arrived, trigger a callback to handle   ***/
+//    /*** the packet via the "ezsHandler" function.          ***/
+//    /**********************************************************/
+//
+//    /* non-blocking test for incoming data */
+//    EZS_CHECK_FOR_PACKET();
 
     /* see appHandler() function in "handlers.c" for API response/event handler */
     /* (handles internal response count tracking and then passes to ezsHandler() below) */
@@ -412,6 +361,36 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief GPDMA1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPDMA1_Init(void)
+{
+
+  /* USER CODE BEGIN GPDMA1_Init 0 */
+
+  /* USER CODE END GPDMA1_Init 0 */
+
+  /* Peripheral clock enable */
+  __HAL_RCC_GPDMA1_CLK_ENABLE();
+
+  /* GPDMA1 interrupt Init */
+    HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
+
+  /* USER CODE BEGIN GPDMA1_Init 1 */
+
+  /* USER CODE END GPDMA1_Init 1 */
+  /* USER CODE BEGIN GPDMA1_Init 2 */
+
+  /* USER CODE END GPDMA1_Init 2 */
 
 }
 
@@ -602,6 +581,11 @@ static void MX_USART2_UART_Init(void)
   }
   /* USER CODE BEGIN USART2_Init 2 */
 
+//  huart2.TxCpltCallback = 0;
+//  huart2.RxCpltCallback = 0;
+
+  setBtUartInstance(&huart2);
+
   /* USER CODE END USART2_Init 2 */
 
 }
@@ -665,7 +649,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(UART2_RTS_SW_GPIO_Port, UART2_RTS_SW_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(USART_RTS_SW_GPIO_Port, USART_RTS_SW_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, UCPD_DBn_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
@@ -696,18 +680,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GREEN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : UART2_CTS_SW_Pin */
-  GPIO_InitStruct.Pin = UART2_CTS_SW_Pin;
+  /*Configure GPIO pin : USART2_CTS_SW_Pin */
+  GPIO_InitStruct.Pin = USART2_CTS_SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(UART2_CTS_SW_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(USART2_CTS_SW_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : UART2_RTS_SW_Pin */
-  GPIO_InitStruct.Pin = UART2_RTS_SW_Pin;
+  /*Configure GPIO pin : USART_RTS_SW_Pin */
+  GPIO_InitStruct.Pin = USART_RTS_SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(UART2_RTS_SW_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(USART_RTS_SW_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : UCPD_DBn_Pin LED_BLUE_Pin */
   GPIO_InitStruct.Pin = UCPD_DBn_Pin|LED_BLUE_Pin;
@@ -722,139 +706,42 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void ezsHandler(ezs_packet_t *packet)
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+void usart2UartUpdate(void)
 {
-    switch (packet->tbl_index)
-    {
-        case EZS_IDX_RSP_SYSTEM_PING:
-            printf("RX: rsp_system_ping: result=");
-            printHex16(packet->payload.rsp_system_ping.result);
-            printf(", runtime=");
-            printHex32(packet->payload.rsp_system_ping.runtime);
-            printf(", fraction=");
-            printHex16(packet->payload.rsp_system_ping.fraction);
-            break;
+	HAL_UART_DeInit(&huart2);
 
-        case EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION:
-            printf("RX: rsp_system_query_firmware_version: app=");
-            printHex32(packet->payload.rsp_system_query_firmware_version.app);
-            printf(", stack=");
-            printHex32(packet->payload.rsp_system_query_firmware_version.stack);
-            printf(", protocol=");
-            printHex16(packet->payload.rsp_system_query_firmware_version.protocol);
-            printf(", hardware=");
-            printHex8(packet->payload.rsp_system_query_firmware_version.hardware);
-
-            /* check for protocol version older than v1.3 */
-            if (packet->payload.rsp_system_query_firmware_version.protocol < 0x0103)
-            {
-                printf("\r\n*** PLEASE UPDATE TARGET MODULE TO LATEST VERISON OF EZ-SERIAL FIRMWARE");
-            }
-            break;
-
-        case EZS_IDX_RSP_SYSTEM_REBOOT:
-            printf("RX: rsp_system_reboot: result=");
-            printHex16(packet->payload.rsp_system_ping.result);
-            break;
-
-        case EZS_IDX_EVT_SYSTEM_BOOT:
-            printf("RX: evt_system_boot: app=");
-            printHex32(packet->payload.evt_system_boot.app);
-            printf(", stack=");
-            printHex32(packet->payload.evt_system_boot.stack);
-            printf(", protocol=");
-            printHex16(packet->payload.evt_system_boot.protocol);
-            printf(", hardware=");
-            printHex8(packet->payload.evt_system_boot.hardware);
-            printf(", cause=");
-            printHex8(packet->payload.evt_system_boot.cause);
-            printf(", address=");
-            printHexMac(packet->payload.evt_system_boot.address);
-            break;
-
-        case EZS_IDX_EVT_GAP_ADV_STATE_CHANGED:
-            printf("RX: evt_gap_adv_state_changed: state=");
-            printHex8(packet->payload.evt_gap_adv_state_changed.state);
-            printf(", reason=");
-            printHex8(packet->payload.evt_gap_adv_state_changed.reason);
-            break;
-
-        case EZS_IDX_EVT_GAP_SCAN_STATE_CHANGED:
-            printf("RX: evt_gap_scan_state_changed: state=");
-            printHex8(packet->payload.evt_gap_scan_state_changed.state);
-            printf(", reason=");
-            printHex8(packet->payload.evt_gap_scan_state_changed.reason);
-            break;
-
-        case EZS_IDX_EVT_GAP_CONNECTED:
-            printf("RX: evt_gap_connected: conn_handle=");
-            printHex8(packet->payload.evt_gap_connected.conn_handle);
-            printf(", address=");
-            printHexMac(packet->payload.evt_gap_connected.address);
-            printf(", type=");
-            printHex8(packet->payload.evt_gap_connected.type);
-            printf(", interval=");
-            printHex16(packet->payload.evt_gap_connected.interval);
-            printf(", slave_latency=");
-            printHex16(packet->payload.evt_gap_connected.slave_latency);
-            printf(", supervision_timeout=");
-            printHex16(packet->payload.evt_gap_connected.supervision_timeout);
-            printf(", bond=");
-            printHex8(packet->payload.evt_gap_connected.bond);
-            break;
-
-        case EZS_IDX_EVT_GAP_DISCONNECTED:
-            printf("RX: evt_gap_disconnected: conn_handle=");
-            printHex8(packet->payload.evt_gap_disconnected.conn_handle);
-            printf(", reason=");
-            printHex16(packet->payload.evt_gap_disconnected.reason);
-            break;
-
-        case EZS_IDX_EVT_P_CYSPP_STATUS:
-            printf("RX: evt_p_cyspp_status: status=");
-            printHex8(packet->payload.evt_p_cyspp_status.status);
-            break;
-
-
-            /* Shimmer added start */
-        case EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS:
-            printf("RX: rsp_system_query_firmware_version: Address=");
-            printHexMac(packet->payload.rsp_system_get_bluetooth_address.address);
-            break;
-
-        case EZS_IDX_RSP_GAP_SET_DEVICE_NAME:
-        	printf("RX: rsp_gap_set_device_name: Result=");
-        	printHex16(packet->payload.rsp_gap_set_device_name.result);
-        	break;
-            /* Shimmer added end */
-
-        default:
-            printf("RX: unhandled packet: ");
-            printHex8(packet->header.group);
-            printf("/");
-            printHex8(packet->header.id);
-            break;
-    }
-
-    printf("\r\n");
-}
-
-void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator)
-{
-    if (reverse) data += bytes;
-    while (bytes)
-    {
-        if (reverse) data--;
-//        printf(((*data >> 4) & 0xF) < 10 ? ('0' + ((*data >> 4) & 0xF)) : ('A' - 10 + ((*data >> 4) & 0xF)));
-//        printf(( *data       & 0xF) < 10 ? ('0' + ( *data       & 0xF)) : ('A' - 10 + ( *data       & 0xF)));
-
-        printf("%c", ((*data >> 4) & 0xF) < 10 ? ('0' + ((*data >> 4) & 0xF)) : ('A' - 10 + ((*data >> 4) & 0xF)));
-        printf("%c", ( *data       & 0xF) < 10 ? ('0' + ( *data       & 0xF)) : ('A' - 10 + ( *data       & 0xF)));
-
-        if (!reverse) data++;
-        bytes--;
-        if (bytes && separator) printf("%c", separator);
-    }
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 1000000;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_EnableFifoMode(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /* USER CODE END 4 */

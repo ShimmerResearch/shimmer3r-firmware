@@ -3323,6 +3323,13 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
 #define ezs_fcmd_p_eddystone_get_parameters() \
     ezs_cmd_va(EZS_IDX_CMD_P_EDDYSTONE_GET_PARAMETERS, 1)
 
+/**************************** Shimmer Start ***********************************/
+
+ezs_packet_t *ezs_parseSingleByte(uint8_t b);
+uint16_t getRemainingByteCount(void);
+
+/**************************** Shimmer End *************************************/
+
 #endif /* EZSAPI_H */
 
 /* [] END OF FILE */

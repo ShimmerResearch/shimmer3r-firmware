@@ -1,6 +1,0 @@
-../Core/Src/ezsapi.c:285:6:EZSerial_Init	1
-../Core/Src/ezsapi.c:304:20:EZSerial_Parse	10
-../Core/Src/ezsapi.c:388:21:EZSerial_SendPacket	3
-../Core/Src/ezsapi.c:420:20:EZSerial_FillPacketMetaFromBinary	10
-../Core/Src/ezsapi.c:480:15:EZSerial_WaitForPacket	17
-../Core/Src/ezsapi.c:559:21:ezs_cmd_va	14

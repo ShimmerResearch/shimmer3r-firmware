@@ -1,10 +1,14 @@
-../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:309:19:HAL_UART_Init	5
-../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:384:19:HAL_HalfDuplex_Init	5
-../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:459:19:HAL_LIN_Init	7
-../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:558:19:HAL_MultiProcessor_Init	6
-../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:634:19:HAL_UART_DeInit	2
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:309:19:HAL_UART_Init	6
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:384:19:HAL_HalfDuplex_Init	6
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:459:19:HAL_LIN_Init	8
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:558:19:HAL_MultiProcessor_Init	7
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:634:19:HAL_UART_DeInit	3
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:681:13:HAL_UART_MspInit	1
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:696:13:HAL_UART_MspDeInit	1
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:732:19:HAL_UART_RegisterCallback	18
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:856:19:HAL_UART_UnRegisterCallback	17
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:957:19:HAL_UART_RegisterRxEventCallback	4
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:994:19:HAL_UART_UnRegisterRxEventCallback	3
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:1122:19:HAL_UART_Transmit	10
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:1220:19:HAL_UART_Receive	15
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:1312:19:HAL_UART_Transmit_IT	11
@@ -41,6 +45,7 @@
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:3045:19:HAL_LIN_SendBreak	2
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:3090:23:HAL_UART_GetState	1
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:3106:10:HAL_UART_GetError	1
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:3128:6:UART_InitCallbacksToDefault	1
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:3151:19:UART_SetConfig	24
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:3308:6:UART_AdvFeatureConfig	10
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c:3384:19:UART_CheckIdleState	8
