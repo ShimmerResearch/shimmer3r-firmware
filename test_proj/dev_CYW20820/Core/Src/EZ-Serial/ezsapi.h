@@ -1186,15 +1186,31 @@ __PACKDEF(ezs_rsp_gap_delete_whitelist_entry_t,
     uint8_t count;
 });
 
+//-------------- Fix 03 Start -------------------------//
+//__PACKDEF(ezs_cmd_gap_start_adv_t,
+//{
+//    uint8_t mode;
+//    uint8_t type;
+//    uint16_t interval;
+//    uint8_t channels;
+//    uint8_t filter;
+//    uint16_t timeout;
+//});
+
 __PACKDEF(ezs_cmd_gap_start_adv_t,
 {
     uint8_t mode;
     uint8_t type;
-    uint16_t interval;
     uint8_t channels;
-    uint8_t filter;
-    uint16_t timeout;
+    uint16_t high_interval;
+    uint16_t high_duration;
+    uint16_t low_interval;
+    uint16_t low_duration;
+    uint8_t flags;
+    macaddr_t direct_addr;
+    uint8_t direct_address_type;
 });
+//-------------- Fix 03 End -------------------------//
 
 __PACKDEF(ezs_rsp_gap_start_adv_t,
 {
@@ -1375,9 +1391,8 @@ __PACKDEF(ezs_cmd_gap_set_adv_parameters_t,
     uint16_t low_interval;
     uint16_t low_duration;
     uint8_t flags;
-    uint8_t filter;
-    //macaddr_t address;
-    uint8_t address_type;
+    macaddr_t direct_addr;
+    uint8_t direct_address_type;
 
 });
 //-------------- Fix 03 End -------------------------//
@@ -1415,9 +1430,8 @@ __PACKDEF(ezs_rsp_gap_get_adv_parameters_t,
     uint16_t low_interval;
     uint16_t low_duration;
     uint8_t flags;
-    uint8_t filter;
-    //macaddr_t address;
-    uint8_t address_type;
+    macaddr_t direct_addr;
+    uint8_t direct_address_type;
 
 });
 //-------------- Fix 03 End -------------------------//
@@ -3077,8 +3091,12 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
     ezs_cmd_va(EZS_IDX_CMD_GAP_ADD_WHITELIST_ENTRY, 0, address, type)
 #define ezs_cmd_gap_delete_whitelist_entry(address, type) \
     ezs_cmd_va(EZS_IDX_CMD_GAP_DELETE_WHITELIST_ENTRY, 0, address, type)
-#define ezs_cmd_gap_start_adv(mode, type, interval, channels, filter, timeout) \
-    ezs_cmd_va(EZS_IDX_CMD_GAP_START_ADV, 0, mode, type, interval, channels, filter, timeout)
+//-------------- Fix 03 Start -------------------------//
+//#define ezs_cmd_gap_start_adv(mode, type, interval, channels, filter, timeout) \
+//    ezs_cmd_va(EZS_IDX_CMD_GAP_START_ADV, 0, mode, type, interval, channels, filter, timeout)
+#define ezs_cmd_gap_start_adv(mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, direct_address, direct_address_type) \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_START_ADV, 0, mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, direct_address, direct_address_type)
+//-------------- Fix 03 Stop -------------------------//
 #define ezs_cmd_gap_stop_adv() \
     ezs_cmd_va(EZS_IDX_CMD_GAP_STOP_ADV, 0)
 #define ezs_cmd_gap_start_scan(mode, interval, window, active, filter, nodupe, timeout) \
@@ -3149,10 +3167,10 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
 #define ezs_fcmd_gap_set_adv_parameters(mode, type, interval, channels, filter, timeout, flags) \
     ezs_cmd_va(EZS_IDX_CMD_GAP_SET_ADV_PARAMETERS, 1, mode, type, interval, channels, filter, timeout, flags)
 */
-#define ezs_cmd_gap_set_adv_parameters(mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter,address_type) \
-    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_ADV_PARAMETERS, 0, mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter,address_type)
-#define ezs_fcmd_gap_set_adv_parameters(mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter,address_type) \
-    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_ADV_PARAMETERS, 1, mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter,address_type)
+#define ezs_cmd_gap_set_adv_parameters(mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, direct_address, direct_address_type) \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_ADV_PARAMETERS, 0, mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, direct_address, direct_address_type)
+#define ezs_fcmd_gap_set_adv_parameters(mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, direct_address, direct_address_type) \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_ADV_PARAMETERS, 1, mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, direct_address, direct_address_type)
 //-------------- Fix 03 End -------------------------//
 
 #define ezs_cmd_gap_get_adv_parameters() \
