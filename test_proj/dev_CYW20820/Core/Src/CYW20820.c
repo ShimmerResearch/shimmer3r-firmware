@@ -25,6 +25,7 @@ ezs_rsp_system_query_firmware_version_t rsp_system_query_firmware_version;
 ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
+ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
 
 static char advNameBt[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
 static char advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
@@ -84,6 +85,8 @@ void btInit(void)
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
 
+  HAL_StatusTypeDef status = setDmaRx(1);
+
   btSetCommands();
 
 //  if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_query_firmware_version(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) == 0)
@@ -133,14 +136,12 @@ void btInit(void)
 */
 
 }
-
+//TODO set appropriate values for setDmaRx() calls
 void btSetCommands(void)
 {
-  HAL_StatusTypeDef status;
   if(btSetCommandsStep == PING)
   {
     btSetCommandsStep++;
-    status = setDmaRx(13);
     ezs_cmd_system_ping();
     return;
   }
@@ -148,7 +149,6 @@ void btSetCommands(void)
   if(btSetCommandsStep == GET_FIRMWARE_VERSION)
   {
     btSetCommandsStep++;
-    status = setDmaRx(5);
     ezs_cmd_system_query_firmware_version();
     return;
   }
@@ -156,7 +156,6 @@ void btSetCommands(void)
   if(btSetCommandsStep == GET_BLUETOOTH_ADDRESS)
   {
     btSetCommandsStep++;
-    status = setDmaRx(5);
     ezs_cmd_system_get_bluetooth_address();
     return;
   }
@@ -179,7 +178,6 @@ void btSetCommands(void)
   {
     btSetCommandsStep++;
     btNameTypeBeingRead = DEVICE_TYPE_BT;
-    status = setDmaRx(5);
     ezs_cmd_gap_get_device_name(DEVICE_TYPE_BT);
     return;
   }
@@ -189,7 +187,6 @@ void btSetCommands(void)
     btSetCommandsStep++;
     if(!strstr((char *)&rsp_gap_get_device_name_bt.name.data[0], &advNameBt[1]))
     {
-      status = setDmaRx(1);
       ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BT, &advNameBt[0]);
       return;
     }
@@ -199,7 +196,6 @@ void btSetCommands(void)
   {
     btSetCommandsStep++;
     btNameTypeBeingRead = DEVICE_TYPE_BLE;
-    status = setDmaRx(5);
     ezs_cmd_gap_get_device_name(DEVICE_TYPE_BLE);
     return;
   }
@@ -210,17 +206,46 @@ void btSetCommands(void)
     btSetCommandsStep++;
     if(!strstr((char *)&rsp_gap_get_device_name_ble.name.data[0], &advNameBle[1]))
     {
-      status = setDmaRx(1);
       ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BLE, &advNameBle[0]);
       return;
     }
+  }
+
+  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE1)
+  {
+    btSetCommandsStep++;
+    ezs_cmd_system_get_uart_parameters(UART_TYPE_PUART);
+    return;
+  }
+
+  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE2)
+  {
+    btSetCommandsStep++;
+    ezs_cmd_system_set_uart_parameters(
+        BAUD_TO_USE,
+        rsp_system_get_uart_parameters.autobaud,
+        rsp_system_get_uart_parameters.autocorrect,
+        rsp_system_get_uart_parameters.flow,
+        rsp_system_get_uart_parameters.databits,
+        rsp_system_get_uart_parameters.parity,
+        rsp_system_get_uart_parameters.stopbits,
+        UART_TYPE_PUART);
+    return;
+  }
+
+  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE3)
+  {
+    btSetCommandsStep++;
+    //TODO resolve reference
+    usart2UartUpdate();
+
+    ezs_cmd_system_ping();
   }
 
   if(btSetCommandsStep == FINISH)
   {
     btSetCommandsStart = 0;
     btIsInitialised = true;
-    setDmaRx(1);
     return;
   }
 
@@ -342,7 +367,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 //          printf("RX: rsp_gap_set_device_name: Result=");
 //          printHex16(packet->payload.rsp_gap_set_device_name.result);
           break;
-            /* Shimmer added end */
 
         case EZS_IDX_RSP_GAP_GET_DEVICE_NAME:
 
@@ -359,12 +383,24 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 //          printHexMac(packet->payload.rsp_gap_get_device_name.name);
           break;
 
+        case EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS:
+          rsp_system_get_uart_parameters = packet->payload.rsp_system_get_uart_parameters;
+//          printf("RX: rsp_gap_set_device_appearance: Result=");
+//          printHex16(packet->payload.rsp_gap_set_device_appearance.result);
+
+          break;
+
+        case EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS:
+//          printf("RX: rsp_gap_set_device_appearance: Result=");
+//          printHex16(packet->payload.rsp_gap_set_device_appearance.result);
+          break;
+
         case EZS_IDX_RSP_GAP_SET_DEVICE_APPEARANCE:
           printf("RX: rsp_gap_set_device_appearance: Result=");
           printHex16(packet->payload.rsp_gap_set_device_appearance.result);
           break;
-            /* Shimmer added end */
 
+          /* Shimmer added end */
 
         default:
           rspParsed = 0;

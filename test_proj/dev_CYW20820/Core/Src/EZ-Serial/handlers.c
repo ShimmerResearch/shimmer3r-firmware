@@ -214,6 +214,10 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
   {
     HAL_StatusTypeDef status = setDmaRx(count);
   }
+  else
+  {
+      HAL_StatusTypeDef status = setDmaRx(1);
+  }
 
 }
 
