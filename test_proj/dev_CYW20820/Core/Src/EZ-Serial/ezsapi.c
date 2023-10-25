@@ -87,7 +87,11 @@ const uint8_t ezs_tbl_cmd[] =
     0x04,0x05,  0x01,   0x01,T_U8,                              /*  17 | / 17, /DIS (gap_disconnect) */
     0x04,0x06,  0x07,   0x02,T_MAC,T_U8,                        /*  18 | / 18, /WLA (gap_add_whitelist_entry) */
     0x04,0x07,  0x07,   0x02,T_MAC,T_U8,                        /*  19 | / 19, /WLD (gap_delete_whitelist_entry) */
-    0x04,0x08,  0x08,   0x06,T_U8,T_U8,T_U16,T_U8,T_U8,T_U16,   /*  20 | / 20, /A (gap_start_adv) */
+    //-------------- Fix 03 Start -------------------------//
+//    0x04,0x08,  0x08,   0x06,T_U8,T_U8,T_U16,T_U8,T_U8,T_U16,   /*  20 | / 20, /A (gap_start_adv) */
+    0x04,0x08,  0x13,   0x0A,T_U8,T_U8,T_U8,T_U16,T_U16,T_U16,T_U16,T_U8,T_MAC,T_U8,
+                                                                /*  20 | / 20, /A (gap_start_adv) */
+    //-------------- Fix 03 End -------------------------//
     0x04,0x09,  0x00,   0x00,                                   /*  21 | / 21, /AX (gap_stop_adv) */
     0x04,0x0A,  0x0A,   0x07,T_U8,T_U16,T_U16,T_U8,T_U8,T_U8,T_U16,
                                                                 /*  22 | / 22, /S (gap_start_scan) */
@@ -151,8 +155,14 @@ const uint8_t ezs_tbl_cmd[] =
     0x04,0x11,  0x02,   0x01,T_U16,                             /*  72 | S 10, SDA (gap_set_device_appearance) */
     0x04,0x13,  0x81,   0x01,T_U8A,                             /*  73 | S 11, SAD (gap_set_adv_data) */
     0x04,0x15,  0x81,   0x01,T_U8A,                             /*  74 | S 12, SSRD (gap_set_sr_data) */
-    0x04,0x17,  0x09,   0x07,T_U8,T_U8,T_U16,T_U8,T_U8,T_U16,T_U8,
+
+  //-------------- Fix 03 Start -------------------------//
+   // 0x04,0x17,  0x09,   0x07,T_U8,T_U8,T_U16,T_U8,T_U8,T_U16,T_U8,
                                                                 /*  75 | S 13, SAP (gap_set_adv_parameters) */
+    0x04,0x17,  0x13,   0x0A,T_U8,T_U8,T_U8,T_U16,T_U16,T_U16,T_U16,T_U8,T_MAC,T_U8,
+                                                                /*  75 | S 13, SAP (gap_set_adv_parameters) */
+  //-------------- Fix 03 End -------------------------//
+
     0x04,0x19,  0x0A,   0x07,T_U8,T_U16,T_U16,T_U8,T_U8,T_U8,T_U16,
                                                                 /*  76 | S 14, SSP (gap_set_scan_parameters) */
     0x04,0x1B,  0x0C,   0x06,T_U16,T_U16,T_U16,T_U16,T_U16,T_U16,

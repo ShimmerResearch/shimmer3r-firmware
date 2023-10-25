@@ -25,6 +25,9 @@ ezs_rsp_system_query_firmware_version_t rsp_system_query_firmware_version;
 ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
+#if USE_GET_SET_ADV_PARAM
+ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
+#endif
 ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
 
 static char advNameBt[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
@@ -209,6 +212,51 @@ void btSetCommands(void)
       ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BLE, &advNameBle[0]);
       return;
     }
+  }
+
+#if USE_GET_SET_ADV_PARAM
+  if(btSetCommandsStep == GET_ADVERTISING_PARAMETERS)
+  {
+    btSetCommandsStep++;
+    status = setDmaRx(5);
+    ezs_cmd_gap_get_adv_parameters();
+    return;
+  }
+
+  if(btSetCommandsStep == SET_ADVERTISING_PARAMETERS)
+  {
+    btSetCommandsStep++;
+    status = setDmaRx(1);
+
+    //TODO decide whether we want to write in flash and then check in future whether we need to set on boot.
+
+    //TODO temp here, original settings read from module
+    ezs_fcmd_gap_set_adv_parameters(2U, 3U, 7U,
+           (uint16_t)48U, (uint16_t)30U, (uint16_t)2048U, (uint16_t)60U,
+           0U,
+      rsp_gap_get_adv_parameters.direct_addr, 0U);
+
+//    /* Advertising interval in units of 0.625 ms. 50 = 31.24ms, infinite advertising. */
+//    ezs_fcmd_gap_set_adv_parameters(2U, 3U, 7U,
+//            (uint16_t)50U, (uint16_t)0U, (uint16_t)50U, (uint16_t)0U,
+//            0U,
+//      rsp_gap_get_adv_parameters.direct_addr, 0U);
+
+    return;
+  }
+#endif
+
+  if(btSetCommandsStep == START_BLE_ADVERTISING)
+  {
+    btSetCommandsStep++;
+    status = setDmaRx(1);
+
+    /* Advertising interval in units of 0.625 ms. 50 = 31.24ms, infinite advertising. */
+    ezs_cmd_gap_start_adv(2U, 3U, 7U,
+            50U, 0U, 50U, 0U,
+            0U,
+            0U, 0U);
+
   }
 
   if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE1)
@@ -398,6 +446,15 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
         case EZS_IDX_RSP_GAP_SET_DEVICE_APPEARANCE:
           printf("RX: rsp_gap_set_device_appearance: Result=");
           printHex16(packet->payload.rsp_gap_set_device_appearance.result);
+          break;
+
+        case EZS_IDX_RSP_GAP_SET_ADV_PARAMETERS:
+          printHex16(packet->payload.rsp_gap_set_adv_parameters.result);
+          break;
+
+        case EZS_IDX_RSP_GAP_GET_ADV_PARAMETERS:
+          rsp_gap_get_adv_parameters = packet->payload.rsp_gap_get_adv_parameters;
+          printHex16(packet->payload.rsp_gap_get_adv_parameters.result);
           break;
 
           /* Shimmer added end */
