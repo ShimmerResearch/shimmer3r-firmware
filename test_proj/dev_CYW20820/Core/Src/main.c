@@ -521,7 +521,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = BAUD_TO_USE;
+  huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -711,7 +711,7 @@ void usart2UartUpdate(void)
   HAL_UART_DeInit(&huart2);
 
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 1000000;
+  huart2.Init.BaudRate = BAUD_TO_USE;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
