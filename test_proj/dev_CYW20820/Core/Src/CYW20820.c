@@ -218,7 +218,6 @@ void btSetCommands(void)
   if(btSetCommandsStep == GET_ADVERTISING_PARAMETERS)
   {
     btSetCommandsStep++;
-    status = setDmaRx(5);
     ezs_cmd_gap_get_adv_parameters();
     return;
   }
@@ -226,7 +225,6 @@ void btSetCommands(void)
   if(btSetCommandsStep == SET_ADVERTISING_PARAMETERS)
   {
     btSetCommandsStep++;
-    status = setDmaRx(1);
 
     //TODO decide whether we want to write in flash and then check in future whether we need to set on boot.
 
@@ -245,19 +243,6 @@ void btSetCommands(void)
     return;
   }
 #endif
-
-  if(btSetCommandsStep == START_BLE_ADVERTISING)
-  {
-    btSetCommandsStep++;
-    status = setDmaRx(1);
-
-    /* Advertising interval in units of 0.625 ms. 50 = 31.24ms, infinite advertising. */
-    ezs_cmd_gap_start_adv(2U, 3U, 7U,
-            50U, 0U, 50U, 0U,
-            0U,
-            0U, 0U);
-
-  }
 
   if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE1)
   {
@@ -288,6 +273,18 @@ void btSetCommands(void)
     usart2UartUpdate();
 
     ezs_cmd_system_ping();
+  }
+
+  if(btSetCommandsStep == START_BLE_ADVERTISING)
+  {
+    btSetCommandsStep++;
+
+    /* Advertising interval in units of 0.625 ms. 50 = 31.24ms, infinite advertising. */
+    ezs_cmd_gap_start_adv(2U, 3U, 7U,
+            50U, 0U, 50U, 0U,
+            0U,
+            0U, 0U);
+
   }
 
   if(btSetCommandsStep == FINISH)
@@ -453,8 +450,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
           break;
 
         case EZS_IDX_RSP_GAP_GET_ADV_PARAMETERS:
+#if USE_GET_SET_ADV_PARAM
           rsp_gap_get_adv_parameters = packet->payload.rsp_gap_get_adv_parameters;
-          printHex16(packet->payload.rsp_gap_get_adv_parameters.result);
+#endif
+//          printHex16(packet->payload.rsp_gap_get_adv_parameters.result);
           break;
 
           /* Shimmer added end */
