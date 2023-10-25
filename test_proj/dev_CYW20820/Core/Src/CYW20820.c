@@ -216,6 +216,22 @@ void btSetCommands(void)
     }
   }
 
+  if(btSetCommandsStep == GET_ADVERTISING_PARAMETERS)
+  {
+    btSetCommandsStep++;
+  status = setDmaRx(5);
+  ezs_cmd_gap_get_adv_parameters();
+    return;
+  }
+
+  if(btSetCommandsStep == SET_ADVERTISING_PARAMETERS)
+  {
+    btSetCommandsStep++;
+  status = setDmaRx(1);
+  ezs_fcmd_gap_set_adv_parameters(2U, 3U, 7U, 40U, 20U, 1100U, 60U, 0U, 0U);
+    return;
+  }
+
   if(btSetCommandsStep == FINISH)
   {
     btSetCommandsStart = 0;
@@ -362,6 +378,14 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
         case EZS_IDX_RSP_GAP_SET_DEVICE_APPEARANCE:
           printf("RX: rsp_gap_set_device_appearance: Result=");
           printHex16(packet->payload.rsp_gap_set_device_appearance.result);
+          break;
+
+        case EZS_IDX_RSP_GAP_SET_ADV_PARAMETERS:
+        	printHex16(packet->payload.rsp_gap_set_adv_parameters.result);
+          break;
+
+        case EZS_IDX_RSP_GAP_GET_ADV_PARAMETERS:
+        	printHex16(packet->payload.rsp_gap_get_adv_parameters.result);
           break;
             /* Shimmer added end */
 
