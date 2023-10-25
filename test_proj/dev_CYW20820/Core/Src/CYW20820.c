@@ -228,7 +228,7 @@ void btSetCommands(void)
   {
     btSetCommandsStep++;
   status = setDmaRx(1);
-  ezs_fcmd_gap_set_adv_parameters(2U, 3U, 7U, 40U, 20U, 1100U, 60U, 0U, 0U);
+  ezs_cmd_gap_set_adv_parameters(2U, 3U, 7U, 40U, 20U, 1100U, 60U, 0U, 0U,0U);
     return;
   }
 

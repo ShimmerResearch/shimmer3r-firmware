@@ -1376,6 +1376,9 @@ __PACKDEF(ezs_cmd_gap_set_adv_parameters_t,
     uint16_t low_duration;
     uint8_t flags;
     uint8_t filter;
+    //macaddr_t address;
+    uint8_t address_type;
+
 });
 //-------------- Fix 03 End -------------------------//
 
@@ -1413,6 +1416,9 @@ __PACKDEF(ezs_rsp_gap_get_adv_parameters_t,
     uint16_t low_duration;
     uint8_t flags;
     uint8_t filter;
+    //macaddr_t address;
+    uint8_t address_type;
+
 });
 //-------------- Fix 03 End -------------------------//
 
@@ -3143,10 +3149,10 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
 #define ezs_fcmd_gap_set_adv_parameters(mode, type, interval, channels, filter, timeout, flags) \
     ezs_cmd_va(EZS_IDX_CMD_GAP_SET_ADV_PARAMETERS, 1, mode, type, interval, channels, filter, timeout, flags)
 */
-#define ezs_cmd_gap_set_adv_parameters(mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter) \
-    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_ADV_PARAMETERS, 0, mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter)
-#define ezs_fcmd_gap_set_adv_parameters(mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter) \
-    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_ADV_PARAMETERS, 1, mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter)
+#define ezs_cmd_gap_set_adv_parameters(mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter,address_type) \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_ADV_PARAMETERS, 0, mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter,address_type)
+#define ezs_fcmd_gap_set_adv_parameters(mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter,address_type) \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_ADV_PARAMETERS, 1, mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, filter,address_type)
 //-------------- Fix 03 End -------------------------//
 
 #define ezs_cmd_gap_get_adv_parameters() \

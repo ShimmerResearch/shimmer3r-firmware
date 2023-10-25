@@ -151,7 +151,7 @@ const uint8_t ezs_tbl_cmd[] =
 	  //-------------- Fix 03 Start -------------------------//
    // 0x04,0x17,  0x09,   0x07,T_U8,T_U8,T_U16,T_U8,T_U8,T_U16,T_U8,
                                                                 /*  75 | S 13, SAP (gap_set_adv_parameters) */
-    0x04,0x17,  0x0D,   0x09,T_U8,T_U8,T_U8,T_U16,T_U16,T_U16,T_U16,T_U8,T_U8,
+    0x04,0x17,  0x0E,   0x0A,T_U8,T_U8,T_U8,T_U16,T_U16,T_U16,T_U16,T_U8,T_U8,T_U8,
                                                                 /*  75 | S 13, SAP (gap_set_adv_parameters) */
 	  //-------------- Fix 03 End -------------------------//
 
