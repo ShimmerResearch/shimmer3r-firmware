@@ -191,6 +191,12 @@ int main(void)
     /* Insert delay 300 ms */
     HAL_Delay(300);
 
+//    if (isBtIsInitialised() && isBtConnected())
+//    {
+//      uint8_t c = 'H';
+//      HAL_UART_Transmit(&huart2, &c, 1, 1500 * HAL_GetTickFreq());
+//    }
+
   }
   /* USER CODE END 3 */
 }
@@ -737,6 +743,9 @@ void usart2UartUpdate(void)
   {
     Error_Handler();
   }
+
+  setBtUartInstance(&huart2);
+  setDmaRx(1);
 }
 
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)

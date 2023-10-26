@@ -158,7 +158,7 @@ ezs_input_result_t appInput(uint8_t *inByte, uint16_t timeout) {
     /* attempt to read a byte from UART */
 //  HAL_StatusTypeDef status = HAL_UART_Receive(huart, inByte, 1, timeout);
 
-  setDmaRx(1);
+//  setDmaRx(1);
 
 //    return EZS_INPUT_RESULT_NO_DATA;
 }
@@ -201,22 +201,23 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 //  }
 //  HAL_StatusTypeDef status = setDmaRx(1);
 
-  for(uint8_t i=0;i<expectedByteCount;i++)
+  for (uint8_t i = 0; i < expectedByteCount; i++)
   {
     ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
-    if(result!=0){
+    if (result != 0)
+    {
       ezsHandlerShimmer(result);
     }
   }
 
   uint16_t count = getRemainingByteCount();
-  if(count!=0)
+  if (count != 0)
   {
     HAL_StatusTypeDef status = setDmaRx(count);
   }
   else
   {
-      HAL_StatusTypeDef status = setDmaRx(1);
+    HAL_StatusTypeDef status = setDmaRx(1);
   }
 
 }
