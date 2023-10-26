@@ -1001,12 +1001,22 @@ __PACKDEF(ezs_rsp_system_set_tx_power_t,
 __PACKDEF(ezs_cmd_system_get_tx_power_t,
 {
 });
-
+//-------------- Fix 05 Start -------------------------//
+/*
 __PACKDEF(ezs_rsp_system_get_tx_power_t,
 {
     uint16_t result;
     uint8_t power;
 });
+*/
+
+__PACKDEF(ezs_rsp_system_get_tx_power_t,
+{
+    uint16_t result;
+    uint8_t power;
+    uint8a_t power_array;
+});
+//-------------- Fix 05 End -------------------------//
 
 __PACKDEF(ezs_cmd_system_set_transport_t,
 {

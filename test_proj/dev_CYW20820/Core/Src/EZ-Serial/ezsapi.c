@@ -142,7 +142,7 @@ const uint8_t ezs_tbl_cmd[] =
     0x02,0x13,  0x01,   0x01,T_U8,                              /*  67 | S  5, SSLP (system_set_sleep_parameters) */
 	  //-------------- Fix 05 Start -------------------------//
 		//0x02,0x15,  0x01,   0x01,T_U8,                              /*  68 | S  6, STXP (system_set_tx_power) */
-    0x02,0x15,  0x82,   0x02,T_U8,T_U8A,                              /*  68 | S  6, STXP (system_set_tx_power) */
+    0x02,0x15,  0x19,   0x02,T_U8,T_U8A,                              /*  68 | S  6, STXP (system_set_tx_power) */
 	  //-------------- Fix 05 End -------------------------//
     0x02,0x17,  0x01,   0x01,T_U8,                              /*  69 | S  7, ST (system_set_transport) */
   //-------------- Fix 04 Start -------------------------//

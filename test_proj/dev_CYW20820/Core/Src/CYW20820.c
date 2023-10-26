@@ -37,8 +37,7 @@ ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
  BR:{-2,0,2,4,6,8,10,12},
  EDR:{-2,0,2,4,6,8,10,12},
  BLE:{-2,0,2,4,6,8,10,10}, */
-#define POWER_ARRAY 0x00
-
+uint8_t power_array[3][8] = {{-2,0,2,4,6,8,10,12},{-2,0,2,4,6,8,10,12},{-2,0,2,4,6,8,10,10}};
 static char advNameBt[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
 static char advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
 
@@ -233,11 +232,10 @@ void btSetCommands(void)
   if(btSetCommandsStep == SET_TX_POWER)
   {
     btSetCommandsStep++;
-   // uint8_t txPower = 0x08;
-		if (rsp_system_get_tx_power.power != TX_POWER)
-		{
-			ezs_fcmd_system_set_tx_power(TX_POWER, POWER_ARRAY);
-		}
+	//	if (rsp_system_get_tx_power.power != TX_POWER)
+	//	{
+			ezs_fcmd_system_set_tx_power(TX_POWER, power_array/*rsp_system_get_tx_power.power_array*/);
+	//	}
     return;
   }
 
