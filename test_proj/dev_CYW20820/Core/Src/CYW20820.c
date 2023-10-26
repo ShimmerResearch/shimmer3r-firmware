@@ -25,10 +25,19 @@ ezs_rsp_system_query_firmware_version_t rsp_system_query_firmware_version;
 ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
+ezs_rsp_system_get_tx_power_t rsp_system_get_tx_power;
 #if USE_GET_SET_ADV_PARAM
 ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 #endif
 ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
+
+#define TX_POWER 0x08 // tx_power max BR: 12dBm,  EBR: 12dBm, BLE: 10dBm.
+
+/* power array of size  3*8: User guide says only need when tx_power = 0 hence set to 0
+ BR:{-2,0,2,4,6,8,10,12},
+ EDR:{-2,0,2,4,6,8,10,12},
+ BLE:{-2,0,2,4,6,8,10,10}, */
+#define POWER_ARRAY 0x00
 
 static char advNameBt[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
 static char advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
@@ -212,6 +221,24 @@ void btSetCommands(void)
       ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BLE, &advNameBle[0]);
       return;
     }
+  }
+
+  if(btSetCommandsStep == GET_TX_POWER)
+  {
+    btSetCommandsStep++;
+    ezs_fcmd_system_get_tx_power();
+    return;
+  }
+
+  if(btSetCommandsStep == SET_TX_POWER)
+  {
+    btSetCommandsStep++;
+   // uint8_t txPower = 0x08;
+		if (rsp_system_get_tx_power.power != TX_POWER)
+		{
+			ezs_fcmd_system_set_tx_power(TX_POWER, POWER_ARRAY);
+		}
+    return;
   }
 
 #if USE_GET_SET_ADV_PARAM
@@ -427,6 +454,13 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 //          printf("RX: rsp_gap_get_device_name: name=");
 //          printHexMac(packet->payload.rsp_gap_get_device_name.name);
           break;
+
+        case EZS_IDX_RSP_SYSTEM_GET_TX_POWER:
+        	rsp_system_get_tx_power = packet->payload.rsp_system_get_tx_power;
+        	break;
+
+        case EZS_IDX_RSP_SYSTEM_SET_TX_POWER:
+        	break;
 
         case EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS:
           rsp_system_get_uart_parameters = packet->payload.rsp_system_get_uart_parameters;
