@@ -703,29 +703,29 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...)
 
 ezs_packet_t *ezs_parseSingleByte(uint8_t b)
 {
-  //TODO don't hard code type
-  ezs_packet_type_t type = EZS_PACKET_TYPE_RESPONSE;
+//  //TODO don't hard code type
+//  ezs_packet_type_t type = EZS_PACKET_TYPE_RESPONSE;
 
     /* byte read, send it to parser */
   ezs_input_result_t result = EZSerial_Parse(b);
 
-    /* check for completion and type */
-    if (result == EZS_INPUT_RESULT_PACKET_COMPLETE &&
-        type != EZS_PACKET_TYPE_ANY &&
-        type != ezs_rx_packet.packet_type)
-    {
-        /* change the result so we don't exit early, but wait for another packet */
-        result = EZS_INPUT_RESULT_BYTE_IGNORED;
-    }
+//    /* check for completion and type */
+//    if (result == EZS_INPUT_RESULT_PACKET_COMPLETE &&
+//        type != EZS_PACKET_TYPE_ANY &&
+//        type != ezs_rx_packet.packet_type)
+//    {
+//        /* change the result so we don't exit early, but wait for another packet */
+//        result = EZS_INPUT_RESULT_BYTE_IGNORED;
+//    }
 
     /* send back a pointer to the received packet if successful */
     if (result == EZS_INPUT_RESULT_PACKET_COMPLETE)
     {
-        /* ensure it's the right packet type */
-        if (type != EZS_PACKET_TYPE_ANY && type != ezs_rx_packet.packet_type) {
-            /* packet type mismatch, return null pointer */
-            return 0;
-        }
+//        /* ensure it's the right packet type */
+//        if (type != EZS_PACKET_TYPE_ANY && type != ezs_rx_packet.packet_type) {
+//            /* packet type mismatch, return null pointer */
+//            return 0;
+//        }
 
         /* correct type, packet complete */
         return &ezs_rx_packet;

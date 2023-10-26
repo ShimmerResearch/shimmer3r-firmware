@@ -142,42 +142,42 @@ void btInit(void)
 //TODO set appropriate values for setDmaRx() calls
 void btSetCommands(void)
 {
-  if(btSetCommandsStep == PING)
+  if (btSetCommandsStep == PING)
   {
     btSetCommandsStep++;
     ezs_cmd_system_ping();
     return;
   }
 
-  if(btSetCommandsStep == GET_FIRMWARE_VERSION)
+  if (btSetCommandsStep == GET_FIRMWARE_VERSION)
   {
     btSetCommandsStep++;
     ezs_cmd_system_query_firmware_version();
     return;
   }
 
-  if(btSetCommandsStep == GET_BLUETOOTH_ADDRESS)
+  if (btSetCommandsStep == GET_BLUETOOTH_ADDRESS)
   {
     btSetCommandsStep++;
     ezs_cmd_system_get_bluetooth_address();
     return;
   }
 
-  if(btSetCommandsStep == UPDATE_LOCAL_ADVERTISING_NAMES)
+  if (btSetCommandsStep == UPDATE_LOCAL_ADVERTISING_NAMES)
   {
     btSetCommandsStep++;
-    advNameBt[11] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]>>4)&0x0F);
-    advNameBt[12] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4])&0x0F);
-    advNameBt[13] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]>>4)&0x0F);
-    advNameBt[14] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5])&0x0F);
+    advNameBt[11] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4] >> 4) & 0x0F);
+    advNameBt[12] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]) & 0x0F);
+    advNameBt[13] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5] >> 4) & 0x0F);
+    advNameBt[14] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]) & 0x0F);
 
-    advNameBle[11] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]>>4)&0x0F);
-    advNameBle[12] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4])&0x0F);
-    advNameBle[13] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]>>4)&0x0F);
-    advNameBle[14] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5])&0x0F);
+    advNameBle[11] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4] >> 4) & 0x0F);
+    advNameBle[12] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]) & 0x0F);
+    advNameBle[13] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5] >> 4) & 0x0F);
+    advNameBle[14] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]) & 0x0F);
   }
 
-  if(btSetCommandsStep == GET_DEVICE_NAME_BT)
+  if (btSetCommandsStep == GET_DEVICE_NAME_BT)
   {
     btSetCommandsStep++;
     btNameTypeBeingRead = DEVICE_TYPE_BT;
@@ -185,17 +185,17 @@ void btSetCommands(void)
     return;
   }
 
-  if(btSetCommandsStep == SET_DEVICE_NAME_BT)
+  if (btSetCommandsStep == SET_DEVICE_NAME_BT)
   {
     btSetCommandsStep++;
-    if(!strstr((char *)&rsp_gap_get_device_name_bt.name.data[0], &advNameBt[1]))
+    if (!strstr((char*) &rsp_gap_get_device_name_bt.name.data[0], &advNameBt[1]))
     {
       ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BT, &advNameBt[0]);
       return;
     }
   }
 
-  if(btSetCommandsStep == GET_DEVICE_NAME_BLE)
+  if (btSetCommandsStep == GET_DEVICE_NAME_BLE)
   {
     btSetCommandsStep++;
     btNameTypeBeingRead = DEVICE_TYPE_BLE;
@@ -204,10 +204,10 @@ void btSetCommands(void)
   }
 
   //TODO BLE advertising name won't update on-the-fly, need to either stop adv before name change and then start again or use F cmd and reset module.
-  if(btSetCommandsStep == SET_DEVICE_NAME_BLE)
+  if (btSetCommandsStep == SET_DEVICE_NAME_BLE)
   {
     btSetCommandsStep++;
-    if(!strstr((char *)&rsp_gap_get_device_name_ble.name.data[0], &advNameBle[1]))
+    if (!strstr((char*) &rsp_gap_get_device_name_ble.name.data[0], &advNameBle[1]))
     {
       ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BLE, &advNameBle[0]);
       return;
@@ -266,7 +266,7 @@ void btSetCommands(void)
     return;
   }
 
-  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE3)
+  if (btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE3)
   {
     btSetCommandsStep++;
     //TODO resolve reference
@@ -275,7 +275,7 @@ void btSetCommands(void)
     ezs_cmd_system_ping();
   }
 
-  if(btSetCommandsStep == START_BLE_ADVERTISING)
+  if (btSetCommandsStep == START_BLE_ADVERTISING)
   {
     btSetCommandsStep++;
 
@@ -284,10 +284,9 @@ void btSetCommands(void)
             50U, 0U, 50U, 0U,
             0U,
             0U, 0U);
-
   }
 
-  if(btSetCommandsStep == FINISH)
+  if (btSetCommandsStep == FINISH)
   {
     btSetCommandsStart = 0;
     btIsInitialised = true;
