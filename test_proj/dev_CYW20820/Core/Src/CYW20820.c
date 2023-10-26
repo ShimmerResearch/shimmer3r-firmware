@@ -30,6 +30,7 @@ ezs_rsp_system_get_tx_power_t rsp_system_get_tx_power;
 ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 #endif
 ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
+ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters;
 
 #define TX_POWER 0x08 // tx_power max BR: 12dBm,  EBR: 12dBm, BLE: 10dBm.
 
@@ -232,10 +233,10 @@ void btSetCommands(void)
   if(btSetCommandsStep == SET_TX_POWER)
   {
     btSetCommandsStep++;
-	//	if (rsp_system_get_tx_power.power != TX_POWER)
-	//	{
+		if (rsp_system_get_tx_power.power != TX_POWER)
+		{
 			ezs_fcmd_system_set_tx_power(TX_POWER, power_array/*rsp_system_get_tx_power.power_array*/);
-	//	}
+		}
     return;
   }
 
@@ -298,6 +299,14 @@ void btSetCommands(void)
     usart2UartUpdate();
 
     ezs_cmd_system_ping();
+    return;
+  }
+
+  if (btSetCommandsStep == GET_CONN_PARAMETERS)
+  {
+    btSetCommandsStep++;
+    ezs_cmd_gap_get_conn_parameters();
+    return;
   }
 
   if (btSetCommandsStep == START_BLE_ADVERTISING)
@@ -465,6 +474,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 //          printHex16(packet->payload.rsp_gap_set_device_appearance.result);
 
           break;
+
+        case EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS:
+        	rsp_gap_get_conn_parameters = packet->payload.rsp_gap_get_conn_parameters;
+        	break;
 
         case EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS:
 //          printf("RX: rsp_gap_set_device_appearance: Result=");
