@@ -32,13 +32,8 @@ ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
 ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters;
 
-#define TX_POWER 0x08 // tx_power max BR: 12dBm,  EBR: 12dBm, BLE: 10dBm.
+#define BT_TX_POWER 7 // tx_power max BR: 12dBm,  EBR: 12dBm, BLE: 10dBm.
 
-/* power array of size  3*8: User guide says only need when tx_power = 0 hence set to 0
- BR:{-2,0,2,4,6,8,10,12},
- EDR:{-2,0,2,4,6,8,10,12},
- BLE:{-2,0,2,4,6,8,10,10}, */
-uint8_t power_array[3][8] = {{-2,0,2,4,6,8,10,12},{-2,0,2,4,6,8,10,12},{-2,0,2,4,6,8,10,10}};
 static char advNameBt[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
 static char advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
 
@@ -226,18 +221,19 @@ void btSetCommands(void)
   if(btSetCommandsStep == GET_TX_POWER)
   {
     btSetCommandsStep++;
-    ezs_fcmd_system_get_tx_power();
+    ezs_cmd_system_get_tx_power();
     return;
   }
 
   if(btSetCommandsStep == SET_TX_POWER)
   {
     btSetCommandsStep++;
-		if (rsp_system_get_tx_power.power != TX_POWER)
-		{
-			ezs_fcmd_system_set_tx_power(TX_POWER, power_array/*rsp_system_get_tx_power.power_array*/);
-		}
-    return;
+    if (rsp_system_get_tx_power.power != BT_TX_POWER)
+    {
+      rsp_system_get_tx_power.power = BT_TX_POWER;
+      ezs_fcmd_system_set_tx_power(BT_TX_POWER, rsp_system_get_tx_power.power);
+      return;
+    }
   }
 
 #if USE_GET_SET_ADV_PARAM
@@ -462,11 +458,13 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
           break;
 
         case EZS_IDX_RSP_SYSTEM_GET_TX_POWER:
-        	rsp_system_get_tx_power = packet->payload.rsp_system_get_tx_power;
-        	break;
+          rsp_system_get_tx_power = packet->payload.rsp_system_get_tx_power;
+          break;
 
         case EZS_IDX_RSP_SYSTEM_SET_TX_POWER:
-        	break;
+          printf("RX: rsp_system_set_tx_power: Result=");
+          printHex16(packet->payload.rsp_system_set_tx_power.result);
+          break;
 
         case EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS:
           rsp_system_get_uart_parameters = packet->payload.rsp_system_get_uart_parameters;
@@ -476,8 +474,8 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
           break;
 
         case EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS:
-        	rsp_gap_get_conn_parameters = packet->payload.rsp_gap_get_conn_parameters;
-        	break;
+          rsp_gap_get_conn_parameters = packet->payload.rsp_gap_get_conn_parameters;
+          break;
 
         case EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS:
 //          printf("RX: rsp_gap_set_device_appearance: Result=");

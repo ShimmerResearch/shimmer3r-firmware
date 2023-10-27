@@ -142,7 +142,7 @@ const uint8_t ezs_tbl_cmd[] =
     0x02,0x13,  0x01,   0x01,T_U8,                              /*  67 | S  5, SSLP (system_set_sleep_parameters) */
 	  //-------------- Fix 05 Start -------------------------//
 		//0x02,0x15,  0x01,   0x01,T_U8,                              /*  68 | S  6, STXP (system_set_tx_power) */
-    0x02,0x15,  0x19,   0x02,T_U8,T_U8A,                              /*  68 | S  6, STXP (system_set_tx_power) */
+    0x02,0x15,  0x1A,   0x02,T_U8,T_PWR_LVL_ARY,                              /*  68 | S  6, STXP (system_set_tx_power) */
 	  //-------------- Fix 05 End -------------------------//
     0x02,0x17,  0x01,   0x01,T_U8,                              /*  69 | S  7, ST (system_set_transport) */
   //-------------- Fix 04 Start -------------------------//
@@ -657,6 +657,11 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...)
                 size++;
                 pointer = (uint8_t *)va_arg(argv, uint8_t *);
                 break;
+//-------------- Fix 05 Start -------------------------//
+            case T_PWR_LVL_ARY:
+              /* 25 bytes exactly, start with 23 and fall through two ++ */
+              size = 23;
+//-------------- Fix 05 Start -------------------------//
                 
             default:
                 /* should never occur, all cases covered */

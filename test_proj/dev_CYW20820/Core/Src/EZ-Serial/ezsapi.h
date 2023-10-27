@@ -134,6 +134,10 @@
 #define T_LU8A  EZS_ARGTYPE_LONGUINT8A
 #define T_LSTR  EZS_ARGTYPE_LONGSTRING
 #define T_MAC   EZS_ARGTYPE_MACADDR
+//-------------- Fix 05 Start -------------------------//
+#define T_PWR_LVL_ARY   EZS_ARGTYPE_POWER_LEVEL_ARY
+//-------------- Fix 05 Start -------------------------//
+
 
 #define EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE                     EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE
 #define EZS_IDX_RSP_PROTOCOL_GET_PARSE_MODE                     EZS_IDX_CMD_PROTOCOL_GET_PARSE_MODE
@@ -688,7 +692,10 @@ typedef enum
     EZS_ARGTYPE_STRING,         /**< 1+ bytes, character string with 1-byte length prefix */
     EZS_ARGTYPE_LONGUINT8A,     /**< 2+ bytes, binary byte array with 2-byte length prefix */
     EZS_ARGTYPE_LONGSTRING,     /**< 2+ bytes, character string with 2-byte length prefix */
-    EZS_ARGTYPE_MACADDR         /**< 6 bytes */
+    EZS_ARGTYPE_MACADDR,         /**< 6 bytes */
+    //-------------- Fix 05 Start -------------------------//
+    EZS_ARGTYPE_POWER_LEVEL_ARY /**< 25 bytes */
+    //-------------- Fix 05 End -------------------------//
 } ezs_argtype_t;
 
 
@@ -721,6 +728,19 @@ __PACKDEF(macaddr_t,
 {
     uint8_t addr[6];
 });
+
+//-------------- Fix 05 Start -------------------------//
+/*******************************************************************************
+* Structure containing a TX Power level byte array.
+*******************************************************************************/
+__PACKDEF(pwrlvlary_t,
+{
+    uint8_t length;
+    int8_t pwrlvlarybr[8];
+    int8_t pwrlvlaryedr[8];
+    int8_t pwrlvlaryble[8];
+});
+//-------------- Fix 05 End -------------------------//
 
 
 /*******************************************************************************
@@ -1001,6 +1021,7 @@ __PACKDEF(ezs_rsp_system_set_tx_power_t,
 __PACKDEF(ezs_cmd_system_get_tx_power_t,
 {
 });
+
 //-------------- Fix 05 Start -------------------------//
 /*
 __PACKDEF(ezs_rsp_system_get_tx_power_t,
@@ -1014,7 +1035,7 @@ __PACKDEF(ezs_rsp_system_get_tx_power_t,
 {
     uint16_t result;
     uint8_t power;
-    uint8a_t power_array;
+    pwrlvlary_t power_level_arrays;
 });
 //-------------- Fix 05 End -------------------------//
 
