@@ -32,7 +32,12 @@ ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 #endif
 ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
 
-#define BT_TX_POWER 7 // tx_power max BR: 12dBm,  EBR: 12dBm, BLE: 10dBm.
+/* 
+ * Index: {1,2,3,4,5,6,7,8}
+ * BR:    {-2,0,2,4,6,8,10,12},
+ * EDR:   {-2,0,2,4,6,8,10,12},
+ * BLE:   {-2,0,2,4,6,8,10,10}, */
+#define BT_TX_POWER 8
 
 static char advNameBt[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
 static char advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
