@@ -743,7 +743,7 @@ ezs_packet_t *ezs_parseSingleByte(uint8_t b)
     return 0;
 }
 
-uint16_t getRemainingByteCount(void)
+uint16_t getEzsRemainingByteCount(void)
 {
   if(ezs_rx_packet_length!=0 && ezs_rx_packet_length_expected!=0)
   {
@@ -753,6 +753,11 @@ uint16_t getRemainingByteCount(void)
   {
     return 0;
   }
+}
+
+uint16_t getEzsPacketLength(void)
+{
+  return ezs_rx_packet_length;
 }
 
 /**************************** Shimmer End *************************************/

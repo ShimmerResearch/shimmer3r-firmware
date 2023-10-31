@@ -201,24 +201,63 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 //  }
 //  HAL_StatusTypeDef status = setDmaRx(1);
 
+
+//  for (uint8_t i = 0; i < expectedByteCount; i++)
+//  {
+//    ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
+//    if (result != 0)
+//    {
+//      ezsHandlerShimmer(result);
+//    }
+//  }
+//
+//  uint16_t count = getEzsRemainingByteCount();
+//  if (count == 0)
+//  {
+//    count = 1;
+//  }
+//  HAL_StatusTypeDef status = setDmaRx(count);
+
+
+  uint8_t waitingForArgs = 0;
+  uint16_t count = 1;
+
   for (uint8_t i = 0; i < expectedByteCount; i++)
   {
-    ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
-    if (result != 0)
+    /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
+     * parse is ideal and the header byte is a Shimmer packet header byte,
+     * parse as Shimmer packet */
+    if(waitingForArgs || (getEzsPacketLength()==0 && rxBuf[i]=='$'))
     {
-      ezsHandlerShimmer(result);
+      // Parse as Shimmer packet
+      printf("S1=0x%x\n", rxBuf[i]);
+    }
+    else
+    {
+      ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
+      /* If complete EZ Serial packet parsed, send to handler */
+      if (result != 0)
+      {
+        ezsHandlerShimmer(result);
+        count = getEzsRemainingByteCount();
+      }
+      else
+      {
+        /* If packet incomplete but byte wasn't recognised as part of an EZ
+         * Serial packet, send to Shimmer parser */
+        if (getEzsPacketLength() == 0)
+        {
+          printf("S2=0x%x\n", rxBuf[i]);
+        }
+      }
     }
   }
 
-  uint16_t count = getRemainingByteCount();
-  if (count != 0)
+  if (count == 0)
   {
-    HAL_StatusTypeDef status = setDmaRx(count);
+    count = 1;
   }
-  else
-  {
-    HAL_StatusTypeDef status = setDmaRx(1);
-  }
+  HAL_StatusTypeDef status = setDmaRx(count);
 
 }
 

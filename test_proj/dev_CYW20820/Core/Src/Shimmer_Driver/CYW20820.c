@@ -32,6 +32,17 @@ ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
 ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters;
 
+static ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters_ref = {
+    .result = 0,
+    .baud = BAUD_TO_USE,
+    .autobaud = 0,
+    .autocorrect = 0,
+    .flow = 0,
+    .databits = 8,
+    .parity = 0,
+    .stopbits = 1
+};
+
 static ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters_ref = {
     .result = 0,
     .interval = 6, // Minimum = 0x0006 (6 * 1.25 ms = 7.5 ms)
@@ -40,6 +51,19 @@ static ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters_ref = {
     .scan_interval = 256,
     .scan_window = 256,
     .scan_timeout = 0
+};
+
+static ezs_cmd_gap_start_adv_t adv_parameters = {
+    .mode = 2,
+    .type = 3,
+    .channels = 7,
+    .high_interval = 50, //(Default=48), units of 0.625 ms. 50 = 31.24ms
+    .high_duration = 0, // (Default=30), 0 = infinite advertising
+    .low_interval = 50, //(Default=2048), units of 0.625 ms. 50 = 31.24ms
+    .low_duration = 0, //(Default=60), 0 = infinite advertising
+    .flags = 0,
+    .direct_addr = {0, 0, 0, 0, 0, 0},
+    .direct_address_type = 0
 };
 
 /* 
@@ -54,7 +78,7 @@ static char advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-'
 
 uint8_t btSetCommandsStart, btSetCommandsStep;
 uint8_t btNameTypeBeingRead;
-bool btIsInitialised, btConnected, btCysppState;
+bool btIsInitialised, btConnected, btCysppState, btUartSettingsChanged;
 
 static char hexdigit2int(uint8_t xd)
 {
@@ -291,26 +315,37 @@ void btSetCommands(void)
   if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE2)
   {
     btSetCommandsStep++;
-    ezs_cmd_system_set_uart_parameters(
-        BAUD_TO_USE,
-        rsp_system_get_uart_parameters.autobaud,
-        rsp_system_get_uart_parameters.autocorrect,
-        rsp_system_get_uart_parameters.flow,
-        rsp_system_get_uart_parameters.databits,
-        rsp_system_get_uart_parameters.parity,
-        rsp_system_get_uart_parameters.stopbits,
-        UART_TYPE_PUART);
-    return;
+    btUartSettingsChanged = false;
+    // No need to set if the current settings are correct.
+    if (memcmp(&rsp_system_get_uart_parameters_ref.result,
+        &rsp_system_get_uart_parameters.result,
+        sizeof(rsp_system_get_uart_parameters_ref)) != 0)
+    {
+      btUartSettingsChanged = true;
+      ezs_cmd_system_set_uart_parameters(
+          rsp_system_get_uart_parameters_ref.baud,
+          rsp_system_get_uart_parameters_ref.autobaud,
+          rsp_system_get_uart_parameters_ref.autocorrect,
+          rsp_system_get_uart_parameters_ref.flow,
+          rsp_system_get_uart_parameters_ref.databits,
+          rsp_system_get_uart_parameters_ref.parity,
+          rsp_system_get_uart_parameters_ref.stopbits,
+          UART_TYPE_PUART);
+      return;
+    }
   }
 
   if (btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE3)
   {
     btSetCommandsStep++;
-    //TODO resolve reference
-    usart2UartUpdate();
-
-    ezs_cmd_system_ping();
-    return;
+    if (btUartSettingsChanged)
+    {
+      btUartSettingsChanged = false;
+      //TODO resolve reference
+      usart2UartUpdate();
+      ezs_cmd_system_ping();
+      return;
+    }
   }
 
   if (btSetCommandsStep == GET_CONN_PARAMETERS)
@@ -343,11 +378,18 @@ void btSetCommands(void)
   {
     btSetCommandsStep++;
 
-    /* Advertising interval in units of 0.625 ms. 50 = 31.24ms, infinite advertising. */
-    ezs_cmd_gap_start_adv(2U, 3U, 7U,
-            50U, 0U, 50U, 0U,
-            0U,
-            0U, 0U);
+    ezs_cmd_gap_start_adv(
+        adv_parameters.mode,
+        adv_parameters.type,
+        adv_parameters.channels,
+        adv_parameters.high_interval,
+        adv_parameters.high_duration,
+        adv_parameters.low_interval,
+        adv_parameters.low_duration,
+        adv_parameters.flags,
+        adv_parameters.direct_addr,
+        adv_parameters.direct_address_type);
+    return;
   }
 
   if (btSetCommandsStep == FINISH)
@@ -379,6 +421,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 //            printHex32(packet->payload.rsp_system_ping.runtime);
 //            printf(", fraction=");
 //            printHex16(packet->payload.rsp_system_ping.fraction);
+//            printf("\r\n");
             break;
 
         case EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION:
@@ -398,11 +441,13 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 //            {
 //                printf("\r\n*** PLEASE UPDATE TARGET MODULE TO LATEST VERISON OF EZ-SERIAL FIRMWARE");
 //            }
+//          printf("\r\n");
             break;
 
         case EZS_IDX_RSP_SYSTEM_REBOOT:
             printf("RX: rsp_system_reboot: result=");
             printHex16(packet->payload.rsp_system_ping.result);
+            printf("\r\n");
             break;
 
         case EZS_IDX_EVT_SYSTEM_BOOT:
@@ -418,13 +463,15 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
             printHex8(packet->payload.evt_system_boot.cause);
             printf(", address=");
             printHexMac(packet->payload.evt_system_boot.address);
+            printf("\r\n");
             break;
 
         case EZS_IDX_EVT_GAP_ADV_STATE_CHANGED:
-            printf("RX: evt_gap_adv_state_changed: state=");
-            printHex8(packet->payload.evt_gap_adv_state_changed.state);
-            printf(", reason=");
-            printHex8(packet->payload.evt_gap_adv_state_changed.reason);
+//            printf("RX: evt_gap_adv_state_changed: state=");
+//            printHex8(packet->payload.evt_gap_adv_state_changed.state);
+//            printf(", reason=");
+//            printHex8(packet->payload.evt_gap_adv_state_changed.reason);
+//            printf("\r\n");
             break;
 
         case EZS_IDX_EVT_GAP_SCAN_STATE_CHANGED:
@@ -432,6 +479,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
             printHex8(packet->payload.evt_gap_scan_state_changed.state);
             printf(", reason=");
             printHex8(packet->payload.evt_gap_scan_state_changed.reason);
+            printf("\r\n");
             break;
 
         case EZS_IDX_EVT_GAP_CONNECTED:
@@ -449,6 +497,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
             printHex16(packet->payload.evt_gap_connected.supervision_timeout);
             printf(", bond=");
             printHex8(packet->payload.evt_gap_connected.bond);
+            printf("\r\n");
             break;
 
         case EZS_IDX_EVT_GAP_DISCONNECTED:
@@ -456,11 +505,13 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
             printHex8(packet->payload.evt_gap_disconnected.conn_handle);
             printf(", reason=");
             printHex16(packet->payload.evt_gap_disconnected.reason);
+            printf("\r\n");
             break;
 
         case EZS_IDX_EVT_P_CYSPP_STATUS:
             printf("RX: evt_p_cyspp_status: status=");
             printHex8(packet->payload.evt_p_cyspp_status.status);
+            printf("\r\n");
             break;
 
 
@@ -498,35 +549,43 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
         case EZS_IDX_RSP_SYSTEM_SET_TX_POWER:
           printf("RX: rsp_system_set_tx_power: Result=");
           printHex16(packet->payload.rsp_system_set_tx_power.result);
+          printf("\r\n");
           break;
 
         case EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS:
           rsp_system_get_uart_parameters = packet->payload.rsp_system_get_uart_parameters;
 //          printf("RX: rsp_gap_set_device_appearance: Result=");
 //          printHex16(packet->payload.rsp_gap_set_device_appearance.result);
+//          printf("\r\n");
           break;
 
         case EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS:
           rsp_gap_get_conn_parameters = packet->payload.rsp_gap_get_conn_parameters;
+//          printf("\r\n");
           break;
 
         case EZS_IDX_RSP_GAP_SET_CONN_PARAMETERS:
 //        printf("RX: rsp_gap_set_conn_parameters: Result=");
 //        printHex16(packet->payload.rsp_gap_set_conn_parameters.result);
+//          printf("\r\n");
           break;
 
         case EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS:
 //          printf("RX: rsp_gap_set_device_appearance: Result=");
 //          printHex16(packet->payload.rsp_gap_set_device_appearance.result);
+//          printf("\r\n");
           break;
 
         case EZS_IDX_RSP_GAP_SET_DEVICE_APPEARANCE:
           printf("RX: rsp_gap_set_device_appearance: Result=");
           printHex16(packet->payload.rsp_gap_set_device_appearance.result);
+          printf("\r\n");
           break;
 
         case EZS_IDX_RSP_GAP_SET_ADV_PARAMETERS:
-          printHex16(packet->payload.rsp_gap_set_adv_parameters.result);
+//          printf("RX: rsp_gap_set_adv_parameters: Result=");
+//          printHex16(packet->payload.rsp_gap_set_adv_parameters.result);
+//          printf("\r\n");
           break;
 
         case EZS_IDX_RSP_GAP_GET_ADV_PARAMETERS:
@@ -534,6 +593,33 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
           rsp_gap_get_adv_parameters = packet->payload.rsp_gap_get_adv_parameters;
 #endif
 //          printHex16(packet->payload.rsp_gap_get_adv_parameters.result);
+//          printf("\r\n");
+          break;
+
+        case EZS_IDX_EVT_GAP_CONNECTION_UPDATED:
+          printf("RX: evt_gap_connection_updated: conn_handle=");
+          printHex8(packet->payload.evt_gap_connection_updated.conn_handle);
+          printf(", interval=");
+          printHex16(packet->payload.evt_gap_connection_updated.interval);
+          printf(", slave_latency=");
+          printHex16(packet->payload.evt_gap_connection_updated.slave_latency);
+          printf(", supervision_timeout=");
+          printHex16(packet->payload.evt_gap_connection_updated.supervision_timeout);
+          printf("\r\n");
+          break;
+
+        case EZS_IDX_RSP_GAP_START_ADV:
+//          printf("RX: rsp_gap_start_adv: Result=");
+//          printHex16(packet->payload.rsp_gap_start_adv.result);
+//          printf("\r\n");
+          break;
+
+        case EZS_IDX_EVT_SMP_ENCRYPTION_STATUS:
+//          printf("RX: evt_smp_encryption_status: conn_handle=");
+//          printHex8(packet->payload.evt_smp_encryption_status.conn_handle);
+//          printf(", status=");
+//          printHex8(packet->payload.evt_smp_encryption_status.status);
+//          printf("\r\n");
           break;
 
           /* Shimmer added end */
@@ -545,6 +631,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
           printHex8(packet->header.group);
           printf("/");
           printHex8(packet->header.id);
+          printf("\r\n");
           break;
     }
 

@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "CYW20820.h"
+#include "Shimmer_Driver/CYW20820.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
