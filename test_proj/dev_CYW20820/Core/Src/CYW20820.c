@@ -26,11 +26,11 @@ ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
 ezs_rsp_system_get_tx_power_t rsp_system_get_tx_power;
+ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters;
 #if USE_GET_SET_ADV_PARAM
 ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 #endif
 ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
-ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters;
 
 #define BT_TX_POWER 7 // tx_power max BR: 12dBm,  EBR: 12dBm, BLE: 10dBm.
 
@@ -305,6 +305,16 @@ void btSetCommands(void)
     return;
   }
 
+  if (btSetCommandsStep == SET_CONN_PARAMETERS)
+  {
+    btSetCommandsStep++;
+    ezs_cmd_gap_set_conn_parameters(rsp_gap_get_conn_parameters.interval,
+        rsp_gap_get_conn_parameters.slave_latency,rsp_gap_get_conn_parameters.supervision_timeout,
+        rsp_gap_get_conn_parameters.scan_interval,rsp_gap_get_conn_parameters.scan_window, rsp_gap_get_conn_parameters.scan_timeout);
+    return;
+  }
+
+
   if (btSetCommandsStep == START_BLE_ADVERTISING)
   {
     btSetCommandsStep++;
@@ -470,11 +480,15 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
           rsp_system_get_uart_parameters = packet->payload.rsp_system_get_uart_parameters;
 //          printf("RX: rsp_gap_set_device_appearance: Result=");
 //          printHex16(packet->payload.rsp_gap_set_device_appearance.result);
-
           break;
 
         case EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS:
           rsp_gap_get_conn_parameters = packet->payload.rsp_gap_get_conn_parameters;
+          break;
+
+        case EZS_IDX_RSP_GAP_SET_CONN_PARAMETERS:
+//        printf("RX: rsp_gap_set_conn_parameters: Result=");
+//        printHex16(packet->payload.rsp_gap_set_conn_parameters.result);
           break;
 
         case EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS:
