@@ -26,11 +26,21 @@ ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
 ezs_rsp_system_get_tx_power_t rsp_system_get_tx_power;
-ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters;
 #if USE_GET_SET_ADV_PARAM
 ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 #endif
 ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
+ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters;
+
+static ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters_ref = {
+    .result = 0,
+    .interval = 6, // Minimum = 0x0006 (6 * 1.25 ms = 7.5 ms)
+    .slave_latency = 0,
+    .supervision_timeout = 100,
+    .scan_interval = 256,
+    .scan_window = 256,
+    .scan_timeout = 0
+};
 
 /* 
  * Index: {1,2,3,4,5,6,7,8}
@@ -313,12 +323,21 @@ void btSetCommands(void)
   if (btSetCommandsStep == SET_CONN_PARAMETERS)
   {
     btSetCommandsStep++;
-    ezs_cmd_gap_set_conn_parameters(rsp_gap_get_conn_parameters.interval,
-        rsp_gap_get_conn_parameters.slave_latency,rsp_gap_get_conn_parameters.supervision_timeout,
-        rsp_gap_get_conn_parameters.scan_interval,rsp_gap_get_conn_parameters.scan_window, rsp_gap_get_conn_parameters.scan_timeout);
-    return;
+    // No need to set if the current settings are correct.
+    if (memcmp(&rsp_gap_get_conn_parameters_ref.result,
+        &rsp_gap_get_conn_parameters.result,
+        sizeof(rsp_gap_get_conn_parameters_ref)) != 0)
+    {
+      ezs_cmd_gap_set_conn_parameters(
+          rsp_gap_get_conn_parameters_ref.interval,
+          rsp_gap_get_conn_parameters_ref.slave_latency,
+          rsp_gap_get_conn_parameters_ref.supervision_timeout,
+          rsp_gap_get_conn_parameters_ref.scan_interval,
+          rsp_gap_get_conn_parameters_ref.scan_window,
+          rsp_gap_get_conn_parameters_ref.scan_timeout);
+      return;
+    }
   }
-
 
   if (btSetCommandsStep == START_BLE_ADVERTISING)
   {
