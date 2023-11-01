@@ -195,14 +195,14 @@ int main(void)
     /* Insert delay 300 ms */
     HAL_Delay(300);
 
-//    if (isBtIsInitialised() && isBtConnected())
-//    {
-//      uint8_t c = 'H';
-//      if(handle_GPDMA1_Channel0.State==HAL_DMA_STATE_READY)
-//      {
-//        HAL_UART_Transmit_DMA(&huart2, &c, 1);
-//      }
-//    }
+    if (isBtIsInitialised() && isBtConnected())
+    {
+      uint8_t c = 'H';
+      if(handle_GPDMA1_Channel1.State==HAL_DMA_STATE_READY)
+      {
+        HAL_UART_Transmit_DMA(&huart2, &c, 1);
+      }
+    }
 
   }
   /* USER CODE END 3 */

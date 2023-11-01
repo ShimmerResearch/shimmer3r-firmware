@@ -59,6 +59,8 @@ void btSetCommands(void);
 void setExpectedResponse(uint16_t idx);
 bool isBtIsInitialised(void);
 void setBtConnectionState(bool state);
+bool isBtConnected(void);
 void setBtCysppState(bool state);
+bool getBtCysppState(void);
 
 #endif /* SRC_CYW20820_H_ */

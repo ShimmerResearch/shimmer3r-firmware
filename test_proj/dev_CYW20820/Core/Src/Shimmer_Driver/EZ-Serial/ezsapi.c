@@ -228,6 +228,24 @@ const uint8_t ezs_tbl_cmd[] =
     0x0C,0x02,  0x00,   0x00,                                   /* 125 | . 11, .IBGP (p_ibeacon_get_parameters) */
     0x0D,0x01,  0x85,   0x04,T_U8,T_U16,T_U8,T_U8A,             /* 126 | . 12, .EDDYSP (p_eddystone_set_parameters) */
     0x0D,0x02,  0x00,   0x00,                                   /* 127 | . 13, .EDDYGP (p_eddystone_get_parameters) */
+//-------------- Fix 06 Start -------------------------//
+    0x0E,0x01,  0x02,   0x02,T_U8,T_U8,                         /* 128 | . , /BTI (bt_start_inquiry) */
+    0x0E,0x02,  0x00,   0x00,                                   /* 129 | . , /BTIX (bt_cancel_inquiry) */
+    0x0E,0x03,  0x06,   0x01,T_MAC,                             /* 130 | . , /BTQN (bt_query_name) */
+    0x0E,0x04,  0x07,   0x02,T_MAC,T_U8,                        /* 131 | . , /BTC (bt_connect) */
+    0x0E,0x05,  0x00,   0x00,                                   /* 132 | . , /BTCX (bt_cancel_connection) */
+    0x0E,0x06,  0x01,   0x01,T_U8,                              /* 133 | . , /BTDIS (bt_disconnect) */
+    0x0E,0x07,  0x00,   0x00,                                   /* 134 | . , /BTQC (bt_query_connections) */
+    0x0E,0x08,  0x01,   0x01,T_U8,                              /* 135 | . , /BTQPA (bt_query_peer_address) */
+    0x0E,0x09,  0x01,   0x01,T_U8,                              /* 136 | . , /BTQSS (bt_query_rssi) */
+    //TODO documentation states length is 03 but then lists 7 parameters
+    0x0E,0x0A,  0x07,   0x07,T_U8,T_U8,T_U8,T_U8,T_U8,T_U8,T_U8,
+                                                                /* 137 | . , SBTP (bt_set_parameters) */
+    0x0E,0x0B,  0x00,   0x00,                                   /* 138 | . , GBTP (bt_get_parameters) */
+    0x0E,0x0C,  0x04,   0x01,T_U32,                             /* 139 | . , SBTDC (bt_set_device_class) */
+    0x0E,0x0D,  0x00,   0x00,                                   /* 140 | . , GBTDC (bt_get_device_class) */
+    0x13,0x03,  0x00,   0x00,                                   /* 141 | . , .SPPGC (spp_get_config) */
+//-------------- Fix 06 End -------------------------//
 };
 
 
@@ -274,6 +292,16 @@ const uint8_t ezs_tbl_evt[] =
     0x09,0x01,  0x09,           /*  35, INT (gpio_interrupt) */
     0x0A,0x01,  0x01,           /*  36, .CYSPP (p_cyspp_status) */
     0x0B,0x01,  0x01,           /*  37, .CYCOM (p_cycommand_status) */
+//-------------- Fix 06 Start -------------------------//
+    0x0E,0x01,  0x0B,           /*  38, /BTIR (bt_inquiry_result) */
+    0x0E,0x02,  0x08,           /*  39, /BTINR (bt_name_result) */
+    0x0E,0x03,  0x00,           /*  40, /BTIC (bt_inquiry_complete) */
+    0x0E,0x04,  0x09,           /*  41, /BTCON (bt_connected) */
+    0x0E,0x05,  0x0B,           /*  42, /BTCS (bt_connection_status) */
+    0x0E,0x06,  0x03,           /*  43, /BTCF (bt_connection_failed) */
+    0x0E,0x07,  0x03,           /*  44, /BTDIS (bt_disconnected) */
+    0x13,0x01,  0x04,           /*  45, .SPPD (SPP_data_received) */
+//-------------- Fix 06 End -------------------------//
 };
 
 
