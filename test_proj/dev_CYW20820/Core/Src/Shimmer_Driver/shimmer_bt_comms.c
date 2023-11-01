@@ -61,7 +61,9 @@ uint32_t firstProcessFailTicks = 0;
 /* Return of 1 brings MSP out of low-power mode */
 uint8_t Dma2ConversionDone(void)
 {
+#if IS_BT_RN
     uint8_t bt_waitForStartCmd, bt_waitForMacAddress, bt_waitForVersion, bt_waitForInitialBoot, bt_waitForReturnNewLine;
+#endif
     uint8_t expectedlen = 0U;
 
 #if IS_BT_RN

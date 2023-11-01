@@ -227,10 +227,15 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
      * parse is ideal and the header byte is a Shimmer packet header byte,
      * parse as Shimmer packet */
-    if(isWaitingForArgs() || (getEzsPacketLength()==0 && rxBuf[i]=='$'))
+    if (isWaitingForArgs()
+        || (getEzsPacketLength() == 0
+            && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
+            && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
+            && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
     {
       // Parse as Shimmer packet
       printf("S1=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
+//      Dma2ConversionDone();
     }
     else
     {

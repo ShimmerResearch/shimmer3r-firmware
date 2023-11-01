@@ -692,23 +692,23 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       break;
 
     case EZS_IDX_EVT_BT_CONNECTED:
-      printf("RX: evt_bt_connected: conn_handle=");
-      printHex8(packet->payload.evt_bt_connected.conn_handle);
-      printf(", Address=");
-      printHexMac(packet->payload.evt_bt_connected.address);
-      printf(", Type=");
-      printHex8(packet->payload.evt_bt_connected.type);
-      printf("\r\n");
+//      printf("RX: evt_bt_connected: conn_handle=");
+//      printHex8(packet->payload.evt_bt_connected.conn_handle);
+//      printf(", Address=");
+//      printHexMac(packet->payload.evt_bt_connected.address);
+//      printf(", Type=");
+//      printHex8(packet->payload.evt_bt_connected.type);
+//      printf("\r\n");
 
       setBtConnectionState(true);
       break;
 
     case EZS_IDX_EVT_BT_DISCONNECTED:
-      printf("RX: evt_bt_disconnected: conn_handle=");
-      printHex8(packet->payload.evt_bt_disconnected.conn_handle);
-      printf(", Reason=");
-      printHex16(packet->payload.evt_bt_disconnected.reason);
-      printf("\r\n");
+//      printf("RX: evt_bt_disconnected: conn_handle=");
+//      printHex8(packet->payload.evt_bt_disconnected.conn_handle);
+//      printf(", Reason=");
+//      printHex16(packet->payload.evt_bt_disconnected.reason);
+//      printf("\r\n");
 
       setBtConnectionState(false);
       break;
