@@ -53,6 +53,8 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 
+CRC_HandleTypeDef hcrc;
+
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 DMA_HandleTypeDef handle_GPDMA1_Channel1;
@@ -77,6 +79,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_MEMORYMAP_Init(void);
 static void MX_USB_OTG_HS_HCD_Init(void);
+static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
 
 void usart2UartUpdate(void);
@@ -141,6 +144,7 @@ int main(void)
   MX_ADC1_Init();
   MX_MEMORYMAP_Init();
   MX_USB_OTG_HS_HCD_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 
   /* -1- Enable GPIO Clock (to be able to program the configuration registers) */
@@ -194,7 +198,10 @@ int main(void)
 //    if (isBtIsInitialised() && isBtConnected())
 //    {
 //      uint8_t c = 'H';
-//      HAL_UART_Transmit(&huart2, &c, 1, 1500 * HAL_GetTickFreq());
+//      if(handle_GPDMA1_Channel0.State==HAL_DMA_STATE_READY)
+//      {
+//        HAL_UART_Transmit_DMA(&huart2, &c, 1);
+//      }
 //    }
 
   }
@@ -335,6 +342,40 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief CRC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CRC_Init(void)
+{
+
+  /* USER CODE BEGIN CRC_Init 0 */
+
+  /* USER CODE END CRC_Init 0 */
+
+  /* USER CODE BEGIN CRC_Init 1 */
+
+  /* USER CODE END CRC_Init 1 */
+  hcrc.Instance = CRC;
+  hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_DISABLE;
+  hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_DISABLE;
+  hcrc.Init.GeneratingPolynomial = 69665;
+  hcrc.Init.CRCLength = CRC_POLYLENGTH_32B;
+  hcrc.Init.InitValue = 0xB0CA;
+  hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+  hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+  hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CRC_Init 2 */
+
+  /* USER CODE END CRC_Init 2 */
 
 }
 
@@ -635,18 +676,25 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, UCPD_DBn_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : BT_LP_MODE_Pin BT_CP_ROLE_Pin */
-  GPIO_InitStruct.Pin = BT_LP_MODE_Pin|BT_CP_ROLE_Pin;
+  /*Configure GPIO pin : BT_LP_MODE_Pin */
+  GPIO_InitStruct.Pin = BT_LP_MODE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  HAL_GPIO_Init(BT_LP_MODE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BT_CYSPP_Pin BT_CONNECTION_Pin */
   GPIO_InitStruct.Pin = BT_CYSPP_Pin|BT_CONNECTION_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BT_CP_ROLE_Pin */
+  GPIO_InitStruct.Pin = BT_CP_ROLE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(BT_CP_ROLE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : USER_BUTTON_Pin */
   GPIO_InitStruct.Pin = USER_BUTTON_Pin;

@@ -1476,7 +1476,6 @@ __PACKDEF(ezs_rsp_gap_get_adv_parameters_t,
     uint8_t flags;
     macaddr_t direct_addr;
     uint8_t direct_address_type;
-
 });
 //-------------- Fix 03 End -------------------------//
 

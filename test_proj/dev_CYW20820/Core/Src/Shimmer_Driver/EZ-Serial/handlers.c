@@ -45,6 +45,7 @@
 #include "stm32u5xx.h"
 
 #include "../EZ-Serial/handlers.h"
+#include "../shimmer_bt_comms.h"
 
 uint8_t pending_response = 0;
 //uint8_t timer_active = 0;
@@ -219,7 +220,6 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 //  HAL_StatusTypeDef status = setDmaRx(count);
 
 
-  uint8_t waitingForArgs = 0;
   uint16_t count = 1;
 
   for (uint8_t i = 0; i < expectedByteCount; i++)
@@ -227,10 +227,10 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
      * parse is ideal and the header byte is a Shimmer packet header byte,
      * parse as Shimmer packet */
-    if(waitingForArgs || (getEzsPacketLength()==0 && rxBuf[i]=='$'))
+    if(isWaitingForArgs() || (getEzsPacketLength()==0 && rxBuf[i]=='$'))
     {
       // Parse as Shimmer packet
-      printf("S1=0x%x\n", rxBuf[i]);
+      printf("S1=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
     }
     else
     {
@@ -247,7 +247,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
          * Serial packet, send to Shimmer parser */
         if (getEzsPacketLength() == 0)
         {
-          printf("S2=0x%x\n", rxBuf[i]);
+          printf("S2=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
         }
       }
     }

@@ -87,11 +87,11 @@ const uint8_t ezs_tbl_cmd[] =
     0x04,0x05,  0x01,   0x01,T_U8,                              /*  17 | / 17, /DIS (gap_disconnect) */
     0x04,0x06,  0x07,   0x02,T_MAC,T_U8,                        /*  18 | / 18, /WLA (gap_add_whitelist_entry) */
     0x04,0x07,  0x07,   0x02,T_MAC,T_U8,                        /*  19 | / 19, /WLD (gap_delete_whitelist_entry) */
-    //-------------- Fix 03 Start -------------------------//
+  //-------------- Fix 03 Start -------------------------//
 //    0x04,0x08,  0x08,   0x06,T_U8,T_U8,T_U16,T_U8,T_U8,T_U16,   /*  20 | / 20, /A (gap_start_adv) */
     0x04,0x08,  0x13,   0x0A,T_U8,T_U8,T_U8,T_U16,T_U16,T_U16,T_U16,T_U8,T_MAC,T_U8,
                                                                 /*  20 | / 20, /A (gap_start_adv) */
-    //-------------- Fix 03 End -------------------------//
+  //-------------- Fix 03 End -------------------------//
     0x04,0x09,  0x00,   0x00,                                   /*  21 | / 21, /AX (gap_stop_adv) */
     0x04,0x0A,  0x0A,   0x07,T_U8,T_U16,T_U16,T_U8,T_U8,T_U8,T_U16,
                                                                 /*  22 | / 22, /S (gap_start_scan) */
@@ -140,10 +140,10 @@ const uint8_t ezs_tbl_cmd[] =
     0x02,0x0F,  0x02,   0x01,T_U16,                             /*  65 | S  3, SECO (system_set_eco_parameters) */
     0x02,0x11,  0x01,   0x01,T_U8,                              /*  66 | S  4, SWCO (system_set_wco_parameters) */
     0x02,0x13,  0x01,   0x01,T_U8,                              /*  67 | S  5, SSLP (system_set_sleep_parameters) */
-	  //-------------- Fix 05 Start -------------------------//
-		//0x02,0x15,  0x01,   0x01,T_U8,                              /*  68 | S  6, STXP (system_set_tx_power) */
-    0x02,0x15,  0x1A,   0x02,T_U8,T_PWR_LVL_ARY,                              /*  68 | S  6, STXP (system_set_tx_power) */
-	  //-------------- Fix 05 End -------------------------//
+  //-------------- Fix 05 Start -------------------------//
+//  0x02,0x15,  0x01,   0x01,T_U8,                                /*  68 | S  6, STXP (system_set_tx_power) */
+    0x02,0x15,  0x1A,   0x02,T_U8,T_PWR_LVL_ARY,                /*  68 | S  6, STXP (system_set_tx_power) */
+  //-------------- Fix 05 End -------------------------//
     0x02,0x17,  0x01,   0x01,T_U8,                              /*  69 | S  7, ST (system_set_transport) */
   //-------------- Fix 04 Start -------------------------//
 //    0x02,0x19,  0x0A,   0x07,T_U32,T_U8,T_U8,T_U8,T_U8,T_U8,T_U8,
@@ -160,7 +160,7 @@ const uint8_t ezs_tbl_cmd[] =
     0x04,0x15,  0x81,   0x01,T_U8A,                             /*  74 | S 12, SSRD (gap_set_sr_data) */
 
   //-------------- Fix 03 Start -------------------------//
-   // 0x04,0x17,  0x09,   0x07,T_U8,T_U8,T_U16,T_U8,T_U8,T_U16,T_U8,
+//    0x04,0x17,  0x09,   0x07,T_U8,T_U8,T_U16,T_U8,T_U8,T_U16,T_U8,
                                                                 /*  75 | S 13, SAP (gap_set_adv_parameters) */
     0x04,0x17,  0x13,   0x0A,T_U8,T_U8,T_U8,T_U16,T_U16,T_U16,T_U16,T_U8,T_MAC,T_U8,
                                                                 /*  75 | S 13, SAP (gap_set_adv_parameters) */
@@ -193,7 +193,7 @@ const uint8_t ezs_tbl_cmd[] =
     0x02,0x1A,  0x01,   0x01,T_U8,                              /*  96 | G  8, GTU (system_get_uart_parameters) */
   //-------------- Fix 04 End -------------------------//
   //-------------- Fix 02 Start -------------------------//
-  //0x04,0x10,  0x00,   0x00,                                   /*  97 | G  9, GDN (gap_get_device_name) */
+//    0x04,0x10,  0x00,   0x00,                                   /*  97 | G  9, GDN (gap_get_device_name) */
     0x04,0x10,  0x01,   0x01,T_U8,                                  /*  97 | G  9, GDN (gap_get_device_name) */
   //-------------- Fix 02 End -------------------------//
     0x04,0x12,  0x00,   0x00,                                   /*  98 | G 10, GDA (gap_get_device_appearance) */
@@ -657,10 +657,13 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...)
                 size++;
                 pointer = (uint8_t *)va_arg(argv, uint8_t *);
                 break;
+
 //-------------- Fix 05 Start -------------------------//
             case T_PWR_LVL_ARY:
-              /* 25 bytes exactly, start with 23 and fall through two ++ */
-              size = 23;
+              /* 25 bytes exactly*/
+              size = 25;
+              pointer = (uint8_t *)va_arg(argv, uint8_t *);
+              break;
 //-------------- Fix 05 Start -------------------------//
                 
             default:
