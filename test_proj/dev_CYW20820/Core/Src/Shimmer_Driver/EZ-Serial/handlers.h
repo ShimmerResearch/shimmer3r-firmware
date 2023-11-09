@@ -50,18 +50,44 @@
 
 #include "../EZ-Serial/ezsapi.h"
 
+#define BT_TX_BUF_SIZE                  256U              /* serial buffer in bytes (power 2)  */
+#define BT_TX_BUF_MASK                  (BT_TX_BUF_SIZE-1UL)
+
+typedef struct{
+    uint8_t data[BT_TX_BUF_SIZE];
+    // tail points to the buffer index for the oldest byte that was added to it
+    uint16_t rdIdx;
+    // head points to the index of the next empty byte in the buffer
+    uint16_t wrIdx;
+} RingFifoTx_t;
+
 //CY_ISR_PROTO(TimerInterruptHandler);
 
 void appHandler(ezs_packet_t *packet);
 ezs_output_result_t appOutput(uint16_t length, const uint8_t *data);
 ezs_input_result_t appInput(uint8_t *inByte, uint16_t timeout);
 
-HAL_StatusTypeDef setDmaRx(uint16_t length);
+HAL_StatusTypeDef setDmaWaitingForResponse(uint16_t length);
 void setBtUartInstance(UART_HandleTypeDef *huartToUse);
 
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart);
+void btUartTxCpltCallback(UART_HandleTypeDef *huart);
+
+void sendNextCharIfNotInProgress(void);
+void sendNextChar(void);
+
+void clearBtTxBuf(uint8_t isCalledFromMain);
+void pushByteToBtTxBuf(uint8_t b);
+void pushBytesToBtTxBuf(uint8_t *buf, uint8_t len);
+uint16_t getUsedSpaceInBtTxBuf(void);
+uint16_t getSpaceInBtTxBuf(void);
+
+void setBtDataRateTestState(uint8_t state);
+void loadBtTxBufForDataRateTest(void);
 
 extern void ezsHandler(ezs_packet_t *packet) __attribute__((weak));
+
+HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len);
 
 #endif /* HANDLERS_H */
 

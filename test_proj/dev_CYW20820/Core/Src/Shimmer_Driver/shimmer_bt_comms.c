@@ -17,24 +17,32 @@
 #include "hal_CRC.h"
 //#include "../5xx_HAL/hal_CRC.h"
 //#include "../../shimmer_btsd.h"
-#include "shimmer_btsd.h"
+//#include "shimmer_btsd.h"
+#include "../S4_App/s4.h"
+#include "../S4_App/s4_taskList.h"
+#include "../S4_App/s4_sensing.h"
 #if BT_DMA_USED_FOR_RX
 //#include "../5xx_HAL/hal_DMA.h"
 #endif
 #include "sd_sync.h"
 
 uint8_t unwrappedResponse[256] = {0};
+#if !BT_DMA_USED_FOR_RX
 char *commandBufPtr;
+#endif
+#if IS_BT_RN
 uint8_t *expectedResponsePtr;
+#endif
 #if BT_DMA_USED_FOR_RX
-uint8_t waitingForArgs, waitingForArgsLength, argsSize;
+uint8_t btArgs[MAX_COMMAND_ARG_SIZE], btWaitingForArgs, btWaitingForArgsLength, btArgsSize, btAction;
 volatile uint8_t btStatusStrIndex;
 
 #if IS_BT_RN
 volatile char btStatusStr[BT_STAT_STR_LEN_LARGEST+1U]; /* +1 to always have a null char */
 volatile char btRxBuffFullResponse[BT_VER_RESPONSE_LARGEST+1U]; /* +1 to always have a null char */
 #endif
-uint8_t btRxBuff[MAX_COMMAND_ARG_SIZE], *btRxExp;
+//uint8_t btRxBuff[MAX_COMMAND_ARG_SIZE], *btRxExp;
+uint8_t *btRxBuffPtr;
 #else
 RingFifoRx_t *gBtRxFifoPtr;
 /* isRn4678CmdDetectedOnBoot is a workaround to know if it's RN42 or RN4678 before version is parsed */
@@ -42,25 +50,43 @@ uint8_t isRn4678CmdDetectedOnBoot = 0;
 #endif
 volatile COMMS_CRC_MODE btCrcMode;
 
+#if IS_BT_RN
 uint8_t *gActionPtr;
 uint8_t *gArgsPtr;
+#endif
 
 #if IS_BT_RN
 volatile char btVerStrResponse[BT_VER_RESPONSE_LARGEST+1U]; /* +1 to always have a null char */
 #endif
 
 uint8_t (*newBtCmdToProcess_cb)(void);
+#if IS_BT_RN
 void (*handleBtRfCommStateChange_cb)(uint8_t);
+#endif
 void (*setMacId_cb)(uint8_t *);
 
 uint16_t numBytesInBtRxBufWhenLastProcessed = 0;
 uint16_t indexOfFirstEol;
 uint32_t firstProcessFailTicks = 0;
 
+uint8_t inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream, enableSdlog,
+        lsm303dlhcAccelRangeResponse, lsm303dlhcMagGainResponse, lsm303dlhcMagSamplingRateResponse, dockStatusBtRsp,
+        vbattBtRsp, trialConfigResponse, centerResponse, shimmerNameResponse, expIDResponse, configTimeResponse,
+        dirResponse, nshimmerResponse, myIDResponse, lsm303dlhcAccelSamplingRateResponse, i2cvBattBtRsp,
+        lsm303dlhcAccelHRModeResponse, mpu9250GyroRangeResponse, bmp180CalibCoeffBtRsp, mpu9250SamplingRateResponse,
+        mpu9250AccelRangeResponse, bmp180OversamplingRatioResponse, internalExpPowerEnableResponse,
+        exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, blinkLedBtRsp, infomemBtRsp, dcIdBtRsp, dcMemBtRsp,
+        mpu9250MagSensAdjValsResponse, lsm303dlhcAccelLPModeResponse, deviceVersionBtRsp, rwcResponse,
+        calibRamResponse, btDataRateResponse;//btIsConnected,
+uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
+uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
+
 #if BT_DMA_USED_FOR_RX
 /* Return of 1 brings MSP out of low-power mode */
-uint8_t Dma2ConversionDone(void)
+//uint8_t Dma2ConversionDone(void)
+uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 {
+  btRxBuffPtr = rxBuff;
 #if IS_BT_RN
     uint8_t bt_waitForStartCmd, bt_waitForMacAddress, bt_waitForVersion, bt_waitForInitialBoot, bt_waitForReturnNewLine;
 #endif
@@ -75,34 +101,31 @@ uint8_t Dma2ConversionDone(void)
     bt_waitForReturnNewLine = BT_getWaitForReturnNewLine();
 #endif
 
+#if IS_BT_RN
     if (!*btRxExp
-#if IS_BT_RN
             && (areBtStatusStringsEnabled()
-                    || (isBtConnected() || bt_waitForStartCmd || bt_waitForMacAddress || bt_waitForVersion || bt_waitForInitialBoot || bt_waitForReturnNewLine))
-#endif
-                    )
+                    || (isBtConnected() || bt_waitForStartCmd || bt_waitForMacAddress || bt_waitForVersion || bt_waitForInitialBoot || bt_waitForReturnNewLine)))
     {
-#if IS_BT_RN
         if (bt_waitForStartCmd)
         {
             /* RN42 responds with "CMD\r\n" and RN4678 with "CMD> " */
-            uint8_t len = strlen((char*) btRxBuff);
+            uint8_t len = strlen((char*) btRxBuffPtr);
             if (len == 5U
-                    && btRxBuff[0] == 'C'
-                    && btRxBuff[1] == 'M'
-                    && btRxBuff[2] == 'D')
+                    && btRxBuffPtr[0] == 'C'
+                    && btRxBuffPtr[1] == 'M'
+                    && btRxBuffPtr[2] == 'D')
             {
                 BT_setWaitForStartCmd(0);
                 setCommandModeActive(1U);
-                memset(btRxBuff, 0, len);
+                memset(btRxBuffPtr, 0, len);
                 BT_setGoodCommand();
             }
         }
         else if (bt_waitForReturnNewLine)
         {
             uint8_t btOffset = strlen(btRxBuffFullResponse);
-            memcpy(btRxBuffFullResponse + btOffset, btRxBuff, strlen((char*) btRxBuff));
-            memset(btRxBuff, 0, strlen((char*) btRxBuff));
+            memcpy(btRxBuffFullResponse + btOffset, btRxBuffPtr, strlen((char*) btRxBuffPtr));
+            memset(btRxBuffPtr, 0, strlen((char*) btRxBuffPtr));
 
             uint8_t responseLen = strlen(btRxBuffFullResponse);
 
@@ -157,20 +180,20 @@ uint8_t Dma2ConversionDone(void)
             {
                 expectedlen = BT_STAT_STR_LEN_RN42_REBOOT;
             }
-            memset(btRxBuff, 0, expectedlen);
+            memset(btRxBuffPtr, 0, expectedlen);
             BT_setWaitForInitialBoot(0);
             BT_setGoodCommand();
         }
         else if (bt_waitForMacAddress)
         {
-            setMacId_cb(btRxBuff);
+            setMacId_cb(btRxBuffPtr);
 
             expectedlen = 14U;
             if (isBtDeviceRn4678())
             {
                 expectedlen += RN4X_CMD_LEN; /* Allow for "CMD> " */
             }
-            memset(btRxBuff, 0, expectedlen);
+            memset(btRxBuffPtr, 0, expectedlen);
             BT_setWaitForMacAddress(0);
             BT_setGoodCommand();
         }
@@ -178,8 +201,8 @@ uint8_t Dma2ConversionDone(void)
         {
             uint8_t btVerRemainingChars = 0;
             uint8_t btOffset = strlen(btRxBuffFullResponse);
-            memcpy(btRxBuffFullResponse + btOffset, btRxBuff, strlen((char*) btRxBuff));
-            memset(btRxBuff, 0, strlen((char*) btRxBuff));
+            memcpy(btRxBuffFullResponse + btOffset, btRxBuffPtr, strlen((char*) btRxBuffPtr));
+            memset(btRxBuffPtr, 0, strlen((char*) btRxBuffPtr));
 
             uint8_t btVerLen = strlen(btRxBuffFullResponse);
             enum BT_FIRMWARE_VERSION btFwVerNew = BT_FW_VER_UNKNOWN;
@@ -287,7 +310,7 @@ uint8_t Dma2ConversionDone(void)
         {
             /* SD Sync Center - get's into this case when the center is waiting for a 0x01 or 0xFF from a node */
             // 1 byte of RC command
-            setRcommResp(btRxBuff, 1U);
+            setRcommResp(btRxBuffPtr, 1U);
             setRcommVar(0);
             setDmaWaitingForResponse(1U);
             return TaskSet(TASK_RCCENTERR1);
@@ -296,50 +319,98 @@ uint8_t Dma2ConversionDone(void)
         else
         {
 #endif
-            if (waitingForArgs)
+            if (btWaitingForArgs)
             {
-                if ((!waitingForArgsLength)
+                if ((!btWaitingForArgsLength)
+#if IS_BT_RN
                         && ((*(gActionPtr) == SET_EXG_REGS_COMMAND)
-                                && (waitingForArgs == 3)))
+#else
+                        && ((btAction == SET_EXG_REGS_COMMAND)
+#endif
+                                && (btWaitingForArgs == 3)))
                 {
-                    gArgsPtr[0] = btRxBuff[0];
-                    gArgsPtr[1] = btRxBuff[1];
-                    gArgsPtr[2] = btRxBuff[2];
-                    waitingForArgsLength = gArgsPtr[2];
-                    setDmaWaitingForResponse(waitingForArgsLength);
+#if IS_BT_RN
+                    gArgsPtr[0] = btRxBuffPtr[0];
+                    gArgsPtr[1] = btRxBuffPtr[1];
+                    gArgsPtr[2] = btRxBuffPtr[2];
+                    btWaitingForArgsLength = gArgsPtr[2];
+#else
+                    btArgs[0] = btRxBuffPtr[0];
+                    btArgs[1] = btRxBuffPtr[1];
+                    btArgs[2] = btRxBuffPtr[2];
+                    btWaitingForArgsLength = btArgs[2];
+#endif
+                    setDmaWaitingForResponse(btWaitingForArgsLength);
                     return 0;
                 }
-                else if ((!waitingForArgsLength)
+                else if ((!btWaitingForArgsLength)
+#if IS_BT_RN
                         && (((*(gActionPtr) == SET_INFOMEM_COMMAND)
-                                && (waitingForArgs == 3))
+#else
+                        && (((btAction == SET_INFOMEM_COMMAND)
+#endif
+                                && (btWaitingForArgs == 3))
+#if IS_BT_RN
                                 || ((*(gActionPtr) == SET_CALIB_DUMP_COMMAND)
-                                        && (waitingForArgs == 3))))
+#else
+                                || ((btAction == SET_CALIB_DUMP_COMMAND)
+#endif
+                                        && (btWaitingForArgs == 3))))
                 {
-                    gArgsPtr[0] = btRxBuff[0];
-                    gArgsPtr[1] = btRxBuff[1];
-                    gArgsPtr[2] = btRxBuff[2];
-                    waitingForArgsLength = gArgsPtr[0];
-                    setDmaWaitingForResponse(waitingForArgsLength);
+#if IS_BT_RN
+                    gArgsPtr[0] = btRxBuffPtr[0];
+                    gArgsPtr[1] = btRxBuffPtr[1];
+                    gArgsPtr[2] = btRxBuffPtr[2];
+                    btWaitingForArgsLength = gArgsPtr[2];
+#else
+                    btArgs[0] = btRxBuffPtr[0];
+                    btArgs[1] = btRxBuffPtr[1];
+                    btArgs[2] = btRxBuffPtr[2];
+                    btWaitingForArgsLength = btArgs[0];
+#endif
+                    setDmaWaitingForResponse(btWaitingForArgsLength);
                     return 0;
                 }
-                else if ((!waitingForArgsLength) && (
-                //                ((*(gActionPtr) == SET_DAUGHTER_CARD_ID_COMMAND) && (waitingForArgs == 1)) ||
+                else if ((!btWaitingForArgsLength) && (
+                //                ((*(gActionPtr) == SET_DAUGHTER_CARD_ID_COMMAND) && (btWaitingForArgs == 1)) ||
+#if IS_BT_RN
                         ((*(gActionPtr) == SET_DAUGHTER_CARD_MEM_COMMAND)
-                                && (waitingForArgs == 1))
-                                || ((*(gActionPtr) == SET_CENTER_COMMAND)
-                                        && (waitingForArgs == 1))
-                                || ((*(gActionPtr) == SET_CONFIGTIME_COMMAND)
-                                        && (waitingForArgs == 1))
-                                || ((*(gActionPtr) == SET_EXPID_COMMAND)
-                                        && (waitingForArgs == 1))
-                                || ((*(gActionPtr) == SET_SHIMMERNAME_COMMAND)
-                                        && (waitingForArgs == 1))))
+                            && (btWaitingForArgs == 1))
+                            || ((*(gActionPtr) == SET_CENTER_COMMAND)
+                                    && (btWaitingForArgs == 1))
+                            || ((*(gActionPtr) == SET_CONFIGTIME_COMMAND)
+                                    && (btWaitingForArgs == 1))
+                            || ((*(gActionPtr) == SET_EXPID_COMMAND)
+                                    && (btWaitingForArgs == 1))
+                            || ((*(gActionPtr) == SET_SHIMMERNAME_COMMAND)
+                                    && (btWaitingForArgs == 1))))
+#else
+                        ((btAction == SET_DAUGHTER_CARD_MEM_COMMAND)
+                            && (btWaitingForArgs == 1))
+                            || ((btAction == SET_CENTER_COMMAND)
+                                    && (btWaitingForArgs == 1))
+                            || ((btAction == SET_CONFIGTIME_COMMAND)
+                                    && (btWaitingForArgs == 1))
+                            || ((btAction == SET_EXPID_COMMAND)
+                                    && (btWaitingForArgs == 1))
+                            || ((btAction == SET_SHIMMERNAME_COMMAND)
+                                    && (btWaitingForArgs == 1))))
+#endif
                 {
-                    gArgsPtr[0] = btRxBuff[0];
+#if IS_BT_RN
+                    gArgsPtr[0] = btRxBuffPtr[0];
                     if (gArgsPtr[0])
+#else
+                    btArgs[0] = btRxBuffPtr[0];
+                    if (btArgs[0])
+#endif
                     {
-                        waitingForArgsLength = gArgsPtr[0];
-                        setDmaWaitingForResponse(waitingForArgsLength);
+#if IS_BT_RN
+                      btWaitingForArgsLength = gArgsPtr[0];
+#else
+                      btWaitingForArgsLength = btArgs[0];
+#endif
+                        setDmaWaitingForResponse(btWaitingForArgsLength);
                         return 0;
                     }
                 }
@@ -349,9 +420,9 @@ uint8_t Dma2ConversionDone(void)
                     uint8_t numberOfCharRemaining = 0U;
                     uint8_t bringUcOutOfSleep = 0U;
 
-                    memcpy(btStatusStr+btStatusStrIndex, btRxBuff, waitingForArgs);
-                    memset(btRxBuff, 0, waitingForArgs);
-                    btStatusStrIndex += waitingForArgs;
+                    memcpy(btStatusStr+btStatusStrIndex, btRxBuffPtr, btWaitingForArgs);
+                    memset(btRxBuffPtr, 0, btWaitingForArgs);
+                    btStatusStrIndex += btWaitingForArgs;
 
                     enum BT_FIRMWARE_VERSION btFwVer = getBtFwVersion();
 
@@ -759,52 +830,68 @@ uint8_t Dma2ConversionDone(void)
 
                     if (numberOfCharRemaining)
                     {
-                        waitingForArgs = numberOfCharRemaining;
+                        btWaitingForArgs = numberOfCharRemaining;
                     }
                     else
                     {
-                        waitingForArgs = 0;
+                        btWaitingForArgs = 0;
                         numberOfCharRemaining = 1U;
                     }
                     setDmaWaitingForResponse(numberOfCharRemaining);
                     return bringUcOutOfSleep;
                 }
 #endif
+#if IS_BT_RN
                 else if (*(gActionPtr) == ACK_COMMAND_PROCESSED)
+#else
+                else if (btAction == ACK_COMMAND_PROCESSED)
+#endif
                 {
 #if USE_OLD_SD_SYNC_APPROACH
                     /* Store local time as early as possible after sync bytes have been received */
                     saveLocalTime();
 #else
                     /* If waiting for command byte */
-                    if(!waitingForArgsLength)
+                    if(!btWaitingForArgsLength)
                     {
                         /* Save command byte */
-                        gArgsPtr[0] = btRxBuff[0];
+#if IS_BT_RN
+                        gArgsPtr[0] = btRxBuffPtr[0];
+#else
+                        btArgs[0] = btRxBuffPtr[0];
+#endif
 
-                        if (btRxBuff[0] == SD_SYNC_RESPONSE)
+                        if (btRxBuffPtr[0] == SD_SYNC_RESPONSE)
                         {
                             /* Wait for flag to be received */
-                            waitingForArgsLength = 1U;
-                            setDmaWaitingForResponse(waitingForArgsLength);
+                            btWaitingForArgsLength = 1U;
+                            setDmaWaitingForResponse(btWaitingForArgsLength);
                             return 0;
                         }
                     }
 #endif
                 }
 
-                if (waitingForArgsLength)
+                if (btWaitingForArgsLength)
                 {
-                    memcpy(gArgsPtr + waitingForArgs, btRxBuff, waitingForArgsLength);
+#if IS_BT_RN
+                    memcpy(gArgsPtr + btWaitingForArgs, btRxBuffPtr, btWaitingForArgsLength);
+#else
+                    memcpy(&btArgs + btWaitingForArgs, btRxBuffPtr, btWaitingForArgsLength);
+#endif
                 }
                 else
                 {
-                    memcpy(gArgsPtr, btRxBuff, waitingForArgs);
+#if IS_BT_RN
+                    memcpy(gArgsPtr, btRxBuffPtr, btWaitingForArgs);
+#else
+                    memcpy(btArgs, btRxBuffPtr, btWaitingForArgs);
+#endif
                 }
 
-                waitingForArgsLength = 0;
-                waitingForArgs = 0;
-                argsSize = 0;
+                btWaitingForArgsLength = 0;
+                btWaitingForArgs = 0;
+                btArgsSize = 0;
                 setDmaWaitingForResponse(1U);
                 if(newBtCmdToProcess_cb)
                 {
@@ -817,7 +904,7 @@ uint8_t Dma2ConversionDone(void)
             }
             else
             {
-                uint8_t data = btRxBuff[0];
+                uint8_t data = btRxBuffPtr[0];
                 uint8_t wakeupMcu = 0;
 
                 switch (data)
@@ -878,7 +965,11 @@ uint8_t Dma2ConversionDone(void)
                 case UPD_SDLOG_CFG_COMMAND:
                 case UPD_CALIB_DUMP_COMMAND:
                 case GET_BT_VERSION_STR_COMMAND:
+#if IS_BT_RN
                     *(gActionPtr) = data;
+#else
+                    btAction = data;
+#endif
                     if(newBtCmdToProcess_cb)
                     {
                         newBtCmdToProcess_cb();
@@ -909,14 +1000,23 @@ uint8_t Dma2ConversionDone(void)
                 case SET_CONFIGTIME_COMMAND:
                 case SET_CRC_COMMAND:
                 case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
+                case DATA_RATE_TEST:
+#if IS_BT_RN
                     *(gActionPtr) = data;
-                    waitingForArgs = 1U;
+#else
+                    btAction = data;
+#endif
+                    btWaitingForArgs = 1U;
                     break;
                 case SET_SAMPLING_RATE_COMMAND:
                 case GET_DAUGHTER_CARD_ID_COMMAND:
                     //                case SET_DAUGHTER_CARD_ID_COMMAND:
+#if IS_BT_RN
                     *(gActionPtr) = data;
-                    waitingForArgs = 2U;
+#else
+                    btAction = data;
+#endif
+                    btWaitingForArgs = 2U;
                     break;
                 case SET_SENSORS_COMMAND:
                 case GET_EXG_REGS_COMMAND:
@@ -928,24 +1028,40 @@ uint8_t Dma2ConversionDone(void)
                 case SET_INFOMEM_COMMAND:
                 case GET_CALIB_DUMP_COMMAND:
                 case SET_CALIB_DUMP_COMMAND:
+#if IS_BT_RN
                     *(gActionPtr) = data;
-                    waitingForArgs = 3U;
+#else
+                    btAction = data;
+#endif
+                    btWaitingForArgs = 3U;
                     break;
                 case SET_CONFIG_SETUP_BYTES_COMMAND:
+#if IS_BT_RN
                     *(gActionPtr) = data;
-                    waitingForArgs = 4U;
+#else
+                    btAction = data;
+#endif
+                    btWaitingForArgs = 4U;
                     break;
                 case SET_RWC_COMMAND:
                 case SET_DERIVED_CHANNEL_BYTES:
+#if IS_BT_RN
                     *(gActionPtr) = data;
-                    waitingForArgs = 8U;
+#else
+                    btAction = data;
+#endif
+                    btWaitingForArgs = 8U;
                     break;
                 case SET_A_ACCEL_CALIBRATION_COMMAND:
                 case SET_MPU9150_GYRO_CALIBRATION_COMMAND:
                 case SET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
                 case SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
+#if IS_BT_RN
                     *(gActionPtr) = data;
-                    waitingForArgs = 21U;
+#else
+                    btAction = data;
+#endif
+                    btWaitingForArgs = 21U;
                     break;
 #endif
 #if IS_BT_RN
@@ -955,27 +1071,35 @@ uint8_t Dma2ConversionDone(void)
                     btStatusStrIndex = 1U;
                     *(gActionPtr) = data;
                     /* Minus 1 because we've already received 1 x RN4678_STATUS_STRING_SEPARATOR */
-                    waitingForArgs = BT_STAT_STR_LEN_SMALLEST - 1U;
+                    btWaitingForArgs = BT_STAT_STR_LEN_SMALLEST - 1U;
                     break;
 #endif
 #if USE_OLD_SD_SYNC_APPROACH
                 case ACK_COMMAND_PROCESSED:
                     /* SD Sync Node - gets here when a node receives a sync packet from a center */
                     *(gActionPtr) = data;
-                    waitingForArgs = SYNC_PACKET_PAYLOAD_SIZE;
+                    btWaitingForArgs = SYNC_PACKET_PAYLOAD_SIZE;
                     break;
 #else
                 case ACK_COMMAND_PROCESSED:
                     /* Wait for command byte */
+#if IS_BT_RN
                     *(gActionPtr) = data;
-                    waitingForArgs = 1U;
+#else
+                    btAction = data;
+#endif
+                    btWaitingForArgs = 1U;
                     break;
                 case SET_SD_SYNC_COMMAND:
                     /* Store local time as early as possible after sync bytes have been received */
                     saveLocalTime();
 
+#if IS_BT_RN
                     *(gActionPtr) = data;
-                    waitingForArgs = SYNC_PACKET_PAYLOAD_SIZE + BT_SD_SYNC_CRC_MODE;
+#else
+                    btAction = data;
+#endif
+                    btWaitingForArgs = SYNC_PACKET_PAYLOAD_SIZE + BT_SD_SYNC_CRC_MODE;
                     break;
 #endif
                 default:
@@ -983,23 +1107,22 @@ uint8_t Dma2ConversionDone(void)
                     break;
                 }
 
-                if (waitingForArgs)
+                if (btWaitingForArgs)
                 {
-                    setDmaWaitingForResponse(waitingForArgs);
+                    setDmaWaitingForResponse(btWaitingForArgs);
                 }
 
                 return wakeupMcu;
             }
 #if IS_BT_RN
         }
-#endif
     }
     else
     {
         uint8_t len = strlen((char*) btRxExp);
-        if (!memcmp(btRxBuff, btRxExp, len))
+        if (!memcmp(btRxBuffPtr, btRxExp, len))
         {
-            memset(btRxBuff, 0, len);
+            memset(btRxBuffPtr, 0, len);
             BT_setGoodCommand();
         }
         else
@@ -1009,20 +1132,25 @@ uint8_t Dma2ConversionDone(void)
     }
 
     setDmaWaitingForResponseIfStatusStrEnabled();
+#endif
     return 0;
 }
 
 void resetBtRxVariablesOnConnect(void)
 {
+#if IS_BT_RN
     /* Reset to unsupported command */
     *(gActionPtr) = ACK_COMMAND_PROCESSED-1U;
-    waitingForArgs = 0;
-    waitingForArgsLength = 0;
+#else
+    btAction = ACK_COMMAND_PROCESSED-1U;
+#endif
+    btWaitingForArgs = 0;
+    btWaitingForArgsLength = 0;
 }
 
 void resetBtRxBuff(void)
 {
-    memset(btRxBuff, 0, sizeof(btRxBuff));
+    memset(btRxBuffPtr, 0, sizeof(btRxBuffPtr));
 }
 
 #else
@@ -1824,6 +1952,7 @@ uint8_t processShimmerBtCmd(void)
     case SET_NSHIMMER_COMMAND:
     case SET_CRC_COMMAND:
     case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE
+    case DATA_RATE_TEST:
         if(numBytesInBtRxBufWhenLastProcessed>=(1U+1U))
         {
             readActionAndArgBytes(1U);
@@ -2095,6 +2224,7 @@ uint8_t isShimmerBtCmd(uint8_t data)
     case SET_CONFIGTIME_COMMAND:
     case SET_CRC_COMMAND:
     case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
+    case DATA_RATE_TEST:
     case SET_SAMPLING_RATE_COMMAND:
     case GET_DAUGHTER_CARD_ID_COMMAND:
     case SET_SENSORS_COMMAND:
@@ -2141,11 +2271,15 @@ uint8_t areUnprocessedBytesInBtRxBuff(void)
 }
 #endif
 
+#if IS_BT_RN
 void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void),
                          void (*handleBtRfCommStateChangeCb)(uint8_t),
                          void (*setMacIdCb)(uint8_t *),
                          uint8_t * actionPtr,
                          uint8_t * argsPtr)
+#else
+void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void))
+#endif
 {
     setBtCrcMode(CRC_OFF);
     numBytesInBtRxBufWhenLastProcessed = 0;
@@ -2154,21 +2288,28 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void),
     memset(unwrappedResponse, 0, sizeof(unwrappedResponse));
 
     newBtCmdToProcess_cb = newBtCmdToProcessCb;
+#if IS_BT_RN
     handleBtRfCommStateChange_cb = handleBtRfCommStateChangeCb;
     setMacId_cb = setMacIdCb;
 
     gActionPtr = actionPtr;
     gArgsPtr = argsPtr;
+#endif
 
+#if !BT_DMA_USED_FOR_RX
     commandBufPtr = getTxCmdBufPtr();
+#endif
+#if IS_BT_RN
     expectedResponsePtr = BT_getExpResp();
-
+#endif
 #if BT_DMA_USED_FOR_RX
+#if IS_BT_RN
     btRxExp = BT_getExpResp();
+#endif
 
-    waitingForArgs = 0;
-    waitingForArgsLength = 0;
-    argsSize = 0;
+    btWaitingForArgs = 0;
+    btWaitingForArgsLength = 0;
+    btArgsSize = 0;
 
 #if IS_BT_RN
     memset(btStatusStr, 0, sizeof(btStatusStr));
@@ -2177,7 +2318,7 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void),
     setBtRxFullResponsePtr(btRxBuffFullResponse);
 #endif
 
-    memset(btRxBuff, 0x00, sizeof(btRxBuff) / sizeof(btRxBuff[0]));
+//    memset(btRxBuffPtr, 0x00, sizeof(btRxBuffPtr) / sizeof(btRxBuffPtr[0]));
 //    DMA2_init((uint16_t*) &UCA1RXBUF, (uint16_t*) btRxBuff, sizeof(btRxBuff));
 //    DMA2_transferDoneFunction(&Dma2ConversionDone);
 //    DMA2SZ = 1U;
@@ -2242,5 +2383,929 @@ COMMS_CRC_MODE getBtCrcMode(void)
 
 uint8_t isWaitingForArgs(void)
 {
-  return waitingForArgs;
+  return btWaitingForArgs;
+}
+
+void BtUart_processCmd(void) {
+   uint64_t temp64;
+   uint16_t temp16;
+
+   //HAL_GPIO_TogglePin(GPIOG, GPIO_PIN_6);//green
+
+   //uint32_t config_time;
+   //uint8_t my_config_time[4];
+   //uint8_t name_len;
+   //uint8_t update_sdconfig = 0, calib_update = 0, calib_sensor = 0, calib_range = 0;
+   switch (btAction) {
+   case INQUIRY_COMMAND:
+      inquiryBtRsp = 1;
+      break;
+   case DUMMY_COMMAND:
+      break;
+   case GET_SAMPLING_RATE_COMMAND:
+      samplingRateBtRsp = 1;
+      break;
+   case TOGGLE_LED_COMMAND:
+      toggleLedRed ^= 1;
+      break;
+   case START_STREAMING_COMMAND:
+      stat.btstreamCmd = 1;
+      S4_Task_set(TASK_STARTSENSING);
+      break;
+   case START_LOGGING_COMMAND:
+      stat.sdlogCmd = 1;
+      S4_Task_set(TASK_STARTSENSING);
+      break;
+   case START_SDBT_COMMAND:
+      stat.btstreamCmd = 1;
+      stat.sdlogCmd = 1;
+      S4_Task_set(TASK_STARTSENSING);
+      break;
+//   case SET_CRC_COMMAND:
+//      crcChecksum = args[0];
+//      break;
+   case STOP_STREAMING_COMMAND:
+      stat.btstreamCmd = 2;
+      S4_Task_set(TASK_STOPSENSING);
+      break;
+   case STOP_LOGGING_COMMAND:
+      stat.sdlogCmd = 2;
+      S4_Task_set(TASK_STOPSENSING);
+      break;
+   case STOP_SDBT_COMMAND:
+      stat.btstreamCmd = 2;
+      stat.sdlogCmd = 2;
+      S4_Task_set(TASK_STOPSENSING);
+      break;
+   case SET_SENSORS_COMMAND:
+      S4Ram_storedConfigSet(btArgs, NV_SENSORS0, 3);
+      S4Ram_sdHeadTextSet(btArgs, NV_SENSORS0, 3);
+      //InfoMem_update();
+      break;
+   case GET_LSM303DLHC_ACCEL_RANGE_COMMAND:
+      lsm303dlhcAccelRangeResponse = 1;
+      break;
+   case GET_LSM303DLHC_MAG_GAIN_COMMAND:
+      lsm303dlhcMagGainResponse = 1;
+      break;
+   case GET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
+      lsm303dlhcMagSamplingRateResponse = 1;
+      break;
+   case GET_STATUS_COMMAND:
+      dockStatusBtRsp = 1;
+      break;
+   case GET_I2C_BATT_STATUS_COMMAND:
+      i2cvBattBtRsp = 1;
+      break;
+//   case SET_I2C_BATT_STATUS_FREQ_COMMAND:
+//      temp16 = btArgs[0] + ((uint16_t)btArgs[1]<<8);
+//      I2C_readBattSetFreq(temp16);
+//      break;
+   case GET_VBATT_COMMAND:
+      vbattBtRsp = 1;
+      break;
+   case GET_TRIAL_CONFIG_COMMAND:
+      trialConfigResponse = 1;
+      break;
+//   case SET_TRIAL_CONFIG_COMMAND:
+//      S4Ram_storedConfigSetByte(NV_SD_TRIAL_CONFIG0, btArgs[0]);
+//      S4Ram_storedConfigSetByte(NV_SD_TRIAL_CONFIG1, 0);
+//      S4Ram_storedConfigSetByte(NV_SD_BT_INTERVAL, btArgs[2]);
+//      S4Ram_sdHeadTextSetByte(SDH_TRIAL_CONFIG0, btArgs[0]);
+//      S4Ram_sdHeadTextSetByte(SDH_TRIAL_CONFIG1, 0);
+//      S4Ram_sdHeadTextSetByte(SDH_BROADCAST_INTERVAL, btArgs[2]);
+//      InfoMem_update();
+//      break;
+   /*case GET_CENTER_COMMAND:
+    centerResponse = 1;
+    break;
+   case SET_CENTER_COMMAND:
+    break;
+   case GET_SHIMMERNAME_COMMAND:
+    shimmerNameResponse = 1;
+    break;
+   case SET_SHIMMERNAME_COMMAND:
+    name_len = btArgs[0]<(MAX_CHARS-1)?args[0]:(MAX_CHARS-1);
+    memset((uint8_t*)(storedConfig+NV_SD_SHIMMER_NAME), 0, MAX_CHARS-1);
+    memcpy((uint8_t*)(storedConfig+NV_SD_SHIMMER_NAME), &args[1], name_len);
+    InfoMem_write((uint8_t*)NV_SD_SHIMMER_NAME, storedConfig+NV_SD_SHIMMER_NAME, MAX_CHARS-1);
+    SetShimmerName();
+    update_sdconfig = 1;
+    break;
+   case GET_EXPID_COMMAND:
+    expIDResponse = 1;
+    break;
+   case SET_EXPID_COMMAND:
+    name_len = args[0]<(MAX_CHARS-1)?args[0]:(MAX_CHARS-1);
+    memset((uint8_t*)(storedConfig+NV_SD_EXP_ID_NAME), 0, MAX_CHARS-1);
+    memcpy((uint8_t*)(storedConfig+NV_SD_EXP_ID_NAME), &args[1], name_len);
+    InfoMem_write((uint8_t*)NV_SD_EXP_ID_NAME, storedConfig+NV_SD_EXP_ID_NAME, MAX_CHARS-1);
+    SetExpIdName();
+    update_sdconfig = 1;
+    break;
+   case GET_CONFIGTIME_COMMAND:
+    configTimeResponse = 1;
+    break;
+   case GET_DIR_COMMAND:
+    dirResponse = 1;
+    break;
+   case SET_CONFIGTIME_COMMAND:
+    name_len = args[0]<(MAX_CHARS-1)?args[0]:(MAX_CHARS-1);
+    memcpy(configTimeText, &args[1], name_len);
+    configTimeText[args[0]]='\0';
+    SetName();
+    config_time = atol((char*)configTimeText);
+    my_config_time[3] = *((uint8_t*)&config_time);
+    my_config_time[2] = *(((uint8_t*)&config_time)+1);
+    my_config_time[1] = *(((uint8_t*)&config_time)+2);
+    my_config_time[0] = *(((uint8_t*)&config_time)+3);
+    memcpy(&sdHeadText[SDH_CONFIG_TIME_0], my_config_time, 4);
+    memcpy((uint8_t*)(storedConfig+NV_SD_CONFIG_TIME), my_config_time, 4);
+    InfoMem_write((uint8_t*)NV_SD_CONFIG_TIME, storedConfig+NV_SD_CONFIG_TIME, 4);
+    update_sdconfig = 1;
+    break;
+   case GET_NSHIMMER_COMMAND:
+    nshimmerResponse = 1;
+    break;
+   case SET_NSHIMMER_COMMAND:
+    storedConfig[NV_SD_NSHIMMER] = args[0];
+    sdHeadText[SDH_NSHIMMER] = args[0];
+    InfoMem_write((uint8_t*)NV_SD_NSHIMMER, storedConfig+NV_SD_NSHIMMER, 1);
+    update_sdconfig = 1;
+    break;
+   case GET_MYID_COMMAND:
+    myIDResponse = 1;
+    break;
+   case SET_MYID_COMMAND:
+    storedConfig[NV_SD_MYTRIAL_ID] = args[0];
+    sdHeadText[SDH_MYTRIAL_ID] = args[0];
+    InfoMem_write((uint8_t*)NV_SD_MYTRIAL_ID, storedConfig+NV_SD_MYTRIAL_ID, 1);
+    update_sdconfig = 1;
+    break;
+   case SET_LSM303DLHC_ACCEL_RANGE_COMMAND:
+    if(args[0] < 4)
+    storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0xF3) + ((args[0]&0x03)<<2);
+    else
+    storedConfig[NV_CONFIG_SETUP_BYTE0] &= 0xF3;
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE0, &storedConfig[NV_CONFIG_SETUP_BYTE0], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE0] = storedConfig[NV_CONFIG_SETUP_BYTE0];
+    update_sdconfig = 1;
+    if(isSensing) {
+    stopSensing = 1;
+    startSensing = 1;
+    }
+    break;
+   case GET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
+    lsm303dlhcAccelSamplingRateResponse = 1;
+    break;
+   case GET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
+    lsm303dlhcAccelLPModeResponse = 1;
+    break;
+   case GET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
+    lsm303dlhcAccelHRModeResponse = 1;
+    break;
+   case GET_MPU9250_GYRO_RANGE_COMMAND:
+    mpu9250GyroRangeResponse = 1;
+    break;*/
+   case GET_BMP180_CALIBRATION_COEFFICIENTS_COMMAND:
+      bmp180CalibCoeffBtRsp = 1;
+      break;/*
+  case GET_MPU9250_SAMPLING_RATE_COMMAND:
+    mpu9250SamplingRateResponse = 1;
+    break;
+  case GET_MPU9250_ACCEL_RANGE_COMMAND:
+    mpu9250AccelRangeResponse = 1;
+    break;
+  case GET_BMP180_PRES_OVERSAMPLING_RATIO_COMMAND:
+    bmp180OversamplingRatioResponse = 1;
+    break;
+  case GET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
+    internalExpPowerEnableResponse = 1;
+    break;
+  case GET_MPU9250_MAG_SENS_ADJ_VALS_COMMAND:
+    mpu9250MagSensAdjValsResponse = 1;
+    break;
+  case GET_EXG_REGS_COMMAND:
+    if(args[0]<2 && args[1]<10 && args[2]<11) {
+      exgChip = args[0];
+      exgStartAddr = args[1];
+      exgLength = args[2];
+    } else
+      exgLength = 0;
+    exgRegsResponse = 1;
+    break;
+*/
+   /*   case SET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
+    if(args[0] < 10)
+      storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0x0F) + ((args[0]&0x0F)<<4);
+    else
+      storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0x0F) + (LSM303DLHC_ACCEL_100HZ<<4);
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE0, &storedConfig[NV_CONFIG_SETUP_BYTE0], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE0] = storedConfig[NV_CONFIG_SETUP_BYTE0];
+    update_sdconfig = 1;
+    if(isSensing) {
+      stopSensing = 1;
+      startSensing = 1;
+    }
+    break;
+    case SET_LSM303DLHC_MAG_GAIN_COMMAND:
+    if(args[0]>0 && args[0]<8)
+      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0x1F) + ((args[0]&0x07)<<5);
+    else
+      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0x1F) + (LSM303DLHC_MAG_1_3G<<5);
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE2, &storedConfig[NV_CONFIG_SETUP_BYTE2], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE2] = storedConfig[NV_CONFIG_SETUP_BYTE2];
+    update_sdconfig = 1;
+    if(isSensing) {
+      stopSensing = 1;
+      startSensing = 1;
+    }
+    break;
+    case SET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
+    if(args[0] < 8)
+      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xE3) + ((args[0]&0x07)<<2);
+    else
+      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xE3) + (LSM303DLHC_MAG_75HZ<<2);
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE2, &storedConfig[NV_CONFIG_SETUP_BYTE2], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE2] = storedConfig[NV_CONFIG_SETUP_BYTE2];
+    update_sdconfig = 1;
+    if(isSensing) {
+      stopSensing = 1;
+      startSensing = 1;
+    }
+    break;
+    case SET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
+    if(args[0] == 1){
+      storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0xFD) + 0x02;
+    }else{
+      storedConfig[NV_CONFIG_SETUP_BYTE0] &= 0xFD;
+    }
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE0, &storedConfig[NV_CONFIG_SETUP_BYTE0], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE0] = storedConfig[NV_CONFIG_SETUP_BYTE0];
+    update_sdconfig = 1;
+    if(isSensing) {
+      stopSensing = 1;
+      startSensing = 1;
+    }
+    break;
+    case SET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
+    if(args[0] == 1){
+      storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0xFE) + 0x01;
+    }else{
+      storedConfig[NV_CONFIG_SETUP_BYTE0] &= 0xFE;
+    }
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE0, &storedConfig[NV_CONFIG_SETUP_BYTE0], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE0] = storedConfig[NV_CONFIG_SETUP_BYTE0];
+    update_sdconfig = 1;
+    if(isSensing) {
+      stopSensing = 1;
+      startSensing = 1;
+    }
+    break;
+    case SET_MPU9250_GYRO_RANGE_COMMAND:
+    if(args[0] < 4)
+      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xFC) + (args[0]&0x03);
+    else
+      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xFC) + MPU9250_GYRO_500DPS;
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE2, &storedConfig[NV_CONFIG_SETUP_BYTE2], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE2] = storedConfig[NV_CONFIG_SETUP_BYTE2];
+    update_sdconfig = 1;
+    if(isSensing) {
+      stopSensing = 1;
+      startSensing = 1;
+    }
+    break;
+    case SET_MPU9250_SAMPLING_RATE_COMMAND:
+    storedConfig[NV_CONFIG_SETUP_BYTE1] = args[0];
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE1, &storedConfig[NV_CONFIG_SETUP_BYTE1], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE1] = storedConfig[NV_CONFIG_SETUP_BYTE1];
+    update_sdconfig = 1;
+    if(isSensing) {
+      stopSensing = 1;
+      startSensing = 1;
+    }
+    break;
+    case SET_MPU9250_ACCEL_RANGE_COMMAND:
+    if(args[0] < 4)
+      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0x3F) + ((args[0]&0x03)<<6);
+    else
+      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0x3F) + (ACCEL_2G<<6);
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE3, &storedConfig[NV_CONFIG_SETUP_BYTE3], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE3] = storedConfig[NV_CONFIG_SETUP_BYTE3];
+    update_sdconfig = 1;
+    if(isSensing) {
+      stopSensing = 1;
+      startSensing = 1;
+    }
+    break;
+    case SET_BMP180_PRES_OVERSAMPLING_RATIO_COMMAND:
+    if(args[0] < 4)
+      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0xCF) + ((args[0]&0x03)<<4);
+    else
+      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0xCF) + (BMP180_OSS_1<<4);
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE3, &storedConfig[NV_CONFIG_SETUP_BYTE3], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE3] = storedConfig[NV_CONFIG_SETUP_BYTE3];
+    update_sdconfig = 1;
+    break;
+    case SET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
+    if(args[0] == 1)
+      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0xFE) + (args[0]&0x01);
+    else
+      storedConfig[NV_CONFIG_SETUP_BYTE3] &= 0xFE;
+    InfoMem_write((void*)NV_CONFIG_SETUP_BYTE3, &storedConfig[NV_CONFIG_SETUP_BYTE3], 1);
+    sdHeadText[SDH_CONFIG_SETUP_BYTE3] = storedConfig[NV_CONFIG_SETUP_BYTE3];
+    update_sdconfig = 1;
+    if(isSensing) {
+      stopSensing = 1;
+      startSensing = 1;
+    }
+    break;
+   */
+   case GET_CONFIG_SETUP_BYTES_COMMAND:
+      configSetupBytesResponse = 1;
+      break;
+   case SET_CONFIG_SETUP_BYTES_COMMAND:
+      S4Ram_storedConfigSet(btArgs, NV_CONFIG_SETUP_BYTE0, 4);
+      //InfoMem_update();
+      break;
+   case SET_SAMPLING_RATE_COMMAND:
+      S4Ram_storedConfigSet(btArgs, NV_SAMPLING_RATE, 2);
+      S4Ram_sdHeadTextSet(btArgs, SDH_SAMPLE_RATE_0, 2);
+      //InfoMem_update();
+      break;
+   case GET_CALIB_DUMP_COMMAND:
+      // usage:
+      // 0x98, offset, offset, length
+      btCalibRamLength = btArgs[0];
+      btCalibRamOffset = btArgs[1] + (btArgs[2]<<8);
+      calibRamResponse = 1;
+      break;
+//   case SET_CALIB_DUMP_COMMAND:
+//      // usage:
+//      // 0x98, offset, offset, length, data[0:127]
+//      // max length of this command = 132
+//      btCalibRamLength = btArgs[0];
+//      btCalibRamOffset = btArgs[1] + (btArgs[2]<<8);
+//      if(ShimmerCalib_ramWrite(btArgs+3, btCalibRamLength, btCalibRamOffset) == 1){
+//         //InfoMem_update();
+////         ShimmerCalibSyncFromDumpRamAll();
+////         update_calib_dump_file = 1;
+//      }
+//      break;
+//   case UPD_FLASH_COMMAND:
+//      InfoMem_update();
+//      //ShimmerCalibSyncFromDumpRamAll();
+//      //update_calib_dump_file = 1;
+//      break;
+   /*   case SET_A_ACCEL_CALIBRATION_COMMAND:
+    memcpy(&storedConfig[NV_A_ACCEL_CALIBRATION], args, 21);
+    InfoMem_write((void*)NV_A_ACCEL_CALIBRATION, &storedConfig[NV_A_ACCEL_CALIBRATION], 21);
+    memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION], &storedConfig[NV_A_ACCEL_CALIBRATION], 21);
+    calib_update = 1;
+    calib_sensor = S_ACCEL_A;
+    break;
+    case GET_A_ACCEL_CALIBRATION_COMMAND:
+    aAccelCalibrationResponse = 1;
+    break;
+    case SET_MPU9250_GYRO_CALIBRATION_COMMAND:
+    memcpy(&storedConfig[NV_MPU9250_GYRO_CALIBRATION], args, 21);
+    InfoMem_write((void*)NV_MPU9250_GYRO_CALIBRATION, &storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21);
+    memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION], &storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21);
+    calib_update = 1;
+    calib_sensor = S_GYRO;
+    calib_range = storedConfig[NV_CONFIG_SETUP_BYTE2] & 0x03;
+    break;
+    case GET_MPU9250_GYRO_CALIBRATION_COMMAND:
+    gyroCalibrationResponse = 1;
+    break;
+    case SET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
+    memcpy(&storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], args, 21);
+    InfoMem_write((void*)NV_LSM303DLHC_MAG_CALIBRATION, &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21);
+    memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION], &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21);
+    calib_update = 1;
+    calib_sensor = S_MAG;
+    calib_range = (storedConfig[NV_CONFIG_SETUP_BYTE2]>>5) & 0x07;
+    break;
+    case GET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
+    magCalibrationResponse = 1;
+    break;
+    case SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
+    memcpy(&storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], args, 21);
+    InfoMem_write((void*)NV_LSM303DLHC_ACCEL_CALIBRATION, &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21);
+    memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION], &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21);
+    calib_update = 1;
+    calib_sensor = S_ACCEL_D;
+    calib_range = (storedConfig[NV_CONFIG_SETUP_BYTE0]>>2)&0x03;
+    break;*/
+   case SET_GSR_RANGE_COMMAND:
+      if (btArgs[0] <= 4){
+         //storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3] & 0xF1) + ((btArgs[0] & 0x07) << 1);
+         S4Ram_storedConfigSetByte(NV_CONFIG_SETUP_BYTE3, (S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0xF1) + ((btArgs[0] & 0x07) << 1));
+      }else{
+         //toredConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3] & 0xF1) + (GSR_AUTORANGE << 1);
+         S4Ram_storedConfigSetByte(NV_CONFIG_SETUP_BYTE3, (S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0xF1) + (GSR_AUTORANGE << 1));
+      }
+      //InfoMem_write((void*)NV_CONFIG_SETUP_BYTE3, &storedConfig[NV_CONFIG_SETUP_BYTE3], 1);
+      //InfoMem_update();
+      //sdHeadText[SDH_CONFIG_SETUP_BYTE3] = storedConfig[NV_CONFIG_SETUP_BYTE3];
+//    update_sdconfig = 1;
+//    if(isSensing) {
+//      stopSensing = 1;
+//      startSensing = 1;
+//    }
+      break;
+   case SET_EXG_REGS_COMMAND:
+      if (btArgs[0] < 2 && btArgs[1] < 10 && btArgs[2] < 11) {
+         if (btArgs[0]) {
+            //memcpy((storedConfig + NV_EXG_ADS1292R_2_CONFIG1 + btArgs[1]), (btArgs + 3), btArgs[2]);
+            S4Ram_storedConfigSet(btArgs + 3, NV_EXG_ADS1292R_2_CONFIG1 + btArgs[1], btArgs[2]);
+            //InfoMem_update();
+            //memcpy(sdHeadText + SDH_EXG_ADS1292R_2_CONFIG1, storedConfig + NV_EXG_ADS1292R_2_CONFIG1, btArgs[2]);
+         } else {
+            //memcpy((storedConfig + NV_EXG_ADS1292R_1_CONFIG1 + btArgs[1]), (btArgs + 3), btArgs[2]);
+            S4Ram_storedConfigSet(btArgs + 3, NV_EXG_ADS1292R_1_CONFIG1 + btArgs[1], btArgs[2]);
+            //InfoMem_update();
+            //memcpy(sdHeadText + SDH_EXG_ADS1292R_1_CONFIG1, storedConfig + NV_EXG_ADS1292R_1_CONFIG1, btArgs[2]);
+         }
+         //update_sdconfig = 1;
+      }
+      break;
+//   case GET_BT_VERSION_STR_COMMAND:
+//       btVerResponse = 1;
+//       break;
+   case DATA_RATE_TEST:
+       /* Stop test before ACK is sent */
+       if (btArgs[0] == 0)
+       {
+           setBtDataRateTestState(0);
+           clearBtTxBuf(1);
+       }
+       btDataRateResponse = 1;
+       break;
+
+   /*     case RESET_TO_DEFAULT_CONFIGURATION_COMMAND:
+     SetDefaultConfiguration();
+     Config2SdHead();
+     update_sdconfig = 1;
+     configureAdcChannels = 1;
+     if(isSensing) {
+       stopSensing = 1;
+       startSensing = 1;
+     }
+     break;
+     case RESET_CALIBRATION_VALUE_COMMAND:
+     memset(&storedConfig[NV_A_ACCEL_CALIBRATION], 0xFF, NV_NUM_CALIBRATION_BYTES);
+     InfoMem_write((void*)NV_A_ACCEL_CALIBRATION, &storedConfig[NV_A_ACCEL_CALIBRATION], NV_NUM_CALIBRATION_BYTES);
+     memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION], &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21);
+     memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION], &storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21);
+     memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION], &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21);
+     memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION], &storedConfig[NV_A_ACCEL_CALIBRATION], 21);
+     calib_update = 1;
+     break;
+     case GET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
+     dAccelCalibrationResponse = 1;
+     break;
+     case GET_GSR_RANGE_COMMAND:
+     gsrRangeResponse = 1;
+     break;
+     case GET_ALL_CALIBRATION_COMMAND:
+     allCalibrationResponse = 1;
+     break;
+   */
+   case DEPRECATED_GET_DEVICE_VERSION_COMMAND:
+   case GET_DEVICE_VERSION_COMMAND:
+      deviceVersionBtRsp = 1;
+      break;
+   case GET_FW_VERSION_COMMAND:
+      fwVersionBtRsp = 1;
+      break;
+   case GET_CHARGE_STATUS_LED_COMMAND:
+      blinkLedBtRsp = 1;
+      break;/*
+  case GET_BUFFER_SIZE_COMMAND:
+    bufferSizeResponse = 1;
+    break;
+  case GET_UNIQUE_SERIAL_COMMAND:
+    uniqueSerialResponse = 1;
+    break;
+*/
+   case GET_DAUGHTER_CARD_ID_COMMAND:
+      btDcMemLength = btArgs[0];
+      btDcMemOffset = btArgs[1];
+      if ((btDcMemLength <= 16) && (btDcMemOffset <= 15) && (btDcMemLength + btDcMemOffset <= 16))
+         dcIdBtRsp = 1;
+      break;
+//   case SET_DAUGHTER_CARD_ID_COMMAND:
+//      btDcMemLength = args[0];
+//      btDcMemOffset = args[1];
+//      if((btDcMemLength<=16) && (btDcMemOffset<=15) && (btDcMemLength+btDcMemOffset<=16)) {
+//         CAT24C16_init();
+//         CAT24C16_write(btDcMemOffset, btDcMemLength, args+2);
+//         CAT24C16_powerOff();
+//      }
+//      break;
+   case GET_DAUGHTER_CARD_MEM_COMMAND:
+      btDcMemLength = btArgs[0];
+      btDcMemOffset = btArgs[1] + (btArgs[2] << 8);
+      if ((btDcMemLength <= 128) && (btDcMemOffset <= 2031) && (btDcMemLength + btDcMemOffset <= 2032))
+         dcMemBtRsp = 1;
+      break;
+//   case SET_DAUGHTER_CARD_MEM_COMMAND:
+//      btDcMemLength = btArgs[0];
+//      btDcMemOffset = btArgs[1] + (btArgs[2] << 8);
+//      if ((btDcMemLength <= 128) && (btDcMemOffset <= 2031) && (btDcMemLength + btDcMemOffset <= 2032)) {
+//         CAT24C16_write(btDcMemOffset + 16, btArgs + 3, btDcMemLength);
+//      }
+//      break;
+   /*   case GET_BT_COMMS_BAUD_RATE:
+    btCommsBaudRateResponse = 1;
+    break;
+    case SET_BT_COMMS_BAUD_RATE:
+    if(args[0] != storedConfig[NV_BT_COMMS_BAUD_RATE]) {
+      if(args[0]<11) {
+        changeBtBaudRate = args[0];
+      } else {
+        changeBtBaudRate = 9;
+      }
+    }
+    break;
+    case GET_DERIVED_CHANNEL_BYTES:
+    derivedChannelResponse = 1;
+    break;
+    case SET_DERIVED_CHANNEL_BYTES:
+    memcpy(&storedConfig[NV_DERIVED_CHANNELS_0], &args[0], 3);
+    InfoMem_write((void*)NV_DERIVED_CHANNELS_0, &storedConfig[NV_DERIVED_CHANNELS_0], 3);
+    memcpy(&sdHeadText[SDH_DERIVED_CHANNELS_0], &storedConfig[NV_DERIVED_CHANNELS_0], 3);
+    update_sdconfig = 1;
+    break;
+   */
+   case GET_INFOMEM_COMMAND:
+      btInfomemLength = btArgs[0];
+      btInfomemOffset = btArgs[1] + (btArgs[2] << 8);
+      if ((btInfomemLength <= 128) && (btInfomemOffset <= (NV_NUM_RWMEM_BYTES - 1)) && (btInfomemLength + btInfomemOffset <= NV_NUM_RWMEM_BYTES))
+         infomemBtRsp = 1;
+      break;
+   case SET_INFOMEM_COMMAND:
+      btInfomemLength = btArgs[0];
+      btInfomemOffset = btArgs[1] + (btArgs[2] << 8);
+      if ((btInfomemLength <= 128) && (btInfomemOffset <= (NV_NUM_RWMEM_BYTES - 1)) && (btInfomemLength + btInfomemOffset <= NV_NUM_RWMEM_BYTES)) {
+//         memcpy(btMacHex, storedConfig + NV_MAC_ADDRESS, 6);
+//         memcpy(storedConfig + btInfomemOffset, btArgs + 3, btInfomemLength);
+//         memcpy(storedConfig + NV_MAC_ADDRESS, btMacHex, 6);
+         uint8_t temp_btMacHex[6];
+         S4Ram_storedConfigGet(temp_btMacHex, NV_MAC_ADDRESS, 6);
+         S4Ram_storedConfigSet(btArgs + 3, btInfomemOffset, btInfomemLength);
+         S4Ram_storedConfigSet(temp_btMacHex, NV_MAC_ADDRESS, 6);
+         //InfoMem_update();
+         //Infomem2Names();
+         //update_sdconfig = 1;
+         //if(((btInfomemOffset>=NV_A_ACCEL_CALIBRATION) && (btInfomemOffset<=NV_CALIBRATION_END)) ||
+         //   (((btInfomemLength+btInfomemOffset)>=NV_A_ACCEL_CALIBRATION) && ((btInfomemLength+btInfomemOffset)<=NV_CALIBRATION_END)) ||
+         //   ((btInfomemOffset<=NV_A_ACCEL_CALIBRATION) && ((btInfomemLength+btInfomemOffset)>=NV_CALIBRATION_END)))
+         //   calib_update = 1;
+      }
+      else
+         return;
+      break;
+   case GET_RWC_COMMAND:
+      rwcResponse = 1;
+      break;
+//   case SET_RWC_COMMAND:
+//      memcpy((uint8_t*)(&temp64), btArgs, 8);// 64bits = 8bytes
+//      RTC_init(temp64);
+//      //storedConfig[NV_SD_TRIAL_CONFIG0] |= SDH_RTC_SET_BY_BT;
+//      S4Ram_storedConfigSetByte(NV_SD_TRIAL_CONFIG0, S4Ram_storedConfigGetByte(NV_SD_TRIAL_CONFIG0) | SDH_RTC_SET_BY_BT);
+//      //InfoMem_update();
+//      break;
+//   default:;
+   }
+   //sendAck = 1;
+   //btSendRsps = 1;
+   S4_Task_set(TASK_BTRESPONSE);
+//   if(update_sdconfig && CheckSdInslot()){
+//      if(!docked)
+//         UpdateSdConfig();
+//      else
+//         SetSdCfgFlag(1);
+//   }
+//   if(calib_update && CheckSdInslot()){
+//      if(!docked)
+//         CalibNewFile(calib_sensor, calib_range);
+//      else
+//         SetCalibFlag(1);
+//      //   CalibAll();
+//      //else
+//      //   SetCalibFlag(1);
+//   }
+}
+
+void BtUart_sendRsp(void) {
+   uint16_t packet_length = 0;
+   //STATTypeDef * stat = GetStatus();
+   uint8_t bt_tx_data[RESPONSE_PACKET_SIZE];
+   packet_length = 0;
+   if (stat.isBtConnected) {
+      //if(sendAck) {
+      *(bt_tx_data + packet_length++) = ACK_COMMAND_PROCESSED;
+      //   sendAck = 0;
+      //}
+      if (inquiryBtRsp) {//todo:
+//         *(bt_tx_data + packet_length++) = INQUIRY_RESPONSE;
+//         //*(uint16_t *)(bt_tx_data + packet_length) = *(uint16_t *)(storedConfig + NV_SAMPLING_RATE); //ADC sampling rate
+//         S4Ram_storedConfigGet(bt_tx_data + packet_length, NV_SAMPLING_RATE, 2);
+//         packet_length += 2;
+////         memcpy((bt_tx_data + packet_length), (storedConfig + NV_CONFIG_SETUP_BYTE0), 4);           //4 config bytes
+//         S4Ram_storedConfigGet(bt_tx_data + packet_length, NV_CONFIG_SETUP_BYTE0, 4);
+//         packet_length += 4;
+//         *(bt_tx_data + packet_length++) = sensing.nbrAdcChans + sensing.nbrDigiChans;                        //number of data channels
+//         *(bt_tx_data + packet_length++) = S4Ram_storedConfigGetByte(NV_BUFFER_SIZE);                      //buffer size
+//         memcpy((bt_tx_data + packet_length), sensing.cc, (sensing.nbrAdcChans + sensing.nbrDigiChans));
+//         packet_length += sensing.nbrAdcChans + sensing.nbrDigiChans;
+         inquiryBtRsp = 0;
+      } else if (samplingRateBtRsp) {
+         *(bt_tx_data + packet_length++) = SAMPLING_RATE_RESPONSE;
+         //*(uint16_t *)(bt_tx_data + packet_length) = *(uint16_t *)(storedConfig + NV_SAMPLING_RATE); //ADC sampling rate
+         S4Ram_storedConfigGet(bt_tx_data + packet_length, NV_SAMPLING_RATE, 2);
+         packet_length += 2;
+         samplingRateBtRsp = 0;
+//      } else if(lsm303dlhcAccelRangeResponse) {
+//         *(bt_tx_data + packet_length++) = LSM303DLHC_ACCEL_RANGE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = (storedConfig[NV_CONFIG_SETUP_BYTE0] & 0x0C) >> 2;
+//         lsm303dlhcAccelRangeResponse = 0;
+//      } else if(lsm303dlhcMagGainResponse) {
+//         *(bt_tx_data + packet_length++) = LSM303DLHC_MAG_GAIN_RESPONSE;
+//         *(bt_tx_data + packet_length++) = (storedConfig[NV_CONFIG_SETUP_BYTE2] & 0xE0) >> 5;
+//         lsm303dlhcMagGainResponse = 0;
+//      } else if(lsm303dlhcMagSamplingRateResponse) {
+//         *(bt_tx_data + packet_length++) = LSM303DLHC_MAG_SAMPLING_RATE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = (storedConfig[NV_CONFIG_SETUP_BYTE2] & 0x1C) >> 2;
+//         lsm303dlhcMagSamplingRateResponse = 0;
+      } else if (dockStatusBtRsp) {
+         *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
+         *(bt_tx_data + packet_length++) = STATUS_RESPONSE;
+//         *(bt_tx_data + packet_length++) = ((isStreaming & 0x01) << 4) +
+//                                         ((isLogging & 0x01) << 3) + ((0 & 0x01) << 2) +
+//                                         ((sensing.en & 0x01) << 1) + (docked & 0x01);
+         *(bt_tx_data + packet_length++) = 0;
+         dockStatusBtRsp = 0;
+//      } else if (i2cvBattBtRsp) {
+//         *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
+//         *(bt_tx_data + packet_length++) = RSP_I2C_BATT_STATUS_COMMAND;
+//         memcpy((bt_tx_data + packet_length), (uint8_t*)stat.battDigital, STC3100_DATA_LEN);
+//         packet_length += STC3100_DATA_LEN;
+//         i2cvBattBtRsp = 0;
+      } else if (vbattBtRsp) {
+         //ReadBatt();
+         *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
+         *(bt_tx_data + packet_length++) = VBATT_RESPONSE;
+         memcpy((uint8_t*)(bt_tx_data + packet_length), (uint8_t*)stat.battVal, 3);
+         packet_length += 3;
+         vbattBtRsp = 0;
+//      } else if(trialConfigResponse) {
+//         *(bt_tx_data + packet_length++) = TRIAL_CONFIG_RESPONSE;
+//         memcpy((bt_tx_data + packet_length), (storedConfig+NV_SD_TRIAL_CONFIG0), 3);  //2 trial config bytes + 1 interval byte
+//         packet_length+=3;
+//         trialConfigResponse = 0;
+//      } else if(centerResponse) {
+//         centerResponse = 0;
+//      } else if(shimmerNameResponse) {
+//         SetShimmerName();
+//         uint8_t shimmer_name_len = strlen((char*)shimmerName);
+//         *(bt_tx_data + packet_length++) = SHIMMERNAME_RESPONSE;
+//         *(bt_tx_data + packet_length++) = shimmer_name_len;
+//         memcpy((bt_tx_data + packet_length), shimmerName, shimmer_name_len);
+//         packet_length+=shimmer_name_len;
+//         shimmerNameResponse = 0;
+//      } else if(expIDResponse) {
+//         SetExpIdName();
+//         uint8_t exp_id_name_len = strlen((char*)expIdName);
+//         *(bt_tx_data + packet_length++) = EXPID_RESPONSE;
+//         *(bt_tx_data + packet_length++) = exp_id_name_len;
+//         memcpy((bt_tx_data + packet_length), expIdName, exp_id_name_len);
+//         packet_length+=exp_id_name_len;
+//         expIDResponse = 0;
+//      } else if(configTimeResponse) {
+//         SetCfgTime();
+//         uint8_t cfgtime_name_len = strlen((char*)configTimeText);
+//         *(bt_tx_data + packet_length++) = CONFIGTIME_RESPONSE;
+//         *(bt_tx_data + packet_length++) = cfgtime_name_len;
+//         memcpy((bt_tx_data + packet_length), configTimeText, cfgtime_name_len);
+//         packet_length+=cfgtime_name_len;
+//         configTimeResponse = 0;
+//      } else if(dirResponse) {
+//         uint8_t dir_len = strlen((char*)fileName)-3;
+//         *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
+//         *(bt_tx_data + packet_length++) = DIR_RESPONSE;
+//         *(bt_tx_data + packet_length++) = dir_len;
+//         memcpy((bt_tx_data + packet_length), fileName, dir_len);
+//         packet_length+=dir_len;
+//         dirResponse = 0;
+//      } else if(nshimmerResponse) {
+//         *(bt_tx_data + packet_length++) = NSHIMMER_RESPONSE;
+//         *(bt_tx_data + packet_length++) = storedConfig[NV_SD_NSHIMMER];
+//         nshimmerResponse = 0;
+//      } else if(myIDResponse) {
+//          *(bt_tx_data + packet_length++) = MYID_RESPONSE;
+//          *(bt_tx_data + packet_length++) = storedConfig[NV_SD_MYTRIAL_ID];
+//          myIDResponse = 0;
+//      } else if(lsm303dlhcAccelSamplingRateResponse) {
+//          *(bt_tx_data + packet_length++) = LSM303DLHC_ACCEL_SAMPLING_RATE_RESPONSE;
+//          *(bt_tx_data + packet_length++) = (storedConfig[NV_CONFIG_SETUP_BYTE0] & 0xF0) >> 4;
+//          lsm303dlhcAccelSamplingRateResponse = 0;
+//      } else if(lsm303dlhcAccelLPModeResponse) {
+//         *(bt_tx_data + packet_length++) = LSM303DLHC_ACCEL_LPMODE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = (storedConfig[NV_CONFIG_SETUP_BYTE0] & 0x02) >> 1;
+//         lsm303dlhcAccelLPModeResponse = 0;
+//      } else if(lsm303dlhcAccelHRModeResponse) {
+//         *(bt_tx_data + packet_length++) = LSM303DLHC_ACCEL_HRMODE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = storedConfig[NV_CONFIG_SETUP_BYTE0] & 0x01;
+//         lsm303dlhcAccelHRModeResponse = 0;
+//      } else if(mpu9250GyroRangeResponse) {
+//         *(bt_tx_data + packet_length++) = MPU9250_GYRO_RANGE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = storedConfig[NV_CONFIG_SETUP_BYTE2] & 0x03;
+//         mpu9250GyroRangeResponse = 0;
+      } else if (bmp180CalibCoeffBtRsp) {
+         *(bt_tx_data + packet_length++) = BMP180_CALIBRATION_COEFFICIENTS_RESPONSE;
+//         BMP180_init(hi2cSensor);//todo: pre read at init
+//         BMP180_getCalib(bt_tx_data + packet_length);
+//         packet_length += 22;
+//         memset((bt_tx_data + packet_length), 0, 24);
+//         packet_length += 24;
+//         bmp180CalibCoeffBtRsp = 0;
+//      } else if(mpu9250SamplingRateResponse) {
+//         *(bt_tx_data + packet_length++) = MPU9250_SAMPLING_RATE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = storedConfig[NV_CONFIG_SETUP_BYTE1];
+//         mpu9250SamplingRateResponse = 0;
+//      } else if(mpu9250AccelRangeResponse) {
+//         *(bt_tx_data + packet_length++) = MPU9250_ACCEL_RANGE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0xC0) >> 6;
+//         mpu9250AccelRangeResponse = 0;
+//      } else if(bmp180OversamplingRatioResponse) {
+//         *(bt_tx_data + packet_length++) = BMP180_PRES_OVERSAMPLING_RATIO_RESPONSE;
+//         *(bt_tx_data + packet_length++) = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0x30) >> 4;
+//         bmp180OversamplingRatioResponse = 0;
+//      } else if(internalExpPowerEnableResponse) {
+//         *(bt_tx_data + packet_length++) = INTERNAL_EXP_POWER_ENABLE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = storedConfig[NV_CONFIG_SETUP_BYTE3]&0x01;
+//         internalExpPowerEnableResponse = 0;
+      } else if (configSetupBytesResponse) {
+         *(bt_tx_data + packet_length++) = CONFIG_SETUP_BYTES_RESPONSE;
+         //memcpy((bt_tx_data + packet_length), &storedConfig[NV_CONFIG_SETUP_BYTE0], 4);
+         S4Ram_storedConfigGet(bt_tx_data + packet_length, NV_CONFIG_SETUP_BYTE0, 4);
+         packet_length += 4;
+         configSetupBytesResponse = 0;
+//      } else if(calibRamResponse) {
+//         *(bt_tx_data + packet_length++) = RSP_CALIB_DUMP_COMMAND;
+//         *(bt_tx_data + packet_length++) = btCalibRamLength;
+//         *(bt_tx_data + packet_length++) = btCalibRamOffset&0xff;
+//         *(bt_tx_data + packet_length++) = (btCalibRamOffset>>8)&0xff;
+//         ShimmerCalib_ramRead(bt_tx_data+packet_length, btCalibRamLength, btCalibRamOffset);
+//         packet_length += btCalibRamLength;
+//         calibRamResponse = 0;
+//      } else if(aAccelCalibrationResponse) {
+//         *(bt_tx_data + packet_length++) = A_ACCEL_CALIBRATION_RESPONSE;
+//         memcpy((bt_tx_data+packet_length), &storedConfig[NV_A_ACCEL_CALIBRATION], 21);
+//         packet_length += 21;
+//         aAccelCalibrationResponse = 0;
+//      } else if(gyroCalibrationResponse) {
+//         *(bt_tx_data + packet_length++) = MPU9250_GYRO_CALIBRATION_RESPONSE;
+//         memcpy((bt_tx_data+packet_length), &storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21);
+//         packet_length += 21;
+//         gyroCalibrationResponse = 0;
+//      } else if(magCalibrationResponse) {
+//         *(bt_tx_data + packet_length++) = LSM303DLHC_MAG_CALIBRATION_RESPONSE;
+//         memcpy((bt_tx_data+packet_length), &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21);
+//         packet_length += 21;
+//         magCalibrationResponse = 0;
+//      } else if(dAccelCalibrationResponse) {
+//         *(bt_tx_data + packet_length++) = LSM303DLHC_ACCEL_CALIBRATION_RESPONSE;
+//         memcpy((bt_tx_data+packet_length), &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21);
+//         packet_length += 21;
+//         dAccelCalibrationResponse = 0;
+//      } else if(gsrRangeResponse) {
+//         *(bt_tx_data + packet_length++) = GSR_RANGE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0x0E) >> 1;
+//         gsrRangeResponse = 0;
+//      } else if(allCalibrationResponse) {
+//         *(bt_tx_data + packet_length++) = ALL_CALIBRATION_RESPONSE;
+//         memcpy((bt_tx_data+packet_length), &storedConfig[NV_A_ACCEL_CALIBRATION], NV_NUM_CALIBRATION_BYTES);
+//         packet_length += NV_NUM_CALIBRATION_BYTES;
+//         allCalibrationResponse = 0;
+      } else if (deviceVersionBtRsp) {
+         *(bt_tx_data + packet_length++) = DEVICE_VERSION_RESPONSE;
+         *(bt_tx_data + packet_length++) = DEVICE_VER;
+         deviceVersionBtRsp = 0;
+//      } else if(mpu9250MagSensAdjValsResponse) {
+//         MPU9250_init();
+//         MPU9250_wake(1);
+//         MPU9250_wake(0);
+//         *(bt_tx_data + packet_length++) = MPU9250_MAG_SENS_ADJ_VALS_RESPONSE;
+//         MPU9250_getMagSensitivityAdj(bt_tx_data+packet_length);
+//         packet_length += 3;
+//         mpu9250MagSensAdjValsResponse = 0;
+      } else if (fwVersionBtRsp) {
+         *(bt_tx_data + packet_length++) = FW_VERSION_RESPONSE;
+         *(bt_tx_data + packet_length++) = FW_IDENTIFIER & 0xFF;
+         *(bt_tx_data + packet_length++) = (FW_IDENTIFIER & 0xFF00) >> 8;
+         *(bt_tx_data + packet_length++) = FW_VER_MAJOR & 0xFF;
+         *(bt_tx_data + packet_length++) = (FW_VER_MAJOR & 0xFF00) >> 8;
+         *(bt_tx_data + packet_length++) = FW_VER_MINOR;
+         *(bt_tx_data + packet_length++) = FW_VER_REL;
+         fwVersionBtRsp = 0;
+      } else if (blinkLedBtRsp) {
+         *(bt_tx_data + packet_length++) = CHARGE_STATUS_LED_RESPONSE;
+         *(bt_tx_data + packet_length++) = stat.battStat;
+         blinkLedBtRsp = 0;
+//      } else if (bufferSizeResponse) {
+//         *(bt_tx_data + packet_length++) = BUFFER_SIZE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = storedConfig[NV_BUFFER_SIZE];
+//         bufferSizeResponse = 0;
+//      } else if (uniqueSerialResponse) {
+//         *(bt_tx_data + packet_length++) = UNIQUE_SERIAL_RESPONSE;
+//         memcpy((bt_tx_data+packet_length), dierecord, 8);
+//         packet_length += 8;
+//         uniqueSerialResponse = 0;
+//      } else if (exgRegsResponse) {
+//         *(bt_tx_data + packet_length++) = EXG_REGS_RESPONSE;
+//         *(bt_tx_data + packet_length++) = exgLength;
+//         if(exgLength) {
+//            if(exgChip)
+//               memcpy((bt_tx_data+packet_length), (storedConfig+NV_EXG_ADS1292R_2_CONFIG1+exgStartAddr), exgLength);
+//            else
+//               memcpy((bt_tx_data+packet_length), (storedConfig+NV_EXG_ADS1292R_1_CONFIG1+exgStartAddr), exgLength);
+//            packet_length += exgLength;
+//         }
+//         exgRegsResponse = 0;
+      } else if (dcIdBtRsp) {
+//         *(bt_tx_data + packet_length++) = DAUGHTER_CARD_ID_RESPONSE;
+//         *(bt_tx_data + packet_length++) = btDcMemLength;
+//         CAT24C16_read(btDcMemOffset, bt_tx_data + packet_length, btDcMemLength);
+//         packet_length += btDcMemLength;
+         dcIdBtRsp = 0;
+      } else if (dcMemBtRsp) {
+//         *(bt_tx_data + packet_length++) = DAUGHTER_CARD_MEM_RESPONSE;
+//         *(bt_tx_data + packet_length++) = btDcMemLength;
+//         CAT24C16_read(btDcMemOffset + 16, bt_tx_data + packet_length, btDcMemLength);
+//         packet_length += btDcMemLength;
+         dcMemBtRsp = 0;
+//      } else if (btCommsBaudRateResponse) {
+//         *(bt_tx_data + packet_length++) = BT_COMMS_BAUD_RATE_RESPONSE;
+//         *(bt_tx_data + packet_length++) = storedConfig[NV_BT_COMMS_BAUD_RATE];
+//         btCommsBaudRateResponse = 0;
+      } else if (infomemBtRsp) {
+         *(bt_tx_data + packet_length++) = INFOMEM_RESPONSE;
+         *(bt_tx_data + packet_length++) = btInfomemLength;
+         //memcpy((bt_tx_data + packet_length), &storedConfig[btInfomemOffset], btInfomemLength);
+         S4Ram_storedConfigGet(bt_tx_data + packet_length, btInfomemOffset, btInfomemLength);
+         packet_length += btInfomemLength;
+         infomemBtRsp = 0;
+//      } else if (derivedChannelResponse) {
+//         *(bt_tx_data + packet_length++) = DERIVED_CHANNEL_BYTES_RESPONSE;
+//         *(bt_tx_data + packet_length++) = storedConfig[NV_DERIVED_CHANNELS_0];
+//         *(bt_tx_data + packet_length++) = storedConfig[NV_DERIVED_CHANNELS_1];
+//         *(bt_tx_data + packet_length++) = storedConfig[NV_DERIVED_CHANNELS_2];
+//         derivedChannelResponse = 0;
+      } else if(rwcResponse){
+//         uint64_t temp_rtcCurrentTime = RTC_get64();
+//         *(bt_tx_data + packet_length++) = RWC_RESPONSE;
+//         memcpy(bt_tx_data + packet_length, (uint8_t*)(&temp_rtcCurrentTime), 8);
+//         packet_length += 8;
+         rwcResponse = 0;
+      }
+//      else if (btVerResponse)
+//      {
+//          uint8_t btVerStrLen = getBtVerStrLen();
+//
+//          *(resPacket + packet_length++) = BT_VERSION_STR_RESPONSE;
+//          *(resPacket + packet_length++) = btVerStrLen;
+//          memcpy((resPacket + packet_length), getBtVerStrPtr(), btVerStrLen);
+//          packet_length += btVerStrLen;
+//
+//          btVerResponse = 0;
+//      }
+      else if (btDataRateResponse)
+      {
+          /* Start test after ACK is sent - this will be handled by the
+           * interrupt after ACK byte is transmitted */
+          if (btArgs[0] != 0)
+          {
+              setBtDataRateTestState(1);
+          }
+          btDataRateResponse = 0;
+      }
+
+      /*if(crcChecksum){
+       uint16_t crc_value;
+       crc_value = CRC_data(bt_tx_data, (uint8_t)packet_length);
+       *(bt_tx_data+packet_length++) = crc_value & 0xFF;
+       *(bt_tx_data+packet_length++) = (crc_value & 0xFF00) >> 8;
+      }*/
+      BT_write(bt_tx_data, packet_length);
+   }
+}
+
+//TODO use declaration in sd_sync.c instead
+void saveLocalTime(void)
+{
+
 }

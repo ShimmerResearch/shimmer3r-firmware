@@ -169,6 +169,7 @@
 #define GET_BT_VERSION_STR_COMMAND                    0xA1
 #define BT_VERSION_STR_RESPONSE                       0xA2
 #define SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE        0xA3
+#define DATA_RATE_TEST                                0xA4
 #if !USE_OLD_SD_SYNC_APPROACH
 #define SET_SD_SYNC_COMMAND                           0xE0
 #define SD_SYNC_RESPONSE                              0xE1
@@ -179,7 +180,8 @@
 #define BT_RX_COMMS_TIMEOUT_TICKS                     328U /* 32768*0.01s = 327.68  */
 
 #if BT_DMA_USED_FOR_RX
-uint8_t Dma2ConversionDone(void);
+//uint8_t Dma2ConversionDone(void);
+uint8_t Dma2ConversionDone(uint8_t *rxBuff);
 void resetBtRxVariablesOnConnect(void);
 void resetBtRxBuff(void);
 #else
@@ -206,11 +208,15 @@ uint16_t getNumBytesInBtRxBufWhenLastProcessed(void);
 uint8_t areUnprocessedBytesInBtRxBuff(void);
 #endif
 
+#if IS_BT_RN
 void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void),
                          void (*handleBtRfCommStateChangeCb)(uint8_t),
                          void (*setMacIdCb)(uint8_t *),
                          uint8_t * actionPtr,
                          uint8_t * argsPtr);
+#else
+void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void));
+#endif
 #if IS_BT_RN
 void triggerBtRfCommStateChangeCallback(bool state);
 void triggerShimmerErrorState(void);

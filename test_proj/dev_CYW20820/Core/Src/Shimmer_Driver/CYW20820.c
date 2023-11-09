@@ -27,8 +27,13 @@
  * BLE:   {-2,0,2,4,6,8,10,10}, */
 #define BT_TX_POWER 8
 
+uint8_t advNameMacIdStartIdx = 11;
 static char advNameBt[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
 static char advNameBle[] = {18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
+
+//uint8_t advNameMacIdStartIdx = 10;
+//static char advNameBt[] = {16, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', '-', 'X', 'X', 'X', 'X', '-', 'B', 'T'};
+//static char advNameBle[] = {17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
 
 uint16_t expectedResponseIdx;
 
@@ -49,7 +54,7 @@ static ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters_ref =
     .baud = BAUD_TO_USE,
     .autobaud = 0,
     .autocorrect = 0,
-    .flow = 0,
+    .flow = FLOW_CONTROL,
     .databits = 8,
     .parity = 0,
     .stopbits = 1
@@ -81,7 +86,7 @@ static ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters_ref = {
 
 uint8_t btSetCommandsStart, btSetCommandsStep;
 uint8_t btNameTypeBeingRead;
-bool btIsInitialised, btConnected, btCysppState, btUartSettingsChanged;
+bool btIsInitialised, btCysppState, btUartSettingsChanged;
 
 static char hexdigit2int(uint8_t xd)
 {
@@ -123,7 +128,7 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
 void btInit(void)
 {
   btSetCommandsStart = 1;
-  btSetCommandsStep = PING;
+  btSetCommandsStep = WAIT_FOR_BOOT;
   btIsInitialised = false;
 
   /* packet pointer for working with response/event data */
@@ -134,7 +139,7 @@ void btInit(void)
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
 
-  HAL_StatusTypeDef status = setDmaRx(1);
+  HAL_StatusTypeDef status = setDmaWaitingForResponse(1);
 
   btSetCommands();
 
@@ -188,16 +193,98 @@ void btInit(void)
 //TODO set appropriate values for setDmaRx() calls
 void btSetCommands(void)
 {
-  // TODO will be needed once we can turn the module on/off
-//  if (btSetCommandsStep == WAIT_FOR_BOOT)
-//  {
-//    btSetCommandsStep++;
+  if (btSetCommandsStep == WAIT_FOR_BOOT)
+  {
+    btSetCommandsStep++;
+//    // TODO will be needed once we can turn the module on/off
 //    setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
 //    return;
-//  }
+  }
+
+  if(btSetCommandsStep == FACTORY_RESET)
+  {
+    btSetCommandsStep++;
+//    printf("Factory Reset\r\n");
+//    setExpectedResponse(EZS_IDX_EVT_SYSTEM_FACTORY_RESET_COMPLETE);
+//    ezs_cmd_system_factory_reset();
+//    return;
+  }
+
+  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE1)
+  {
+    btSetCommandsStep++;
+    printf("Update UART Stage1\r\n");
+    setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS);
+    ezs_cmd_system_get_uart_parameters(UART_TYPE_PUART);
+    return;
+  }
+
+  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE2)
+  {
+    btSetCommandsStep++;
+    printf("Current Baud=%lu\r\n", rsp_system_get_uart_parameters.baud);
+    btUartSettingsChanged = false;
+    // No need to set if the current settings are correct.
+    if (memcmp(&rsp_system_get_uart_parameters_ref.result,
+        &rsp_system_get_uart_parameters.result,
+        sizeof(rsp_system_get_uart_parameters_ref)) != 0)
+    {
+      printf("Update UART Stage2\r\n");
+      printf("Setting Baud to %lu\r\n", rsp_system_get_uart_parameters_ref.baud);
+      btUartSettingsChanged = true;
+      setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
+      ezs_cmd_system_set_uart_parameters(
+          rsp_system_get_uart_parameters_ref.baud,
+          rsp_system_get_uart_parameters_ref.autobaud,
+          rsp_system_get_uart_parameters_ref.autocorrect,
+          rsp_system_get_uart_parameters_ref.flow,
+          rsp_system_get_uart_parameters_ref.databits,
+          rsp_system_get_uart_parameters_ref.parity,
+          rsp_system_get_uart_parameters_ref.stopbits,
+          UART_TYPE_PUART);
+      return;
+    }
+  }
+
+  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE3)
+  {
+    btSetCommandsStep++;
+//    if (btUartSettingsChanged)
+//    {
+//      printf("Update UART Stage3\r\n");
+//      btUartSettingsChanged = true;
+//      setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
+//      ezs_fcmd_system_set_uart_parameters(
+//          rsp_system_get_uart_parameters_ref.baud,
+//          rsp_system_get_uart_parameters_ref.autobaud,
+//          rsp_system_get_uart_parameters_ref.autocorrect,
+//          rsp_system_get_uart_parameters_ref.flow,
+//          rsp_system_get_uart_parameters_ref.databits,
+//          rsp_system_get_uart_parameters_ref.parity,
+//          rsp_system_get_uart_parameters_ref.stopbits,
+//          UART_TYPE_PUART);
+//      return;
+//    }
+  }
+
+  if (btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE4)
+  {
+    btSetCommandsStep++;
+    if (btUartSettingsChanged)
+    {
+      printf("Update UART Stage4\r\n");
+      btUartSettingsChanged = false;
+      //TODO resolve reference
+      usart2UartUpdate();
+//      setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
+//      ezs_cmd_system_ping();
+//      return;
+    }
+  }
 
   if (btSetCommandsStep == PING)
   {
+    printf("Ping\r\n");
     btSetCommandsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
     ezs_cmd_system_ping();
@@ -206,6 +293,7 @@ void btSetCommands(void)
 
   if (btSetCommandsStep == STOP_BLE_ADVERTISING)
   {
+    printf("Stop BLE Advertising\r\n");
     btSetCommandsStep++;
     setExpectedResponse(EZS_IDX_RSP_GAP_STOP_ADV);
     ezs_cmd_gap_stop_adv();
@@ -214,6 +302,7 @@ void btSetCommands(void)
 
   if (btSetCommandsStep == GET_FIRMWARE_VERSION)
   {
+    printf("Get FW Version\r\n");
     btSetCommandsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION);
     ezs_cmd_system_query_firmware_version();
@@ -222,6 +311,7 @@ void btSetCommands(void)
 
   if (btSetCommandsStep == GET_BLUETOOTH_ADDRESS)
   {
+    printf("Get BT address\r\n");
     btSetCommandsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS);
     ezs_cmd_system_get_bluetooth_address();
@@ -230,20 +320,22 @@ void btSetCommands(void)
 
   if (btSetCommandsStep == UPDATE_LOCAL_ADVERTISING_NAMES)
   {
+    printf("Update local advertising name\r\n");
     btSetCommandsStep++;
-    advNameBt[11] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4] >> 4) & 0x0F);
-    advNameBt[12] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]) & 0x0F);
-    advNameBt[13] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5] >> 4) & 0x0F);
-    advNameBt[14] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]) & 0x0F);
+    advNameBt[advNameMacIdStartIdx] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4] >> 4) & 0x0F);
+    advNameBt[advNameMacIdStartIdx+1] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]) & 0x0F);
+    advNameBt[advNameMacIdStartIdx+2] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5] >> 4) & 0x0F);
+    advNameBt[advNameMacIdStartIdx+3] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]) & 0x0F);
 
-    advNameBle[11] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4] >> 4) & 0x0F);
-    advNameBle[12] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]) & 0x0F);
-    advNameBle[13] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5] >> 4) & 0x0F);
-    advNameBle[14] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]) & 0x0F);
+    advNameBle[advNameMacIdStartIdx] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4] >> 4) & 0x0F);
+    advNameBle[advNameMacIdStartIdx+1] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]) & 0x0F);
+    advNameBle[advNameMacIdStartIdx+2] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5] >> 4) & 0x0F);
+    advNameBle[advNameMacIdStartIdx+3] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]) & 0x0F);
   }
 
   if (btSetCommandsStep == GET_DEVICE_NAME_BT)
   {
+    printf("Get Device Name BT\r\n");
     btSetCommandsStep++;
     btNameTypeBeingRead = DEVICE_TYPE_BT;
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_DEVICE_NAME);
@@ -256,6 +348,7 @@ void btSetCommands(void)
     btSetCommandsStep++;
     if (!strstr((char*) &rsp_gap_get_device_name_bt.name.data[0], &advNameBt[1]))
     {
+      printf("Set Device Name BT\r\n");
       setExpectedResponse(EZS_IDX_RSP_GAP_SET_DEVICE_NAME);
       ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BT, &advNameBt[0]);
       return;
@@ -264,6 +357,7 @@ void btSetCommands(void)
 
   if (btSetCommandsStep == GET_DEVICE_NAME_BLE)
   {
+    printf("Get Device Name BLE\r\n");
     btSetCommandsStep++;
     btNameTypeBeingRead = DEVICE_TYPE_BLE;
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_DEVICE_NAME);
@@ -277,6 +371,7 @@ void btSetCommands(void)
     btSetCommandsStep++;
     if (!strstr((char*) &rsp_gap_get_device_name_ble.name.data[0], &advNameBle[1]))
     {
+      printf("Set Device Name BLE\r\n");
       setExpectedResponse(EZS_IDX_RSP_GAP_SET_DEVICE_NAME);
       ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BLE, &advNameBle[0]);
       return;
@@ -285,6 +380,7 @@ void btSetCommands(void)
 
   if(btSetCommandsStep == GET_TX_POWER)
   {
+    printf("Get TX Power\r\n");
     btSetCommandsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_TX_POWER);
     ezs_cmd_system_get_tx_power();
@@ -296,6 +392,7 @@ void btSetCommands(void)
     btSetCommandsStep++;
     if (rsp_system_get_tx_power.power != BT_TX_POWER)
     {
+      printf("Set TX Power\r\n");
       rsp_system_get_tx_power.power = BT_TX_POWER;
       setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_TX_POWER);
       ezs_fcmd_system_set_tx_power(BT_TX_POWER, &rsp_system_get_tx_power.power_level_arrays);
@@ -337,54 +434,9 @@ void btSetCommands(void)
   }
 #endif
 
-  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE1)
-  {
-    btSetCommandsStep++;
-    setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS);
-    ezs_cmd_system_get_uart_parameters(UART_TYPE_PUART);
-    return;
-  }
-
-  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE2)
-  {
-    btSetCommandsStep++;
-    btUartSettingsChanged = false;
-    // No need to set if the current settings are correct.
-    if (memcmp(&rsp_system_get_uart_parameters_ref.result,
-        &rsp_system_get_uart_parameters.result,
-        sizeof(rsp_system_get_uart_parameters_ref)) != 0)
-    {
-      btUartSettingsChanged = true;
-      setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
-      ezs_cmd_system_set_uart_parameters(
-          rsp_system_get_uart_parameters_ref.baud,
-          rsp_system_get_uart_parameters_ref.autobaud,
-          rsp_system_get_uart_parameters_ref.autocorrect,
-          rsp_system_get_uart_parameters_ref.flow,
-          rsp_system_get_uart_parameters_ref.databits,
-          rsp_system_get_uart_parameters_ref.parity,
-          rsp_system_get_uart_parameters_ref.stopbits,
-          UART_TYPE_PUART);
-      return;
-    }
-  }
-
-  if (btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE3)
-  {
-    btSetCommandsStep++;
-    if (btUartSettingsChanged)
-    {
-      btUartSettingsChanged = false;
-      //TODO resolve reference
-      usart2UartUpdate();
-      setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
-      ezs_cmd_system_ping();
-      return;
-    }
-  }
-
   if (btSetCommandsStep == GET_CONN_PARAMETERS)
   {
+    printf("Get Conn Param\r\n");
     btSetCommandsStep++;
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS);
     ezs_cmd_gap_get_conn_parameters();
@@ -399,6 +451,7 @@ void btSetCommands(void)
         &rsp_gap_get_conn_parameters.result,
         sizeof(rsp_gap_get_conn_parameters_ref)) != 0)
     {
+      printf("Set Conn Param\r\n");
       setExpectedResponse(EZS_IDX_RSP_GAP_SET_CONN_PARAMETERS);
       ezs_cmd_gap_set_conn_parameters(
           rsp_gap_get_conn_parameters_ref.interval,
@@ -413,6 +466,7 @@ void btSetCommands(void)
 
   if (btSetCommandsStep == START_BLE_ADVERTISING)
   {
+    printf("Start BLE Advertising\r\n");
     btSetCommandsStep++;
 
     setExpectedResponse(EZS_IDX_RSP_GAP_START_ADV);
@@ -466,22 +520,22 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     case EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION:
       rsp_system_query_firmware_version = packet->payload.rsp_system_query_firmware_version;
 
-//        printf("RX: rsp_system_query_firmware_version: app=");
-//        printHex32(packet->payload.rsp_system_query_firmware_version.app);
-//        printf(", stack=");
-//        printHex32(packet->payload.rsp_system_query_firmware_version.stack);
-//        printf(", protocol=");
-//        printHex16(packet->payload.rsp_system_query_firmware_version.protocol);
-//        printf(", hardware=");
-//        printHex8(packet->payload.rsp_system_query_firmware_version.hardware);
-//
-//        /* check for protocol version older than v1.3 */
-//        if (packet->payload.rsp_system_query_firmware_version.protocol < 0x0103)
-//        {
-//            printf("\r\n*** PLEASE UPDATE TARGET MODULE TO LATEST VERISON OF EZ-SERIAL FIRMWARE");
-//        }
-//        printf("\r\n");
-        break;
+      printf("RX: rsp_system_query_firmware_version: app=");
+      printHex32(packet->payload.rsp_system_query_firmware_version.app);
+      printf(", stack=");
+      printHex32(packet->payload.rsp_system_query_firmware_version.stack);
+      printf(", protocol=");
+      printHex16(packet->payload.rsp_system_query_firmware_version.protocol);
+      printf(", hardware=");
+      printHex8(packet->payload.rsp_system_query_firmware_version.hardware);
+
+      /* check for protocol version older than v1.3 */
+      if (packet->payload.rsp_system_query_firmware_version.protocol < 0x0103)
+      {
+          printf("\r\n*** PLEASE UPDATE TARGET MODULE TO LATEST VERISON OF EZ-SERIAL FIRMWARE");
+      }
+      printf("\r\n");
+      break;
 
     case EZS_IDX_RSP_SYSTEM_REBOOT:
       if (packet->payload.rsp_gap_set_device_name.result != EZS_ERR_SUCCESS)
@@ -509,11 +563,11 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       break;
 
     case EZS_IDX_EVT_GAP_ADV_STATE_CHANGED:
-//        printf("RX: evt_gap_adv_state_changed: state=");
-//        printHex8(packet->payload.evt_gap_adv_state_changed.state);
-//        printf(", reason=");
-//        printHex8(packet->payload.evt_gap_adv_state_changed.reason);
-//        printf("\r\n");
+      printf("RX: evt_gap_adv_state_changed: state=");
+      printHex8(packet->payload.evt_gap_adv_state_changed.state);
+      printf(", reason=");
+      printHex8(packet->payload.evt_gap_adv_state_changed.reason);
+      printf("\r\n");
       break;
 
     case EZS_IDX_EVT_GAP_SCAN_STATE_CHANGED:
@@ -713,6 +767,18 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       setBtConnectionState(false);
       break;
 
+    case EZS_IDX_EVT_SYSTEM_ERROR:
+      printf("CYW20820 System Error\r\n");
+      break;
+
+    case EZS_IDX_RSP_SYSTEM_FACTORY_RESET:
+      printf("ACK factory reset\r\n");
+      break;
+
+    case EZS_IDX_EVT_SYSTEM_FACTORY_RESET_COMPLETE:
+      printf("Factory reset complete\r\n");
+      break;
+
     /* -------- Shimmer added end -------- */
 
     default:
@@ -743,16 +809,6 @@ void setExpectedResponse(uint16_t idx)
 bool isBtIsInitialised(void)
 {
   return btIsInitialised;
-}
-
-void setBtConnectionState(bool state)
-{
-  btConnected = state;
-}
-
-bool isBtConnected(void)
-{
-  return btConnected;
 }
 
 void setBtCysppState(bool state)

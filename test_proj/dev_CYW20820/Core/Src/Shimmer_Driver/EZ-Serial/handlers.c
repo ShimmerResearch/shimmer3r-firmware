@@ -46,6 +46,7 @@
 
 #include "../EZ-Serial/handlers.h"
 #include "../shimmer_bt_comms.h"
+#include "../../S4_App/s4.h"
 
 uint8_t pending_response = 0;
 //uint8_t timer_active = 0;
@@ -55,8 +56,24 @@ UART_HandleTypeDef *huart;
 
 uint8_t *inBytePtr;
 
+uint8_t bt_txBuf[512];
 uint8_t rxBuf[512];
 uint16_t expectedByteCount;
+
+/* Buffer read / write macros                                                 */
+#define RINGFIFO_RESET(ringFifo)                {ringFifo.rdIdx = ringFifo.wrIdx = 0;}
+#define RINGFIFO_WR(ringFifo, dataIn, mask)     {ringFifo.data[mask & ringFifo.wrIdx++] = (dataIn);}
+#define RINGFIFO_RD(ringFifo, dataOut, mask)    {ringFifo.rdIdx++; dataOut = ringFifo.data[mask & (ringFifo.rdIdx-1)];}
+#define RINGFIFO_EMPTY(ringFifo)                (ringFifo.rdIdx == ringFifo.wrIdx)
+#define RINGFIFO_FULL(ringFifo, mask)           ((mask & ringFifo.rdIdx) == (mask & (ringFifo.wrIdx+1)))
+#define RINGFIFO_COUNT(ringFifo, mask)          (mask & (ringFifo.wrIdx - ringFifo.rdIdx))
+
+volatile RingFifoTx_t gBtTxFifo;
+
+volatile uint8_t messageInProgress;
+
+uint8_t btDataRateTestState;
+uint32_t btDataRateTestCounter;
 
 /*******************************************************************************
 * Interrupt Handler Name: TimerInterruptHandler
@@ -109,9 +126,9 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data) {
 //    UART_SpiUartPutArray((uint8_t *)data, length);
     HAL_StatusTypeDef ret_val;
 
-    ret_val = HAL_UART_Transmit_DMA(huart, (uint8_t *)data, length);
+//    ret_val = HAL_UART_Transmit_DMA(huart, (uint8_t *)data, length);
 //    ret_val = HAL_UART_Transmit(huart, (uint8_t *)data, length, 1500*HAL_GetTickFreq());
-//    ret_val = HAL_UART_Transmit_IT(huart, (uint8_t *)data, length);
+    ret_val = HAL_UART_Transmit_IT(huart, (uint8_t *)data, length);
 
     if(ret_val != HAL_OK){
       printf("DMA problem in appOutput\r\n");
@@ -164,7 +181,7 @@ ezs_input_result_t appInput(uint8_t *inByte, uint16_t timeout) {
 //    return EZS_INPUT_RESULT_NO_DATA;
 }
 
-HAL_StatusTypeDef setDmaRx(uint16_t length) {
+HAL_StatusTypeDef setDmaWaitingForResponse(uint16_t length) {
   expectedByteCount = length;
   HAL_StatusTypeDef status = HAL_UART_Receive_DMA(huart, &rxBuf[0], expectedByteCount);
   return status;
@@ -174,10 +191,10 @@ void setBtUartInstance(UART_HandleTypeDef *huartToUse) {
   huart = huartToUse;
 
   HAL_UART_RegisterCallback(huart, HAL_UART_RX_COMPLETE_CB_ID, btUartDmaRxCpltCallback);
+  HAL_UART_RegisterCallback(huart, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
 //  HAL_DMA_RegisterCallback(huart->, HAL_DMA_XFER_CPLT_CB_ID, btUartDmaRxCpltCallback);
-
-
 }
+
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 {
 //  printf("byte received\r\n");
@@ -235,7 +252,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     {
       // Parse as Shimmer packet
       printf("S1=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
-//      Dma2ConversionDone();
+      Dma2ConversionDone(&rxBuf[i]);
     }
     else
     {
@@ -262,12 +279,174 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
   {
     count = 1;
   }
-  HAL_StatusTypeDef status = setDmaRx(count);
-
+  HAL_StatusTypeDef status = setDmaWaitingForResponse(count);
 }
+
+void btUartTxCpltCallback(UART_HandleTypeDef *huart)
+{
+  sendNextChar();
+}
+
+void sendNextCharIfNotInProgress(void)
+{
+    if (!messageInProgress)
+    {
+        sendNextChar();
+    }
+}
+
+void sendNextChar(void)
+{
+    if (btDataRateTestState)
+    {
+        loadBtTxBufForDataRateTest();
+    }
+
+    if (!RINGFIFO_EMPTY(gBtTxFifo)
+//#if BT_FLUSH_TX_BUF_IF_RN4678_RTS_LOCK_DETECTED
+//            && (rn4678RtsLockDetected || !isBtModuleOverflowPinHigh())
+//#else
+//            && !isBtModuleOverflowPinHigh())
+//#endif
+      )
+    {
+        messageInProgress = 1;
+        /* commenting out while loop as individual bytes are sent based on
+         * interrupt firing so no need to wait here. */
+        //ensure no tx interrupt is pending
+//        while (UCA1IFG & UCTXIFG);
+//        uint8_t bt_txBuf;
+
+//        RINGFIFO_RD(gBtTxFifo, bt_txBuf[0], BT_TX_BUF_MASK);
+//        HAL_StatusTypeDef ret_val = HAL_UART_Transmit_IT(huart, &bt_txBuf[0], 1);
+
+        uint8_t rdIdx = (gBtTxFifo.rdIdx & BT_TX_BUF_MASK);
+        uint8_t wrIdx = (gBtTxFifo.wrIdx & BT_TX_BUF_MASK);
+
+        if (rdIdx < wrIdx)
+        {
+          uint8_t numBytes = wrIdx-rdIdx;
+          HAL_StatusTypeDef ret_val = HAL_UART_Transmit_IT(huart, &gBtTxFifo.data[rdIdx], numBytes);
+          gBtTxFifo.rdIdx += numBytes;
+        }
+        else
+        {
+          uint8_t numBytes = BT_TX_BUF_SIZE-rdIdx;
+          HAL_StatusTypeDef ret_val = HAL_UART_Transmit_IT(huart, &gBtTxFifo.data[rdIdx], numBytes);
+          gBtTxFifo.rdIdx += numBytes;
+        }
+    }
+    else
+    {
+        messageInProgress = 0;              //false
+    }
+}
+
+void clearBtTxBuf(uint8_t isCalledFromMain)
+{
+//    uint16_t i;
+    /* We don't want to be clearing the TX buffer if main is in the middle to
+     * streaming bytes to it */
+//    if (isCalledFromMain)
+//    {
+        RINGFIFO_RESET(gBtTxFifo);
+
+        // Reset all bytes in the buffer -> only used during debugging
+//        for(i=BT_TX_BUF_SIZE-1;i<BT_TX_BUF_SIZE;i--)
+//        {
+//            *(&gBtTxFifo.data[0]+i) = 0xFF;
+//        }
+//    }
+//    else
+//    {
+//        setBtClearTxBufFlag(1);
+//    }
+}
+
+void pushByteToBtTxBuf(uint8_t c)
+{
+    if (!RINGFIFO_FULL(gBtTxFifo, BT_TX_BUF_MASK))
+    {
+        RINGFIFO_WR(gBtTxFifo, c, BT_TX_BUF_MASK);
+    }
+}
+
+void pushBytesToBtTxBuf(uint8_t *buf, uint8_t len)
+{
+//    uint8_t i;
+//    for (i = 0; i < len; i++)
+//    {
+//        pushByteToBtTxBuf(*(buf + i));
+//    }
+
+    /* if enough space at after head, copy it in */
+    uint16_t spaceAfterHead = BT_TX_BUF_SIZE - (gBtTxFifo.wrIdx & BT_TX_BUF_MASK);
+    if (spaceAfterHead > len)
+    {
+        memcpy(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf, len);
+        gBtTxFifo.wrIdx += len;
+    }
+    else
+    {
+        /* Fill from head to end of buf */
+        memcpy(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf, spaceAfterHead);
+        gBtTxFifo.wrIdx += spaceAfterHead;
+
+        /* Fill from start of buf. We already checked above whether there is
+         * enough space in the buf (getSpaceInBtTxBuf()) so we don't need to
+         * worry about the tail position. */
+        uint16_t remaining = len - spaceAfterHead;
+        memcpy(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf + spaceAfterHead, remaining);
+        gBtTxFifo.wrIdx += remaining;
+    }
+}
+
+uint16_t getUsedSpaceInBtTxBuf(void)
+{
+    return RINGFIFO_COUNT(gBtTxFifo, BT_TX_BUF_MASK);
+}
+
+uint16_t getSpaceInBtTxBuf(void)
+{
+    // Minus 1 as we always need to leave 1 empty byte in the rolling buffer
+    return BT_TX_BUF_SIZE - 1 - getUsedSpaceInBtTxBuf();
+}
+
+void setBtDataRateTestState(uint8_t state)
+{
+    btDataRateTestState = state;
+    btDataRateTestCounter = 0;
+}
+
+void loadBtTxBufForDataRateTest(void)
+{
+    uint16_t spaceInTxBuf = getSpaceInBtTxBuf();
+    if (spaceInTxBuf > sizeof(btDataRateTestCounter))
+    {
+        pushBytesToBtTxBuf((uint8_t *) &btDataRateTestCounter, sizeof(btDataRateTestCounter));
+        btDataRateTestCounter++;
+    }
+}
+
 
 //void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 //{
 ////  HAL_UART_Transmit_DMA(&huart1,(uint8_t *) "Message Received!\r\n", sizeof("Message Received!\r\n"));
 ////  HAL_UART_Receive_DMA(&huart1, pRxBuff, 10);
 //}
+
+HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len) {
+//   HAL_StatusTypeDef ret_val;
+//   memcpy(bt_txBuf, buf, len);
+//   ret_val = HAL_UART_Transmit_DMA(huart, bt_txBuf, len);
+
+   pushBytesToBtTxBuf(buf, len);
+
+   sendNextCharIfNotInProgress();
+
+//   ret_val = HAL_UART_Transmit_IT(huart, bt_txBuf, len);
+//   if(ret_val == HAL_OK){
+//      PeriStat_Set(STAT_PERI_BT);
+//   }
+//   return ret_val;
+}

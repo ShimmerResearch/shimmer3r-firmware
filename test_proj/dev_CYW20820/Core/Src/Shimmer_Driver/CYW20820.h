@@ -13,11 +13,17 @@
 //TODO decide if needed and remove it and associated code if not
 #define USE_GET_SET_ADV_PARAM 0
 
-#define BAUD_TO_USE 115200L //1000000L
+#define BAUD_TO_USE 3000000L //3000000L //1000000L //115200L
+#define FLOW_CONTROL 0
 
 enum BT_SET_COMMAND_STAGES
 {
   WAIT_FOR_BOOT,
+  FACTORY_RESET,
+  UPDATE_UART_SETTINGS_STAGE1,
+  UPDATE_UART_SETTINGS_STAGE2,
+  UPDATE_UART_SETTINGS_STAGE3,
+  UPDATE_UART_SETTINGS_STAGE4,
   PING,
   STOP_BLE_ADVERTISING,
   GET_FIRMWARE_VERSION,
@@ -33,9 +39,6 @@ enum BT_SET_COMMAND_STAGES
   GET_ADVERTISING_PARAMETERS,
   SET_ADVERTISING_PARAMETERS,
 #endif
-  UPDATE_UART_SETTINGS_STAGE1,
-  UPDATE_UART_SETTINGS_STAGE2,
-  UPDATE_UART_SETTINGS_STAGE3,
   GET_CONN_PARAMETERS,
   SET_CONN_PARAMETERS,
   START_BLE_ADVERTISING,
@@ -58,8 +61,6 @@ void btInit(void);
 void btSetCommands(void);
 void setExpectedResponse(uint16_t idx);
 bool isBtIsInitialised(void);
-void setBtConnectionState(bool state);
-bool isBtConnected(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
 

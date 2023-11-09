@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Shimmer_Driver/CYW20820.h"
+#include "S4_App/s4.h"
+#include "S4_App/s4_taskList.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,13 +59,14 @@ CRC_HandleTypeDef hcrc;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
-DMA_HandleTypeDef handle_GPDMA1_Channel1;
 DMA_HandleTypeDef handle_GPDMA1_Channel0;
 
 HCD_HandleTypeDef hhcd_USB_OTG_HS;
 
 /* USER CODE BEGIN PV */
 static GPIO_InitTypeDef  GPIO_InitStruct;
+
+STATTypeDef stat;
 
 /* USER CODE END PV */
 
@@ -80,9 +83,13 @@ static void MX_ADC1_Init(void);
 static void MX_MEMORYMAP_Init(void);
 static void MX_USB_OTG_HS_HCD_Init(void);
 static void MX_CRC_Init(void);
+static void MX_FLASH_Init(void);
 /* USER CODE BEGIN PFP */
 
 void usart2UartUpdate(void);
+void setBtConnectionState(bool state);
+bool isBtConnected(void);
+uint8_t setTaskNewBtCmdToProcess(void);
 
 /* USER CODE END PFP */
 
@@ -145,6 +152,7 @@ int main(void)
   MX_MEMORYMAP_Init();
   MX_USB_OTG_HS_HCD_Init();
   MX_CRC_Init();
+  MX_FLASH_Init();
   /* USER CODE BEGIN 2 */
 
   /* -1- Enable GPIO Clock (to be able to program the configuration registers) */
@@ -168,6 +176,9 @@ int main(void)
   /* --------------------------------------------------------------------- */
 
   printf("\r\nBT init start\r\n");
+
+  btCommsProtocolInit(setTaskNewBtCmdToProcess);
+
   HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, GPIO_PIN_SET);
   //TODO remove or update delay when value known
   HAL_Delay(100);
@@ -191,18 +202,20 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
-    /* Insert delay 300 ms */
-    HAL_Delay(300);
+//    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+//    /* Insert delay 300 ms */
+//    HAL_Delay(300);
+//
+//    if (isBtIsInitialised() && isBtConnected())
+//    {
+//      uint8_t c = 'H';
+//      if(handle_GPDMA1_Channel1.State==HAL_DMA_STATE_READY)
+//      {
+//        HAL_UART_Transmit_DMA(&huart2, &c, 1);
+//      }
+//    }
 
-    if (isBtIsInitialised() && isBtConnected())
-    {
-      uint8_t c = 'H';
-      if(handle_GPDMA1_Channel1.State==HAL_DMA_STATE_READY)
-      {
-        HAL_UART_Transmit_DMA(&huart2, &c, 1);
-      }
-    }
+    S4_Task_manage();
 
   }
   /* USER CODE END 3 */
@@ -380,6 +393,35 @@ static void MX_CRC_Init(void)
 }
 
 /**
+  * @brief FLASH Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_FLASH_Init(void)
+{
+
+  /* USER CODE BEGIN FLASH_Init 0 */
+
+  /* USER CODE END FLASH_Init 0 */
+
+  /* USER CODE BEGIN FLASH_Init 1 */
+
+  /* USER CODE END FLASH_Init 1 */
+  if (HAL_FLASH_Unlock() != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_FLASH_Lock() != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN FLASH_Init 2 */
+
+  /* USER CODE END FLASH_Init 2 */
+
+}
+
+/**
   * @brief GPDMA1 Initialization Function
   * @param None
   * @retval None
@@ -397,8 +439,6 @@ static void MX_GPDMA1_Init(void)
   /* GPDMA1 interrupt Init */
     HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
-    HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
 
   /* USER CODE BEGIN GPDMA1_Init 1 */
 
@@ -520,7 +560,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 3000000;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -770,7 +810,7 @@ void usart2UartUpdate(void)
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
+  huart2.Init.HwFlowCtl = FLOW_CONTROL? UART_HWCONTROL_RTS_CTS:UART_HWCONTROL_NONE;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -793,7 +833,7 @@ void usart2UartUpdate(void)
   }
 
   setBtUartInstance(&huart2);
-  setDmaRx(1);
+  setDmaWaitingForResponse(1);
 }
 
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
@@ -826,6 +866,21 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   default:
     break;
   }
+}
+
+void setBtConnectionState(bool state)
+{
+  stat.isBtConnected = state;
+}
+
+bool isBtConnected(void)
+{
+  return stat.isBtConnected;
+}
+
+uint8_t setTaskNewBtCmdToProcess(void)
+{
+  return S4_Task_set(TASK_BTPROCESS);
 }
 
 /* USER CODE END 4 */
