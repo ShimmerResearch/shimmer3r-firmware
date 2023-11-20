@@ -130,6 +130,7 @@ void btInit(void)
   btSetCommandsStart = 1;
   btSetCommandsStep = WAIT_FOR_BOOT;
   btIsInitialised = false;
+  uint8_t initialBaudRate = BAUD_115200;
 
   /* packet pointer for working with response/event data */
 //  ezs_packet_t *packet;
@@ -249,22 +250,26 @@ void btSetCommands(void)
   if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE3)
   {
     btSetCommandsStep++;
-//    if (btUartSettingsChanged)
-//    {
-//      printf("Update UART Stage3\r\n");
-//      btUartSettingsChanged = true;
-//      setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
-//      ezs_fcmd_system_set_uart_parameters(
-//          rsp_system_get_uart_parameters_ref.baud,
-//          rsp_system_get_uart_parameters_ref.autobaud,
-//          rsp_system_get_uart_parameters_ref.autocorrect,
-//          rsp_system_get_uart_parameters_ref.flow,
-//          rsp_system_get_uart_parameters_ref.databits,
-//          rsp_system_get_uart_parameters_ref.parity,
-//          rsp_system_get_uart_parameters_ref.stopbits,
-//          UART_TYPE_PUART);
-//      return;
-//    }
+    if (btUartSettingsChanged)
+    {
+      printf("Update UART Stage3\r\n");
+	     btUartSettingsChanged = true;
+/*      setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
+      ezs_fcmd_system_set_uart_parameters(
+          rsp_system_get_uart_parameters_ref.baud,
+          rsp_system_get_uart_parameters_ref.autobaud,
+          rsp_system_get_uart_parameters_ref.autocorrect,
+          rsp_system_get_uart_parameters_ref.flow,
+          rsp_system_get_uart_parameters_ref.databits,
+          rsp_system_get_uart_parameters_ref.parity,
+          rsp_system_get_uart_parameters_ref.stopbits,
+          UART_TYPE_PUART);*/
+	     setExpectedResponse(EZS_IDX_RSP_SYSTEM_STORE_CONFIG);
+	     ezs_cmd_system_store_config();
+	     setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+	     ezs_cmd_system_reboot();
+      //return;
+    }
   }
 
   if (btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE4)
@@ -275,10 +280,12 @@ void btSetCommands(void)
       printf("Update UART Stage4\r\n");
       btUartSettingsChanged = false;
       //TODO resolve reference
+      usart1UartUpdate();
       usart2UartUpdate();
-//      setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
-//      ezs_cmd_system_ping();
-//      return;
+
+      //setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
+      //ezs_cmd_system_ping();
+     // return;
     }
   }
 
@@ -295,9 +302,9 @@ void btSetCommands(void)
   {
     printf("Stop BLE Advertising\r\n");
     btSetCommandsStep++;
-    setExpectedResponse(EZS_IDX_RSP_GAP_STOP_ADV);
-    ezs_cmd_gap_stop_adv();
-    return;
+    //setExpectedResponse(EZS_IDX_RSP_GAP_STOP_ADV);
+    //ezs_cmd_gap_stop_adv();
+   // return;
   }
 
   if (btSetCommandsStep == GET_FIRMWARE_VERSION)
@@ -306,7 +313,7 @@ void btSetCommands(void)
     btSetCommandsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION);
     ezs_cmd_system_query_firmware_version();
-    return;
+   // return;
   }
 
   if (btSetCommandsStep == GET_BLUETOOTH_ADDRESS)
@@ -538,10 +545,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       break;
 
     case EZS_IDX_RSP_SYSTEM_REBOOT:
-      if (packet->payload.rsp_gap_set_device_name.result != EZS_ERR_SUCCESS)
+      if (packet->payload.rsp_system_reboot.result == EZS_ERR_SUCCESS)
       {
         printf("RX: rsp_system_reboot: result=");
-        printHex16(packet->payload.rsp_system_ping.result);
+        printHex16(packet->payload.rsp_system_reboot.result);
         printf("\r\n");
       }
       break;
@@ -777,6 +784,11 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
     case EZS_IDX_EVT_SYSTEM_FACTORY_RESET_COMPLETE:
       printf("Factory reset complete\r\n");
+      break;
+
+    case EZS_IDX_RSP_SYSTEM_STORE_CONFIG:
+      printf("Store config complete\r\n");
+      printHex16(packet->payload.rsp_system_store_config.result);
       break;
 
     /* -------- Shimmer added end -------- */

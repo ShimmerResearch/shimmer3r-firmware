@@ -13,8 +13,8 @@
 //TODO decide if needed and remove it and associated code if not
 #define USE_GET_SET_ADV_PARAM 0
 
-#define BAUD_TO_USE 3000000L //3000000L //1000000L //115200L
-#define FLOW_CONTROL 0
+#define BAUD_TO_USE 1000000L //1000000L //3000000L //1000000L //115200L
+#define FLOW_CONTROL 1
 
 enum BT_SET_COMMAND_STAGES
 {
@@ -56,7 +56,24 @@ enum BLUETOOTH_UART_TYPE
   UART_TYPE_PUART,
   UART_TYPE_HCI_UART
 };
-
+enum BT_BAUD_RATE
+{
+    BAUD_115200     = 0U, //default
+    BAUD_1200       = 1U,
+    BAUD_2400       = 2U,
+    BAUD_4800       = 3U,
+    BAUD_9600       = 4U,
+    BAUD_19200      = 5U,
+    BAUD_38400      = 6U,
+    BAUD_57600      = 7U,
+    BAUD_230400     = 8U,
+    BAUD_460800     = 9U,
+    BAUD_921600     = 10U,
+    BAUD_1000000    = 11U,
+    BAUD_2000000    = 12U,
+    BAUD_3000000    = 13U,
+    BAUD_NO_CHANGE_NEEDED = 0xFF,
+};
 void btInit(void);
 void btSetCommands(void);
 void setExpectedResponse(uint16_t idx);
