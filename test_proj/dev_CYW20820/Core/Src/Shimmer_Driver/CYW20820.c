@@ -128,7 +128,7 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
 void btInit(void)
 {
   btSetCommandsStart = 1;
-  btSetCommandsStep = WAIT_FOR_BOOT;
+  btSetCommandsStep = PING;
   btIsInitialised = false;
   uint8_t initialBaudRate = BAUD_115200;
 
@@ -194,6 +194,14 @@ void btInit(void)
 //TODO set appropriate values for setDmaRx() calls
 void btSetCommands(void)
 {
+  if (btSetCommandsStep == PING)
+  {
+    printf("Ping\r\n");
+    btSetCommandsStep++;
+    setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
+    ezs_cmd_system_ping();
+    return;
+  }
   if (btSetCommandsStep == WAIT_FOR_BOOT)
   {
     btSetCommandsStep++;
@@ -235,7 +243,7 @@ void btSetCommands(void)
       btUartSettingsChanged = true;
       setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
       ezs_cmd_system_set_uart_parameters(
-          rsp_system_get_uart_parameters_ref.baud,
+          BAUD_TO_USE,
           rsp_system_get_uart_parameters_ref.autobaud,
           rsp_system_get_uart_parameters_ref.autocorrect,
           rsp_system_get_uart_parameters_ref.flow,
@@ -264,10 +272,10 @@ void btSetCommands(void)
           rsp_system_get_uart_parameters_ref.parity,
           rsp_system_get_uart_parameters_ref.stopbits,
           UART_TYPE_PUART);*/
-	     setExpectedResponse(EZS_IDX_RSP_SYSTEM_STORE_CONFIG);
+/*	     setExpectedResponse(EZS_IDX_RSP_SYSTEM_STORE_CONFIG);
 	     ezs_cmd_system_store_config();
 	     setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
-	     ezs_cmd_system_reboot();
+	     ezs_cmd_system_reboot();*/
       //return;
     }
   }
@@ -283,20 +291,20 @@ void btSetCommands(void)
       usart1UartUpdate();
       usart2UartUpdate();
 
-      //setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
-      //ezs_cmd_system_ping();
-     // return;
+      setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
+      ezs_cmd_system_ping();
+      return;
     }
   }
 
-  if (btSetCommandsStep == PING)
+/*  if (btSetCommandsStep == PING)
   {
     printf("Ping\r\n");
     btSetCommandsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
     ezs_cmd_system_ping();
     return;
-  }
+  }*/
 
   if (btSetCommandsStep == STOP_BLE_ADVERTISING)
   {
@@ -313,7 +321,7 @@ void btSetCommands(void)
     btSetCommandsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION);
     ezs_cmd_system_query_firmware_version();
-   // return;
+    return;
   }
 
   if (btSetCommandsStep == GET_BLUETOOTH_ADDRESS)
@@ -338,6 +346,7 @@ void btSetCommands(void)
     advNameBle[advNameMacIdStartIdx+1] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]) & 0x0F);
     advNameBle[advNameMacIdStartIdx+2] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5] >> 4) & 0x0F);
     advNameBle[advNameMacIdStartIdx+3] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]) & 0x0F);
+    return;
   }
 
   if (btSetCommandsStep == GET_DEVICE_NAME_BT)
