@@ -3810,6 +3810,7 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
 ezs_packet_t *ezs_parseSingleByte(uint8_t b);
 uint16_t getEzsRemainingByteCount(void);
 uint16_t getEzsPacketLength(void);
+ezs_input_result_t getLastEzsByteParseResult(void);
 
 /**************************** Shimmer End *************************************/
 

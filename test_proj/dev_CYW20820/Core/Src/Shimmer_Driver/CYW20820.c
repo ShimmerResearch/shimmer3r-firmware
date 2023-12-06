@@ -20,6 +20,8 @@
 #define printHex32(VARIABLE)    printHex((uint8_t *)&VARIABLE, 4, 1, 0)
 #define printHexMac(VARIABLE)   printHex((uint8_t *)&VARIABLE, 6, 1, ':')
 
+#define ENABLE_DEBUG_PRINTS 0
+
 /*
  * Index: {1,2,3,4,5,6,7,8}
  * BR:    {-2,0,2,4,6,8,10,12},
@@ -136,6 +138,8 @@ void btInit(void)
 
 //  printf("\r\nEZ-Serial API communication demo started\r\n");
 
+  resetEzsPendingResponse();
+
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
 
@@ -249,36 +253,54 @@ void btSetCommands(void)
   if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE3)
   {
     btSetCommandsStep++;
-//    if (btUartSettingsChanged)
-//    {
-//      printf("Update UART Stage3\r\n");
-//      btUartSettingsChanged = true;
-//      setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
-//      ezs_fcmd_system_set_uart_parameters(
-//          rsp_system_get_uart_parameters_ref.baud,
-//          rsp_system_get_uart_parameters_ref.autobaud,
-//          rsp_system_get_uart_parameters_ref.autocorrect,
-//          rsp_system_get_uart_parameters_ref.flow,
-//          rsp_system_get_uart_parameters_ref.databits,
-//          rsp_system_get_uart_parameters_ref.parity,
-//          rsp_system_get_uart_parameters_ref.stopbits,
-//          UART_TYPE_PUART);
-//      return;
-//    }
+    if (btUartSettingsChanged)
+    {
+      printf("Update UART Stage3\r\n");
+      //TODO resolve reference
+      usart2UartUpdate(rsp_system_get_uart_parameters_ref.baud);
+    }
   }
 
   if (btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE4)
   {
+    if (btUartSettingsChanged)
+    {
+      /* Experimentally it was found that a delay was needed after the baud rate
+       * is updated and before more commands are sent to the module, otherwise
+       * the module reboots. We can't call HAL_delay here as it's being called
+       * from an interrupt so this is done back in main.c */
+      printf("Update UART Stage4\r\n");
+      return;
+    }
+    else
+    {
+      btSetCommandsStep++;
+    }
+  }
+
+  if (btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE5)
+  {
     btSetCommandsStep++;
     if (btUartSettingsChanged)
     {
-      printf("Update UART Stage4\r\n");
+      printf("Update UART Stage5\r\n");
+
+      setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
+      ezs_fcmd_system_set_uart_parameters(
+          rsp_system_get_uart_parameters_ref.baud,
+          rsp_system_get_uart_parameters_ref.autobaud,
+          rsp_system_get_uart_parameters_ref.autocorrect,
+          rsp_system_get_uart_parameters_ref.flow,
+          rsp_system_get_uart_parameters_ref.databits,
+          rsp_system_get_uart_parameters_ref.parity,
+          rsp_system_get_uart_parameters_ref.stopbits,
+          UART_TYPE_PUART);
+
+//      setExpectedResponse(EZS_IDX_RSP_SYSTEM_STORE_CONFIG);
+//      ezs_cmd_system_store_config();
+
       btUartSettingsChanged = false;
-      //TODO resolve reference
-      usart2UartUpdate();
-//      setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
-//      ezs_cmd_system_ping();
-//      return;
+      return;
     }
   }
 
@@ -493,6 +515,17 @@ void btSetCommands(void)
 
 }
 
+uint8_t isEzsBaudRateDelayPending(void)
+{
+  return btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE4
+      && btUartSettingsChanged;
+}
+
+void incrementBtSetCommandsStep(void)
+{
+  btSetCommandsStep++;
+}
+
 void ezsHandler(ezs_packet_t *packet)
 {
 
@@ -505,6 +538,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
   {
     case EZS_IDX_RSP_SYSTEM_PING:
       rsp_system_ping = packet->payload.rsp_system_ping;
+#if ENABLE_DEBUG_PRINTS
       if (packet->payload.rsp_system_ping.result != EZS_ERR_SUCCESS)
       {
         printf("RX: rsp_system_ping: result=");
@@ -515,11 +549,13 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
         printHex16(packet->payload.rsp_system_ping.fraction);
         printf("\r\n");
       }
+#endif
       break;
 
     case EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION:
       rsp_system_query_firmware_version = packet->payload.rsp_system_query_firmware_version;
 
+#if ENABLE_DEBUG_PRINTS
       printf("RX: rsp_system_query_firmware_version: app=");
       printHex32(packet->payload.rsp_system_query_firmware_version.app);
       printf(", stack=");
@@ -535,18 +571,22 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
           printf("\r\n*** PLEASE UPDATE TARGET MODULE TO LATEST VERISON OF EZ-SERIAL FIRMWARE");
       }
       printf("\r\n");
+#endif
       break;
 
     case EZS_IDX_RSP_SYSTEM_REBOOT:
-      if (packet->payload.rsp_gap_set_device_name.result != EZS_ERR_SUCCESS)
+#if ENABLE_DEBUG_PRINTS
+      if (packet->payload.rsp_system_reboot.result != EZS_ERR_SUCCESS)
       {
         printf("RX: rsp_system_reboot: result=");
-        printHex16(packet->payload.rsp_system_ping.result);
+        printHex16(packet->payload.rsp_system_reboot.result);
         printf("\r\n");
       }
+#endif
       break;
 
     case EZS_IDX_EVT_SYSTEM_BOOT:
+#if ENABLE_DEBUG_PRINTS
       printf("RX: evt_system_boot: app=");
       printHex32(packet->payload.evt_system_boot.app);
       printf(", stack=");
@@ -560,70 +600,85 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printf(", address=");
       printHexMac(packet->payload.evt_system_boot.address);
       printf("\r\n");
+#endif
       break;
 
     case EZS_IDX_EVT_GAP_ADV_STATE_CHANGED:
+#if ENABLE_DEBUG_PRINTS
       printf("RX: evt_gap_adv_state_changed: state=");
       printHex8(packet->payload.evt_gap_adv_state_changed.state);
       printf(", reason=");
       printHex8(packet->payload.evt_gap_adv_state_changed.reason);
       printf("\r\n");
+#endif
       break;
 
     case EZS_IDX_EVT_GAP_SCAN_STATE_CHANGED:
+#if ENABLE_DEBUG_PRINTS
       printf("RX: evt_gap_scan_state_changed: state=");
       printHex8(packet->payload.evt_gap_scan_state_changed.state);
       printf(", reason=");
       printHex8(packet->payload.evt_gap_scan_state_changed.reason);
       printf("\r\n");
+#endif
       break;
 
     case EZS_IDX_EVT_GAP_CONNECTED:
-        printf("RX: evt_gap_connected: conn_handle=");
-        printHex8(packet->payload.evt_gap_connected.conn_handle);
-        printf(", address=");
-        printHexMac(packet->payload.evt_gap_connected.address);
-        printf(", type=");
-        printHex8(packet->payload.evt_gap_connected.type);
-        printf(", interval=");
-        printHex16(packet->payload.evt_gap_connected.interval);
-        printf(", slave_latency=");
-        printHex16(packet->payload.evt_gap_connected.slave_latency);
-        printf(", supervision_timeout=");
-        printHex16(packet->payload.evt_gap_connected.supervision_timeout);
-        printf(", bond=");
-        printHex8(packet->payload.evt_gap_connected.bond);
-        printf("\r\n");
+#if ENABLE_DEBUG_PRINTS
+      printf("RX: evt_gap_connected: conn_handle=");
+      printHex8(packet->payload.evt_gap_connected.conn_handle);
+      printf(", address=");
+      printHexMac(packet->payload.evt_gap_connected.address);
+      printf(", type=");
+      printHex8(packet->payload.evt_gap_connected.type);
+      printf(", interval=");
+      printHex16(packet->payload.evt_gap_connected.interval);
+      printf(", slave_latency=");
+      printHex16(packet->payload.evt_gap_connected.slave_latency);
+      printf(", supervision_timeout=");
+      printHex16(packet->payload.evt_gap_connected.supervision_timeout);
+      printf(", bond=");
+      printHex8(packet->payload.evt_gap_connected.bond);
+      printf("\r\n");
+#endif
         break;
 
     case EZS_IDX_EVT_GAP_DISCONNECTED:
-        printf("RX: evt_gap_disconnected: conn_handle=");
-        printHex8(packet->payload.evt_gap_disconnected.conn_handle);
-        printf(", reason=");
-        printHex16(packet->payload.evt_gap_disconnected.reason);
-        printf("\r\n");
+#if ENABLE_DEBUG_PRINTS
+      printf("RX: evt_gap_disconnected: conn_handle=");
+      printHex8(packet->payload.evt_gap_disconnected.conn_handle);
+      printf(", reason=");
+      printHex16(packet->payload.evt_gap_disconnected.reason);
+      printf("\r\n");
+#endif
         break;
 
     case EZS_IDX_EVT_P_CYSPP_STATUS:
+#if ENABLE_DEBUG_PRINTS
       printf("RX: evt_p_cyspp_status: status=");
       printHex8(packet->payload.evt_p_cyspp_status.status);
       printf("\r\n");
+#endif
       break;
 
 
     /* -------- Shimmer added start -------- */
     case EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS:
       rsp_system_get_bluetooth_address = packet->payload.rsp_system_get_bluetooth_address;
+#if ENABLE_DEBUG_PRINTS
 //      printf("RX: rsp_system_query_firmware_version: Address=");
 //      printHexMac(packet->payload.rsp_system_get_bluetooth_address.address);
+#endif
       break;
 
     case EZS_IDX_RSP_GAP_SET_DEVICE_NAME:
+#if ENABLE_DEBUG_PRINTS
       if (packet->payload.rsp_gap_set_device_name.result != EZS_ERR_SUCCESS)
       {
         printf("RX: rsp_gap_set_device_name: Result=");
         printHex16(packet->payload.rsp_gap_set_device_name.result);
       }
+#endif
       break;
 
     case EZS_IDX_RSP_GAP_GET_DEVICE_NAME:
@@ -637,8 +692,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
           rsp_gap_get_device_name_bt = packet->payload.rsp_gap_get_device_name;
       }
 
+#if ENABLE_DEBUG_PRINTS
 //      printf("RX: rsp_gap_get_device_name: name=");
 //      printHexMac(packet->payload.rsp_gap_get_device_name.name);
+#endif
       break;
 
     case EZS_IDX_RSP_SYSTEM_GET_TX_POWER:
@@ -646,68 +703,85 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       break;
 
     case EZS_IDX_RSP_SYSTEM_SET_TX_POWER:
+#if ENABLE_DEBUG_PRINTS
       if (packet->payload.rsp_system_set_tx_power.result != EZS_ERR_SUCCESS)
       {
         printf("RX: rsp_system_set_tx_power: Result=");
         printHex16(packet->payload.rsp_system_set_tx_power.result);
         printf("\r\n");
       }
+#endif
       break;
 
     case EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS:
       rsp_system_get_uart_parameters = packet->payload.rsp_system_get_uart_parameters;
+#if ENABLE_DEBUG_PRINTS
 //      printf("RX: rsp_gap_set_device_appearance: Result=");
 //      printHex16(packet->payload.rsp_gap_set_device_appearance.result);
 //      printf("\r\n");
+#endif
       break;
 
     case EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS:
       rsp_gap_get_conn_parameters = packet->payload.rsp_gap_get_conn_parameters;
+#if ENABLE_DEBUG_PRINTS
 //      printf("\r\n");
+#endif
       break;
 
     case EZS_IDX_RSP_GAP_SET_CONN_PARAMETERS:
+#if ENABLE_DEBUG_PRINTS
       if (packet->payload.rsp_gap_set_conn_parameters.result != EZS_ERR_SUCCESS)
       {
         printf("RX: rsp_gap_set_conn_parameters: Result=");
         printHex16(packet->payload.rsp_gap_set_conn_parameters.result);
         printf("\r\n");
       }
+#endif
       break;
 
     case EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS:
+#if ENABLE_DEBUG_PRINTS
       if (packet->payload.rsp_gap_set_device_appearance.result != EZS_ERR_SUCCESS)
       {
         printf("RX: rsp_gap_set_device_appearance: Result=");
         printHex16(packet->payload.rsp_gap_set_device_appearance.result);
         printf("\r\n");
       }
+#endif
       break;
 
     case EZS_IDX_RSP_GAP_SET_DEVICE_APPEARANCE:
+#if ENABLE_DEBUG_PRINTS
       printf("RX: rsp_gap_set_device_appearance: Result=");
       printHex16(packet->payload.rsp_gap_set_device_appearance.result);
       printf("\r\n");
+#endif
       break;
 
     case EZS_IDX_RSP_GAP_SET_ADV_PARAMETERS:
+#if ENABLE_DEBUG_PRINTS
       if (packet->payload.rsp_gap_set_adv_parameters.result != EZS_ERR_SUCCESS)
       {
         printf("RX: rsp_gap_set_adv_parameters: Result=");
         printHex16(packet->payload.rsp_gap_set_adv_parameters.result);
         printf("\r\n");
       }
+#endif
       break;
 
     case EZS_IDX_RSP_GAP_GET_ADV_PARAMETERS:
 #if USE_GET_SET_ADV_PARAM
       rsp_gap_get_adv_parameters = packet->payload.rsp_gap_get_adv_parameters;
 #endif
+#if ENABLE_DEBUG_PRINTS
 //      printHex16(packet->payload.rsp_gap_get_adv_parameters.result);
 //      printf("\r\n");
+#endif
       break;
 
     case EZS_IDX_EVT_GAP_CONNECTION_UPDATED:
+#if ENABLE_DEBUG_PRINTS
       printf("RX: evt_gap_connection_updated: conn_handle=");
       printHex8(packet->payload.evt_gap_connection_updated.conn_handle);
       printf(", interval=");
@@ -717,35 +791,43 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printf(", supervision_timeout=");
       printHex16(packet->payload.evt_gap_connection_updated.supervision_timeout);
       printf("\r\n");
+#endif
       break;
 
     case EZS_IDX_RSP_GAP_START_ADV:
+#if ENABLE_DEBUG_PRINTS
       if (packet->payload.rsp_gap_start_adv.result != EZS_ERR_SUCCESS)
       {
         printf("RX: rsp_gap_start_adv: Result=");
         printHex16(packet->payload.rsp_gap_start_adv.result);
         printf("\r\n");
       }
+#endif
       break;
 
     case EZS_IDX_RSP_GAP_STOP_ADV:
+#if ENABLE_DEBUG_PRINTS
       if (packet->payload.rsp_gap_stop_adv.result != EZS_ERR_SUCCESS)
       {
         printf("RX: rsp_gap_stop_adv: Result=");
         printHex16(packet->payload.rsp_gap_stop_adv.result);
         printf("\r\n");
       }
+#endif
       break;
 
     case EZS_IDX_EVT_SMP_ENCRYPTION_STATUS:
+#if ENABLE_DEBUG_PRINTS
 //      printf("RX: evt_smp_encryption_status: conn_handle=");
 //      printHex8(packet->payload.evt_smp_encryption_status.conn_handle);
 //      printf(", status=");
 //      printHex8(packet->payload.evt_smp_encryption_status.status);
 //      printf("\r\n");
+#endif
       break;
 
     case EZS_IDX_EVT_BT_CONNECTED:
+#if ENABLE_DEBUG_PRINTS
 //      printf("RX: evt_bt_connected: conn_handle=");
 //      printHex8(packet->payload.evt_bt_connected.conn_handle);
 //      printf(", Address=");
@@ -753,40 +835,58 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 //      printf(", Type=");
 //      printHex8(packet->payload.evt_bt_connected.type);
 //      printf("\r\n");
+#endif
 
       setBtConnectionState(true);
       break;
 
     case EZS_IDX_EVT_BT_DISCONNECTED:
+#if ENABLE_DEBUG_PRINTS
 //      printf("RX: evt_bt_disconnected: conn_handle=");
 //      printHex8(packet->payload.evt_bt_disconnected.conn_handle);
 //      printf(", Reason=");
 //      printHex16(packet->payload.evt_bt_disconnected.reason);
 //      printf("\r\n");
+#endif
 
       setBtConnectionState(false);
       break;
 
     case EZS_IDX_EVT_SYSTEM_ERROR:
+#if ENABLE_DEBUG_PRINTS
       printf("CYW20820 System Error\r\n");
+#endif
       break;
 
     case EZS_IDX_RSP_SYSTEM_FACTORY_RESET:
+#if ENABLE_DEBUG_PRINTS
       printf("ACK factory reset\r\n");
+#endif
       break;
 
     case EZS_IDX_EVT_SYSTEM_FACTORY_RESET_COMPLETE:
+#if ENABLE_DEBUG_PRINTS
       printf("Factory reset complete\r\n");
+#endif
+      break;
+
+    case EZS_IDX_RSP_SYSTEM_STORE_CONFIG:
+#if ENABLE_DEBUG_PRINTS
+      printf("Store config complete\r\n");
+      printHex16(packet->payload.rsp_system_store_config.result);
+#endif
       break;
 
     /* -------- Shimmer added end -------- */
 
     default:
+#if ENABLE_DEBUG_PRINTS
       printf("RX: unhandled packet: ");
       printHex8(packet->header.group);
       printf("/");
       printHex8(packet->header.id);
       printf("\r\n");
+#endif
       break;
   }
 

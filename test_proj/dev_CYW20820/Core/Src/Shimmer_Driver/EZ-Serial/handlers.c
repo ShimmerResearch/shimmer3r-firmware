@@ -183,7 +183,15 @@ ezs_input_result_t appInput(uint8_t *inByte, uint16_t timeout) {
 
 HAL_StatusTypeDef setDmaWaitingForResponse(uint16_t length) {
   expectedByteCount = length;
+//  HAL_StatusTypeDef status = HAL_UART_AbortReceive(huart);
+
   HAL_StatusTypeDef status = HAL_UART_Receive_DMA(huart, &rxBuf[0], expectedByteCount);
+
+  if(status!=HAL_OK)
+  {
+    printf("setDmaWaitingForResponse fault\r\n");
+  }
+
   return status;
 }
 
@@ -257,19 +265,33 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     else
     {
       ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
-      /* If complete EZ Serial packet parsed, send to handler */
       if (result != 0)
       {
+        /* If complete EZ Serial packet parsed, send to handler */
         ezsHandlerShimmer(result);
-        count = getEzsRemainingByteCount();
       }
       else
       {
-        /* If packet incomplete but byte wasn't recognised as part of an EZ
-         * Serial packet, send to Shimmer parser */
-        if (getEzsPacketLength() == 0)
+        ezs_input_result_t result = getLastEzsByteParseResult();
+
+        if (result == EZS_INPUT_RESULT_IN_PROGRESS)
         {
-          printf("S2=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
+//          if (getEzsPacketLength() != 0)
+//          {
+//            count = getEzsRemainingByteCount();
+//          }
+          count = getEzsRemainingByteCount();
+        }
+
+        // TODO get working
+        else if (result == EZS_INPUT_RESULT_BYTE_IGNORED)
+        {
+          /* If packet incomplete but byte wasn't recognised as part of an EZ
+           * Serial packet, send to Shimmer parser */
+          if (getEzsPacketLength() == 0)
+          {
+            printf("S2=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
+          }
         }
       }
     }
@@ -450,3 +472,9 @@ HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len) {
 //   }
 //   return ret_val;
 }
+
+void resetEzsPendingResponse(void)
+{
+  pending_response = 0;
+}
+

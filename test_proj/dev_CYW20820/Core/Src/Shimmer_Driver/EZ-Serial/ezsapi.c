@@ -327,6 +327,9 @@ ezs_output_result_t (*EZSerial_HardwareOutput)(uint16_t length, const uint8_t *d
 *******************************************************************************/
 ezs_input_result_t (*EZSerial_HardwareInput)(uint8_t *inByte, uint16_t timeout);
 
+/**************************** Shimmer Start ***********************************/
+ezs_input_result_t lastEzsByteParseResult;
+/**************************** Shimmer End ***********************************/
 
 /**
  * @brief Initialize EZ-Serial API parser/generator and host I/O handlers
@@ -747,6 +750,7 @@ ezs_packet_t *ezs_parseSingleByte(uint8_t b)
 
     /* byte read, send it to parser */
   ezs_input_result_t result = EZSerial_Parse(b);
+  lastEzsByteParseResult = result;
 
 //    /* check for completion and type */
 //    if (result == EZS_INPUT_RESULT_PACKET_COMPLETE &&
@@ -791,6 +795,10 @@ uint16_t getEzsPacketLength(void)
   return ezs_rx_packet_length;
 }
 
+ezs_input_result_t getLastEzsByteParseResult(void)
+{
+  return lastEzsByteParseResult;
+}
 /**************************** Shimmer End *************************************/
 
 /* [] END OF FILE */

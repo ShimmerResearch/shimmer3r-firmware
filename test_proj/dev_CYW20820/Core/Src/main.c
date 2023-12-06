@@ -86,7 +86,8 @@ static void MX_CRC_Init(void);
 static void MX_FLASH_Init(void);
 /* USER CODE BEGIN PFP */
 
-void usart2UartUpdate(void);
+void btInitialise(void);
+void usart2UartUpdate(uint32_t baudRate);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
 uint8_t setTaskNewBtCmdToProcess(void);
@@ -178,20 +179,7 @@ int main(void)
   printf("\r\nBT init start\r\n");
 
   btCommsProtocolInit(setTaskNewBtCmdToProcess);
-
-  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, GPIO_PIN_SET);
-  //TODO remove or update delay when value known
-  HAL_Delay(100);
-  btInit();
-
-  while (!isBtIsInitialised())
-  {
-    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
-    /* Insert delay 300 ms */
-    HAL_Delay(100);
-  }
-  printf("BT init end\r\n");
-
+  btInitialise();
 
   /* USER CODE END 2 */
 
@@ -560,7 +548,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 3000000;
+  huart1.Init.BaudRate = 1000000;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -608,7 +596,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 1000000;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -795,17 +783,80 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void btInitialise(void)
+{
+  uint8_t reset_cnt = 20U; // 20 * 100ms = 2s per baud rate attempt
+  uint8_t failCount = 0U;
+
+  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, GPIO_PIN_SET);
+  //TODO remove or update delay when value known
+  HAL_Delay(100);
+  printf("Attempting 1M Baud\r\n");
+  btInit();
+
+  while (!isBtIsInitialised())
+  {
+    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+    /* Insert delay 100 ms */
+    HAL_Delay(100);
+
+    if (isEzsBaudRateDelayPending())
+    {
+      /* Delay or arbitrary value. As a guide, the EZ-Serial user guide states that it takes ~150 ms for a "chipset reset and boot process". */
+      HAL_Delay(500);
+      incrementBtSetCommandsStep();
+      btSetCommands();
+    }
+
+    if (!(reset_cnt--))
+    {
+      failCount++;
+
+      if (failCount <= 3)
+      {
+        uint32_t baudToTry;
+        if (failCount == 1)
+        {
+          baudToTry = 115200;
+        }
+        else if (failCount == 2)
+        {
+          baudToTry = 460800;
+        }
+        else if (failCount == 3)
+        {
+          baudToTry = 2000000;
+        }
+
+        printf("Attempting %lu Baud\r\n", baudToTry);
+        usart2UartUpdate(baudToTry);
+      }
+      else
+      {
+        printf("BT init failed\r\n");
+        // software POR reset
+        NVIC_SystemReset();
+      }
+      btInit();
+
+      reset_cnt = 50U;
+    }
+  }
+  printf("BT init end\r\n");
+}
+
 /**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
   */
-void usart2UartUpdate(void)
+void usart2UartUpdate(uint32_t baudRate)
 {
-  HAL_UART_DeInit(&huart2);
+  HAL_StatusTypeDef status = HAL_UART_Abort(&huart2);
+  status = HAL_UART_DeInit(&huart2);
 
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = BAUD_TO_USE;
+  huart2.Init.BaudRate = baudRate;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -833,7 +884,6 @@ void usart2UartUpdate(void)
   }
 
   setBtUartInstance(&huart2);
-  setDmaWaitingForResponse(1);
 }
 
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)

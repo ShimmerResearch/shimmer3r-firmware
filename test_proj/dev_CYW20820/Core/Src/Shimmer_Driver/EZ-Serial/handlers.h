@@ -85,9 +85,13 @@ uint16_t getSpaceInBtTxBuf(void);
 void setBtDataRateTestState(uint8_t state);
 void loadBtTxBufForDataRateTest(void);
 
+uint8_t isEzsBaudRateDelayPending(void);
+void incrementBtSetCommandsStep(void);
+
 extern void ezsHandler(ezs_packet_t *packet) __attribute__((weak));
 
 HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len);
+void resetEzsPendingResponse(void);
 
 #endif /* HANDLERS_H */
 
