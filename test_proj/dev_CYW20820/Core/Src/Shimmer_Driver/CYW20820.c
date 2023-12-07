@@ -20,7 +20,7 @@
 #define printHex32(VARIABLE)    printHex((uint8_t *)&VARIABLE, 4, 1, 0)
 #define printHexMac(VARIABLE)   printHex((uint8_t *)&VARIABLE, 6, 1, ':')
 
-#define ENABLE_DEBUG_PRINTS 0
+#define ENABLE_DEBUG_PRINTS 1
 
 /*
  * Index: {1,2,3,4,5,6,7,8}
@@ -73,17 +73,17 @@ static ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters_ref = {
 };
 
 static ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters_ref = {
-    .result = 0,
-    .mode = 2,
-    .type = 3,
-    .channels = 7,
-    .high_interval = 50, //(Default=48), units of 0.625 ms. 50 = 31.24ms
-    .high_duration = 0, // (Default=30), 0 = infinite advertising
-    .low_interval = 50, //(Default=2048), units of 0.625 ms. 50 = 31.24ms
-    .low_duration = 0, //(Default=60), 0 = infinite advertising
-    .flags = 0,
-    .direct_addr = {{0}},
-    .direct_address_type = 0
+    .result = 0,          // (Default=)
+    .mode = 2,            // (Default=)
+    .type = 3,            // (Default=)
+    .channels = 7,        // (Default=)
+    .high_interval = 48,  // (Default=48), units of 0.625 ms. 50 = 31.24ms
+    .high_duration = 30,   // (Default=30), 0 = infinite advertising
+    .low_interval = 2048,   // (Default=2048), units of 0.625 ms. 50 = 31.24ms
+    .low_duration = 60,    // (Default=60), 0 = infinite advertising
+    .flags = 0,           // (Default=)
+    .direct_addr = {{0}}, // (Default=)
+    .direct_address_type = 0 // (Default=)
 };
 
 uint8_t btSetCommandsStart, btSetCommandsStep;
@@ -344,15 +344,15 @@ void btSetCommands(void)
   {
     printf("Update local advertising name\r\n");
     btSetCommandsStep++;
-    advNameBt[advNameMacIdStartIdx] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4] >> 4) & 0x0F);
-    advNameBt[advNameMacIdStartIdx+1] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]) & 0x0F);
-    advNameBt[advNameMacIdStartIdx+2] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5] >> 4) & 0x0F);
-    advNameBt[advNameMacIdStartIdx+3] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]) & 0x0F);
+    advNameBt[advNameMacIdStartIdx] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
+    advNameBt[advNameMacIdStartIdx+1] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
+    advNameBt[advNameMacIdStartIdx+2] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
+    advNameBt[advNameMacIdStartIdx+3] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
 
-    advNameBle[advNameMacIdStartIdx] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4] >> 4) & 0x0F);
-    advNameBle[advNameMacIdStartIdx+1] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[4]) & 0x0F);
-    advNameBle[advNameMacIdStartIdx+2] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5] >> 4) & 0x0F);
-    advNameBle[advNameMacIdStartIdx+3] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[5]) & 0x0F);
+    advNameBle[advNameMacIdStartIdx] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
+    advNameBle[advNameMacIdStartIdx+1] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
+    advNameBle[advNameMacIdStartIdx+2] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
+    advNameBle[advNameMacIdStartIdx+3] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
   }
 
   if (btSetCommandsStep == GET_DEVICE_NAME_BT)
@@ -426,6 +426,7 @@ void btSetCommands(void)
   if(btSetCommandsStep == GET_ADVERTISING_PARAMETERS)
   {
     btSetCommandsStep++;
+    printf("Get Advertising Parameters\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_ADV_PARAMETERS);
     ezs_cmd_gap_get_adv_parameters();
     return;
@@ -439,6 +440,7 @@ void btSetCommands(void)
         &rsp_gap_get_adv_parameters.result,
         sizeof(rsp_gap_get_adv_parameters_ref)) != 0)
     {
+      printf("Set Advertising Parameters\r\n");
       setExpectedResponse(EZS_IDX_RSP_GAP_SET_ADV_PARAMETERS);
       ezs_fcmd_gap_set_adv_parameters(
           rsp_gap_get_adv_parameters_ref.mode,
@@ -458,8 +460,8 @@ void btSetCommands(void)
 
   if (btSetCommandsStep == GET_CONN_PARAMETERS)
   {
-    printf("Get Conn Param\r\n");
     btSetCommandsStep++;
+    printf("Get Conn Param\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS);
     ezs_cmd_gap_get_conn_parameters();
     return;
@@ -486,11 +488,16 @@ void btSetCommands(void)
     }
   }
 
-  if (btSetCommandsStep == START_BLE_ADVERTISING)
+  if (btSetCommandsStep == START_BLE_ADVERTISING_STAGE1)
   {
-    printf("Start BLE Advertising\r\n");
-    btSetCommandsStep++;
+    printf("Start BLE Advertising Stage1\r\n");
+    return;
+  }
 
+  if (btSetCommandsStep == START_BLE_ADVERTISING_STAGE2)
+  {
+    btSetCommandsStep++;
+    printf("Start BLE Advertising Stage2\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_START_ADV);
     ezs_cmd_gap_start_adv(
         rsp_gap_get_adv_parameters_ref.mode,
@@ -519,6 +526,11 @@ uint8_t isEzsBaudRateDelayPending(void)
 {
   return btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE4
       && btUartSettingsChanged;
+}
+
+uint8_t isEzsStartAdvertisingDelayPending(void)
+{
+  return btSetCommandsStep == START_BLE_ADVERTISING_STAGE1;
 }
 
 void incrementBtSetCommandsStep(void)

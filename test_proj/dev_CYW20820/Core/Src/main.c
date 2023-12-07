@@ -800,7 +800,7 @@ void btInitialise(void)
     /* Insert delay 100 ms */
     HAL_Delay(100);
 
-    if (isEzsBaudRateDelayPending())
+    if (isEzsBaudRateDelayPending() || isEzsStartAdvertisingDelayPending())
     {
       /* Delay or arbitrary value. As a guide, the EZ-Serial user guide states that it takes ~150 ms for a "chipset reset and boot process". */
       HAL_Delay(500);
