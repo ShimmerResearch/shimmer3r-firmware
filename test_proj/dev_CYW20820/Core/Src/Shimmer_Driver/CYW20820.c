@@ -77,10 +77,10 @@ static ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters_ref = {
     .mode = 2,            // (Default=)
     .type = 3,            // (Default=)
     .channels = 7,        // (Default=)
-    .high_interval = 48,  // (Default=48), units of 0.625 ms. 50 = 31.24ms
-    .high_duration = 30,   // (Default=30), 0 = infinite advertising
-    .low_interval = 2048,   // (Default=2048), units of 0.625 ms. 50 = 31.24ms
-    .low_duration = 60,    // (Default=60), 0 = infinite advertising
+    .high_interval = 50,  // (Default=48), units of 0.625 ms. 50 = 31.24ms
+    .high_duration = 0,   // (Default=30), 0 = infinite advertising
+    .low_interval = 50,   // (Default=2048), units of 0.625 ms. 50 = 31.24ms
+    .low_duration = 0,    // (Default=60), 0 = infinite advertising
     .flags = 0,           // (Default=)
     .direct_addr = {{0}}, // (Default=)
     .direct_address_type = 0 // (Default=)
