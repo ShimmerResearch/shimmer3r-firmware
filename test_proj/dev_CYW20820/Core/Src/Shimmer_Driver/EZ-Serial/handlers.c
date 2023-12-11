@@ -187,6 +187,8 @@ HAL_StatusTypeDef setDmaWaitingForResponse(uint16_t length) {
 
   HAL_StatusTypeDef status = HAL_UART_Receive_DMA(huart, &rxBuf[0], expectedByteCount);
 
+//  printf("%d\r\n", length);
+
   if(status!=HAL_OK)
   {
     printf("setDmaWaitingForResponse fault\r\n");
@@ -261,6 +263,8 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       // Parse as Shimmer packet
       printf("S1=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
       Dma2ConversionDone(&rxBuf[i]);
+      //TODO get working
+//      count = getShimmerRemainingByteCount();
     }
     else
     {

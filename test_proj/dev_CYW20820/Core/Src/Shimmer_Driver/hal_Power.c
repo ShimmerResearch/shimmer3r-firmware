@@ -131,9 +131,15 @@ void Power_GpioAnalogConfig (void)
 
 }
 void Power_SleepUntilInterrupt(void) {
-   SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
-   __WFI();
-   SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+  //Original
+//   SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+//   __WFI();
+//   SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+
+   //Suggestion 1
+   HAL_SuspendTick();
+   HAL_PWR_EnterSLEEPMode(0, PWR_SLEEPENTRY_WFI);
+   HAL_ResumeTick();
 }
 
 void Power_StopUntilInterrupt(void) {
