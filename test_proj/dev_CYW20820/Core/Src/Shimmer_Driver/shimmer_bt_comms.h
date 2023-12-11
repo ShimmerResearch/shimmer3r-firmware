@@ -229,4 +229,7 @@ COMMS_CRC_MODE getBtCrcMode(void);
 
 uint8_t isWaitingForArgs(void);
 
+void setDmaWaitingForResponse(uint16_t count);
+uint16_t getBtRxShimmerCommsWaitByteCount(void);
+
 #endif /* SHIMMER3_COMMON_SOURCE_BLUETOOTH_SD_SHIMMER_BT_COMMS_H_ */

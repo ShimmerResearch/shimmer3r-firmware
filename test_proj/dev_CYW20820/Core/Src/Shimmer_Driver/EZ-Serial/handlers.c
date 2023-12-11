@@ -181,7 +181,7 @@ ezs_input_result_t appInput(uint8_t *inByte, uint16_t timeout) {
 //    return EZS_INPUT_RESULT_NO_DATA;
 }
 
-HAL_StatusTypeDef setDmaWaitingForResponse(uint16_t length) {
+HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length) {
   expectedByteCount = length;
 //  HAL_StatusTypeDef status = HAL_UART_AbortReceive(huart);
 
@@ -263,8 +263,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       // Parse as Shimmer packet
       printf("S1=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
       Dma2ConversionDone(&rxBuf[i]);
-      //TODO get working
-//      count = getShimmerRemainingByteCount();
+      count = getBtRxShimmerCommsWaitByteCount();
     }
     else
     {
@@ -288,7 +287,9 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
         }
 
         // TODO get working
-        else if (result == EZS_INPUT_RESULT_BYTE_IGNORED)
+        else if (result == EZS_INPUT_RESULT_BUFFER_OVERFLOW
+            || result == EZS_INPUT_RESULT_UNHANDLED_PACKET
+            || result == EZS_INPUT_RESULT_INVALID_CHECKSUM)
         {
           /* If packet incomplete but byte wasn't recognised as part of an EZ
            * Serial packet, send to Shimmer parser */
@@ -305,7 +306,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
   {
     count = 1;
   }
-  HAL_StatusTypeDef status = setDmaWaitingForResponse(count);
+  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(count);
 }
 
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)

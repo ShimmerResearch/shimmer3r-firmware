@@ -67,7 +67,7 @@ void appHandler(ezs_packet_t *packet);
 ezs_output_result_t appOutput(uint16_t length, const uint8_t *data);
 ezs_input_result_t appInput(uint8_t *inByte, uint16_t timeout);
 
-HAL_StatusTypeDef setDmaWaitingForResponse(uint16_t length);
+HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length);
 void setBtUartInstance(UART_HandleTypeDef *huartToUse);
 
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart);

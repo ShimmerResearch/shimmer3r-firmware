@@ -143,7 +143,7 @@ void btInit(void)
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
 
-  HAL_StatusTypeDef status = setDmaWaitingForResponse(1);
+  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
 
   btSetCommands();
 

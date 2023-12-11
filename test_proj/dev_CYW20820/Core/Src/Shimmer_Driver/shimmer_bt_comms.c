@@ -81,6 +81,8 @@ uint8_t inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream, enableS
 uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
 uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
 
+uint16_t btRxWaitByteCount = 0;
+
 #if BT_DMA_USED_FOR_RX
 /* Return of 1 brings MSP out of low-power mode */
 //uint8_t Dma2ConversionDone(void)
@@ -3309,3 +3311,14 @@ void saveLocalTime(void)
 {
 
 }
+
+void setDmaWaitingForResponse(uint16_t count)
+{
+  btRxWaitByteCount = count;
+}
+
+uint16_t getBtRxShimmerCommsWaitByteCount(void)
+{
+  return btRxWaitByteCount;
+}
+
