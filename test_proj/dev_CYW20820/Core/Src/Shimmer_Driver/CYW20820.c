@@ -14,6 +14,9 @@
 #include "EZ-Serial/ezsapi.h"
 #include "EZ-Serial/handlers.h"
 
+//TODO remove the need for this include
+#include "main.h"
+
 /* convenience functions for pretty-printing binary data as zero-padded hexadecimal */
 #define printHex8(VARIABLE)     printHex((uint8_t *)&VARIABLE, 1, 1, 0)
 #define printHex16(VARIABLE)    printHex((uint8_t *)&VARIABLE, 2, 1, 0)
@@ -659,6 +662,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printHex8(packet->payload.evt_gap_connected.bond);
       printf("\r\n");
 #endif
+      setBtConnectionState(true);
         break;
 
     case EZS_IDX_EVT_GAP_DISCONNECTED:
@@ -669,6 +673,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printHex16(packet->payload.evt_gap_disconnected.reason);
       printf("\r\n");
 #endif
+      setBtConnectionState(false);
         break;
 
     case EZS_IDX_EVT_P_CYSPP_STATUS:
@@ -677,6 +682,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printHex8(packet->payload.evt_p_cyspp_status.status);
       printf("\r\n");
 #endif
+      setBtCysppState(packet->payload.evt_p_cyspp_status.status);
       break;
 
 
@@ -846,27 +852,29 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
     case EZS_IDX_EVT_BT_CONNECTED:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-//      printf("RX: evt_bt_connected: conn_handle=");
-//      printHex8(packet->payload.evt_bt_connected.conn_handle);
-//      printf(", Address=");
-//      printHexMac(packet->payload.evt_bt_connected.address);
-//      printf(", Type=");
-//      printHex8(packet->payload.evt_bt_connected.type);
-//      printf("\r\n");
+      printf("RX: evt_bt_connected: conn_handle=");
+      printHex8(packet->payload.evt_bt_connected.conn_handle);
+      printf(", Address=");
+      printHexMac(packet->payload.evt_bt_connected.address);
+      printf(", Type=");
+      printHex8(packet->payload.evt_bt_connected.type);
+      printf("\r\n");
 #endif
 
       setBtConnectionState(true);
+      setBtCysppState(true);
       break;
 
     case EZS_IDX_EVT_BT_DISCONNECTED:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-//      printf("RX: evt_bt_disconnected: conn_handle=");
-//      printHex8(packet->payload.evt_bt_disconnected.conn_handle);
-//      printf(", Reason=");
-//      printHex16(packet->payload.evt_bt_disconnected.reason);
-//      printf("\r\n");
+      printf("RX: evt_bt_disconnected: conn_handle=");
+      printHex8(packet->payload.evt_bt_disconnected.conn_handle);
+      printf(", Reason=");
+      printHex16(packet->payload.evt_bt_disconnected.reason);
+      printf("\r\n");
 #endif
 
+      setBtCysppState(false);
       setBtConnectionState(false);
       break;
 
@@ -932,6 +940,15 @@ bool isBtIsInitialised(void)
 void setBtCysppState(bool state)
 {
   btCysppState = state;
+  //TODO move out of this driver file
+  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, btCysppState? GPIO_PIN_SET:GPIO_PIN_RESET);
+
+  //TODO move out of this driver file and make common with implementation in shimmer_bt_comms.c
+  if(!state && getBtDataRateTestState())
+  {
+    setBtDataRateTestState(0);
+    clearBtTxBuf(1);
+  }
 }
 
 bool getBtCysppState(void)

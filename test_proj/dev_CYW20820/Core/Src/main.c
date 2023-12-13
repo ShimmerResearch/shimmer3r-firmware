@@ -601,7 +601,7 @@ static void MX_USART2_UART_Init(void)
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -861,7 +861,13 @@ void usart2UartUpdate(uint32_t baudRate)
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = FLOW_CONTROL? UART_HWCONTROL_RTS_CTS:UART_HWCONTROL_NONE;
+  if(baudRate==115200){
+    huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  }
+  else
+  {
+    huart2.Init.HwFlowCtl = FLOW_CONTROL? UART_HWCONTROL_RTS_CTS:UART_HWCONTROL_NONE;
+  }
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -890,12 +896,10 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin) {
   case BT_CONNECTION_Pin:
-    setBtConnectionState(false);
-    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+//    setBtConnectionState(false);
     break;
   case BT_CYSPP_Pin:
-    setBtCysppState(false);
-    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+//    setBtCysppState(false);
     break;
   default:
     break;
@@ -906,12 +910,10 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin) {
   case BT_CONNECTION_Pin:
-    setBtConnectionState(true);
-    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
+//    setBtConnectionState(true);
     break;
   case BT_CYSPP_Pin:
-    setBtCysppState(true);
-    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+//    setBtCysppState(true);
     break;
   default:
     break;
@@ -921,6 +923,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 void setBtConnectionState(bool state)
 {
   stat.isBtConnected = state;
+  HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
 }
 
 bool isBtConnected(void)

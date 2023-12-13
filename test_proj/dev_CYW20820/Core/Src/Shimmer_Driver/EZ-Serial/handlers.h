@@ -83,6 +83,7 @@ uint16_t getUsedSpaceInBtTxBuf(void);
 uint16_t getSpaceInBtTxBuf(void);
 
 void setBtDataRateTestState(uint8_t state);
+uint8_t getBtDataRateTestState(void);
 void loadBtTxBufForDataRateTest(void);
 
 uint8_t isEzsBaudRateDelayPending(void);

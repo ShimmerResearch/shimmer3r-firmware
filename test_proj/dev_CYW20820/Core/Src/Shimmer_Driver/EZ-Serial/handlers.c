@@ -445,6 +445,11 @@ void setBtDataRateTestState(uint8_t state)
     btDataRateTestCounter = 0;
 }
 
+uint8_t getBtDataRateTestState(void)
+{
+  return btDataRateTestState;
+}
+
 void loadBtTxBufForDataRateTest(void)
 {
     uint16_t spaceInTxBuf = getSpaceInBtTxBuf();
