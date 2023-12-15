@@ -455,8 +455,9 @@ void loadBtTxBufForDataRateTest(void)
     uint16_t spaceInTxBuf = getSpaceInBtTxBuf();
     if (spaceInTxBuf > sizeof(btDataRateTestCounter))
     {
-        pushBytesToBtTxBuf((uint8_t *) &btDataRateTestCounter, sizeof(btDataRateTestCounter));
-        btDataRateTestCounter++;
+      pushByteToBtTxBuf(DATA_RATE_TEST_RESPONSE);
+      pushBytesToBtTxBuf((uint8_t *) &btDataRateTestCounter, sizeof(btDataRateTestCounter));
+      btDataRateTestCounter++;
     }
 }
 

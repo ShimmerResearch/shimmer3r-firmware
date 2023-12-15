@@ -1002,7 +1002,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case SET_CONFIGTIME_COMMAND:
                 case SET_CRC_COMMAND:
                 case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
-                case DATA_RATE_TEST:
+                case SET_DATA_RATE_TEST:
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
@@ -1954,7 +1954,7 @@ uint8_t processShimmerBtCmd(void)
     case SET_NSHIMMER_COMMAND:
     case SET_CRC_COMMAND:
     case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE
-    case DATA_RATE_TEST:
+    case SET_DATA_RATE_TEST:
         if(numBytesInBtRxBufWhenLastProcessed>=(1U+1U))
         {
             readActionAndArgBytes(1U);
@@ -2226,7 +2226,7 @@ uint8_t isShimmerBtCmd(uint8_t data)
     case SET_CONFIGTIME_COMMAND:
     case SET_CRC_COMMAND:
     case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
-    case DATA_RATE_TEST:
+    case SET_DATA_RATE_TEST:
     case SET_SAMPLING_RATE_COMMAND:
     case GET_DAUGHTER_CARD_ID_COMMAND:
     case SET_SENSORS_COMMAND:
@@ -2835,7 +2835,7 @@ void BtUart_processCmd(void) {
 //   case GET_BT_VERSION_STR_COMMAND:
 //       btVerResponse = 1;
 //       break;
-   case DATA_RATE_TEST:
+   case SET_DATA_RATE_TEST:
        /* Stop test before ACK is sent */
        if (btArgs[0] == 0)
        {
