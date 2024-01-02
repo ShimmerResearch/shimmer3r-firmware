@@ -19,7 +19,6 @@
 enum BT_SET_COMMAND_STAGES
 {
   WAIT_FOR_BOOT,
-  FACTORY_RESET,
   UPDATE_UART_SETTINGS_STAGE1,
   UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3,
@@ -48,6 +47,17 @@ enum BT_SET_COMMAND_STAGES
   FINISH
 };
 
+enum BT_FACTORY_RESET_COMMAND_STAGES
+{
+  FR_WAIT_FOR_BOOT,
+  FACTORY_RESET,
+  FR_WAIT_FOR_REBOOT_AFTER_FR,
+  FR_UPDATE_UART,
+  FR_PING,
+  FR_RESET_BT_MAC_ID,
+  FR_FINISH
+};
+
 enum BLUETOOTH_DEVICE_TYPE
 {
   DEVICE_TYPE_BLE,
@@ -61,9 +71,14 @@ enum BLUETOOTH_UART_TYPE
 };
 
 void btInit(void);
-void btSetCommands(void);
+void btInitCommands(void);
+void btFactoryResetInit(void);
+void btFactoryResetCommands(void);
 void setExpectedResponse(uint16_t idx);
 bool isBtIsInitialised(void);
+bool isBtIsFactoryResetted(void);
+bool isBtInitCmdsRunning(void);
+bool isBtFactoryResetCmdsRunning(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
 void setBtLpMode(bool allowLowPower);

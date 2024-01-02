@@ -87,7 +87,9 @@ uint8_t getBtDataRateTestState(void);
 void loadBtTxBufForDataRateTest(void);
 
 uint8_t isEzsBaudRateDelayPending(void);
-void incrementBtSetCommandsStep(void);
+uint8_t isEzsFactoryRebootDelayPending(void);
+void incrementBtInitCmdsStep(void);
+void incrementBtFactoryResetCmdsStep(void);
 
 extern void ezsHandler(ezs_packet_t *packet) __attribute__((weak));
 

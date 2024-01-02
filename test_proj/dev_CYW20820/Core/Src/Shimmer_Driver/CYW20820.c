@@ -89,9 +89,9 @@ static ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters_ref = {
     .direct_address_type = 0 // (Default=)
 };
 
-uint8_t btSetCommandsStart, btSetCommandsStep;
+uint8_t btInitCmdsRunning, btInitCmdsStep, btFactoryResetCmdsRunning, btFactoryResetCmdsStep;
 uint8_t btNameTypeBeingRead;
-bool btIsInitialised, btCysppState, btUartSettingsChanged;
+bool btIsInitialised, btIsFactoryResetted,  btCysppState, btUartSettingsChanged;
 
 static char hexdigit2int(uint8_t xd)
 {
@@ -132,8 +132,8 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
 
 void btInit(void)
 {
-  btSetCommandsStart = 1;
-  btSetCommandsStep = WAIT_FOR_BOOT;
+  btInitCmdsRunning = 1;
+  btInitCmdsStep = WAIT_FOR_BOOT;
   btIsInitialised = false;
 
   /* packet pointer for working with response/event data */
@@ -148,7 +148,7 @@ void btInit(void)
 
   HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
 
-  btSetCommands();
+  btInitCommands();
 
 //  if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_query_firmware_version(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) == 0)
 //  {
@@ -198,37 +198,28 @@ void btInit(void)
 
 }
 //TODO set appropriate values for setDmaRx() calls
-void btSetCommands(void)
+void btInitCommands(void)
 {
-  if (btSetCommandsStep == WAIT_FOR_BOOT)
+  if (btInitCmdsStep == WAIT_FOR_BOOT)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
 //    // TODO will be needed once we can turn the module on/off
 //    setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
 //    return;
   }
 
-  if(btSetCommandsStep == FACTORY_RESET)
+  if(btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)
   {
-    btSetCommandsStep++;
-//    printf("Factory Reset\r\n");
-//    setExpectedResponse(EZS_IDX_EVT_SYSTEM_FACTORY_RESET_COMPLETE);
-//    ezs_cmd_system_factory_reset();
-//    return;
-  }
-
-  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE1)
-  {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     printf("Update UART Stage1\r\n");
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS);
     ezs_cmd_system_get_uart_parameters(UART_TYPE_PUART);
     return;
   }
 
-  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE2)
+  if(btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE2)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     printf("Current Baud=%lu\r\n", rsp_system_get_uart_parameters.baud);
     btUartSettingsChanged = false;
     // No need to set if the current settings are correct.
@@ -253,18 +244,18 @@ void btSetCommands(void)
     }
   }
 
-  if(btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE3)
+  if(btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE3)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     if (btUartSettingsChanged)
     {
       printf("Update UART Stage3\r\n");
       //TODO resolve reference
-      usart2UartUpdate(rsp_system_get_uart_parameters_ref.baud);
+      usart2UartUpdate(rsp_system_get_uart_parameters_ref.baud, rsp_system_get_uart_parameters_ref.flow);
     }
   }
 
-  if (btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE4)
+  if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE4)
   {
     if (btUartSettingsChanged)
     {
@@ -277,13 +268,13 @@ void btSetCommands(void)
     }
     else
     {
-      btSetCommandsStep++;
+      btInitCmdsStep++;
     }
   }
 
-  if (btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE5)
+  if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE5)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     if (btUartSettingsChanged)
     {
       printf("Update UART Stage5\r\n");
@@ -307,55 +298,55 @@ void btSetCommands(void)
     }
   }
 
-  if (btSetCommandsStep == PING)
+  if (btInitCmdsStep == PING)
   {
     printf("Ping\r\n");
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
     ezs_cmd_system_ping();
     return;
   }
 
-  if (btSetCommandsStep == STOP_BLE_ADVERTISING_STAGE1)
+  if (btInitCmdsStep == STOP_BLE_ADVERTISING_STAGE1)
   {
     printf("Stop BLE Advertising\r\n");
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     setExpectedResponse(EZS_IDX_RSP_GAP_STOP_ADV);
     ezs_cmd_gap_stop_adv();
     return;
   }
 
-  if (btSetCommandsStep == STOP_BLE_ADVERTISING_STAGE2)
+  if (btInitCmdsStep == STOP_BLE_ADVERTISING_STAGE2)
   {
     printf("Wait for BLE stop\r\n");
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
     return;
   }
 
 
-  if (btSetCommandsStep == GET_FIRMWARE_VERSION)
+  if (btInitCmdsStep == GET_FIRMWARE_VERSION)
   {
     printf("Get FW Version\r\n");
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION);
     ezs_cmd_system_query_firmware_version();
     return;
   }
 
-  if (btSetCommandsStep == GET_BLUETOOTH_ADDRESS)
+  if (btInitCmdsStep == GET_BLUETOOTH_ADDRESS)
   {
     printf("Get BT address\r\n");
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS);
     ezs_cmd_system_get_bluetooth_address();
     return;
   }
 
-  if (btSetCommandsStep == UPDATE_LOCAL_ADVERTISING_NAMES)
+  if (btInitCmdsStep == UPDATE_LOCAL_ADVERTISING_NAMES)
   {
     printf("Update local advertising name\r\n");
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     advNameBt[advNameMacIdStartIdx] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
     advNameBt[advNameMacIdStartIdx+1] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
     advNameBt[advNameMacIdStartIdx+2] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
@@ -367,19 +358,19 @@ void btSetCommands(void)
     advNameBle[advNameMacIdStartIdx+3] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
   }
 
-  if (btSetCommandsStep == GET_DEVICE_NAME_BT)
+  if (btInitCmdsStep == GET_DEVICE_NAME_BT)
   {
     printf("Get Device Name BT\r\n");
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     btNameTypeBeingRead = DEVICE_TYPE_BT;
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_DEVICE_NAME);
     ezs_cmd_gap_get_device_name(DEVICE_TYPE_BT);
     return;
   }
 
-  if (btSetCommandsStep == SET_DEVICE_NAME_BT)
+  if (btInitCmdsStep == SET_DEVICE_NAME_BT)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     if (!strstr((char*) &rsp_gap_get_device_name_bt.name.data[0], &advNameBt[1]))
     {
       printf("Set Device Name BT\r\n");
@@ -389,10 +380,10 @@ void btSetCommands(void)
     }
   }
 
-  if (btSetCommandsStep == GET_DEVICE_NAME_BLE)
+  if (btInitCmdsStep == GET_DEVICE_NAME_BLE)
   {
     printf("Get Device Name BLE\r\n");
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     btNameTypeBeingRead = DEVICE_TYPE_BLE;
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_DEVICE_NAME);
     ezs_cmd_gap_get_device_name(DEVICE_TYPE_BLE);
@@ -400,9 +391,9 @@ void btSetCommands(void)
   }
 
   //TODO BLE advertising name won't update on-the-fly, need to either stop adv before name change and then start again or use F cmd and reset module.
-  if (btSetCommandsStep == SET_DEVICE_NAME_BLE)
+  if (btInitCmdsStep == SET_DEVICE_NAME_BLE)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     if (!strstr((char*) &rsp_gap_get_device_name_ble.name.data[0], &advNameBle[1]))
     {
       printf("Set Device Name BLE\r\n");
@@ -412,18 +403,18 @@ void btSetCommands(void)
     }
   }
 
-  if(btSetCommandsStep == GET_TX_POWER)
+  if(btInitCmdsStep == GET_TX_POWER)
   {
     printf("Get TX Power\r\n");
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_TX_POWER);
     ezs_cmd_system_get_tx_power();
     return;
   }
 
-  if(btSetCommandsStep == SET_TX_POWER)
+  if(btInitCmdsStep == SET_TX_POWER)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     if (rsp_system_get_tx_power.power != BT_TX_POWER)
     {
       printf("Set TX Power\r\n");
@@ -435,18 +426,18 @@ void btSetCommands(void)
   }
 
 #if USE_GET_SET_ADV_PARAM
-  if(btSetCommandsStep == GET_ADVERTISING_PARAMETERS)
+  if(btInitCmdsStep == GET_ADVERTISING_PARAMETERS)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     printf("Get Advertising Parameters\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_ADV_PARAMETERS);
     ezs_cmd_gap_get_adv_parameters();
     return;
   }
 
-  if(btSetCommandsStep == SET_ADVERTISING_PARAMETERS)
+  if(btInitCmdsStep == SET_ADVERTISING_PARAMETERS)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
 
     if (memcmp(&rsp_gap_get_adv_parameters_ref.result,
         &rsp_gap_get_adv_parameters.result,
@@ -470,18 +461,18 @@ void btSetCommands(void)
   }
 #endif
 
-  if (btSetCommandsStep == GET_CONN_PARAMETERS)
+  if (btInitCmdsStep == GET_CONN_PARAMETERS)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     printf("Get Conn Param\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS);
     ezs_cmd_gap_get_conn_parameters();
     return;
   }
 
-  if (btSetCommandsStep == SET_CONN_PARAMETERS)
+  if (btInitCmdsStep == SET_CONN_PARAMETERS)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     // No need to set if the current settings are correct.
     if (memcmp(&rsp_gap_get_conn_parameters_ref.result,
         &rsp_gap_get_conn_parameters.result,
@@ -500,9 +491,9 @@ void btSetCommands(void)
     }
   }
 
-  if (btSetCommandsStep == START_BLE_ADVERTISING_STAGE1)
+  if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     printf("Start BLE Advertising\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_START_ADV);
     ezs_cmd_gap_start_adv(
@@ -519,32 +510,118 @@ void btSetCommands(void)
     return;
   }
 
-  if (btSetCommandsStep == START_BLE_ADVERTISING_STAGE2)
+  if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE2)
   {
-    btSetCommandsStep++;
+    btInitCmdsStep++;
     printf("Wait for BLE start\r\n");
     setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
     return;
   }
 
-  if (btSetCommandsStep == FINISH)
+  if (btInitCmdsStep == FINISH)
   {
-    btSetCommandsStart = 0;
+    btInitCmdsRunning = 0;
     btIsInitialised = true;
     return;
   }
 
 }
 
-uint8_t isEzsBaudRateDelayPending(void)
+void btFactoryResetInit(void)
 {
-  return btSetCommandsStep == UPDATE_UART_SETTINGS_STAGE4
-      && btUartSettingsChanged;
+  btFactoryResetCmdsRunning = 1;
+  btFactoryResetCmdsStep = FR_WAIT_FOR_BOOT;
+  btIsFactoryResetted = false;
+
+  resetEzsPendingResponse();
+
+  /* initialize EZ-Serial interface and callbacks */
+  EZSerial_Init(appHandler, appOutput, appInput);
+
+  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+
+  btFactoryResetCommands();
 }
 
-void incrementBtSetCommandsStep(void)
+void btFactoryResetCommands(void)
 {
-  btSetCommandsStep++;
+  if (btFactoryResetCmdsStep == FR_WAIT_FOR_BOOT)
+  {
+    btFactoryResetCmdsStep++;
+//    // TODO will be needed once we can turn the module on/off
+//    setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+//    return;
+  }
+
+  if (btFactoryResetCmdsStep == FACTORY_RESET)
+  {
+    btFactoryResetCmdsStep++;
+    printf("Factory Reset\r\n");
+    setExpectedResponse(EZS_IDX_EVT_SYSTEM_FACTORY_RESET_COMPLETE);
+    ezs_cmd_system_factory_reset();
+    return;
+  }
+
+  if(btFactoryResetCmdsStep == FR_WAIT_FOR_REBOOT_AFTER_FR)
+  {
+    return;
+  }
+
+  if(btFactoryResetCmdsStep == FR_UPDATE_UART)
+  {
+    btFactoryResetCmdsStep++;
+    printf("Update UART to factory default\r\n");
+    //TODO resolve reference
+    usart2UartUpdate(115200, 0);
+    HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+  }
+
+  if (btFactoryResetCmdsStep == FR_PING)
+  {
+    printf("Ping\r\n");
+    btFactoryResetCmdsStep++;
+    setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
+    ezs_cmd_system_ping();
+    return;
+  }
+
+  if (btFactoryResetCmdsStep == FR_RESET_BT_MAC_ID)
+  {
+    btFactoryResetCmdsStep++;
+//    printf("Reset BT Address\r\n");
+//    setExpectedResponse(EZS_IDX_CMD_SYSTEM_SET_BLUETOOTH_ADDRESS);
+//    macaddr_t addr;
+//    memset(addr.addr, 0, sizeof(addr.addr));
+//    ezs_cmd_system_set_bluetooth_address(&addr);
+//    return;
+  }
+
+  if (btFactoryResetCmdsStep == FR_FINISH)
+  {
+    btFactoryResetCmdsRunning = 0;
+    btIsFactoryResetted = true;
+    return;
+  }
+}
+
+uint8_t isEzsBaudRateDelayPending(void)
+{
+  return btInitCmdsRunning && btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE4 && btUartSettingsChanged;
+}
+
+uint8_t isEzsFactoryRebootDelayPending(void)
+{
+  return btFactoryResetCmdsRunning && btFactoryResetCmdsStep == FR_WAIT_FOR_REBOOT_AFTER_FR;
+}
+
+void incrementBtInitCmdsStep(void)
+{
+  btInitCmdsStep++;
+}
+
+void incrementBtFactoryResetCmdsStep(void)
+{
+  btFactoryResetCmdsStep++;
 }
 
 void ezsHandler(ezs_packet_t *packet)
@@ -663,7 +740,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printf("\r\n");
 #endif
       setBtConnectionState(true);
-        break;
+      break;
 
     case EZS_IDX_EVT_GAP_DISCONNECTED:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
@@ -674,7 +751,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printf("\r\n");
 #endif
       setBtConnectionState(false);
-        break;
+      break;
 
     case EZS_IDX_EVT_P_CYSPP_STATUS:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
@@ -918,12 +995,20 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
 //  printf("\r\n");
 
-  if (btSetCommandsStart && packet->tbl_index == expectedResponseIdx)
+  if ((btInitCmdsRunning || btFactoryResetCmdsRunning) && packet->tbl_index == expectedResponseIdx)
   {
     /* Set the expected response to be invalid */
     setExpectedResponse(EZS_IDX_EVT_MAX);
-    /* Continue with the next set command */
-    btSetCommands();
+    if (btInitCmdsRunning)
+    {
+      /* Continue with the next set command */
+      btInitCommands();
+    }
+    else if (btFactoryResetCmdsRunning)
+    {
+      /* Continue with the next set command */
+      btFactoryResetCommands();
+    }
   }
 }
 
@@ -935,6 +1020,21 @@ void setExpectedResponse(uint16_t idx)
 bool isBtIsInitialised(void)
 {
   return btIsInitialised;
+}
+
+bool isBtIsFactoryResetted(void)
+{
+  return btIsFactoryResetted;
+}
+
+bool isBtInitCmdsRunning(void)
+{
+  return btInitCmdsRunning;
+}
+
+bool isBtFactoryResetCmdsRunning(void)
+{
+  return btFactoryResetCmdsRunning;
 }
 
 void setBtCysppState(bool state)
@@ -961,4 +1061,8 @@ void setBtLpMode(bool allowLowPower)
   //TODO get working and update default LP_MODE pin state appropriately in CubeMX
   //TODO move out of this driver file
 //  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, allowLowPower ? GPIO_PIN_RESET : GPIO_PIN_SET);
+
+  //TODO remove or update delay when value known
+//  HAL_Delay(100);
+
 }

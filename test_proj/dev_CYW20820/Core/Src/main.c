@@ -87,7 +87,9 @@ static void MX_FLASH_Init(void);
 /* USER CODE BEGIN PFP */
 
 void btInitialise(void);
-void usart2UartUpdate(uint32_t baudRate);
+void btFactoryResetViaFw(void);
+void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
+void usart2UartUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
 uint8_t setTaskNewBtCmdToProcess(void);
@@ -176,9 +178,8 @@ int main(void)
 
   /* --------------------------------------------------------------------- */
 
-  printf("\r\nBT init start\r\n");
-
   btCommsProtocolInit(setTaskNewBtCmdToProcess);
+//  btFactoryResetViaFw();
   btInitialise();
 
   /* USER CODE END 2 */
@@ -759,16 +760,46 @@ static void MX_GPIO_Init(void)
 
 void btInitialise(void)
 {
-  uint8_t reset_cnt = 20U; // 20 * 100ms = 2s per baud rate attempt
+  printf("\r\nBT init start\r\n");
+
+  // 20 * 100ms = 2s per baud rate attempt
+  btCommWithDiffBaudRates(true, 20U);
+
+  printf("BT init end\r\n");
+}
+
+void btFactoryResetViaFw(void)
+{
+  printf("\r\nBT factory reset start\r\n");
+
+  // 50 * 100ms = 5s per baud rate attempt
+  btCommWithDiffBaudRates(false, 50U);
+
+  // Abort transfer operations to release UART for subsequent requests.
+  HAL_StatusTypeDef status = HAL_UART_Abort(&huart2);
+
+  printf("BT factory reset end\r\n");
+}
+
+void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
+{
   uint8_t failCount = 0U;
 
   setBtLpMode(false);
-  //TODO remove or update delay when value known
-  HAL_Delay(100);
-  printf("Attempting 1M Baud\r\n");
-  btInit();
 
-  while (!isBtIsInitialised())
+  printf("Attempting 1M Baud\r\n");
+
+  if (isInit)
+  {
+    btInit();
+  }
+  else
+  {
+    btFactoryResetInit();
+  }
+
+  while ((isBtInitCmdsRunning() && !isBtIsInitialised())
+      || (isBtFactoryResetCmdsRunning() && !isBtIsFactoryResetted()))
   {
     HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
     /* Insert delay 100 ms */
@@ -778,8 +809,15 @@ void btInitialise(void)
     {
       /* Delay or arbitrary value. As a guide, the EZ-Serial user guide states that it takes ~150 ms for a "chipset reset and boot process". */
       HAL_Delay(500);
-      incrementBtSetCommandsStep();
-      btSetCommands();
+      incrementBtInitCmdsStep();
+      btInitCommands();
+    }
+    else if (isEzsFactoryRebootDelayPending())
+    {
+      /* Experimentally found to be ~ 2.75s. */
+      HAL_Delay(3000);
+      incrementBtFactoryResetCmdsStep();
+      btFactoryResetCommands();
     }
 
     if (!(reset_cnt--))
@@ -803,21 +841,28 @@ void btInitialise(void)
         }
 
         printf("Attempting %lu Baud\r\n", baudToTry);
-        usart2UartUpdate(baudToTry);
+        usart2UartUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
       }
       else
       {
-        printf("BT init failed\r\n");
+        printf("Operation failed, performing system reset\r\n");
         // software POR reset
         NVIC_SystemReset();
       }
-      btInit();
+
+      if (isInit)
+      {
+        btInit();
+      }
+      else
+      {
+        btFactoryResetInit();
+      }
 
       reset_cnt = 50U;
     }
   }
   setBtLpMode(true);
-  printf("BT init end\r\n");
 }
 
 /**
@@ -825,7 +870,7 @@ void btInitialise(void)
   * @param None
   * @retval None
   */
-void usart2UartUpdate(uint32_t baudRate)
+void usart2UartUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
 {
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart2);
   status = HAL_UART_DeInit(&huart2);
@@ -836,13 +881,7 @@ void usart2UartUpdate(uint32_t baudRate)
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
-  if(baudRate==115200){
-    huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  }
-  else
-  {
-    huart2.Init.HwFlowCtl = FLOW_CONTROL? UART_HWCONTROL_RTS_CTS:UART_HWCONTROL_NONE;
-  }
+  huart2.Init.HwFlowCtl = hwFlowCtrl? UART_HWCONTROL_RTS_CTS:UART_HWCONTROL_NONE;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
