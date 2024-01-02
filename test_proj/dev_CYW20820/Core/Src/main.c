@@ -687,10 +687,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BT_CP_ROLE_GPIO_Port, BT_CP_ROLE_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOE, BT_LP_MODE_Pin|BT_CP_ROLE_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
@@ -699,30 +696,20 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(USART_RTS_SW_GPIO_Port, USART_RTS_SW_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, UCPD_DBn_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : BT_LP_MODE_Pin */
-  GPIO_InitStruct.Pin = BT_LP_MODE_Pin;
+  /*Configure GPIO pins : BT_LP_MODE_Pin BT_CP_ROLE_Pin */
+  GPIO_InitStruct.Pin = BT_LP_MODE_Pin|BT_CP_ROLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(BT_LP_MODE_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BT_CYSPP_Pin BT_CONNECTION_Pin */
   GPIO_InitStruct.Pin = BT_CYSPP_Pin|BT_CONNECTION_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : BT_CP_ROLE_Pin */
-  GPIO_InitStruct.Pin = BT_CP_ROLE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(BT_CP_ROLE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : USER_BUTTON_Pin */
   GPIO_InitStruct.Pin = USER_BUTTON_Pin;
@@ -750,19 +737,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GREEN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : USART2_CTS_SW_Pin */
-  GPIO_InitStruct.Pin = USART2_CTS_SW_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(USART2_CTS_SW_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : USART_RTS_SW_Pin */
-  GPIO_InitStruct.Pin = USART_RTS_SW_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(USART_RTS_SW_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pins : UCPD_DBn_Pin LED_BLUE_Pin */
   GPIO_InitStruct.Pin = UCPD_DBn_Pin|LED_BLUE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -788,7 +762,7 @@ void btInitialise(void)
   uint8_t reset_cnt = 20U; // 20 * 100ms = 2s per baud rate attempt
   uint8_t failCount = 0U;
 
-  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, GPIO_PIN_SET);
+  setBtLpMode(false);
   //TODO remove or update delay when value known
   HAL_Delay(100);
   printf("Attempting 1M Baud\r\n");
@@ -842,6 +816,7 @@ void btInitialise(void)
       reset_cnt = 50U;
     }
   }
+  setBtLpMode(true);
   printf("BT init end\r\n");
 }
 

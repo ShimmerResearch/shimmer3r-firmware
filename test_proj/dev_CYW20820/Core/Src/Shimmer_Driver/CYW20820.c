@@ -956,3 +956,9 @@ bool getBtCysppState(void)
   return btCysppState;
 }
 
+void setBtLpMode(bool allowLowPower)
+{
+  //TODO get working and update default LP_MODE pin state appropriately in CubeMX
+  //TODO move out of this driver file
+//  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, allowLowPower ? GPIO_PIN_RESET : GPIO_PIN_SET);
+}

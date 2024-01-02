@@ -66,5 +66,6 @@ void setExpectedResponse(uint16_t idx);
 bool isBtIsInitialised(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
+void setBtLpMode(bool allowLowPower);
 
 #endif /* SRC_CYW20820_H_ */
