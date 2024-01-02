@@ -48,6 +48,7 @@ ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
 ezs_rsp_system_get_tx_power_t rsp_system_get_tx_power;
+ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode;
 #if USE_GET_SET_ADV_PARAM
 ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 #endif
@@ -87,6 +88,11 @@ static ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters_ref = {
     .flags = 0,           // (Default=)
     .direct_addr = {{0}}, // (Default=)
     .direct_address_type = 0 // (Default=)
+};
+
+static ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode_ref = {
+    .mode = 4,            // (Default=4)
+    .interval = 300,      // A value of 300 was read from eval kit. Datasheet states setting isn't supported.
 };
 
 uint8_t btInitCmdsRunning, btInitCmdsStep, btFactoryResetCmdsRunning, btFactoryResetCmdsStep;
@@ -421,6 +427,28 @@ void btInitCommands(void)
       rsp_system_get_tx_power.power = BT_TX_POWER;
       setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_TX_POWER);
       ezs_fcmd_system_set_tx_power(BT_TX_POWER, &rsp_system_get_tx_power.power_level_arrays);
+      return;
+    }
+  }
+
+  if(btInitCmdsStep == GET_SMP_PRIVACY_MODE)
+  {
+    printf("Get SMP Privacy mode\r\n");
+    btInitCmdsStep++;
+    setExpectedResponse(EZS_IDX_RSP_SMP_GET_PRIVACY_MODE);
+    ezs_cmd_smp_get_privacy_mode();
+    return;
+  }
+
+  if(btInitCmdsStep == SET_SMP_PRIVACY_MODE)
+  {
+    btInitCmdsStep++;
+    if (rsp_smp_get_privacy_mode.mode != rsp_smp_get_privacy_mode_ref.mode)
+    {
+      printf("Set SMP Privacy mode\r\n");
+      setExpectedResponse(EZS_IDX_RSP_SMP_SET_PRIVACY_MODE);
+      // Leaving the interval value unchanged from what is set in the module
+      ezs_fcmd_smp_set_privacy_mode(rsp_smp_get_privacy_mode_ref.mode, rsp_smp_get_privacy_mode.interval);
       return;
     }
   }
@@ -992,6 +1020,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printf("Store config complete\r\n");
       printHex16(packet->payload.rsp_system_store_config.result);
 #endif
+      break;
+
+    case EZS_IDX_RSP_SMP_GET_PRIVACY_MODE:
+      rsp_smp_get_privacy_mode = packet->payload.rsp_smp_get_privacy_mode;
       break;
 
     /* -------- Shimmer added end -------- */
