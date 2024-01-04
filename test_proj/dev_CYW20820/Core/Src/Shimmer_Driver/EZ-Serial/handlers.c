@@ -353,13 +353,13 @@ void sendNextChar(void)
         if (rdIdx < wrIdx)
         {
           uint8_t numBytes = wrIdx-rdIdx;
-          HAL_StatusTypeDef ret_val = HAL_UART_Transmit_IT(huart, &gBtTxFifo.data[rdIdx], numBytes);
+          HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huart, &gBtTxFifo.data[rdIdx], numBytes);
           gBtTxFifo.rdIdx += numBytes;
         }
         else
         {
           uint8_t numBytes = BT_TX_BUF_SIZE-rdIdx;
-          HAL_StatusTypeDef ret_val = HAL_UART_Transmit_IT(huart, &gBtTxFifo.data[rdIdx], numBytes);
+          HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huart, &gBtTxFifo.data[rdIdx], numBytes);
           gBtTxFifo.rdIdx += numBytes;
         }
     }
@@ -452,13 +452,24 @@ uint8_t getBtDataRateTestState(void)
 
 void loadBtTxBufForDataRateTest(void)
 {
-    uint16_t spaceInTxBuf = getSpaceInBtTxBuf();
-    if (spaceInTxBuf > sizeof(btDataRateTestCounter))
-    {
-      pushByteToBtTxBuf(DATA_RATE_TEST_RESPONSE);
-      pushBytesToBtTxBuf((uint8_t *) &btDataRateTestCounter, sizeof(btDataRateTestCounter));
-      btDataRateTestCounter++;
-    }
+//  uint16_t spaceInTxBuf = getSpaceInBtTxBuf();
+//  uint16_t i;
+//  if (spaceInTxBuf > sizeof(btDataRateTestCounter) + 1U)
+//  {
+//    for (i = 0; i < (spaceInTxBuf / (sizeof(btDataRateTestCounter) + 1U)); i++)
+//    {
+//      pushByteToBtTxBuf(DATA_RATE_TEST_RESPONSE);
+//      pushBytesToBtTxBuf((uint8_t *) &btDataRateTestCounter, sizeof(btDataRateTestCounter));
+//      btDataRateTestCounter++;
+//    }
+//  }
+
+  if (getSpaceInBtTxBuf() > (sizeof(btDataRateTestCounter) + 1U))
+  {
+    pushByteToBtTxBuf(DATA_RATE_TEST_RESPONSE);
+    pushBytesToBtTxBuf((uint8_t*) &btDataRateTestCounter, sizeof(btDataRateTestCounter));
+    btDataRateTestCounter++;
+  }
 }
 
 

@@ -59,6 +59,7 @@ CRC_HandleTypeDef hcrc;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
 DMA_HandleTypeDef handle_GPDMA1_Channel0;
 
 HCD_HandleTypeDef hhcd_USB_OTG_HS;
@@ -428,6 +429,8 @@ static void MX_GPDMA1_Init(void)
   /* GPDMA1 interrupt Init */
     HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
 
   /* USER CODE BEGIN GPDMA1_Init 1 */
 
@@ -824,7 +827,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
     {
       failCount++;
 
-      if (failCount <= 3)
+      if (failCount <= 4)
       {
         uint32_t baudToTry;
         if (failCount == 1)
@@ -838,6 +841,10 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
         else if (failCount == 3)
         {
           baudToTry = 2000000;
+        }
+        else if (failCount == 4)
+        {
+          baudToTry = 500000;
         }
 
         printf("Attempting %lu Baud\r\n", baudToTry);
