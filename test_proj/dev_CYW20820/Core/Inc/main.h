@@ -80,6 +80,7 @@ void Error_Handler(void);
 #define BT_CP_ROLE_GPIO_Port GPIOE
 #define USER_BUTTON_Pin GPIO_PIN_13
 #define USER_BUTTON_GPIO_Port GPIOC
+#define USER_BUTTON_EXTI_IRQn EXTI13_IRQn
 #define VBUS_SENSE_Pin GPIO_PIN_2
 #define VBUS_SENSE_GPIO_Port GPIOC
 #define UCPD_FLT_Pin GPIO_PIN_14

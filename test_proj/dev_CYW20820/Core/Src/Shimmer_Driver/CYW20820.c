@@ -1026,6 +1026,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       rsp_smp_get_privacy_mode = packet->payload.rsp_smp_get_privacy_mode;
       break;
 
+    case EZS_IDX_RSP_SMP_SET_PRIVACY_MODE:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+      printf("Set Privacy Mode Complete\r\n");
+#endif
+      break;
+
     /* -------- Shimmer added end -------- */
 
     default:

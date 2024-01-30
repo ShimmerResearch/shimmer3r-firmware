@@ -327,6 +327,10 @@ void sendNextChar(void)
     if (btDataRateTestState)
     {
         loadBtTxBufForDataRateTest();
+/*        if(btDataRateTestCounter % 5 == 0)
+        {
+            HAL_Delay(1U);
+        }*/
     }
 
     if (!RINGFIFO_EMPTY(gBtTxFifo)
