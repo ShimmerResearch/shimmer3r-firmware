@@ -311,7 +311,14 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
-  sendNextChar();
+  if(isBtConnected())
+  {
+    sendNextChar();
+  }
+  else
+  {
+    clearBtTxBuf(0);
+  }
 }
 
 void sendNextCharIfNotInProgress(void)

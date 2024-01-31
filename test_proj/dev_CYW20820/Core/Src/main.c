@@ -787,10 +787,12 @@ void btFactoryResetViaFw(void)
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
 {
   uint8_t failCount = 0U;
+  uint32_t baudToTry = BAUD_TO_USE;
 
   setBtLpMode(false);
 
-  printf("Attempting 1M Baud\r\n");
+  printf("Attempting %lu Baud\r\n", baudToTry);
+  usart2UartUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
 
   if (isInit)
   {
@@ -829,7 +831,6 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
 
       if (failCount <= 4)
       {
-        uint32_t baudToTry;
         if (failCount == 1)
         {
           baudToTry = 115200;
