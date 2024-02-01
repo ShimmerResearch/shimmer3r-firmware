@@ -13,7 +13,7 @@
 
 
 #define USE_DEFAULT_LED       1
-#define USE_I2C_VBATT_REPORT  1
+#define USE_I2C_VBATT_REPORT  0 //changed to 0 for porting
 #define SKIP_50MS             1
 #define USE_VBATT_ALWAYS      1
 #define HAL_TEST_INFOMEM      1
@@ -28,7 +28,7 @@
 
 //#include "s4_led.h"
 //#include "s4_calc.h"
-//#include "s4_sensing.h"
+#include "s4_sensing.h"
 //#include "s4_ram.h"
 //#include "s4_calib.h"
 //#include "s4_adc.h"

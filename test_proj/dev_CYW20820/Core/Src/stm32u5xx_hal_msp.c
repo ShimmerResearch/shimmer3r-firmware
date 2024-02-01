@@ -27,7 +27,8 @@
 extern DMA_HandleTypeDef handle_GPDMA1_Channel1;
 
 extern DMA_HandleTypeDef handle_GPDMA1_Channel0;
-
+extern DMA_HandleTypeDef hdma_i2c1_rx;
+extern DMA_HandleTypeDef hdma_i2c1_tx;
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
 
@@ -233,6 +234,43 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
     HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
+/*  I2C1 DMA Init
+    I2C1_RX Init*/
+   hdma_i2c1_rx.Instance = GPDMA1_Channel2;
+   hdma_i2c1_rx.Init.Request = LL_DMA_CHANNEL_1;
+   hdma_i2c1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+   hdma_i2c1_rx.Init.SrcInc = DMA_SINC_FIXED;
+   hdma_i2c1_rx.Init.DestInc = DMA_DINC_FIXED;
+   hdma_i2c1_rx.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
+   hdma_i2c1_rx.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
+   hdma_i2c1_rx.Init.Mode = DMA_NORMAL;
+   hdma_i2c1_rx.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
+   hdma_i2c1_rx.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+   if (HAL_DMA_Init(&hdma_i2c1_rx) != HAL_OK)
+   {
+     Error_Handler();
+   }
+
+   __HAL_LINKDMA(hi2c,hdmarx,hdma_i2c1_rx);
+
+    /*I2C1_TX Init*/
+   hdma_i2c1_tx.Instance = GPDMA1_Channel3;
+   hdma_i2c1_tx.Init.Request = LL_DMA_CHANNEL_1;
+   hdma_i2c1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+   hdma_i2c1_rx.Init.SrcInc = DMA_SINC_FIXED;
+   hdma_i2c1_rx.Init.DestInc = DMA_DINC_FIXED;
+   hdma_i2c1_rx.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
+   hdma_i2c1_rx.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
+   hdma_i2c1_rx.Init.Mode = DMA_NORMAL;
+   hdma_i2c1_rx.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
+   hdma_i2c1_rx.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+   if (HAL_DMA_Init(&hdma_i2c1_tx) != HAL_OK)
+   {
+     Error_Handler();
+   }
+
+   __HAL_LINKDMA(hi2c,hdmatx,hdma_i2c1_tx);
+
     /* Peripheral clock enable */
     __HAL_RCC_I2C1_CLK_ENABLE();
     /* I2C1 interrupt Init */
@@ -270,6 +308,10 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
     HAL_GPIO_DeInit(GPIOG, GPIO_PIN_13);
 
     HAL_GPIO_DeInit(GPIOG, GPIO_PIN_14);
+
+    /*I2C1 DMA deInit*/
+   HAL_DMA_DeInit(hi2c->hdmarx);
+   HAL_DMA_DeInit(hi2c->hdmatx);
 
     /* I2C1 interrupt DeInit */
     HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
@@ -310,6 +352,7 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef* hrtc)
     __HAL_RCC_RTCAPB_CLK_ENABLE();
     __HAL_RCC_RTCAPB_CLKAM_ENABLE();
     /* RTC interrupt Init */
+    HAL_NVIC_SetPriority(RTC_S_IRQn, 1, 0);
     HAL_NVIC_SetPriority(RTC_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(RTC_IRQn);
   /* USER CODE BEGIN RTC_MspInit 1 */
@@ -338,6 +381,7 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* hrtc)
     __HAL_RCC_RTCAPB_CLKAM_DISABLE();
 
     /* RTC interrupt DeInit */
+    HAL_NVIC_DisableIRQ(RTC_S_IRQn);
     HAL_NVIC_DisableIRQ(RTC_IRQn);
   /* USER CODE BEGIN RTC_MspDeInit 1 */
 

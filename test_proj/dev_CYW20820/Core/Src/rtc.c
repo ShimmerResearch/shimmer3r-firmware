@@ -95,18 +95,18 @@ void MX_RTC_Init(void)
 
 }
 
-void HAL_RTC_MspInit(RTC_HandleTypeDef* rtcHandle)
+/*void HAL_RTC_MspInit(RTC_HandleTypeDef* rtcHandle) // commented for porting
 {
 
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
   if(rtcHandle->Instance==RTC)
   {
-  /* USER CODE BEGIN RTC_MspInit 0 */
+   USER CODE BEGIN RTC_MspInit 0
 
-  /* USER CODE END RTC_MspInit 0 */
+   USER CODE END RTC_MspInit 0
 
-  /** Initializes the peripherals clock
-  */
+  * Initializes the peripherals clock
+
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC;
     PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
@@ -114,16 +114,16 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef* rtcHandle)
       Error_Handler();
     }
 
-    /* RTC clock enable */
+     RTC clock enable
     __HAL_RCC_RTC_ENABLE();
 
-    /* RTC interrupt Init */
+     RTC interrupt Init
    // HAL_NVIC_SetPriority(RTC_WKUP_IRQn, 1, 0);
     HAL_NVIC_SetPriority(RTC_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(RTC_IRQn);
-  /* USER CODE BEGIN RTC_MspInit 1 */
+   USER CODE BEGIN RTC_MspInit 1
 
-  /* USER CODE END RTC_MspInit 1 */
+   USER CODE END RTC_MspInit 1
   }
 }
 
@@ -132,20 +132,20 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
   if(rtcHandle->Instance==RTC)
   {
-  /* USER CODE BEGIN RTC_MspDeInit 0 */
+   USER CODE BEGIN RTC_MspDeInit 0
 
-  /* USER CODE END RTC_MspDeInit 0 */
-    /* Peripheral clock disable */
+   USER CODE END RTC_MspDeInit 0
+     Peripheral clock disable
     __HAL_RCC_RTC_DISABLE();
 
-    /* RTC interrupt Deinit */
+     RTC interrupt Deinit
     //HAL_NVIC_DisableIRQ(RTC_WKUP_IRQn);
     HAL_NVIC_DisableIRQ(RTC_IRQn);
-  /* USER CODE BEGIN RTC_MspDeInit 1 */
+   USER CODE BEGIN RTC_MspDeInit 1
 
-  /* USER CODE END RTC_MspDeInit 1 */
+   USER CODE END RTC_MspDeInit 1
   }
-}
+}*/
 
 /* USER CODE BEGIN 1 */
 
