@@ -72,8 +72,8 @@ volatile RingFifoTx_t gBtTxFifo;
 
 volatile uint8_t messageInProgress;
 
-uint8_t btDataRateTestState;
-uint32_t btDataRateTestCounter;
+uint8_t dataRateTestState;
+uint8_t dataRateTestTxPacket[] = {DATA_RATE_TEST_RESPONSE, 0, 0, 0, 0};
 
 /*******************************************************************************
 * Interrupt Handler Name: TimerInterruptHandler
@@ -311,9 +311,16 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if(isBtConnected())
+  if (isBtConnected())
   {
-    sendNextChar();
+    if (dataRateTestState)
+    {
+      loadBtTxBufForDataRateTest();
+    }
+    else
+    {
+      sendNextChar();
+    }
   }
   else
   {
@@ -331,11 +338,6 @@ void sendNextCharIfNotInProgress(void)
 
 void sendNextChar(void)
 {
-    if (btDataRateTestState)
-    {
-        loadBtTxBufForDataRateTest();
-    }
-
     if (!RINGFIFO_EMPTY(gBtTxFifo)
 //#if BT_FLUSH_TX_BUF_IF_RN4678_RTS_LOCK_DETECTED
 //            && (rn4678RtsLockDetected || !isBtModuleOverflowPinHigh())
@@ -448,13 +450,13 @@ uint16_t getSpaceInBtTxBuf(void)
 
 void setBtDataRateTestState(uint8_t state)
 {
-    btDataRateTestState = state;
-    btDataRateTestCounter = 0;
+  dataRateTestState = state;
+  *((uint32_t*) &dataRateTestTxPacket[1]) = 0;
 }
 
 uint8_t getBtDataRateTestState(void)
 {
-  return btDataRateTestState;
+  return dataRateTestState;
 }
 
 void loadBtTxBufForDataRateTest(void)
@@ -467,16 +469,19 @@ void loadBtTxBufForDataRateTest(void)
 //    {
 //      pushByteToBtTxBuf(DATA_RATE_TEST_RESPONSE);
 //      pushBytesToBtTxBuf((uint8_t *) &btDataRateTestCounter, sizeof(btDataRateTestCounter));
-//      btDataRateTestCounter++;
+//      dataRateTestCounter++;
 //    }
 //  }
 
-  if (getSpaceInBtTxBuf() > (sizeof(btDataRateTestCounter) + 1U))
-  {
-    pushByteToBtTxBuf(DATA_RATE_TEST_RESPONSE);
-    pushBytesToBtTxBuf((uint8_t*) &btDataRateTestCounter, sizeof(btDataRateTestCounter));
-    btDataRateTestCounter++;
-  }
+//  if (getSpaceInBtTxBuf() > (sizeof(dataRateTestCounter) + 1U))
+//  {
+//    pushByteToBtTxBuf(DATA_RATE_TEST_RESPONSE);
+//    pushBytesToBtTxBuf((uint8_t*) &dataRateTestCounter, sizeof(dataRateTestCounter));
+//    dataRateTestCounter++;
+//  }
+
+  HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huart, &dataRateTestTxPacket[0], sizeof(dataRateTestTxPacket));
+  (*((uint32_t*) &dataRateTestTxPacket[1]))++;
 }
 
 
