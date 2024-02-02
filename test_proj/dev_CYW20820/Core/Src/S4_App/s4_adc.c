@@ -72,7 +72,7 @@ void S4_NORM_ADC_init(void){
    //hadcSens = &hadc2;
    hadcSens.Instance = ADC2;
    //hadcBatt = &hadc3;
-   hadcBatt.Instance = ADC3;
+   hadcBatt.Instance = ADC4;  //ADC3 unavailable
    
 //   pStat = GetStatus();
 //   pSensing = S4Sens_getSensing();
@@ -87,7 +87,7 @@ void S4_NORM_ADC_initBatt(void){
    /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
    */
    HAL_ADC_DeInit(&hadcBatt);
-   hadcBatt.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+   hadcBatt.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4; //ADC_CLOCK_SYNC_PCLK_DIV4;
    hadcBatt.Init.Resolution = ADC_RESOLUTION_12B;
    hadcBatt.Init.ScanConvMode = DISABLE;
    hadcBatt.Init.ContinuousConvMode = DISABLE;
@@ -102,7 +102,8 @@ void S4_NORM_ADC_initBatt(void){
     */
    sConfig.Channel = ADC_CHANNEL_3;
    sConfig.Rank = 1;
-   sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
+   sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES;
+   //sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES; changed for porting
    HAL_ADC_ConfigChannel(&hadcBatt, &sConfig);
 }
 
@@ -176,13 +177,13 @@ void S4_NORM_ADC_configureChannels(void){
       S4Ram_storedConfigSetByte(NV_SENSORS1, S4Ram_storedConfigGetByte(NV_SENSORS1) | SENSOR_INT_ADC_10);
       S4Ram_storedConfigSetByte(NV_SENSORS2, S4Ram_storedConfigGetByte(NV_SENSORS2) | SENSOR_INT_ADC_12); 
              
-      HAL_GPIO_WritePin(GPIOF, PPG_EN_Pin, GPIO_PIN_SET);
+      //HAL_GPIO_WritePin(GPIOF, PPG_EN_Pin, GPIO_PIN_SET); commetned for porting
    }
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_STRAIN) {
       //in shimmer3 this corresponds to adc13 and adc14
       S4Ram_storedConfigSetByte(NV_SENSORS1, S4Ram_storedConfigGetByte(NV_SENSORS1) | SENSOR_INT_ADC_11); 
       S4Ram_storedConfigSetByte(NV_SENSORS2, S4Ram_storedConfigGetByte(NV_SENSORS2) | SENSOR_INT_ADC_0);         
-      HAL_GPIO_WritePin(GPIOB, GPIO_INTERNAL4_Pin, GPIO_PIN_SET);
+      //HAL_GPIO_WritePin(GPIOB, GPIO_INTERNAL4_Pin, GPIO_PIN_SET);  commented for porting
    }
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_GSR) {
       //in shimmer3 this corresponds to adc1
@@ -191,13 +192,13 @@ void S4_NORM_ADC_configureChannels(void){
       uint16_t temp_samplingrate;
       S4Ram_storedConfigGet((uint8_t*)&temp_samplingrate, NV_SAMPLING_RATE, 2);
       GSR_init(S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3), temp_samplingrate, GSR_AUTORANGE);
-      if (((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0x0E) >> 1) <= HW_RES_3M3) {
+      //if (((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0x0E) >> 1) <= HW_RES_3M3) { commented for porting
          GSR_setRange((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0x0E) >> 1);
          gsrActiveResistor = (S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0x0E) >> 1;
-      } else {
-         GSR_setRange(HW_RES_40K);
-         gsrActiveResistor = HW_RES_40K;
-      }  
+      //} else {   commented for porting
+      //   GSR_setRange(HW_RES_40K); commented for porting
+        // gsrActiveResistor = HW_RES_40K;   commented for porting
+     // }
    }
      
    //External ADC 9
@@ -280,14 +281,16 @@ void S4_NORM_ADC_startSensing(){
    uint8_t adc_counter_sens = 1;//, adc_counter_resv = 0;   
    adcConfig = ADC_CONFIG_SENS;
    
-   sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
+   //sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES; changed for porting
+   sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES;
       
    if(adc.sensorLen > 0){  
       HAL_ADC_DeInit(&hadcSens);
       
       //memcpy((uint8_t*)&hadcSens.Init, (uint8_t*)&hadcBatt.Init, sizeof(ADC_InitTypeDef));    
       //hadcSens.Instance = ADC2;
-      hadcSens.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+      //hadcSens.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+      hadcBatt.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2; //ADC_CLOCK_SYNC_PCLK_DIV2;
       hadcSens.Init.Resolution = ADC_RESOLUTION_12B;
       //hadcSens.Init.ScanConvMode = DISABLE;
       hadcSens.Init.ContinuousConvMode = DISABLE;
@@ -345,7 +348,7 @@ void S4_NORM_ADC_startSensing(){
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
       
-      HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_SET);
+      //HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_SET);   commented for porting
    }   
    
 #if USE_VBATT_ALWAYS
@@ -556,10 +559,10 @@ void S4_NORM_ADC_stopSensing(){
    HAL_ADC_Stop_DMA(&hadcSens);
    HAL_ADC_DeInit(&hadcSens);      
    //Analog Accel (KXRB5-2042)
-   HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
+   //HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);  commented for porting
    //Analog Strain Gauge,  esets the PV_SG voltage to gauge op-amp
-   HAL_GPIO_WritePin(GPIOB, GPIO_INTERNAL4_Pin, GPIO_PIN_RESET);
-   HAL_GPIO_WritePin(GPIOF, PPG_EN_Pin, GPIO_PIN_RESET);
+  // HAL_GPIO_WritePin(GPIOB, GPIO_INTERNAL4_Pin, GPIO_PIN_RESET);   commented for porting
+  // HAL_GPIO_WritePin(GPIOF, PPG_EN_Pin, GPIO_PIN_RESET);    commented for porting
    
    if(adc.chanCntResv > 0){
       HAL_ADC_Stop_DMA(&hadcResv);
@@ -628,7 +631,7 @@ void S4_NORM_ADC_readBatt(void) {
       hadcSens.Init.NbrOfConversion = 1;
       HAL_ADC_Init(&hadcSens);
       
-      sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
+      sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES;
       sConfig.Channel = ADC_CHANNEL_3;
       sConfig.Rank = 1;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);      
@@ -638,8 +641,8 @@ void S4_NORM_ADC_readBatt(void) {
    stat.battVal[0] = adc_battVal & 0xff;
    stat.battVal[1] = (adc_battVal>>8) & 0xff;
    stat.battVal[2] = 0;
-   stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)<<7;
-   stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)<<6;
+ /*  stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)<<7;  commented for porting
+   stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)<<6;*/
    if(need_to_restore){
       S4_ADC_startSensing();
    }

@@ -22,6 +22,11 @@ typedef struct {//adc - Sensors
 #define ADC_CONFIG_SENS 1
 #define ADC_CONFIG_BATT 2
 
+/*Defined here for porting can be moved*/
+#define LED_RED      0x01 // == BATT_LOW
+#define LED_YELLOW   0x02 // == BATT_MID
+#define LED_GREEN0  0x04 // == BATT_HIGH
+
 #if USE_FREERTOS
 #define S4_ADC_init              S4_RTOS_ADC_init
 #define S4_ADC_init1             S4_RTOS_ADC_init1

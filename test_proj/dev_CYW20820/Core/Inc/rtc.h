@@ -30,7 +30,7 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
     
-//#include "s4__cfg.h"
+#include "../Src/S4_App/s4__cfg.h"
 
 /* USER CODE END Includes */
 
