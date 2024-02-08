@@ -20,6 +20,7 @@
 #include "main.h"
 #include "stm32u5xx_nucleo.h"
 #include <stdio.h>
+#include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -103,6 +104,7 @@ int main(void)
   MX_SDMMC1_SD_Init();
   MX_USB_OTG_HS_PCD_Init();
   /* USER CODE BEGIN 2 */
+  MX_FATFS_Init();
 
   /* USER CODE END 2 */
 
