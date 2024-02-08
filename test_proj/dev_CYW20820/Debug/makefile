@@ -61,8 +61,8 @@ all: main-build
 main-build: dev_CYW20820.elf secondary-outputs
 
 # Tool invocations
-dev_CYW20820.elf dev_CYW20820.map: $(OBJS) $(USER_OBJS) C:\Users\MarkNolan\STM32CubeIDE\workspace_1.13.2\FW_Shimmer3r\test_proj\dev_CYW20820\STM32U5A5ZJTXQ_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "dev_CYW20820.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"C:\Users\MarkNolan\STM32CubeIDE\workspace_1.13.2\FW_Shimmer3r\test_proj\dev_CYW20820\STM32U5A5ZJTXQ_FLASH.ld" --specs=nosys.specs -Wl,-Map="dev_CYW20820.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+dev_CYW20820.elf dev_CYW20820.map: $(OBJS) $(USER_OBJS) C:\Users\BhavanaRallapalli\git\FW_Shimmer3r\test_proj\dev_CYW20820\STM32U5A5ZJTXQ_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "dev_CYW20820.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"C:\Users\BhavanaRallapalli\git\FW_Shimmer3r\test_proj\dev_CYW20820\STM32U5A5ZJTXQ_FLASH.ld" --specs=nosys.specs -Wl,-Map="dev_CYW20820.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
