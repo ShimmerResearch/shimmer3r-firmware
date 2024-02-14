@@ -35,6 +35,16 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include "s4.h"
+#include "s4__cfg.h"
+
+#define TIM_MEASURE_START time_start = SysTick->VAL
+#define TIM_MEASURE_END time_end = SysTick->VAL;            \
+  time_diff = time_start - time_end
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,10 +73,71 @@ void SystemClock_Config(void);
 static void SystemPower_Config(void);
 /* USER CODE BEGIN PFP */
 
+void Init(void);
+uint32_t FullTest(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+STATTypeDef stat;
+//SENSINGTypeDef *pSensing;
+
+volatile uint32_t time_start, time_end, time_diff;
+
+
+extern UART_HandleTypeDef *huartBt;
+
+void Init() {
+   Board_ledOn(LED_ALL);
+   memset((uint8_t*)&stat, 0, sizeof(STATTypeDef));
+   stat.battStatLed = LED_YELLOW;
+   stat.isConfiguring = 1;
+
+   // ==== 0.86ma ====
+   TIM_init();
+   InfoMem_init();
+   S4_Task_init();
+   S4Sens_init();
+   // ==== 0.86ma ====
+   //SD_init();
+   //GPIO_init();
+   I2C_init();
+   S4_ADC_init();
+   SPI_init();
+   // ==== 0.86ma ====
+   DockUart_init();
+   DockUart_disable();
+   // ==== 0.89ma ====
+   S4_RTC_Init();
+   // ==== 24.60ma ====
+   Board_delayMicrosInit();
+   DockUart_interruptCheck();
+   SD_insertedCheck();
+   //GPIO_userButtonCheck();
+   BtUart_init();
+   S4Ram_init();
+   ShimmerCalib_init();
+   // ==== 13.8ma ====
+#if FULL_TEST_MODE
+   FullTest();
+#endif
+   //BT_disable(huartBt);
+   DockUart_enable();
+   stat.isConfiguring = 0;
+   S4Sens_stopPeripherals();
+   S4_RTC_WakeUpSetSlow();
+   Board_ledOff(LED_ALL);
+//   while(1){
+//      //__NOP();
+//      Power_StopUntilInterrupt();
+//      //Power_SleepUntilInterrupt();
+//   }
+   //Power_StopUntilInterrupt();
+}
+
+uint8_t dcID[16];
 
 /* USER CODE END 0 */
 
@@ -77,6 +148,9 @@ static void SystemPower_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
+  uint32_t i = 0;
+  while(i++ < 1000000);
 
   /* USER CODE END 1 */
 
@@ -117,6 +191,10 @@ int main(void)
   MX_ICACHE_Init();
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
+  MX_FATFS_Init();
+
+  Init();
+  //Task_set(TASK_STARTSENSING);
 
   /* USER CODE END 2 */
 
@@ -127,6 +205,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    S4_Task_manage();
   }
   /* USER CODE END 3 */
 }
@@ -215,6 +294,26 @@ static void SystemPower_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+STATTypeDef * GetStatus(){
+   return &stat;
+}
+
+uint32_t FullTest(void) {
+   //uint32_t test_result = 0;
+
+   stat.testResult += I2C_test();
+
+   stat.testResult += SD_test()<<6;
+
+   stat.testResult += (!stat.isBtPoweredOn)<<7;
+
+   stat.testResult += InfoMem_test()<<8;
+
+   stat.testResult += SPI_test()<<16;
+
+   return stat.testResult ;
+}
 
 /* USER CODE END 4 */
 

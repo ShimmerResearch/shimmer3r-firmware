@@ -30,6 +30,8 @@
 /*----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 
+uint64_t GPIO_tsPress = 0, GPIO_tsLastRelease = 0, GPIO_tsRelease = 0;
+
 /* USER CODE END 1 */
 
 /** Configure pins
@@ -187,5 +189,74 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 2 */
+
+void GPIO_init(void){
+   //pSensing = S4Sens_getSensing();
+//   pStat = GetStatus();
+//   GPIO_tsPress = GPIO_tsRelease = GPIO_tsLastRelease = 0;
+}
+
+void GPIO_userButtonCheck() {
+   if (HAL_GPIO_ReadPin(USER_N_GPIO_Port, USER_N_Pin) == GPIO_PIN_RESET) { //pressed
+      stat.isButtonPressed = 1;
+      Board_ledOn(LED_YELLOW);
+      GPIO_tsPress = RTC_get64();
+   } else {
+      stat.isButtonPressed = 0;
+      Board_ledOff(LED_YELLOW);
+      GPIO_tsRelease = RTC_get64();
+      if(GPIO_tsRelease - GPIO_tsLastRelease > 3277){
+         if(stat.isSensing == 0){
+            stat.sdlogCmd = 1;
+            S4_Task_set(TASK_STARTSENSING);
+         }else{
+            stat.sdlogCmd = 2;
+            S4_Task_set(TASK_STOPSENSING);
+         }
+      }
+      GPIO_tsLastRelease = GPIO_tsRelease;
+   }
+}
+
+uint16_t ext_cnt1 = 0;
+uint16_t ext_cnt2 = 0;
+uint16_t ext_cnt3 = 0;
+uint16_t ext_cnt4 = 0;
+uint16_t ext_cnt5 = 0;
+uint16_t ext_cnt6 = 0;
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+   switch (GPIO_Pin) {
+   case GPIO_INTERNAL1_Pin:
+      if (stat.isSensing) {
+         //EXG_dataReadyChip1();
+         ext_cnt1++;
+         if(!(ext_cnt1 % 100)){
+            __NOP();
+            __NOP();
+            __NOP();
+         }
+         EXG_gatherDataStart();
+      }
+      break;//EXG1
+//DOCK_Pin and gpio_internal share the same pin
+   case GPIO_INTERNAL_Pin:
+      if (stat.isSensing) {
+
+         //EXG_gatherDataStart();
+            __NOP();
+            __NOP();
+            __NOP();
+         //EXG_dataReadyChip2();
+      }
+      break;//EXG2
+   case BTH_RTS_Pin:          BtUart_rtsIntCheck();            break;
+   case BTH_STATUS_Pin:       BtUart_connectIntCheck();        break;
+   case DOCK_Pin:             DockUart_interruptCheck();       break;
+   case USER_N_Pin:           GPIO_userButtonCheck();          break;
+   case SD_DETECT_N_Pin:      SD_insertedCheck();              break;
+   default: break;
+   }
+}
 
 /* USER CODE END 2 */

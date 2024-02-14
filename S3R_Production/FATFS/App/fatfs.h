@@ -1,13 +1,12 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    spi.h
-  * @brief   This file contains all the function prototypes for
-  *          the spi.c file
+  * @file   fatfs.h
+  * @brief  Header for fatfs applications
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2023 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -18,15 +17,15 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __SPI_H__
-#define __SPI_H__
-
+#ifndef __fatfs_H
+#define __fatfs_H
 #ifdef __cplusplus
-extern "C" {
+ extern "C" {
 #endif
 
-/* Includes ------------------------------------------------------------------*/
-#include "main.h"
+#include "ff.h"
+#include "ff_gen_drv.h"
+#include "sd_diskio.h" /* defines SD_Driver as external */
 
 /* USER CODE BEGIN Includes */
 
@@ -35,35 +34,30 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-extern SPI_HandleTypeDef hspi2;
+extern uint8_t retSD; /* Return value for SD */
+extern char SDPath[4]; /* SD logical drive path */
+extern FATFS SDFatFS; /* File system object for SD logical drive */
+extern FIL SDFile; /* File object for SD */
 
-/* USER CODE BEGIN Private defines */
-
-/* USER CODE END Private defines */
-
-void MX_SPI2_Init(void);
+void MX_FATFS_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-void SPI_init(void);
-uint8_t SPI_test(void);
-void SPI_configureChannels(void);
-void SPI_startSensing(void);
-void SPI_pollSensors(void);
-void SPI_stopSensing(void);
-
-void SPI_gatherDataCb(void (*done_cb)(void));
-void SPI_gatherDataStart(void);
-void SpiStep1Start(void);
-void SpiStep2Start(void);
-void SpiStep3Start(void);
-void SpiStepDone(void);
+    
+void SD_init(void);
+uint8_t SD_test(void);
+void SD_insertedCheck(void);
+void SD_fileInit(void);
+void SD_close(void);
+void SD_makeFileName(char* name_buf);
+void SD_writeToBuff(uint8_t *buf, uint16_t len);
+void SD_writeToCard(void);
+//void SD_config2SdHead(void);
+void SD_mount(uint8_t val);
+void SD_insertedCheck(void);
 
 /* USER CODE END Prototypes */
-
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __SPI_H__ */
-
+#endif /*__fatfs_H */

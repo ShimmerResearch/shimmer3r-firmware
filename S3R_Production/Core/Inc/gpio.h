@@ -30,6 +30,9 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 
+#include "s4.h"
+#include "s4__cfg.h"
+
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
@@ -39,6 +42,9 @@ extern "C" {
 void MX_GPIO_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+void GPIO_init(void);
+void GPIO_userButtonCheck(void);
 
 /* USER CODE END Prototypes */
 

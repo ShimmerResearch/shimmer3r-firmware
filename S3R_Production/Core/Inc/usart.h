@@ -30,6 +30,9 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 
+#include "s4.h"
+#include "s4__cfg.h"
+
 /* USER CODE END Includes */
 
 extern UART_HandleTypeDef huart1;
@@ -47,6 +50,34 @@ void MX_USART2_UART_Init(void);
 void MX_USART3_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+void Uart_init(void);
+
+void BtUart_init(void);
+uint8_t BtUart_callBack(uint8_t* data_buf);
+void BtUart_sendRsp(void);
+void BtUart_processCmd(void);
+//HAL_StatusTypeDef BtUart_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
+//uint8_t BtUart_isConnected(void);
+
+void DockUart_init(void);
+void DockUart_disable(void);
+void DockUart_enable(void);
+void DockUart_rxCallback(uint8_t data);
+void DockUart_processCmd(void);
+void DockUart_sendRsp(void);
+uint8_t DockUart_getStep(void);
+void DockUart_setStep(uint8_t val);
+
+
+void ExpUart_init(void);
+void ExpUart_rxCallback(uint8_t data);
+uint8_t ExpUart_TxIT(uint8_t *pData, uint16_t Size);
+
+uint8_t  BtUart_connectIntCheck(void);
+#define  BtUart_rtsIntCheck() BT_rtsInterrupt(HAL_GPIO_ReadPin(BTH_RTS_GPIO_Port, BTH_RTS_Pin))
+uint8_t  DockUart_interruptCheck(void);
+void     DockUart_setup(void);
 
 /* USER CODE END Prototypes */
 
