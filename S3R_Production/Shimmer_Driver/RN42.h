@@ -44,7 +44,7 @@
 #define RN42_H
 
 #include <stdint.h>
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include "s4.h"
 
 #if DEVICE_VER == 58 // Shimmer4SDK

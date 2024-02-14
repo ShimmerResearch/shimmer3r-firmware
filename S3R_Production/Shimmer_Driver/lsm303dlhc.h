@@ -44,7 +44,7 @@
 #define LSM303DLHC_H
 
 #include <stdint.h>
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 
 #define LSM303DHLC_ACCEL_ADDR 0x19<<1 // 7 bit address of the LSM303DHLC's accelerometer
 #define LSM303DHLC_MAG_ADDR   0x1E<<1 // 7 bit address of the LSM303DHLC's magnetometer

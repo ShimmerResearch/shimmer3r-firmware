@@ -40,7 +40,7 @@
  * @date May, 2016
  */
  
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include "bmp180.h"
 
 static int16_t  AC1, AC2, AC3, B1, B2, MB, MC, MD;

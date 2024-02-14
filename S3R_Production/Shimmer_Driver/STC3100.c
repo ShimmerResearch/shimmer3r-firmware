@@ -40,7 +40,7 @@
  * @date August, 2016
  */
 
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include "STC3100.h"
 
 I2C_HandleTypeDef *hi2c_STC3100;

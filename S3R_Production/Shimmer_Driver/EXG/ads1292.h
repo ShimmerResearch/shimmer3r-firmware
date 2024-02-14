@@ -43,7 +43,7 @@
 #ifndef ADS1292_H
 #define ADS1292_H
 
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include <stdint.h>
 
 //initialise the SPI and other pins for use with the ADS1292
@@ -240,7 +240,7 @@ void ADS1292_gatherDataDone(void);
 //Bit 1 TEST_AMP: Test signal amplitude
 //    This bit determines the test signal amplitude.
 //       0 = No test signal (default)
-//       1 = ±(VREFP – VREFN)/2400
+//       1 = ï¿½(VREFP ï¿½ VREFN)/2400
 //
 //Bit 0 TEST_FREQ: Test signal frequency.
 //    This bit determines the test signal frequency.
@@ -542,22 +542,22 @@ void ADS1292_gatherDataDone(void);
 //Bits[5:2] RESP_PH[3:0]: Respiration phase(1)
 //    These bits control the phase of the respiration demodulation control signal.
 //    RESP_PH[3:0]   RESP_CLK = 32kHz     RESP_CLK = 64kHz
-//       0000        0° (default)         0° (default)
-//       0001        11.25°               22.5°
-//       0010        22.5°                45°
-//       0011        33.75°               67.5°
-//       0100        45°                  90°
-//       0101        56.25°               112.5°
-//       0110        67.5°                135°
-//       0111        78.75°               157.5°
-//       1000        90°                  Not available
-//       1001        101.25°              Not available
-//       1010        112.5°               Not available
-//       1011        123.75°              Not available
-//       1100        135°                 Not available
-//       1101        146.25°              Not available
-//       1110        157.5°               Not available
-//       1111        168.75°              Not available
+//       0000        0ï¿½ (default)         0ï¿½ (default)
+//       0001        11.25ï¿½               22.5ï¿½
+//       0010        22.5ï¿½                45ï¿½
+//       0011        33.75ï¿½               67.5ï¿½
+//       0100        45ï¿½                  90ï¿½
+//       0101        56.25ï¿½               112.5ï¿½
+//       0110        67.5ï¿½                135ï¿½
+//       0111        78.75ï¿½               157.5ï¿½
+//       1000        90ï¿½                  Not available
+//       1001        101.25ï¿½              Not available
+//       1010        112.5ï¿½               Not available
+//       1011        123.75ï¿½              Not available
+//       1100        135ï¿½                 Not available
+//       1101        146.25ï¿½              Not available
+//       1110        157.5ï¿½               Not available
+//       1111        168.75ï¿½              Not available
 //
 //    (1) The RESP_PH3 bit is ignored when RESP_CLK = 64kHz.
 //
@@ -594,7 +594,7 @@ void ADS1292_gatherDataDone(void);
 //Bit 1 RLDREF_INT: RLDREF signal
 //    This bit determines the RLDREF signal source.
 //       0 = RLDREF signal fed externally
-//       1 = RLDREF signal (AVDD – AVSS)/2 generated internally (default)
+//       1 = RLDREF signal (AVDD ï¿½ AVSS)/2 generated internally (default)
 //
 //Bit 0 Must be set to '1;
 #define ADS1x9x_REG_RESP2      (0x00Au)

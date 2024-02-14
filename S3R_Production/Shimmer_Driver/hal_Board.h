@@ -73,11 +73,11 @@ extern void Board_delayMicros(uint32_t micros);
 #ifdef SHIMMER4_SDK_CONFIG_H
 
 #define LED_RED_GPIO GPIOG
-#define LED_RED_PIN  LED_RD_Pin
+#define LED_RED_PIN  CHG_LED_RD_Pin
 #define LED_GR0_GPIO GPIOC
-#define LED_GR0_PIN  LED_GR_Pin
+#define LED_GR0_PIN  CHG_LED_GR_Pin
 #define LED_YEL_GPIO GPIOC
-#define LED_YEL_PIN  LED_YE_Pin
+#define LED_YEL_PIN  CHG_LED_YE_Pin
 #define LED_GR1_GPIO LED_GR1_GPIO_Port
 #define LED_GR1_PIN  LED_GR1_Pin
 #define LED_BLU_GPIO LED_BLU_GPIO_Port

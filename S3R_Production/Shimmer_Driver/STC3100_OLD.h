@@ -45,7 +45,7 @@
 
 #pragma anon_unions
 
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include <stdint.h>
 
 #define STC3100_ADDR           0x70 << 1  //7 bit address I2C address of the STC3100

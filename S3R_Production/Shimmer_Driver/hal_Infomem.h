@@ -90,7 +90,7 @@ yes      IROM1    0x8008000   0xf8000
 
 #include<stdint.h>
 #include <string.h>
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include "s4__cfg.h"
 
 #ifndef HAL_INFOMEM_H

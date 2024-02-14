@@ -15,7 +15,7 @@
 #include "s4_calib.h"
 #include "ff.h"
 #include "s4.h"
-#include "stm32f7xx.h"
+#include "stm32u5xx.h"
 #include "hal_Infomem.h"
 
 uint8_t shimmerCalib_ram[SHIMMER_CALIB_RAM_MAX], shimmerCalib_macId[5], shimmerCalib_ramTemp[SHIMMER_CALIB_RAM_MAX];

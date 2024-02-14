@@ -44,7 +44,7 @@
 //https://github.com/tinyos/tinyos-main/blob/master/tos/platforms/shimmer/chips/gsr/GsrP.nc
 
 #include "gsr.h"
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include "math.h"
 #include "main.h"
 

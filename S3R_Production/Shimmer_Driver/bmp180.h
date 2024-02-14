@@ -43,7 +43,7 @@
 #ifndef BMP180_H
 #define BMP180_H
 
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include <stdint.h>
 #include <math.h>
 

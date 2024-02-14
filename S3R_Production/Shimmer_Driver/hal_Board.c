@@ -42,7 +42,7 @@
  
 #include "hal_Board.h"
 
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 
 /***************************************************************************//**
  * @brief  Turn on LEDs

@@ -43,7 +43,7 @@
 #ifndef MPU9250_H
 #define MPU9250_H
 
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include <stdint.h>
 
 //#define MPU9250_ADDR       0x68  //7 bit address I2C address of the MPU9250 accel and gyro
@@ -110,19 +110,19 @@ HAL_StatusTypeDef MPU9250_accelReadStart(void);
 HAL_StatusTypeDef MPU9250_accelReadDone(uint8_t *buf);
 
 //val = sensitivity to set
-//0 = ±250°/s
-//1 = ±500°/s
-//2 = ±1000°/s
-//3 = ±2000°/s
-//else ±250°/s
+//0 = ï¿½250ï¿½/s
+//1 = ï¿½500ï¿½/s
+//2 = ï¿½1000ï¿½/s
+//3 = ï¿½2000ï¿½/s
+//else ï¿½250ï¿½/s
 void MPU9250_setGyroSensitivity(uint8_t val);
 
 //val = sensitivity to set
-//0 = ±2G
-//1 = ±4G
-//2 = ±8G
-//3 = ±16G
-//else ±2G
+//0 = ï¿½2G
+//1 = ï¿½4G
+//2 = ï¿½8G
+//3 = ï¿½16G
+//else ï¿½2G
 void MPU9250_setAccelRange(uint8_t val);
 
 //Set the sampling rate for the gyro and accel

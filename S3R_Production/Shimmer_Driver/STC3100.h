@@ -45,7 +45,7 @@
 
 #pragma anon_unions
 
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include <stdint.h>
 
 #define STC3100_ADDR           0x70 << 1  //7 bit address I2C address of the STC3100
@@ -290,8 +290,8 @@ The battery current is coded in 2's complement format, and the LSB value is 11.7
 13-bit resolution mode, the 0 bit is always set to zero. In 12-bit resolution, bits 0 and 1 are
 always set to zero.
 The battery voltage is coded in binary format, and the LSB value is 2.44 mV.
-The temperature value is coded in 2's complement format, and the LSB value is 0.125° C.
-The temperature of 0° C corresponds to code 0.
+The temperature value is coded in 2's complement format, and the LSB value is 0.125ï¿½ C.
+The temperature of 0ï¿½ C corresponds to code 0.
 */
 void STC3100_readData(uint8_t* buf);
 void STC3100_readData_it(uint8_t* buf);

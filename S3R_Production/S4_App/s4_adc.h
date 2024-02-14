@@ -2,7 +2,7 @@
 #ifndef S4_ADC_H
 #define S4_ADC_H
 
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 //#include "main.h"
 
 #include "s4.h"

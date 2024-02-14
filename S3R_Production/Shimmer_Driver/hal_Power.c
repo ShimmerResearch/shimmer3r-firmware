@@ -42,7 +42,7 @@
 
 #include "hal_Power.h"
 #include "s4.h"
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 
 extern void SystemClock_Config(void);
 extern STATTypeDef * GetStatus(void);
@@ -52,16 +52,16 @@ extern void TIM_init(void);
 void Power_Standby(void) {
    HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
    // need to clear flag here
-   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB | PWR_FLAG_WU);
+   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SBF | PWR_WAKEUP_ALL_FLAG);
    HAL_PWR_EnterSTANDBYMode();
 }
 
 
 uint8_t Power_StandbyReset(void) {
    /* Check Standby Flag */
-   if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET) {
+   if (__HAL_PWR_GET_FLAG(PWR_FLAG_SBF) != RESET) {
       /* Clear Standby and wakeup flag */
-      __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB | PWR_FLAG_WU);
+      __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SBF | PWR_WAKEUP_ALL_FLAG);
       /* Reset was from wakeup from standy */
       return 1;
    }
@@ -91,7 +91,7 @@ void Power_GpioAnalogConfig (void)
    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
    GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
    GPIO_InitStruct.Pull = GPIO_NOPULL;
-   GPIO_InitStruct.Pin = GPIO_PIN_All;
+   GPIO_InitStruct.Pin = GPIO_PIN_ALL;
 
 //   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -104,7 +104,7 @@ void Power_GpioAnalogConfig (void)
    HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
    HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
    HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
-   HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+//   HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
 
    /* Disable GPIOs clock */
 
@@ -130,9 +130,9 @@ void Power_GpioAnalogConfig (void)
 
 }
 void Power_SleepUntilInterrupt(void) {
-   SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
-   __WFI();
-   SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+  HAL_SuspendTick();
+  HAL_PWR_EnterSLEEPMode(0, PWR_SLEEPENTRY_WFI);
+  HAL_ResumeTick();
 }
 
 void Power_StopUntilInterrupt(void) {

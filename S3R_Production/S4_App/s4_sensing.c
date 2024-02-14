@@ -46,8 +46,8 @@ SENSINGTypeDef sensing;
 //static STATTypeDef * pStat; 
 
 ADCTypeDef *sensing_adc;
-I2CTypeDef *sensing_i2c;
-I2CTypeDef *sensing_i2c_batt;
+I2C_TypeDef *sensing_i2c;
+I2C_TypeDef *sensing_i2c_batt;
 
 uint32_t temp_cnt1, temp_cnt2, temp_cnt3, temp_cnt4;
 
