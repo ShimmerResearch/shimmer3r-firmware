@@ -40,7 +40,9 @@
 #include <stdlib.h>
 #include "s4.h"
 #include "s4__cfg.h"
-
+#if IS_SHIMMER3R
+#include "fatfs.h"
+#endif
 #define TIM_MEASURE_START time_start = SysTick->VAL
 #define TIM_MEASURE_END time_end = SysTick->VAL;            \
   time_diff = time_start - time_end

@@ -72,7 +72,9 @@ void S4_NORM_ADC_init(void){
    //hadcSens = &hadc2;
    hadcSens.Instance = ADC2;
    //hadcBatt = &hadc3;
+#if !IS_SHIMMER3R
    hadcBatt.Instance = ADC3;
+#endif
    
 //   pStat = GetStatus();
 //   pSensing = S4Sens_getSensing();
@@ -87,7 +89,11 @@ void S4_NORM_ADC_initBatt(void){
    /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
    */
    HAL_ADC_DeInit(&hadcBatt);
+#if IS_SHIMMER3R
+   hadcBatt.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+#else
    hadcBatt.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+#endif
    hadcBatt.Init.Resolution = ADC_RESOLUTION_12B;
    hadcBatt.Init.ScanConvMode = DISABLE;
    hadcBatt.Init.ContinuousConvMode = DISABLE;
@@ -102,7 +108,11 @@ void S4_NORM_ADC_initBatt(void){
     */
    sConfig.Channel = ADC_CHANNEL_3;
    sConfig.Rank = 1;
+#if IS_SHIMMER3R
+   sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
+#else
    sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
+#endif
    HAL_ADC_ConfigChannel(&hadcBatt, &sConfig);
 }
 
@@ -279,15 +289,22 @@ void S4_NORM_ADC_startSensing(){
    ADC_ChannelConfTypeDef sConfig;
    uint8_t adc_counter_sens = 1;//, adc_counter_resv = 0;   
    adcConfig = ADC_CONFIG_SENS;
-   
+#if IS_SHIMMER3R
+   sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
+#else
    sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
+#endif
       
    if(adc.sensorLen > 0){  
       HAL_ADC_DeInit(&hadcSens);
       
       //memcpy((uint8_t*)&hadcSens.Init, (uint8_t*)&hadcBatt.Init, sizeof(ADC_InitTypeDef));    
       //hadcSens.Instance = ADC2;
+#if IS_SHIMMER3R
+      hadcSens.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+#else
       hadcSens.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+#endif
       hadcSens.Init.Resolution = ADC_RESOLUTION_12B;
       //hadcSens.Init.ScanConvMode = DISABLE;
       hadcSens.Init.ContinuousConvMode = DISABLE;
@@ -627,8 +644,11 @@ void S4_NORM_ADC_readBatt(void) {
       hadcSens.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
       hadcSens.Init.NbrOfConversion = 1;
       HAL_ADC_Init(&hadcSens);
-      
+#if IS_SHIMMER3R
+      sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
+#else
       sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
+#endif
       sConfig.Channel = ADC_CHANNEL_3;
       sConfig.Rank = 1;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);      
