@@ -177,6 +177,7 @@ void Error_Handler(void);
 #define SW_SPI2_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
+#define IS_SHIMMER3R 1      /* for porting over codes from Shimmer4 to shimmer3r*/
 
 /* USER CODE END Private defines */
 
