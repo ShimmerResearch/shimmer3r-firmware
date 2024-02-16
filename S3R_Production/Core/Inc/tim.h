@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    spi.h
+  * @file    tim.h
   * @brief   This file contains all the function prototypes for
-  *          the spi.c file
+  *          the tim.c file
   ******************************************************************************
   * @attention
   *
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __SPI_H__
-#define __SPI_H__
+#ifndef __TIM_H__
+#define __TIM_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,37 +30,22 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 
-#include "s4.h"
-#include "s4__cfg.h"
-
 /* USER CODE END Includes */
 
-extern SPI_HandleTypeDef hspi1;
+extern TIM_HandleTypeDef htim3;
 
-extern SPI_HandleTypeDef hspi2;
+extern TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-void MX_SPI1_Init(void);
-void MX_SPI2_Init(void);
+void MX_TIM3_Init(void);
+void MX_TIM4_Init(void);
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN Prototypes */
-
-void SPI_init(void);
-uint8_t SPI_test(void);
-void SPI_configureChannels(void);
-void SPI_startSensing(void);
-void SPI_pollSensors(void);
-void SPI_stopSensing(void);
-
-void SPI_gatherDataCb(void (*done_cb)(void));
-void SPI_gatherDataStart(void);
-void SpiStep1Start(void);
-void SpiStep2Start(void);
-void SpiStep3Start(void);
-void SpiStepDone(void);
 
 /* USER CODE END Prototypes */
 
@@ -68,5 +53,5 @@ void SpiStepDone(void);
 }
 #endif
 
-#endif /* __SPI_H__ */
+#endif /* __TIM_H__ */
 

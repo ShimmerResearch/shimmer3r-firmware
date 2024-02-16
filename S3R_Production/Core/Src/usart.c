@@ -259,24 +259,16 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     __HAL_RCC_USART2_CLK_ENABLE();
 
     __HAL_RCC_GPIOA_CLK_ENABLE();
-    __HAL_RCC_GPIOD_CLK_ENABLE();
     /**USART2 GPIO Configuration
     PA2     ------> USART2_TX
-    PD6     ------> USART2_RX
+    PA3     ------> USART2_RX
     */
-    GPIO_InitStruct.Pin = DOCK_TXD_Pin;
+    GPIO_InitStruct.Pin = DOCK_TXD_Pin|DOCK_RXD_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
-    HAL_GPIO_Init(DOCK_TXD_GPIO_Port, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = DOCK_RXD_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
-    HAL_GPIO_Init(DOCK_RXD_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE BEGIN USART2_MspInit 1 */
 
@@ -307,7 +299,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     PD11     ------> USART3_CTS
     PD12     ------> USART3_RTS
     */
-    GPIO_InitStruct.Pin = BTH_TXD_Pin|BTH_RXD_Pin|BTH_CTS_Pin|BTH_RTS_Pin;
+    GPIO_InitStruct.Pin = BT_TXD_Pin|BT_RXD_Pin|BT_CTS_Pin|BT_RTS_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -411,11 +403,9 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
     /**USART2 GPIO Configuration
     PA2     ------> USART2_TX
-    PD6     ------> USART2_RX
+    PA3     ------> USART2_RX
     */
-    HAL_GPIO_DeInit(DOCK_TXD_GPIO_Port, DOCK_TXD_Pin);
-
-    HAL_GPIO_DeInit(DOCK_RXD_GPIO_Port, DOCK_RXD_Pin);
+    HAL_GPIO_DeInit(GPIOA, DOCK_TXD_Pin|DOCK_RXD_Pin);
 
   /* USER CODE BEGIN USART2_MspDeInit 1 */
 
@@ -435,7 +425,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
     PD11     ------> USART3_CTS
     PD12     ------> USART3_RTS
     */
-    HAL_GPIO_DeInit(GPIOD, BTH_TXD_Pin|BTH_RXD_Pin|BTH_CTS_Pin|BTH_RTS_Pin);
+    HAL_GPIO_DeInit(GPIOD, BT_TXD_Pin|BT_RXD_Pin|BT_CTS_Pin|BT_RTS_Pin);
 
     /* USART3 DMA DeInit */
     HAL_DMA_DeInit(uartHandle->hdmatx);

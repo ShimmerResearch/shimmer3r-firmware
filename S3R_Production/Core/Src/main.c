@@ -28,6 +28,7 @@
 #include "rtc.h"
 #include "sdmmc.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
@@ -176,7 +177,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
-  MX_I2C1_Init();
   MX_I2C2_Init();
   MX_RNG_Init();
   MX_RTC_Init();
@@ -190,6 +190,9 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ICACHE_Init();
   MX_CRC_Init();
+  MX_SPI1_Init();
+  MX_TIM3_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   MX_FATFS_Init();
 
