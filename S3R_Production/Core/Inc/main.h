@@ -140,6 +140,7 @@ void Error_Handler(void);
 #define EXP_RESET_N_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+#define IS_SHIMMER3R 1      /* for porting over codes from Shimmer4 to shimmer3r*/
 
 /* USER CODE END Private defines */
 

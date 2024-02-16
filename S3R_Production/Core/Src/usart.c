@@ -454,7 +454,11 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
 void Uart_init(void){
    huartBt = &huart3;
+#if IS_SHIMMER3R
+   huartDock = &huart2;
+#else
    huartDock = &huart6;
+#endif
    //huartExp = &huart6;
 
 //   pStat = GetStatus();
