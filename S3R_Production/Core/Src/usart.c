@@ -2059,7 +2059,7 @@ uint8_t ExpUart_TxIT(uint8_t *pData, uint16_t Size){
 
 
 uint8_t BtUart_connectIntCheck(void) {
-   if (HAL_GPIO_ReadPin(BTH_STATUS_GPIO_Port, BTH_STATUS_Pin) == GPIO_PIN_SET) { //connected
+   if (HAL_GPIO_ReadPin(BT_CONNECTION_GPIO_Port, BT_CONNECTION_Pin) == GPIO_PIN_SET) { //connected
       //HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_RESET);//blue
       BT_connectionInterrupt(1);
       stat.isBtConnected = 1;

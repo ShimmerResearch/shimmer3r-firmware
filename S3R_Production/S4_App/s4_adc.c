@@ -106,7 +106,7 @@ void S4_NORM_ADC_initBatt(void){
    HAL_ADC_Init(&hadcBatt);
     /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
     */
-   sConfig.Channel = ADC_CHANNEL_3;
+   sConfig.Channel = ADC_CHANNEL_VBATT;
    sConfig.Rank = 1;
 #if IS_SHIMMER3R
    sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
@@ -185,14 +185,17 @@ void S4_NORM_ADC_configureChannels(void){
       //in shimmer3 this corresponds to adc12
       S4Ram_storedConfigSetByte(NV_SENSORS1, S4Ram_storedConfigGetByte(NV_SENSORS1) | SENSOR_INT_ADC_10);
       S4Ram_storedConfigSetByte(NV_SENSORS2, S4Ram_storedConfigGetByte(NV_SENSORS2) | SENSOR_INT_ADC_12); 
-             
+#if IS_SHIMMER3R
+      HAL_GPIO_WritePin(GPIOF, SW_EXP_BRD_Pin, GPIO_PIN_SET);
+#else
       HAL_GPIO_WritePin(GPIOF, PPG_EN_Pin, GPIO_PIN_SET);
+#endif
    }
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_STRAIN) {
       //in shimmer3 this corresponds to adc13 and adc14
       S4Ram_storedConfigSetByte(NV_SENSORS1, S4Ram_storedConfigGetByte(NV_SENSORS1) | SENSOR_INT_ADC_11); 
       S4Ram_storedConfigSetByte(NV_SENSORS2, S4Ram_storedConfigGetByte(NV_SENSORS2) | SENSOR_INT_ADC_0);         
-      HAL_GPIO_WritePin(GPIOB, GPIO_INTERNAL4_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOB, SW_STRAIN_GAUGE_Pin, GPIO_PIN_SET);
    }
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_GSR) {
       //in shimmer3 this corresponds to adc1
@@ -350,15 +353,15 @@ void S4_NORM_ADC_startSensing(){
    
    //Analog Accel
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {      
-      sConfig.Channel = ADC_CHANNEL_13;//x
+      sConfig.Channel = ADC_CHANNEL_ACCEL_X;//x
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
 
-      sConfig.Channel = ADC_CHANNEL_14;//y
+      sConfig.Channel = ADC_CHANNEL_ACCEL_Y;//y
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
 
-      sConfig.Channel = ADC_CHANNEL_15;//z
+      sConfig.Channel = ADC_CHANNEL_ACCEL_Z;//z
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
       
@@ -370,60 +373,63 @@ void S4_NORM_ADC_startSensing(){
 #else
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_VBATT) {   
 #endif   
-      sConfig.Channel = ADC_CHANNEL_3;
+      sConfig.Channel = ADC_CHANNEL_VBATT;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
    }
    
    //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXT_ADC_9) {
-      sConfig.Channel = ADC_CHANNEL_9;
+      sConfig.Channel = ADC_CHANNEL_EXT_A7;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
    }
    
    //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXT_ADC_8) {
-      sConfig.Channel = ADC_CHANNEL_8;
+      sConfig.Channel = ADC_CHANNEL_EXT_A6;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
    }
    
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_EXT_ADC_1) {
-      sConfig.Channel = ADC_CHANNEL_1;
+      sConfig.Channel = ADC_CHANNEL_EXT_A1;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
    }
-   
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_10) {
-      sConfig.Channel = ADC_CHANNEL_10;
-      sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
-   }
-   
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_12) {
-      sConfig.Channel = ADC_CHANNEL_12;
-      sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
-   }
-   
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_11) {
-      sConfig.Channel = ADC_CHANNEL_11;
-      sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
-   }
-   
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_0) {
-      sConfig.Channel = ADC_CHANNEL_0;
-      sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
-   }
-   
+
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_2) {
-      sConfig.Channel = ADC_CHANNEL_2;
+      sConfig.Channel = ADC_CHANNEL_INT_A2;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
    }
+
+   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_10) {
+      sConfig.Channel = ADC_CHANNEL_INT_A10;
+      sConfig.Rank = adc_counter_sens++;
+      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+   }
+
+   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_11) {
+      sConfig.Channel = ADC_CHANNEL_INT_A11;
+      sConfig.Rank = adc_counter_sens++;
+      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+   }
+
+   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_0) {
+      sConfig.Channel = ADC_CHANNEL_INT_A0;
+      sConfig.Rank = adc_counter_sens++;
+      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+   }
+
+#if !IS_SHIMMER3R
+   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_12) {
+      sConfig.Channel = ADC_CHANNEL_INT_A12;
+      sConfig.Rank = adc_counter_sens++;
+      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+   }
+#endif
+
 }
    
 void (*ADC_gatherDataDone_cb)(void);
@@ -575,8 +581,8 @@ void S4_NORM_ADC_stopSensing(){
    //Analog Accel (KXRB5-2042)
    HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
    //Analog Strain Gauge,  esets the PV_SG voltage to gauge op-amp
-   HAL_GPIO_WritePin(GPIOB, GPIO_INTERNAL4_Pin, GPIO_PIN_RESET);
-   HAL_GPIO_WritePin(GPIOF, PPG_EN_Pin, GPIO_PIN_RESET);
+   HAL_GPIO_WritePin(GPIOB, SW_STRAIN_GAUGE_Pin, GPIO_PIN_RESET);
+   HAL_GPIO_WritePin(GPIOF, SW_PPG_EN_Pin, GPIO_PIN_RESET);
    
    if(adc.chanCntResv > 0){
       HAL_ADC_Stop_DMA(&hadcResv);
@@ -649,7 +655,7 @@ void S4_NORM_ADC_readBatt(void) {
 #else
       sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
 #endif
-      sConfig.Channel = ADC_CHANNEL_3;
+      sConfig.Channel = ADC_CHANNEL_VBATT;
       sConfig.Rank = 1;
       HAL_ADC_ConfigChannel(&hadcSens, &sConfig);      
    }   

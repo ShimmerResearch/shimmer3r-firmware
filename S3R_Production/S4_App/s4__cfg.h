@@ -3,6 +3,8 @@
 #ifndef SHIMMER4_SDK_CONFIG_H
 #define SHIMMER4_SDK_CONFIG_H
 
+#define IS_SHIMMER3R 1      /* for porting over codes from Shimmer4 to shimmer3r*/
+
 #define USE_DEFAULT_SENSOR    1
 #define RTC_FAST              0 // need to increase rtc alarm interrupt priority before enabling this option
 #define USE_8BYTES_INIT_TS    0      

@@ -47,6 +47,7 @@
 #include "stm32u5xx_hal.h"
 #include "math.h"
 #include "main.h"
+#include "hal_Board.h"
 
 #define HW_RES_40K_MIN_ADC_VAL   1120 //10k to 56k..1159->1140 //nom: changed to 1120 for linear conversion
 #define HW_RES_287K_MAX_ADC_VAL  3960 //56k to 220k was 4000 but was 3948 on shimmer so changed to 3800 //nom: changed to 3960 for linear conversion
@@ -133,23 +134,23 @@ void GSR_output(uint32_t *buf) {
 void GSR_setRange(uint8_t range) {
    switch (range) {
    case HW_RES_40K:
-      HAL_GPIO_WritePin(GPIOH, GPIO_INTERNAL3_Pin, GPIO_PIN_RESET); // A0 = 0
-      HAL_GPIO_WritePin(GPIOH, GPIO_INTERNAL2_Pin, GPIO_PIN_RESET); // A1 = 0
+      HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A0_Pin, GPIO_PIN_RESET); // A0 = 0
+      HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A1_Pin, GPIO_PIN_RESET); // A1 = 0
       break;
 
    case HW_RES_287K:
-      HAL_GPIO_WritePin(GPIOH, GPIO_INTERNAL3_Pin, GPIO_PIN_SET);   // A0 = 1
-      HAL_GPIO_WritePin(GPIOH, GPIO_INTERNAL2_Pin, GPIO_PIN_RESET); // A1 = 0
+      HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A0_Pin, GPIO_PIN_SET);   // A0 = 1
+      HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A1_Pin, GPIO_PIN_RESET); // A1 = 0
       break;
 
    case HW_RES_1M:
-      HAL_GPIO_WritePin(GPIOH, GPIO_INTERNAL3_Pin, GPIO_PIN_RESET); // A0 = 0
-      HAL_GPIO_WritePin(GPIOH, GPIO_INTERNAL2_Pin, GPIO_PIN_SET);   // A1 = 1
+      HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A0_Pin, GPIO_PIN_RESET); // A0 = 0
+      HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A1_Pin, GPIO_PIN_SET);   // A1 = 1
       break;
 
    case HW_RES_3M3:
-      HAL_GPIO_WritePin(GPIOH, GPIO_INTERNAL3_Pin, GPIO_PIN_SET);   // A0 = 1
-      HAL_GPIO_WritePin(GPIOH, GPIO_INTERNAL2_Pin, GPIO_PIN_SET);   // A1 = 1
+      HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A0_Pin, GPIO_PIN_SET);   // A0 = 1
+      HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A1_Pin, GPIO_PIN_SET);   // A1 = 1
       break;
    }   
    gsrActiveRes = range;

@@ -372,7 +372,7 @@ void I2cBatt_configureChannels(void){
 void I2C_startSensing(void){
    memset((uint8_t*)&i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
 
-   if ((0 != i2cSens.sensorLen) && (HAL_GPIO_ReadPin(SW_I2C_GPIO_Port, SW_I2C_Pin) == GPIO_PIN_RESET)) {
+   if ((0 != i2cSens.sensorLen) && (HAL_GPIO_ReadPin(SW_I2C2_GPIO_Port, SW_I2C2_Pin) == GPIO_PIN_RESET)) {
       //HAL_GPIO_WritePin(SW_I2C_GPIO_Port, SW_I2C_Pin, GPIO_PIN_SET);//I2C
       Board_SW_I2C(1);
       HAL_Delay(1000);

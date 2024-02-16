@@ -59,10 +59,10 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, SW_ACCEL_Pin|BT_DEVICE_WAKE_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, SD_PC_SWITCH_Pin|SW_I2C2_Pin|SW_SPI2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, SW_I2C2_Pin|SW_SPI2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, SW_ACCEL_Pin|BT_DEVICE_WAKE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, BT_LP_MODE_Pin|SW_FLASH_Pin, GPIO_PIN_SET);
@@ -79,11 +79,12 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, SW_EXP_BRD_Pin|CS_ICM_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = SPARE_PIN1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pins : PEPin PEPin PEPin */
+  GPIO_InitStruct.Pin = SD_PC_SWITCH_Pin|SW_I2C2_Pin|SW_SPI2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SPARE_PIN1_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PEPin PEPin PEPin */
   GPIO_InitStruct.Pin = USER_BTN_N_Pin|CHG_STAT1_Pin|CHG_STAT2_Pin;
@@ -92,10 +93,10 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = SPARE_PIN2_Pin;
+  GPIO_InitStruct.Pin = GPIO_INTERNAL3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SPARE_PIN2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIO_INTERNAL3_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PCPin PCPin PCPin */
   GPIO_InitStruct.Pin = SW_ACCEL_Pin|BT_CP_ROLE_Pin|BT_DEVICE_WAKE_Pin;
@@ -114,13 +115,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = LSM_DRDY_Pin|LSM_INT1_Pin|ICM_INT1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PEPin PEPin */
-  GPIO_InitStruct.Pin = SW_I2C2_Pin|SW_SPI2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PDPin PDPin PDPin PDPin */
@@ -173,7 +167,7 @@ void GPIO_init(void){
 }
 
 void GPIO_userButtonCheck() {
-   if (HAL_GPIO_ReadPin(USER_N_GPIO_Port, USER_N_Pin) == GPIO_PIN_RESET) { //pressed
+   if (HAL_GPIO_ReadPin(USER_BTN_N_GPIO_Port, USER_BTN_N_Pin) == GPIO_PIN_RESET) { //pressed
       stat.isButtonPressed = 1;
       Board_ledOn(LED_YELLOW);
       GPIO_tsPress = RTC_get64();
@@ -216,7 +210,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       }
       break;//EXG1
 //DOCK_Pin and gpio_internal share the same pin
-   case GPIO_INTERNAL_Pin:
+   case GPIO_INTERNAL0_Pin:
       if (stat.isSensing) {
 
          //EXG_gatherDataStart();
@@ -226,10 +220,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
          //EXG_dataReadyChip2();
       }
       break;//EXG2
-   case BTH_RTS_Pin:          BtUart_rtsIntCheck();            break;
-   case BTH_STATUS_Pin:       BtUart_connectIntCheck();        break;
-   case DOCK_Pin:             DockUart_interruptCheck();       break;
-   case USER_N_Pin:           GPIO_userButtonCheck();          break;
+   case BT_RTS_Pin:           BtUart_rtsIntCheck();            break;
+   case BT_CONNECTION_Pin:        BtUart_connectIntCheck();        break;
+   case DOCK_DETECT_Pin:      DockUart_interruptCheck();       break;
+   case USER_BTN_N_Pin:       GPIO_userButtonCheck();          break;
    case SD_DETECT_N_Pin:      SD_insertedCheck();              break;
    default: break;
    }

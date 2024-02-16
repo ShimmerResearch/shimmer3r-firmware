@@ -57,8 +57,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SPARE_PIN1_Pin GPIO_PIN_2
-#define SPARE_PIN1_GPIO_Port GPIOE
+#define SD_PC_SWITCH_Pin GPIO_PIN_2
+#define SD_PC_SWITCH_GPIO_Port GPIOE
 #define LED_LWR_RD_Pin GPIO_PIN_3
 #define LED_LWR_RD_GPIO_Port GPIOE
 #define LED_LWR_GR_Pin GPIO_PIN_4
@@ -67,8 +67,8 @@ void Error_Handler(void);
 #define LED_LWR_BLU_GPIO_Port GPIOE
 #define USER_BTN_N_Pin GPIO_PIN_6
 #define USER_BTN_N_GPIO_Port GPIOE
-#define SPARE_PIN2_Pin GPIO_PIN_13
-#define SPARE_PIN2_GPIO_Port GPIOC
+#define GPIO_INTERNAL3_Pin GPIO_PIN_13
+#define GPIO_INTERNAL3_GPIO_Port GPIOC
 #define ACCEL_X_Pin GPIO_PIN_0
 #define ACCEL_X_GPIO_Port GPIOC
 #define ACCEL_Y_Pin GPIO_PIN_1
@@ -177,7 +177,6 @@ void Error_Handler(void);
 #define SW_SPI2_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
-#define IS_SHIMMER3R 1      /* for porting over codes from Shimmer4 to shimmer3r*/
 
 /* USER CODE END Private defines */
 

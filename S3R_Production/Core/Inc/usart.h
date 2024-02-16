@@ -75,7 +75,7 @@ void ExpUart_rxCallback(uint8_t data);
 uint8_t ExpUart_TxIT(uint8_t *pData, uint16_t Size);
 
 uint8_t  BtUart_connectIntCheck(void);
-#define  BtUart_rtsIntCheck() BT_rtsInterrupt(HAL_GPIO_ReadPin(BTH_RTS_GPIO_Port, BTH_RTS_Pin))
+#define  BtUart_rtsIntCheck() BT_rtsInterrupt(HAL_GPIO_ReadPin(BT_RTS_GPIO_Port, BT_RTS_Pin))
 uint8_t  DockUart_interruptCheck(void);
 void     DockUart_setup(void);
 
