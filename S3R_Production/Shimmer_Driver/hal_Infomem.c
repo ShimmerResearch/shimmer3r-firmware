@@ -84,7 +84,7 @@ void InfoMem_update() {
    if(infoMem_p_storedConfig != 0){
 #if IS_SHIMMER3R
      for(j = 0; j < INFOMEM_RAM_SIZE; j+=128){
-       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, *(uint32_t*)(infoMem_p_storedConfig+j));
+       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, infoMem_p_storedConfig+j);
      }
 #else
       for(j = 0; j < INFOMEM_RAM_SIZE; j+=4){
@@ -99,7 +99,7 @@ void InfoMem_update() {
    if(infoMem_p_shimmerCalib_ram != 0){
 #if IS_SHIMMER3R
      for(j = 0; j < INFOMEM_CALIB_SIZE; j+=128){
-       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CALIB_OFFSET+j, *(uint32_t*)(infoMem_p_shimmerCalib_ram+j));
+       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CALIB_OFFSET+j, infoMem_p_shimmerCalib_ram+j);
      }
 #else
       for(j = 0; j < INFOMEM_CALIB_SIZE; j+=4){
@@ -112,7 +112,7 @@ void InfoMem_update() {
 #if HAL_TEST_INFOMEM
 #if IS_SHIMMER3R
    for(j = 0; j < INFOMEM_TEST_SIZE; j+=128){
-      HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_TEST_OFFSET+j,  *(uint32_t*)(test_infomem_wr+j));
+      HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_TEST_OFFSET+j, test_infomem_wr+j);
    }
 #else
    for(j = 0; j < INFOMEM_TEST_SIZE; j+=4){
