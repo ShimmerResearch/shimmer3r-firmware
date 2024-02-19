@@ -88,7 +88,9 @@ void S4_NORM_ADC_init(void){
 //   pStat = GetStatus();
 //   pSensing = S4Sens_getSensing();
    
-   S4_ADC_initBatt();   
+#if !IS_SHIMMER3R
+   S4_ADC_initBatt();
+#endif
 }
 
 void S4_NORM_ADC_initBatt(void){
@@ -116,10 +118,15 @@ void S4_NORM_ADC_initBatt(void){
     /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
     */
    sConfig.Channel = ADC_CHANNEL_VBATT;
-   sConfig.Rank = 1;
 #if IS_SHIMMER3R
+   // Copied from MX_ADC1_Init function
+   sConfig.Rank = ADC_REGULAR_RANK_1;
    sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
+   sConfig.SingleDiff = ADC_SINGLE_ENDED;
+   sConfig.OffsetNumber = ADC_OFFSET_NONE;
+   sConfig.Offset = 0;
 #else
+   sConfig.Rank = 1;
    sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
 #endif
    HAL_ADC_ConfigChannel(&hadcBatt, &sConfig);
