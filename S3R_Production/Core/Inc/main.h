@@ -77,8 +77,8 @@ void Error_Handler(void);
 #define ACCEL_Z_GPIO_Port GPIOC
 #define SW_ACCEL_Pin GPIO_PIN_3
 #define SW_ACCEL_GPIO_Port GPIOC
-#define BATTERY_Pin GPIO_PIN_0
-#define BATTERY_GPIO_Port GPIOA
+#define GPIO_INTERNAL4_Pin GPIO_PIN_0
+#define GPIO_INTERNAL4_GPIO_Port GPIOA
 #define DOCK_DETECT_Pin GPIO_PIN_1
 #define DOCK_DETECT_GPIO_Port GPIOA
 #define DOCK_TXD_Pin GPIO_PIN_2

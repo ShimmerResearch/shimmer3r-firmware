@@ -74,7 +74,7 @@ void InfoMem_update() {
    HAL_FLASH_Unlock();
 #if IS_SHIMMER3R
    uint32_t PageError;
-   //TODO check PageEror
+   //TODO check PageError
    HAL_FLASHEx_Erase(&pEraseInit, &PageError);
 #else
    FLASH_Erase_Sector(INFOMEM_SECTOR, FLASH_VOLTAGE_RANGE_3);

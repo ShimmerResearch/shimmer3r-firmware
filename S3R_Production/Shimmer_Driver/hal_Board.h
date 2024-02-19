@@ -98,12 +98,12 @@ extern void Board_delayMicros(uint32_t micros);
 #define ADC_CHANNEL_ACCEL_X ADC_CHANNEL_0
 #define ADC_CHANNEL_ACCEL_Y ADC_CHANNEL_1
 #define ADC_CHANNEL_ACCEL_Z ADC_CHANNEL_2
-#define ADC_CHANNEL_VBATT ADC_CHANNEL_5
+#define ADC_CHANNEL_VBATT ADC_CHANNEL_VBAT
 
 //TODO update Ax number to be more generic in the code between hardware
 //Shimmer3:   ExtCh 7, ExtCh 6, ExtCh 15, IntCh 1, IntCh 12, IntCh 13, IntCh 14
 //Shimmer4:   ExtCh 9, ExtCh 8, ExtCh 1,  IntCh 2, IntCh 10, IntCh 11, IntCh 0, IntCh 12
-//Shimmer3r:  ExtCh 9, ExtCh 8, ExtCh 1,  IntCh 2, IntCh 10, IntCh 11, IntCh 0, IntCh 12
+//Shimmer3r:  ExtCh 9, ExtCh 10, ExtCh 11, IntCh 17, IntCh 12, IntCh 15, IntCh 16, (ch 5 available on GPIO_INTERNAL4)
 #define ADC_CHANNEL_EXT_A7 ADC_CHANNEL_9
 #define ADC_CHANNEL_EXT_A6 ADC_CHANNEL_10
 #define ADC_CHANNEL_EXT_A1 ADC_CHANNEL_11

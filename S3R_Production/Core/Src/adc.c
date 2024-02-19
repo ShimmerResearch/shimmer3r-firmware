@@ -126,7 +126,7 @@ void MX_ADC2_Init(void)
 
   /** Configure Regular Channel
   */
-  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Channel = ADC_CHANNEL_VBAT;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_5CYCLE;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
@@ -177,7 +177,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     PC0     ------> ADC1_IN1
     PC1     ------> ADC1_IN2
     PC2     ------> ADC1_IN3
-    PA0     ------> ADC1_IN5
     PA4     ------> ADC1_IN9
     PA5     ------> ADC1_IN10
     PA6     ------> ADC1_IN11
@@ -191,8 +190,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = BATTERY_Pin|GPIO_ADC_EXT_EXP0_Pin|GPIO_ADC_EXT_EXP1_Pin|GPIO_ADC_EXT_EXP2_Pin
-                          |GPIO_ADC_INT_EXP0_Pin;
+    GPIO_InitStruct.Pin = GPIO_ADC_EXT_EXP0_Pin|GPIO_ADC_EXT_EXP1_Pin|GPIO_ADC_EXT_EXP2_Pin|GPIO_ADC_INT_EXP0_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -215,20 +213,20 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
 
   /* USER CODE END ADC2_MspInit 0 */
 
+  /** Initializes the peripherals clock
+  */
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADCDAC;
+    PeriphClkInit.AdcDacClockSelection = RCC_ADCDACCLKSOURCE_HSI;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
     /* ADC2 clock enable */
     HAL_RCC_ADC12_CLK_ENABLED++;
     if(HAL_RCC_ADC12_CLK_ENABLED==1){
       __HAL_RCC_ADC12_CLK_ENABLE();
     }
-
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    /**ADC2 GPIO Configuration
-    PA0     ------> ADC2_IN5
-    */
-    GPIO_InitStruct.Pin = BATTERY_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(BATTERY_GPIO_Port, &GPIO_InitStruct);
 
     /* ADC2 interrupt Init */
     HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
@@ -257,7 +255,6 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     PC0     ------> ADC1_IN1
     PC1     ------> ADC1_IN2
     PC2     ------> ADC1_IN3
-    PA0     ------> ADC1_IN5
     PA4     ------> ADC1_IN9
     PA5     ------> ADC1_IN10
     PA6     ------> ADC1_IN11
@@ -268,8 +265,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     */
     HAL_GPIO_DeInit(GPIOC, ACCEL_X_Pin|ACCEL_Y_Pin|ACCEL_Z_Pin);
 
-    HAL_GPIO_DeInit(GPIOA, BATTERY_Pin|GPIO_ADC_EXT_EXP0_Pin|GPIO_ADC_EXT_EXP1_Pin|GPIO_ADC_EXT_EXP2_Pin
-                          |GPIO_ADC_INT_EXP0_Pin);
+    HAL_GPIO_DeInit(GPIOA, GPIO_ADC_EXT_EXP0_Pin|GPIO_ADC_EXT_EXP1_Pin|GPIO_ADC_EXT_EXP2_Pin|GPIO_ADC_INT_EXP0_Pin);
 
     HAL_GPIO_DeInit(GPIOB, GPIO_ADC_INT_EXP1_Pin|GPIO_ADC_INT_EXP2_Pin|GPIO_ADC_INT_EXP3_Pin);
 
@@ -296,11 +292,6 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     if(HAL_RCC_ADC12_CLK_ENABLED==0){
       __HAL_RCC_ADC12_CLK_DISABLE();
     }
-
-    /**ADC2 GPIO Configuration
-    PA0     ------> ADC2_IN5
-    */
-    HAL_GPIO_DeInit(BATTERY_GPIO_Port, BATTERY_Pin);
 
     /* ADC2 interrupt Deinit */
   /* USER CODE BEGIN ADC2:ADC1_2_IRQn disable */

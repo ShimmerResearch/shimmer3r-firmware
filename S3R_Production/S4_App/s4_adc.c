@@ -53,7 +53,9 @@
 //static SENSINGTypeDef *pSensing;
 
 ADCTypeDef adc;
+#if !IS_SHIMMER3R
 ADC_HandleTypeDef hadcResv; //reserved for user use
+#endif
 ADC_HandleTypeDef hadcSens;
 ADC_HandleTypeDef hadcBatt;
 
@@ -65,14 +67,21 @@ uint8_t adcConfig;
 
 void S4_NORM_ADC_init(void){   
    
+#if IS_SHIMMER3R
+  adc.chanCntSens = adc.chanCntBatt = 0;
+#else
    adc.chanCntResv = adc.chanCntSens = adc.chanCntBatt = 0;
    memset(&hadcResv, 0, sizeof(ADC_HandleTypeDef));// = 0;//&hadc1;
+#endif
    adcConfig = ADC_CONFIG_NONE;
+#if IS_SHIMMER3R
+   hadcSens.Instance = ADC1;
+   hadcBatt.Instance = ADC2;
+#else
    hadcResv.Instance = ADC1;
    //hadcSens = &hadc2;
    hadcSens.Instance = ADC2;
    //hadcBatt = &hadc3;
-#if !IS_SHIMMER3R
    hadcBatt.Instance = ADC3;
 #endif
    
@@ -121,7 +130,11 @@ void S4_NORM_ADC_configureChannels(void){
    uint8_t nbr_adc_chans = 0;
    
    adc.sensorLen = 0;//adc.sensorCnt = 0;
+#if IS_SHIMMER3R
+   adc.chanCntSens = adc.chanCntBatt = 0;
+#else
    adc.chanCntResv = adc.chanCntSens = adc.chanCntBatt = 0;
+#endif
    
    //shimmer3 adc channel seq:
    // a_accel
@@ -334,6 +347,7 @@ void S4_NORM_ADC_startSensing(){
       }
    }
    
+#if !IS_SHIMMER3R
    if(adc.chanCntResv > 0){  
       HAL_ADC_DeInit(&hadcResv);
       
@@ -350,6 +364,7 @@ void S4_NORM_ADC_startSensing(){
       hadcResv.Init.NbrOfConversion = adc.chanCntResv;
       HAL_ADC_Init(&hadcResv);
    }
+#endif
    
    //Analog Accel
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {      
@@ -438,9 +453,11 @@ void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void)){
 }
    
 void S4_NORM_ADC_gatherDataStart(void){   
+#if !IS_SHIMMER3R
    if(adc.chanCntResv > 0){
       __NOP();
    }
+#endif
    if(adc.sensorLen > 0){
       HAL_ADC_Start_DMA(&hadcSens, adcBufSens, (uint32_t)adc.sensorLen);
       for(uint16_t i = 0; i < 144/2; i++);
@@ -584,10 +601,12 @@ void S4_NORM_ADC_stopSensing(){
    HAL_GPIO_WritePin(GPIOB, SW_STRAIN_GAUGE_Pin, GPIO_PIN_RESET);
    HAL_GPIO_WritePin(GPIOF, SW_PPG_EN_Pin, GPIO_PIN_RESET);
    
+#if !IS_SHIMMER3R
    if(adc.chanCntResv > 0){
       HAL_ADC_Stop_DMA(&hadcResv);
       HAL_ADC_DeInit(&hadcResv);
    } 
+#endif
    adcConfig = ADC_CONFIG_NONE;
 }
 
@@ -678,9 +697,11 @@ void S4_NORM_ADC_readBatt(void) {
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
+#if !IS_SHIMMER3R
    if (hadc->Instance == hadcResv.Instance) {//adc1
       __NOP();
    }
+#endif
    if (hadc->Instance == hadcSens.Instance) {//adc2
       __NOP();
       //ADC_gatherDataDone_cb();

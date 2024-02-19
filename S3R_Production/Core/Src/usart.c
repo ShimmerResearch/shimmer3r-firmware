@@ -731,7 +731,9 @@ uint8_t BtUart_callBack(uint8_t* data_buf) {
 
 void BtUart_processCmd(void) {
    uint64_t temp64;
+#if !IS_SHIMMER3R
    uint16_t temp16;
+#endif
 
    //HAL_GPIO_TogglePin(GPIOG, GPIO_PIN_6);//green
 
