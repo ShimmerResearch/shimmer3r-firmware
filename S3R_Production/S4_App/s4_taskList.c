@@ -95,8 +95,10 @@ void S4_NORM_Task_manage(void){
       //case TASK_NEXTSENSOR:      I2C_sensorNext();       break;
       case TASK_SDWRITE:         SD_writeToCard();       break;
       case TASK_BATTREAD:     
-         S4_ADC_readBatt();        
-         I2C_readBatt();          
+         S4_ADC_readBatt();
+#if !IS_SHIMMER3R
+         I2C_readBatt();
+#endif
          break;
       default: break;
       }

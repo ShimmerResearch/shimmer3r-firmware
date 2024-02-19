@@ -49,6 +49,15 @@ uint8_t test_infomem_wr[INFOMEM_RAM_SIZE];
 uint8_t test_infomem_rd[INFOMEM_RAM_SIZE];
 #endif
 
+#if IS_SHIMMER3R
+FLASH_EraseInitTypeDef pEraseInit = {
+  .TypeErase = FLASH_TYPEERASE_PAGES,
+  .Banks = INFOMEM_FLASH_BANK,
+  .Page = INFOMEM_PAGE_OFFSET,
+  .NbPages = INFOMEM_NUM_OF_PAGES
+};
+#endif
+
 void InfoMem_init(void){
    infoMem_p_storedConfig = S4Ram_getStoredConfig();
    infoMem_p_shimmerCalib_ram = ShimmerCalib_getRam();
@@ -63,10 +72,21 @@ void InfoMem_init(void){
 void InfoMem_update() { 
    uint16_t j;
    HAL_FLASH_Unlock();
+#if IS_SHIMMER3R
+   uint32_t PageError;
+   //TODO check PageEror
+   HAL_FLASHEx_Erase(&pEraseInit, &PageError);
+#else
    FLASH_Erase_Sector(INFOMEM_SECTOR, FLASH_VOLTAGE_RANGE_3);
    FLASH_WaitForLastOperation((uint32_t)500);
+#endif
       
    if(infoMem_p_storedConfig != 0){
+#if IS_SHIMMER3R
+     for(j = 0; j < INFOMEM_RAM_SIZE; j+=128){
+       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, *(uint32_t*)(infoMem_p_storedConfig+j));
+     }
+#else
       for(j = 0; j < INFOMEM_RAM_SIZE; j+=4){
          // FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
          HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_RAM_OFFSET+j, *(uint32_t*)(infoMem_p_storedConfig+j));
@@ -74,21 +94,33 @@ void InfoMem_update() {
 //      for(j = 0; j < INFOMEM_RAM_SIZE; j++){
 //         HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_RAM_OFFSET+j, infoMem_p_storedConfig[j]);
 //      }
+#endif
    }
    if(infoMem_p_shimmerCalib_ram != 0){
+#if IS_SHIMMER3R
+     for(j = 0; j < INFOMEM_CALIB_SIZE; j+=128){
+       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CALIB_OFFSET+j, *(uint32_t*)(infoMem_p_shimmerCalib_ram+j));
+     }
+#else
       for(j = 0; j < INFOMEM_CALIB_SIZE; j+=4){
          // FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
          HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_CALIB_OFFSET+j,  *(uint32_t*)(infoMem_p_shimmerCalib_ram+j));
       }
+#endif
    }
    
 #if HAL_TEST_INFOMEM
+#if IS_SHIMMER3R
+   for(j = 0; j < INFOMEM_TEST_SIZE; j+=128){
+      HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_TEST_OFFSET+j,  *(uint32_t*)(test_infomem_wr+j));
+   }
+#else
    for(j = 0; j < INFOMEM_TEST_SIZE; j+=4){
       // FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
       HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_TEST_OFFSET+j,  *(uint32_t*)(test_infomem_wr+j));
    }
-#endif   
-   
+#endif
+#endif
    
    HAL_FLASH_Lock();
 }
@@ -96,13 +128,25 @@ void InfoMem_update() {
 void InfoMem_updateFrom(uint8_t * buf) { 
    uint16_t j;  
    HAL_FLASH_Unlock();
+#if IS_SHIMMER3R
+   uint32_t PageError;
+   //TODO check PageEror
+   HAL_FLASHEx_Erase(&pEraseInit, &PageError);
+#else
    FLASH_Erase_Sector(INFOMEM_SECTOR, FLASH_VOLTAGE_RANGE_3);
    FLASH_WaitForLastOperation((uint32_t)50000);
+#endif
    
+#if IS_SHIMMER3R
+   for(j = 0; j < INFOMEM_RAM_SIZE; j+=128){
+      HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, buf[j]);
+   }
+#else
    for(j = 0; j < INFOMEM_RAM_SIZE; j++){
       // FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
       HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_RAM_OFFSET+j, buf[j]);
    }
+#endif
    HAL_FLASH_Lock();
 }
 

@@ -151,40 +151,55 @@ void I2C_init(void);
 uint8_t I2C_test(void);
 void I2C_scan(I2C_HandleTypeDef *hi2c);
 I2C_HandleTypeDef * I2C_getHandlerSensor(void);
+#if !IS_SHIMMER3R
 I2C_HandleTypeDef * I2C_getHandlerBatt(void);
 
 #define I2C_BATT_REPORT_INTERVAL_DEFAULT    0
 void I2C_readBatt(void);
 void I2C_readBattSetFreq(uint16_t val);
+#endif
 
 void I2cSensing(I2C_SENSING_TYPE start);
+#if !IS_SHIMMER3R
 void I2cBattMonitor(I2C_SENSING_TYPE start);
+#endif
 //void I2cSensing(uint8_t start);
 //void I2cBattMonitor(uint8_t start);
 
 void I2C_gatherDataInit(void (*done_cb)(void));
 void I2cSens_gatherDataCb(void (*done_cb)(void));
+#if !IS_SHIMMER3R
 void I2cBatt_gatherDataCb(void (*done_cb)(void));
+#endif
 void I2C_gatherDataStart(void);
 void I2cSens_gatherDataStart(void);
+#if !IS_SHIMMER3R
 void I2cBatt_gatherDataStart(void);
-
+#endif
 
 void I2C_configureChannels(void);
 void I2cSens_configureChannels(void);
+#if !IS_SHIMMER3R
 void I2cBatt_configureChannels(void);
+#endif
 
 void I2C_startSensing(void);
 void I2Sens_startSensing(void);
+#if !IS_SHIMMER3R
 void I2Batt_startSensing(void);
+#endif
 
 void I2C_pollSensors(void);
 void I2cSens_pollSensors(void);
+#if !IS_SHIMMER3R
 void I2cBatt_pollSensors(void);
+#endif
 
 void I2C_stopSensing(void);
 void I2cSens_stopSensing(void);
+#if !IS_SHIMMER3R
 void I2cBatt_stopSensing(void);
+#endif
 
 
 void BMP180Setup(void);
@@ -213,12 +228,16 @@ void Lsm303dlhcAccelRxDoneHandler(void);
 void Lsm303dlhcMagSample(void);
 void Lsm303dlhcMagTxDoneHandler(void);
 void Lsm303dlhcMagRxDoneHandler(void);
+#if !IS_SHIMMER3R
 void STC3100Sample(void);
 void STC3100BatteryTxDoneHandler(void);
 void STC3100BatteryRxDoneHandler(void);
+#endif
 
 void I2cSens_sensorNext(void);
+#if !IS_SHIMMER3R
 void I2cBatt_sensorNext(void);
+#endif
 
 /* USER CODE END Prototypes */
 

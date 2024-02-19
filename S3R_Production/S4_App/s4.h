@@ -294,9 +294,11 @@ typedef uint8_t bool;
 #define RSP_CALIB_DUMP_COMMAND                        0x99
 #define GET_CALIB_DUMP_COMMAND                        0x9A
 #define UPD_FLASH_COMMAND                             0x9B
+#if !IS_SHIMMER3R
 #define SET_I2C_BATT_STATUS_FREQ_COMMAND              0x9C
 #define RSP_I2C_BATT_STATUS_COMMAND                   0x9D
 #define GET_I2C_BATT_STATUS_COMMAND                   0x9E
+#endif
 //#define ROUTINE_COMMUNICATION                         0xE0
 #define ACK_COMMAND_PROCESSED                         0xFF
 

@@ -35,7 +35,9 @@
 #include "s4_calib.h"
 #include "s4_adc.h"
 #include "hal_Power.h"
+#if !IS_SHIMMER3R
 #include "STC3100.h"
+#endif
 #include "gsr.h"
 #include "RN42.h"
 #include "lsm303dlhc.h"
@@ -49,8 +51,10 @@
 #include "EXG\exg.h"
 
 #include "adc.h"
-//#include "can.h"
-//#include "dma.h"
+#if !IS_SHIMMER3R
+#include "can.h"
+#include "dma.h"
+#endif
 #include "fatfs.h"
 #include "i2c.h"
 // #include "iwdg.h"

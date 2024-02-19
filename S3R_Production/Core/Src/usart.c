@@ -598,7 +598,9 @@ uint8_t BtUart_callBack(uint8_t* data_buf) {
       case TOGGLE_LED_COMMAND:
       case START_STREAMING_COMMAND:
       case GET_STATUS_COMMAND:
+#if !IS_SHIMMER3R
       case GET_I2C_BATT_STATUS_COMMAND:
+#endif
       case GET_VBATT_COMMAND:
       case GET_TRIAL_CONFIG_COMMAND:
       case START_SDBT_COMMAND:
@@ -677,7 +679,9 @@ uint8_t BtUart_callBack(uint8_t* data_buf) {
          return 0;
       case SET_SAMPLING_RATE_COMMAND:
       case GET_DAUGHTER_CARD_ID_COMMAND:
+#if !IS_SHIMMER3R
       case SET_I2C_BATT_STATUS_FREQ_COMMAND:
+#endif
          //case SET_DAUGHTER_CARD_ID_COMMAND:
          btWaitingForArgs = 2;
          BT_setRxLen(2);
@@ -793,6 +797,7 @@ void BtUart_processCmd(void) {
    case GET_STATUS_COMMAND:
       dockStatusBtRsp = 1;
       break;
+#if !IS_SHIMMER3R
    case GET_I2C_BATT_STATUS_COMMAND:
       i2cvBattBtRsp = 1;
       break;
@@ -800,6 +805,7 @@ void BtUart_processCmd(void) {
       temp16 = btArgs[0] + ((uint16_t)btArgs[1]<<8);
       I2C_readBattSetFreq(temp16);
       break;
+#endif
    case GET_VBATT_COMMAND:
       vbattBtRsp = 1;
       break;
@@ -1374,12 +1380,14 @@ void BtUart_sendRsp(void) {
 //                                         ((sensing.en & 0x01) << 1) + (docked & 0x01);
          *(bt_tx_data + packet_length++) = 0;
          dockStatusBtRsp = 0;
+#if !IS_SHIMMER3R
       } else if (i2cvBattBtRsp) {
          *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
          *(bt_tx_data + packet_length++) = RSP_I2C_BATT_STATUS_COMMAND;
          memcpy((bt_tx_data + packet_length), (uint8_t*)stat.battDigital, STC3100_DATA_LEN);
          packet_length += STC3100_DATA_LEN;
          i2cvBattBtRsp = 0;
+#endif
       } else if (vbattBtRsp) {
          //ReadBatt();
          *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
