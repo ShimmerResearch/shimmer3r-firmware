@@ -74,6 +74,7 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void PeriphCommonClock_Config(void);
 static void SystemPower_Config(void);
 /* USER CODE BEGIN PFP */
 
@@ -172,6 +173,9 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+/* Configure the peripherals common clocks */
+  PeriphCommonClock_Config();
+
   /* Configure the System Power */
   SystemPower_Config();
 
@@ -191,7 +195,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
-  MX_USB_OTG_HS_HCD_Init();
+  MX_USB_OTG_HS_USB_Init();
   MX_USART2_UART_Init();
   MX_ICACHE_Init();
   MX_CRC_Init();
@@ -280,6 +284,14 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief Peripherals Common Clock Configuration
+  * @retval None
+  */
+void PeriphCommonClock_Config(void)
+{
 }
 
 /**

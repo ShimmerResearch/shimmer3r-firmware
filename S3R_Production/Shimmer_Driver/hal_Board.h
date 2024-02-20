@@ -92,8 +92,8 @@ extern void Board_delayMicros(uint32_t micros);
 #define GSR_RANGE_A0_Pin  GPIO_ADC_INT_EXP3_Pin
 #define GSR_RANGE_A1_Pin  GPIO_ADC_INT_EXP2_Pin
 
-#define SW_STRAIN_GAUGE_Pin GPIO_INTERNAL3_Pin
-#define SW_PPG_EN_Pin GPIO_INTERNAL3_Pin
+#define SW_STRAIN_GAUGE_Pin SW_I2C2_Pin //GPIO_INTERNAL3_Pin
+#define SW_PPG_EN_Pin SW_I2C2_Pin //GPIO_INTERNAL3_Pin
 
 #define ADC_CHANNEL_ACCEL_X ADC_CHANNEL_0
 #define ADC_CHANNEL_ACCEL_Y ADC_CHANNEL_1
