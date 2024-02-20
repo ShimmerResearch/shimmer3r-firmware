@@ -59,6 +59,9 @@ ADC_HandleTypeDef hadcResv; //reserved for user use
 ADC_HandleTypeDef hadcSens;
 ADC_HandleTypeDef hadcBatt;
 
+ADC_HandleTypeDef *hadcSensPtr;
+ADC_HandleTypeDef *hadcBattPtr;
+
 uint32_t adc_battVal, adcBufSens[12], adcBufResv[12];// max 12 channels, each of 16 bits
 //uint32_t adcBuf3[12];
 uint8_t gsrActiveResistor;
@@ -75,16 +78,19 @@ void S4_NORM_ADC_init(void){
 #endif
    adcConfig = ADC_CONFIG_NONE;
 #if IS_SHIMMER3R
-   hadcSens.Instance = ADC1;
-   hadcBatt.Instance = ADC2;
+   hadcSensPtr = getHadc1();
+   hadcBattPtr = getHadc2();
 #else
    hadcResv.Instance = ADC1;
    //hadcSens = &hadc2;
    hadcSens.Instance = ADC2;
    //hadcBatt = &hadc3;
    hadcBatt.Instance = ADC3;
-#endif
    
+   hadcSensPtr = &hadcSens;
+   hadcBattPtr = &hadcBatt;
+ #endif
+
 //   pStat = GetStatus();
 //   pSensing = S4Sens_getSensing();
    
@@ -99,22 +105,22 @@ void S4_NORM_ADC_initBatt(void){
    ADC_ChannelConfTypeDef sConfig;
    /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
    */
-   HAL_ADC_DeInit(&hadcBatt);
+   HAL_ADC_DeInit(hadcBattPtr);
 #if IS_SHIMMER3R
-   hadcBatt.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+   hadcBattPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
 #else
-   hadcBatt.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+   hadcBattPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
 #endif
-   hadcBatt.Init.Resolution = ADC_RESOLUTION_12B;
-   hadcBatt.Init.ScanConvMode = DISABLE;
-   hadcBatt.Init.ContinuousConvMode = DISABLE;
-   hadcBatt.Init.DiscontinuousConvMode = DISABLE;
-   hadcBatt.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-   hadcBatt.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-   hadcBatt.Init.NbrOfConversion = 1;
-   hadcBatt.Init.DMAContinuousRequests = ENABLE;
-   hadcBatt.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-   HAL_ADC_Init(&hadcBatt);
+   hadcBattPtr->Init.Resolution = ADC_RESOLUTION_12B;
+   hadcBattPtr->Init.ScanConvMode = DISABLE;
+   hadcBattPtr->Init.ContinuousConvMode = DISABLE;
+   hadcBattPtr->Init.DiscontinuousConvMode = DISABLE;
+   hadcBattPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+   hadcBattPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
+   hadcBattPtr->Init.NbrOfConversion = 1;
+   hadcBattPtr->Init.DMAContinuousRequests = ENABLE;
+   hadcBattPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+   HAL_ADC_Init(hadcBattPtr);
     /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
     */
    sConfig.Channel = ADC_CHANNEL_VBATT;
@@ -129,7 +135,7 @@ void S4_NORM_ADC_initBatt(void){
    sConfig.Rank = 1;
    sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
 #endif
-   HAL_ADC_ConfigChannel(&hadcBatt, &sConfig);
+   HAL_ADC_ConfigChannel(hadcBattPtr, &sConfig);
 }
 
 void S4_NORM_ADC_configureChannels(void){
@@ -319,36 +325,36 @@ void S4_NORM_ADC_startSensing(){
 #endif
       
    if(adc.sensorLen > 0){  
-      HAL_ADC_DeInit(&hadcSens);
+      HAL_ADC_DeInit(hadcSensPtr);
       
-      //memcpy((uint8_t*)&hadcSens.Init, (uint8_t*)&hadcBatt.Init, sizeof(ADC_InitTypeDef));    
+      //memcpy((uint8_t*)hadcSensPtr.Init, (uint8_t*)&hadcBattPtr->Init, sizeof(ADC_InitTypeDef));
       //hadcSens.Instance = ADC2;
 #if IS_SHIMMER3R
-      hadcSens.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+      hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
 #else
-      hadcSens.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+      hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
 #endif
-      hadcSens.Init.Resolution = ADC_RESOLUTION_12B;
-      //hadcSens.Init.ScanConvMode = DISABLE;
-      hadcSens.Init.ContinuousConvMode = DISABLE;
-      hadcSens.Init.DiscontinuousConvMode = DISABLE;
-      hadcSens.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-      hadcSens.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-      //hadcSens.Init.NbrOfConversion = 3;
-      hadcSens.Init.DMAContinuousRequests = ENABLE;
-      //hadcSens.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+      hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
+      //hadcSensPtr->Init.ScanConvMode = DISABLE;
+      hadcSensPtr->Init.ContinuousConvMode = DISABLE;
+      hadcSensPtr->Init.DiscontinuousConvMode = DISABLE;
+      hadcSensPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+      hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
+      //hadcSensPtr->Init.NbrOfConversion = 3;
+      hadcSensPtr->Init.DMAContinuousRequests = ENABLE;
+      //hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
       
       if(adc.sensorLen > 1){
-         hadcSens.Init.ScanConvMode = ENABLE;
-         hadcSens.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+         hadcSensPtr->Init.ScanConvMode = ENABLE;
+         hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
       } else {
-         hadcSens.Init.ScanConvMode = DISABLE;
-         hadcSens.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+         hadcSensPtr->Init.ScanConvMode = DISABLE;
+         hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
       }
       
-      hadcSens.Init.NbrOfConversion = adc.sensorLen;
+      hadcSensPtr->Init.NbrOfConversion = adc.sensorLen;
       
-      if (HAL_ADC_Init(&hadcSens) != HAL_OK)
+      if (HAL_ADC_Init(hadcSensPtr) != HAL_OK)
       {
          Error_Handler();
       }
@@ -358,7 +364,7 @@ void S4_NORM_ADC_startSensing(){
    if(adc.chanCntResv > 0){  
       HAL_ADC_DeInit(&hadcResv);
       
-      hadcResv.Init = hadcBatt.Init;    
+      hadcResv.Init = hadcBattPtr->Init;
       
       if(adc.chanCntResv > 1){
          hadcResv.Init.ScanConvMode = ENABLE;
@@ -377,15 +383,15 @@ void S4_NORM_ADC_startSensing(){
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {      
       sConfig.Channel = ADC_CHANNEL_ACCEL_X;//x
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
 
       sConfig.Channel = ADC_CHANNEL_ACCEL_Y;//y
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
 
       sConfig.Channel = ADC_CHANNEL_ACCEL_Z;//z
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
       
       HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_SET);
    }   
@@ -397,58 +403,58 @@ void S4_NORM_ADC_startSensing(){
 #endif   
       sConfig.Channel = ADC_CHANNEL_VBATT;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
    
    //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXT_ADC_9) {
       sConfig.Channel = ADC_CHANNEL_EXT_A7;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
    
    //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXT_ADC_8) {
       sConfig.Channel = ADC_CHANNEL_EXT_A6;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
    
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_EXT_ADC_1) {
       sConfig.Channel = ADC_CHANNEL_EXT_A1;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
 
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_2) {
       sConfig.Channel = ADC_CHANNEL_INT_A2;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
 
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_10) {
       sConfig.Channel = ADC_CHANNEL_INT_A10;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
 
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_11) {
       sConfig.Channel = ADC_CHANNEL_INT_A11;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
 
    if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_0) {
       sConfig.Channel = ADC_CHANNEL_INT_A0;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
 
 #if !IS_SHIMMER3R
    if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_12) {
       sConfig.Channel = ADC_CHANNEL_INT_A12;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
 #endif
 
@@ -466,7 +472,7 @@ void S4_NORM_ADC_gatherDataStart(void){
    }
 #endif
    if(adc.sensorLen > 0){
-      HAL_ADC_Start_DMA(&hadcSens, adcBufSens, (uint32_t)adc.sensorLen);
+      HAL_ADC_Start_DMA(hadcSensPtr, adcBufSens, (uint32_t)adc.sensorLen);
       for(uint16_t i = 0; i < 144/2; i++);
       
       ADC_gatherDataDone_cb();
@@ -600,8 +606,8 @@ void S4_NORM_ADC_bufPoll(){
 
 
 void S4_NORM_ADC_stopSensing(){      
-   HAL_ADC_Stop_DMA(&hadcSens);
-   HAL_ADC_DeInit(&hadcSens);      
+   HAL_ADC_Stop_DMA(hadcSensPtr);
+   HAL_ADC_DeInit(hadcSensPtr);
    //Analog Accel (KXRB5-2042)
    HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
    //Analog Strain Gauge,  esets the PV_SG voltage to gauge op-amp
@@ -670,23 +676,36 @@ void S4_NORM_ADC_readBatt(void) {
       }      
       adcConfig = ADC_CONFIG_BATT;
       
-      HAL_ADC_DeInit(&hadcSens);   
-      hadcSens.Init = hadcBatt.Init;      
-      hadcSens.Init.ScanConvMode = DISABLE;
-      hadcSens.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-      hadcSens.Init.NbrOfConversion = 1;
-      HAL_ADC_Init(&hadcSens);
+      HAL_ADC_DeInit(hadcSensPtr);
+      hadcSensPtr->Init = hadcBattPtr->Init;
+      hadcSensPtr->Init.ScanConvMode = DISABLE;
+      hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+      hadcSensPtr->Init.NbrOfConversion = 1;
+      HAL_ADC_Init(hadcSensPtr);
 #if IS_SHIMMER3R
+      // Copied from MX_ADC1_Init function
+      sConfig.Rank = ADC_REGULAR_RANK_1;
       sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
+      sConfig.SingleDiff = ADC_SINGLE_ENDED;
+      sConfig.OffsetNumber = ADC_OFFSET_NONE;
+      sConfig.Offset = 0;
 #else
       sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
 #endif
       sConfig.Channel = ADC_CHANNEL_VBATT;
       sConfig.Rank = 1;
-      HAL_ADC_ConfigChannel(&hadcSens, &sConfig);      
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }   
-   HAL_ADC_Start_DMA(&hadcBatt, &adc_battVal, 1);
+#if IS_SHIMMER3R
+   //TODO hadcSensPtr is configured above from Shimmer4 code but we're using hadcBattPtr below which I can't make sense of.
+   //TODO A bit of cross-over here between the two ADCs (presumably to handle whether the device is streaming or not) but I think this can probably be cleaned up a lot.
+   //TODO Shimmer4 implementation called DMA operation here and then delayed for a number of samples, I think calling HAL_ADC_Start may be better here but needs testing
+   HAL_ADC_Start(hadcBattPtr);
+   adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
+#else
+   HAL_ADC_Start_DMA(hadcBattPtr, &adc_battVal, 1);
    for(uint16_t i = 0; i < 144; i++);
+#endif
    stat.battVal[0] = adc_battVal & 0xff;
    stat.battVal[1] = (adc_battVal>>8) & 0xff;
    stat.battVal[2] = 0;
@@ -709,7 +728,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
       __NOP();
    }
 #endif
-   if (hadc->Instance == hadcSens.Instance) {//adc2
+   if (hadc->Instance == hadcSensPtr->Instance) {//adc2
       __NOP();
       //ADC_gatherDataDone_cb();
    }

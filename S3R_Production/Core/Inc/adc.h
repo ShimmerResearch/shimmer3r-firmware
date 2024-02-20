@@ -45,6 +45,9 @@ void MX_ADC2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+ADC_HandleTypeDef* getHadc1(void);
+ADC_HandleTypeDef* getHadc2(void);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
