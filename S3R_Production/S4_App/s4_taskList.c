@@ -137,3 +137,8 @@ uint32_t S4_NORM_Task_getList(){
    return taskList;
 }
 
+uint8_t setTaskNewBtCmdToProcess(void)
+{
+  return S4_Task_set(TASK_BTPROCESS);
+}
+

@@ -31,7 +31,7 @@ UART_HandleTypeDef *huartBt;
 UART_HandleTypeDef *huartDock;
 UART_HandleTypeDef *huartExp;
 
-
+#if !IS_SHIMMER3R
 // BT UART variables
 uint8_t btArgs[MAX_COMMAND_ARG_SIZE], btWaitingForArgs, btWaitingForArgsLength, btArgsSize, btAction;
 // BT command vars
@@ -46,7 +46,7 @@ uint8_t inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream, enableS
         calibRamResponse;//btIsConnected,
 uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
 uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
-
+#endif
 
 uint8_t  uartSteps, uartArgSize, uartArg2Wait, uartCrc2Wait, uartAction;//uartProcessCmds, uartSendResponses,
 uint8_t uartDockRxBuf[2], dockRxBuf[UART_DATA_LEN_MAX], uartRespBuf[UART_RSP_PACKET_SIZE];
@@ -455,7 +455,7 @@ void Uart_init(void){
 //   pSensing = S4Sens_getSensing();
 }
 
-
+#if !IS_SHIMMER3R
 /*****************************************************
  *
  *  bt uart
@@ -1620,6 +1620,7 @@ void BtUart_sendRsp(void) {
    }
 #endif
 }
+#endif
 
 /*****************************************************
  *
@@ -1658,6 +1659,11 @@ void DockUart_init(void){
    HAL_UART_Init(huartDock);
 
    HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
+
+#if IS_SHIMMER3R
+   HAL_UART_RegisterCallback(huartDock, HAL_UART_RX_COMPLETE_CB_ID, dockUartRxCallback);
+//   HAL_UART_RegisterCallback(huartDock, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
+#endif
 }
 
 void DockUart_disable(void){
@@ -2123,6 +2129,7 @@ void DockUart_setup(void) {
 //   return HAL_UART_Transmit_DMA(huart, pData, Size);
 //}
 
+#if !IS_SHIMMER3R
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 //#if UART_DOCK0BT1
    if (huart->Instance == huartBt->Instance) {
@@ -2143,16 +2150,22 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
    }
 //#else
    else if (huart->Instance == huartDock->Instance) {
-      //Board_ledToggle(LED_YELLOW);
-      if (stat.isDocked) {
-         DockUart_rxCallback(uartDockRxBuf[0]);
-//      } else {
-//         ExpUart_rxCallback(uartDockRxBuf[0]);
-      }
-      //HAL_UART_Receive_DMA(huartDock, uartDockRxBuf, 1);
-      HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
+     dockUartRxCallback(huart);
    }
 //#endif
+}
+#endif
+
+void dockUartRxCallback(UART_HandleTypeDef *huart)
+{
+  //Board_ledToggle(LED_YELLOW);
+  if (stat.isDocked) {
+     DockUart_rxCallback(uartDockRxBuf[0]);
+//      } else {
+//         ExpUart_rxCallback(uartDockRxBuf[0]);
+  }
+  //HAL_UART_Receive_DMA(huartDock, uartDockRxBuf, 1);
+  HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
 }
 
 /* USER CODE END 1 */

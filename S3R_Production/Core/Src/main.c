@@ -41,9 +41,6 @@
 #include <stdlib.h>
 #include "s4.h"
 #include "s4__cfg.h"
-#if IS_SHIMMER3R
-#include "fatfs.h"
-#endif
 
 #define TIM_MEASURE_START time_start = SysTick->VAL
 #define TIM_MEASURE_END time_end = SysTick->VAL;            \
@@ -80,6 +77,16 @@ static void SystemPower_Config(void);
 
 void Init(void);
 uint32_t FullTest(void);
+
+//TODO move out of here
+#if IS_SHIMMER3R
+void btInitialise(void);
+void btFactoryResetViaFw(void);
+void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
+void usart2UartUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
+void setBtConnectionState(bool state);
+bool isBtConnected(void);
+#endif
 
 /* USER CODE END PFP */
 
@@ -123,7 +130,13 @@ void Init() {
    DockUart_interruptCheck();
    SD_insertedCheck();
    //GPIO_userButtonCheck();
+#if IS_SHIMMER3R
+   btCommsProtocolInit(setTaskNewBtCmdToProcess);
+ //  btFactoryResetViaFw();
+   btInitialise();
+#else
    BtUart_init();
+#endif
    S4Ram_init();
    ShimmerCalib_init();
    // ==== 13.8ma ====
@@ -133,7 +146,7 @@ void Init() {
    //BT_disable(huartBt);
    DockUart_enable();
    stat.isConfiguring = 0;
-   S4Sens_stopPeripherals();
+//   S4Sens_stopPeripherals();
    S4_RTC_WakeUpSetSlow();
    Board_ledOff(LED_ALL);
 //   while(1){
@@ -189,7 +202,7 @@ int main(void)
   MX_I2C2_Init();
   MX_RNG_Init();
   MX_RTC_Init();
-  MX_SDMMC1_SD_Init();
+//  MX_SDMMC1_SD_Init();
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
@@ -338,6 +351,174 @@ uint32_t FullTest(void) {
 
    return stat.testResult ;
 }
+
+//TODO move out of here
+#if IS_SHIMMER3R
+void btInitialise(void)
+{
+  printf("\r\nBT init start\r\n");
+
+  // 20 * 100ms = 2s per baud rate attempt
+  btCommWithDiffBaudRates(true, 20U);
+
+  printf("BT init end\r\n");
+}
+
+void btFactoryResetViaFw(void)
+{
+  printf("\r\nBT factory reset start\r\n");
+
+  // 50 * 100ms = 5s per baud rate attempt
+  btCommWithDiffBaudRates(false, 50U);
+
+  // Abort transfer operations to release UART for subsequent requests.
+  HAL_StatusTypeDef status = HAL_UART_Abort(&huart2);
+
+  printf("BT factory reset end\r\n");
+}
+
+void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
+{
+  uint8_t failCount = 0U;
+  uint32_t baudToTry = BAUD_TO_USE;
+
+  setBtLpMode(false);
+
+  printf("Attempting %lu Baud\r\n", baudToTry);
+  usart2UartUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
+
+  if (isInit)
+  {
+    btInit();
+  }
+  else
+  {
+    btFactoryResetInit();
+  }
+
+  while ((isBtInitCmdsRunning() && !isBtIsInitialised())
+      || (isBtFactoryResetCmdsRunning() && !isBtIsFactoryResetted()))
+  {
+//    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+    /* Insert delay 100 ms */
+    HAL_Delay(100);
+
+    if (isEzsBaudRateDelayPending())
+    {
+      /* Delay or arbitrary value. As a guide, the EZ-Serial user guide states that it takes ~150 ms for a "chipset reset and boot process". */
+      HAL_Delay(500);
+      incrementBtInitCmdsStep();
+      btInitCommands();
+    }
+    else if (isEzsFactoryRebootDelayPending())
+    {
+      /* Experimentally found to be ~ 2.75s. */
+      HAL_Delay(3000);
+      incrementBtFactoryResetCmdsStep();
+      btFactoryResetCommands();
+    }
+
+    if (!(reset_cnt--))
+    {
+      failCount++;
+
+      if (failCount <= 4)
+      {
+        if (failCount == 1)
+        {
+          baudToTry = 115200;
+        }
+        else if (failCount == 2)
+        {
+          baudToTry = 460800;
+        }
+        else if (failCount == 3)
+        {
+          baudToTry = 2000000;
+        }
+        else if (failCount == 4)
+        {
+          baudToTry = 500000;
+        }
+
+        printf("Attempting %lu Baud\r\n", baudToTry);
+        usart2UartUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
+      }
+      else
+      {
+        printf("Operation failed, performing system reset\r\n");
+        // software POR reset
+        NVIC_SystemReset();
+      }
+
+      if (isInit)
+      {
+        btInit();
+      }
+      else
+      {
+        btFactoryResetInit();
+      }
+
+      reset_cnt = 50U;
+    }
+  }
+  setBtLpMode(true);
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+void usart2UartUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
+{
+  HAL_StatusTypeDef status = HAL_UART_Abort(&huart2);
+  status = HAL_UART_DeInit(&huart2);
+
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = baudRate;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = hwFlowCtrl? UART_HWCONTROL_RTS_CTS:UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_EnableFifoMode(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  setBtUartInstance(&huart2);
+}
+
+void setBtConnectionState(bool state)
+{
+  stat.isBtConnected = state;
+//  HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
+}
+
+bool isBtConnected(void)
+{
+  return stat.isBtConnected;
+}
+
+#endif
 
 /* USER CODE END 4 */
 

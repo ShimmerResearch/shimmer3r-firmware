@@ -53,12 +53,14 @@ void MX_USART3_UART_Init(void);
 
 void Uart_init(void);
 
+#if !IS_SHIMMER3R
 void BtUart_init(void);
 uint8_t BtUart_callBack(uint8_t* data_buf);
 void BtUart_sendRsp(void);
 void BtUart_processCmd(void);
 //HAL_StatusTypeDef BtUart_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
 //uint8_t BtUart_isConnected(void);
+#endif
 
 void DockUart_init(void);
 void DockUart_disable(void);
@@ -74,10 +76,14 @@ void ExpUart_init(void);
 void ExpUart_rxCallback(uint8_t data);
 uint8_t ExpUart_TxIT(uint8_t *pData, uint16_t Size);
 
+#if !IS_SHIMMER3R
 uint8_t  BtUart_connectIntCheck(void);
 #define  BtUart_rtsIntCheck() BT_rtsInterrupt(HAL_GPIO_ReadPin(BT_RTS_GPIO_Port, BT_RTS_Pin))
+#endif
 uint8_t  DockUart_interruptCheck(void);
 void     DockUart_setup(void);
+
+void dockUartRxCallback(UART_HandleTypeDef *huart);
 
 /* USER CODE END Prototypes */
 

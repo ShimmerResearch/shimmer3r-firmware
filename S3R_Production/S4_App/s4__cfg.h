@@ -39,7 +39,13 @@
 #include "STC3100.h"
 #endif
 #include "gsr.h"
+#if IS_SHIMMER3R
+#include "../Shimmer_Driver/Bluetooth/CYW20820.h"
+#include "../Shimmer_Driver/Bluetooth/shimmer_bt_comms.h"
+#include "../Shimmer_Driver/Bluetooth/EZ-Serial/handlers.h"
+#else
 #include "RN42.h"
+#endif
 #include "lsm303dlhc.h"
 #include "mpu9250.h"
 #include "s4_taskList.h"

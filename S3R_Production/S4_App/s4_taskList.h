@@ -104,6 +104,8 @@ uint8_t S4_NORM_Task_set(uint32_t task_id);
 //return the whole tasklist
 uint32_t S4_NORM_Task_getList(void);
 
+uint8_t setTaskNewBtCmdToProcess(void);
+
 #endif //S4_TASKLIST_H
 
 
