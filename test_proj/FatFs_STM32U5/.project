@@ -3,6 +3,7 @@
 	<name>FatFs_STM32U5</name>
 	<comment></comment>
 	<projects>
+		<project>FatFs_STM32U5</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
