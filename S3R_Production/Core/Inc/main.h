@@ -65,10 +65,10 @@ void Error_Handler(void);
 #define LED_LWR_GR_GPIO_Port GPIOE
 #define LED_LWR_BLU_Pin GPIO_PIN_5
 #define LED_LWR_BLU_GPIO_Port GPIOE
-#define USER_BTN_N_Pin GPIO_PIN_6
-#define USER_BTN_N_GPIO_Port GPIOE
-#define BT_CYSPP_Pin GPIO_PIN_13
-#define BT_CYSPP_GPIO_Port GPIOC
+#define BT_CYSPP_Pin GPIO_PIN_6
+#define BT_CYSPP_GPIO_Port GPIOE
+#define USER_BTN_N_Pin GPIO_PIN_13
+#define USER_BTN_N_GPIO_Port GPIOC
 #define ACCEL_X_Pin GPIO_PIN_0
 #define ACCEL_X_GPIO_Port GPIOC
 #define ACCEL_Y_Pin GPIO_PIN_1
