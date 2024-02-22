@@ -221,9 +221,9 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void));
 #if IS_BT_RN
 void triggerBtRfCommStateChangeCallback(bool state);
 void triggerShimmerErrorState(void);
+#endif
 uint8_t getBtVerStrLen(void);
 char * getBtVerStrPtr(void);
-#endif
 
 void setBtCrcMode(COMMS_CRC_MODE btCrcModeNew);
 COMMS_CRC_MODE getBtCrcMode(void);

@@ -130,13 +130,13 @@ void Init() {
    DockUart_interruptCheck();
    SD_insertedCheck();
    //GPIO_userButtonCheck();
-//#if IS_SHIMMER3R
-//   btCommsProtocolInit(setTaskNewBtCmdToProcess);
-// //  btFactoryResetViaFw();
-//   btInitialise();
-//#else
-//   BtUart_init();
-//#endif
+#if IS_SHIMMER3R
+   btCommsProtocolInit(setTaskNewBtCmdToProcess);
+ //  btFactoryResetViaFw();
+   btInitialise();
+#else
+   BtUart_init();
+#endif
    S4Ram_init();
    ShimmerCalib_init();
    // ==== 13.8ma ====
@@ -146,7 +146,7 @@ void Init() {
    //BT_disable(huartBt);
    DockUart_enable();
    stat.isConfiguring = 0;
-//   S4Sens_stopPeripherals();
+   S4Sens_stopPeripherals();
    S4_RTC_WakeUpSetSlow();
    Board_ledOff(LED_ALL);
 //   while(1){
@@ -202,7 +202,7 @@ int main(void)
   MX_I2C2_Init();
   MX_RNG_Init();
   MX_RTC_Init();
-//  MX_SDMMC1_SD_Init();
+  MX_SDMMC1_SD_Init();
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();

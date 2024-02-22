@@ -86,7 +86,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="FATFS/Target"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Middlewares"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="S4_App"/>
-						<entry excluding="RN42.c|BMP280_driver/bmp280_support.c|STC3100.c|SR7/sr7.c|STC3100_OLD.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Shimmer_Driver"/>
+						<entry excluding="Bluetooth/sd_sync.c|RN42.c|BMP280_driver/bmp280_support.c|STC3100.c|SR7/sr7.c|STC3100_OLD.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Shimmer_Driver"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
