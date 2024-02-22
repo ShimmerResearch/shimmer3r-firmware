@@ -67,8 +67,10 @@ void Error_Handler(void);
 #define LED_LWR_BLU_GPIO_Port GPIOE
 #define BT_CYSPP_Pin GPIO_PIN_6
 #define BT_CYSPP_GPIO_Port GPIOE
+#define BT_CYSPP_EXTI_IRQn EXTI6_IRQn
 #define USER_BTN_N_Pin GPIO_PIN_13
 #define USER_BTN_N_GPIO_Port GPIOC
+#define USER_BTN_N_EXTI_IRQn EXTI13_IRQn
 #define ACCEL_X_Pin GPIO_PIN_0
 #define ACCEL_X_GPIO_Port GPIOC
 #define ACCEL_Y_Pin GPIO_PIN_1
@@ -81,6 +83,7 @@ void Error_Handler(void);
 #define CS_ICM_GPIO_Port GPIOA
 #define DOCK_DETECT_Pin GPIO_PIN_1
 #define DOCK_DETECT_GPIO_Port GPIOA
+#define DOCK_DETECT_EXTI_IRQn EXTI1_IRQn
 #define DOCK_TXD_Pin GPIO_PIN_2
 #define DOCK_TXD_GPIO_Port GPIOA
 #define DOCK_RXD_Pin GPIO_PIN_3
@@ -101,8 +104,10 @@ void Error_Handler(void);
 #define GPIO_ADC_INT_EXP3_GPIO_Port GPIOB
 #define CHG_STAT1_Pin GPIO_PIN_7
 #define CHG_STAT1_GPIO_Port GPIOE
+#define CHG_STAT1_EXTI_IRQn EXTI7_IRQn
 #define CHG_STAT2_Pin GPIO_PIN_8
 #define CHG_STAT2_GPIO_Port GPIOE
+#define CHG_STAT2_EXTI_IRQn EXTI8_IRQn
 #define LSM_DRDY_Pin GPIO_PIN_9
 #define LSM_DRDY_GPIO_Port GPIOE
 #define LSM_INT1_Pin GPIO_PIN_10
@@ -125,8 +130,10 @@ void Error_Handler(void);
 #define LED_UPR_RD_GPIO_Port GPIOD
 #define BT_CONNECTION_Pin GPIO_PIN_14
 #define BT_CONNECTION_GPIO_Port GPIOD
+#define BT_CONNECTION_EXTI_IRQn EXTI14_IRQn
 #define BT_HOST_WAKE_Pin GPIO_PIN_15
 #define BT_HOST_WAKE_GPIO_Port GPIOD
+#define BT_HOST_WAKE_EXTI_IRQn EXTI15_IRQn
 #define BT_CP_ROLE_Pin GPIO_PIN_6
 #define BT_CP_ROLE_GPIO_Port GPIOC
 #define BT_DEVICE_WAKE_Pin GPIO_PIN_7
@@ -145,6 +152,7 @@ void Error_Handler(void);
 #define SD_CLK_GPIO_Port GPIOC
 #define SD_DETECT_N_Pin GPIO_PIN_0
 #define SD_DETECT_N_GPIO_Port GPIOD
+#define SD_DETECT_N_EXTI_IRQn EXTI0_IRQn
 #define SW_FLASH_Pin GPIO_PIN_1
 #define SW_FLASH_GPIO_Port GPIOD
 #define SD_CMD_Pin GPIO_PIN_2

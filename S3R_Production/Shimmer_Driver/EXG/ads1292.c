@@ -299,7 +299,9 @@ void ADS1292_gatherDataDone(void){
    ADS1292_dataReadDone_cb();
 }
 
+#if !IS_SHIMMER3R
 extern DMA_HandleTypeDef hdma_spi1_rx;
+#endif
 void ADS1292_dataReadFromChip1() {
    __disable_irq();
    if(!chip1ReadPending && !chip2ReadPending){
@@ -319,7 +321,11 @@ void ADS1292_dataReadFromChip1() {
          HAL_SPI_DMAStop(hspi_exg);         
          //Board_delayMicros(6);
          while(HAL_SPI_GetState(hspi_exg)!=HAL_SPI_STATE_READY);
+#if IS_SHIMMER3R
+         while(HAL_DMA_GetState(hspi_exg->hdmarx)!=HAL_DMA_STATE_READY);
+#else
          while(HAL_DMA_GetState(&hdma_spi1_rx)!=HAL_DMA_STATE_READY);
+#endif
          HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
       }else{
          ads1292_bbuf = 0;
@@ -350,7 +356,11 @@ void ADS1292_dataReadFromChip2() {
          HAL_SPI_DMAStop(hspi_exg);         
          //Board_delayMicros(6);
          while(HAL_SPI_GetState(hspi_exg)!=HAL_SPI_STATE_READY);
-         while(HAL_DMA_GetState(&hdma_spi1_rx)!=HAL_DMA_STATE_READY);         
+#if IS_SHIMMER3R
+         while(HAL_DMA_GetState(hspi_exg->hdmarx)!=HAL_DMA_STATE_READY);
+#else
+         while(HAL_DMA_GetState(&hdma_spi1_rx)!=HAL_DMA_STATE_READY);
+#endif
          
          HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
       }else{

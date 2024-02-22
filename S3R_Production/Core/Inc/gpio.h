@@ -46,6 +46,10 @@ void MX_GPIO_Init(void);
 void GPIO_init(void);
 void GPIO_userButtonCheck(void);
 
+#if IS_SHIMMER3R
+void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising);
+#endif
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

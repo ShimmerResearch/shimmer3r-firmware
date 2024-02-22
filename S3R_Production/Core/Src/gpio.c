@@ -99,7 +99,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = USER_BTN_N_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(USER_BTN_N_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PCPin PCPin PCPin */
@@ -187,6 +187,31 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SW_EXP_BRD_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI6_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI7_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI8_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI8_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI13_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI13_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI14_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI14_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_IRQn);
+
 }
 
 /* USER CODE BEGIN 2 */
@@ -230,31 +255,76 @@ uint16_t ext_cnt6 = 0;
 #if IS_SHIMMER3R
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
-  switch (GPIO_Pin) {
+//  switch (GPIO_Pin)
+//  {
+//  default:
+//    break;
+//  }
+  gpioExtiCommon(GPIO_Pin, 1);
+}
+
+void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
+{
+  switch (GPIO_Pin)
+  {
+  case GPIO_INTERNAL1_Pin:
+    //TODO check if product is ExG unit
+    //EXG1 DRDY active low
+    if (stat.isSensing)
+    {
+      //EXG_dataReadyChip1();
+      ext_cnt1++;
+      if (!(ext_cnt1 % 100))
+      {
+        __NOP();
+        __NOP();
+        __NOP();
+      }
+      EXG_gatherDataStart();
+    }
+    break;
+  case GPIO_INTERNAL0_Pin:
+    //TODO check if product is ExG unit
+    //EXG2 DRDY active low
+    if (stat.isSensing)
+    {
+      //EXG_gatherDataStart();
+      __NOP();
+      __NOP();
+      __NOP();
+      //EXG_dataReadyChip2();
+    }
+    break;
+  default:
+    gpioExtiCommon(GPIO_Pin, 0);
+    break;
+  }
+}
+
+void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
+{
+  switch (GPIO_Pin)
+  {
   case BT_CONNECTION_Pin:
-//    setBtConnectionState(false);
+//    setBtConnectionState(isRising);
     break;
   case BT_CYSPP_Pin:
-//    setBtCysppState(false);
+//    setBtCysppState(isRising);
+    break;
+  case DOCK_DETECT_Pin:
+    DockUart_interruptCheck();
+    break;
+  case USER_BTN_N_Pin:
+    GPIO_userButtonCheck();
+    break;
+  case SD_DETECT_N_Pin:
+    SD_insertedCheck();
     break;
   default:
     break;
   }
 }
 
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
-{
-  switch (GPIO_Pin) {
-  case BT_CONNECTION_Pin:
-//    setBtConnectionState(true);
-    break;
-  case BT_CYSPP_Pin:
-//    setBtCysppState(true);
-    break;
-  default:
-    break;
-  }
-}
 #else
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
    switch (GPIO_Pin) {
@@ -290,6 +360,5 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
    }
 }
 #endif
-
 
 /* USER CODE END 2 */
