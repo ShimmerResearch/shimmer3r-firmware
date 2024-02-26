@@ -90,7 +90,7 @@ static void MX_FLASH_Init(void);
 void btInitialise(void);
 void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
-void usart2UartUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
+void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
 uint8_t setTaskNewBtCmdToProcess(void);
@@ -792,7 +792,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
   setBtLpMode(false);
 
   printf("Attempting %lu Baud\r\n", baudToTry);
-  usart2UartUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
+  usartBtUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
 
   if (isInit)
   {
@@ -849,7 +849,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
         }
 
         printf("Attempting %lu Baud\r\n", baudToTry);
-        usart2UartUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
+        usartBtUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
       }
       else
       {
@@ -878,7 +878,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
   * @param None
   * @retval None
   */
-void usart2UartUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
+void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
 {
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart2);
   status = HAL_UART_DeInit(&huart2);

@@ -257,7 +257,7 @@ void btInitCommands(void)
     {
       printf("Update UART Stage3\r\n");
       //TODO resolve reference
-      usart2UartUpdate(rsp_system_get_uart_parameters_ref.baud, rsp_system_get_uart_parameters_ref.flow);
+      usartBtUpdate(rsp_system_get_uart_parameters_ref.baud, rsp_system_get_uart_parameters_ref.flow);
     }
   }
 
@@ -609,7 +609,7 @@ void btFactoryResetCommands(void)
     btFactoryResetCmdsStep++;
     printf("Update UART to factory default\r\n");
     //TODO resolve reference
-    usart2UartUpdate(115200, 0);
+    usartBtUpdate(115200, 0);
     HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
   }
 

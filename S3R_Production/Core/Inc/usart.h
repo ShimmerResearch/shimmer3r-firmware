@@ -53,6 +53,8 @@ void MX_USART3_UART_Init(void);
 
 void Uart_init(void);
 
+void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
+
 #if !IS_SHIMMER3R
 void BtUart_init(void);
 uint8_t BtUart_callBack(uint8_t* data_buf);

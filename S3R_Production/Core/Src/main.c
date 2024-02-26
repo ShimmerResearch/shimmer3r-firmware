@@ -83,7 +83,6 @@ uint32_t FullTest(void);
 void btInitialise(void);
 void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
-void usart2UartUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
 #endif
@@ -372,7 +371,7 @@ void btFactoryResetViaFw(void)
   btCommWithDiffBaudRates(false, 50U);
 
   // Abort transfer operations to release UART for subsequent requests.
-  HAL_StatusTypeDef status = HAL_UART_Abort(&huart2);
+  HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
 
   printf("BT factory reset end\r\n");
 }
@@ -385,7 +384,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
   setBtLpMode(false);
 
   printf("Attempting %lu Baud\r\n", baudToTry);
-  usart2UartUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
+  usartBtUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
 
   if (isInit)
   {
@@ -442,7 +441,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
         }
 
         printf("Attempting %lu Baud\r\n", baudToTry);
-        usart2UartUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
+        usartBtUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
       }
       else
       {
@@ -464,47 +463,6 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
     }
   }
   setBtLpMode(true);
-}
-
-/**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-void usart2UartUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
-{
-  HAL_StatusTypeDef status = HAL_UART_Abort(&huart2);
-  status = HAL_UART_DeInit(&huart2);
-
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = baudRate;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = hwFlowCtrl? UART_HWCONTROL_RTS_CTS:UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_EnableFifoMode(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  setBtUartInstance(&huart2);
 }
 
 void setBtConnectionState(bool state)

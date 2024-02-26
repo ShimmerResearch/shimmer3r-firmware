@@ -455,6 +455,47 @@ void Uart_init(void){
 //   pSensing = S4Sens_getSensing();
 }
 
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
+{
+  HAL_StatusTypeDef status = HAL_UART_Abort(huartBt);
+  status = HAL_UART_DeInit(huartBt);
+
+  huartBt->Instance = USART3;
+  huartBt->Init.BaudRate = baudRate;
+  huartBt->Init.WordLength = UART_WORDLENGTH_8B;
+  huartBt->Init.StopBits = UART_STOPBITS_1;
+  huartBt->Init.Parity = UART_PARITY_NONE;
+  huartBt->Init.Mode = UART_MODE_TX_RX;
+  huartBt->Init.HwFlowCtl = hwFlowCtrl? UART_HWCONTROL_RTS_CTS:UART_HWCONTROL_NONE;
+  huartBt->Init.OverSampling = UART_OVERSAMPLING_16;
+  huartBt->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huartBt->Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huartBt->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(huartBt) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(huartBt, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(huartBt, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_EnableFifoMode(huartBt) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  setBtUartInstance(huartBt);
+}
+
 #if !IS_SHIMMER3R
 /*****************************************************
  *
