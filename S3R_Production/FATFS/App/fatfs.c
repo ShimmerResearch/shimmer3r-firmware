@@ -98,6 +98,50 @@ uint8_t SD_test(void){
    return stat.badFile;
 }
 
+uint8_t SD_test_alternative(void)
+{
+  FRESULT res; /* FatFs function common result code */
+  uint32_t byteswritten, bytesread; /* File write/read counts */
+  uint8_t wtext[] = "STM32 FATFS works great!"; /* File write buffer */
+  uint8_t rtext[_MAX_SS];/* File read buffer */
+  FIL SDFile;
+
+  if(f_mount(&fatfs, (TCHAR const*)SDPath, 0) != FR_OK)
+  {
+    Error_Handler();
+  }
+  else
+  {
+    if(f_mkfs((TCHAR const*)SDPath, FM_ANY, 0, rtext, sizeof(rtext)) != FR_OK)
+      {
+      Error_Handler();
+      }
+    else
+    {
+      //Open file for writing (Create)
+      if(f_open(&SDFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
+      {
+        Error_Handler();
+      }
+      else
+      {
+
+        //Write to the text file
+        res = f_write(&SDFile, wtext, strlen((char *)wtext), (void *)&byteswritten);
+        if((byteswritten == 0) || (res != FR_OK))
+        {
+          Error_Handler();
+        }
+        else
+        {
+
+          f_close(&SDFile);
+        }
+      }
+    }
+  }
+  f_mount(&SDFatFS, (TCHAR const*)NULL, 0);
+}
 
 void SD_setShimmerName(){
    uint8_t i;
@@ -157,10 +201,6 @@ uint8_t SD_setBasedir() {
 
    SD_infomem2Names();
    //SetName();
-#if _USE_LFN
-   fno.lfname = lfn;
-   fno.lfsize = sizeof(lfn);
-#endif
 
    file_status = f_opendir(&dir, "/data");
    if(file_status){
@@ -205,11 +245,7 @@ uint8_t SD_setBasedir() {
       if(*fno.fname == 0)
          break;
       else if(fno.fattrib & AM_DIR){
-#if _USE_LFN
-         fname = (*fno.lfname) ? fno.lfname : fno.fname;
-#else
          fname = (*lfn) ? lfn : fno.fname;
-#endif
 
          if(!strncmp(fname, (char*)shimmerName, strlen(fname)-4)){ // -4 because of the -000 etc.
             scout = strchr(fname, '-');

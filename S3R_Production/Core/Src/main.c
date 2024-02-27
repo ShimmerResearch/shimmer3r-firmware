@@ -221,6 +221,9 @@ int main(void)
   Init();
   //Task_set(TASK_STARTSENSING);
 
+//  SD_test();
+//  SD_test_alternative();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */

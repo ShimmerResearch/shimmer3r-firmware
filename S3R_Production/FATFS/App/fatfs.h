@@ -45,6 +45,7 @@ void MX_FATFS_Init(void);
 
 void SD_init(void);
 uint8_t SD_test(void);
+uint8_t SD_test_alternative(void);
 void SD_insertedCheck(void);
 void SD_fileInit(void);
 void SD_close(void);
