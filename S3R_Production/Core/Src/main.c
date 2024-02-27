@@ -130,6 +130,7 @@ void Init() {
    SD_insertedCheck();
    //GPIO_userButtonCheck();
 #if IS_SHIMMER3R
+   setCrcHandleToUse(getCrcHandle());
    btCommsProtocolInit(setTaskNewBtCmdToProcess);
  //  btFactoryResetViaFw();
    btInitialise();

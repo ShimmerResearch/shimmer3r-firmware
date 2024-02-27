@@ -12,9 +12,13 @@
 //#include "msp430.h"
 //#include "../5xx_HAL/hal_CRC.h"
 //#include "../../shimmer_btsd.h"
+#include "crc.h"
 
 #define USE_OLD_SD_SYNC_APPROACH        0
 #define BT_SD_SYNC_CRC_MODE             CRC_1BYTES_ENABLED
+
+#define MAX_NODES       20
+#define MAX_CHARS       13
 
 // BT routine communication
 // all node time must *2 in use

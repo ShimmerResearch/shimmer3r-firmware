@@ -265,10 +265,9 @@ uint8_t ShimmerCalib_ramWrite(const uint8_t* buf, uint8_t length, uint16_t offse
 // return 0 : success; 1: fail
 uint8_t ShimmerCalib_ramRead( uint8_t* buf, uint8_t length, uint16_t offset){
    shimmerCalib_ramLen = min(*(uint16_t*)shimmerCalib_ram, SHIMMER_CALIB_RAM_MAX-2);
-   if((length<=128) &&
-      (offset<=(SHIMMER_CALIB_RAM_MAX-1)) &&
-      (length+offset<=SHIMMER_CALIB_RAM_MAX)){
-      memcpy(buf, shimmerCalib_ram+offset, length);
+   if((length <= 128) && (offset <= (SHIMMER_CALIB_RAM_MAX-1))
+       && (length + offset <= SHIMMER_CALIB_RAM_MAX)){
+      memcpy(buf, shimmerCalib_ram + offset, length);
       return 0;
    }
    else{

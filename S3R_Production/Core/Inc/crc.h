@@ -42,6 +42,8 @@ void MX_CRC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+CRC_HandleTypeDef* getCrcHandle(void);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

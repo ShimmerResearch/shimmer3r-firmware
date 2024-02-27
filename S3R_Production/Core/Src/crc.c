@@ -90,4 +90,9 @@ void HAL_CRC_MspDeInit(CRC_HandleTypeDef* crcHandle)
 
 /* USER CODE BEGIN 1 */
 
+CRC_HandleTypeDef* getCrcHandle(void)
+{
+  return &hcrc;
+}
+
 /* USER CODE END 1 */

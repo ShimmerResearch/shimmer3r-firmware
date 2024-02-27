@@ -3,7 +3,9 @@
 #ifndef SHIMMER4_SDK_CONFIG_H
 #define SHIMMER4_SDK_CONFIG_H
 
-#define IS_SHIMMER3R 1      /* for porting over codes from Shimmer4 to shimmer3r*/
+#define IS_SHIMMER3R        1 /* for porting over codes from Shimmer4 to shimmer3r*/
+#define IS_CONNECTED_EEPROM 0
+#define IS_CONNECTED_DIG_SENSORS 0
 
 #define USE_DEFAULT_SENSOR    1
 #define RTC_FAST              0 // need to increase rtc alarm interrupt priority before enabling this option
@@ -52,6 +54,7 @@
 #include "CAT24C16.h"
 #include "hal_Board.h"
 #include "hal_Infomem.h"
+#include "hal_CRC.h"
 #include "bmp180.h"
 #include "BMP280_driver\bmp280.h"
 #include "EXG\exg.h"
@@ -73,5 +76,6 @@
 #include "usb_otg.h"
 // #include "wwdg.h"
 #include "gpio.h"
+#include "crc.h"
 
 #endif

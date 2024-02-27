@@ -9,6 +9,7 @@
 #define HAL_CRC_H_
 
 #include <stdint.h>
+#include "stm32u5xx.h"
 
 #define CRC_INIT     0xB0CA
 
@@ -19,8 +20,10 @@ typedef enum
     CRC_2BYTES_ENABLED   = 2,
 } COMMS_CRC_MODE;
 
-uint16_t CRC_data(uint8_t *buf, uint8_t len);
+uint32_t CRC_data(uint8_t *buf, uint8_t len);
 void calculateCrcAndInsert(uint8_t crcMode, uint8_t *aryPtr, uint8_t len);
 uint8_t checkCrc(uint8_t crcMode, uint8_t *aryPtr, uint8_t payloadLen);
+
+void setCrcHandleToUse(CRC_HandleTypeDef *hcrc);
 
 #endif /* HAL_CRC_H_ */

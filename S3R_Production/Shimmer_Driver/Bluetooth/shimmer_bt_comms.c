@@ -14,7 +14,7 @@
 //#include "RN4X.h"
 //#include "../5xx_HAL/hal_board.h"
 //#include "../5xx_HAL/hal_RTC.h"
-#include "hal_CRC.h"
+//#include "hal_CRC.h"
 //#include "../5xx_HAL/hal_CRC.h"
 //#include "../../shimmer_btsd.h"
 //#include "shimmer_btsd.h"
@@ -48,7 +48,6 @@ RingFifoRx_t *gBtRxFifoPtr;
 /* isRn4678CmdDetectedOnBoot is a workaround to know if it's RN42 or RN4678 before version is parsed */
 uint8_t isRn4678CmdDetectedOnBoot = 0;
 #endif
-volatile COMMS_CRC_MODE btCrcMode;
 
 #if IS_BT_RN
 uint8_t *gActionPtr;
@@ -72,7 +71,7 @@ uint16_t numBytesInBtRxBufWhenLastProcessed = 0;
 uint16_t indexOfFirstEol;
 uint32_t firstProcessFailTicks = 0;
 
-uint8_t inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream, enableSdlog,
+uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream, enableSdlog,
         lsm303dlhcAccelRangeResponse, lsm303dlhcMagGainResponse, lsm303dlhcMagSamplingRateResponse, dockStatusBtRsp,
         vbattBtRsp, trialConfigResponse, centerResponse, shimmerNameResponse, expIDResponse, configTimeResponse,
         dirResponse, nshimmerResponse, myIDResponse, lsm303dlhcAccelSamplingRateResponse, i2cvBattBtRsp,
@@ -80,11 +79,13 @@ uint8_t inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream, enableS
         mpu9250AccelRangeResponse, bmp180OversamplingRatioResponse, internalExpPowerEnableResponse,
         exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, blinkLedBtRsp, infomemBtRsp, dcIdBtRsp, dcMemBtRsp,
         mpu9250MagSensAdjValsResponse, lsm303dlhcAccelLPModeResponse, deviceVersionBtRsp, rwcResponse,
-        calibRamResponse, btDataRateResponse, btVerResponse;//btIsConnected,
+        calibRamResponse, btDataRateResponse, btVerResponse, bmp280CalibrationCoefficientsResponse;//btIsConnected,
 uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
 uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
 
 uint16_t btRxWaitByteCount = 0;
+
+volatile COMMS_CRC_MODE btCrcMode;
 
 #if BT_DMA_USED_FOR_RX
 /* Return of 1 brings MSP out of low-power mode */
@@ -968,7 +969,8 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case GET_DERIVED_CHANNEL_BYTES:
                 case GET_RWC_COMMAND:
                 case UPD_SDLOG_CFG_COMMAND:
-                case UPD_CALIB_DUMP_COMMAND:
+//                case UPD_CALIB_DUMP_COMMAND:
+                case UPD_FLASH_COMMAND:
                 case GET_BT_VERSION_STR_COMMAND:
 #if IS_BT_RN
                     *(gActionPtr) = data;
@@ -2335,6 +2337,8 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void))
 #endif
 
     memset(btVerStrResponse, 0x00, sizeof(btVerStrResponse) / sizeof(btVerStrResponse[0]));
+
+    resetBtResponseBools();
 }
 
 #if IS_BT_RN
@@ -2364,6 +2368,50 @@ void triggerShimmerErrorState(void)
 }
 #endif
 
+void resetBtResponseBools(void)
+{
+  deviceVersionBtRsp = 0;
+  rwcResponse = 0;
+  dcIdBtRsp = 0;
+  dcMemBtRsp = 0;
+  infomemBtRsp = 0;
+
+  sendAck = 0;
+
+  i2cvBattBtRsp = 0;
+  inquiryBtRsp = 0;
+  samplingRateBtRsp = 0;
+  toggleLedRed = 0;
+  lsm303dlhcAccelRangeResponse = 0;
+  lsm303dlhcMagGainResponse = 0;
+  lsm303dlhcMagSamplingRateResponse = 0;
+  dockStatusBtRsp = 0;
+  vbattBtRsp = 0;
+  trialConfigResponse = 0;
+  centerResponse = 0;
+  shimmerNameResponse = 0;
+  expIDResponse = 0;
+  configTimeResponse = 0;
+  dirResponse = 0;
+  nshimmerResponse = 0;
+  myIDResponse = 0;
+  lsm303dlhcAccelSamplingRateResponse = 0;
+  lsm303dlhcAccelLPModeResponse = 0;
+  lsm303dlhcAccelHRModeResponse = 0;
+  mpu9250GyroRangeResponse = 0;
+  bmp180CalibCoeffBtRsp = 0;
+  bmp280CalibrationCoefficientsResponse = 0;
+  mpu9250SamplingRateResponse = 0;
+  mpu9250AccelRangeResponse = 0;
+  bmp180OversamplingRatioResponse = 0;
+  internalExpPowerEnableResponse = 0;
+  mpu9250MagSensAdjValsResponse = 0;
+  exgRegsResponse = 0;
+  configSetupBytesResponse = 0;
+  fwVersionBtRsp = 0;
+  blinkLedBtRsp = 0;
+}
+
 uint8_t getBtVerStrLen(void)
 {
     return strlen(btVerStrResponse);
@@ -2372,16 +2420,6 @@ uint8_t getBtVerStrLen(void)
 char * getBtVerStrPtr(void)
 {
     return &btVerStrResponse[0];
-}
-
-void setBtCrcMode(COMMS_CRC_MODE btCrcModeNew)
-{
-    btCrcMode = btCrcModeNew;
-}
-
-COMMS_CRC_MODE getBtCrcMode(void)
-{
-    return btCrcMode;
 }
 
 uint8_t isWaitingForArgs(void)
@@ -2424,9 +2462,9 @@ void BtUart_processCmd(void) {
       stat.sdlogCmd = 1;
       S4_Task_set(TASK_STARTSENSING);
       break;
-//   case SET_CRC_COMMAND:
-//      crcChecksum = args[0];
-//      break;
+   case SET_CRC_COMMAND:
+      setBtCrcMode(btArgs[0]);
+      break;
    case STOP_STREAMING_COMMAND:
       stat.btstreamCmd = 2;
       S4_Task_set(TASK_STOPSENSING);
@@ -2574,7 +2612,11 @@ void BtUart_processCmd(void) {
     break;*/
    case GET_BMP180_CALIBRATION_COEFFICIENTS_COMMAND:
       bmp180CalibCoeffBtRsp = 1;
-      break;/*
+      break;
+  case GET_BMP280_CALIBRATION_COEFFICIENTS_COMMAND:
+      bmp280CalibrationCoefficientsResponse = 1;
+      break;
+/*
   case GET_MPU9250_SAMPLING_RATE_COMMAND:
     mpu9250SamplingRateResponse = 1;
     break;
@@ -2984,9 +3026,15 @@ void BtUart_processCmd(void) {
       break;
    default:;
    }
-   //sendAck = 1;
-   //btSendRsps = 1;
-   S4_Task_set(TASK_BTRESPONSE);
+   /* Send ACK back for all commands except when FW has received an ACK */
+   if (btAction != ACK_COMMAND_PROCESSED
+      /* ACK is sent back as part of SD_SYNC_RESPONSE so no need to send it here */
+      && btAction != SET_SD_SYNC_COMMAND)
+    {
+        sendAck = 1;
+        S4_Task_set(TASK_BTRESPONSE);
+    }
+
 //   if(update_sdconfig && CheckSdInslot()){
 //      if(!docked)
 //         UpdateSdConfig();
@@ -3010,10 +3058,11 @@ void BtUart_sendRsp(void) {
    uint8_t bt_tx_data[RESPONSE_PACKET_SIZE];
    packet_length = 0;
    if (stat.isBtConnected) {
-      //if(sendAck) {
-      *(bt_tx_data + packet_length++) = ACK_COMMAND_PROCESSED;
-      //   sendAck = 0;
-      //}
+     if (sendAck)
+     {
+       *(bt_tx_data + packet_length++) = ACK_COMMAND_PROCESSED;
+       sendAck = 0;
+     }
       if (inquiryBtRsp) {//todo:
          *(bt_tx_data + packet_length++) = INQUIRY_RESPONSE;
          //*(uint16_t *)(bt_tx_data + packet_length) = *(uint16_t *)(storedConfig + NV_SAMPLING_RATE); //ADC sampling rate
@@ -3139,6 +3188,21 @@ void BtUart_sendRsp(void) {
 //         memset((bt_tx_data + packet_length), 0, 24);
 //         packet_length += 24;
 //         bmp180CalibCoeffBtRsp = 0;
+      } else if (bmp280CalibrationCoefficientsResponse) {
+//TODO support BMP280
+#if IS_CONNECTED_DIG_SENSORS
+        if (isBmp280InUse())
+        {
+          *(bt_tx_data + packet_length++) = BMP280_CALIBRATION_COEFFICIENTS_RESPONSE;
+          memcpy(resPacket + packet_length, bmpX80Calib, BMP280_CALIB_DATA_SIZE);
+          packet_length += BMP280_CALIB_DATA_SIZE;
+        }
+#else
+        *(bt_tx_data + packet_length++) = BMP280_CALIBRATION_COEFFICIENTS_RESPONSE;
+        packet_length += BMP280_CALIB_DATA_SIZE;
+#endif
+        bmp280CalibrationCoefficientsResponse = 0;
+
 //      } else if(mpu9250SamplingRateResponse) {
 //         *(bt_tx_data + packet_length++) = MPU9250_SAMPLING_RATE_RESPONSE;
 //         *(bt_tx_data + packet_length++) = storedConfig[NV_CONFIG_SETUP_BYTE1];
@@ -3246,13 +3310,21 @@ void BtUart_sendRsp(void) {
       } else if (dcIdBtRsp) {
          *(bt_tx_data + packet_length++) = DAUGHTER_CARD_ID_RESPONSE;
          *(bt_tx_data + packet_length++) = btDcMemLength;
+#if IS_CONNECTED_EEPROM
          CAT24C16_read(btDcMemOffset, bt_tx_data + packet_length, btDcMemLength);
+#else
+         bt_tx_data[packet_length+0] = 31;//0xFF;//47;
+         bt_tx_data[packet_length+1] = 9;//0xFF;//1;
+         bt_tx_data[packet_length+2] = 0;//0xFF;//0;
+#endif
          packet_length += btDcMemLength;
          dcIdBtRsp = 0;
       } else if (dcMemBtRsp) {
          *(bt_tx_data + packet_length++) = DAUGHTER_CARD_MEM_RESPONSE;
          *(bt_tx_data + packet_length++) = btDcMemLength;
+#if IS_CONNECTED_EEPROM
          CAT24C16_read(btDcMemOffset + 16, bt_tx_data + packet_length, btDcMemLength);
+#endif
          packet_length += btDcMemLength;
          dcMemBtRsp = 0;
 //      } else if (btCommsBaudRateResponse) {
@@ -3301,20 +3373,14 @@ void BtUart_sendRsp(void) {
           btDataRateResponse = 0;
       }
 
-      /*if(crcChecksum){
-       uint16_t crc_value;
-       crc_value = CRC_data(bt_tx_data, (uint8_t)packet_length);
-       *(bt_tx_data+packet_length++) = crc_value & 0xFF;
-       *(bt_tx_data+packet_length++) = (crc_value & 0xFF00) >> 8;
-      }*/
+      uint8_t crcMode = getBtCrcMode();
+      if (crcMode != CRC_OFF)
+      {
+          calculateCrcAndInsert(crcMode, bt_tx_data, packet_length);
+          packet_length += crcMode;
+      }
       BT_write(bt_tx_data, packet_length);
    }
-}
-
-//TODO use declaration in sd_sync.c instead
-void saveLocalTime(void)
-{
-
 }
 
 void setDmaWaitingForResponse(uint16_t count)
@@ -3325,5 +3391,15 @@ void setDmaWaitingForResponse(uint16_t count)
 uint16_t getBtRxShimmerCommsWaitByteCount(void)
 {
   return btRxWaitByteCount;
+}
+
+void setBtCrcMode(COMMS_CRC_MODE btCrcModeNew)
+{
+    btCrcMode = btCrcModeNew;
+}
+
+COMMS_CRC_MODE getBtCrcMode(void)
+{
+    return btCrcMode;
 }
 

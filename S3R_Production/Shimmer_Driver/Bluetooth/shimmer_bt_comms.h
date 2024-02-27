@@ -9,13 +9,14 @@
 #define SHIMMER3_COMMON_SOURCE_BLUETOOTH_SD_SHIMMER_BT_COMMS_H_
 
 #include <stdint.h>
-//#include "../../shimmer_btsd.h"
-//#include "../5xx_HAL/hal_CRC.h"
+#include "s4__cfg.h"
 #include "hal_CRC.h"
 
 #define BT_DMA_USED_FOR_RX 1
 #define IS_BT_RN 0
 #define FW_IS_LOGANDSTREAM 1
+
+#define MAX_COMMAND_ARG_SIZE 131
 
 // Packet Types// Packet Types
 #define DATA_PACKET                                   0x00
@@ -162,8 +163,14 @@
 #define SET_CALIB_DUMP_COMMAND                        0x98
 #define RSP_CALIB_DUMP_COMMAND                        0x99
 #define GET_CALIB_DUMP_COMMAND                        0x9A
-#define UPD_CALIB_DUMP_COMMAND                        0x9B
+//#define UPD_CALIB_DUMP_COMMAND                        0x9B
+#define UPD_FLASH_COMMAND                             0x9B
 #define UPD_SDLOG_CFG_COMMAND                         0x9C
+#if !IS_SHIMMER3R
+#define SET_I2C_BATT_STATUS_FREQ_COMMAND              0x9C
+#define RSP_I2C_BATT_STATUS_COMMAND                   0x9D
+#define GET_I2C_BATT_STATUS_COMMAND                   0x9E
+#endif
 #define BMP280_CALIBRATION_COEFFICIENTS_RESPONSE      0x9F
 #define GET_BMP280_CALIBRATION_COEFFICIENTS_COMMAND   0xA0
 #define GET_BT_VERSION_STR_COMMAND                    0xA1
@@ -225,9 +232,6 @@ void triggerShimmerErrorState(void);
 uint8_t getBtVerStrLen(void);
 char * getBtVerStrPtr(void);
 
-void setBtCrcMode(COMMS_CRC_MODE btCrcModeNew);
-COMMS_CRC_MODE getBtCrcMode(void);
-
 uint8_t isWaitingForArgs(void);
 
 void BtUart_processCmd(void);
@@ -235,5 +239,8 @@ void BtUart_sendRsp(void);
 
 void setDmaWaitingForResponse(uint16_t count);
 uint16_t getBtRxShimmerCommsWaitByteCount(void);
+
+void setBtCrcMode(COMMS_CRC_MODE btCrcModeNew);
+COMMS_CRC_MODE getBtCrcMode(void);
 
 #endif /* SHIMMER3_COMMON_SOURCE_BLUETOOTH_SD_SHIMMER_BT_COMMS_H_ */

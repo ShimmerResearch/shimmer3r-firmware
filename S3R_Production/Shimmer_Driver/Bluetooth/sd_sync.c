@@ -19,6 +19,8 @@
 #include "shimmer_bt_comms.h"
 //#include "RN4X.h"
 //#include "../../shimmer_btsd.h"
+#include "s4.h"
+#include "s4_taskList.h"
 
 uint8_t nodeName[MAX_NODES][MAX_CHARS], shortExpFlag;
 uint8_t syncNodeCnt, syncNodeNum, syncThis, syncNodeSucc, nReboot,
@@ -47,7 +49,9 @@ void (*btStartCb)(void);
 void (*btStopCb)(uint8_t);
 uint8_t (*taskSetCb)(TASK_FLAGS);
 
-extern uint8_t sensing, onSingleTouch, docked, btPowerOn, stopLogging;
+//extern uint8_t sensing, onSingleTouch, docked, btPowerOn, stopLogging;
+extern SENSINGTypeDef sensing;
+extern STATTypeDef stat;
 extern uint8_t sdHeadText[SDHEAD_LEN];
 extern uint8_t all0xff[7U];
 
@@ -156,7 +160,10 @@ uint8_t getSyncCnt(void)
 
 void saveLocalTime(void)
 {
-    myLocalTimeLong = getRwcTime();
+//    myLocalTimeLong = getRwcTime();
+    //TODO revisit for Shimmer3r
+    myLocalTimeLong = RTC_get64();
+
 }
 
 void resetSyncRcNodeR10Cnt(void)
@@ -424,7 +431,7 @@ void SyncCenterT10(void)
 #else
     *(resPacket + packet_length++) = SET_SD_SYNC_COMMAND;
 #endif
-    *(resPacket + packet_length++) = sensing;
+    *(resPacket + packet_length++) = stat.isSensing;
     myLocalTimeLong = getRwcTime();
     *(uint64_t*) (resPacket + packet_length) = myLocalTimeLong;
     packet_length += 8;
@@ -435,7 +442,7 @@ void SyncCenterT10(void)
         packet_length += BT_SD_SYNC_CRC_MODE;
     }
 
-    BT_write(resPacket, packet_length, SHIMMER_CMD);
+    BT_write(resPacket, packet_length);
 }
 
 /* Sync Center only. Called by TASK_RCCENTERR1 when a center receives a byte
@@ -521,7 +528,8 @@ void SyncNodeR10(void)
         }
         else
         {
-            if (onSingleTouch && !sensing && sd_tolog)
+            if ((S4Ram_storedConfigGetByte(NV_SENSORS1) & SDH_SINGLETOUCH)
+                && !stat.isSensing && sd_tolog)
             {
                 taskSetCb(TASK_STARTSENSING);
             }
@@ -575,7 +583,7 @@ void SyncNodeT1(uint8_t val)
     BT_write(&tosend, 1U, SHIMMER_CMD);
 #else
     uint8_t syncResponse[] = {ACK_COMMAND_PROCESSED, SD_SYNC_RESPONSE, val};
-    BT_write(&syncResponse[0], 3U, SHIMMER_CMD);
+    BT_write(&syncResponse[0], 3U);
 #endif
     if (syncNodeWinExpire < (syncCnt + SYNC_EXTEND * SYNC_FACTOR))
     {
@@ -691,16 +699,19 @@ void handleSyncTimerTrigger(void)
     }
     else                                   //idle: no_RC mode
     {
-        if (docked)
+        if (stat.isDocked)
         {
-            if (sensing)
+            if (stat.isSensing)
             {
                 /* Note SDLog calls TASK_STOPSENSING here whereas
                  * LogAndStream could be in the middle of streaming over
                  * Bluetooth */
-                stopLogging = 1;
+//                stopLogging = 1;
+                //TODO temp putting this in for Shimmer3r
+                stat.sdlogCmd = 2;
+                taskSetCb(TASK_STOPSENSING);
             }
-            if (btPowerOn)
+            if (stat.isBtPoweredOn)
             {
                 btStopCb(0);
             }
@@ -710,7 +721,7 @@ void handleSyncTimerTrigger(void)
 
 void handleSyncTimerTriggerCenter(void)
 {
-    if (sensing && (syncNodeNum > 0))
+    if (stat.isSensing && (syncNodeNum > 0))
     {
         if (syncCnt == 1)
         {
@@ -778,7 +789,7 @@ void handleSyncTimerTriggerCenter(void)
                         else if ((cReboot >= 2)
                                 && (cReboot < 5 * SYNC_FACTOR))
                         {
-                            if (btPowerOn)
+                            if (stat.isBtPoweredOn)
                             {
                                 syncCurrNodeDone = syncCurrNode
                                         + SYNC_CD * SYNC_FACTOR - 1;
@@ -904,69 +915,73 @@ void startBtForSync(void)
 //ccr1: for blink timer
 void CommTimerStart(void)
 {
-    TA0CTL = TASSEL_1 + MC_2 + TACLR;    //ACLK, continuous mode, clear TAR
-    TA0CCTL1 = CCIE;
-    TA0CCR1 = GetTA0() + 16384;
+  //TODO
+//    TA0CTL = TASSEL_1 + MC_2 + TACLR;    //ACLK, continuous mode, clear TAR
+//    TA0CCTL1 = CCIE;
+//    TA0CCR1 = GetTA0() + 16384;
 }
 
 inline void CommTimerStop(void)
 {
-    TA0CTL = MC_0; // StopTb0()
-    //rcommStatus=0;
-    TA0CCTL1 &= ~CCIE;
+  //TODO
+//    TA0CTL = MC_0; // StopTb0()
+//    //rcommStatus=0;
+//    TA0CCTL1 &= ~CCIE;
 }
 
 inline uint16_t GetTA0(void)
 {
-    register uint16_t t0, t1;
-    uint8_t ie;
-    if (ie = (__get_SR_register() & GIE))   //interrupts enabled? // @suppress("Assignment in condition")
-        __disable_interrupt();
-    t1 = TA0R;
-    do {t0=t1; t1=TA0R;} while(t0!=t1);
-    if (ie)
-        __enable_interrupt();
-    return t1;
+  //TODO
+//    register uint16_t t0, t1;
+//    uint8_t ie;
+//    if (ie = (__get_SR_register() & GIE))   //interrupts enabled? // @suppress("Assignment in condition")
+//        __disable_interrupt();
+//    t1 = TA0R;
+//    do {t0=t1; t1=TA0R;} while(t0!=t1);
+//    if (ie)
+//        __enable_interrupt();
+//    return t1;
 }
 
-#pragma vector=TIMER0_A1_VECTOR
-__interrupt void TIMER0_A1_ISR(void)
-{
-    switch (__even_in_range(TA0IV, 14))
-    {
-    case 0:
-        break;                           // No interrupt
-    case 2:                                  // TA0CCR1
-        TA0CCR1 += SYNC_PERIOD;
-
-        /* SDLog handles auto-stop in TIMER0_A1_VECTOR whereas LogAndStream handles it in TIMER0_B1_VECTOR */
-//        if (sensing && maxLen)
-//        {
-//            if (maxLenCnt < maxLen * SYNC_FACTOR)
-//                maxLenCnt++;
-//            else
-//            {
-//                stopLogging = 1;
-//                //stopSensing = 1;
-//                maxLenCnt = 0;
-//                return;
-//            }
-//        }
-
-        handleSyncTimerTrigger();
-
-        break;
-    case 4:
-        break;                           // TA0CCR2 not used
-    case 6:
-        break;                           // Reserved
-    case 8:
-        break;                           // Reserved
-    case 10:
-        break;                           // Reserved
-    case 12:
-        break;                           // Reserved
-    case 14:
-        break;                           // TAIFG overflow handler
-    }
-}
+//TODO
+//#pragma vector=TIMER0_A1_VECTOR
+//__interrupt void TIMER0_A1_ISR(void)
+//{
+//    switch (__even_in_range(TA0IV, 14))
+//    {
+//    case 0:
+//        break;                           // No interrupt
+//    case 2:                                  // TA0CCR1
+//        TA0CCR1 += SYNC_PERIOD;
+//
+//        /* SDLog handles auto-stop in TIMER0_A1_VECTOR whereas LogAndStream handles it in TIMER0_B1_VECTOR */
+////        if (sensing && maxLen)
+////        {
+////            if (maxLenCnt < maxLen * SYNC_FACTOR)
+////                maxLenCnt++;
+////            else
+////            {
+////                stopLogging = 1;
+////                //stopSensing = 1;
+////                maxLenCnt = 0;
+////                return;
+////            }
+////        }
+//
+//        handleSyncTimerTrigger();
+//
+//        break;
+//    case 4:
+//        break;                           // TA0CCR2 not used
+//    case 6:
+//        break;                           // Reserved
+//    case 8:
+//        break;                           // Reserved
+//    case 10:
+//        break;                           // Reserved
+//    case 12:
+//        break;                           // Reserved
+//    case 14:
+//        break;                           // TAIFG overflow handler
+//    }
+//}

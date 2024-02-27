@@ -234,8 +234,10 @@ void S4Sens_stopPeripherals(void) {
    S4_ADC_stopSensing();     
    HAL_Delay(10); // Send ACK command needs delay here...
    BtUart_sendRsp();   
+#if IS_CONNECTED_DIG_SENSORS
    I2C_stopSensing();
    SPI_stopSensing();
+#endif
 }
 
 void S4Sens_streamData(void) {

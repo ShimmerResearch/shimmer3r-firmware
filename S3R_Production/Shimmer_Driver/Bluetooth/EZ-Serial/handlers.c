@@ -249,7 +249,8 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
   uint16_t count = 1;
 
-  for (uint8_t i = 0; i < expectedByteCount; i++)
+  uint8_t i = 0;
+  while (i < expectedByteCount)
   {
     /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
      * parse is ideal and the header byte is a Shimmer packet header byte,
@@ -262,7 +263,9 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     {
       // Parse as Shimmer packet
       printf("S1=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
+      count = getBtRxShimmerCommsWaitByteCount();
       Dma2ConversionDone(&rxBuf[i]);
+      i += count;
       count = getBtRxShimmerCommsWaitByteCount();
     }
     else
@@ -299,6 +302,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
           }
         }
       }
+      i += 1;
     }
   }
 

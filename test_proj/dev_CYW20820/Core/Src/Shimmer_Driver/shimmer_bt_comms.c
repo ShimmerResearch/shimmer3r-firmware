@@ -2423,9 +2423,9 @@ void BtUart_processCmd(void) {
       stat.sdlogCmd = 1;
       S4_Task_set(TASK_STARTSENSING);
       break;
-//   case SET_CRC_COMMAND:
-//      crcChecksum = args[0];
-//      break;
+   case SET_CRC_COMMAND:
+       setBtCrcMode(btArgs[0]);
+       break;
    case STOP_STREAMING_COMMAND:
       stat.btstreamCmd = 2;
       S4_Task_set(TASK_STOPSENSING);
@@ -3296,12 +3296,12 @@ void BtUart_sendRsp(void) {
           btDataRateResponse = 0;
       }
 
-      /*if(crcChecksum){
-       uint16_t crc_value;
-       crc_value = CRC_data(bt_tx_data, (uint8_t)packet_length);
-       *(bt_tx_data+packet_length++) = crc_value & 0xFF;
-       *(bt_tx_data+packet_length++) = (crc_value & 0xFF00) >> 8;
-      }*/
+      uint8_t crcMode = getBtCrcMode();
+      if (crcMode != CRC_OFF)
+      {
+          calculateCrcAndInsert(crcMode, bt_tx_data, packet_length);
+          packet_length += crcMode;
+      }
       BT_write(bt_tx_data, packet_length);
    }
 }
