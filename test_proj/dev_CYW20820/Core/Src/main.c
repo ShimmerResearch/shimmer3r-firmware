@@ -21,7 +21,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "CYW20820.h"
+#include "Shimmer_Driver/CYW20820.h"
+#include "S4_App/s4.h"
+#include "S4_App/s4_taskList.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,6 +55,8 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 
+CRC_HandleTypeDef hcrc;
+
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 DMA_HandleTypeDef handle_GPDMA1_Channel1;
@@ -62,6 +66,8 @@ HCD_HandleTypeDef hhcd_USB_OTG_HS;
 
 /* USER CODE BEGIN PV */
 static GPIO_InitTypeDef  GPIO_InitStruct;
+
+STATTypeDef stat;
 
 /* USER CODE END PV */
 
@@ -77,9 +83,17 @@ static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_MEMORYMAP_Init(void);
 static void MX_USB_OTG_HS_HCD_Init(void);
+static void MX_CRC_Init(void);
+static void MX_FLASH_Init(void);
 /* USER CODE BEGIN PFP */
 
-void usart2UartUpdate(void);
+void btInitialise(void);
+void btFactoryResetViaFw(void);
+void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
+void usart2UartUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
+void setBtConnectionState(bool state);
+bool isBtConnected(void);
+uint8_t setTaskNewBtCmdToProcess(void);
 
 /* USER CODE END PFP */
 
@@ -141,6 +155,8 @@ int main(void)
   MX_ADC1_Init();
   MX_MEMORYMAP_Init();
   MX_USB_OTG_HS_HCD_Init();
+  MX_CRC_Init();
+  MX_FLASH_Init();
   /* USER CODE BEGIN 2 */
 
   /* -1- Enable GPIO Clock (to be able to program the configuration registers) */
@@ -163,20 +179,9 @@ int main(void)
 
   /* --------------------------------------------------------------------- */
 
-  printf("\r\nBT init start\r\n");
-  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, GPIO_PIN_SET);
-  //TODO remove or update delay when value known
-  HAL_Delay(100);
-  btInit();
-
-  while (!isBtIsInitialised())
-  {
-    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
-    /* Insert delay 300 ms */
-    HAL_Delay(100);
-  }
-  printf("BT init end\r\n");
-
+  btCommsProtocolInit(setTaskNewBtCmdToProcess);
+//  btFactoryResetViaFw();
+  btInitialise();
 
   /* USER CODE END 2 */
 
@@ -187,15 +192,20 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
-    /* Insert delay 300 ms */
-    HAL_Delay(300);
-
+//    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+//    /* Insert delay 300 ms */
+//    HAL_Delay(300);
+//
 //    if (isBtIsInitialised() && isBtConnected())
 //    {
 //      uint8_t c = 'H';
-//      HAL_UART_Transmit(&huart2, &c, 1, 1500 * HAL_GetTickFreq());
+//      if(handle_GPDMA1_Channel1.State==HAL_DMA_STATE_READY)
+//      {
+//        HAL_UART_Transmit_DMA(&huart2, &c, 1);
+//      }
 //    }
+
+    S4_Task_manage();
 
   }
   /* USER CODE END 3 */
@@ -335,6 +345,69 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief CRC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CRC_Init(void)
+{
+
+  /* USER CODE BEGIN CRC_Init 0 */
+
+  /* USER CODE END CRC_Init 0 */
+
+  /* USER CODE BEGIN CRC_Init 1 */
+
+  /* USER CODE END CRC_Init 1 */
+  hcrc.Instance = CRC;
+  hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_DISABLE;
+  hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_DISABLE;
+  hcrc.Init.GeneratingPolynomial = 69665;
+  hcrc.Init.CRCLength = CRC_POLYLENGTH_32B;
+  hcrc.Init.InitValue = 0xB0CA;
+  hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+  hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+  hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CRC_Init 2 */
+
+  /* USER CODE END CRC_Init 2 */
+
+}
+
+/**
+  * @brief FLASH Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_FLASH_Init(void)
+{
+
+  /* USER CODE BEGIN FLASH_Init 0 */
+
+  /* USER CODE END FLASH_Init 0 */
+
+  /* USER CODE BEGIN FLASH_Init 1 */
+
+  /* USER CODE END FLASH_Init 1 */
+  if (HAL_FLASH_Unlock() != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_FLASH_Lock() != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN FLASH_Init 2 */
+
+  /* USER CODE END FLASH_Init 2 */
 
 }
 
@@ -479,7 +552,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 1000000;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -527,12 +600,12 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 1000000;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -618,19 +691,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BT_CP_ROLE_GPIO_Port, BT_CP_ROLE_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOE, BT_LP_MODE_Pin|BT_CP_ROLE_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(USART_RTS_SW_GPIO_Port, USART_RTS_SW_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, UCPD_DBn_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
@@ -674,19 +741,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GREEN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : USART2_CTS_SW_Pin */
-  GPIO_InitStruct.Pin = USART2_CTS_SW_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(USART2_CTS_SW_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : USART_RTS_SW_Pin */
-  GPIO_InitStruct.Pin = USART_RTS_SW_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(USART_RTS_SW_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pins : UCPD_DBn_Pin LED_BLUE_Pin */
   GPIO_InitStruct.Pin = UCPD_DBn_Pin|LED_BLUE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -707,22 +761,135 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void btInitialise(void)
+{
+  printf("\r\nBT init start\r\n");
+
+  // 20 * 100ms = 2s per baud rate attempt
+  btCommWithDiffBaudRates(true, 20U);
+
+  printf("BT init end\r\n");
+}
+
+void btFactoryResetViaFw(void)
+{
+  printf("\r\nBT factory reset start\r\n");
+
+  // 50 * 100ms = 5s per baud rate attempt
+  btCommWithDiffBaudRates(false, 50U);
+
+  // Abort transfer operations to release UART for subsequent requests.
+  HAL_StatusTypeDef status = HAL_UART_Abort(&huart2);
+
+  printf("BT factory reset end\r\n");
+}
+
+void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
+{
+  uint8_t failCount = 0U;
+  uint32_t baudToTry = BAUD_TO_USE;
+
+  setBtLpMode(false);
+
+  printf("Attempting %lu Baud\r\n", baudToTry);
+  usart2UartUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
+
+  if (isInit)
+  {
+    btInit();
+  }
+  else
+  {
+    btFactoryResetInit();
+  }
+
+  while ((isBtInitCmdsRunning() && !isBtIsInitialised())
+      || (isBtFactoryResetCmdsRunning() && !isBtIsFactoryResetted()))
+  {
+    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+    /* Insert delay 100 ms */
+    HAL_Delay(100);
+
+    if (isEzsBaudRateDelayPending())
+    {
+      /* Delay or arbitrary value. As a guide, the EZ-Serial user guide states that it takes ~150 ms for a "chipset reset and boot process". */
+      HAL_Delay(500);
+      incrementBtInitCmdsStep();
+      btInitCommands();
+    }
+    else if (isEzsFactoryRebootDelayPending())
+    {
+      /* Experimentally found to be ~ 2.75s. */
+      HAL_Delay(3000);
+      incrementBtFactoryResetCmdsStep();
+      btFactoryResetCommands();
+    }
+
+    if (!(reset_cnt--))
+    {
+      failCount++;
+
+      if (failCount <= 4)
+      {
+        if (failCount == 1)
+        {
+          baudToTry = 115200;
+        }
+        else if (failCount == 2)
+        {
+          baudToTry = 460800;
+        }
+        else if (failCount == 3)
+        {
+          baudToTry = 2000000;
+        }
+        else if (failCount == 4)
+        {
+          baudToTry = 500000;
+        }
+
+        printf("Attempting %lu Baud\r\n", baudToTry);
+        usart2UartUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
+      }
+      else
+      {
+        printf("Operation failed, performing system reset\r\n");
+        // software POR reset
+        NVIC_SystemReset();
+      }
+
+      if (isInit)
+      {
+        btInit();
+      }
+      else
+      {
+        btFactoryResetInit();
+      }
+
+      reset_cnt = 50U;
+    }
+  }
+  setBtLpMode(true);
+}
+
 /**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
   */
-void usart2UartUpdate(void)
+void usart2UartUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
 {
-  HAL_UART_DeInit(&huart2);
+  HAL_StatusTypeDef status = HAL_UART_Abort(&huart2);
+  status = HAL_UART_DeInit(&huart2);
 
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = BAUD_TO_USE;
+  huart2.Init.BaudRate = baudRate;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
+  huart2.Init.HwFlowCtl = hwFlowCtrl? UART_HWCONTROL_RTS_CTS:UART_HWCONTROL_NONE;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -745,19 +912,16 @@ void usart2UartUpdate(void)
   }
 
   setBtUartInstance(&huart2);
-  setDmaRx(1);
 }
 
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin) {
   case BT_CONNECTION_Pin:
-    setBtConnectionState(false);
-    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+//    setBtConnectionState(false);
     break;
   case BT_CYSPP_Pin:
-    setBtCysppState(false);
-    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+//    setBtCysppState(false);
     break;
   default:
     break;
@@ -768,16 +932,30 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin) {
   case BT_CONNECTION_Pin:
-    setBtConnectionState(true);
-    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
+//    setBtConnectionState(true);
     break;
   case BT_CYSPP_Pin:
-    setBtCysppState(true);
-    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+//    setBtCysppState(true);
     break;
   default:
     break;
   }
+}
+
+void setBtConnectionState(bool state)
+{
+  stat.isBtConnected = state;
+  HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
+}
+
+bool isBtConnected(void)
+{
+  return stat.isBtConnected;
+}
+
+uint8_t setTaskNewBtCmdToProcess(void)
+{
+  return S4_Task_set(TASK_BTPROCESS);
 }
 
 /* USER CODE END 4 */

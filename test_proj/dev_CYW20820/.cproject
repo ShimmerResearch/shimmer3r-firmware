@@ -75,7 +75,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
+						<entry excluding="Src/Shimmer_Driver/hal_Infomem.c|Src/S4_App/s4_sensing.c|Src/S4_App/s4_led.c|Src/S4_App/s4_calib.c|Src/S4_App/s4_adc.c|Src/Shimmer_Driver/sd_sync.c|Src/Shimmer_Driver/hal_CRC.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 					</sourceEntries>
 				</configuration>
@@ -152,7 +152,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
+						<entry excluding="Src/Shimmer_Driver/hal_Infomem.c|Src/S4_App/s4_sensing.c|Src/S4_App/s4_led.c|Src/S4_App/s4_calib.c|Src/S4_App/s4_adc.c|Src/Shimmer_Driver/sd_sync.c|Src/Shimmer_Driver/hal_CRC.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 					</sourceEntries>
 				</configuration>
