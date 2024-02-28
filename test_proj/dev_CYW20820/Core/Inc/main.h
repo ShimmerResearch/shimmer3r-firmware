@@ -68,24 +68,33 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define BT_LP_MODE_Pin GPIO_PIN_2
-#define BT_LP_MODE_GPIO_Port GPIOE
-#define BT_CYSPP_Pin GPIO_PIN_4
+#define BT_CYSPP_Pin GPIO_PIN_6
 #define BT_CYSPP_GPIO_Port GPIOE
-#define BT_CYSPP_EXTI_IRQn EXTI4_IRQn
-#define BT_CONNECTION_Pin GPIO_PIN_5
-#define BT_CONNECTION_GPIO_Port GPIOE
-#define BT_CONNECTION_EXTI_IRQn EXTI5_IRQn
-#define BT_CP_ROLE_Pin GPIO_PIN_6
-#define BT_CP_ROLE_GPIO_Port GPIOE
+#define BT_CYSPP_EXTI_IRQn EXTI6_IRQn
 #define USER_BUTTON_Pin GPIO_PIN_13
 #define USER_BUTTON_GPIO_Port GPIOC
+#define USER_BUTTON_EXTI_IRQn EXTI13_IRQn
 #define VBUS_SENSE_Pin GPIO_PIN_2
 #define VBUS_SENSE_GPIO_Port GPIOC
 #define UCPD_FLT_Pin GPIO_PIN_14
 #define UCPD_FLT_GPIO_Port GPIOB
+#define BT_TX_Pin GPIO_PIN_8
+#define BT_TX_GPIO_Port GPIOD
+#define BT_RX_Pin GPIO_PIN_9
+#define BT_RX_GPIO_Port GPIOD
+#define BT_LP_MODE_Pin GPIO_PIN_10
+#define BT_LP_MODE_GPIO_Port GPIOD
+#define BT_CTS_Pin GPIO_PIN_11
+#define BT_CTS_GPIO_Port GPIOD
+#define BT_RTS_Pin GPIO_PIN_12
+#define BT_RTS_GPIO_Port GPIOD
+#define BT_CONNECTION_Pin GPIO_PIN_14
+#define BT_CONNECTION_GPIO_Port GPIOD
+#define BT_CONNECTION_EXTI_IRQn EXTI14_IRQn
 #define LED_RED_Pin GPIO_PIN_2
 #define LED_RED_GPIO_Port GPIOG
+#define BT_CP_ROLE_Pin GPIO_PIN_6
+#define BT_CP_ROLE_GPIO_Port GPIOC
 #define LED_GREEN_Pin GPIO_PIN_7
 #define LED_GREEN_GPIO_Port GPIOC
 #define T_VCP_TX_Pin GPIO_PIN_9

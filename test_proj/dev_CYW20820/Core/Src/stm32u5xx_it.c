@@ -57,7 +57,7 @@
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef handle_GPDMA1_Channel1;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel0;
-extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart3;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -201,31 +201,45 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles EXTI Line4 interrupt.
+  * @brief This function handles EXTI Line6 interrupt.
   */
-void EXTI4_IRQHandler(void)
+void EXTI6_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI4_IRQn 0 */
+  /* USER CODE BEGIN EXTI6_IRQn 0 */
 
-  /* USER CODE END EXTI4_IRQn 0 */
+  /* USER CODE END EXTI6_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(BT_CYSPP_Pin);
-  /* USER CODE BEGIN EXTI4_IRQn 1 */
+  /* USER CODE BEGIN EXTI6_IRQn 1 */
 
-  /* USER CODE END EXTI4_IRQn 1 */
+  /* USER CODE END EXTI6_IRQn 1 */
 }
 
 /**
-  * @brief This function handles EXTI Line5 interrupt.
+  * @brief This function handles EXTI Line13 interrupt.
   */
-void EXTI5_IRQHandler(void)
+void EXTI13_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI5_IRQn 0 */
+  /* USER CODE BEGIN EXTI13_IRQn 0 */
 
-  /* USER CODE END EXTI5_IRQn 0 */
+  /* USER CODE END EXTI13_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(USER_BUTTON_Pin);
+  /* USER CODE BEGIN EXTI13_IRQn 1 */
+
+  /* USER CODE END EXTI13_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI Line14 interrupt.
+  */
+void EXTI14_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI14_IRQn 0 */
+
+  /* USER CODE END EXTI14_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(BT_CONNECTION_Pin);
-  /* USER CODE BEGIN EXTI5_IRQn 1 */
+  /* USER CODE BEGIN EXTI14_IRQn 1 */
 
-  /* USER CODE END EXTI5_IRQn 1 */
+  /* USER CODE END EXTI14_IRQn 1 */
 }
 
 /**
@@ -257,17 +271,17 @@ void GPDMA1_Channel1_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles USART2 global interrupt.
+  * @brief This function handles USART3 global interrupt.
   */
-void USART2_IRQHandler(void)
+void USART3_IRQHandler(void)
 {
-  /* USER CODE BEGIN USART2_IRQn 0 */
+  /* USER CODE BEGIN USART3_IRQn 0 */
 
-  /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart2);
-  /* USER CODE BEGIN USART2_IRQn 1 */
+  /* USER CODE END USART3_IRQn 0 */
+  HAL_UART_IRQHandler(&huart3);
+  /* USER CODE BEGIN USART3_IRQn 1 */
 
-  /* USER CODE END USART2_IRQn 1 */
+  /* USER CODE END USART3_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
