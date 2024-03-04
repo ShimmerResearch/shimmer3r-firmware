@@ -50,6 +50,113 @@
 
 #define STOREDCONFIG_SIZE 512
 
+//#pragma pack(2)
+
+typedef __packed struct
+		{
+
+	      //cfg in common
+
+		  uint8_t samplingRateLSB:1;
+		  uint8_t samplingRateMSB:1;
+		  uint8_t bufferSizeLSB:1;
+		  uint8_t bufferSizeMSB:1;
+		  uint8_t sensors0:1;
+		  uint8_t sensors1:1;
+		  uint8_t sensors2:1;
+		  uint8_t configSetupByte0:1;
+		  uint8_t configSetupByte1:1;
+		  uint8_t configSetupByte2:1;
+		  uint8_t configSetupByte3:1;
+		  uint8_t exgADS1292R_1_CONFIG1:1;
+		  uint8_t exgADS1292R_1_CONFIG2:1;
+		  uint8_t exgADS1292R_1_LOFF:1;
+		  uint8_t exgADS1292R_1_CH1SET:1;
+		  uint8_t exgADS1292R_1_CH2SET:1;
+		  uint8_t exgADS1292R_1_RLD_SENS:1;
+		  uint8_t exgADS1292R_1_LOFF_SENS:1;
+		  uint8_t exgADS1292R_1_LOFF_STAT:1;
+		  uint8_t exgADS1292R_1_RESP1:1;
+		  uint8_t exgADS1292R_1_RESP2:1;
+		  uint8_t exgADS1292R_2_CONFIG1:1;
+		  uint8_t exgADS1292R_2_CONFIG2:1;
+		  uint8_t exgADS1292R_2_LOFF:1;
+		  uint8_t exgADS1292R_2_CH1SET:1;
+		  uint8_t exgADS1292R_2_CH2SET:1;
+		  uint8_t exgADS1292R_2_RLD_SENS:1;
+		  uint8_t exgADS1292R_2_LOFF_SENS:1;
+		  uint8_t exgADS1292R_2_LOFF_STAT:1;
+		  uint8_t exgADS1292R_2_RESP1:1;
+		  uint8_t exgADS1292R_2_RESP2:1;
+		  uint8_t btCommsBaudRate:1;
+		  uint8_t NvDerivedChannels0:1;
+		  uint8_t NvDerivedChannels1:1;
+		  uint8_t NvDerivedChannels2:1;
+		  uint64_t A_accelCalibration0:21;
+		  uint64_t MPU9150GyroCalibration:21;
+		  uint64_t LSM303DLHCMagCalibration:21;
+		  uint64_t LSM303DLHCAccelCalibration:21;
+
+
+		  //cfg in SDlog line InfoMem 118-122
+		  uint8_t NvDerivedChannels3:1;
+		  uint8_t NvDerivedChannels4:1;
+		  uint8_t NvDerivedChannels5MSB:1;
+		  uint8_t NvDerivedChannels6:1;
+		  uint8_t NvDerivedChannels7:1;
+
+		  //cfg for sd
+
+		  uint8_t nVSensors3:1;
+		  uint8_t nVSensors4:1;
+		  uint8_t nVConfigSetupByte4:1;
+		  uint8_t nVConfigSetupByte5:1;
+		  uint8_t nVConfigSetupByte6:1;
+		  uint64_t nVMPLAccelCalibration:21;
+		  uint64_t nVMPLMagCalibration:21;
+		  uint16_t nVMPLGyroCalibration:12;
+		  uint16_t nVSDShimmerName:12;
+		  uint16_t nVSDExPIDNAME:12;
+		  uint8_t nVSDConfigTimeMSB:4;
+		  uint8_t nVSDMyTrialID:1;
+		  uint8_t nVSDNShimmer:1;
+		  uint8_t nVSDTrialConfig0:1;
+		  uint8_t nVSDTrialConfig1:1;
+		  uint8_t nVSDBTInterval:1;
+		  uint8_t nVESTEXPLENLSB:1;
+		  uint8_t nVESTEXPLENMSB:1;
+		  uint8_t nVMaxExPLenlSB:1;
+		  uint8_t nVMaxExPLenMSB:1;
+		  uint8_t macADDr:6;
+		  uint8_t SD_CONFIG_DELAY_FLAG:1;
+
+		  //cfg for sync
+
+		  uint64_t SYNC_NODE_ADDR1:6;
+		  uint64_t SYNC_NODE_ADDR2:6;
+		  uint64_t SYNC_NODE_ADDR3:6;
+		  uint64_t SYNC_NODE_ADDR4:6;
+		  uint64_t SYNC_NODE_ADDR5:6;
+		  uint64_t SYNC_NODE_ADDR6:6;
+		  uint64_t SYNC_NODE_ADDR7:6;
+		  uint64_t SYNC_NODE_ADDR8:6;
+		  uint64_t SYNC_NODE_ADDR9:6;
+		  uint64_t SYNC_NODE_ADDR10:6;
+		  uint64_t SYNC_NODE_ADDR11:6;
+		  uint64_t SYNC_NODE_ADDR12:6;
+		  uint64_t SYNC_NODE_ADDR13:6;
+		  uint64_t SYNC_NODE_ADDR14:6;
+		  uint64_t SYNC_NODE_ADDR15:6;
+		  uint64_t SYNC_NODE_ADDR16:6;
+		  uint64_t SYNC_NODE_ADDR17:6;
+		  uint64_t SYNC_NODE_ADDR18:6;
+		  uint64_t SYNC_NODE_ADDR19:6;
+		  uint64_t SYNC_NODE_ADDR20:6;
+		  uint64_t SYNC_NODE_ADDR21:6;
+		};
+
+
+
 void S4Ram_init(void);   
 uint8_t* S4Ram_getStoredConfig(void);
 uint8_t* S4Ram_getSdHeadText(void);
