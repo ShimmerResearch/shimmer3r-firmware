@@ -3296,12 +3296,12 @@ void BtUart_sendRsp(void) {
           btDataRateResponse = 0;
       }
 
-      uint8_t crcMode = getBtCrcMode();
-      if (crcMode != CRC_OFF)
-      {
-          calculateCrcAndInsert(crcMode, bt_tx_data, packet_length);
-          packet_length += crcMode;
-      }
+//      uint8_t crcMode = getBtCrcMode();
+//      if (crcMode != CRC_OFF)
+//      {
+//          calculateCrcAndInsert(crcMode, bt_tx_data, packet_length);
+//          packet_length += crcMode;
+//      }
       BT_write(bt_tx_data, packet_length);
    }
 }
