@@ -74,7 +74,7 @@ typedef struct __attribute__((packed)) gOPERBytes
 	uint8_t chEnExtADC15 :1;
 	uint8_t chEnWrAccel :1;
 	uint8_t chEnBattery :1;
-	uint8_t unusedIdx4bit6 :1;
+	uint8_t unusedIdx4Bit6 :1;
 	uint8_t chEnBrAmp :1;
 
 	//sensors2 cfg
@@ -285,10 +285,10 @@ typedef struct __attribute__((packed)) gOPERBytes
 	uint8_t chEnMplSensorFusion :1;
 	uint8_t nVMPLAccelCalibration[21];
 	uint8_t nVMPLMagCalibration[21];
-	uint8_t nVMPLGyroCalibration[21];
+	uint8_t nVMPLGyroCalibration[12];
 	uint8_t nVSDShimmerName[12];
-	uint16_t nVSdExPIDNAME[12];
-	uint8_t nVSDConfigTimeMSB[4];
+	uint8_t nVSdExPIDNAME[12];
+	uint8_t nVSDConfigTime[4];
 	uint8_t nVSDMyTrialID;
 	uint8_t nVSDNShimmer;
 
@@ -299,7 +299,7 @@ typedef struct __attribute__((packed)) gOPERBytes
 	uint8_t unusedIdx217Bit3:1;
 	uint8_t rtcError :1;
 	uint8_t userButton :1;
-	uint8_t bt_pin_setup:1;
+	uint8_t btPinSetup:1;
 	uint8_t rtcSetByBt :1;
 
 	//nVSDTrialConfig1
@@ -324,9 +324,10 @@ typedef struct __attribute__((packed)) gOPERBytes
 	uint8_t unusedIdx230Bit3:1;
 	uint8_t unusedIdx230Bit4:1;
 	uint8_t unusedIdx230Bit5:1;
-	uint8_t nv_Bt_Set_Pin:2;
+	uint8_t unusedIdx230Bit6:1;
+	uint8_t sdCfgFlag:1;
 
-	uint8_t nv_BT_Set_Pin; //only set 0xAA during Factory reset for once.
+	uint8_t nvBtSetPin;
 	uint8_t unusedIdx232;
 	uint8_t unusedIdx233;
 	uint8_t unusedIdx234;
@@ -353,27 +354,27 @@ typedef struct __attribute__((packed)) gOPERBytes
 	uint8_t unusedIdx255;
 
 	//cfg for sync //put it as individual bytes
-	uint64_t syncNodeAddr1[6];
-	uint64_t syncNodeAddr2[6];
-	uint64_t syncNodeAddr3[6];
-	uint64_t syncNodeAddr4[6];
-	uint64_t syncNodeAddr5[6];
-	uint64_t syncNodeAddr6[6];
-	uint64_t syncNodeAddr7[6];
-	uint64_t syncNodeAddr8[6];
-	uint64_t syncNodeAddr9[6];
-	uint64_t syncNodeAddr[6];
-	uint64_t syncNodeAddr11[6];
-	uint64_t syncNodeAddr12[6];
-	uint64_t syncNodeAddr13[6];
-	uint64_t syncNodeAddr14[6];
-	uint64_t syncNodeAddr15[6];
-	uint64_t syncNodeAddr16[6];
-	uint64_t syncNodeAddr17[6];
-	uint64_t syncNodeAddr18[6];
-	uint64_t syncNodeAddr19[6];
-	uint64_t syncNodeAddr20[6];
-	uint64_t syncNodeAddr21[6];
+	uint8_t syncNodeAddr1[6];
+	uint8_t syncNodeAddr2[6];
+	uint8_t syncNodeAddr3[6];
+	uint8_t syncNodeAddr4[6];
+	uint8_t syncNodeAddr5[6];
+	uint8_t syncNodeAddr6[6];
+	uint8_t syncNodeAddr7[6];
+	uint8_t syncNodeAddr8[6];
+	uint8_t syncNodeAddr9[6];
+	uint8_t syncNodeAddr[6];
+	uint8_t syncNodeAddr11[6];
+	uint8_t syncNodeAddr12[6];
+	uint8_t syncNodeAddr13[6];
+	uint8_t syncNodeAddr14[6];
+	uint8_t syncNodeAddr15[6];
+	uint8_t syncNodeAddr16[6];
+	uint8_t syncNodeAddr17[6];
+	uint8_t syncNodeAddr18[6];
+	uint8_t syncNodeAddr19[6];
+	uint8_t syncNodeAddr20[6];
+	uint8_t syncNodeAddr21[6];
 
 	uint8_t unusedIdx382;
 	uint8_t unusedIdx383;
