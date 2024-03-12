@@ -133,10 +133,11 @@ typedef struct __attribute__((packed)) gConfigBytes
 	uint8_t chEnRes_amp :1;
 	uint8_t chEnSkinTemp :1;
 	uint8_t chEnPpg :1; //ppg_12.13
-	uint8_t chEnPpg1 :1;  //ppg1
-	uint8_t chEnPpg2 :1; //ppg2_1.14
-	uint8_t chEnPpgToHr1 :1; //ppgtoHr_12.13
-	uint8_t chEnPpgToHr2 :1; //ppgtoHr1.14
+	uint8_t chEnPpg1 :1; //ppg1_12.13
+	uint8_t chEnPpg2 :1;  //ppg2_1.14
+	uint8_t chEnPpgtoHr :1; //ppgtoHr_12.13
+	uint8_t chEnPpgToHr1 :1; //ppgtoHr1_12.13
+	uint8_t chEnPpgToHr2 :1; //ppgtoHr2_1.14
 
 	//nvDerivedChannels1
 	uint8_t chEnGsrMetricsGeneral :1;
@@ -230,8 +231,8 @@ typedef struct __attribute__((packed)) gConfigBytes
 	uint8_t chEnGsrMetricsTrendPeak :1;
 	uint8_t chEnGaitModule :1;
 	uint8_t chEnGyroOnTheFlyCalib :1;
-	uint8_t unusedByte118Bit6:1;
-	uint8_t unusedByte118Bit7:1;
+	uint8_t unusedByte118Bit6 :1;
+	uint8_t unusedByte118Bit7 :1;
 	uint8_t nvDerivedChannels4;
 	uint8_t nvDerivedChannels5MSB;
 	uint8_t nvDerivedChannels6;
@@ -254,10 +255,10 @@ typedef struct __attribute__((packed)) gConfigBytes
 	uint8_t chEnMplQuat6Dof :1;
 
 	//nVSensors4
-	uint8_t unusedIdx129Bit0:1;
-	uint8_t unusedIdx129Bit1:1;
-	uint8_t unusedIdx129Bit2:1;
-	uint8_t unusedIdx129Bit3:1;
+	uint8_t unusedIdx129Bit0 :1;
+	uint8_t unusedIdx129Bit1 :1;
+	uint8_t unusedIdx129Bit2 :1;
+	uint8_t unusedIdx129Bit3 :1;
 	uint8_t chEnMplQuat6DofRaw :1;
 	uint8_t chEnMpu9150MagCal :1;
 	uint8_t chEnMpu9150AccelCal :1;
@@ -275,9 +276,9 @@ typedef struct __attribute__((packed)) gConfigBytes
 	uint8_t chEnMpu9150MplSamplingRate :3;
 
 	//config setup byte6
-	uint8_t unusedIdx132Bit0:1;
-	uint8_t unusedIdx132Bit1:1;
-	uint8_t unusedIdx132Bit2:1;
+	uint8_t unusedIdx132Bit0 :1;
+	uint8_t unusedIdx132Bit1 :1;
+	uint8_t unusedIdx132Bit2 :1;
 	uint8_t chEnMplEnable :1;
 	uint8_t chEnMplMagDistCal :1;
 	uint8_t chEnMplVectCompCal :1;
@@ -293,23 +294,23 @@ typedef struct __attribute__((packed)) gConfigBytes
 	uint8_t nVSDNShimmer;
 
 	//nVSDTrialConfig0
-	uint8_t sDErrorEnable:1;
+	uint8_t sDErrorEnable :1;
 	uint8_t master :1;
 	uint8_t sync :1;
-	uint8_t unusedIdx217Bit3:1;
+	uint8_t unusedIdx217Bit3 :1;
 	uint8_t rtcError :1;
 	uint8_t userButton :1;
-	uint8_t btPinSetup:1;
+	uint8_t btPinSetup :1;
 	uint8_t rtcSetByBt :1;
 
 	//nVSDTrialConfig1
 	uint8_t lowBatteryCutOut :1;
-	uint8_t unusedIdx218Bit1:1;
-	uint8_t unusedIdx218Bit2:1;
-	uint8_t unusedIdx218Bit3:1;
+	uint8_t unusedIdx218Bit1 :1;
+	uint8_t unusedIdx218Bit2 :1;
+	uint8_t unusedIdx218Bit3 :1;
 	uint8_t tcxo :1;
-	uint8_t unusedIdx218Bit5:1;
-	uint8_t unusedIdx218Bit6:1;
+	uint8_t unusedIdx218Bit5 :1;
+	uint8_t unusedIdx218Bit6 :1;
 	uint8_t singleTouchStart :1;
 
 	uint8_t nVSDBTInterval;
@@ -320,12 +321,12 @@ typedef struct __attribute__((packed)) gConfigBytes
 	//SDConfigDelayFlag;
 	uint8_t info_sdcfg :1;
 	uint8_t info_calib :1;
-	uint8_t unusedIdx230Bit2:1;
-	uint8_t unusedIdx230Bit3:1;
-	uint8_t unusedIdx230Bit4:1;
-	uint8_t unusedIdx230Bit5:1;
-	uint8_t unusedIdx230Bit6:1;
-	uint8_t sdCfgFlag:1;
+	uint8_t unusedIdx230Bit2 :1;
+	uint8_t unusedIdx230Bit3 :1;
+	uint8_t unusedIdx230Bit4 :1;
+	uint8_t unusedIdx230Bit5 :1;
+	uint8_t unusedIdx230Bit6 :1;
+	uint8_t sdCfgFlag :1;
 
 	uint8_t nvBtSetPin;
 	uint8_t unusedIdx232;
