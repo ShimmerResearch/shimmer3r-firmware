@@ -51,7 +51,7 @@
 
 #define STOREDCONFIG_SIZE 512
 
-typedef struct __attribute__((packed)) gOPERBytes
+typedef struct __attribute__((packed)) gConfigBytes
 {
 	//cfg in common
 	uint16_t samplingRate;
@@ -378,29 +378,27 @@ typedef struct __attribute__((packed)) gOPERBytes
 
 	uint8_t unusedIdx382;
 	uint8_t unusedIdx383;
-} gOPERBytes;
+} gConfigBytes;
 
 void S4Ram_init(void);
 uint8_t* S4Ram_getStoredConfig(void);
 uint8_t* S4Ram_getSdHeadText(void);
 void S4Ram_SetDefaultInfomem(void);
 
-uint8_t S4Ram_sdHeadTextSet(const uint8_t *buf, uint16_t offset,
-		uint16_t length);
-uint8_t S4Ram_sdHeadTextGet(uint8_t *buf, uint16_t offset, uint16_t length);
+uint8_t S4Ram_sdHeadTextSet(const uint8_t* buf, uint16_t offset,uint16_t length);
+uint8_t S4Ram_sdHeadTextGet(uint8_t* buf, uint16_t offset, uint16_t length);
 uint8_t S4Ram_sdHeadTextGetByte(uint16_t offset);
 uint8_t S4Ram_sdHeadTextSetByte(uint16_t offset, uint8_t val);
 
-uint8_t S4Ram_storedConfigSet(const uint8_t *buf, uint16_t offset,
-		uint16_t length);
-uint8_t S4Ram_storedConfigGet(uint8_t *buf, uint16_t offset, uint16_t length);
+uint8_t S4Ram_storedConfigSet(const uint8_t* buf, uint16_t offset,uint16_t length);
+uint8_t S4Ram_storedConfigGet(uint8_t* buf, uint16_t offset, uint16_t length);
 uint8_t S4Ram_storedConfigGetByte(uint16_t offset);
 uint8_t S4Ram_storedConfigSetByte(uint16_t offset, uint8_t val);
 
-void S4Ram_btMacAsciiSet(const uint8_t *buf);
-void S4Ram_btMacAsciiGet(uint8_t *buf);
-void S4Ram_btMacHexSet(const uint8_t *buf);
-void S4Ram_btMacHexGet(uint8_t *buf);
+void S4Ram_btMacAsciiSet(const uint8_t* buf);
+void S4Ram_btMacAsciiGet(uint8_t* buf);
+void S4Ram_btMacHexSet(const uint8_t* buf);
+void S4Ram_btMacHexGet(uint8_t* buf);
 
 void S4Ram_config2SdHead(void);
 
