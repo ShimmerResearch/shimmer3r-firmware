@@ -23,6 +23,7 @@
 #include "gpdma.h"
 #include "i2c.h"
 #include "icache.h"
+#include "mdf.h"
 #include "memorymap.h"
 #include "rng.h"
 #include "rtc.h"
@@ -215,6 +216,7 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
+  MX_MDF1_Init();
   /* USER CODE BEGIN 2 */
   MX_FATFS_Init();
 

@@ -92,9 +92,9 @@ extern void Board_delayMicros(uint32_t micros);
 #define GSR_RANGE_A0_Pin  GPIO_ADC_INT_EXP3_Pin
 #define GSR_RANGE_A1_Pin  GPIO_ADC_INT_EXP2_Pin
 
-//TODO settle on pin being used to turn on/off power to Bridge Amp/PPG/GSR expansion boards
-#define SW_STRAIN_GAUGE_Pin SW_I2C2_Pin //GPIO_INTERNAL3_Pin
-#define SW_PPG_EN_Pin SW_I2C2_Pin //GPIO_INTERNAL3_Pin
+#define SW_STRAIN_GAUGE_Pin GPIO_INTERNAL1_Pin
+#define SW_BRIDGE_AMP_Pin GPIO_INTERNAL0_Pin
+#define SW_PPG_EN_Pin GPIO_INTERNAL1_Pin
 
 #define ADC_CHANNEL_ACCEL_X ADC_CHANNEL_0
 #define ADC_CHANNEL_ACCEL_Y ADC_CHANNEL_1
@@ -175,11 +175,12 @@ extern void Board_delayMicros(uint32_t micros);
 
 //exp_reset_n is used by RESETN of exg*2 and VCC of eeprom
 #if IS_SHIMMER3R
-#define Board_SW_EXP(x)       HAL_GPIO_WritePin(SW_EXP_BRD_GPIO_Port, SW_EXP_BRD_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
 #define Board_SW_I2C(x)       HAL_GPIO_WritePin(SW_I2C2_GPIO_Port, SW_I2C2_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
+#define Board_EXG_RESET_N(x)  HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
 #else
 #define Board_SW_EXP(x)       HAL_GPIO_WritePin(EXP_RESET_N_GPIO_Port, EXP_RESET_N_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
 #define Board_SW_I2C(x)       HAL_GPIO_WritePin(SW_I2C_GPIO_Port, SW_I2C_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
+#define Board_EXG_RESET_N(x)  HAL_GPIO_WritePin(SW_I2C_GPIO_Port, SW_I2C_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
 #endif
 
 #define Board_ExG_CS(x)       HAL_GPIO_WritePin(GPIOA,        GPIO_PIN_4,   x?GPIO_PIN_SET:GPIO_PIN_RESET)

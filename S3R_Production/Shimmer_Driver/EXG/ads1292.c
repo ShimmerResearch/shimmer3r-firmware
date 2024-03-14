@@ -70,7 +70,7 @@ void ADS1292_init(SPI_HandleTypeDef *hspi) {
       USE_843_75KHZ = 1;
    }
    
-   Board_SW_EXP(0);  
+   Board_EXG_RESET_N(0);
    Board_ExG_CS(1);
    Board_ECG_CS(1);
    Board_RESP_CS(1);
@@ -140,12 +140,12 @@ void ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata) {
 }
 
 void ADS1292_powerOn(void) {
-   Board_SW_EXP(1);
+   Board_EXG_RESET_N(1);
    HAL_Delay(10);
 }
 
 void ADS1292_powerOff(void) {
-   Board_SW_EXP(0);
+   Board_EXG_RESET_N(0);
 }
 
 
@@ -153,11 +153,11 @@ void ADS1292_powerOff(void) {
 //Remains powered on afterwards
 //Delays match the sample code from TI
 void ADS1292_resetPulse(void) {   
-   Board_SW_EXP(1);
+   Board_EXG_RESET_N(1);
    HAL_Delay(1);
-   Board_SW_EXP(0);
+   Board_EXG_RESET_N(0);
    HAL_Delay(1);
-   Board_SW_EXP(1);
+   Board_EXG_RESET_N(1);
    HAL_Delay(7);
 }
 

@@ -172,6 +172,7 @@ void S4_NORM_ADC_configureChannels(void){
    // int_a0   (sg_low)
    // int_a2   (gsr)
    
+#if !IS_SHIMMER3R
    //Analog Accel (KXRB5-2042)
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {
       *channel_contents_ptr++ = X_A_ACCEL;
@@ -186,6 +187,7 @@ void S4_NORM_ADC_configureChannels(void){
 //      adc.sensorCnt++;
 //      adc.chanCntSens++;
    }  
+#endif
    //Analog Battery Voltage
 #if USE_VBATT_ALWAYS
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_VBATT) {      
@@ -211,11 +213,7 @@ void S4_NORM_ADC_configureChannels(void){
       //in shimmer3 this corresponds to adc12
       S4Ram_storedConfigSetByte(NV_SENSORS1, S4Ram_storedConfigGetByte(NV_SENSORS1) | SENSOR_INT_ADC_10);
       S4Ram_storedConfigSetByte(NV_SENSORS2, S4Ram_storedConfigGetByte(NV_SENSORS2) | SENSOR_INT_ADC_12); 
-#if IS_SHIMMER3R
-      HAL_GPIO_WritePin(GPIOF, SW_EXP_BRD_Pin, GPIO_PIN_SET);
-#else
-      HAL_GPIO_WritePin(GPIOF, PPG_EN_Pin, GPIO_PIN_SET);
-#endif
+      HAL_GPIO_WritePin(GPIOF, SW_PPG_EN_Pin, GPIO_PIN_SET);
    }
    if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_STRAIN) {
       //in shimmer3 this corresponds to adc13 and adc14
@@ -377,7 +375,6 @@ void S4_NORM_ADC_startSensing(){
       hadcResv.Init.NbrOfConversion = adc.chanCntResv;
       HAL_ADC_Init(&hadcResv);
    }
-#endif
    
    //Analog Accel
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {      
@@ -395,6 +392,7 @@ void S4_NORM_ADC_startSensing(){
       
       HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_SET);
    }   
+#endif
    
 #if USE_VBATT_ALWAYS
    if (1) {
@@ -488,6 +486,7 @@ void S4_NORM_ADC_bufPoll(){
 //      ADC_readBatt();
 //   }
    
+#if !IS_SHIMMER3R
    //Analog Accel
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {      
       // X
@@ -500,6 +499,7 @@ void S4_NORM_ADC_bufPoll(){
       sensing.dataBuf[sensing.ptr.analogAccel + 4] = *((uint8_t*)adcBufSens + adc_offset_sens++);
       sensing.dataBuf[sensing.ptr.analogAccel + 5] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }
+#endif
    
    //Analog Battery Voltage
 #if USE_VBATT_ALWAYS    
@@ -608,8 +608,10 @@ void S4_NORM_ADC_bufPoll(){
 void S4_NORM_ADC_stopSensing(){      
    HAL_ADC_Stop_DMA(hadcSensPtr);
    HAL_ADC_DeInit(hadcSensPtr);
+#if !IS_SHIMMER3R
    //Analog Accel (KXRB5-2042)
    HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
+#endif
    //Analog Strain Gauge,  esets the PV_SG voltage to gauge op-amp
    HAL_GPIO_WritePin(GPIOB, SW_STRAIN_GAUGE_Pin, GPIO_PIN_RESET);
    HAL_GPIO_WritePin(GPIOF, SW_PPG_EN_Pin, GPIO_PIN_RESET);
