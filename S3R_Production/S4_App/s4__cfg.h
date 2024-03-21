@@ -7,7 +7,7 @@
 #define IS_CONNECTED_EEPROM 0
 #define IS_CONNECTED_DIG_SENSORS 0
 
-#define USE_DEFAULT_SENSOR    1
+#define USE_DEFAULT_SENSOR    0
 #define RTC_FAST              0 // need to increase rtc alarm interrupt priority before enabling this option
 #define USE_8BYTES_INIT_TS    0      
 #define TEST_UNDOCKED         0
@@ -20,7 +20,7 @@
 #define USE_I2C_VBATT_REPORT  1
 #define SKIP_50MS             1
 #define USE_VBATT_ALWAYS      1
-#define HAL_TEST_INFOMEM      1
+#define HAL_TEST_INFOMEM      0
 #define USE_BT                1
 #define USE_SD                1
 #define USE_BMPX80            2//x=1 for 180, x=2 for 280
