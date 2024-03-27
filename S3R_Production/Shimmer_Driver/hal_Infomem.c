@@ -71,6 +71,10 @@ void InfoMem_init(void){
    
 void InfoMem_update() { 
    uint16_t j;
+   if (HAL_ICACHE_Disable() != HAL_OK)
+   {
+     Error_Handler();
+   }
    HAL_FLASH_Unlock();
 #if IS_SHIMMER3R
    uint32_t PageError;
@@ -83,7 +87,7 @@ void InfoMem_update() {
       
    if(infoMem_p_storedConfig != 0){
 #if IS_SHIMMER3R
-     for(j = 0; j < INFOMEM_RAM_SIZE; j+=128){
+     for(j = 0; j < INFOMEM_RAM_SIZE; j += QUAD_WORD_BYTE_SIZE){
        HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, (uint32_t)(infoMem_p_storedConfig+j));
      }
 #else
@@ -98,7 +102,7 @@ void InfoMem_update() {
    }
    if(infoMem_p_shimmerCalib_ram != 0){
 #if IS_SHIMMER3R
-     for(j = 0; j < INFOMEM_CALIB_SIZE; j+=128){
+     for(j = 0; j < INFOMEM_CALIB_SIZE; j += QUAD_WORD_BYTE_SIZE){
        HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CALIB_OFFSET+j, (uint32_t)(infoMem_p_shimmerCalib_ram+j));
      }
 #else
@@ -111,7 +115,7 @@ void InfoMem_update() {
    
 #if HAL_TEST_INFOMEM
 #if IS_SHIMMER3R
-   for(j = 0; j < INFOMEM_TEST_SIZE; j+=128){
+   for(j = 0; j < INFOMEM_TEST_SIZE; j += QUAD_WORD_BYTE_SIZE){
       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_TEST_OFFSET+j, (uint32_t)(test_infomem_wr+j));
    }
 #else
@@ -123,6 +127,10 @@ void InfoMem_update() {
 #endif
    
    HAL_FLASH_Lock();
+   if (HAL_ICACHE_Enable() != HAL_OK)
+   {
+     Error_Handler();
+   }
 }
 
 void InfoMem_updateFrom(uint8_t * buf) { 
@@ -138,7 +146,7 @@ void InfoMem_updateFrom(uint8_t * buf) {
 #endif
    
 #if IS_SHIMMER3R
-   for(j = 0; j < INFOMEM_RAM_SIZE; j+=128){
+   for(j = 0; j < INFOMEM_RAM_SIZE; j += QUAD_WORD_BYTE_SIZE){
       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, (uint32_t)(buf+j));
    }
 #else

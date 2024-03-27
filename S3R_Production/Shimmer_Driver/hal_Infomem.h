@@ -124,6 +124,8 @@ yes      IROM1    0x8008000   0xf8000
 
 #define INFOMEM_SIZE_TOTAL       INFOMEM_RAM_SIZE + INFOMEM_CALIB_SIZE + INFOMEM_TEST_SIZE
 
+#define QUAD_WORD_BYTE_SIZE      16
+
 
 //returns 0 if successful, 1 if failure
 
