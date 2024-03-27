@@ -69,6 +69,7 @@ extern DMA_HandleTypeDef handle_GPDMA1_Channel1;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel0;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
+extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -226,90 +227,6 @@ void RTC_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles EXTI Line0 interrupt.
-  */
-void EXTI0_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI0_IRQn 0 */
-
-  /* USER CODE END EXTI0_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(SD_DETECT_N_Pin);
-  /* USER CODE BEGIN EXTI0_IRQn 1 */
-
-  /* USER CODE END EXTI0_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI Line1 interrupt.
-  */
-void EXTI1_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI1_IRQn 0 */
-
-  /* USER CODE END EXTI1_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(DOCK_DETECT_Pin);
-  /* USER CODE BEGIN EXTI1_IRQn 1 */
-
-  /* USER CODE END EXTI1_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI Line6 interrupt.
-  */
-void EXTI6_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI6_IRQn 0 */
-
-  /* USER CODE END EXTI6_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(BT_CYSPP_Pin);
-  /* USER CODE BEGIN EXTI6_IRQn 1 */
-
-  /* USER CODE END EXTI6_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI Line7 interrupt.
-  */
-void EXTI7_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI7_IRQn 0 */
-
-  /* USER CODE END EXTI7_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(CHG_STAT1_Pin);
-  /* USER CODE BEGIN EXTI7_IRQn 1 */
-
-  /* USER CODE END EXTI7_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI Line8 interrupt.
-  */
-void EXTI8_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI8_IRQn 0 */
-
-  /* USER CODE END EXTI8_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(CHG_STAT2_Pin);
-  /* USER CODE BEGIN EXTI8_IRQn 1 */
-
-  /* USER CODE END EXTI8_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI Line13 interrupt.
-  */
-void EXTI13_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI13_IRQn 0 */
-
-  /* USER CODE END EXTI13_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(USER_BTN_N_Pin);
-  /* USER CODE BEGIN EXTI13_IRQn 1 */
-
-  /* USER CODE END EXTI13_IRQn 1 */
-}
-
-/**
   * @brief This function handles EXTI Line14 interrupt.
   */
 void EXTI14_IRQHandler(void)
@@ -321,20 +238,6 @@ void EXTI14_IRQHandler(void)
   /* USER CODE BEGIN EXTI14_IRQn 1 */
 
   /* USER CODE END EXTI14_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI Line15 interrupt.
-  */
-void EXTI15_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI15_IRQn 0 */
-
-  /* USER CODE END EXTI15_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(BT_HOST_WAKE_Pin);
-  /* USER CODE BEGIN EXTI15_IRQn 1 */
-
-  /* USER CODE END EXTI15_IRQn 1 */
 }
 
 /**
@@ -504,6 +407,20 @@ void USART3_IRQHandler(void)
   /* USER CODE BEGIN USART3_IRQn 1 */
 
   /* USER CODE END USART3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USB OTG HS global interrupt.
+  */
+void OTG_HS_IRQHandler(void)
+{
+  /* USER CODE BEGIN OTG_HS_IRQn 0 */
+
+  /* USER CODE END OTG_HS_IRQn 0 */
+  HAL_PCD_IRQHandler(&hpcd_USB_OTG_HS);
+  /* USER CODE BEGIN OTG_HS_IRQn 1 */
+
+  /* USER CODE END OTG_HS_IRQn 1 */
 }
 
 /**

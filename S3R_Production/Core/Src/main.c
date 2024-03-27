@@ -68,11 +68,12 @@
 
 /* USER CODE BEGIN PV */
 
+uint8_t dcID[16];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void PeriphCommonClock_Config(void);
 static void SystemPower_Config(void);
 /* USER CODE BEGIN PFP */
 
@@ -86,6 +87,9 @@ void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
+//TODO move to "s4_adc.c"
+void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue);
+void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
 #endif
 
 /* USER CODE END PFP */
@@ -158,8 +162,6 @@ void Init() {
    //Power_StopUntilInterrupt();
 }
 
-uint8_t dcID[16];
-
 /* USER CODE END 0 */
 
 /**
@@ -168,6 +170,7 @@ uint8_t dcID[16];
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   uint32_t i = 0;
@@ -187,9 +190,6 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-/* Configure the peripherals common clocks */
-  PeriphCommonClock_Config();
-
   /* Configure the System Power */
   SystemPower_Config();
 
@@ -207,9 +207,8 @@ int main(void)
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
-  MX_ADC1_Init();
   MX_ADC2_Init();
-  MX_USB_OTG_HS_USB_Init();
+  MX_USB_OTG_HS_PCD_Init();
   MX_USART2_UART_Init();
   MX_ICACHE_Init();
   MX_CRC_Init();
@@ -217,8 +216,14 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_MDF1_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+#if USE_FATFS
   MX_FATFS_Init();
+#endif
+#if !USE_USBX
+  MX_USB_DEVICE_Init();
+#endif
 
   Init();
   //Task_set(TASK_STARTSENSING);
@@ -226,6 +231,15 @@ int main(void)
 //  SD_test();
 //  SD_test_alternative();
 
+  //TODO move to "s4_adc.c"
+  //https://www.youtube.com/watch?v=GBr6bQ-PzV8
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+  i = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -236,6 +250,10 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     S4_Task_manage();
+
+//    HAL_UART_Transmit(&huart2, "E", 1, 0xFFFF);
+    rgb_led_lwr_color(i, i, i);
+    i++;
   }
   /* USER CODE END 3 */
 }
@@ -251,7 +269,7 @@ void SystemClock_Config(void)
 
   /** Configure the main internal regulator output voltage
   */
-  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE3) != HAL_OK)
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -264,7 +282,9 @@ void SystemClock_Config(void)
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI
-                              |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
+                              |RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE
+                              |RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
@@ -272,16 +292,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_0;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
-  RCC_OscInitStruct.PLL.PLLMBOOST = RCC_PLLMBOOST_DIV4;
-  RCC_OscInitStruct.PLL.PLLM = 3;
-  RCC_OscInitStruct.PLL.PLLN = 8;
-  RCC_OscInitStruct.PLL.PLLP = 8;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
-  RCC_OscInitStruct.PLL.PLLR = 2;
-  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLLVCIRANGE_1;
-  RCC_OscInitStruct.PLL.PLLFRACN = 0;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -298,18 +309,10 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB3CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief Peripherals Common Clock Configuration
-  * @retval None
-  */
-void PeriphCommonClock_Config(void)
-{
 }
 
 /**
@@ -480,6 +483,22 @@ void setBtConnectionState(bool state)
 bool isBtConnected(void)
 {
   return stat.isBtConnected;
+}
+
+//TODO move to "s4_adc.c"
+void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue)
+{
+  htim3.Instance->CCR1 = red;
+  htim3.Instance->CCR2 = green;
+  htim3.Instance->CCR3 = blue;
+}
+
+//TODO move to "s4_adc.c"
+void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue)
+{
+  htim3.Instance->CCR2 = red;
+  htim3.Instance->CCR3 = green;
+  htim3.Instance->CCR4 = blue;
 }
 
 #endif

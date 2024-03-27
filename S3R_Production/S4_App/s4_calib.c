@@ -13,8 +13,10 @@
 //#include "msp430.h"
 
 #include "s4_calib.h"
-#include "ff.h"
 #include "s4.h"
+#if USE_FATFS
+#include "ff.h"
+#endif
 #include "stm32u5xx.h"
 #include "hal_Infomem.h"
 
@@ -126,6 +128,7 @@ void ShimmerCalib_ram2File(){
  * ram buffer will use 0 as length, 00000 as content
  */
 uint8_t ShimmerCalib_file2Ram(){
+#if USE_FATFS
    char cal_file_name[48];
    DIR gdc;
    FIL gfc;
@@ -165,7 +168,8 @@ uint8_t ShimmerCalib_file2Ram(){
    shimmerCalib_ramLen = min(*(uint16_t*)shimmerCalib_ram, SHIMMER_CALIB_RAM_MAX-2);
    f_close(&gfc);
    HAL_Delay(50);
-   
+#endif
+
    return 0;
 }
 

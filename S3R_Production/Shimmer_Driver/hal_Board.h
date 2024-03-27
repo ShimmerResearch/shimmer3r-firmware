@@ -187,7 +187,7 @@ extern void Board_delayMicros(uint32_t micros);
 #define Board_ECG_CS(x)       HAL_GPIO_WritePin(ECG_CS_GPIO,  ECG_CS_PIN,   x?GPIO_PIN_SET:GPIO_PIN_RESET)  
 #define Board_RESP_CS(x)      HAL_GPIO_WritePin(RESP_CS_GPIO, RESP_CS_PIN,  x?GPIO_PIN_SET:GPIO_PIN_RESET)  
 
-#define Board_arm0pc1(x)      HAL_GPIO_WritePin(GPIOG, SD_PC_SWITCH_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)  //EXT_MEM: 0 for arm, 1 for pc
+#define Board_arm0pc1(x)      HAL_GPIO_WritePin(GPIOG, SW_SD_MCU_DOCK_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)  //EXT_MEM: 0 for arm, 1 for pc
 #define Board_sdPower(x)      HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, x?GPIO_PIN_SET:GPIO_PIN_RESET)
 #define Board_detectN(x)      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
 #endif //SHIMMER4_SDK_CONFIG_H

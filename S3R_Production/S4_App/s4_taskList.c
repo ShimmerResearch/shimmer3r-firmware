@@ -52,6 +52,11 @@ void S4_NORM_Task_init(void){
 
 void S4_NORM_Task_manage(void){   
    taskCurrent = S4_Task_getCurrent();
+
+#if USE_USBX
+   USBX_Device_Process();
+#endif
+
    if (!taskCurrent) {
       Power_SleepUntilInterrupt();
 //      if(stat.isBtConnected && !stat.isSensing){

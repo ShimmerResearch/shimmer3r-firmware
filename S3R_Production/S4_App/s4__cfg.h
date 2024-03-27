@@ -25,6 +25,8 @@
 #define USE_SD                1
 #define USE_BMPX80            2//x=1 for 180, x=2 for 280
 #define NUM_SDWRBUF           64
+#define USE_FATFS             1
+#define USE_USBX              0
 
 #include <string.h>
 #include <ctype.h>
@@ -36,6 +38,7 @@
 #include "s4_ram.h"
 #include "s4_calib.h"
 #include "s4_adc.h"
+#include "s4_sd.h"
 #include "hal_Power.h"
 #if !IS_SHIMMER3R
 #include "STC3100.h"
@@ -64,7 +67,9 @@
 #include "can.h"
 #include "dma.h"
 #endif
+#if USE_FATFS
 #include "fatfs.h"
+#endif
 #include "i2c.h"
 // #include "iwdg.h"
 #include "rng.h"
