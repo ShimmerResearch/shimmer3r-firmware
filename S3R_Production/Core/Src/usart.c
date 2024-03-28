@@ -445,7 +445,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 void Uart_init(void){
    huartBt = &huart3;
 #if IS_SHIMMER3R
-   huartDock = &huart2;
+   huartDock = &huart1;
 #else
    huartDock = &huart6;
 #endif
@@ -2140,7 +2140,7 @@ uint8_t DockUart_interruptCheck(void) {
 #if TEST_UNDOCKED
    if ( 0 ){
 #else
-   if (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_4) == GPIO_PIN_SET) { //docked
+   if (HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET) { //docked
 #endif
       stat.isDocked = 1;
       //Board_sd2Pc();
