@@ -71,6 +71,7 @@ void InfoMem_init(void){
    
 void InfoMem_update() { 
    uint16_t j;
+   /*We may need to disable and enable icache before/after writing to flash got this from STM forum */
    if (HAL_ICACHE_Disable() != HAL_OK)
    {
      Error_Handler();
@@ -127,6 +128,7 @@ void InfoMem_update() {
 #endif
    
    HAL_FLASH_Lock();
+   /*We may need to disable and enable icache before/after writing to flash got this from STM forum */
    if (HAL_ICACHE_Enable() != HAL_OK)
    {
      Error_Handler();
