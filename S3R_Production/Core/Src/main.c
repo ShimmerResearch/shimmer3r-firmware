@@ -253,7 +253,7 @@ int main(void)
 
 //    HAL_UART_Transmit(&huart2, "E", 1, 0xFFFF);
     rgb_led_lwr_color(i, i, i);
-    i++;
+    i+=5;
   }
   /* USER CODE END 3 */
 }
