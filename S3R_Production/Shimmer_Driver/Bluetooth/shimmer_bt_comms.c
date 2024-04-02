@@ -883,7 +883,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if IS_BT_RN
                     memcpy(gArgsPtr + btWaitingForArgs, btRxBuffPtr, btWaitingForArgsLength);
 #else
-                    memcpy(&btArgs + btWaitingForArgs, btRxBuffPtr, btWaitingForArgsLength);
+                    memcpy(&btArgs[btWaitingForArgs], btRxBuffPtr, btWaitingForArgsLength);
 #endif
                 }
                 else
@@ -891,7 +891,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if IS_BT_RN
                     memcpy(gArgsPtr, btRxBuffPtr, btWaitingForArgs);
 #else
-                    memcpy(btArgs, btRxBuffPtr, btWaitingForArgs);
+                    memcpy(&btArgs[0], btRxBuffPtr, btWaitingForArgs);
 #endif
                 }
 
@@ -2793,7 +2793,7 @@ void BtUart_processCmd(void) {
       // max length of this command = 132
       btCalibRamLength = btArgs[0];
       btCalibRamOffset = btArgs[1] + (btArgs[2]<<8);
-      if(ShimmerCalib_ramWrite(btArgs+3, btCalibRamLength, btCalibRamOffset) == 1){
+      if(ShimmerCalib_ramWrite(&btArgs[3], btCalibRamLength, btCalibRamOffset) == 1){
          //InfoMem_update();
 //         ShimmerCalibSyncFromDumpRamAll();
 //         update_calib_dump_file = 1;
@@ -2865,12 +2865,12 @@ void BtUart_processCmd(void) {
       if (btArgs[0] < 2 && btArgs[1] < 10 && btArgs[2] < 11) {
          if (btArgs[0]) {
             //memcpy((storedConfig + NV_EXG_ADS1292R_2_CONFIG1 + btArgs[1]), (btArgs + 3), btArgs[2]);
-            S4Ram_storedConfigSet(btArgs + 3, NV_EXG_ADS1292R_2_CONFIG1 + btArgs[1], btArgs[2]);
+            S4Ram_storedConfigSet(&btArgs[3], NV_EXG_ADS1292R_2_CONFIG1 + btArgs[1], btArgs[2]);
             //InfoMem_update();
             //memcpy(sdHeadText + SDH_EXG_ADS1292R_2_CONFIG1, storedConfig + NV_EXG_ADS1292R_2_CONFIG1, btArgs[2]);
          } else {
             //memcpy((storedConfig + NV_EXG_ADS1292R_1_CONFIG1 + btArgs[1]), (btArgs + 3), btArgs[2]);
-            S4Ram_storedConfigSet(btArgs + 3, NV_EXG_ADS1292R_1_CONFIG1 + btArgs[1], btArgs[2]);
+            S4Ram_storedConfigSet(&btArgs[3], NV_EXG_ADS1292R_1_CONFIG1 + btArgs[1], btArgs[2]);
             //InfoMem_update();
             //memcpy(sdHeadText + SDH_EXG_ADS1292R_1_CONFIG1, storedConfig + NV_EXG_ADS1292R_1_CONFIG1, btArgs[2]);
          }
@@ -2961,7 +2961,7 @@ void BtUart_processCmd(void) {
       btDcMemLength = btArgs[0];
       btDcMemOffset = btArgs[1] + (btArgs[2] << 8);
       if ((btDcMemLength <= 128) && (btDcMemOffset <= 2031) && (btDcMemLength + btDcMemOffset <= 2032)) {
-         CAT24C16_write(btDcMemOffset + 16, btArgs + 3, btDcMemLength);
+         CAT24C16_write(btDcMemOffset + 16, &btArgs[3], btDcMemLength);
       }
       break;
    /*   case GET_BT_COMMS_BAUD_RATE:
@@ -3001,7 +3001,7 @@ void BtUart_processCmd(void) {
 //         memcpy(storedConfig + NV_MAC_ADDRESS, btMacHex, 6);
          uint8_t temp_btMacHex[6];
          S4Ram_storedConfigGet(temp_btMacHex, NV_MAC_ADDRESS, 6);
-         S4Ram_storedConfigSet(btArgs + 3, btInfomemOffset, btInfomemLength);
+         S4Ram_storedConfigSet(&btArgs[3], btInfomemOffset, btInfomemLength);
          S4Ram_storedConfigSet(temp_btMacHex, NV_MAC_ADDRESS, 6);
          //InfoMem_update();
          //Infomem2Names();
