@@ -140,6 +140,8 @@ void Error_Handler(void);
 #define SDMMC1_D1_GPIO_Port GPIOC
 #define SW_I2C2_Pin GPIO_PIN_8
 #define SW_I2C2_GPIO_Port GPIOA
+#define CS_HIGH_G_Pin GPIO_PIN_15
+#define CS_HIGH_G_GPIO_Port GPIOA
 #define SDMMC1_D2_Pin GPIO_PIN_10
 #define SDMMC1_D2_GPIO_Port GPIOC
 #define SDMMC1_D3_Pin GPIO_PIN_11
@@ -162,8 +164,6 @@ void Error_Handler(void);
 #define CS_BMP390_GPIO_Port GPIOD
 #define CS_LSM303AH_Pin GPIO_PIN_7
 #define CS_LSM303AH_GPIO_Port GPIOD
-#define CS_HIGH_G_Pin GPIO_PIN_5
-#define CS_HIGH_G_GPIO_Port GPIOB
 #define DOCK_TXD_Pin GPIO_PIN_6
 #define DOCK_TXD_GPIO_Port GPIOB
 #define DOCK_RXD_Pin GPIO_PIN_7

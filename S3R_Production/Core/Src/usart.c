@@ -29,7 +29,11 @@
 
 UART_HandleTypeDef *huartBt;
 UART_HandleTypeDef *huartDock;
+#if IS_SHIMMER3R
+UART_HandleTypeDef *huartBsl;
+#else
 UART_HandleTypeDef *huartExp;
+#endif
 
 #if !IS_SHIMMER3R
 // BT UART variables
@@ -446,6 +450,7 @@ void Uart_init(void){
    huartBt = &huart3;
 #if IS_SHIMMER3R
    huartDock = &huart1;
+   huartBsl = &huart2;
 #else
    huartDock = &huart6;
 #endif
@@ -2090,6 +2095,7 @@ void DockUart_sendRsp() {
    HAL_UART_Transmit(huartDock, uartRespBuf, uart_resp_len, 5);
 }
 
+#if !IS_SHIMMER3R
 /*****************************************************
  *
  *  Expansion uart
@@ -2113,7 +2119,7 @@ uint8_t ExpUart_TxIT(uint8_t *pData, uint16_t Size){
    HAL_UART_Transmit_IT(huartExp, pData, Size);
    return 0;
 }
-
+#endif
 
 uint8_t BtUart_connectIntCheck(void) {
    if (HAL_GPIO_ReadPin(BT_CONNECTION_GPIO_Port, BT_CONNECTION_Pin) == GPIO_PIN_SET) { //connected

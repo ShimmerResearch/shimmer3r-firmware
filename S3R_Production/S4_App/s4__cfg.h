@@ -83,4 +83,6 @@
 #include "gpio.h"
 #include "crc.h"
 
+#include "swo.h"
+
 #endif

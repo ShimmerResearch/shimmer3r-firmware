@@ -104,6 +104,20 @@ volatile uint32_t time_start, time_end, time_diff;
 
 
 extern UART_HandleTypeDef *huartBt;
+#if IS_SHIMMER3R
+extern UART_HandleTypeDef *huartBsl;
+#endif
+
+int _write(int file, char *ptr, int len)
+{
+  int DataIdx;
+  for (DataIdx = 0; DataIdx < len; DataIdx++)
+  {
+//    ITM_SendChar(*ptr++);
+    HAL_UART_Transmit(huartBsl, ptr++, 1, 0xFFFF);
+  }
+  return len;
+}
 
 void Init() {
    Board_ledOn(LED_ALL);
@@ -217,6 +231,7 @@ int main(void)
   MX_TIM4_Init();
   MX_MDF1_Init();
   MX_ADC1_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
 #if USE_FATFS
   MX_FATFS_Init();
@@ -240,6 +255,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
   i = 0;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -250,6 +266,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     S4_Task_manage();
+
+    printf("Hello World \n");
 
 //    HAL_UART_Transmit(&huart2, "E", 1, 0xFFFF);
     rgb_led_lwr_color(i, i, i);

@@ -73,10 +73,11 @@ void DockUart_sendRsp(void);
 uint8_t DockUart_getStep(void);
 void DockUart_setStep(uint8_t val);
 
-
+#if !IS_SHIMMER3R
 void ExpUart_init(void);
 void ExpUart_rxCallback(uint8_t data);
 uint8_t ExpUart_TxIT(uint8_t *pData, uint16_t Size);
+#endif
 
 #if !IS_SHIMMER3R
 uint8_t  BtUart_connectIntCheck(void);
