@@ -3403,3 +3403,50 @@ COMMS_CRC_MODE getBtCrcMode(void)
     return btCrcMode;
 }
 
+uint8_t BT_getMacAddressAscii(char *macAscii) {
+#if IS_SHIMMER3R
+  // MAC is stored as 6 byte array in CYW20820 library
+  uint8_t *macAddrPtr = BT_getCyw20820MacAddressPtr();
+  (void)sprintf(macAscii, "%02X%02X%02X%02X%02X%02X", macAddrPtr[5], macAddrPtr[4], macAddrPtr[3], macAddrPtr[2], macAddrPtr[1], macAddrPtr[0]);
+  return 1;
+#else
+  if(BT_getRn42MacAddressPtr(macAddrPtr))
+  {
+      memcpy(macAscii, macAddrPtr, 12);
+      return 0;
+   } else {
+      return 1;
+   }
+#endif
+}
+
+uint8_t BT_getMacAddressHex(uint8_t *macHex) {
+#if IS_SHIMMER3R
+  uint8_t* ptr = BT_getCyw20820MacAddressPtr();
+  macHex[0] = *(ptr + 5);
+  macHex[1] = *(ptr + 4);
+  macHex[2] = *(ptr + 3);
+  macHex[3] = *(ptr + 2);
+  macHex[4] = *(ptr + 1);
+  macHex[5] = *(ptr + 0);
+  return 1;
+#else
+  uint8_t i, pchar[3];
+  if(BT_getRn42MacAddressPtr(macAddrPtr))
+  {
+    //memcpy(mac, rn42Mac, 12);
+    pchar[2] = 0;
+    for (i = 0; i < 6; i++)
+    {
+      pchar[0] = macAddrPtr[i * 2];
+      pchar[1] = macAddrPtr[i * 2 + 1];
+      macHex[i] = strtoul((char*) pchar, 0, 16);
+    }
+    return 0;
+  }
+  else
+  {
+    return 1;
+  }
+#endif
+}

@@ -85,5 +85,6 @@ bool isBtFactoryResetCmdsRunning(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
 void setBtLpMode(bool allowLowPower);
+uint8_t* BT_getCyw20820MacAddressPtr(void);
 
 #endif /* SRC_CYW20820_H_ */

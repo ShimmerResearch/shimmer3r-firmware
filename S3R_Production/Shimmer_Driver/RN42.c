@@ -677,28 +677,16 @@ void BT_setInquiryTime(char * hexval_time) {
    snprintf(newInquiryTime, 5, "%s", hexval_time);
 }
 
-uint8_t BT_getMacAddressAscii(uint8_t *macAscii) {
-   if(*rn42Mac) {
-      memcpy(macAscii, rn42Mac, 12);
-      return 0;
-   } else {
-      return 1;
-   }
-}
-uint8_t BT_getMacAddressHex(uint8_t *macHex) {
-   uint8_t i, pchar[3];
-   if(*rn42Mac) {
-      //memcpy(mac, rn42Mac, 12);      
-      pchar[2]=0;
-      for(i=0; i <6; i++){
-         pchar[0] = rn42Mac[i*2];
-         pchar[1] = rn42Mac[i*2+1];
-         macHex[i] = strtoul((char*)pchar,0,16);
-      }      
-      return 0;
-   } else {
-      return 1;
-   }
+uint8_t BT_getRn42MacAddressPtr(uint8_t *macPtr) {
+  if (*rn42Mac)
+  {
+    macPtr = rn42Mac;
+    return 1;
+  }
+  else
+  {
+    return 0;
+  }
 }
 
 void BT_resetDefaults() {

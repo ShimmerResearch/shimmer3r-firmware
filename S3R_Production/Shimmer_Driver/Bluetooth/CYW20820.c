@@ -1112,3 +1112,8 @@ void setBtLpMode(bool allowLowPower)
 //  HAL_Delay(100);
 
 }
+
+uint8_t* BT_getCyw20820MacAddressPtr(void)
+{
+  return &rsp_system_get_bluetooth_address.address.addr[0];
+}

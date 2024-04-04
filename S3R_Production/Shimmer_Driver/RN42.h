@@ -137,8 +137,7 @@ void BT_setInquiryTime(char *hexvalTime);   // max 4 chars (hex word)
 //Will only be valid *after* BT_Configure() is run
 //BT_init() needs to be run before the return value
 //can be trusted
-uint8_t BT_getMacAddressAscii(uint8_t *macAscii);
-uint8_t BT_getMacAddressHex(uint8_t *macHex);
+uint8_t BT_getRn42MacAddressPtr(uint8_t *macPtr);
 
 void BT_resetDefaults(void);
 

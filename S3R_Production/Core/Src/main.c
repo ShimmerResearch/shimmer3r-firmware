@@ -267,9 +267,8 @@ int main(void)
     /* USER CODE BEGIN 3 */
     S4_Task_manage();
 
-    printf("Hello World \n");
-
-//    HAL_UART_Transmit(&huart2, "E", 1, 0xFFFF);
+    //TODO remove the following debug code
+//    printf("Hello World \n");
     rgb_led_lwr_color(i, i, i);
     i+=5;
   }
@@ -386,6 +385,17 @@ void btInitialise(void)
 
   // 20 * 100ms = 2s per baud rate attempt
   btCommWithDiffBaudRates(true, 20U);
+
+  /* Shouldn't get past btCommWithDiffBaudRates() if BT isn't initialised so
+   * assume it has been from here on. */
+  char temp_btMacAscii[14];
+  uint8_t temp_btMacHex[6];
+  BT_getMacAddressHex(temp_btMacHex);
+  S4Ram_btMacHexSet(temp_btMacHex);
+  BT_getMacAddressAscii(temp_btMacAscii);
+  S4Ram_btMacAsciiSet(temp_btMacAscii);
+
+  stat.isBtPoweredOn = 1;
 
   printf("BT init end\r\n");
 }

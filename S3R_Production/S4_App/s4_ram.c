@@ -147,13 +147,15 @@ uint8_t S4Ram_storedConfigSetByte(uint16_t offset, uint8_t val){
  * btMacAscii: Set(), Get()
  */
 
-void S4Ram_btMacAsciiSet(const uint8_t* buf){
+void S4Ram_btMacAsciiSet(char *buf)
+{
    memcpy(btMacAscii, buf, 12);
    btMacAscii[12] = 0;
 }
 
-void S4Ram_btMacAsciiGet(uint8_t* buf){
-   memcpy(buf, btMacAscii, 12);
+void S4Ram_btMacAsciiGet(uint8_t *buf)
+{
+  memcpy(buf, btMacAscii, 12);
 }
 
 
@@ -161,12 +163,15 @@ void S4Ram_btMacAsciiGet(uint8_t* buf){
  * btMacHex: Set(), Get()
  */
 
-void S4Ram_btMacHexSet(const uint8_t* buf){   memcpy(btMacHex, buf, 6);}
+void S4Ram_btMacHexSet(uint8_t *buf)
+{
+  memcpy(btMacHex, buf, 6);
+}
 
-void S4Ram_btMacHexGet(uint8_t* buf)      {   memcpy(buf, btMacHex, 6);}
-
-
-
+void S4Ram_btMacHexGet(uint8_t *buf)
+{
+  memcpy(buf, btMacHex, 6);
+}
 
 void S4Ram_SetDefaultInfomem(void) {
    //uint8_t temp_btMacAscii[14];

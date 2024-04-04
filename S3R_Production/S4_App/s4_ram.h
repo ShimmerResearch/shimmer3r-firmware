@@ -396,9 +396,9 @@ uint8_t S4Ram_storedConfigGet(uint8_t* buf, uint16_t offset, uint16_t length);
 uint8_t S4Ram_storedConfigGetByte(uint16_t offset);
 uint8_t S4Ram_storedConfigSetByte(uint16_t offset, uint8_t val);
 
-void S4Ram_btMacAsciiSet(const uint8_t* buf);
+void S4Ram_btMacAsciiSet(char *buf);
 void S4Ram_btMacAsciiGet(uint8_t* buf);
-void S4Ram_btMacHexSet(const uint8_t* buf);
+void S4Ram_btMacHexSet(uint8_t* buf);
 void S4Ram_btMacHexGet(uint8_t* buf);
 
 void S4Ram_config2SdHead(void);

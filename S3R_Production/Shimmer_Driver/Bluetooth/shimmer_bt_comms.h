@@ -243,4 +243,7 @@ uint16_t getBtRxShimmerCommsWaitByteCount(void);
 void setBtCrcMode(COMMS_CRC_MODE btCrcModeNew);
 COMMS_CRC_MODE getBtCrcMode(void);
 
+uint8_t BT_getMacAddressAscii(char *macAscii);
+uint8_t BT_getMacAddressHex(uint8_t *macHex);
+
 #endif /* SHIMMER3_COMMON_SOURCE_BLUETOOTH_SD_SHIMMER_BT_COMMS_H_ */
