@@ -49,7 +49,7 @@ uint8_t test_infomem_wr[INFOMEM_RAM_SIZE];
 uint8_t test_infomem_rd[INFOMEM_RAM_SIZE];
 #endif
 
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
 FLASH_EraseInitTypeDef pEraseInit = {
   .TypeErase = FLASH_TYPEERASE_PAGES,
   .Banks = INFOMEM_FLASH_BANK,
@@ -71,91 +71,97 @@ void InfoMem_init(void){
    
 void InfoMem_update() { 
    uint16_t j;
-#if IS_SHIMMER3R
-   /*We may need to disable and enable icache before/after writing to flash got this from STM forum */
+#if defined(SHIMMER3R)
+   /* Disable instruction cache prior to internal cacheable memory update */
    if (HAL_ICACHE_Disable() != HAL_OK)
    {
      Error_Handler();
    }
 #endif
-   HAL_FLASH_Unlock();
-#if IS_SHIMMER3R
+   HAL_StatusTypeDef status = HAL_FLASH_Unlock();
+   if (status != HAL_OK)
+   {
+     Error_Handler();
+   }
+#if defined(SHIMMER3R)
    uint32_t PageError;
    //TODO check PageError
-   HAL_FLASHEx_Erase(&pEraseInit, &PageError);
-#else
-   FLASH_Erase_Sector(INFOMEM_SECTOR, FLASH_VOLTAGE_RANGE_3);
-   FLASH_WaitForLastOperation((uint32_t)500);
+   status |= HAL_FLASHEx_Erase(&pEraseInit, &PageError);
+#elif defined(SHIMMER4_SDK)
+   status |= FLASH_Erase_Sector(INFOMEM_SECTOR, FLASH_VOLTAGE_RANGE_3);
+   status |= FLASH_WaitForLastOperation((uint32_t)500);
 #endif
       
    if(infoMem_p_storedConfig != 0){
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
      for(j = 0; j < INFOMEM_RAM_SIZE; j += QUAD_WORD_BYTE_SIZE){
-       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, (uint32_t)(infoMem_p_storedConfig+j));
+       status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, (uint32_t)(infoMem_p_storedConfig+j));
      }
-#else
+#elif defined(SHIMMER4_SDK)
       for(j = 0; j < INFOMEM_RAM_SIZE; j+=4){
          // FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
-         HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_RAM_OFFSET+j, *(uint32_t*)(infoMem_p_storedConfig+j));
+        status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_RAM_OFFSET+j, *(uint32_t*)(infoMem_p_storedConfig+j));
       }
 //      for(j = 0; j < INFOMEM_RAM_SIZE; j++){
-//         HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_RAM_OFFSET+j, infoMem_p_storedConfig[j]);
+//         status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_RAM_OFFSET+j, infoMem_p_storedConfig[j]);
 //      }
 #endif
    }
    if(infoMem_p_shimmerCalib_ram != 0){
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
      for(j = 0; j < INFOMEM_CALIB_SIZE; j += QUAD_WORD_BYTE_SIZE){
-       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CALIB_OFFSET+j, (uint32_t)(infoMem_p_shimmerCalib_ram+j));
+       status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CALIB_OFFSET+j, (uint32_t)(infoMem_p_shimmerCalib_ram+j));
      }
-#else
+#elif defined(SHIMMER4_SDK)
       for(j = 0; j < INFOMEM_CALIB_SIZE; j+=4){
          // FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
-         HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_CALIB_OFFSET+j,  *(uint32_t*)(infoMem_p_shimmerCalib_ram+j));
+        status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_CALIB_OFFSET+j,  *(uint32_t*)(infoMem_p_shimmerCalib_ram+j));
       }
 #endif
    }
    
 #if HAL_TEST_INFOMEM
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    for(j = 0; j < INFOMEM_TEST_SIZE; j += QUAD_WORD_BYTE_SIZE){
-      HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_TEST_OFFSET+j, (uint32_t)(test_infomem_wr+j));
+     status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_TEST_OFFSET+j, (uint32_t)(test_infomem_wr+j));
    }
-#else
+#elif defined(SHIMMER4_SDK)
    for(j = 0; j < INFOMEM_TEST_SIZE; j+=4){
       // FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
-      HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_TEST_OFFSET+j,  *(uint32_t*)(test_infomem_wr+j));
+     status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_TEST_OFFSET+j,  *(uint32_t*)(test_infomem_wr+j));
    }
 #endif
 #endif
    
-   HAL_FLASH_Lock();
-#if IS_SHIMMER3R
-   /*We may need to disable and enable icache before/after writing to flash got this from STM forum */
-   if (HAL_ICACHE_Enable() != HAL_OK)
+   status |= HAL_FLASH_Lock();
+#if defined(SHIMMER3R)
+   /* Enable instruction cache after the internal cacheable memory update */
+   HAL_ICACHE_Enable();
+#endif
+
+   if (status != HAL_OK)
    {
      Error_Handler();
    }
-#endif
 }
 
 void InfoMem_updateFrom(uint8_t * buf) { 
    uint16_t j;  
    HAL_FLASH_Unlock();
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    uint32_t PageError;
    //TODO check PageEror
    HAL_FLASHEx_Erase(&pEraseInit, &PageError);
-#else
+#elif defined(SHIMMER4_SDK)
    FLASH_Erase_Sector(INFOMEM_SECTOR, FLASH_VOLTAGE_RANGE_3);
    FLASH_WaitForLastOperation((uint32_t)50000);
 #endif
    
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    for(j = 0; j < INFOMEM_RAM_SIZE; j += QUAD_WORD_BYTE_SIZE){
       HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, (uint32_t)(buf+j));
    }
-#else
+#elif defined(SHIMMER4_SDK)
    for(j = 0; j < INFOMEM_RAM_SIZE; j++){
       // FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
       HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_RAM_OFFSET+j, buf[j]);

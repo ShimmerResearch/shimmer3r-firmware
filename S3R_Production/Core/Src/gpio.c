@@ -217,7 +217,7 @@ uint16_t ext_cnt5 = 0;
 uint16_t ext_cnt6 = 0;
 
 //TODO copy Shimmer4 pins from HAL_GPIO_EXTI_Callback to HAL_GPIO_EXTI_Rising_Callback and HAL_GPIO_EXTI_Falling_Callback
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
 //  switch (GPIO_Pin)
@@ -290,7 +290,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
   }
 }
 
-#else
+#elif defined(SHIMMER4_SDK)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
    switch (GPIO_Pin) {
    case GPIO_INTERNAL1_Pin:

@@ -81,7 +81,7 @@ void Init(void);
 uint32_t FullTest(void);
 
 //TODO move out of here
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
 void btInitialise(void);
 void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
@@ -104,7 +104,7 @@ volatile uint32_t time_start, time_end, time_diff;
 
 
 extern UART_HandleTypeDef *huartBt;
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
 extern UART_HandleTypeDef *huartBsl;
 #endif
 
@@ -126,7 +126,7 @@ void Init() {
    stat.isConfiguring = 1;
 
    // ==== 0.86ma ====
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    TIM_init();
 #endif
    InfoMem_init();
@@ -148,12 +148,12 @@ void Init() {
    DockUart_interruptCheck();
    SD_insertedCheck();
    //GPIO_userButtonCheck();
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    setCrcHandleToUse(getCrcHandle());
    btCommsProtocolInit(setTaskNewBtCmdToProcess);
  //  btFactoryResetViaFw();
    btInitialise();
-#else
+#elif defined(SHIMMER4_SDK)
    BtUart_init();
 #endif
    S4Ram_init();
@@ -378,7 +378,7 @@ uint32_t FullTest(void) {
 }
 
 //TODO move out of here
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
 void btInitialise(void)
 {
   printf("\r\nBT init start\r\n");

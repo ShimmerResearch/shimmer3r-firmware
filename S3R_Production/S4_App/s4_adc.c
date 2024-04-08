@@ -53,7 +53,7 @@
 //static SENSINGTypeDef *pSensing;
 
 ADCTypeDef adc;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 ADC_HandleTypeDef hadcResv; //reserved for user use
 #endif
 ADC_HandleTypeDef hadcSens;
@@ -70,17 +70,17 @@ uint8_t adcConfig;
 
 void S4_NORM_ADC_init(void){   
    
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
   adc.chanCntSens = adc.chanCntBatt = 0;
-#else
+#elif defined(SHIMMER4_SDK)
    adc.chanCntResv = adc.chanCntSens = adc.chanCntBatt = 0;
    memset(&hadcResv, 0, sizeof(ADC_HandleTypeDef));// = 0;//&hadc1;
 #endif
    adcConfig = ADC_CONFIG_NONE;
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    hadcSensPtr = getHadc1();
    hadcBattPtr = getHadc2();
-#else
+#elif defined(SHIMMER4_SDK)
    hadcResv.Instance = ADC1;
    //hadcSens = &hadc2;
    hadcSens.Instance = ADC2;
@@ -94,7 +94,7 @@ void S4_NORM_ADC_init(void){
 //   pStat = GetStatus();
 //   pSensing = S4Sens_getSensing();
    
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    S4_ADC_initBatt();
 #endif
 }
@@ -106,9 +106,9 @@ void S4_NORM_ADC_initBatt(void){
    /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
    */
    HAL_ADC_DeInit(hadcBattPtr);
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    hadcBattPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-#else
+#elif defined(SHIMMER4_SDK)
    hadcBattPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
 #endif
    hadcBattPtr->Init.Resolution = ADC_RESOLUTION_12B;
@@ -124,7 +124,7 @@ void S4_NORM_ADC_initBatt(void){
     /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
     */
    sConfig.Channel = ADC_CHANNEL_VBATT;
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    // Copied from MX_ADC1_Init function
    sConfig.Rank = ADC_REGULAR_RANK_1;
    sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
@@ -143,7 +143,7 @@ void S4_NORM_ADC_configureChannels(void){
    uint8_t nbr_adc_chans = 0;
    
    adc.sensorLen = 0;//adc.sensorCnt = 0;
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    adc.chanCntSens = adc.chanCntBatt = 0;
 #else
    adc.chanCntResv = adc.chanCntSens = adc.chanCntBatt = 0;
@@ -172,7 +172,7 @@ void S4_NORM_ADC_configureChannels(void){
    // int_a0   (sg_low)
    // int_a2   (gsr)
    
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    //Analog Accel (KXRB5-2042)
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {
       *channel_contents_ptr++ = X_A_ACCEL;
@@ -316,9 +316,9 @@ void S4_NORM_ADC_startSensing(){
    ADC_ChannelConfTypeDef sConfig;
    uint8_t adc_counter_sens = 1;//, adc_counter_resv = 0;   
    adcConfig = ADC_CONFIG_SENS;
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
-#else
+#elif defined(SHIMMER4_SDK)
    sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
 #endif
       
@@ -327,9 +327,9 @@ void S4_NORM_ADC_startSensing(){
       
       //memcpy((uint8_t*)hadcSensPtr.Init, (uint8_t*)&hadcBattPtr->Init, sizeof(ADC_InitTypeDef));
       //hadcSens.Instance = ADC2;
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
       hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-#else
+#elif defined(SHIMMER4_SDK)
       hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
 #endif
       hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
@@ -358,7 +358,7 @@ void S4_NORM_ADC_startSensing(){
       }
    }
    
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    if(adc.chanCntResv > 0){  
       HAL_ADC_DeInit(&hadcResv);
       
@@ -448,7 +448,7 @@ void S4_NORM_ADC_startSensing(){
       HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_12) {
       sConfig.Channel = ADC_CHANNEL_INT_A12;
       sConfig.Rank = adc_counter_sens++;
@@ -464,7 +464,7 @@ void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void)){
 }
    
 void S4_NORM_ADC_gatherDataStart(void){   
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    if(adc.chanCntResv > 0){
       __NOP();
    }
@@ -486,7 +486,7 @@ void S4_NORM_ADC_bufPoll(){
 //      ADC_readBatt();
 //   }
    
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    //Analog Accel
    if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {      
       // X
@@ -608,7 +608,7 @@ void S4_NORM_ADC_bufPoll(){
 void S4_NORM_ADC_stopSensing(){      
    HAL_ADC_Stop_DMA(hadcSensPtr);
    HAL_ADC_DeInit(hadcSensPtr);
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    //Analog Accel (KXRB5-2042)
    HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
 #endif
@@ -616,7 +616,7 @@ void S4_NORM_ADC_stopSensing(){
    HAL_GPIO_WritePin(GPIOB, SW_STRAIN_GAUGE_Pin, GPIO_PIN_RESET);
    HAL_GPIO_WritePin(GPIOF, SW_PPG_EN_Pin, GPIO_PIN_RESET);
    
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    if(adc.chanCntResv > 0){
       HAL_ADC_Stop_DMA(&hadcResv);
       HAL_ADC_DeInit(&hadcResv);
@@ -684,27 +684,27 @@ void S4_NORM_ADC_readBatt(void) {
       hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
       hadcSensPtr->Init.NbrOfConversion = 1;
       HAL_ADC_Init(hadcSensPtr);
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
       // Copied from MX_ADC1_Init function
       sConfig.Rank = ADC_REGULAR_RANK_1;
       sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
       sConfig.SingleDiff = ADC_SINGLE_ENDED;
       sConfig.OffsetNumber = ADC_OFFSET_NONE;
       sConfig.Offset = 0;
-#else
+#elif defined(SHIMMER4_SDK)
       sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
 #endif
       sConfig.Channel = ADC_CHANNEL_VBATT;
       sConfig.Rank = 1;
       HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }   
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    //TODO hadcSensPtr is configured above from Shimmer4 code but we're using hadcBattPtr below which I can't make sense of.
    //TODO A bit of cross-over here between the two ADCs (presumably to handle whether the device is streaming or not) but I think this can probably be cleaned up a lot.
    //TODO Shimmer4 implementation called DMA operation here and then delayed for a number of samples, I think calling HAL_ADC_Start may be better here but needs testing
    HAL_ADC_Start(hadcBattPtr);
    adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
-#else
+#elif defined(SHIMMER4_SDK)
    HAL_ADC_Start_DMA(hadcBattPtr, &adc_battVal, 1);
    for(uint16_t i = 0; i < 144; i++);
 #endif
@@ -725,7 +725,7 @@ void S4_NORM_ADC_readBatt(void) {
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    if (hadc->Instance == hadcResv.Instance) {//adc1
       __NOP();
    }

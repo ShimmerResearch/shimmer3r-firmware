@@ -55,7 +55,7 @@ void Uart_init(void);
 
 void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 void BtUart_init(void);
 uint8_t BtUart_callBack(uint8_t* data_buf);
 void BtUart_sendRsp(void);
@@ -73,13 +73,13 @@ void DockUart_sendRsp(void);
 uint8_t DockUart_getStep(void);
 void DockUart_setStep(uint8_t val);
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 void ExpUart_init(void);
 void ExpUart_rxCallback(uint8_t data);
 uint8_t ExpUart_TxIT(uint8_t *pData, uint16_t Size);
 #endif
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 uint8_t  BtUart_connectIntCheck(void);
 #define  BtUart_rtsIntCheck() BT_rtsInterrupt(HAL_GPIO_ReadPin(BT_RTS_GPIO_Port, BT_RTS_Pin))
 #endif

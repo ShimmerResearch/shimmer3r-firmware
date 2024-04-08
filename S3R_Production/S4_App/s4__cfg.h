@@ -3,7 +3,6 @@
 #ifndef SHIMMER4_SDK_CONFIG_H
 #define SHIMMER4_SDK_CONFIG_H
 
-#define IS_SHIMMER3R        1 /* for porting over codes from Shimmer4 to shimmer3r*/
 #define IS_CONNECTED_EEPROM 0
 #define IS_CONNECTED_DIG_SENSORS 0
 
@@ -40,15 +39,15 @@
 #include "s4_adc.h"
 #include "s4_sd.h"
 #include "hal_Power.h"
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 #include "STC3100.h"
 #endif
 #include "gsr.h"
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
 #include "../Shimmer_Driver/Bluetooth/CYW20820.h"
 #include "../Shimmer_Driver/Bluetooth/shimmer_bt_comms.h"
 #include "../Shimmer_Driver/Bluetooth/EZ-Serial/handlers.h"
-#else
+#elif defined(SHIMMER4_SDK)
 #include "RN42.h"
 #endif
 #include "lsm303dlhc.h"
@@ -63,7 +62,7 @@
 #include "EXG\exg.h"
 
 #include "adc.h"
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 #include "can.h"
 #include "dma.h"
 #endif

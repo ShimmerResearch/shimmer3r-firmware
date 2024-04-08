@@ -29,13 +29,13 @@
 
 UART_HandleTypeDef *huartBt;
 UART_HandleTypeDef *huartDock;
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
 UART_HandleTypeDef *huartBsl;
-#else
+#elif defined(SHIMMER4_SDK)
 UART_HandleTypeDef *huartExp;
 #endif
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 // BT UART variables
 uint8_t btArgs[MAX_COMMAND_ARG_SIZE], btWaitingForArgs, btWaitingForArgsLength, btArgsSize, btAction;
 // BT command vars
@@ -448,10 +448,10 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
 void Uart_init(void){
    huartBt = &huart3;
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    huartDock = &huart1;
    huartBsl = &huart2;
-#else
+#elif defined(SHIMMER4_SDK)
    huartDock = &huart6;
 #endif
    //huartExp = &huart6;
@@ -501,7 +501,7 @@ void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
   setBtUartInstance(huartBt);
 }
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 /*****************************************************
  *
  *  bt uart
@@ -644,7 +644,7 @@ uint8_t BtUart_callBack(uint8_t* data_buf) {
       case TOGGLE_LED_COMMAND:
       case START_STREAMING_COMMAND:
       case GET_STATUS_COMMAND:
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
       case GET_I2C_BATT_STATUS_COMMAND:
 #endif
       case GET_VBATT_COMMAND:
@@ -725,7 +725,7 @@ uint8_t BtUart_callBack(uint8_t* data_buf) {
          return 0;
       case SET_SAMPLING_RATE_COMMAND:
       case GET_DAUGHTER_CARD_ID_COMMAND:
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
       case SET_I2C_BATT_STATUS_FREQ_COMMAND:
 #endif
          //case SET_DAUGHTER_CARD_ID_COMMAND:
@@ -777,7 +777,7 @@ uint8_t BtUart_callBack(uint8_t* data_buf) {
 
 void BtUart_processCmd(void) {
    uint64_t temp64;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    uint16_t temp16;
 #endif
 
@@ -845,7 +845,7 @@ void BtUart_processCmd(void) {
    case GET_STATUS_COMMAND:
       dockStatusBtRsp = 1;
       break;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    case GET_I2C_BATT_STATUS_COMMAND:
       i2cvBattBtRsp = 1;
       break;
@@ -1428,7 +1428,7 @@ void BtUart_sendRsp(void) {
 //                                         ((sensing.en & 0x01) << 1) + (docked & 0x01);
          *(bt_tx_data + packet_length++) = 0;
          dockStatusBtRsp = 0;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
       } else if (i2cvBattBtRsp) {
          *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
          *(bt_tx_data + packet_length++) = RSP_I2C_BATT_STATUS_COMMAND;
@@ -1706,7 +1706,7 @@ void DockUart_init(void){
 
    HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
 
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    HAL_UART_RegisterCallback(huartDock, HAL_UART_RX_COMPLETE_CB_ID, dockUartRxCallback);
 //   HAL_UART_RegisterCallback(huartDock, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
 #endif
@@ -2095,7 +2095,7 @@ void DockUart_sendRsp() {
    HAL_UART_Transmit(huartDock, uartRespBuf, uart_resp_len, 5);
 }
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 /*****************************************************
  *
  *  Expansion uart
@@ -2176,7 +2176,7 @@ void DockUart_setup(void) {
 //   return HAL_UART_Transmit_DMA(huart, pData, Size);
 //}
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 //#if UART_DOCK0BT1
    if (huart->Instance == huartBt->Instance) {

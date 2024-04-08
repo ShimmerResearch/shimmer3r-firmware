@@ -313,7 +313,7 @@ void S4Sens_stepInit(void){
 //   I2C_gatherDataInit(S4Sens_step3Start);
 //   I2C2_gatherDataInit(S4Sens_step4Start);
    I2cSens_gatherDataCb(S4Sens_step3Start);
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    I2cBatt_gatherDataCb(S4Sens_step4Start);
 #endif
    SPI_gatherDataCb(S4Sens_step5Start);
@@ -339,7 +339,7 @@ void S4Sens_step2Start(void){
 void S4Sens_step3Start(void){  
    PeriStat_Clr(STAT_PERI_I2C_SENS);
    temp_cnt3++;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    I2cBatt_gatherDataStart();
 #endif
 }

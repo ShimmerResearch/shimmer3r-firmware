@@ -3,19 +3,19 @@
 #ifndef S4_H
 #define S4_H
 
-//#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
 #define DEVICE_VER            3
 #define FW_IDENTIFIER         3      // 12 is the firmware for shimmer4sdk, with LogAndStream in side
 #define FW_VER_MAJOR          1      // Maor version number: 0-65535
 #define FW_VER_MINOR          0      // Minor version number: 0-255
 #define FW_VER_REL            0     // internal version number: 0-255
-//#else
-//#define DEVICE_VER            58      // HARDWARE VERSION: SR_58 for Shimmer4SDK
-//#define FW_IDENTIFIER         12      // 12 is the firmware for shimmer4sdk, with LogAndStream in side
-//#define FW_VER_MAJOR          0      // Maor version number: 0-65535
-//#define FW_VER_MINOR          0      // Minor version number: 0-255
-//#define FW_VER_REL            23     // internal version number: 0-255
-//#endif
+#elif defined(SHIMMER4_SDK)
+#define DEVICE_VER            58      // HARDWARE VERSION: SR_58 for Shimmer4SDK
+#define FW_IDENTIFIER         12      // 12 is the firmware for shimmer4sdk, with LogAndStream in side
+#define FW_VER_MAJOR          0      // Maor version number: 0-65535
+#define FW_VER_MINOR          0      // Minor version number: 0-255
+#define FW_VER_REL            23     // internal version number: 0-255
+#endif
       
 typedef uint8_t bool;
 #define TRUE 1

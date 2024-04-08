@@ -96,7 +96,7 @@ yes      IROM1    0x8008000   0xf8000
 #ifndef HAL_INFOMEM_H
 #define HAL_INFOMEM_H
 
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
 #define INFOMEM_OFFSET           0x083F8000
 
 #define INFOMEM_FLASH_BANK      FLASH_BANK_2
@@ -104,7 +104,7 @@ yes      IROM1    0x8008000   0xf8000
 #define INFOMEM_PAGE_OFFSET     ((INFOMEM_OFFSET-FLASH_BANK_2_OFFSET)/FLASH_PAGE_SIZE) /* 252 */
 #define INFOMEM_NUM_OF_PAGES    (INFOMEM_SIZE_MAX/FLASH_PAGE_SIZE) /* 32 KB / 8 KB = 4 */
 
-#else
+#elif defined(SHIMMER4_SDK)
 #define INFOMEM_SECTOR           FLASH_SECTOR_1
 #define INFOMEM_OFFSET           0x08008000
 #endif

@@ -2495,7 +2495,7 @@ void BtUart_processCmd(void) {
    case GET_STATUS_COMMAND:
       dockStatusBtRsp = 1;
       break;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    case GET_I2C_BATT_STATUS_COMMAND:
       i2cvBattBtRsp = 1;
       break;
@@ -3102,7 +3102,7 @@ void BtUart_sendRsp(void) {
 //                                         ((sensing.en & 0x01) << 1) + (docked & 0x01);
          *(bt_tx_data + packet_length++) = 0;
          dockStatusBtRsp = 0;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
       } else if (i2cvBattBtRsp) {
          *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
          *(bt_tx_data + packet_length++) = RSP_I2C_BATT_STATUS_COMMAND;
@@ -3404,12 +3404,12 @@ COMMS_CRC_MODE getBtCrcMode(void)
 }
 
 uint8_t BT_getMacAddressAscii(char *macAscii) {
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
   // MAC is stored as 6 byte array in CYW20820 library
   uint8_t *macAddrPtr = BT_getCyw20820MacAddressPtr();
   (void)sprintf(macAscii, "%02X%02X%02X%02X%02X%02X", macAddrPtr[5], macAddrPtr[4], macAddrPtr[3], macAddrPtr[2], macAddrPtr[1], macAddrPtr[0]);
   return 1;
-#else
+#elif defined(SHIMMER4_SDK)
   if(BT_getRn42MacAddressPtr(macAddrPtr))
   {
       memcpy(macAscii, macAddrPtr, 12);
@@ -3421,7 +3421,7 @@ uint8_t BT_getMacAddressAscii(char *macAscii) {
 }
 
 uint8_t BT_getMacAddressHex(uint8_t *macHex) {
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
   uint8_t* ptr = BT_getCyw20820MacAddressPtr();
   macHex[0] = *(ptr + 5);
   macHex[1] = *(ptr + 4);
@@ -3430,7 +3430,7 @@ uint8_t BT_getMacAddressHex(uint8_t *macHex) {
   macHex[4] = *(ptr + 1);
   macHex[5] = *(ptr + 0);
   return 1;
-#else
+#elif defined(SHIMMER4_SDK)
   uint8_t i, pchar[3];
   if(BT_getRn42MacAddressPtr(macAddrPtr))
   {

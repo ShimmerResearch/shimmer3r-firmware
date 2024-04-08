@@ -166,7 +166,7 @@
 //#define UPD_CALIB_DUMP_COMMAND                        0x9B
 #define UPD_FLASH_COMMAND                             0x9B
 #define UPD_SDLOG_CFG_COMMAND                         0x9C
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 #define SET_I2C_BATT_STATUS_FREQ_COMMAND              0x9C
 #define RSP_I2C_BATT_STATUS_COMMAND                   0x9D
 #define GET_I2C_BATT_STATUS_COMMAND                   0x9E

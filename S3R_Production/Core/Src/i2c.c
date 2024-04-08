@@ -32,7 +32,7 @@ I2CTypeDef i2cSens;
 I2CTypeDef i2cBatt;
 
 I2C_HandleTypeDef *hi2cSensor;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 I2C_HandleTypeDef *hi2cBattery;
 #endif
 
@@ -41,12 +41,12 @@ BMP180TypeDef sensorBmp180;
 BMP280TypeDef sensorBmp280;
 struct bmp280_t bmp280;
 i2cReadBufTypeDef i2cSens_buf;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 uint8_t stc3100_buf[STC3100_DATA_LEN];
 #endif
 
 uint8_t i2c_addr_list[128], i2c_addr_list_len;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 uint16_t i2c_batt_report_interval = I2C_BATT_REPORT_INTERVAL_DEFAULT;
 #endif
 //I2CBatteryTypeDef i2cBatt;
@@ -177,9 +177,9 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 
 void I2C_init(void){
    sensorBmp180.en = 0;
-#if IS_SHIMMER3R
+#if defined(SHIMMER3R)
    hi2cSensor  = &hi2c2;
-#else
+#elif defined(SHIMMER4_SDK)
    hi2cSensor  = &hi2c1;
    hi2cBattery = &hi2c2;
 #endif
@@ -188,7 +188,7 @@ void I2C_init(void){
    memset((uint8_t*)&i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
    // init eeprom
    CAT24C16_init(hi2cSensor);
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    STC3100_init(hi2cBattery);
 #if USE_I2C_VBATT_REPORT
    STC3100_wake(1);
@@ -204,7 +204,7 @@ uint8_t I2C_test(void){
    HAL_Delay(50);
 
    I2C_scan(hi2cSensor);
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    I2C_scan(hi2cBattery);
 #endif
 
@@ -251,7 +251,7 @@ void I2C_scan(I2C_HandleTypeDef *hi2c){
 I2C_HandleTypeDef * I2C_getHandlerSensor(void){
    return hi2cSensor;
 }
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 I2C_HandleTypeDef * I2C_getHandlerBatt(void){
    return hi2cBattery;
 }
@@ -284,7 +284,7 @@ void I2C_readBattSetFreq(uint16_t val){
 
 void I2C_configureChannels(void){
    I2cSens_configureChannels();
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    I2cBatt_configureChannels();
 #endif
 }
@@ -364,7 +364,7 @@ void I2cSens_configureChannels(void){
    sensing.nbrDigiChans += nbr_i2c1_chans;
 }
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 void I2cBatt_configureChannels(void){
    uint8_t *channel_contents_ptr = sensing.cc+sensing.ccLen;
    uint8_t nbr_i2c_batt_chans = 0;
@@ -396,7 +396,7 @@ void I2C_startSensing(void){
       HAL_Delay(1000);
    }
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_STC3100) {
       STC3100_wake(1);
    }
@@ -449,7 +449,7 @@ void I2C_pollSensors(void){
 
 void I2C_stopSensing(void){
    I2cSens_stopSensing();
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    I2cBatt_stopSensing();
 #endif
 
@@ -469,7 +469,7 @@ void I2cSens_stopSensing(void){
    Board_SW_I2C(0);
 }
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 void I2cBatt_stopSensing(void){
    if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_STC3100) {
       STC3100_wake(0);
@@ -484,7 +484,7 @@ void I2cBatt_stopSensing(void){
 
 
 void (*I2cSens_gatherDataDone_cb)(void);
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 void (*I2cBatt_gatherDataDone_cb)(void);
 #endif
 
@@ -500,7 +500,7 @@ void I2cSens_gatherDataStart(void){
    I2cSensing(I2C_FIRST_SENSOR);
 }
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 void I2cBatt_gatherDataCb(void (*done_cb)(void)){
    I2cBatt_gatherDataDone_cb = done_cb;
 }
@@ -529,7 +529,7 @@ void I2cSensing(I2C_SENSING_TYPE start) {
    }
 }
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 void I2cBattMonitor(I2C_SENSING_TYPE start) {
    i2cBatt.sensorCnt = (start ==  I2C_FIRST_SENSOR) ? 0 : i2cBatt.sensorCnt + 1;
    if (i2cBatt.sensorCnt == i2cBatt.sensorLen) {
@@ -559,7 +559,7 @@ void I2cSens_sensorNext(void){
    }
 }
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 void I2cBatt_sensorNext(void) {
    switch (i2cBatt.sensorList[i2cBatt.sensorCnt]) {
    case I2C_STC3100:             STC3100Sample();           break;
@@ -711,7 +711,7 @@ void BMP280RxDoneHandler(void) {
    }
 }
 
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
 void STC3100Sample(void) {
    i2cBatt.status = I2C_STAT_STC3100_DATA_GET;
    STC3100_readData_it(stc3100_buf);
@@ -881,7 +881,7 @@ void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    if(hi2c->Instance == hi2cBattery->Instance){
       switch(i2cBatt.sensorList[i2cBatt.sensorCnt]){
       case I2C_STC3100:              STC3100BatteryRxDoneHandler();     break;

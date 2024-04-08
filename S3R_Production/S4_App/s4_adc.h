@@ -13,7 +13,7 @@ typedef struct {//adc - Sensors
    uint8_t sensorList[20];
    uint8_t sensorLen;
    uint8_t sensorCnt;
-#if !IS_SHIMMER3R
+#if defined(SHIMMER4_SDK)
    uint8_t chanCntResv;
 #endif
    uint8_t chanCntSens;
