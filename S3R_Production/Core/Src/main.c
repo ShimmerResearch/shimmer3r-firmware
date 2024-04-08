@@ -110,12 +110,12 @@ extern UART_HandleTypeDef *huartBsl;
 
 int _write(int file, char *ptr, int len)
 {
-  int DataIdx;
-  for (DataIdx = 0; DataIdx < len; DataIdx++)
-  {
+//  int DataIdx;
+//  for (DataIdx = 0; DataIdx < len; DataIdx++)
+//  {
 //    ITM_SendChar(*ptr++);
-    HAL_UART_Transmit(huartBsl, ptr++, 1, 0xFFFF);
-  }
+//  }
+  HAL_UART_Transmit(huartBsl, (uint8_t *) ptr++, (uint16_t) len, 0xFFFF);
   return len;
 }
 
