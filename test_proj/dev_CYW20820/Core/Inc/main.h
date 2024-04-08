@@ -68,14 +68,13 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define BT_CYSPP_Pin GPIO_PIN_6
-#define BT_CYSPP_GPIO_Port GPIOE
-#define BT_CYSPP_EXTI_IRQn EXTI6_IRQn
 #define USER_BUTTON_Pin GPIO_PIN_13
 #define USER_BUTTON_GPIO_Port GPIOC
 #define USER_BUTTON_EXTI_IRQn EXTI13_IRQn
 #define VBUS_SENSE_Pin GPIO_PIN_2
 #define VBUS_SENSE_GPIO_Port GPIOC
+#define BT_HOST_WAKE_Pin GPIO_PIN_8
+#define BT_HOST_WAKE_GPIO_Port GPIOE
 #define UCPD_FLT_Pin GPIO_PIN_14
 #define UCPD_FLT_GPIO_Port GPIOB
 #define BT_TX_Pin GPIO_PIN_8
@@ -91,6 +90,8 @@ void Error_Handler(void);
 #define BT_CONNECTION_Pin GPIO_PIN_14
 #define BT_CONNECTION_GPIO_Port GPIOD
 #define BT_CONNECTION_EXTI_IRQn EXTI14_IRQn
+#define BT_CYSPP_Pin GPIO_PIN_15
+#define BT_CYSPP_GPIO_Port GPIOD
 #define LED_RED_Pin GPIO_PIN_2
 #define LED_RED_GPIO_Port GPIOG
 #define BT_CP_ROLE_Pin GPIO_PIN_6

@@ -121,6 +121,7 @@ PUTCHAR_PROTOTYPE
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -654,9 +655,9 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
@@ -677,17 +678,17 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, UCPD_DBn_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : BT_CYSPP_Pin */
-  GPIO_InitStruct.Pin = BT_CYSPP_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(BT_CYSPP_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pin : USER_BUTTON_Pin */
   GPIO_InitStruct.Pin = USER_BUTTON_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USER_BUTTON_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BT_HOST_WAKE_Pin */
+  GPIO_InitStruct.Pin = BT_HOST_WAKE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(BT_HOST_WAKE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : UCPD_FLT_Pin */
   GPIO_InitStruct.Pin = UCPD_FLT_Pin;
@@ -702,11 +703,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(BT_LP_MODE_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : BT_CONNECTION_Pin */
-  GPIO_InitStruct.Pin = BT_CONNECTION_Pin;
+  /*Configure GPIO pins : BT_CONNECTION_Pin BT_CYSPP_Pin */
+  GPIO_InitStruct.Pin = BT_CONNECTION_Pin|BT_CYSPP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(BT_CONNECTION_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LED_RED_Pin */
   GPIO_InitStruct.Pin = LED_RED_Pin;
@@ -730,9 +731,6 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI6_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI6_IRQn);
-
   HAL_NVIC_SetPriority(EXTI13_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI13_IRQn);
 
