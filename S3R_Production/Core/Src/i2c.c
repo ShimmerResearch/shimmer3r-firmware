@@ -200,7 +200,9 @@ uint8_t I2C_test(void){
    uint8_t ret_val = 0;
    Board_SW_I2C(1);
 
+#if defined(SHIMMER4_SDK)
    Board_SW_EXP(1);//eeprom
+#endif
    HAL_Delay(50);
 
    I2C_scan(hi2cSensor);
@@ -208,6 +210,7 @@ uint8_t I2C_test(void){
    I2C_scan(hi2cBattery);
 #endif
 
+#if defined(SHIMMER4_SDK)
    MPU9250_init(hi2cSensor);
    if(MPU9250_test())
       ret_val |= 0x01;
@@ -219,6 +222,7 @@ uint8_t I2C_test(void){
       ret_val |= 0x04;
 
    Board_SW_EXP(1);
+#endif
    CAT24C16_init(I2C_getHandlerSensor());
    //HAL_Delay(1000);
    if (CAT24C16_test()) { //eeprom
@@ -226,9 +230,11 @@ uint8_t I2C_test(void){
    }
    Board_SW_I2C(1);
 
+#if defined(SHIMMER4_SDK)
    if(bmp280_test(hi2cSensor)){
       ret_val |= 0x10;
    }
+#endif
 
    return ret_val;
 }

@@ -13,7 +13,6 @@
 #include "hal_CRC.h"
 
 #define BT_DMA_USED_FOR_RX 1
-#define IS_BT_RN 0
 #define FW_IS_LOGANDSTREAM 1
 
 #define MAX_COMMAND_ARG_SIZE 131
@@ -216,7 +215,7 @@ uint16_t getNumBytesInBtRxBufWhenLastProcessed(void);
 uint8_t areUnprocessedBytesInBtRxBuff(void);
 #endif
 
-#if IS_BT_RN
+#if defined(SHIMMER3)
 void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void),
                          void (*handleBtRfCommStateChangeCb)(uint8_t),
                          void (*setMacIdCb)(uint8_t *),
@@ -225,10 +224,11 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void),
 #else
 void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void));
 #endif
-#if IS_BT_RN
+#if defined(SHIMMER3)
 void triggerBtRfCommStateChangeCallback(bool state);
 void triggerShimmerErrorState(void);
 #endif
+void resetBtResponseBools(void);
 uint8_t getBtVerStrLen(void);
 char * getBtVerStrPtr(void);
 

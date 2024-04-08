@@ -17,9 +17,9 @@
 #define FW_VER_REL            23     // internal version number: 0-255
 #endif
       
-typedef uint8_t bool;
-#define TRUE 1
-#define FALSE 0
+//typedef uint8_t bool;
+//#define TRUE 1
+//#define FALSE 0
 
 //typedef uint8_t error_t;
 //#define SUCCESS 1

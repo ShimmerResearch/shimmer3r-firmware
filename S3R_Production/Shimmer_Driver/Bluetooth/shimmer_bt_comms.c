@@ -30,14 +30,14 @@ uint8_t unwrappedResponse[256] = {0};
 #if !BT_DMA_USED_FOR_RX
 char *commandBufPtr;
 #endif
-#if IS_BT_RN
+#if defined(SHIMMER3)
 uint8_t *expectedResponsePtr;
 #endif
 #if BT_DMA_USED_FOR_RX
 uint8_t btArgs[MAX_COMMAND_ARG_SIZE], btWaitingForArgs, btWaitingForArgsLength, btArgsSize, btAction;
 volatile uint8_t btStatusStrIndex;
 
-#if IS_BT_RN
+#if defined(SHIMMER3)
 volatile char btStatusStr[BT_STAT_STR_LEN_LARGEST+1U]; /* +1 to always have a null char */
 volatile char btRxBuffFullResponse[BT_VER_RESPONSE_LARGEST+1U]; /* +1 to always have a null char */
 #endif
@@ -49,12 +49,12 @@ RingFifoRx_t *gBtRxFifoPtr;
 uint8_t isRn4678CmdDetectedOnBoot = 0;
 #endif
 
-#if IS_BT_RN
+#if defined(SHIMMER3)
 uint8_t *gActionPtr;
 uint8_t *gArgsPtr;
 #endif
 
-#if IS_BT_RN
+#if defined(SHIMMER3)
 volatile char btVerStrResponse[BT_VER_RESPONSE_LARGEST+1U]; /* +1 to always have a null char */
 #else
 //TODO decide on size
@@ -62,7 +62,7 @@ volatile char btVerStrResponse[10U+1U]; /* +1 to always have a null char */
 #endif
 
 uint8_t (*newBtCmdToProcess_cb)(void);
-#if IS_BT_RN
+#if defined(SHIMMER3)
 void (*handleBtRfCommStateChange_cb)(uint8_t);
 #endif
 void (*setMacId_cb)(uint8_t *);
@@ -93,12 +93,12 @@ volatile COMMS_CRC_MODE btCrcMode;
 uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 {
   btRxBuffPtr = rxBuff;
-#if IS_BT_RN
+#if defined(SHIMMER3)
     uint8_t bt_waitForStartCmd, bt_waitForMacAddress, bt_waitForVersion, bt_waitForInitialBoot, bt_waitForReturnNewLine;
 #endif
     uint8_t expectedlen = 0U;
 
-#if IS_BT_RN
+#if defined(SHIMMER3)
     DMA2AndCtsDisable();
     bt_waitForStartCmd = BT_getWaitForStartCmd();
     bt_waitForMacAddress = BT_getWaitForMacAddress();
@@ -107,7 +107,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
     bt_waitForReturnNewLine = BT_getWaitForReturnNewLine();
 #endif
 
-#if IS_BT_RN
+#if defined(SHIMMER3)
     if (!*btRxExp
             && (areBtStatusStringsEnabled()
                     || (isBtConnected() || bt_waitForStartCmd || bt_waitForMacAddress || bt_waitForVersion || bt_waitForInitialBoot || bt_waitForReturnNewLine)))
@@ -328,14 +328,14 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
             if (btWaitingForArgs)
             {
                 if ((!btWaitingForArgsLength)
-#if IS_BT_RN
+#if defined(SHIMMER3)
                         && ((*(gActionPtr) == SET_EXG_REGS_COMMAND)
 #else
                         && ((btAction == SET_EXG_REGS_COMMAND)
 #endif
                                 && (btWaitingForArgs == 3)))
                 {
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     gArgsPtr[0] = btRxBuffPtr[0];
                     gArgsPtr[1] = btRxBuffPtr[1];
                     gArgsPtr[2] = btRxBuffPtr[2];
@@ -350,20 +350,20 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     return 0;
                 }
                 else if ((!btWaitingForArgsLength)
-#if IS_BT_RN
+#if defined(SHIMMER3)
                         && (((*(gActionPtr) == SET_INFOMEM_COMMAND)
 #else
                         && (((btAction == SET_INFOMEM_COMMAND)
 #endif
                                 && (btWaitingForArgs == 3))
-#if IS_BT_RN
+#if defined(SHIMMER3)
                                 || ((*(gActionPtr) == SET_CALIB_DUMP_COMMAND)
 #else
                                 || ((btAction == SET_CALIB_DUMP_COMMAND)
 #endif
                                         && (btWaitingForArgs == 3))))
                 {
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     gArgsPtr[0] = btRxBuffPtr[0];
                     gArgsPtr[1] = btRxBuffPtr[1];
                     gArgsPtr[2] = btRxBuffPtr[2];
@@ -379,7 +379,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 }
                 else if ((!btWaitingForArgsLength) && (
                 //                ((*(gActionPtr) == SET_DAUGHTER_CARD_ID_COMMAND) && (btWaitingForArgs == 1)) ||
-#if IS_BT_RN
+#if defined(SHIMMER3)
                         ((*(gActionPtr) == SET_DAUGHTER_CARD_MEM_COMMAND)
                             && (btWaitingForArgs == 1))
                             || ((*(gActionPtr) == SET_CENTER_COMMAND)
@@ -403,7 +403,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                                     && (btWaitingForArgs == 1))))
 #endif
                 {
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     gArgsPtr[0] = btRxBuffPtr[0];
                     if (gArgsPtr[0])
 #else
@@ -411,7 +411,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     if (btArgs[0])
 #endif
                     {
-#if IS_BT_RN
+#if defined(SHIMMER3)
                       btWaitingForArgsLength = gArgsPtr[0];
 #else
                       btWaitingForArgsLength = btArgs[0];
@@ -420,7 +420,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                         return 0;
                     }
                 }
-#if IS_BT_RN
+#if defined(SHIMMER3)
                 else if (*(gActionPtr) == RN4678_STATUS_STRING_SEPARATOR)
                 {
                     uint8_t numberOfCharRemaining = 0U;
@@ -847,7 +847,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     return bringUcOutOfSleep;
                 }
 #endif
-#if IS_BT_RN
+#if defined(SHIMMER3)
                 else if (*(gActionPtr) == ACK_COMMAND_PROCESSED)
 #else
                 else if (btAction == ACK_COMMAND_PROCESSED)
@@ -861,7 +861,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     if(!btWaitingForArgsLength)
                     {
                         /* Save command byte */
-#if IS_BT_RN
+#if defined(SHIMMER3)
                         gArgsPtr[0] = btRxBuffPtr[0];
 #else
                         btArgs[0] = btRxBuffPtr[0];
@@ -880,7 +880,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 
                 if (btWaitingForArgsLength)
                 {
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     memcpy(gArgsPtr + btWaitingForArgs, btRxBuffPtr, btWaitingForArgsLength);
 #else
                     memcpy(&btArgs[btWaitingForArgs], btRxBuffPtr, btWaitingForArgsLength);
@@ -888,7 +888,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 }
                 else
                 {
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     memcpy(gArgsPtr, btRxBuffPtr, btWaitingForArgs);
 #else
                     memcpy(&btArgs[0], btRxBuffPtr, btWaitingForArgs);
@@ -972,7 +972,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 //                case UPD_CALIB_DUMP_COMMAND:
                 case UPD_FLASH_COMMAND:
                 case GET_BT_VERSION_STR_COMMAND:
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     *(gActionPtr) = data;
 #else
                     btAction = data;
@@ -1008,7 +1008,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case SET_CRC_COMMAND:
                 case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
                 case SET_DATA_RATE_TEST:
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     *(gActionPtr) = data;
 #else
                     btAction = data;
@@ -1018,7 +1018,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case SET_SAMPLING_RATE_COMMAND:
                 case GET_DAUGHTER_CARD_ID_COMMAND:
                     //                case SET_DAUGHTER_CARD_ID_COMMAND:
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     *(gActionPtr) = data;
 #else
                     btAction = data;
@@ -1035,7 +1035,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case SET_INFOMEM_COMMAND:
                 case GET_CALIB_DUMP_COMMAND:
                 case SET_CALIB_DUMP_COMMAND:
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     *(gActionPtr) = data;
 #else
                     btAction = data;
@@ -1043,7 +1043,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     btWaitingForArgs = 3U;
                     break;
                 case SET_CONFIG_SETUP_BYTES_COMMAND:
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     *(gActionPtr) = data;
 #else
                     btAction = data;
@@ -1052,7 +1052,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     break;
                 case SET_RWC_COMMAND:
                 case SET_DERIVED_CHANNEL_BYTES:
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     *(gActionPtr) = data;
 #else
                     btAction = data;
@@ -1063,7 +1063,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case SET_MPU9150_GYRO_CALIBRATION_COMMAND:
                 case SET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
                 case SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     *(gActionPtr) = data;
 #else
                     btAction = data;
@@ -1071,7 +1071,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     btWaitingForArgs = 21U;
                     break;
 #endif
-#if IS_BT_RN
+#if defined(SHIMMER3)
                 case RN4678_STATUS_STRING_SEPARATOR:
                     memset(btStatusStr, 0, sizeof(btStatusStr));
                     btStatusStr[0U] = RN4678_STATUS_STRING_SEPARATOR;
@@ -1090,7 +1090,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #else
                 case ACK_COMMAND_PROCESSED:
                     /* Wait for command byte */
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     *(gActionPtr) = data;
 #else
                     btAction = data;
@@ -1101,7 +1101,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     /* Store local time as early as possible after sync bytes have been received */
                     saveLocalTime();
 
-#if IS_BT_RN
+#if defined(SHIMMER3)
                     *(gActionPtr) = data;
 #else
                     btAction = data;
@@ -1121,7 +1121,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 
                 return wakeupMcu;
             }
-#if IS_BT_RN
+#if defined(SHIMMER3)
         }
     }
     else
@@ -1145,7 +1145,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 
 void resetBtRxVariablesOnConnect(void)
 {
-#if IS_BT_RN
+#if defined(SHIMMER3)
     /* Reset to unsupported command */
     *(gActionPtr) = ACK_COMMAND_PROCESSED-1U;
 #else
@@ -2278,7 +2278,7 @@ uint8_t areUnprocessedBytesInBtRxBuff(void)
 }
 #endif
 
-#if IS_BT_RN
+#if defined(SHIMMER3)
 void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void),
                          void (*handleBtRfCommStateChangeCb)(uint8_t),
                          void (*setMacIdCb)(uint8_t *),
@@ -2295,7 +2295,7 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void))
     memset(unwrappedResponse, 0, sizeof(unwrappedResponse));
 
     newBtCmdToProcess_cb = newBtCmdToProcessCb;
-#if IS_BT_RN
+#if defined(SHIMMER3)
     handleBtRfCommStateChange_cb = handleBtRfCommStateChangeCb;
     setMacId_cb = setMacIdCb;
 
@@ -2306,11 +2306,11 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void))
 #if !BT_DMA_USED_FOR_RX
     commandBufPtr = getTxCmdBufPtr();
 #endif
-#if IS_BT_RN
+#if defined(SHIMMER3)
     expectedResponsePtr = BT_getExpResp();
 #endif
 #if BT_DMA_USED_FOR_RX
-#if IS_BT_RN
+#if defined(SHIMMER3)
     btRxExp = BT_getExpResp();
 #endif
 
@@ -2318,7 +2318,7 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void))
     btWaitingForArgsLength = 0;
     btArgsSize = 0;
 
-#if IS_BT_RN
+#if defined(SHIMMER3)
     memset(btStatusStr, 0, sizeof(btStatusStr));
 
     memset(btRxBuffFullResponse, 0x00, sizeof(btRxBuffFullResponse) / sizeof(btRxBuffFullResponse[0]));
@@ -2341,7 +2341,7 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void))
     resetBtResponseBools();
 }
 
-#if IS_BT_RN
+#if defined(SHIMMER3)
 void triggerBtRfCommStateChangeCallback(bool state)
 {
     if (handleBtRfCommStateChange_cb)
@@ -3189,15 +3189,15 @@ void BtUart_sendRsp(void) {
 //         packet_length += 24;
 //         bmp180CalibCoeffBtRsp = 0;
       } else if (bmp280CalibrationCoefficientsResponse) {
-//TODO support BMP280
-#if IS_CONNECTED_DIG_SENSORS
+#if defined(SHIMMER3) | defined(SHIMMER4_SDK)
         if (isBmp280InUse())
         {
           *(bt_tx_data + packet_length++) = BMP280_CALIBRATION_COEFFICIENTS_RESPONSE;
           memcpy(resPacket + packet_length, bmpX80Calib, BMP280_CALIB_DATA_SIZE);
           packet_length += BMP280_CALIB_DATA_SIZE;
         }
-#else
+#elif defined(SHIMMER3R)
+        //TODO support BMP-390 once Consensys knows the Shimmer3r doesn't have a BMP280
         *(bt_tx_data + packet_length++) = BMP280_CALIBRATION_COEFFICIENTS_RESPONSE;
         packet_length += BMP280_CALIB_DATA_SIZE;
 #endif
