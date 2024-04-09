@@ -27,6 +27,13 @@ SPI_HandleTypeDef *hspiExg;
 
 void (*SPI_gatherDataDone_cb)(void);
 
+#if defined(SHIMMER3R)
+bool spi1BusChipPwrFlags[SPI1_CHIP_QTY];
+bool spi2BusChipPwrFlags[SPI2_CHIP_QTY];
+bool spi3BusChipPwrFlags[SPI3_CHIP_QTY];
+
+#endif
+
 /* USER CODE END 0 */
 
 SPI_HandleTypeDef hspi1;
@@ -648,4 +655,45 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi){
    __NOP();
    __NOP();
 }
+
+#if defined(SHIMMER3R)
+void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex)
+{
+  bool stateToSet = false;
+  spi1BusChipPwrFlags[chipIndex] = state;
+
+  for (uint8_t i = 0; i < sizeof(spi1BusChipPwrFlags); i++)
+  {
+    // If any chips should be on, set power on.
+    if (spi1BusChipPwrFlags[i])
+    {
+      stateToSet = true;
+      break;
+    }
+  }
+
+  //TODO check polarity
+  HAL_GPIO_WritePin(SW_SPI1_GPIO_Port, SW_SPI1_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+
+void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex)
+{
+  bool stateToSet = false;
+  spi2BusChipPwrFlags[chipIndex] = state;
+
+  for (uint8_t i = 0; i < sizeof(spi2BusChipPwrFlags); i++)
+  {
+    // If any chips should be on, set power on.
+    if (spi2BusChipPwrFlags[i])
+    {
+      stateToSet = true;
+      break;
+    }
+  }
+
+  //TODO check polarity
+  HAL_GPIO_WritePin(SW_SPI2_GPIO_Port, SW_SPI2_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+#endif
+
 /* USER CODE END 1 */

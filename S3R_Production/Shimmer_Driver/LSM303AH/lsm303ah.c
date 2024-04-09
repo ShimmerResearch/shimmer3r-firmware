@@ -137,14 +137,14 @@ typedef struct {
 #define    WAIT_MAG_TIME_01     20 //ms
 #define    WAIT_MAG_TIME_02     60 //ms
 
-#define    SAMPLES_XL            5 //number of samples
-#define    SAMPLES_MAG          50 //number of samples
+#define    SELF_TEST_SAMPLES_XL            5 //number of samples
+#define    SELF_TEST_SAMPLES_MAG          50 //number of samples
 
 /* Self test limits. */
-#define    MIN_ST_LIMIT_mg      70.0f
-#define    MAX_ST_LIMIT_mg    1500.0f
-#define    MIN_ST_LIMIT_mG      15.0f
-#define    MAX_ST_LIMIT_mG     500.0f
+#define    SELF_TEST_MIN_ST_LIMIT_mg      70.0f
+#define    SELF_TEST_MAX_ST_LIMIT_mg    1500.0f
+#define    SELF_TEST_MIN_ST_LIMIT_mG      15.0f
+#define    SELF_TEST_MAX_ST_LIMIT_mG     500.0f
 
 /* Self test results. */
 #define    ST_PASS     1U
@@ -184,11 +184,11 @@ static sensbus_t mag_bus = {&SENSOR_BUS,
                             CS_LSM303AH_GPIO_Port,
                             CS_LSM303AH_Pin
                            };
+#endif
 
 static stmdev_ctx_t dev_ctx_xl;
 static stmdev_ctx_t dev_ctx_mg;
-static lsm303ah_reg_t reg;
-#endif
+
 /* Extern variables ----------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
@@ -211,36 +211,17 @@ static void platform_init(void);
 /* Main Example --------------------------------------------------------------*/
 void lsm303ah_self_test(void)
 {
-#if !defined(SHIMMER3R)
-  stmdev_ctx_t dev_ctx_xl;
-  stmdev_ctx_t dev_ctx_mg;
-#endif
+  lsm303ah_reg_t reg;
   uint8_t tx_buffer[1000];
   float meas_st_off[3];
   int16_t data_raw[3];
   float meas_st_on[3];
-#if !defined(SHIMMER3R)
-  lsm303ah_reg_t reg;
-#endif
   float test_val[3];
   uint8_t st_result;
   uint8_t i, j;
-#if !defined(SHIMMER3R)
-  /* Initialize mems driver interface */
-  dev_ctx_xl.write_reg = platform_write;
-  dev_ctx_xl.read_reg = platform_read;
-  dev_ctx_xl.handle = (void *)&xl_bus;
-  dev_ctx_mg.write_reg = platform_write;
-  dev_ctx_mg.read_reg = platform_read;
-  dev_ctx_mg.handle = (void *)&mag_bus;
-#endif
   /* Initialize self test results */
   st_result = ST_PASS;
-#if !defined(SHIMMER3R)
-  /* Wait boot time and initialize platform specific hardware */
-  platform_init();
-  /* Wait sensor boot time */
-  platform_delay(BOOT_TIME);
+
   /* Check device ID */
   lsm303ah_xl_device_id_get(&dev_ctx_xl, &reg.byte);
 
@@ -251,7 +232,6 @@ void lsm303ah_self_test(void)
 
   if ( reg.byte != LSM303AH_ID_MG )
     while (1); /*manage here device not found */
-#endif
 
   /* Restore default configuration */
   lsm303ah_xl_reset_set(&dev_ctx_xl, PROPERTY_ENABLE);
@@ -285,7 +265,7 @@ void lsm303ah_self_test(void)
   lsm303ah_acceleration_raw_get(&dev_ctx_xl, data_raw);
 
   /* Read samples and get the average vale for each axis */
-  for (i = 0; i < SAMPLES_XL; i++) {
+  for (i = 0; i < SELF_TEST_SAMPLES_XL; i++) {
     /* Check if new value available */
     do {
       lsm303ah_xl_status_reg_get(&dev_ctx_xl, &reg.status_a);
@@ -301,7 +281,7 @@ void lsm303ah_self_test(void)
 
   /* Calculate the mg average values */
   for (i = 0; i < 3; i++) {
-    meas_st_off[i] /= SAMPLES_XL;
+    meas_st_off[i] /= SELF_TEST_SAMPLES_XL;
   }
 
   /* Enable Self Test positive (or negative) */
@@ -319,7 +299,7 @@ void lsm303ah_self_test(void)
   lsm303ah_acceleration_raw_get(&dev_ctx_xl, data_raw);
 
   /* Read samples and get the average vale for each axis */
-  for (i = 0; i < SAMPLES_XL; i++) {
+  for (i = 0; i < SELF_TEST_SAMPLES_XL; i++) {
     /* Check if new value available */
     do {
       lsm303ah_xl_status_reg_get(&dev_ctx_xl, &reg.status_a);
@@ -335,7 +315,7 @@ void lsm303ah_self_test(void)
 
   /* Calculate the mg average values */
   for (i = 0; i < 3; i++) {
-    meas_st_on[i] /= SAMPLES_XL;
+    meas_st_on[i] /= SELF_TEST_SAMPLES_XL;
   }
 
   /* Calculate the mg values for self test */
@@ -345,8 +325,8 @@ void lsm303ah_self_test(void)
 
   /* Check self test limit */
   for (i = 0; i < 3; i++) {
-    if (( MIN_ST_LIMIT_mg > test_val[i] ) ||
-        ( test_val[i] > MAX_ST_LIMIT_mg)) {
+    if (( SELF_TEST_MIN_ST_LIMIT_mg > test_val[i] ) ||
+        ( test_val[i] > SELF_TEST_MAX_ST_LIMIT_mg)) {
       st_result = ST_FAIL;
     }
 
@@ -382,7 +362,7 @@ void lsm303ah_self_test(void)
   /* Read samples and get the average vale for each axis */
   memset(meas_st_off, 0x00, 3 * sizeof(float));
 
-  for (i = 0; i < SAMPLES_MAG; i++) {
+  for (i = 0; i < SELF_TEST_SAMPLES_MAG; i++) {
     /* Check if new value available */
     do {
       lsm303ah_mg_data_ready_get(&dev_ctx_mg, &reg.byte);
@@ -398,7 +378,7 @@ void lsm303ah_self_test(void)
 
   /* Calculate the mg average values */
   for (i = 0; i < 3; i++) {
-    meas_st_off[i] /= SAMPLES_MAG;
+    meas_st_off[i] /= SELF_TEST_SAMPLES_MAG;
   }
 
   /* Enable Self Test */
@@ -408,7 +388,7 @@ void lsm303ah_self_test(void)
   /* Read samples and get the average vale for each axis */
   memset(meas_st_on, 0x00, 3 * sizeof(float));
 
-  for (i = 0; i < SAMPLES_MAG; i++) {
+  for (i = 0; i < SELF_TEST_SAMPLES_MAG; i++) {
     /* Check if new value available */
     do {
       lsm303ah_mg_data_ready_get(&dev_ctx_mg, &reg.byte);
@@ -424,7 +404,7 @@ void lsm303ah_self_test(void)
 
   /* Calculate the mg average values */
   for (i = 0; i < 3; i++) {
-    meas_st_on[i] /= SAMPLES_MAG;
+    meas_st_on[i] /= SELF_TEST_SAMPLES_MAG;
   }
 
   st_result = ST_PASS;
@@ -436,8 +416,8 @@ void lsm303ah_self_test(void)
 
   /* Check self test limit */
   for (i = 0; i < 3; i++) {
-    if (( MIN_ST_LIMIT_mG > test_val[i] ) ||
-        ( test_val[i] > MAX_ST_LIMIT_mG)) {
+    if (( SELF_TEST_MIN_ST_LIMIT_mG > test_val[i] ) ||
+        ( test_val[i] > SELF_TEST_MAX_ST_LIMIT_mG)) {
       st_result = ST_FAIL;
     }
   }
@@ -457,110 +437,6 @@ void lsm303ah_self_test(void)
 
   tx_com(tx_buffer, strlen((char const *)tx_buffer));
 }
-
-//void lsm303ah_read_data_polling(void)
-//{
-//  stmdev_ctx_t dev_ctx_xl;
-//  stmdev_ctx_t dev_ctx_mg;
-//  /* Initialize mems driver interface */
-//  dev_ctx_xl.write_reg = platform_write;
-//  dev_ctx_xl.read_reg = platform_read;
-//  dev_ctx_xl.handle = (void *)&xl_bus;
-//  dev_ctx_mg.write_reg = platform_write;
-//  dev_ctx_mg.read_reg = platform_read;
-//  dev_ctx_mg.handle = (void *)&mag_bus;
-//  /* Wait boot time and initialize platform specific hardware */
-//  platform_init();
-//  /* Wait sensor boot time */
-//  platform_delay(BOOT_TIME);
-//  /* Check device ID */
-//  whoamI = 0;
-//  lsm303ah_xl_device_id_get(&dev_ctx_xl, &whoamI);
-//
-//  if ( whoamI != LSM303AH_ID_XL )
-//    while (1); /*manage here device not found */
-//
-//  whoamI = 0;
-//  lsm303ah_mg_device_id_get(&dev_ctx_mg, &whoamI);
-//
-//  if ( whoamI != LSM303AH_ID_MG )
-//    while (1); /*manage here device not found */
-//
-//  /* Restore default configuration */
-//  lsm303ah_xl_reset_set(&dev_ctx_xl, PROPERTY_ENABLE);
-//
-//  do {
-//    lsm303ah_xl_reset_get(&dev_ctx_xl, &rst);
-//  } while (rst);
-//
-//  lsm303ah_mg_reset_set(&dev_ctx_mg, PROPERTY_ENABLE);
-//
-//  do {
-//    lsm303ah_mg_reset_get(&dev_ctx_mg, &rst);
-//  } while (rst);
-//
-//  /* Enable Block Data Update */
-//  lsm303ah_xl_block_data_update_set(&dev_ctx_xl, PROPERTY_ENABLE);
-//  lsm303ah_mg_block_data_update_set(&dev_ctx_mg, PROPERTY_ENABLE);
-//  /* Set full scale */
-//  lsm303ah_xl_full_scale_set(&dev_ctx_xl, LSM303AH_XL_2g);
-//  /* Configure filtering chain */
-//  /* Accelerometer - High Pass / Slope path */
-//  //lsm303ah_xl_hp_path_set(&dev_ctx_xl, LSM303AH_HP_ON_OUTPUTS);
-//  /* Set / Reset magnetic sensor mode */
-//  lsm303ah_mg_set_rst_mode_set(&dev_ctx_mg,
-//                               LSM303AH_MG_SENS_OFF_CANC_EVERY_ODR);
-//  /* Enable temperature compensation on mag sensor */
-//  lsm303ah_mg_offset_temp_comp_set(&dev_ctx_mg, PROPERTY_ENABLE);
-//  /* Set Output Data Rate */
-//  lsm303ah_xl_data_rate_set(&dev_ctx_xl, LSM303AH_XL_ODR_100Hz_LP);
-//  lsm303ah_mg_data_rate_set(&dev_ctx_mg, LSM303AH_MG_ODR_10Hz);
-//  /* Set magnetometer in continuous mode */
-//  lsm303ah_mg_operating_mode_set(&dev_ctx_mg,
-//                                 LSM303AH_MG_CONTINUOUS_MODE);
-//
-//  /* Read samples in polling mode (no int) */
-//  while (1) {
-//    /* Read output only if new value is available */
-//    lsm303ah_reg_t reg;
-//    lsm303ah_xl_status_reg_get(&dev_ctx_xl, &reg.status_a);
-//
-//    if (reg.status_a.drdy) {
-//      /* Read acceleration data */
-//      memset(data_raw_acceleration, 0x00, 3 * sizeof(int16_t));
-//      lsm303ah_acceleration_raw_get(&dev_ctx_xl,
-//                                    data_raw_acceleration);
-//      acceleration_mg[0] = lsm303ah_from_fs2g_to_mg(
-//                             data_raw_acceleration[0]);
-//      acceleration_mg[1] = lsm303ah_from_fs2g_to_mg(
-//                             data_raw_acceleration[1]);
-//      acceleration_mg[2] = lsm303ah_from_fs2g_to_mg(
-//                             data_raw_acceleration[2]);
-//      sprintf((char *)tx_buffer,
-//              "Acceleration [mg]:%4.2f\t%4.2f\t%4.2f\r\n",
-//              acceleration_mg[0], acceleration_mg[1], acceleration_mg[2]);
-//      tx_com( tx_buffer, strlen( (char const *)tx_buffer ) );
-//    }
-//
-//    lsm303ah_mg_status_get(&dev_ctx_mg, &reg.status_reg_m);
-//
-//    if (reg.status_reg_m.zyxda) {
-//      /* Read magnetic field data */
-//      memset(data_raw_magnetic, 0x00, 3 * sizeof(int16_t));
-//      lsm303ah_magnetic_raw_get(&dev_ctx_mg, data_raw_magnetic);
-//      magnetic_mG[0] = lsm303ah_from_lsb_to_mgauss(
-//                         data_raw_magnetic[0]);
-//      magnetic_mG[1] = lsm303ah_from_lsb_to_mgauss(
-//                         data_raw_magnetic[1]);
-//      magnetic_mG[2] = lsm303ah_from_lsb_to_mgauss(
-//                         data_raw_magnetic[2]);
-//      sprintf((char *)tx_buffer,
-//              "Magnetic field [mG]:%4.2f\t%4.2f\t%4.2f\r\n",
-//              magnetic_mG[0], magnetic_mG[1], magnetic_mG[2]);
-//      tx_com( tx_buffer, strlen( (char const *)tx_buffer ) );
-//    }
-//  }
-//}
 
 /*
  * @brief  Write generic device register (platform dependent)
@@ -644,6 +520,8 @@ static void tx_com(uint8_t *tx_buffer, uint16_t len)
   CDC_Transmit_FS(tx_buffer, len);
 #elif defined(SPC584B_DIS)
   sd_lld_write(&SD2, tx_buffer, len);
+#elif defined(SHIMMER3R)
+  printf((char *) tx_buffer, len);
 #endif
 }
 
@@ -676,10 +554,9 @@ static void platform_init(void)
   HAL_Delay(1000);
 #endif
 }
-#endif
 
-#if defined(SHIMMER3R)
-void init_lsm303ah(void)
+#elif defined(SHIMMER3R)
+void lsm303ah_driver_init(void)
 {
   /* Initialize mems driver interface */
   dev_ctx_xl.write_reg = platform_write;
@@ -688,27 +565,15 @@ void init_lsm303ah(void)
   dev_ctx_mg.write_reg = platform_write;
   dev_ctx_mg.read_reg = platform_read;
   dev_ctx_mg.handle = (void *)&mag_bus;
-
-  set_power_spi2_bus(true);
-
-  /* Check device ID */
-  lsm303ah_xl_device_id_get(&dev_ctx_xl, &reg.byte);
-
-  if ( reg.byte != LSM303AH_ID_XL )
-    while (1); /*manage here device not found */
-
-  lsm303ah_mg_device_id_get(&dev_ctx_mg, &reg.byte);
-
-  if ( reg.byte != LSM303AH_ID_MG )
-    while (1); /*manage here device not found */
 }
 
-//TODO move to spi.c
-void set_power_spi2_bus(bool state)
+void lsm303ah_power_on(void)
 {
-  //TODO mange SPI2 bus power state depending on whether any/none sensors are/should be enabled
-  //TODO check polarity
-  HAL_GPIO_WritePin(SW_SPI2_GPIO_Port, SW_SPI2_Pin, state ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  set_power_spi2_bus(true, SPI2_CHIP_INDEX_LSM303AH);
 }
 
+void lsm303ah_power_off(void)
+{
+  set_power_spi2_bus(false, SPI2_CHIP_INDEX_LSM303AH);
+}
 #endif

@@ -12,8 +12,8 @@
 
 void lsm303ah_self_test(void);
 
-void init_lsm303ah(void);
-//TODO move to spi.h
-void set_power_spi2_bus(bool state);
+void lsm303ah_driver_init(void);
+void lsm303ah_power_on(void);
+void lsm303ah_power_off(void);
 
 #endif /* LSM303AH_LSM303AH_H_ */

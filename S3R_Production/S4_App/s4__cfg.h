@@ -51,6 +51,11 @@
 #elif defined(SHIMMER4_SDK)
 #include "RN42.h"
 #endif
+#if defined(SHIMMER3R)
+#include "../Shimmer_Driver/LIS3MDL/lis3mdl.h"
+#include "../Shimmer_Driver/LSM303AH/lsm303ah.h"
+#include "../Shimmer_Driver/LSM6DSV/lsm6dsv.h"
+#endif
 #include "lsm303dlhc.h"
 #include "mpu9250.h"
 #include "s4_taskList.h"

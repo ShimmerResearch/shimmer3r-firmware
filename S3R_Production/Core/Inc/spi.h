@@ -43,6 +43,29 @@ extern SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN Private defines */
 
+#if defined(SHIMMER3R)
+typedef enum
+{
+  SPI1_CHIP_INDEX_LSM6DSV,
+  SPI1_CHIP_INDEX_ADXL371,
+  SPI1_CHIP_INDEX_BMP390,
+  SPI1_CHIP_QTY
+} SPI1_CHIP_INDEX;
+
+typedef enum
+{
+  SPI2_CHIP_INDEX_LSM303AH,
+  SPI2_CHIP_INDEX_LIS3MDL,
+  SPI2_CHIP_QTY
+} SPI2_CHIP_INDEX;
+
+typedef enum
+{
+  SPI3_CHIP_INDEX_ADS1292R,
+  SPI3_CHIP_QTY
+} SPI3_CHIP_INDEX;
+#endif
+
 /* USER CODE END Private defines */
 
 void MX_SPI1_Init(void);
@@ -64,6 +87,11 @@ void SpiStep1Start(void);
 void SpiStep2Start(void);
 void SpiStep3Start(void);
 void SpiStepDone(void);
+
+#if defined(SHIMMER3R)
+void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex);
+void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex);
+#endif
 
 /* USER CODE END Prototypes */
 

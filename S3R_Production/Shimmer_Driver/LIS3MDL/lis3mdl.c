@@ -61,6 +61,8 @@
  *            header file of the driver (_reg.h).
  */
 
+// Based on https://github.com/STMicroelectronics/STMems_Standard_C_drivers/tree/master/lis3mdl_STdC/examples
+
 
 #if defined(STEVAL_MKI109V3)
 /* MKI109V3: Define communication interface */
@@ -133,6 +135,7 @@ static const float min_st_limit[] = {1.0f, 1.0f, 0.1f};
 static const float max_st_limit[] = {3.0f, 3.0f, 1.0f};
 
 /* Private variables ---------------------------------------------------------*/
+static stmdev_ctx_t dev_ctx;
 
 /* Extern variables ----------------------------------------------------------*/
 
@@ -150,13 +153,14 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
                              uint16_t len);
 static void tx_com( uint8_t *tx_buffer, uint16_t len );
 static void platform_delay(uint32_t ms);
+#if !defined(SHIMMER3R)
 static void platform_init(void);
+#endif
 
 /* Main Example --------------------------------------------------------------*/
 void lis3mdl_self_test(void)
 {
   uint8_t tx_buffer[1000];
-  stmdev_ctx_t dev_ctx;
   int16_t data_raw[3];
   float val_st_off[3];
   float val_st_on[3];
@@ -167,13 +171,7 @@ void lis3mdl_self_test(void)
   uint8_t rst;
   uint8_t i;
   uint8_t j;
-  /* Initialize mems driver interface */
-  dev_ctx.write_reg = platform_write;
-  dev_ctx.read_reg = platform_read;
-  dev_ctx.mdelay = platform_delay;
-  dev_ctx.handle = &SENSOR_BUS;
-  /* Init test platform */
-  platform_init();
+
   /* Check device ID */
   lis3mdl_device_id_get(&dev_ctx, &whoamI);
 
@@ -389,6 +387,8 @@ static void tx_com(uint8_t *tx_buffer, uint16_t len)
   CDC_Transmit_FS(tx_buffer, len);
 #elif defined(SPC584B_DIS)
   sd_lld_write(&SD2, tx_buffer, len);
+#elif defined(SHIMMER3R)
+  printf((char *) tx_buffer, len);
 #endif
 }
 
@@ -407,6 +407,7 @@ static void platform_delay(uint32_t ms)
 #endif
 }
 
+#if !defined(SHIMMER3R)
 /*
  * @brief  platform specific initialization (platform dependent)
  */
@@ -421,3 +422,23 @@ static void platform_init(void)
 #endif
 }
 
+#elif defined(SHIMMER3R)
+void lis3mdl_driver_init(void)
+{
+  /* Initialize mems driver interface */
+  dev_ctx.write_reg = platform_write;
+  dev_ctx.read_reg = platform_read;
+  dev_ctx.mdelay = platform_delay;
+  dev_ctx.handle = &SENSOR_BUS;
+}
+
+void lis3mdl_power_on(void)
+{
+  set_power_spi2_bus(true, SPI2_CHIP_INDEX_LIS3MDL);
+}
+
+void lis3mdl_power_off(void)
+{
+  set_power_spi2_bus(false, SPI2_CHIP_INDEX_LIS3MDL);
+}
+#endif

@@ -59,6 +59,8 @@
  *            header file of the driver (_reg.h).
  */
 
+// https://github.com/STMicroelectronics/STMems_Standard_C_drivers/tree/master/lsm6dsv_STdC/examples
+
 #if defined(STEVAL_MKI109V3)
 /* MKI109V3: Define communication interface */
 #define SENSOR_BUS hspi2
@@ -117,8 +119,8 @@
 #define    BOOT_TIME      10
 
 /* Self test limits. */
-#define    MIN_ST_LIMIT_mg        50.0f
-#define    MAX_ST_LIMIT_mg      1700.0f
+#define    SELF_TEST_MIN_ST_LIMIT_mg        50.0f
+#define    SELF_TEST_MAX_ST_LIMIT_mg      1700.0f
 #define    MIN_ST_LIMIT_mdps   150000.0f
 #define    MAX_ST_LIMIT_mdps   700000.0f
 
@@ -129,6 +131,7 @@
 uint8_t tx_buffer[1000];
 
 /* Private variables ---------------------------------------------------------*/
+static stmdev_ctx_t dev_ctx;
 
 /* Extern variables ----------------------------------------------------------*/
 
@@ -146,14 +149,15 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
                              uint16_t len);
 static void tx_com( uint8_t *tx_buffer, uint16_t len );
 static void platform_delay(uint32_t ms);
+#if !defined(SHIMMER3R)
 static void platform_init(void);
+#endif
 
 /* Main Example --------------------------------------------------------------*/
 void lsm6dsv_self_test(void)
 {
   lsm6dsv_all_sources_t all_sources;
   int16_t data_raw[3];
-  stmdev_ctx_t dev_ctx;
   float val_st_off[3];
   float val_st_on[3];
   float test_val[3];
@@ -162,16 +166,6 @@ void lsm6dsv_self_test(void)
   lsm6dsv_reset_t rst;
   uint8_t i;
   uint8_t j;
-
-  /* Initialize mems driver interface */
-  dev_ctx.write_reg = platform_write;
-  dev_ctx.read_reg = platform_read;
-  dev_ctx.mdelay = platform_delay;
-  dev_ctx.handle = &SENSOR_BUS;
-  /* Init test platform */
-  platform_init();
-  /* Wait sensor boot time */
-  platform_delay(BOOT_TIME);
 
   /* Check device ID */
   lsm6dsv_device_id_get(&dev_ctx, &whoamI);
@@ -270,8 +264,8 @@ void lsm6dsv_self_test(void)
   st_result = ST_PASS;
 
   for (i = 0; i < 3; i++) {
-    if (( MIN_ST_LIMIT_mg > test_val[i] ) ||
-        ( test_val[i] > MAX_ST_LIMIT_mg)) {
+    if (( SELF_TEST_MIN_ST_LIMIT_mg > test_val[i] ) ||
+        ( test_val[i] > SELF_TEST_MAX_ST_LIMIT_mg)) {
       st_result = ST_FAIL;
     }
   }
@@ -455,6 +449,8 @@ static void tx_com(uint8_t *tx_buffer, uint16_t len)
   CDC_Transmit_FS(tx_buffer, len);
 #elif defined(SPC584B_DIS)
   sd_lld_write(&SD2, tx_buffer, len);
+#elif defined(SHIMMER3R)
+  printf((char *) tx_buffer, len);
 #endif
 }
 
@@ -473,6 +469,7 @@ static void platform_delay(uint32_t ms)
 #endif
 }
 
+#if !defined(SHIMMER3R)
 /*
  * @brief  platform specific initialization (platform dependent)
  */
@@ -486,3 +483,24 @@ static void platform_init(void)
   HAL_Delay(1000);
 #endif
 }
+
+#elif defined(SHIMMER3R)
+void lsm6dsv_driver_init(void)
+{
+  /* Initialize mems driver interface */
+  dev_ctx.write_reg = platform_write;
+  dev_ctx.read_reg = platform_read;
+  dev_ctx.mdelay = platform_delay;
+  dev_ctx.handle = &SENSOR_BUS;
+}
+
+void lsm6dsv_power_on(void)
+{
+  set_power_spi1_bus(true, SPI1_CHIP_INDEX_LSM6DSV);
+}
+
+void lsm6dsv_power_off(void)
+{
+  set_power_spi1_bus(false, SPI1_CHIP_INDEX_LSM6DSV);
+}
+#endif
