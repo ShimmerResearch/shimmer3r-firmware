@@ -39,7 +39,7 @@
 /*! @file bmp3.c
  * @brief Sensor driver for BMP3 sensor */
 
-#include "bmp3.h"
+#include <BMP3/bmp3.h>
 
 /***************** Static function declarations ******************************/
 

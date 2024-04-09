@@ -36,7 +36,7 @@
 *
 */
 
-#include "bmp3_selftest.h"
+#include <BMP3/bmp3_selftest.h>
 
 #ifndef BMP3_DOUBLE_PRECISION_COMPENSATION
 
