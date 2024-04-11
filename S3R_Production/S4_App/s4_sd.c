@@ -127,43 +127,39 @@ uint8_t SD_test_alternative(void)
 #endif
 }
 
-void SD_setShimmerName(){
-   uint8_t i;
-   uint8_t temp_btMacAscii[14];
-   for(i=0; (i<MAX_CHARS-1)&&isprint(S4Ram_storedConfigGetByte(NV_SD_SHIMMER_NAME+i)) ; i++);
-   if(i){
-      //memcpy((char*)shimmerName, (char*)(storedConfig+NV_SD_SHIMMER_NAME), i);
-      S4Ram_storedConfigGet(shimmerName, NV_SD_SHIMMER_NAME, i);
-      shimmerName[i] = 0;
-   }else{
-//      strcpy((char*)(storedConfig+NV_SD_SHIMMER_NAME), "idXXXX");
-//      memcpy((storedConfig+NV_SD_SHIMMER_NAME)+2, btMacAscii+8, 4);
-//      strcpy((char*)shimmerName, (char*)(storedConfig+NV_SD_SHIMMER_NAME));
-      S4Ram_storedConfigSet((uint8_t*)"idXXXX", NV_SD_SHIMMER_NAME, 6);
-      S4Ram_btMacAsciiGet(temp_btMacAscii);
-      S4Ram_storedConfigSet(temp_btMacAscii+8, NV_SD_SHIMMER_NAME+2, 4);
-      S4Ram_storedConfigGet(shimmerName, NV_SD_SHIMMER_NAME, 6);
-   }
+void SD_setShimmerName()
+{
+  uint8_t i;
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+
+  memset(&shimmerName[0], 0x00, sizeof(shimmerName));
+
+  for (i = 0; (i < MAX_CHARS - 1) && isprint((uint8_t)configBytes->shimmerName[i]); i++);
+  if (i == 0)
+  {
+    setDefaultShimmerName();
+  }
+  memcpy((char*) shimmerName, &(configBytes->shimmerName[0]), sizeof(configBytes->shimmerName));
 }
-void SD_setExpIdName(){
-//   uint8_t i;//, len_temp;
-//   for(i=0; (i<MAX_CHARS-1)&&(isprint(S4Ram_storedConfigGetByte(NV_SD_EXP_ID_NAME+i))) ; i++);
-//   if(i){
-//      S4Ram_storedConfigGet(expIdName, NV_SD_EXP_ID_NAME, i);
-//      expIdName[i] = 0;
-//   }else{
-//      S4Ram_storedConfigSet((uint8_t*)"default_exp", NV_SD_EXP_ID_NAME, 12);
-//      S4Ram_storedConfigGet(expIdName, NV_SD_EXP_ID_NAME, i);
-//   }
-   strcpy((char*)expIdName,"DefaultTrial");
+
+void SD_setExpIdName()
+{
+  uint8_t i;
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+
+  memset(&expIdName[0], 0x00, sizeof(expIdName));
+
+  for (i = 0; (i < MAX_CHARS - 1) && (isprint((uint8_t)configBytes->expIdName[i])); i++);
+  if (i == 0)
+  {
+    setDefaultTrialId();
+  }
+  memcpy((char*) expIdName, &(configBytes->expIdName[0]), sizeof(configBytes->expIdName));
+//  strcpy((char*)expIdName,"DefaultTrial");
 }
+
 void SD_setCfgTime(){
-   uint32_t cfg_time_temp = 0;
-   uint8_t i;
-   for(i=0;i<4;i++){
-      cfg_time_temp<<=8;
-      cfg_time_temp += S4Ram_storedConfigGetByte(NV_SD_CONFIG_TIME+i);
-   }
+   uint32_t cfg_time_temp = S4Ram_getStoredConfig()->configTime;
    if(cfg_time_temp){
       S4Calc_itoaNo0((uint64_t)cfg_time_temp, configTimeText, UINT32_LEN);
    }else{

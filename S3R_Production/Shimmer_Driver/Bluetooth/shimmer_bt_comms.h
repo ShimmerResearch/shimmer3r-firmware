@@ -231,6 +231,7 @@ void triggerShimmerErrorState(void);
 void resetBtResponseBools(void);
 uint8_t getBtVerStrLen(void);
 char * getBtVerStrPtr(void);
+void updateBtVer(void);
 
 uint8_t isWaitingForArgs(void);
 

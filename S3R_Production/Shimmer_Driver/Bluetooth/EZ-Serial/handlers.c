@@ -262,7 +262,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
             && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
     {
       // Parse as Shimmer packet
-      printf("S1=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
+      printf("S1=0x%x\n", rxBuf[i]);
       count = getBtRxShimmerCommsWaitByteCount();
       Dma2ConversionDone(&rxBuf[i]);
       i += count;
@@ -298,7 +298,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
            * Serial packet, send to Shimmer parser */
           if (getEzsPacketLength() == 0)
           {
-            printf("S2=%c(0x%x)\n", rxBuf[i], rxBuf[i]);
+            printf("S2=0x%x\n", rxBuf[i]);
           }
         }
       }
@@ -360,21 +360,22 @@ void sendNextChar(void)
 //        RINGFIFO_RD(gBtTxFifo, bt_txBuf[0], BT_TX_BUF_MASK);
 //        HAL_StatusTypeDef ret_val = HAL_UART_Transmit_IT(huart, &bt_txBuf[0], 1);
 
+        HAL_StatusTypeDef ret_val;
+        uint8_t numBytes;
+
         uint8_t rdIdx = (gBtTxFifo.rdIdx & BT_TX_BUF_MASK);
         uint8_t wrIdx = (gBtTxFifo.wrIdx & BT_TX_BUF_MASK);
 
         if (rdIdx < wrIdx)
         {
-          uint8_t numBytes = wrIdx-rdIdx;
-          HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, &gBtTxFifo.data[rdIdx], numBytes);
-          gBtTxFifo.rdIdx += numBytes;
+          numBytes = wrIdx-rdIdx;
         }
         else
         {
-          uint8_t numBytes = BT_TX_BUF_SIZE-rdIdx;
-          HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, &gBtTxFifo.data[rdIdx], numBytes);
-          gBtTxFifo.rdIdx += numBytes;
+          numBytes = BT_TX_BUF_SIZE-rdIdx;
         }
+        ret_val = HAL_UART_Transmit_DMA(huartBtPtr, &gBtTxFifo.data[rdIdx], numBytes);
+        gBtTxFifo.rdIdx += numBytes;
     }
     else
     {
@@ -499,6 +500,8 @@ HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len) {
 //   HAL_StatusTypeDef ret_val;
 //   memcpy(bt_txBuf, buf, len);
 //   ret_val = HAL_UART_Transmit_DMA(huart, bt_txBuf, len);
+
+   //printf("BT_write=%d\n", len);
 
    pushBytesToBtTxBuf(buf, len);
 

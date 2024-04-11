@@ -55,7 +55,7 @@ uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
 uint8_t  uartSteps, uartArgSize, uartArg2Wait, uartCrc2Wait, uartAction;//uartProcessCmds, uartSendResponses,
 uint8_t uartDockRxBuf[2], dockRxBuf[UART_DATA_LEN_MAX], uartRespBuf[UART_RSP_PACKET_SIZE];
 uint8_t  uartSendRspMac, uartSendRspVer, uartSendRspBat, uartSendRspRtcConfigTime, uartSendRspCurrentTime,
-         uartSendRspGdi, uartSendRspGdm, uartSendRspGim, uartSendRspCalibDump,
+         uartSendRspGdi, uartSendRspGdm, uartSendRspGim, uartSendRspCalibDump, uartSendRspBtVer,
          uartSendRspAck, uartSendRspBadCmd, uartSendRspBadArg, uartSendRspBadCrc;
 uint8_t uartDcMemLength, uartInfoMemLength, uartCalibRamLength;
 uint16_t uartDcMemOffset, uartInfoMemOffset, uartCalibRamOffset;
@@ -1197,11 +1197,9 @@ void BtUart_processCmd(void) {
     break;*/
    case SET_GSR_RANGE_COMMAND:
       if (btArgs[0] <= 4){
-         //storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3] & 0xF1) + ((btArgs[0] & 0x07) << 1);
-         S4Ram_storedConfigSetByte(NV_CONFIG_SETUP_BYTE3, (S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0xF1) + ((btArgs[0] & 0x07) << 1));
+        S4Ram_getStoredConfig()->gsrRange = (btArgs[0] & 0x07);
       }else{
-         //toredConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3] & 0xF1) + (GSR_AUTORANGE << 1);
-         S4Ram_storedConfigSetByte(NV_CONFIG_SETUP_BYTE3, (S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0xF1) + (GSR_AUTORANGE << 1));
+        S4Ram_getStoredConfig()->gsrRange = GSR_AUTORANGE;
       }
       //InfoMem_write((void*)NV_CONFIG_SETUP_BYTE3, &storedConfig[NV_CONFIG_SETUP_BYTE3], 1);
       //InfoMem_update();
@@ -1679,22 +1677,28 @@ void BtUart_sendRsp(void) {
  *
  *****************************************************/
 
-
-
 void DockUart_init(void){
    uartSteps = 0;
    uartArgSize = 0;
    uartArg2Wait = 0;
    uartCrc2Wait = 0;
+
+   uartSendRspAck = 0;
    uartSendRspBadCmd = 0;
    uartSendRspBadArg = 0;
    uartSendRspBadCrc = 0;
+
    uartSendRspMac = 0;
    uartSendRspVer = 0;
    uartSendRspBat = 0;
    uartSendRspRtcConfigTime = 0;
    uartSendRspCurrentTime = 0;
+
+   uartSendRspGdi = 0;
+   uartSendRspGdm = 0;
+   uartSendRspGim = 0;
    uartSendRspCalibDump = 0;
+   uartSendRspBtVer = 0;
 
    uartTimeStart = uartTimeEnd = 0;
 
@@ -1821,7 +1825,8 @@ void DockUart_processCmd() {
                case UART_PROP_INFOMEM:
                   uartInfoMemLength = dockRxBuf[UART_RXBUF_DATA];
                   uartInfoMemOffset = (uint16_t)dockRxBuf[UART_RXBUF_DATA + 1] + (((uint16_t)dockRxBuf[UART_RXBUF_DATA + 2]) << 8);
-                  if ((uartInfoMemLength <= 128) && (uartInfoMemOffset <= 0x1ff) && (uartInfoMemLength + uartInfoMemOffset <= 0x200))
+//                  if ((uartInfoMemLength <= 128) && (uartInfoMemOffset <= 0x1ff) && (uartInfoMemLength + uartInfoMemOffset <= 0x200))
+                  if ((uartInfoMemLength <= 0x80) && (uartInfoMemOffset <= 0x01ff) && (uartInfoMemLength + uartInfoMemOffset <= 0x0200))
                      uartSendRspGim = 1;
                   else
                      uartSendRspBadArg = 1;
@@ -1876,6 +1881,21 @@ void DockUart_processCmd() {
                   break;
                }
             }
+            else if (dockRxBuf[UART_RXBUF_COMP] == UART_COMP_BT)
+            {
+                switch (dockRxBuf[UART_RXBUF_PROP])
+                {
+                case UART_PROP_VER:
+                    if ((dockRxBuf[UART_RXBUF_LEN] == 2))
+                        uartSendRspBtVer = 1;
+                    else
+                        uartSendRspBadArg = 1;
+                    break;
+                default:
+                    uartSendRspBadCmd = 1;
+                    break;
+                }
+            }
             else {
                uartSendRspBadCmd = 1;
             }
@@ -1888,8 +1908,7 @@ void DockUart_processCmd() {
                      uint64_t temp64;
                      memcpy((uint8_t*)(&temp64), dockRxBuf+UART_RXBUF_DATA, 8);// 64bits = 8bytes
                      RTC_init(temp64);
-                     //storedConfig[NV_SD_TRIAL_CONFIG0] &= ~SDH_RTC_SET_BY_BT;
-                     S4Ram_storedConfigSetByte(NV_SD_TRIAL_CONFIG0, S4Ram_storedConfigGetByte(NV_SD_TRIAL_CONFIG0) & ~SDH_RTC_SET_BY_BT);
+                     S4Ram_getStoredConfig()->rtcSetByBt = 1;
                      InfoMem_update();
                      //sdHeadText[SDH_TRIAL_CONFIG0] = storedConfig[NV_SD_TRIAL_CONFIG0];
                      uartSendRspAck = 1;
@@ -1901,9 +1920,6 @@ void DockUart_processCmd() {
                   uartInfoMemLength = dockRxBuf[UART_RXBUF_DATA];
                   uartInfoMemOffset = (uint16_t)dockRxBuf[UART_RXBUF_DATA + 1] + (((uint16_t)dockRxBuf[UART_RXBUF_DATA + 2]) << 8);
                   if ((uartInfoMemLength <= 0x80) && (uartInfoMemOffset <= 0x01ff) && (uartInfoMemLength + uartInfoMemOffset <= 0x0200)) {
-//                     memcpy(btMacHex, storedConfig + NV_MAC_ADDRESS, 6);
-//                     memcpy(storedConfig + uartInfoMemOffset, dockRxBuf + UART_RXBUF_DATA + 3, uartInfoMemLength);
-//                     memcpy(storedConfig + NV_MAC_ADDRESS, btMacHex, 6);
                      uint8_t temp_btMacHex[6];
                      S4Ram_storedConfigGet(temp_btMacHex, NV_MAC_ADDRESS, 6);
                      S4Ram_storedConfigSet(dockRxBuf + UART_RXBUF_DATA + 3, uartInfoMemOffset, uartInfoMemLength);
@@ -2054,7 +2070,13 @@ void DockUart_sendRsp() {
       *(uartRespBuf + uart_resp_len++) = UART_COMP_DAUGHTER_CARD;
       *(uartRespBuf + uart_resp_len++) = UART_PROP_CARD_ID;
       if ((uartDcMemLength + uart_resp_len) < UART_RSP_PACKET_SIZE) {
+#if IS_CONNECTED_EEPROM
          CAT24C16_read(uartDcMemOffset, uartRespBuf + uart_resp_len, uartDcMemLength);
+#else
+         uartRespBuf[uart_resp_len+0] = EXP_BRD_ID_MAJOR;
+         uartRespBuf[uart_resp_len+1] = EXP_BRD_ID_MINOR;
+         uartRespBuf[uart_resp_len+2] = EXP_BRD_ID_INTERNAL;
+#endif
       }
       uart_resp_len += uartDcMemLength;
    } else if (uartSendRspGdm) {
@@ -2065,7 +2087,9 @@ void DockUart_sendRsp() {
       *(uartRespBuf + uart_resp_len++) = UART_COMP_DAUGHTER_CARD;
       *(uartRespBuf + uart_resp_len++) = UART_PROP_CARD_MEM;
       if ((uartDcMemLength + uart_resp_len) < UART_RSP_PACKET_SIZE) {
+#if IS_CONNECTED_EEPROM
          CAT24C16_read(uartDcMemOffset + 16, uartRespBuf + uart_resp_len, uartDcMemLength);
+#endif
       }
       uart_resp_len += uartDcMemLength;
    } else if (uartSendRspGim) {
@@ -2091,13 +2115,27 @@ void DockUart_sendRsp() {
       }
       uart_resp_len += uartCalibRamLength;
    }
+   else if (uartSendRspBtVer)
+   {
+       uartSendRspBtVer = 0;
+       uint8_t btVerStrLen = getBtVerStrLen();
+       *(uartRespBuf + uart_resp_len++) = '$';
+       *(uartRespBuf + uart_resp_len++) = UART_RESPONSE;
+       *(uartRespBuf + uart_resp_len++) = 2U + btVerStrLen;
+       *(uartRespBuf + uart_resp_len++) = UART_COMP_BT;
+       *(uartRespBuf + uart_resp_len++) = UART_PROP_VER;
+
+       memcpy(uartRespBuf + uart_resp_len, getBtVerStrPtr(), btVerStrLen);
+       uart_resp_len += btVerStrLen;
+   }
 
    uartRespCrc = S4Calc_crcCalc(uartRespBuf, uart_resp_len);
    *(uartRespBuf + uart_resp_len++) = uartRespCrc & 0xff;
    *(uartRespBuf + uart_resp_len++) = (uartRespCrc & 0xff00) >> 8;
 
    //HAL_UART_Transmit_IT(&huart6, uartRespBuf, uart_resp_len);
-   HAL_UART_Transmit(huartDock, uartRespBuf, uart_resp_len, 5);
+   // Takes ~1.2ms to transmit 135 bytes @ 115200 baud therefore setting timeout to be > ~38.4ms
+   HAL_UART_Transmit(huartDock, uartRespBuf, uart_resp_len, 100);
 }
 
 #if defined(SHIMMER4_SDK)
@@ -2216,7 +2254,7 @@ void dockUartRxCallback(UART_HandleTypeDef *huart)
 //      } else {
 //         ExpUart_rxCallback(uartDockRxBuf[0]);
   }
-  //HAL_UART_Receive_DMA(huartDock, uartDockRxBuf, 1);
+//  HAL_UART_Receive_DMA(huartDock, uartDockRxBuf, 1);
   HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
 }
 

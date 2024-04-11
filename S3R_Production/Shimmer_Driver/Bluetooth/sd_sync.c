@@ -528,8 +528,9 @@ void SyncNodeR10(void)
         }
         else
         {
-            if ((S4Ram_storedConfigGetByte(NV_SENSORS1) & SDH_SINGLETOUCH)
-                && !stat.isSensing && sd_tolog)
+            if (S4Ram_getStoredConfig()->singleTouchStart
+                && !stat.isSensing
+                && sd_tolog)
             {
                 taskSetCb(TASK_STARTSENSING);
             }

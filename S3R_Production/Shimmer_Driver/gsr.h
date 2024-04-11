@@ -49,6 +49,7 @@
 #define HW_RES_287K  1
 #define HW_RES_1M    2
 #define HW_RES_3M3   3
+#define GSR_AUTORANGE 4
 
 void GSR_init(uint8_t gsrRange, uint16_t gsrSamplingRate, uint8_t gsrAutoRange);
 

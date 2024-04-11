@@ -16,7 +16,14 @@
 #define FW_VER_MINOR          0      // Minor version number: 0-255
 #define FW_VER_REL            23     // internal version number: 0-255
 #endif
-      
+
+#if !IS_CONNECTED_EEPROM & defined(SHIMMER3R)
+#define EXP_BRD_ID_MAJOR      31 //0xFF//47
+#define EXP_BRD_ID_MINOR      9  //0xFF//1
+#define EXP_BRD_ID_INTERNAL   0  //0xFF//0
+#endif
+
+
 //typedef uint8_t bool;
 //#define TRUE 1
 //#define FALSE 0
@@ -56,6 +63,7 @@
 #define UART_COMP_DAUGHTER_CARD     0x03
 #define UART_COMP_D_ACCEL           0x04
 #define UART_COMP_GSR               0x05
+#define UART_COMP_BT                0x0A
 //================= WP uart 3.0: property names ==============
 // component == UART_COMP_SHIMMER:
 #define UART_PROP_ENABLE            0x00 // this is for all sensors
@@ -141,97 +149,18 @@
 #define STC3100_CH_3                      0x2B
 #define STC3100_CH_4                      0x2C
 #define STC3100_CH_5                      0x2D
-#define EXT_ADC_9                         0x2E
-#define EXT_ADC_8                         0x2F
-#define EXT_ADC_1                         0x30
-#define INT_ADC_10                        0x31
-#define INT_ADC_12                        0x32
-#define INT_ADC_11                        0x33
-#define INT_ADC_0                         0x34
-#define INT_ADC_2                         0x35
+#define EXT_ADC_0                         0x2E
+#define EXT_ADC_1                         0x2F
+#define EXT_ADC_2                         0x30
+#define INT_ADC_0                        0x31
+#if defined(SHIMMER4_SDK)
+#define INT_ADC_4                        0x32
+#endif
+#define INT_ADC_1                        0x33
+#define INT_ADC_2                         0x34
+#define INT_ADC_3                         0x35
 #define PPG_1                             0x36
 #define PPG_2                             0x37
-
-// Infomem contents
-//#define NV_NUM_CONFIG_BYTES             100
-// Infomem contents
-#define NV_NUM_SETTINGS_BYTES             34
-#define NV_NUM_CALIBRATION_BYTES          84
-#define NV_NUM_SD_BYTES                   37
-#define NV_TOTAL_NUM_CONFIG_BYTES         384//NV_NUM_SETTINGS_BYTES + NV_NUM_CALIBRATION_BYTES + NV_NUM_SD_BYTES
-#define NV_NUM_RWMEM_BYTES                512
-
-#define NV_SAMPLING_RATE                  0
-#define NV_BUFFER_SIZE                    2
-#define NV_SENSORS0                       3
-#define NV_SENSORS1                       4
-#define NV_SENSORS2                       5
-#define NV_CONFIG_SETUP_BYTE0             6 //sensors setting bytes
-#define NV_CONFIG_SETUP_BYTE1             7
-#define NV_CONFIG_SETUP_BYTE2             8
-#define NV_CONFIG_SETUP_BYTE3             9
-#define NV_EXG_ADS1292R_1_CONFIG1         10// exg bytes, not implemented yet
-#define NV_EXG_ADS1292R_1_CONFIG2         11
-#define NV_EXG_ADS1292R_1_LOFF            12
-#define NV_EXG_ADS1292R_1_CH1SET          13
-#define NV_EXG_ADS1292R_1_CH2SET          14
-#define NV_EXG_ADS1292R_1_RLD_SENS        15
-#define NV_EXG_ADS1292R_1_LOFF_SENS       16
-#define NV_EXG_ADS1292R_1_LOFF_STAT       17
-#define NV_EXG_ADS1292R_1_RESP1           18
-#define NV_EXG_ADS1292R_1_RESP2           19
-#define NV_EXG_ADS1292R_2_CONFIG1         20
-#define NV_EXG_ADS1292R_2_CONFIG2         21
-#define NV_EXG_ADS1292R_2_LOFF            22
-#define NV_EXG_ADS1292R_2_CH1SET          23
-#define NV_EXG_ADS1292R_2_CH2SET          24
-#define NV_EXG_ADS1292R_2_RLD_SENS        25
-#define NV_EXG_ADS1292R_2_LOFF_SENS       26
-#define NV_EXG_ADS1292R_2_LOFF_STAT       27
-#define NV_EXG_ADS1292R_2_RESP1           28
-#define NV_EXG_ADS1292R_2_RESP2           29
-#define NV_BT_COMMS_BAUD_RATE             30
-#define NV_DERIVED_CHANNELS_0             31
-#define NV_DERIVED_CHANNELS_1             32
-#define NV_DERIVED_CHANNELS_2             33
-#define NV_A_ACCEL_CALIBRATION            34
-#define NV_MPU9250_GYRO_CALIBRATION       55
-#define NV_LSM303DLHC_MAG_CALIBRATION     76
-#define NV_LSM303DLHC_ACCEL_CALIBRATION   97       //97->117
-#define NV_CALIBRATION_END                117
-#define NV_DERIVED_CHANNELS_3             118
-#define NV_DERIVED_CHANNELS_4             119
-#define NV_DERIVED_CHANNELS_5             120
-#define NV_DERIVED_CHANNELS_6             121
-#define NV_DERIVED_CHANNELS_7             122
-
-#define NV_SENSORS3                       (128+0)
-#define NV_SENSORS4                       (128+1)
-#define NV_CONFIG_SETUP_BYTE4             (128+2)
-#define NV_CONFIG_SETUP_BYTE5             (128+3)
-#define NV_CONFIG_SETUP_BYTE6             (128+4)
-#define NV_MPL_ACCEL_CALIBRATION          (128+5)    //+21
-#define NV_MPL_MAG_CALIBRATION            (128+26)   //+21
-#define NV_MPL_GYRO_CALIBRATION           (128+47)   //+12
-#define NV_SD_SHIMMER_NAME                (128+59)   // +12 bytes
-#define NV_SD_EXP_ID_NAME                 (128+71)   // +12 bytes
-#define NV_SD_CONFIG_TIME                 (128+83)   // +4 bytes
-#define NV_SD_MYTRIAL_ID                  (128+87)   // 1 byte
-#define NV_SD_NSHIMMER                    (128+88)   // 1 byte
-#define NV_SD_TRIAL_CONFIG0               (128+89)
-#define NV_SD_TRIAL_CONFIG1               (128+90)
-#define NV_SD_BT_INTERVAL                 (128+91)
-#define NV_EST_EXP_LEN_MSB                (128+92)  // 2bytes
-#define NV_EST_EXP_LEN_LSB                (128+93)
-#define NV_MAX_EXP_LEN_MSB                (128+94)  // 2bytes
-#define NV_MAX_EXP_LEN_LSB                (128+95)
-#define NV_MAC_ADDRESS                    (128+96)   // 6bytes
-#define NV_SD_CONFIG_DELAY_FLAG           (128+102)
-#define NV_BT_SET_PIN                     (128+103)
-#define NV_TEMP_PRES_CALIBRATION          (128+104) // +22 bytes, till 128+125
-
-#define NV_CENTER                         (128+128+0)
-#define NV_NODE0                          (128+128+6)
 
 //SENSORS0
 #define SENSOR_A_ACCEL                 0x80
@@ -240,27 +169,31 @@
 #define SENSOR_EXG1_24BIT              0x10
 #define SENSOR_EXG2_24BIT              0x08
 #define SENSOR_GSR                     0x04
-#define SENSOR_EXT_ADC_9               0x02
-#define SENSOR_EXT_ADC_8               0x01
+#define SENSOR_EXT_ADC_0               0x02
+#define SENSOR_EXT_ADC_1               0x01
 //SENSORS1
 #define SENSOR_STRAIN                  0x80
 //#define SDH_SENSOR_HR                0x40
+#if defined(SHIMMER4_SDK)
 #define SENSOR_APP_PPG                 0x40
+#endif
 #define SENSOR_VBATT                   0x20
 #define SENSOR_LSM303DLHC_ACCEL        0x10
-#define SENSOR_EXT_ADC_1               0x08
-#define SENSOR_INT_ADC_2               0x04
-#define SENSOR_INT_ADC_10              0x02
-#define SENSOR_INT_ADC_11              0x01
+#define SENSOR_EXT_ADC_2               0x08
+#define SENSOR_INT_ADC_3               0x04
+#define SENSOR_INT_ADC_0               0x02
+#define SENSOR_INT_ADC_1               0x01
 //SENORS2
-#define SENSOR_INT_ADC_0               0x80
+#define SENSOR_INT_ADC_2               0x80
 #define SENSOR_MPU9250_ACCEL           0x40
 #define SENSOR_MPU9250_MAG             0x20
 #define SENSOR_EXG1_16BIT              0x10
 #define SENSOR_EXG2_16BIT              0x08
 #define SENSOR_BMP180_PRESSURE         0x04
-#define SENSOR_INT_ADC_12              0x02
+#if defined(SHIMMER4_SDK)
+#define SENSOR_INT_ADC_4               0x02
 #define SENSOR_STC3100                 0x01
+#endif
 //NV_SENSORS5
 //#define SENSOR_APP_STRAIN              0x80
 //#define SENSOR_APP_GSR                 0x40
@@ -592,9 +525,6 @@
 #define BMP180_OSS_2                0x01
 #define BMP180_OSS_4                0x02
 #define BMP180_OSS_8                0x03
-
-//BtStream specific extension to range values : should SDLog keep it?
-#define GSR_AUTORANGE               0x04
 
 #define STAT_PERI_ADC               0x01
 #define STAT_PERI_I2C_SENS          0x02

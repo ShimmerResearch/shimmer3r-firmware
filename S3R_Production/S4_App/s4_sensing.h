@@ -71,14 +71,16 @@ typedef struct {//data ptr (offset)
    uint8_t gsr;
    uint8_t strainGauge;
    uint8_t ppg;
-   uint8_t extADC_9;
-   uint8_t extADC_8;
-   uint8_t extADC_1;
-   uint8_t intADC_10;
-   uint8_t intADC_12;
-   uint8_t intADC_11;
-   uint8_t intADC_0;
-   uint8_t intADC_2;
+   uint8_t extADC0;
+   uint8_t extADC1;
+   uint8_t extADC2;
+   uint8_t intADC0;
+#if defined(SHIMMER4_SDK)
+   uint8_t intADC4;
+#endif
+   uint8_t intADC1;
+   uint8_t intADC2;
+   uint8_t intADC3;
    uint8_t batteryAnalog;
 } DATAPTRTypeDef;
 

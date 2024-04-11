@@ -140,14 +140,14 @@
 #define STC3100_CH_3                      0x2B
 #define STC3100_CH_4                      0x2C
 #define STC3100_CH_5                      0x2D
-#define EXT_ADC_9                         0x2E
-#define EXT_ADC_8                         0x2F
-#define EXT_ADC_1                         0x30
-#define INT_ADC_10                        0x31
-#define INT_ADC_12                        0x32
-#define INT_ADC_11                        0x33
-#define INT_ADC_0                         0x34
-#define INT_ADC_2                         0x35
+#define EXT_ADC_0                         0x2E
+#define EXT_ADC_1                         0x2F
+#define EXT_ADC_2                         0x30
+#define INT_ADC_0                         0x31
+#define INT_ADC_4                         0x32
+#define INT_ADC_1                         0x33
+#define INT_ADC_2                         0x34
+#define INT_ADC_3                         0x35
 #define PPG_1                             0x36
 #define PPG_2                             0x37
 
@@ -389,26 +389,26 @@
 #define SENSOR_EXG1_24BIT              0x10
 #define SENSOR_EXG2_24BIT              0x08
 #define SENSOR_GSR                     0x04
-#define SENSOR_EXT_ADC_9               0x02
-#define SENSOR_EXT_ADC_8               0x01
+#define SENSOR_EXT_ADC_0               0x02
+#define SENSOR_EXT_ADC_1               0x01
 //SENSORS1
 #define SENSOR_STRAIN                  0x80
 //#define SDH_SENSOR_HR                0x40
 #define SENSOR_APP_PPG                 0x40
 #define SENSOR_VBATT                   0x20
 #define SENSOR_LSM303DLHC_ACCEL        0x10
-#define SENSOR_EXT_ADC_1               0x08
-#define SENSOR_INT_ADC_2               0x04
-#define SENSOR_INT_ADC_10              0x02
-#define SENSOR_INT_ADC_11              0x01
+#define SENSOR_EXT_ADC_2               0x08
+#define SENSOR_INT_ADC_3               0x04
+#define SENSOR_INT_ADC_0               0x02
+#define SENSOR_INT_ADC_1               0x01
 //SENORS2
-#define SENSOR_INT_ADC_0               0x80
+#define SENSOR_INT_ADC_2               0x80
 #define SENSOR_MPU9250_ACCEL           0x40
 #define SENSOR_MPU9250_MAG             0x20
 #define SENSOR_EXG1_16BIT              0x10
 #define SENSOR_EXG2_16BIT              0x08
 #define SENSOR_BMP180_PRESSURE         0x04
-#define SENSOR_INT_ADC_12              0x02
+#define SENSOR_INT_ADC_4               0x02
 #define SENSOR_STC3100                 0x01
 //NV_SENSORS5
 //#define SENSOR_APP_STRAIN              0x80

@@ -140,7 +140,7 @@ void Error_Handler(void);
 #define SDMMC1_D1_GPIO_Port GPIOC
 #define SW_I2C2_Pin GPIO_PIN_8
 #define SW_I2C2_GPIO_Port GPIOA
-#define CS_HIGH_G_Pin GPIO_PIN_15
+#define CS_HIGH_G_Pin GPIO_PIN_10
 #define CS_HIGH_G_GPIO_Port GPIOA
 #define SDMMC1_D2_Pin GPIO_PIN_10
 #define SDMMC1_D2_GPIO_Port GPIOC

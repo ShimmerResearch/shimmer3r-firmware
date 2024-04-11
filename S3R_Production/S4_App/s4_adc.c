@@ -141,6 +141,7 @@ void S4_NORM_ADC_initBatt(void){
 void S4_NORM_ADC_configureChannels(void){
    uint8_t *channel_contents_ptr = sensing.cc+sensing.ccLen;
    uint8_t nbr_adc_chans = 0;
+   gConfigBytes *configBytes = S4Ram_getStoredConfig();
    
    adc.sensorLen = 0;//adc.sensorCnt = 0;
 #if defined(SHIMMER3R)
@@ -174,7 +175,7 @@ void S4_NORM_ADC_configureChannels(void){
    
 #if defined(SHIMMER4_SDK)
    //Analog Accel (KXRB5-2042)
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {
+   if (configBytes->chEnLnAccel) {
       *channel_contents_ptr++ = X_A_ACCEL;
       *channel_contents_ptr++ = Y_A_ACCEL;
       *channel_contents_ptr++ = Z_A_ACCEL;
@@ -190,7 +191,8 @@ void S4_NORM_ADC_configureChannels(void){
 #endif
    //Analog Battery Voltage
 #if USE_VBATT_ALWAYS
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_VBATT) {      
+  if (configBytes->chEnVBattery)
+  {
       *channel_contents_ptr++ = VBATT;
       nbr_adc_chans += 1;
       sensing.ptr.batteryAnalog = sensing.dataLen;
@@ -200,7 +202,7 @@ void S4_NORM_ADC_configureChannels(void){
       adc.sensorList[adc.sensorLen++] = VBATT;
    }      
 #else
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_VBATT) {      
+   if (configBytes->chEnVBattery) {
       *channel_contents_ptr++ = VBATT;
       nbr_adc_chans += 1;
       sensing.ptr.batteryAnalog = sensing.dataLen;
@@ -208,111 +210,120 @@ void S4_NORM_ADC_configureChannels(void){
       adc.sensorList[adc.sensorLen++] = VBATT;
    }     
 #endif
-   
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_APP_PPG) {
+
+   // TODO check what's needed below for Shimmer3r
+#if defined(SHIMMER4_SDK)
+   if (configBytes->chEnPpg) {
       //in shimmer3 this corresponds to adc12
-      S4Ram_storedConfigSetByte(NV_SENSORS1, S4Ram_storedConfigGetByte(NV_SENSORS1) | SENSOR_INT_ADC_10);
-      S4Ram_storedConfigSetByte(NV_SENSORS2, S4Ram_storedConfigGetByte(NV_SENSORS2) | SENSOR_INT_ADC_12); 
-      HAL_GPIO_WritePin(GPIOF, SW_PPG_EN_Pin, GPIO_PIN_SET);
+      configBytes->chEnIntADC0 = 1;
+      configBytes->chEnIntADC4 = 1;
+      HAL_GPIO_WritePin(SW_PPG_EN_GPIO_Port, SW_PPG_EN_Pin, GPIO_PIN_SET);
    }
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_STRAIN) {
+   if (configBytes->chEnBridgeAmp) {
       //in shimmer3 this corresponds to adc13 and adc14
-      S4Ram_storedConfigSetByte(NV_SENSORS1, S4Ram_storedConfigGetByte(NV_SENSORS1) | SENSOR_INT_ADC_11); 
-      S4Ram_storedConfigSetByte(NV_SENSORS2, S4Ram_storedConfigGetByte(NV_SENSORS2) | SENSOR_INT_ADC_0);         
-      HAL_GPIO_WritePin(GPIOB, SW_STRAIN_GAUGE_Pin, GPIO_PIN_SET);
+      configBytes->chEnIntADC1 = 1;
+      configBytes->chEnIntADC2 = 1;
+      HAL_GPIO_WritePin(SW_STRAIN_GAUGE_GPIO_Port, SW_STRAIN_GAUGE_Pin, GPIO_PIN_SET);
    }
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_GSR) {
-      //in shimmer3 this corresponds to adc1
-      S4Ram_storedConfigSetByte(NV_SENSORS1, S4Ram_storedConfigGetByte(NV_SENSORS1) | SENSOR_INT_ADC_2);
+#endif
+
+   if (configBytes->chEnGsr) {
+     // TODO check what's needed below for Shimmer3r
+#if defined(SHIMMER4_SDK)
+     //in shimmer3 this corresponds to adc1
+      configBytes->chEnIntADC3 = 1;
+#endif
          
-      uint16_t temp_samplingrate;
-      S4Ram_storedConfigGet((uint8_t*)&temp_samplingrate, NV_SAMPLING_RATE, 2);
-      GSR_init(S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3), temp_samplingrate, GSR_AUTORANGE);
-      if (((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0x0E) >> 1) <= HW_RES_3M3) {
-         GSR_setRange((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0x0E) >> 1);
-         gsrActiveResistor = (S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0x0E) >> 1;
+      GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks, GSR_AUTORANGE);
+      if (configBytes->gsrRange <= HW_RES_3M3) {
+         GSR_setRange(configBytes->gsrRange);
+         gsrActiveResistor = configBytes->gsrRange;
       } else {
          GSR_setRange(HW_RES_40K);
          gsrActiveResistor = HW_RES_40K;
-      }  
+      }
    }
-     
-   //External ADC 9
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXT_ADC_9) {
-      *channel_contents_ptr++ = EXT_ADC_9;
+
+   //External ADC 0
+   if (configBytes->chEnExtADC0) {
+      *channel_contents_ptr++ = EXT_ADC_0;
       nbr_adc_chans += 1;
-      sensing.ptr.extADC_9 = sensing.dataLen;
+      sensing.ptr.extADC0 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = EXT_ADC_9;
-   }
-   
-   //External ADC 8
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXT_ADC_8) {
-      *channel_contents_ptr++ = EXT_ADC_8;
-      nbr_adc_chans += 1;
-      sensing.ptr.extADC_8 = sensing.dataLen;
-      sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = EXT_ADC_8;
+      adc.sensorList[adc.sensorLen++] = EXT_ADC_0;
    }
    
    //External ADC 1
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_EXT_ADC_1) {
+   if (configBytes->chEnExtADC1) {
       *channel_contents_ptr++ = EXT_ADC_1;
       nbr_adc_chans += 1;
-      sensing.ptr.extADC_1 = sensing.dataLen;
+      sensing.ptr.extADC1 = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = EXT_ADC_1;
+   }
+   
+   //External ADC 2
+   if (configBytes->chEnExtADC2) {
+      *channel_contents_ptr++ = EXT_ADC_2;
+      nbr_adc_chans += 1;
+      sensing.ptr.extADC2 = sensing.dataLen;
+      sensing.dataLen += 2;
+      adc.sensorList[adc.sensorLen++] = EXT_ADC_2;
    }   
    
-   //Internal ADC 10
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_10) {
-      *channel_contents_ptr++ = INT_ADC_10;
-      nbr_adc_chans += 1;
-      sensing.ptr.intADC_10 = sensing.dataLen;
-      sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INT_ADC_10;
-   }
-   
-   //Internal ADC 12
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_12) {
-      *channel_contents_ptr++ = INT_ADC_12;
-      nbr_adc_chans += 1;
-      sensing.ptr.intADC_12 = sensing.dataLen;
-      sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INT_ADC_12;
-   }
-   
-   //Internal ADC 11
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_11) {
-      *channel_contents_ptr++ = INT_ADC_11;
-      nbr_adc_chans += 1;
-      sensing.ptr.intADC_11 = sensing.dataLen;
-      sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INT_ADC_11;
-   }
-   
    //Internal ADC 0
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_0) {
+   if (configBytes->chEnIntADC0) {
       *channel_contents_ptr++ = INT_ADC_0;
       nbr_adc_chans += 1;
-      sensing.ptr.intADC_0 = sensing.dataLen;
+      sensing.ptr.intADC0 = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = INT_ADC_0;
    }
    
+#if defined(SHIMMER4_SDK)
+   //Internal ADC 4
+   if (configBytes->chEnIntADC4) {
+      *channel_contents_ptr++ = INT_ADC_4;
+      nbr_adc_chans += 1;
+      sensing.ptr.intADC4 = sensing.dataLen;
+      sensing.dataLen += 2;
+      adc.sensorList[adc.sensorLen++] = INT_ADC_4;
+   }
+#endif
+   
+   //Internal ADC 1
+   if (configBytes->chEnIntADC1) {
+      *channel_contents_ptr++ = INT_ADC_1;
+      nbr_adc_chans += 1;
+      sensing.ptr.intADC1 = sensing.dataLen;
+      sensing.dataLen += 2;
+      adc.sensorList[adc.sensorLen++] = INT_ADC_1;
+   }
+   
    //Internal ADC 2
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_2) {
+   if (configBytes->chEnIntADC2) {
       *channel_contents_ptr++ = INT_ADC_2;
       nbr_adc_chans += 1;
-      sensing.ptr.intADC_2 = sensing.dataLen;
+      sensing.ptr.intADC2 = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = INT_ADC_2;
+   }
+   
+   //Internal ADC 3
+   if (configBytes->chEnIntADC3) {
+      *channel_contents_ptr++ = INT_ADC_3;
+      nbr_adc_chans += 1;
+      sensing.ptr.intADC3 = sensing.dataLen;
+      sensing.dataLen += 2;
+      adc.sensorList[adc.sensorLen++] = INT_ADC_3;
    }   
+
    sensing.nbrAdcChans += nbr_adc_chans;
    sensing.ccLen += nbr_adc_chans;
 }
 
 void S4_NORM_ADC_startSensing(){
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
    ADC_ChannelConfTypeDef sConfig;
    uint8_t adc_counter_sens = 1;//, adc_counter_resv = 0;   
    adcConfig = ADC_CONFIG_SENS;
@@ -377,7 +388,7 @@ void S4_NORM_ADC_startSensing(){
    }
    
    //Analog Accel
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {      
+   if (configBytes->chEnLnAccel) {
       sConfig.Channel = ADC_CHANNEL_ACCEL_X;//x
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
@@ -397,7 +408,7 @@ void S4_NORM_ADC_startSensing(){
 #if USE_VBATT_ALWAYS
    if (1) {
 #else
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_VBATT) {   
+   if (configBytes->chEnVBattery) {
 #endif   
       sConfig.Channel = ADC_CHANNEL_VBATT;
       sConfig.Rank = adc_counter_sens++;
@@ -405,52 +416,52 @@ void S4_NORM_ADC_startSensing(){
    }
    
    //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXT_ADC_9) {
-      sConfig.Channel = ADC_CHANNEL_EXT_A7;
+   if (configBytes->chEnExtADC0) {
+      sConfig.Channel = ADC_CHANNEL_EXT_A0;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
    
    //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXT_ADC_8) {
-      sConfig.Channel = ADC_CHANNEL_EXT_A6;
-      sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
-   }
-   
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_EXT_ADC_1) {
+   if (configBytes->chEnExtADC1) {
       sConfig.Channel = ADC_CHANNEL_EXT_A1;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
-
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_2) {
-      sConfig.Channel = ADC_CHANNEL_INT_A2;
+   
+   if (configBytes->chEnExtADC2) {
+      sConfig.Channel = ADC_CHANNEL_EXT_A2;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
 
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_10) {
-      sConfig.Channel = ADC_CHANNEL_INT_A10;
+   if (configBytes->chEnIntADC3) {
+      sConfig.Channel = ADC_CHANNEL_INT_A3;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
 
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_11) {
-      sConfig.Channel = ADC_CHANNEL_INT_A11;
-      sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
-   }
-
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_0) {
+   if (configBytes->chEnIntADC0) {
       sConfig.Channel = ADC_CHANNEL_INT_A0;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
 
+   if (configBytes->chEnIntADC1) {
+      sConfig.Channel = ADC_CHANNEL_INT_A1;
+      sConfig.Rank = adc_counter_sens++;
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+   }
+
+   if (configBytes->chEnIntADC2) {
+      sConfig.Channel = ADC_CHANNEL_INT_A2;
+      sConfig.Rank = adc_counter_sens++;
+      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+   }
+
 #if defined(SHIMMER4_SDK)
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_12) {
-      sConfig.Channel = ADC_CHANNEL_INT_A12;
+   if (configBytes->chEnIntADC4) {
+      sConfig.Channel = ADC_CHANNEL_INT_A4;
       sConfig.Rank = adc_counter_sens++;
       HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
    }
@@ -481,6 +492,7 @@ void S4_NORM_ADC_gatherDataStart(void){
 void S4_NORM_ADC_bufPoll(){
    uint8_t adc_offset_sens = 0;//, adc_offset_resv = 0;   
    //uint8_t adc_vbattery[2];
+   gConfigBytes *configBytes = S4Ram_getStoredConfig();
    
 //   if(adc.chanCntBatt > 0){
 //      ADC_readBatt();
@@ -488,7 +500,7 @@ void S4_NORM_ADC_bufPoll(){
    
 #if defined(SHIMMER4_SDK)
    //Analog Accel
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {      
+   if (configBytes->chEnLnAccel) {
       // X
       sensing.dataBuf[sensing.ptr.analogAccel + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
       sensing.dataBuf[sensing.ptr.analogAccel + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);       
@@ -505,12 +517,12 @@ void S4_NORM_ADC_bufPoll(){
 #if USE_VBATT_ALWAYS    
    stat.battVal[0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    stat.battVal[1] = *((uint8_t*)adcBufSens + adc_offset_sens++);  
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_VBATT) { 
+   if (configBytes->chEnVBattery) {
       sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = stat.battVal[0];
       sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = stat.battVal[1];
    }  
 #else
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_VBATT) { 
+   if (configBytes->chEnVBattery) {
       stat.battVal[0] = sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
       stat.battVal[1] = sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }     
@@ -518,44 +530,46 @@ void S4_NORM_ADC_bufPoll(){
    S4_ADC_rankBatt();
    
    //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXT_ADC_9) {      
-      sensing.dataBuf[sensing.ptr.extADC_9 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-      sensing.dataBuf[sensing.ptr.extADC_9 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+   if (configBytes->chEnExtADC0) {
+      sensing.dataBuf[sensing.ptr.extADC0 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+      sensing.dataBuf[sensing.ptr.extADC0 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }
    //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXT_ADC_8) {      
-      sensing.dataBuf[sensing.ptr.extADC_8 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-      sensing.dataBuf[sensing.ptr.extADC_8 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+   if (configBytes->chEnExtADC1) {
+      sensing.dataBuf[sensing.ptr.extADC1 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+      sensing.dataBuf[sensing.ptr.extADC1 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_EXT_ADC_1) {      
-      sensing.dataBuf[sensing.ptr.extADC_1 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-      sensing.dataBuf[sensing.ptr.extADC_1 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+   if (configBytes->chEnExtADC2) {
+      sensing.dataBuf[sensing.ptr.extADC2 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+      sensing.dataBuf[sensing.ptr.extADC2 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }      
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_10) {      
-      sensing.dataBuf[sensing.ptr.intADC_10 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-      sensing.dataBuf[sensing.ptr.intADC_10 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+   if (configBytes->chEnIntADC0) {
+      sensing.dataBuf[sensing.ptr.intADC0 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+      sensing.dataBuf[sensing.ptr.intADC0 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_12) {      
-      sensing.dataBuf[sensing.ptr.intADC_12 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-      sensing.dataBuf[sensing.ptr.intADC_12 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+#if defined(SHIMMER4_SDK)
+   if (configBytes->chEnIntADC4) {
+      sensing.dataBuf[sensing.ptr.intADC4 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+      sensing.dataBuf[sensing.ptr.intADC4 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_11) {      
-      sensing.dataBuf[sensing.ptr.intADC_11 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-      sensing.dataBuf[sensing.ptr.intADC_11 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+#endif
+   if (configBytes->chEnIntADC1) {
+      sensing.dataBuf[sensing.ptr.intADC1 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+      sensing.dataBuf[sensing.ptr.intADC1 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }   
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_INT_ADC_0) {      
-      sensing.dataBuf[sensing.ptr.intADC_0 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-      sensing.dataBuf[sensing.ptr.intADC_0 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+   if (configBytes->chEnIntADC2) {
+      sensing.dataBuf[sensing.ptr.intADC2 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+      sensing.dataBuf[sensing.ptr.intADC2 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_INT_ADC_2) {      
-      sensing.dataBuf[sensing.ptr.intADC_2 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-      sensing.dataBuf[sensing.ptr.intADC_2 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+   if (configBytes->chEnIntADC3) {
+      sensing.dataBuf[sensing.ptr.intADC3 + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+      sensing.dataBuf[sensing.ptr.intADC3 + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }   
    
 //   //PPG
    
 //   //Strain Gauge
-//   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_STRAIN) {
+//   if (configBytes->chEnBrAmp) {
 //      // SG_LOW channel         
 //      sensing.dataBuf[sensing.ptr.strainGauge + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
 //      sensing.dataBuf[sensing.ptr.strainGauge + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
@@ -564,46 +578,54 @@ void S4_NORM_ADC_bufPoll(){
 //      sensing.dataBuf[sensing.ptr.strainGauge + 3] = *((uint8_t*)adcBufSens + adc_offset_sens++);
 //   }
    // GSR
-   if(S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_GSR) {
+   if(configBytes->chEnGsr) {
       union {
          uint8_t u8[4];
          uint32_t u32;
       }gsr_buf;
-      gsr_buf.u8[0] = sensing.dataBuf[sensing.ptr.intADC_2 + 0];
-      gsr_buf.u8[1] = sensing.dataBuf[sensing.ptr.intADC_2 + 1];
+      gsr_buf.u8[0] = sensing.dataBuf[sensing.ptr.intADC3 + 0];
+      gsr_buf.u8[1] = sensing.dataBuf[sensing.ptr.intADC3 + 1];
       GSR_output(&gsr_buf.u32);
       
-      sensing.dataBuf[sensing.ptr.intADC_2 + 0] = gsr_buf.u8[0];
-      sensing.dataBuf[sensing.ptr.intADC_2 + 1] = gsr_buf.u8[1];
+      sensing.dataBuf[sensing.ptr.intADC3 + 0] = gsr_buf.u8[0];
+      sensing.dataBuf[sensing.ptr.intADC3 + 1] = gsr_buf.u8[1];
    }
    
    
 }
 
-//void ADC_stopSensing(){      
-//   if(adc.sensorLen > 0){
-//      HAL_ADC_Stop_DMA(hadcSens);
-//      HAL_ADC_DeInit(hadcSens);
-//      
-//      //Analog Accel (KXRB5-2042)
-//      if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_A_ACCEL) {
-//         HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
-//      }         
-//      //Analog Strain Gauge
-//      if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_STRAIN) {
-//         HAL_GPIO_WritePin(GPIOB, GPIO_INTERNAL4_Pin, GPIO_PIN_RESET); // Resets the PV_SG voltage to gauge op-amp
-//      }        
-//      if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_APP_PPG) {
-//         HAL_GPIO_WritePin(GPIOF, PPG_EN_Pin, GPIO_PIN_RESET);
-//      }
-//   }     
-//   if(adc.chanCntResv > 0){
-//      HAL_ADC_Stop_DMA(hadcResv);
-//      HAL_ADC_DeInit(hadcResv);
-//   } 
-//   adcConfig = ADC_CONFIG_NONE;
+//void ADC_stopSensing()
+//{
+//  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+//  if (adc.sensorLen > 0)
+//  {
+//    HAL_ADC_Stop_DMA(hadcSens);
+//    HAL_ADC_DeInit(hadcSens);
+//
+//    //Analog Accel (KXRB5-2042)
+//    if (configBytes->chEnLnAccel)
+//    {
+//      HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
+//    }
+//    //Analog Strain Gauge
+//    if (configBytes->chEnBridgeAmp)
+//    {
+//      // Resets the PV_SG voltage to gauge op-amp
+//      HAL_GPIO_WritePin(SW_STRAIN_GAUGE_GPIO_Port, SW_STRAIN_GAUGE_Pin,
+//          GPIO_PIN_RESET);
+//    }
+//    if (configBytes->chEnPpgApp)
+//    {
+//      HAL_GPIO_WritePin(SW_PPG_EN_GPIO_Port, PPG_EN_Pin, GPIO_PIN_RESET);
+//    }
+//  }
+//  if (adc.chanCntResv > 0)
+//  {
+//    HAL_ADC_Stop_DMA(hadcResv);
+//    HAL_ADC_DeInit(hadcResv);
+//  }
+//  adcConfig = ADC_CONFIG_NONE;
 //}
-
 
 void S4_NORM_ADC_stopSensing(){      
    HAL_ADC_Stop_DMA(hadcSensPtr);

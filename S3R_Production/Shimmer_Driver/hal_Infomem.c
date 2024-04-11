@@ -42,11 +42,12 @@
  
 #include "hal_Infomem.h"
 
-uint8_t *infoMem_p_storedConfig, *infoMem_p_shimmerCalib_ram;
+gConfigBytes *infoMem_p_storedConfig;
+uint8_t *infoMem_p_shimmerCalib_ram;
 
 #if HAL_TEST_INFOMEM
-uint8_t test_infomem_wr[INFOMEM_RAM_SIZE];
-uint8_t test_infomem_rd[INFOMEM_RAM_SIZE];
+uint8_t test_infomem_wr[INFOMEM_CONFIG_SIZE];
+uint8_t test_infomem_rd[INFOMEM_CONFIG_SIZE];
 #endif
 
 #if defined(SHIMMER3R)
@@ -94,13 +95,13 @@ void InfoMem_update() {
       
    if(infoMem_p_storedConfig != 0){
 #if defined(SHIMMER3R)
-     for(j = 0; j < INFOMEM_RAM_SIZE; j += QUAD_WORD_BYTE_SIZE){
-       status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, (uint32_t)(infoMem_p_storedConfig+j));
+     for(j = 0; j < INFOMEM_CONFIG_SIZE; j += QUAD_WORD_BYTE_SIZE){
+       status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CONFIG_OFFSET+j, (uint32_t)(infoMem_p_storedConfig->rawBytes+j));
      }
 #elif defined(SHIMMER4_SDK)
-      for(j = 0; j < INFOMEM_RAM_SIZE; j+=4){
+      for(j = 0; j < INFOMEM_CONFIG_SIZE; j+=4){
          // FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
-        status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_RAM_OFFSET+j, *(uint32_t*)(infoMem_p_storedConfig+j));
+        status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_CONFIG_OFFSET+j, *(uint32_t*)(infoMem_p_storedConfig->rawBytes+j));
       }
 //      for(j = 0; j < INFOMEM_RAM_SIZE; j++){
 //         status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_RAM_OFFSET+j, infoMem_p_storedConfig[j]);
@@ -158,23 +159,23 @@ void InfoMem_updateFrom(uint8_t * buf) {
 #endif
    
 #if defined(SHIMMER3R)
-   for(j = 0; j < INFOMEM_RAM_SIZE; j += QUAD_WORD_BYTE_SIZE){
-      HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_RAM_OFFSET+j, (uint32_t)(buf+j));
+   for(j = 0; j < INFOMEM_CONFIG_SIZE; j += QUAD_WORD_BYTE_SIZE){
+      HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CONFIG_OFFSET+j, (uint32_t)(buf+j));
    }
 #elif defined(SHIMMER4_SDK)
-   for(j = 0; j < INFOMEM_RAM_SIZE; j++){
+   for(j = 0; j < INFOMEM_CONFIG_SIZE; j++){
       // FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
-      HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_RAM_OFFSET+j, buf[j]);
+      HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_CONFIG_OFFSET+j, buf[j]);
    }
 #endif
    HAL_FLASH_Lock();
 }
 
 uint8_t InfoMem_readRam(uint8_t *buf, uint16_t addr, uint16_t size) {
-   if(addr+size > INFOMEM_RAM_SIZE)
+   if(addr+size > INFOMEM_CONFIG_SIZE)
       return 1;   
    //reading 512 bytes takes 0x4ed clk cpu cycles
-   memcpy(buf, (uint8_t *)INFOMEM_RAM_OFFSET+addr, size);
+   memcpy(buf, (uint8_t *)INFOMEM_CONFIG_OFFSET+addr, size);
    
    return 0;
 }

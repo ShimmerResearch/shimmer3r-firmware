@@ -324,6 +324,9 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
     GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    /* SPI2 interrupt Init */
+    HAL_NVIC_SetPriority(SPI2_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(SPI2_IRQn);
   /* USER CODE BEGIN SPI2_MspInit 1 */
 
   /* USER CODE END SPI2_MspInit 1 */
@@ -407,6 +410,8 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_13|GPIO_PIN_15);
 
+    /* SPI2 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(SPI2_IRQn);
   /* USER CODE BEGIN SPI2_MspDeInit 1 */
 
   /* USER CODE END SPI2_MspDeInit 1 */
@@ -444,116 +449,130 @@ uint8_t SPI_test(void){
    return ret_val;
 }
 
-void SPI_configureChannels(){
-   uint8_t *channel_contents_ptr = sensing.cc+sensing.ccLen;
-   uint8_t nbr_spi_chans = 0;
-   //ExG (spi)
-   if ((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT) ||
-         (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT) ||
-         (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT) ||
-         (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT)) {
-      if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT) {
-         *channel_contents_ptr++ = EXG_ADS1292R_1_STATUS;
-         *channel_contents_ptr++ = EXG_ADS1292R_1_CH1_24BIT;
-         *channel_contents_ptr++ = EXG_ADS1292R_1_CH2_24BIT;
-         nbr_spi_chans += 3;
-         S4Ram_storedConfigSetByte(NV_SENSORS2, S4Ram_storedConfigGetByte(NV_SENSORS2) & ~SENSOR_EXG1_16BIT);
-         sensing.ptr.exg1 = sensing.dataLen;
-         sensing.dataLen += 7;
-      } else if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT) {
-         *channel_contents_ptr++ = EXG_ADS1292R_1_STATUS;
-         *channel_contents_ptr++ = EXG_ADS1292R_1_CH1_16BIT;
-         *channel_contents_ptr++ = EXG_ADS1292R_1_CH2_16BIT;
-         nbr_spi_chans += 3;
-         sensing.ptr.exg1 = sensing.dataLen;
-         sensing.dataLen += 5;
-      }
-      if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT) {
-         *channel_contents_ptr++ = EXG_ADS1292R_2_STATUS;
-         *channel_contents_ptr++ = EXG_ADS1292R_2_CH1_24BIT;
-         *channel_contents_ptr++ = EXG_ADS1292R_2_CH2_24BIT;
-         nbr_spi_chans += 3;
-         S4Ram_storedConfigSetByte(NV_SENSORS2, S4Ram_storedConfigGetByte(NV_SENSORS2) & ~SENSOR_EXG2_16BIT);
-         sensing.ptr.exg2 = sensing.dataLen;
-         sensing.dataLen += 7;
-      } else if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT) {
-         *channel_contents_ptr++ = EXG_ADS1292R_2_STATUS;
-         *channel_contents_ptr++ = EXG_ADS1292R_2_CH1_16BIT;
-         *channel_contents_ptr++ = EXG_ADS1292R_2_CH2_16BIT;
-         nbr_spi_chans += 3;
-         sensing.ptr.exg2 = sensing.dataLen;
-         sensing.dataLen += 5;
-      }
-   }
-   sensing.ccLen += nbr_spi_chans;
-   sensing.nbrDigiChans += nbr_spi_chans;
+void SPI_configureChannels()
+{
+  uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
+  uint8_t nbr_spi_chans = 0;
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+
+  //ExG (spi)
+  if (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
+      || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit)
+  {
+    if (configBytes->chEnExg1_24Bit)
+    {
+      *channel_contents_ptr++ = EXG_ADS1292R_1_STATUS;
+      *channel_contents_ptr++ = EXG_ADS1292R_1_CH1_24BIT;
+      *channel_contents_ptr++ = EXG_ADS1292R_1_CH2_24BIT;
+      nbr_spi_chans += 3;
+      configBytes->chEnExg1_16Bit = 0;
+      sensing.ptr.exg1 = sensing.dataLen;
+      sensing.dataLen += 7;
+    }
+    else if (configBytes->chEnExg1_16Bit)
+    {
+      *channel_contents_ptr++ = EXG_ADS1292R_1_STATUS;
+      *channel_contents_ptr++ = EXG_ADS1292R_1_CH1_16BIT;
+      *channel_contents_ptr++ = EXG_ADS1292R_1_CH2_16BIT;
+      nbr_spi_chans += 3;
+      sensing.ptr.exg1 = sensing.dataLen;
+      sensing.dataLen += 5;
+    }
+    if (configBytes->chEnExg2_24Bit)
+    {
+      *channel_contents_ptr++ = EXG_ADS1292R_2_STATUS;
+      *channel_contents_ptr++ = EXG_ADS1292R_2_CH1_24BIT;
+      *channel_contents_ptr++ = EXG_ADS1292R_2_CH2_24BIT;
+      nbr_spi_chans += 3;
+      configBytes->chEnExg2_16Bit = 0;
+      sensing.ptr.exg2 = sensing.dataLen;
+      sensing.dataLen += 7;
+    }
+    else if (configBytes->chEnExg2_16Bit)
+    {
+      *channel_contents_ptr++ = EXG_ADS1292R_2_STATUS;
+      *channel_contents_ptr++ = EXG_ADS1292R_2_CH1_16BIT;
+      *channel_contents_ptr++ = EXG_ADS1292R_2_CH2_16BIT;
+      nbr_spi_chans += 3;
+      sensing.ptr.exg2 = sensing.dataLen;
+      sensing.dataLen += 5;
+    }
+  }
+  sensing.ccLen += nbr_spi_chans;
+  sensing.nbrDigiChans += nbr_spi_chans;
 }
-void SPI_startSensing(){
-   static uint8_t temp_exg_buf[11];
-   //ExG (SPI)
-   if ((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT) ||
-       (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT) ||
-       (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT) ||
-       (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT)) {
-      EXG_init(hspiExg);
-      if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT ||
-          S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT) {
-         S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_1_CONFIG1, 10);
-         EXG_writeRegs(0, ADS1292R_CONFIG1, 10, temp_exg_buf);
-         EXG_readRegs(0, 0, 11, temp_exg_buf);// can read back to check if write is done successfully
-         __NOP();
-         __NOP();
-         __NOP();
-      }
-      if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT ||
-          S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT) {
-         HAL_Delay(100);   //100ms
-         EXG_setRdatac(1, 0);
-         S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_2_CONFIG1, 10);
-         EXG_writeRegs(1, ADS1292R_CONFIG1, 10, temp_exg_buf);
-         EXG_readRegs(1, 0, 11, temp_exg_buf);
-         EXG_enableChip2(1);
-         __NOP();
-         __NOP();
-         __NOP();
-      }
-      //probably turning on internal reference, so wait for it to settle
+
+void SPI_startSensing()
+{
+  static uint8_t temp_exg_buf[11];
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+
+  //ExG (SPI)
+  if (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
+      || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit)
+  {
+    EXG_init(hspiExg);
+    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+    {
+      S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_1_CONFIG1, 10);
+      EXG_writeRegs(0, ADS1292R_CONFIG1, 10, temp_exg_buf);
+      EXG_readRegs(0, 0, 11, temp_exg_buf); // can read back to check if write is done successfully
+      __NOP();
+      __NOP();
+      __NOP();
+    }
+    if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+    {
       HAL_Delay(100);   //100ms
+      EXG_setRdatac(1, 0);
+      S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_2_CONFIG1, 10);
+      EXG_writeRegs(1, ADS1292R_CONFIG1, 10, temp_exg_buf);
+      EXG_readRegs(1, 0, 11, temp_exg_buf);
+      EXG_enableChip2(1);
+      __NOP();
+      __NOP();
+      __NOP();
+    }
+    //probably turning on internal reference, so wait for it to settle
+    HAL_Delay(100);   //100ms
 
-      //probably setting the PGA gain so cancel the channel offset
-      if (((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT) ||
-           (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT)) &&
-           (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_1_RESP2) & 0x80)) {
-         EXG_offsetCal(0);
-      }
-      if (((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT) ||
-           (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT)) &&
-           (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_2_RESP2) & 0x80)) {
-         EXG_offsetCal(1);
-      }
+    //probably setting the PGA gain so cancel the channel offset
+    if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+        && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_1_RESP2) & 0x80))
+    {
+      EXG_offsetCal(0);
+    }
+    if ((configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+        && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_2_RESP2) & 0x80))
+    {
+      EXG_offsetCal(1);
+    }
 
-      if (((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT) ||
-           (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT)) &&
-          ((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT) ||
-           (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT))) {
-         EXG_start(2);
-      } else if ((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT) ||
-                 (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT)) {
-         EXG_start(0);
-      } else {
-         EXG_start(1);
-      }
-   }
+    if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+        && (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit))
+    {
+      EXG_start(2);
+    }
+    else if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+    {
+      EXG_start(0);
+    }
+    else
+    {
+      EXG_start(1);
+    }
+  }
 }
+
 //void SPI_startSensing(){
 //   //ExG (SPI)
-//   if ((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT) ||
-//       (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT) ||
-//       (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT) ||
-//       (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT)) {
+//   if ((configBytes->chEnExg1_24Bit) ||
+//       (configBytes->chEnExg2_24Bit) ||
+//       (configBytes->chEnExg1_16Bit) ||
+//       (configBytes->chEnExg2_16Bit)) {
 //      EXG_init(hspiExg);
-//      if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT ||
-//          S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT) {
+//      if (configBytes->chEnExg1_24Bit ||
+//          configBytes->chEnExg1_16Bit) {
 //         S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_1_CONFIG1, 10);
 //         EXG_writeRegs(0, ADS1292R_CONFIG1, 10, temp_exg_buf);
 //         EXG_readRegs(0, 0, 11, temp_exg_buf);// can read back to check if write is done successfully
@@ -568,8 +587,8 @@ void SPI_startSensing(){
 //         EXG_start(0);
 //      }
 //      HAL_Delay(100);   //100ms
-//      if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT ||
-//          S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT) {
+//      if (configBytes->chEnExg2_24Bit ||
+//          configBytes->chEnExg2_16Bit) {
 //         EXG_setRdatac(1, 0);
 //         S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_2_CONFIG1, 10);
 //         EXG_writeRegs(1, ADS1292R_CONFIG1, 10, temp_exg_buf);
@@ -593,30 +612,28 @@ void SPI_startSensing(){
 //}
 void SPI_pollSensors(){
    //exg
-   if ((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT) ||
-       (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT)) {
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+   if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit) {
       EXG_readData(0, 0, sensing.dataBuf + sensing.ptr.exg1);
    }
-   if ((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT) ||
-       (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT)) {
+   if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit) {
       EXG_readData(1, 0, sensing.dataBuf + sensing.ptr.exg2);
    }
 }
 void SPI_stopSensing(){
 //   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 //   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
-   if((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT) ||
-      (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT)) {
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+   if(configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit) {
       EXG_stop(1);     //probably not needed
    }
-   if((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT) ||
-      (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT)) {
+   if(configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit) {
       EXG_stop(0);     //probably not needed
    }
-//   if((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG1_24BIT) ||
-//      (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_EXG2_24BIT) ||
-//      (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG1_16BIT) ||
-//      (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_EXG2_16BIT)) {
+//   if(configBytes->chEnExg1_24Bit
+//      || configBytes->chEnExg2_24Bit
+//      || configBytes->chEnExg1_16Bit
+//      || configBytes->chEnExg2_16Bit) {
       EXG_powerOff();
 //   }
    //HAL_SPI_MspDeInit(hspiExg);//this may save .2-.3 mA?

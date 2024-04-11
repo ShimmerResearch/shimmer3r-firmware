@@ -153,6 +153,7 @@ void Init() {
    btCommsProtocolInit(setTaskNewBtCmdToProcess);
  //  btFactoryResetViaFw();
    btInitialise();
+   updateBtVer();
 #elif defined(SHIMMER4_SDK)
    BtUart_init();
 #endif

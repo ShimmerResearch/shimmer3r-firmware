@@ -135,8 +135,7 @@ void S4Sens_startSensing(void) {
       S4Sens_stepInit();      
       S4Sens_configureChannels();
 
-      uint16_t sampling_rate;   
-      S4Ram_storedConfigGet((uint8_t *)&sampling_rate, NV_SAMPLING_RATE, 2);
+      uint16_t sampling_rate = S4Ram_getStoredConfig()->samplingRateTicks;
       sensing.freq = 32768.0 / sampling_rate;
       if(sensing.freq>4096){// Please don't go too fast, Thx, Best Regards.
          stat.isConfiguring = 0;

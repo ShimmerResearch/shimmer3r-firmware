@@ -265,7 +265,7 @@ I2C_HandleTypeDef * I2C_getHandlerBatt(void){
 void I2C_readBatt(void){
    static uint16_t cnt = 0;
 #if USE_I2C_VBATT_REPORT
-   if(stat.isSensing && (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_STC3100)){
+   if(stat.isSensing && S4Ram_getStoredConfig()->chEnStc3100){
 
    } else if(i2c_batt_report_interval == 0){
 
@@ -298,9 +298,10 @@ void I2cSens_configureChannels(void){
    uint8_t *channel_contents_ptr = sensing.cc+sensing.ccLen;
    i2cSens.sensorLen = i2cSens.sensorCnt = 0;
    uint8_t nbr_i2c1_chans = 0;
+   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
    //Digi Gyro (MPU9250)
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_MPU9250_GYRO) {
+   if (configBytes->chEnGyro) {
       *channel_contents_ptr++ = X_MPU9250_GYRO;
       *channel_contents_ptr++ = Y_MPU9250_GYRO;
       *channel_contents_ptr++ = Z_MPU9250_GYRO;
@@ -310,7 +311,7 @@ void I2cSens_configureChannels(void){
       i2cSens.sensorList[i2cSens.sensorLen++] = I2C_MPU9250_GYRO;
    }
    //Digi Accel (LSM303DLHC)
-   if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_LSM303DLHC_ACCEL) {
+   if (configBytes->chEnWrAccel) {
       *channel_contents_ptr++ = X_LSM303DLHC_ACCEL;
       *channel_contents_ptr++ = Y_LSM303DLHC_ACCEL;
       *channel_contents_ptr++ = Z_LSM303DLHC_ACCEL;
@@ -320,7 +321,7 @@ void I2cSens_configureChannels(void){
       i2cSens.sensorList[i2cSens.sensorLen++] = I2C_LSM303DLHC_ACCEL;
    }
    //Mag (LSM303DLHC)
-   if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_LSM303DLHC_MAG) {
+   if (configBytes->chEnMag) {
       *channel_contents_ptr++ = X_LSM303DLHC_MAG;
       *channel_contents_ptr++ = Z_LSM303DLHC_MAG;
       *channel_contents_ptr++ = Y_LSM303DLHC_MAG;
@@ -330,7 +331,7 @@ void I2cSens_configureChannels(void){
       i2cSens.sensorList[i2cSens.sensorLen++] = I2C_LSM303DLHC_MAG;
    }
    //Digi Accel (MPU9250)
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_MPU9250_ACCEL) {
+   if (configBytes->chEnAltAccel) {
       *channel_contents_ptr++ = X_MPU9250_ACCEL;
       *channel_contents_ptr++ = Y_MPU9250_ACCEL;
       *channel_contents_ptr++ = Z_MPU9250_ACCEL;
@@ -340,7 +341,7 @@ void I2cSens_configureChannels(void){
       i2cSens.sensorList[i2cSens.sensorLen++] = I2C_MPU9250_ACCEL;
    }
    //Digi Mag (MPU9250)
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_MPU9250_MAG) {
+   if (configBytes->chEnAltMag) {
       *channel_contents_ptr++ = X_MPU9250_MAG;
       *channel_contents_ptr++ = Y_MPU9250_MAG;
       *channel_contents_ptr++ = Z_MPU9250_MAG;
@@ -352,7 +353,7 @@ void I2cSens_configureChannels(void){
 
 
    // Temp & Pressure sensor (BMP280)
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_BMP180_PRESSURE) {
+   if (configBytes->chEnPressureAndTemperature) {
       *channel_contents_ptr++ = BMP180_TEMP;
       *channel_contents_ptr++ = BMP180_PRESSURE;
       nbr_i2c1_chans += 2; //TEMP & PRES, ON/OFF together
@@ -376,7 +377,7 @@ void I2cBatt_configureChannels(void){
    uint8_t nbr_i2c_batt_chans = 0;
    i2cBatt.sensorLen = i2cBatt.sensorCnt = 0;
    //Digi Battery IC (STC3100)
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_STC3100) {
+   if (S4Ram_getStoredConfig()->chEnStc3100) {
       // All 5 channels - charge, counter, current, voltage, temperature
       *channel_contents_ptr++ = STC3100_CH_1;
       *channel_contents_ptr++ = STC3100_CH_2;
@@ -394,6 +395,8 @@ void I2cBatt_configureChannels(void){
 #endif
 
 void I2C_startSensing(void){
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+
    memset((uint8_t*)&i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
 
    if ((0 != i2cSens.sensorLen) && (HAL_GPIO_ReadPin(SW_I2C2_GPIO_Port, SW_I2C2_Pin) == GPIO_PIN_RESET)) {
@@ -403,46 +406,48 @@ void I2C_startSensing(void){
    }
 
 #if defined(SHIMMER4_SDK)
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_STC3100) {
+   if (configBytes->chEnStc3100) {
       STC3100_wake(1);
    }
 #endif
 
-   if ((S4Ram_storedConfigGetByte(NV_SENSORS0)&SENSOR_MPU9250_GYRO) ||
-         (S4Ram_storedConfigGetByte(NV_SENSORS2)&SENSOR_MPU9250_ACCEL) ||
-         (S4Ram_storedConfigGetByte(NV_SENSORS2)&SENSOR_MPU9250_MAG)) {
+   if (configBytes->chEnGyro
+       || configBytes->chEnAltAccel
+       || configBytes->chEnAltMag) {
       MPU9250_init(hi2cSensor);
-      if ((S4Ram_storedConfigGetByte(NV_SENSORS0)&SENSOR_MPU9250_GYRO) ||
-            (S4Ram_storedConfigGetByte(NV_SENSORS2)&SENSOR_MPU9250_ACCEL)) {
+      if (configBytes->chEnGyro || configBytes->chEnAltAccel) {
          MPU9250_wake(1);
-         MPU9250_setSamplingRate(S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE1));
+         MPU9250_setSamplingRate(configBytes->gyroRate);
       }
-      if (S4Ram_storedConfigGetByte(NV_SENSORS0)&SENSOR_MPU9250_GYRO) {
-         MPU9250_setGyroSensitivity(S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE2) & 0x03); //This needs to go after the wake?
+      if (configBytes->chEnGyro) {
+        //This needs to go after the wake?
+         MPU9250_setGyroSensitivity(configBytes->gyroRange);
       }
-      if (S4Ram_storedConfigGetByte(NV_SENSORS2)&SENSOR_MPU9250_ACCEL) {
-         MPU9250_setAccelRange((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0xC0) >> 6);
+      if (configBytes->chEnAltAccel) {
+         MPU9250_setAccelRange(configBytes->altAccelRange);
       }
-      if (S4Ram_storedConfigGetByte(NV_SENSORS2)&SENSOR_MPU9250_MAG) {
+      if (configBytes->chEnAltMag) {
          MPU9250MagSetup();
       }
    }
 
-   if ((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_LSM303DLHC_MAG) ||
-       (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_LSM303DLHC_ACCEL)) {
+   if (configBytes->chEnMag || configBytes->chEnWrAccel) {
       LSM303DLHC_init(hi2cSensor);
-      if (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_LSM303DLHC_ACCEL) {
-         LSM303DLHC_accelInit(((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE0) & 0xF0) >> 4), //sampling rate
-                              ((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE0) & 0x0C) >> 2), //range
-                              ((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE0) & 0x02) >> 1), //low power mode
-                              ( S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE0) & 0x01));    //high resolution mode
+      if (configBytes->chEnWrAccel)
+      {
+         LSM303DLHC_accelInit(configBytes->wrAccelRate, //sampling rate
+             configBytes->wrAccelRange, //range
+             configBytes->wrAccelLPM, //low power mode
+             configBytes->wrAccelHRM);    //high resolution mode
       }
-      if (S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_LSM303DLHC_MAG)
-         LSM303DLHC_magInit(((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE2) & 0x1C) >> 2), //sampling rate
-                            ((S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE2) & 0xE0) >> 5)); //gain
+      if (configBytes->chEnMag)
+      {
+        LSM303DLHC_magInit(configBytes->magRate, //sampling rate
+            configBytes->magRange); //gain
+      }
    }
 
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_BMP180_PRESSURE) {
+   if (configBytes->chEnPressureAndTemperature) {
 #if USE_BMPX80 == 1
       BMP180Setup();
 #else //USE_BMPX80 == 2
@@ -463,12 +468,12 @@ void I2C_stopSensing(void){
    //HAL_I2C_MspDeInit(hi2cBattery);//this may save .2-.3 mA?
 }
 void I2cSens_stopSensing(void){
-   if ((S4Ram_storedConfigGetByte(NV_SENSORS0)&SENSOR_MPU9250_GYRO) ||
-         (S4Ram_storedConfigGetByte(NV_SENSORS2)&SENSOR_MPU9250_ACCEL)) {
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+
+   if (configBytes->chEnGyro || configBytes->chEnAltAccel) {
       MPU9250_wake(0);
    }
-   if ((S4Ram_storedConfigGetByte(NV_SENSORS0) & SENSOR_LSM303DLHC_MAG) ||
-       (S4Ram_storedConfigGetByte(NV_SENSORS1) & SENSOR_LSM303DLHC_ACCEL)) {
+   if (configBytes->chEnMag || configBytes->chEnWrAccel) {
       LSM303DLHC_sleep();
    }
    HAL_Delay(10);
@@ -477,7 +482,7 @@ void I2cSens_stopSensing(void){
 
 #if defined(SHIMMER4_SDK)
 void I2cBatt_stopSensing(void){
-   if (S4Ram_storedConfigGetByte(NV_SENSORS2) & SENSOR_STC3100) {
+   if (S4Ram_getStoredConfig()->chEnStc3100) {
       STC3100_wake(0);
    }
 }
@@ -578,7 +583,7 @@ void BMP180Setup(void) {
    BMP180_init(hi2cSensor);
 
    sensorBmp180.en = 1;
-   sensorBmp180.oss = (S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & BMP180_PRESSURE_RESOLUTION) >> 4;
+   sensorBmp180.oss = S4Ram_getStoredConfig()->pressurePrecision;
    switch (sensorBmp180.oss) {
    case 0: sensorBmp180.preSampleClkInterval = 45; break;
    case 1: sensorBmp180.preSampleClkInterval = 75; break;
@@ -653,7 +658,7 @@ void BMP280Setup(void) {
    uint8_t val;
    sensorBmp280.en = 1;
    // use values 0,1,2,3 to represent mode 0,2,3,4. mode 1 abandoned
-   val = (S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & BMP180_PRESSURE_RESOLUTION) >> 4;
+   val = S4Ram_getStoredConfig()->pressurePrecision;
    val = 0;
    bmp280.working_mode = (val == 0) ? 0 : val + 1;
    bmp280.dev_addr = BMP280_I2C_ADDRESS1 << 1;

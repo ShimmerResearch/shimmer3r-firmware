@@ -58,7 +58,7 @@ uint8_t *gArgsPtr;
 volatile char btVerStrResponse[BT_VER_RESPONSE_LARGEST+1U]; /* +1 to always have a null char */
 #else
 //TODO decide on size
-volatile char btVerStrResponse[10U+1U]; /* +1 to always have a null char */
+volatile char btVerStrResponse[100U];
 #endif
 
 uint8_t (*newBtCmdToProcess_cb)(void);
@@ -2422,6 +2422,13 @@ char * getBtVerStrPtr(void)
     return &btVerStrResponse[0];
 }
 
+void updateBtVer(void)
+{
+#if defined(SHIMMER3R)
+  BT_getCyw20820FirmwareVersionStr(&btVerStrResponse[0]);
+#endif
+}
+
 uint8_t isWaitingForArgs(void)
 {
   return btWaitingForArgs;
@@ -2846,11 +2853,9 @@ void BtUart_processCmd(void) {
     break;*/
    case SET_GSR_RANGE_COMMAND:
       if (btArgs[0] <= 4){
-         //storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3] & 0xF1) + ((btArgs[0] & 0x07) << 1);
-         S4Ram_storedConfigSetByte(NV_CONFIG_SETUP_BYTE3, (S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0xF1) + ((btArgs[0] & 0x07) << 1));
+         S4Ram_getStoredConfig()->gsrRange = btArgs[0] & 0x07;
       }else{
-         //toredConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3] & 0xF1) + (GSR_AUTORANGE << 1);
-         S4Ram_storedConfigSetByte(NV_CONFIG_SETUP_BYTE3, (S4Ram_storedConfigGetByte(NV_CONFIG_SETUP_BYTE3) & 0xF1) + (GSR_AUTORANGE << 1));
+         S4Ram_getStoredConfig()->gsrRange = GSR_AUTORANGE;
       }
       //InfoMem_write((void*)NV_CONFIG_SETUP_BYTE3, &storedConfig[NV_CONFIG_SETUP_BYTE3], 1);
       //InfoMem_update();
@@ -2864,12 +2869,10 @@ void BtUart_processCmd(void) {
    case SET_EXG_REGS_COMMAND:
       if (btArgs[0] < 2 && btArgs[1] < 10 && btArgs[2] < 11) {
          if (btArgs[0]) {
-            //memcpy((storedConfig + NV_EXG_ADS1292R_2_CONFIG1 + btArgs[1]), (btArgs + 3), btArgs[2]);
             S4Ram_storedConfigSet(&btArgs[3], NV_EXG_ADS1292R_2_CONFIG1 + btArgs[1], btArgs[2]);
             //InfoMem_update();
             //memcpy(sdHeadText + SDH_EXG_ADS1292R_2_CONFIG1, storedConfig + NV_EXG_ADS1292R_2_CONFIG1, btArgs[2]);
          } else {
-            //memcpy((storedConfig + NV_EXG_ADS1292R_1_CONFIG1 + btArgs[1]), (btArgs + 3), btArgs[2]);
             S4Ram_storedConfigSet(&btArgs[3], NV_EXG_ADS1292R_1_CONFIG1 + btArgs[1], btArgs[2]);
             //InfoMem_update();
             //memcpy(sdHeadText + SDH_EXG_ADS1292R_1_CONFIG1, storedConfig + NV_EXG_ADS1292R_1_CONFIG1, btArgs[2]);
@@ -3020,8 +3023,7 @@ void BtUart_processCmd(void) {
    case SET_RWC_COMMAND:
       memcpy((uint8_t*)(&temp64), btArgs, 8);// 64bits = 8bytes
       RTC_init(temp64);
-      //storedConfig[NV_SD_TRIAL_CONFIG0] |= SDH_RTC_SET_BY_BT;
-      S4Ram_storedConfigSetByte(NV_SD_TRIAL_CONFIG0, S4Ram_storedConfigGetByte(NV_SD_TRIAL_CONFIG0) | SDH_RTC_SET_BY_BT);
+      S4Ram_getStoredConfig()->rtcSetByBt = 1;
       //InfoMem_update();
       break;
    default:;
@@ -3313,9 +3315,9 @@ void BtUart_sendRsp(void) {
 #if IS_CONNECTED_EEPROM
          CAT24C16_read(btDcMemOffset, bt_tx_data + packet_length, btDcMemLength);
 #else
-         bt_tx_data[packet_length+0] = 31;//0xFF;//47;
-         bt_tx_data[packet_length+1] = 9;//0xFF;//1;
-         bt_tx_data[packet_length+2] = 0;//0xFF;//0;
+         bt_tx_data[packet_length+0] = EXP_BRD_ID_MAJOR;
+         bt_tx_data[packet_length+1] = EXP_BRD_ID_MINOR;
+         bt_tx_data[packet_length+2] = EXP_BRD_ID_INTERNAL;
 #endif
          packet_length += btDcMemLength;
          dcIdBtRsp = 0;
