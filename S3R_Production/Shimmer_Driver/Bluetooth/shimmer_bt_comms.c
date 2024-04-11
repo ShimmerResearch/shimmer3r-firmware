@@ -3099,10 +3099,9 @@ void BtUart_sendRsp(void) {
       } else if (dockStatusBtRsp) {
          *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
          *(bt_tx_data + packet_length++) = STATUS_RESPONSE;
-//         *(bt_tx_data + packet_length++) = ((isStreaming & 0x01) << 4) +
-//                                         ((isLogging & 0x01) << 3) + ((0 & 0x01) << 2) +
-//                                         ((sensing.en & 0x01) << 1) + (docked & 0x01);
-         *(bt_tx_data + packet_length++) = 0;
+         *(bt_tx_data + packet_length++) = ((stat.isStreaming & 0x01) << 4) +
+                                         ((stat.isLogging & 0x01) << 3) + ((0 & 0x01) << 2) +
+                                         ((stat.isSensing & 0x01) << 1) + (stat.isDocked & 0x01);
          dockStatusBtRsp = 0;
 #if defined(SHIMMER4_SDK)
       } else if (i2cvBattBtRsp) {
