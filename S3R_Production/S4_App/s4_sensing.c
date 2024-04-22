@@ -49,7 +49,11 @@ ADCTypeDef *sensing_adc;
 I2C_TypeDef *sensing_i2c;
 I2C_TypeDef *sensing_i2c_batt;
 
+#if defined(SHIMMER3R)
+uint8_t expectedCbFlags = 0, currentCbFlags = 0;
+#elif defined(SHIMMER4_SDK)
 uint32_t temp_cnt1, temp_cnt2, temp_cnt3, temp_cnt4;
+#endif
 
 //I2CBatteryTypeDef *sensing_i2c_batt;
 
@@ -299,7 +303,11 @@ void S4Sens_gatherData(void) {
       sensing.dataBuf[sensing.ptr.ts + 2] = (sensing.latestTs >> 16) & 0xff;
 
       //Task_set(TASK_STREAMDATA);//
+#if defined(SHIMMER3R)
+      sensing_start();
+#elif defined(SHIMMER4_SDK)
       S4Sens_step1Start();
+#endif
       
       //S4Sens_streamData();
 
@@ -308,17 +316,68 @@ void S4Sens_gatherData(void) {
 }
 
 void S4Sens_stepInit(void){
-   S4_ADC_gatherDataCb(S4Sens_step2Start);
-//   I2C_gatherDataInit(S4Sens_step3Start);
-//   I2C2_gatherDataInit(S4Sens_step4Start);
-   I2cSens_gatherDataCb(S4Sens_step3Start);
-#if defined(SHIMMER4_SDK)
-   I2cBatt_gatherDataCb(S4Sens_step4Start);
+#if defined(SHIMMER3R)
+  S4_ADC_gatherDataCb(sensing_adcCompleteCb);
+  I2cSens_gatherDataCb(sensing_i2cCompleteCb);
+  SPI_gatherDataCb(sensing_spiCompleteCb);
+
+  expectedCbFlags = 0;
+  if (areAdcChannelsEnabled())
+  {
+    expectedCbFlags |= STAT_PERI_ADC;
+  }
+  if (areI2cChannelsEnabled())
+  {
+    expectedCbFlags |= STAT_PERI_I2C_SENS;
+  }
+  if (areSpiChannelsEnabled())
+  {
+    expectedCbFlags |= STAT_PERI_SPI_SENS;
+  }
+
+#elif defined(SHIMMER4_SDK)
+  S4_ADC_gatherDataCb(S4Sens_step2Start);
+//  I2C_gatherDataInit(S4Sens_step3Start);
+//  I2C2_gatherDataInit(S4Sens_step4Start);
+  I2cSens_gatherDataCb(S4Sens_step3Start);
+  I2cBatt_gatherDataCb(S4Sens_step4Start);
+  SPI_gatherDataCb(S4Sens_step5Start);
+  temp_cnt1 = temp_cnt2 = temp_cnt3 = temp_cnt4 = 0;
 #endif
-   SPI_gatherDataCb(S4Sens_step5Start);
-   temp_cnt1 = temp_cnt2 = temp_cnt3 = temp_cnt4 = 0;
 }
 
+#if defined(SHIMMER3R)
+void sensing_start(void)
+{
+  currentCbFlags = 0;
+  S4Sens_streamData();
+}
+
+void sensing_adcCompleteCb(void)
+{
+  sensing_stageCompleteCb(STAT_PERI_ADC);
+}
+
+void sensing_i2cCompleteCb(void)
+{
+  sensing_stageCompleteCb(STAT_PERI_I2C_SENS);
+}
+
+void sensing_spiCompleteCb(void)
+{
+  sensing_stageCompleteCb(STAT_PERI_SPI_SENS);
+}
+
+void sensing_stageCompleteCb(uint8_t stage)
+{
+  currentCbFlags |= stage;
+  if (currentCbFlags == expectedCbFlags)
+  {
+    //TODO
+  }
+}
+
+#elif defined(SHIMMER4_SDK)
 void S4Sens_step1Start(void){  
    PeriStat_Set(STAT_PERI_ADC | STAT_PERI_I2C_SENS | STAT_PERI_I2C_BATT | STAT_PERI_SPI_SENS);
    S4Sens_streamData();
@@ -329,6 +388,7 @@ void S4Sens_step1Start(void){
       __NOP();
    }
 }
+
 void S4Sens_step2Start(void){  
    PeriStat_Clr(STAT_PERI_ADC);
    temp_cnt2++;
@@ -338,9 +398,7 @@ void S4Sens_step2Start(void){
 void S4Sens_step3Start(void){  
    PeriStat_Clr(STAT_PERI_I2C_SENS);
    temp_cnt3++;
-#if defined(SHIMMER4_SDK)
    I2cBatt_gatherDataStart();
-#endif
 }
 void S4Sens_step4Start(void){  
    PeriStat_Clr(STAT_PERI_I2C_BATT);
@@ -353,17 +411,19 @@ void S4Sens_step5Start(void){
    //S4Sens_streamData();
    S4Sens_stepDone();
 }
-void S4Sens_stepDone(void)  {  
+#endif
+void S4Sens_stepDone(void)
+{
+#if defined(SHIMMER3R)
+
+#endif
 }
    
+#if defined(SHIMMER4_SDK)
 //void S4Sens_step1End(void){S4Sens_step2Start();}
 //void S4Sens_step2End(void){S4Sens_step3Start();}
 //void S4Sens_step3End(void){S4Sens_step4Start();}
 //void S4Sens_step4End(void){S4Sens_step5Start();}
 //void S4Sens_step5End(void){S4Sens_step6Start();}
 //void S4Sens_step6End(void){}
-   
-
-
-
-
+#endif

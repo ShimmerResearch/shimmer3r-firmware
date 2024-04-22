@@ -490,8 +490,9 @@ typedef union
 
     uint8_t unusedIdx382;
     uint8_t unusedIdx383;
+
+    uint8_t padding[128];
   };
-  uint8_t padding[128];
 } gConfigBytes;
 
 void S4Ram_init(void);

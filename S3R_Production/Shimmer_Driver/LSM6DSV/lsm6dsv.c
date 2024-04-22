@@ -77,6 +77,10 @@
 
 #elif defined(SHIMMER3R)
 #define SENSOR_BUS hspi1
+
+#define CS_PORT CS_LSM6DSV_GPIO_Port
+#define CS_PIN CS_LSM6DSV_Pin
+
 #endif
 
 
@@ -392,10 +396,10 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
 #elif defined(SPC584B_DIS)
   i2c_lld_write(handle,  LSM6DSV_I2C_ADD_H & 0xFE, reg, (uint8_t*) bufp, len);
 #elif defined(SHIMMER3R)
-  HAL_GPIO_WritePin(CS_LSM6DSV_GPIO_Port, CS_LSM6DSV_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
   HAL_SPI_Transmit(handle, (uint8_t*) bufp, len, 1000);
-  HAL_GPIO_WritePin(CS_LSM6DSV_GPIO_Port, CS_LSM6DSV_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 #endif
   return 0;
 }
@@ -426,10 +430,10 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
   i2c_lld_read(handle, LSM6DSV_I2C_ADD_H & 0xFE, reg, bufp, len);
 #elif defined(SHIMMER3R)
   reg |= 0x80;
-  HAL_GPIO_WritePin(CS_LSM6DSV_GPIO_Port, CS_LSM6DSV_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
   HAL_SPI_Receive(handle, bufp, len, 1000);
-  HAL_GPIO_WritePin(CS_LSM6DSV_GPIO_Port, CS_LSM6DSV_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 #endif
   return 0;
 }
@@ -503,4 +507,85 @@ void lsm6dsv_power_off(void)
 {
   set_power_spi1_bus(false, SPI1_CHIP_INDEX_LSM6DSV);
 }
+
+void lsm6dsv_SelectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
+}
+
+void lsm6dsv_UnselectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+}
+
+void lsm6dsv_config_accel(uint8_t rate, uint8_t range)
+{
+  //TODO if chip sampling rate is lower than Shimmer sampling, enable pin interrupt to only read data from chip when it's ready
+//  pin_int.drdy_xl = PROPERTY_ENABLE;
+//  lsm6dsv_pin_int1_route_set(&dev_ctx, &pin_int);
+
+  /* Set Output Data Rate.
+   * Selected data rate have to be equal or greater with respect
+   * with MLC data rate.
+   */
+  lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_120Hz);
+  /* Set full scale */
+  lsm6dsv_xl_full_scale_set(&dev_ctx, (lsm6dsv_xl_full_scale_t) range);
+
+//  /* Configure filtering chain */
+//  filt_settling_mask.drdy = PROPERTY_ENABLE;
+//  filt_settling_mask.irq_xl = PROPERTY_ENABLE;
+//  filt_settling_mask.irq_g = PROPERTY_ENABLE;
+//  lsm6dsv_filt_settling_mask_set(&dev_ctx, filt_settling_mask);
+//  lsm6dsv_filt_xl_lp2_set(&dev_ctx, PROPERTY_ENABLE);
+//  lsm6dsv_filt_xl_lp2_bandwidth_set(&dev_ctx, LSM6DSV_XL_STRONG);
+}
+
+void lsm6dsv_config_gyro(uint8_t rate, uint8_t range)
+{
+//  lsm6dsv_flag_data_ready_get(&dev_ctx, &drdy);
+}
+
+void lsm6dsv_status_get(void)
+{
+  lsm6dsv_data_ready_t drdy;
+  lsm6dsv_flag_data_ready_get(&dev_ctx, &drdy);
+}
+
+HAL_StatusTypeDef lsm6dsv_accel_get(uint8_t *buf)
+{
+  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_A | 0x80, 0, 0, 0, 0, 0, 0 };
+  HAL_StatusTypeDef ret;
+
+  lsm6dsv_SelectDevice();
+  ret = HAL_SPI_TransmitReceive_DMA(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
+//  ret = HAL_SPI_TransmitReceive(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff), 1000);
+
+//  platform_read(dev_ctx.handle, LSM6DSV_OUTX_L_A, buf, 6);
+
+  return ret;
+}
+
+HAL_StatusTypeDef lsm6dsv_gyro_get(uint8_t *buf)
+{
+  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_G | 0x80, 0, 0, 0, 0, 0, 0 };
+  HAL_StatusTypeDef ret;
+  ret = HAL_SPI_TransmitReceive_DMA(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
+  return ret;
+}
+
+void lsm6dsv_restore_default_config(void)
+{
+  lsm6dsv_reset_t rst;
+
+  /* Restore default configuration */
+  lsm6dsv_reset_set(&dev_ctx, LSM6DSV_RESTORE_CTRL_REGS);
+  do {
+    lsm6dsv_reset_get(&dev_ctx, &rst);
+  } while (rst != LSM6DSV_READY);
+
+  /* Enable Block Data Update */
+  lsm6dsv_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
+}
+
 #endif

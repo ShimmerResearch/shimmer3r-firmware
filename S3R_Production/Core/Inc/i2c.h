@@ -132,6 +132,7 @@ typedef struct {//mpu9250Mag
 } MPU9250MagTypeDef;
 
 typedef struct {
+#if defined(SHIMMER4_SDK)
    uint8_t lsm303AccelBuf[6];
    uint8_t lsm303MagBuf[6];
    uint8_t mpu9250AccelBuf[6];
@@ -139,6 +140,7 @@ typedef struct {
    uint8_t mpu9250GyroBuf[6];
 //   uint8_t tempBuf[6]; // temp and pres don't need buf
 //   uint8_t presBuf[6];
+#endif
 } i2cReadBufTypeDef;
 
 /* USER CODE END Private defines */
@@ -149,6 +151,7 @@ void MX_I2C2_Init(void);
 
 void I2C_init(void);
 uint8_t I2C_test(void);
+void set_power_i2c_main_bus(uint8_t state);
 void I2C_scan(I2C_HandleTypeDef *hi2c);
 I2C_HandleTypeDef * I2C_getHandlerSensor(void);
 #if defined(SHIMMER4_SDK)
@@ -202,6 +205,7 @@ void I2cBatt_stopSensing(void);
 #endif
 
 
+#if defined(SHIMMER4_SDK)
 void BMP180Setup(void);
 void BMP180Sample(void);
 void BMP180TxDoneHandler(void);
@@ -228,14 +232,16 @@ void Lsm303dlhcAccelRxDoneHandler(void);
 void Lsm303dlhcMagSample(void);
 void Lsm303dlhcMagTxDoneHandler(void);
 void Lsm303dlhcMagRxDoneHandler(void);
-#if defined(SHIMMER4_SDK)
 void STC3100Sample(void);
 void STC3100BatteryTxDoneHandler(void);
 void STC3100BatteryRxDoneHandler(void);
 #endif
 
 void I2cSens_sensorNext(void);
-#if defined(SHIMMER4_SDK)
+
+#if defined(SHIMMER3R)
+bool areI2cChannelsEnabled(void);
+#elif defined(SHIMMER4_SDK)
 void I2cBatt_sensorNext(void);
 #endif
 

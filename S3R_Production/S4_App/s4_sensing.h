@@ -57,15 +57,17 @@
         
 typedef struct {//data ptr (offset)
    uint8_t ts;
-   uint8_t temp;
-   uint8_t pres;
-   uint8_t lsm303dlhcAccel;
-   uint8_t lsm303dlhcMag;
-   uint8_t mpu9250Gyro;
-   uint8_t mpu9250Accel;
-   uint8_t mpu9250Mag;
-   uint8_t analogAccel;
+   uint8_t temperature;
+   uint8_t pressure;
+   uint8_t accel2;  // "WR Accel"
+   uint8_t mag1;    // "Mag"
+   uint8_t gyro;
+   uint8_t accel3;  // "Alt Accel"
+   uint8_t mag2;    // "Alt Mag"
+   uint8_t accel1;  // "LN Accel"
+#if defined(SHIMMER4_SDK)
    uint8_t stc3100Batt;
+#endif
    uint8_t exg1;
    uint8_t exg2;
    uint8_t gsr;
@@ -129,11 +131,19 @@ void S4Sens_bufPoll(void);
 void S4Sens_gatherData(void);
 
 void S4Sens_stepInit(void);
+#if defined(SHIMMER3R)
+void sensing_start(void);
+void sensing_adcCompleteCb(void);
+void sensing_i2cCompleteCb(void);
+void sensing_spiCompleteCb(void);
+void sensing_stageCompleteCb(uint8_t stage);
+#elif defined(SHIMMER4_SDK)
 void S4Sens_step1Start(void);
 void S4Sens_step2Start(void);
 void S4Sens_step3Start(void);
 void S4Sens_step4Start(void);
 void S4Sens_step5Start(void);
+#endif
 void S4Sens_stepDone(void);
 
 #endif // S4_SENSING_H

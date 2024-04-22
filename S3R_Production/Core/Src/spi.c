@@ -22,17 +22,30 @@
 
 /* USER CODE BEGIN 0 */
 
+#if defined(SHIMMER3R)
+SPI_HandleTypeDef *hspiSensing1;
+SPI_HandleTypeDef *hspiSensing2;
+#endif
 SPI_HandleTypeDef *hspiExg;
 //static SENSINGTypeDef *pSensing;
-
-void (*SPI_gatherDataDone_cb)(void);
 
 #if defined(SHIMMER3R)
 bool spi1BusChipPwrFlags[SPI1_CHIP_QTY];
 bool spi2BusChipPwrFlags[SPI2_CHIP_QTY];
 bool spi3BusChipPwrFlags[SPI3_CHIP_QTY];
 
+spi1ReadBuf spi1Sens_buf;
+spi2ReadBuf spi2Sens_buf;
+spi3ReadBuf spi3Sens_buf;
+
+SPITypeDef spi1Sens;
+SPITypeDef spi2Sens;
+SPITypeDef spi3Sens;
+
+uint8_t expectedSpiBusCbFlags = 0, currentSpiBusCbFlags = 0;
 #endif
+
+void (*SPI_gatherDataDone_cb)(void);
 
 /* USER CODE END 0 */
 
@@ -41,6 +54,10 @@ SPI_HandleTypeDef hspi2;
 SPI_HandleTypeDef hspi3;
 DMA_HandleTypeDef handle_GPDMA1_Channel5;
 DMA_HandleTypeDef handle_GPDMA1_Channel4;
+DMA_HandleTypeDef handle_GPDMA1_Channel7;
+DMA_HandleTypeDef handle_GPDMA1_Channel6;
+DMA_HandleTypeDef handle_GPDMA1_Channel9;
+DMA_HandleTypeDef handle_GPDMA1_Channel8;
 
 /* SPI1 init function */
 void MX_SPI1_Init(void)
@@ -89,6 +106,15 @@ void MX_SPI1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SPI1_Init 2 */
+
+  HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI1_TxRxCpltCallback);
+  HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
+
+#if defined(SHIMMER3R)
+  lsm6dsv_driver_init();
+  adxl371_driver_init();
+  bmp390_driver_init();
+#endif
 
   /* USER CODE END SPI1_Init 2 */
 
@@ -141,6 +167,12 @@ void MX_SPI2_Init(void)
   }
   /* USER CODE BEGIN SPI2_Init 2 */
 
+  HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI2_TxRxCpltCallback);
+  HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
+
+  lsm303ah_driver_init();
+  lis3mdl_driver_init();
+
   /* USER CODE END SPI2_Init 2 */
 
 }
@@ -192,6 +224,15 @@ void MX_SPI3_Init(void)
   }
   /* USER CODE BEGIN SPI3_Init 2 */
 
+  //TODO
+//  HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI3_TxRxCpltCallback);
+  HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_COMPLETE_CB_ID, SPI3_TxCpltCallback);
+  HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_RX_COMPLETE_CB_ID, SPI3_RxCpltCallback);
+  HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
+
+  //TODO
+//  ads1292r_driver_init();
+
   /* USER CODE END SPI3_Init 2 */
 
 }
@@ -237,8 +278,8 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
     handle_GPDMA1_Channel5.Instance = GPDMA1_Channel5;
     handle_GPDMA1_Channel5.Init.Request = GPDMA1_REQUEST_SPI1_TX;
     handle_GPDMA1_Channel5.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
-    handle_GPDMA1_Channel5.Init.Direction = DMA_MEMORY_TO_PERIPH;
-    handle_GPDMA1_Channel5.Init.SrcInc = DMA_SINC_FIXED;
+    handle_GPDMA1_Channel5.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    handle_GPDMA1_Channel5.Init.SrcInc = DMA_SINC_INCREMENTED;
     handle_GPDMA1_Channel5.Init.DestInc = DMA_DINC_FIXED;
     handle_GPDMA1_Channel5.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
     handle_GPDMA1_Channel5.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
@@ -266,7 +307,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
     handle_GPDMA1_Channel4.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
     handle_GPDMA1_Channel4.Init.Direction = DMA_PERIPH_TO_MEMORY;
     handle_GPDMA1_Channel4.Init.SrcInc = DMA_SINC_FIXED;
-    handle_GPDMA1_Channel4.Init.DestInc = DMA_DINC_FIXED;
+    handle_GPDMA1_Channel4.Init.DestInc = DMA_DINC_INCREMENTED;
     handle_GPDMA1_Channel4.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
     handle_GPDMA1_Channel4.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
     handle_GPDMA1_Channel4.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
@@ -324,6 +365,61 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
     GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    /* SPI2 DMA Init */
+    /* GPDMA1_REQUEST_SPI2_TX Init */
+    handle_GPDMA1_Channel7.Instance = GPDMA1_Channel7;
+    handle_GPDMA1_Channel7.Init.Request = GPDMA1_REQUEST_SPI2_TX;
+    handle_GPDMA1_Channel7.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+    handle_GPDMA1_Channel7.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    handle_GPDMA1_Channel7.Init.SrcInc = DMA_SINC_INCREMENTED;
+    handle_GPDMA1_Channel7.Init.DestInc = DMA_DINC_FIXED;
+    handle_GPDMA1_Channel7.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel7.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel7.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
+    handle_GPDMA1_Channel7.Init.SrcBurstLength = 1;
+    handle_GPDMA1_Channel7.Init.DestBurstLength = 1;
+    handle_GPDMA1_Channel7.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel7.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+    handle_GPDMA1_Channel7.Init.Mode = DMA_NORMAL;
+    if (HAL_DMA_Init(&handle_GPDMA1_Channel7) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(spiHandle, hdmatx, handle_GPDMA1_Channel7);
+
+    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel7, DMA_CHANNEL_NPRIV) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* GPDMA1_REQUEST_SPI2_RX Init */
+    handle_GPDMA1_Channel6.Instance = GPDMA1_Channel6;
+    handle_GPDMA1_Channel6.Init.Request = GPDMA1_REQUEST_SPI2_RX;
+    handle_GPDMA1_Channel6.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+    handle_GPDMA1_Channel6.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    handle_GPDMA1_Channel6.Init.SrcInc = DMA_SINC_FIXED;
+    handle_GPDMA1_Channel6.Init.DestInc = DMA_DINC_INCREMENTED;
+    handle_GPDMA1_Channel6.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel6.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel6.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
+    handle_GPDMA1_Channel6.Init.SrcBurstLength = 1;
+    handle_GPDMA1_Channel6.Init.DestBurstLength = 1;
+    handle_GPDMA1_Channel6.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel6.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+    handle_GPDMA1_Channel6.Init.Mode = DMA_NORMAL;
+    if (HAL_DMA_Init(&handle_GPDMA1_Channel6) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(spiHandle, hdmarx, handle_GPDMA1_Channel6);
+
+    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel6, DMA_CHANNEL_NPRIV) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
     /* SPI2 interrupt Init */
     HAL_NVIC_SetPriority(SPI2_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(SPI2_IRQn);
@@ -362,6 +458,64 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
     GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    /* SPI3 DMA Init */
+    /* GPDMA1_REQUEST_SPI3_TX Init */
+    handle_GPDMA1_Channel9.Instance = GPDMA1_Channel9;
+    handle_GPDMA1_Channel9.Init.Request = GPDMA1_REQUEST_SPI3_TX;
+    handle_GPDMA1_Channel9.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+    handle_GPDMA1_Channel9.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    handle_GPDMA1_Channel9.Init.SrcInc = DMA_SINC_INCREMENTED;
+    handle_GPDMA1_Channel9.Init.DestInc = DMA_DINC_FIXED;
+    handle_GPDMA1_Channel9.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel9.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel9.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
+    handle_GPDMA1_Channel9.Init.SrcBurstLength = 1;
+    handle_GPDMA1_Channel9.Init.DestBurstLength = 1;
+    handle_GPDMA1_Channel9.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel9.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+    handle_GPDMA1_Channel9.Init.Mode = DMA_NORMAL;
+    if (HAL_DMA_Init(&handle_GPDMA1_Channel9) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(spiHandle, hdmatx, handle_GPDMA1_Channel9);
+
+    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel9, DMA_CHANNEL_NPRIV) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* GPDMA1_REQUEST_SPI3_RX Init */
+    handle_GPDMA1_Channel8.Instance = GPDMA1_Channel8;
+    handle_GPDMA1_Channel8.Init.Request = GPDMA1_REQUEST_SPI3_RX;
+    handle_GPDMA1_Channel8.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+    handle_GPDMA1_Channel8.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    handle_GPDMA1_Channel8.Init.SrcInc = DMA_SINC_FIXED;
+    handle_GPDMA1_Channel8.Init.DestInc = DMA_DINC_INCREMENTED;
+    handle_GPDMA1_Channel8.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel8.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel8.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
+    handle_GPDMA1_Channel8.Init.SrcBurstLength = 1;
+    handle_GPDMA1_Channel8.Init.DestBurstLength = 1;
+    handle_GPDMA1_Channel8.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel8.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+    handle_GPDMA1_Channel8.Init.Mode = DMA_NORMAL;
+    if (HAL_DMA_Init(&handle_GPDMA1_Channel8) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(spiHandle, hdmarx, handle_GPDMA1_Channel8);
+
+    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel8, DMA_CHANNEL_NPRIV) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* SPI3 interrupt Init */
+    HAL_NVIC_SetPriority(SPI3_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(SPI3_IRQn);
   /* USER CODE BEGIN SPI3_MspInit 1 */
 
   /* USER CODE END SPI3_MspInit 1 */
@@ -410,6 +564,10 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_13|GPIO_PIN_15);
 
+    /* SPI2 DMA DeInit */
+    HAL_DMA_DeInit(spiHandle->hdmatx);
+    HAL_DMA_DeInit(spiHandle->hdmarx);
+
     /* SPI2 interrupt Deinit */
     HAL_NVIC_DisableIRQ(SPI2_IRQn);
   /* USER CODE BEGIN SPI2_MspDeInit 1 */
@@ -431,6 +589,12 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5);
 
+    /* SPI3 DMA DeInit */
+    HAL_DMA_DeInit(spiHandle->hdmatx);
+    HAL_DMA_DeInit(spiHandle->hdmarx);
+
+    /* SPI3 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(SPI3_IRQn);
   /* USER CODE BEGIN SPI3_MspDeInit 1 */
 
   /* USER CODE END SPI3_MspDeInit 1 */
@@ -438,15 +602,28 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 }
 
 /* USER CODE BEGIN 1 */
-void SPI_init(void){
+
+void SPI_init(void)
+{
+#if defined(SHIMMER3R)
+  hspiSensing1 = &hspi1;
+  hspiSensing2 = &hspi2;
+  hspiExg = &hspi3;
+#elif defined(SHIMMER4_SDK)
    hspiExg = &hspi1;
    //pSensing = S4Sens_getSensing();
+#endif
 }
-uint8_t SPI_test(void){
-   uint8_t ret_val = 0;
-   EXG_init(hspiExg);
-   ret_val |= EXG_test();
-   return ret_val;
+
+uint8_t SPI_test(void)
+{
+  uint8_t ret_val = 0;
+#if defined(SHIMMER3R)
+  lsm6dsv_self_test();
+#endif
+  EXG_init(hspiExg);
+  ret_val |= EXG_test();
+  return ret_val;
 }
 
 void SPI_configureChannels()
@@ -455,51 +632,170 @@ void SPI_configureChannels()
   uint8_t nbr_spi_chans = 0;
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
-  //ExG (spi)
-  if (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
-      || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit)
+#if defined(SHIMMER3R)
+  memset((uint8_t*) &spi1Sens, 0, sizeof(spi1Sens));
+  memset((uint8_t*) &spi2Sens, 0, sizeof(spi2Sens));
+  memset((uint8_t*) &spi3Sens, 0, sizeof(spi3Sens));
+
+  spi1Sens.busId = SPI1_BUS_FLAG;
+  spi2Sens.busId = SPI2_BUS_FLAG;
+  spi3Sens.busId = SPI3_BUS_FLAG;
+
+  if (configBytes->chEnLnAccel)
   {
-    if (configBytes->chEnExg1_24Bit)
+    *channel_contents_ptr++ = X_ACCEL_1;
+    *channel_contents_ptr++ = Y_ACCEL_1;
+    *channel_contents_ptr++ = Z_ACCEL_1;
+    nbr_spi_chans += 3;
+    sensing.ptr.accel1 = sensing.dataLen;
+    sensing.dataLen += 6;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_LSM6DSV_ACCEL;
+  }
+
+  if (configBytes->chEnGyro)
+  {
+    *channel_contents_ptr++ = X_GYRO;
+    *channel_contents_ptr++ = Y_GYRO;
+    *channel_contents_ptr++ = Z_GYRO;
+    nbr_spi_chans += 3;
+    sensing.ptr.gyro = sensing.dataLen;
+    sensing.dataLen += 6;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_LSM6DSV_GYRO;
+  }
+
+  if (configBytes->chEnPressureAndTemperature)
+  {
+    *channel_contents_ptr++ = BMP_TEMPERATURE;
+    *channel_contents_ptr++ = BMP_PRESSURE;
+    nbr_spi_chans += 2; //TEMP & PRES, ON/OFF together
+    sensing.ptr.temperature = sensing.dataLen;
+    sensing.dataLen += 2;
+    sensing.ptr.pressure = sensing.dataLen;
+    sensing.dataLen += 3;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_BMP390_PRESSURE_TEMP;
+  }
+
+  if (configBytes->chEnAltAccel)
+  {
+    *channel_contents_ptr++ = X_ACCEL_3;
+    *channel_contents_ptr++ = Y_ACCEL_3;
+    *channel_contents_ptr++ = Z_ACCEL_3;
+    nbr_spi_chans += 3;
+    sensing.ptr.accel3 = sensing.dataLen;
+    sensing.dataLen += 6;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADXL371_ACCEL;
+  }
+
+  if (configBytes->chEnWrAccel)
+  {
+    *channel_contents_ptr++ = X_ACCEL_2;
+    *channel_contents_ptr++ = Y_ACCEL_2;
+    *channel_contents_ptr++ = Z_ACCEL_2;
+    nbr_spi_chans += 3;
+    sensing.ptr.accel2 = sensing.dataLen;
+    sensing.dataLen += 6;
+    spi2Sens.sensorList[spi2Sens.sensorLen++] = SPI2_LSM303AH_ACCEL;
+  }
+
+  if (configBytes->chEnMag)
+  {
+    *channel_contents_ptr++ = X_MAG_1;
+    *channel_contents_ptr++ = Z_MAG_1;
+    *channel_contents_ptr++ = Y_MAG_1;
+    nbr_spi_chans += 3;
+    sensing.ptr.mag1 = sensing.dataLen;
+    sensing.dataLen += 6;
+    spi2Sens.sensorList[spi2Sens.sensorLen++] = SPI2_LSM303AH_MAG;
+  }
+
+  if (configBytes->chEnAltMag)
+  {
+    *channel_contents_ptr++ = X_MAG_2;
+    *channel_contents_ptr++ = Y_MAG_2;
+    *channel_contents_ptr++ = Z_MAG_2;
+    nbr_spi_chans += 3;
+    sensing.ptr.mag2 = sensing.dataLen;
+    sensing.dataLen += 6;
+    spi2Sens.sensorList[spi2Sens.sensorLen++] = SPI2_LIS3MDL_MAG;
+  }
+#endif
+
+  //ExG (spi)
+  if (isAds1292Present())
+  {
+    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
+        || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit)
     {
-      *channel_contents_ptr++ = EXG_ADS1292R_1_STATUS;
-      *channel_contents_ptr++ = EXG_ADS1292R_1_CH1_24BIT;
-      *channel_contents_ptr++ = EXG_ADS1292R_1_CH2_24BIT;
-      nbr_spi_chans += 3;
-      configBytes->chEnExg1_16Bit = 0;
-      sensing.ptr.exg1 = sensing.dataLen;
-      sensing.dataLen += 7;
-    }
-    else if (configBytes->chEnExg1_16Bit)
-    {
-      *channel_contents_ptr++ = EXG_ADS1292R_1_STATUS;
-      *channel_contents_ptr++ = EXG_ADS1292R_1_CH1_16BIT;
-      *channel_contents_ptr++ = EXG_ADS1292R_1_CH2_16BIT;
-      nbr_spi_chans += 3;
-      sensing.ptr.exg1 = sensing.dataLen;
-      sensing.dataLen += 5;
-    }
-    if (configBytes->chEnExg2_24Bit)
-    {
-      *channel_contents_ptr++ = EXG_ADS1292R_2_STATUS;
-      *channel_contents_ptr++ = EXG_ADS1292R_2_CH1_24BIT;
-      *channel_contents_ptr++ = EXG_ADS1292R_2_CH2_24BIT;
-      nbr_spi_chans += 3;
-      configBytes->chEnExg2_16Bit = 0;
-      sensing.ptr.exg2 = sensing.dataLen;
-      sensing.dataLen += 7;
-    }
-    else if (configBytes->chEnExg2_16Bit)
-    {
-      *channel_contents_ptr++ = EXG_ADS1292R_2_STATUS;
-      *channel_contents_ptr++ = EXG_ADS1292R_2_CH1_16BIT;
-      *channel_contents_ptr++ = EXG_ADS1292R_2_CH2_16BIT;
-      nbr_spi_chans += 3;
-      sensing.ptr.exg2 = sensing.dataLen;
-      sensing.dataLen += 5;
+      if (configBytes->chEnExg1_24Bit)
+      {
+        *channel_contents_ptr++ = EXG_ADS1292R_1_STATUS;
+        *channel_contents_ptr++ = EXG_ADS1292R_1_CH1_24BIT;
+        *channel_contents_ptr++ = EXG_ADS1292R_1_CH2_24BIT;
+        nbr_spi_chans += 3;
+        configBytes->chEnExg1_16Bit = 0;
+        sensing.ptr.exg1 = sensing.dataLen;
+        sensing.dataLen += 7;
+#if defined(SHIMMER3R)
+        spi3Sens.sensorList[spi3Sens.sensorLen++] = SPI3_ADS1292R_EXG1;
+#endif
+      }
+      else if (configBytes->chEnExg1_16Bit)
+      {
+        *channel_contents_ptr++ = EXG_ADS1292R_1_STATUS;
+        *channel_contents_ptr++ = EXG_ADS1292R_1_CH1_16BIT;
+        *channel_contents_ptr++ = EXG_ADS1292R_1_CH2_16BIT;
+        nbr_spi_chans += 3;
+        sensing.ptr.exg1 = sensing.dataLen;
+        sensing.dataLen += 5;
+#if defined(SHIMMER3R)
+        spi3Sens.sensorList[spi3Sens.sensorLen++] = SPI3_ADS1292R_EXG1;
+#endif
+      }
+      if (configBytes->chEnExg2_24Bit)
+      {
+        *channel_contents_ptr++ = EXG_ADS1292R_2_STATUS;
+        *channel_contents_ptr++ = EXG_ADS1292R_2_CH1_24BIT;
+        *channel_contents_ptr++ = EXG_ADS1292R_2_CH2_24BIT;
+        nbr_spi_chans += 3;
+        configBytes->chEnExg2_16Bit = 0;
+        sensing.ptr.exg2 = sensing.dataLen;
+        sensing.dataLen += 7;
+#if defined(SHIMMER3R)
+        spi3Sens.sensorList[spi3Sens.sensorLen++] = SPI3_ADS1292R_EXG2;
+#endif
+      }
+      else if (configBytes->chEnExg2_16Bit)
+      {
+        *channel_contents_ptr++ = EXG_ADS1292R_2_STATUS;
+        *channel_contents_ptr++ = EXG_ADS1292R_2_CH1_16BIT;
+        *channel_contents_ptr++ = EXG_ADS1292R_2_CH2_16BIT;
+        nbr_spi_chans += 3;
+        sensing.ptr.exg2 = sensing.dataLen;
+        sensing.dataLen += 5;
+#if defined(SHIMMER3R)
+        spi3Sens.sensorList[spi3Sens.sensorLen++] = SPI3_ADS1292R_EXG2;
+#endif
+      }
     }
   }
   sensing.ccLen += nbr_spi_chans;
   sensing.nbrDigiChans += nbr_spi_chans;
+
+#if defined(SHIMMER3R)
+  expectedSpiBusCbFlags = 0;
+  if (spi1Sens.sensorLen > 0)
+  {
+    expectedSpiBusCbFlags |= SPI1_BUS_FLAG;
+  }
+  if (spi2Sens.sensorLen > 0)
+  {
+    expectedSpiBusCbFlags |= SPI2_BUS_FLAG;
+  }
+  if (spi3Sens.sensorLen > 0)
+  {
+    expectedSpiBusCbFlags |= SPI3_BUS_FLAG;
+  }
+#endif
 }
 
 void SPI_startSensing()
@@ -507,170 +803,410 @@ void SPI_startSensing()
   static uint8_t temp_exg_buf[11];
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
-  //ExG (SPI)
-  if (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
-      || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit)
+  memset((uint8_t*) &spi1Sens_buf, 0, sizeof(spi1ReadBuf));
+  memset((uint8_t*) &spi2Sens_buf, 0, sizeof(spi2ReadBuf));
+  memset((uint8_t*) &spi3Sens_buf, 0, sizeof(spi3ReadBuf));
+
+#if defined(SHIMMER3R)
+  if ((configBytes->chEnLnAccel) || (configBytes->chEnGyro))
   {
-    EXG_init(hspiExg);
-    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+    lsm6dsv_power_on();
+    lsm6dsv_restore_default_config();
+
+    if (configBytes->chEnLnAccel)
     {
-      S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_1_CONFIG1, 10);
-      EXG_writeRegs(0, ADS1292R_CONFIG1, 10, temp_exg_buf);
-      EXG_readRegs(0, 0, 11, temp_exg_buf); // can read back to check if write is done successfully
-      __NOP();
-      __NOP();
-      __NOP();
+      lsm6dsv_config_accel(configBytes->gyroRate, configBytes->altAccelRange);
     }
-    if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+
+    if (configBytes->chEnGyro)
     {
+      lsm6dsv_config_gyro(configBytes->gyroRate, configBytes->gyroRange);
+    }
+  }
+
+  if (configBytes->chEnPressureAndTemperature)
+  {
+  }
+
+  if (configBytes->chEnAltAccel)
+  {
+  }
+
+  if (configBytes->chEnWrAccel)
+  {
+  }
+
+  if (configBytes->chEnMag)
+  {
+  }
+
+  if (configBytes->chEnAltMag)
+  {
+  }
+
+#endif
+
+  //ExG (SPI)
+  if (isAds1292Present())
+  {
+    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
+        || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit)
+    {
+      EXG_init(hspiExg);
+      if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+      {
+        S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_1_CONFIG1, 10);
+        EXG_writeRegs(0, ADS1292R_CONFIG1, 10, temp_exg_buf);
+        EXG_readRegs(0, 0, 11, temp_exg_buf); // can read back to check if write is done successfully
+        __NOP();
+        __NOP();
+        __NOP();
+      }
+      if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+      {
+        HAL_Delay(100);   //100ms
+        EXG_setRdatac(1, 0);
+        S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_2_CONFIG1, 10);
+        EXG_writeRegs(1, ADS1292R_CONFIG1, 10, temp_exg_buf);
+        EXG_readRegs(1, 0, 11, temp_exg_buf);
+        EXG_enableChip2(1);
+        __NOP();
+        __NOP();
+        __NOP();
+      }
+      //probably turning on internal reference, so wait for it to settle
       HAL_Delay(100);   //100ms
-      EXG_setRdatac(1, 0);
-      S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_2_CONFIG1, 10);
-      EXG_writeRegs(1, ADS1292R_CONFIG1, 10, temp_exg_buf);
-      EXG_readRegs(1, 0, 11, temp_exg_buf);
-      EXG_enableChip2(1);
-      __NOP();
-      __NOP();
-      __NOP();
-    }
-    //probably turning on internal reference, so wait for it to settle
-    HAL_Delay(100);   //100ms
 
-    //probably setting the PGA gain so cancel the channel offset
-    if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
-        && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_1_RESP2) & 0x80))
-    {
-      EXG_offsetCal(0);
-    }
-    if ((configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
-        && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_2_RESP2) & 0x80))
-    {
-      EXG_offsetCal(1);
-    }
+      //probably setting the PGA gain so cancel the channel offset
+      if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+          && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_1_RESP2) & 0x80))
+      {
+        EXG_offsetCal(0);
+      }
+      if ((configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+          && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_2_RESP2) & 0x80))
+      {
+        EXG_offsetCal(1);
+      }
 
-    if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
-        && (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit))
-    {
-      EXG_start(2);
-    }
-    else if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
-    {
-      EXG_start(0);
-    }
-    else
-    {
-      EXG_start(1);
+      if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+          && (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit))
+      {
+        EXG_start(2);
+      }
+      else if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+      {
+        EXG_start(0);
+      }
+      else
+      {
+        EXG_start(1);
+      }
     }
   }
 }
 
-//void SPI_startSensing(){
-//   //ExG (SPI)
-//   if ((configBytes->chEnExg1_24Bit) ||
-//       (configBytes->chEnExg2_24Bit) ||
-//       (configBytes->chEnExg1_16Bit) ||
-//       (configBytes->chEnExg2_16Bit)) {
-//      EXG_init(hspiExg);
-//      if (configBytes->chEnExg1_24Bit ||
-//          configBytes->chEnExg1_16Bit) {
-//         S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_1_CONFIG1, 10);
-//         EXG_writeRegs(0, ADS1292R_CONFIG1, 10, temp_exg_buf);
-//         EXG_readRegs(0, 0, 11, temp_exg_buf);// can read back to check if write is done successfully
-//         __NOP();
-//         __NOP();
-//         __NOP();
-//         //probably turning on internal reference, so wait for it to settle
-//         HAL_Delay(100);   //100ms
-//         if (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_1_RESP2) & 0x80) {
-//            EXG_offsetCal(0);
-//         }
-//         EXG_start(0);
-//      }
-//      HAL_Delay(100);   //100ms
-//      if (configBytes->chEnExg2_24Bit ||
-//          configBytes->chEnExg2_16Bit) {
-//         EXG_setRdatac(1, 0);
-//         S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_2_CONFIG1, 10);
-//         EXG_writeRegs(1, ADS1292R_CONFIG1, 10, temp_exg_buf);
-//         EXG_readRegs(1, 0, 11, temp_exg_buf);
-//         __NOP();
-//         __NOP();
-//         __NOP();
-//         //probably turning on internal reference, so wait for it to settle
-//         HAL_Delay(100);   //100ms
-//         EXG_enableChip2(1);
-//         if (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_2_RESP2) & 0x80) {
-//            EXG_offsetCal(1);
-//         }
-//         EXG_start(1);
-//      }
-//
-//      ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1);
-//      ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP2);
-//
-//   }
-//}
-void SPI_pollSensors(){
-   //exg
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
-   if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit) {
+void SPI_pollSensors()
+{
+#if defined(SHIMMER3R)
+  currentSpiBusCbFlags = 0;
+
+  if (spi1Sens.sensorLen > 0)
+  {
+    SpiSensing(&spi1Sens, SPI_FIRST_SENSOR);
+  }
+  if (spi2Sens.sensorLen > 0)
+  {
+    SpiSensing(&spi2Sens, SPI_FIRST_SENSOR);
+  }
+  if (spi3Sens.sensorLen > 0)
+  {
+    SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
+  }
+
+#endif
+
+  //ExG (SPI)
+  if (isAds1292Present())
+  {
+    //exg
+    gConfigBytes *configBytes = S4Ram_getStoredConfig();
+    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+    {
       EXG_readData(0, 0, sensing.dataBuf + sensing.ptr.exg1);
-   }
-   if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit) {
+    }
+    if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+    {
       EXG_readData(1, 0, sensing.dataBuf + sensing.ptr.exg2);
-   }
+    }
+  }
 }
-void SPI_stopSensing(){
-//   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
-//   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+void SPI_stopSensing()
+{
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
-   if(configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit) {
+
+#if defined(SHIMMER3R)
+  //TODO
+//  set_power_spi1_bus(0, chipIndex);
+//  set_power_spi2_bus(0, chipIndex);
+//  set_power_spi3_bus(0, chipIndex);
+
+  //TODO unselect all chips
+  lsm6dsv_UnselectDevice();
+  bmp3_UnselectDevice();
+  adxl371_UnselectDevice();
+
+  //TODO do we need to deinit the SPI buses to save power?
+
+
+#elif
+  if (isAds1292Present())
+  {
+  //   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+  //   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+    if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+    {
       EXG_stop(1);     //probably not needed
-   }
-   if(configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit) {
+    }
+    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+    {
       EXG_stop(0);     //probably not needed
-   }
-//   if(configBytes->chEnExg1_24Bit
-//      || configBytes->chEnExg2_24Bit
-//      || configBytes->chEnExg1_16Bit
-//      || configBytes->chEnExg2_16Bit) {
-      EXG_powerOff();
-//   }
-   //HAL_SPI_MspDeInit(hspiExg);//this may save .2-.3 mA?
+    }
+  //   if(configBytes->chEnExg1_24Bit
+  //      || configBytes->chEnExg2_24Bit
+  //      || configBytes->chEnExg1_16Bit
+  //      || configBytes->chEnExg2_16Bit) {
+    EXG_powerOff();
+  //   }
+    //HAL_SPI_MspDeInit(hspiExg);//this may save .2-.3 mA?
+  }
+#endif
 }
 
-void SPI_gatherDataCb(void (*done_cb)(void)){
-   SPI_gatherDataDone_cb = done_cb;
-   EXG_gatherDataInit(SpiStep2Start);
+void SPI_gatherDataCb(void (*done_cb)(void))
+{
+  SPI_gatherDataDone_cb = done_cb;
+#if defined(SHIMMER4_SDK)
+  EXG_gatherDataInit(SpiStep2Start);
+#endif
 }
 
-void SPI_gatherDataStart(void){
-   SpiStep1Start();
+#if defined(SHIMMER3R)
+void SPI_busGatherDataDone_cb(uint8_t flag)
+{
+  // if all SPI buses complete, call main callback to sensing.c
+  currentSpiBusCbFlags |= flag;
+  if (currentSpiBusCbFlags == expectedSpiBusCbFlags)
+  {
+    SPI_gatherDataDone_cb();
+  }
+}
+#endif
+
+void SPI_gatherDataStart(void)
+{
+  SpiStep1Start();
 }
 
-void SpiStep1Start(void){  EXG_gatherDataStart();}
-void SpiStep2Start(void){  SpiStep3Start();}
-void SpiStep3Start(void){  SpiStepDone();}
-void SpiStepDone(void){    SPI_gatherDataDone_cb();}
-
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
-   if (hspi->Instance == SPI1) {
-      EXG_spiTxIsr();
-   }
+void SpiStep1Start(void)
+{
+  EXG_gatherDataStart();
+}
+void SpiStep2Start(void)
+{
+  SpiStep3Start();
+}
+void SpiStep3Start(void)
+{
+  SpiStepDone();
+}
+void SpiStepDone(void)
+{
+  SPI_gatherDataDone_cb();
 }
 
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
-   if (hspi->Instance == SPI1) {
-      EXG_spiRxIsr();
-   }
+#if defined(SHIMMER3R)
+void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
+{
+  spiSensingInfo->sensorCnt = (start == SPI_FIRST_SENSOR) ? 0 : spiSensingInfo->sensorCnt + 1;
+  if (spiSensingInfo->sensorCnt == spiSensingInfo->sensorLen)
+  {
+    spiSensingInfo->status = SPI_STAT_IDLE;
+    spiSensingInfo->sensorCnt = 0;
+    SPI_busGatherDataDone_cb(spiSensingInfo->busId);
+  }
+  else if (spiSensingInfo->sensorCnt < spiSensingInfo->sensorLen)
+  {
+    SpiSens_sensorNext(spiSensingInfo);
+  }
+  else
+  {
+    while (1)
+    {
+      Board_ledToggle(LED_ALL);
+      HAL_Delay(100);
+    }
+  }
 }
 
-void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi){
-   __NOP();
-   __NOP();
-   __NOP();
-   __NOP();
-   __NOP();
+void SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
+{
+  switch (spiSensingInfo->sensorList[spiSensingInfo->sensorCnt])
+  {
+  case SPI1_LSM6DSV_ACCEL:
+    //TODO
+    spiSensingInfo->status = SPI_STAT_LSM6DSV_ACCEL_GET;
+    lsm6dsv_accel_get(spi1Sens_buf.lsm6dsvAccelBuf);
+    break;
+  case SPI1_LSM6DSV_GYRO:
+    //TODO
+    spiSensingInfo->status = SPI_STAT_LSM6DSV_GYRO_GET;
+    lsm6dsv_gyro_get(spi1Sens_buf.lsm6dsvGyroBuf);
+    break;
+  case SPI1_ADXL371_ACCEL:
+    //TODO
+    break;
+  case SPI1_BMP390_PRESSURE_TEMP:
+    //TODO
+    break;
+  case SPI2_LSM303AH_ACCEL:
+    //TODO
+    break;
+  case SPI2_LSM303AH_MAG:
+    //TODO
+    break;
+  case SPI2_LIS3MDL_MAG:
+    //TODO
+    break;
+  case SPI3_ADS1292R_EXG1:
+    //TODO
+    break;
+  case SPI3_ADS1292R_EXG2:
+    //TODO
+    break;
+
+//  case I2C_LSM303DLHC_ACCEL:
+//    Lsm303dlhcAccelSample();
+//    break;
+//  case I2C_LSM303DLHC_MAG:
+//    Lsm303dlhcMagSample();
+//    break;
+//  case I2C_MPU9250_GYRO:
+//    MPU9250GyroSample();
+//    break;
+//  case I2C_MPU9250_ACCEL:
+//    MPU9250AccelSample();
+//    break;
+//  case I2C_MPU9250_MAG:
+//    MPU9250MagSample();
+//    break;
+//  case I2C_BMP180:
+//    BMP180Sample();
+//    break;
+//  case I2C_BMP280:
+//    BMP280Sample();
+    break;
+  default:
+    break;
+  }
+}
+
+void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
+  {
+  case SPI1_LSM6DSV_ACCEL:
+    lsm6dsv_UnselectDevice();
+    break;
+  case SPI1_LSM6DSV_GYRO:
+    lsm6dsv_UnselectDevice();
+    break;
+  case SPI1_ADXL371_ACCEL:
+    adxl371_UnselectDevice();
+    break;
+  case SPI1_BMP390_PRESSURE_TEMP:
+    bmp3_UnselectDevice();
+    break;
+  default:
+    break;
+  }
+
+  SpiSensing(&spi1Sens, SPI_NEXT_SENSOR);
+}
+
+void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  switch (spi2Sens.sensorList[spi2Sens.sensorCnt])
+  {
+  case SPI2_LSM303AH_ACCEL:
+//    BMP180RxDoneHandler();
+    break;
+  case SPI2_LSM303AH_MAG:
+//    BMP280RxDoneHandler();
+    break;
+  case SPI2_LIS3MDL_MAG:
+//    MPU9250GyroRxDoneHandler();
+    break;
+  default:
+    break;
+  }
+}
+
+void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  switch (spi2Sens.sensorList[spi2Sens.sensorCnt])
+  {
+  case SPI3_ADS1292R_EXG1:
+//    BMP180RxDoneHandler();
+    break;
+  case SPI3_ADS1292R_EXG2:
+//    BMP280RxDoneHandler();
+    break;
+  default:
+    break;
+  }
+}
+
+void SPI3_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  EXG_spiTxIsr();
+}
+
+void SPI3_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  EXG_spiRxIsr();
+}
+
+#elif defined(SHIMMER4_SDK)
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  if (hspi->Instance == SPI1)
+  {
+    EXG_spiTxIsr();
+  }
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  if (hspi->Instance == SPI1)
+  {
+    EXG_spiRxIsr();
+  }
+}
+#endif
+
+#if defined(SHIMMER3R)
+void SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+#elif defined(SHIMMER4_SDK)
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+#endif
+{
+  __NOP();
+  __NOP();
+  __NOP();
+  __NOP();
+  __NOP();
 }
 
 #if defined(SHIMMER3R)
@@ -689,8 +1225,11 @@ void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex)
     }
   }
 
-  //TODO check polarity
-  HAL_GPIO_WritePin(SW_SPI1_GPIO_Port, SW_SPI1_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  if (stateToSet != HAL_GPIO_ReadPin(SW_SPI1_GPIO_Port, SW_SPI1_Pin))
+  {
+    HAL_GPIO_WritePin(SW_SPI1_GPIO_Port, SW_SPI1_Pin,
+        stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  }
 }
 
 void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex)
@@ -708,9 +1247,20 @@ void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex)
     }
   }
 
-  //TODO check polarity
-  HAL_GPIO_WritePin(SW_SPI2_GPIO_Port, SW_SPI2_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  if (stateToSet != HAL_GPIO_ReadPin(SW_SPI2_GPIO_Port, SW_SPI2_Pin))
+  {
+    HAL_GPIO_WritePin(SW_SPI2_GPIO_Port, SW_SPI2_Pin,
+        stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  }
 }
+
+bool areSpiChannelsEnabled(void)
+{
+  return
+      (spi1Sens.sensorLen + spi2Sens.sensorLen + spi3Sens.sensorLen) > 0 ?
+          true : false;
+}
+
 #endif
 
 /* USER CODE END 1 */

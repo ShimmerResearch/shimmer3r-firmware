@@ -44,6 +44,7 @@
 #include "STC3100.h"
 #endif
 #include "gsr.h"
+#include "../Shimmer_Driver/shimmer_boards/shimmer_boards.h"
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/Bluetooth/CYW20820.h"
 #include "../Shimmer_Driver/Bluetooth/shimmer_bt_comms.h"
@@ -55,6 +56,9 @@
 #include "../Shimmer_Driver/LIS3MDL/lis3mdl.h"
 #include "../Shimmer_Driver/LSM303AH/lsm303ah.h"
 #include "../Shimmer_Driver/LSM6DSV/lsm6dsv.h"
+#include "../Shimmer_Driver/BMP3/hal_bmp3.h"
+#include "../Shimmer_Driver/ADXL371/adxl371.h"
+#include "../Shimmer_Driver/ADXL371/adxl371_spi.h"
 #endif
 #include "lsm303dlhc.h"
 #include "mpu9250.h"

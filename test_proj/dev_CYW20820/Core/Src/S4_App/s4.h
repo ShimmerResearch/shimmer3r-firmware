@@ -120,8 +120,8 @@
 #define X_MPU9250_MAG                     0x17
 #define Y_MPU9250_MAG                     0x18
 #define Z_MPU9250_MAG                     0x19
-#define BMP180_TEMP                       0x1A
-#define BMP180_PRESSURE                   0x1B
+#define BMP_TEMPERATURE                       0x1A
+#define BMP_PRESSURE                   0x1B
 #define GSR_RAW                           0x1C
 #define EXG_ADS1292R_1_STATUS             0x1D
 #define EXG_ADS1292R_1_CH1_24BIT          0x1E

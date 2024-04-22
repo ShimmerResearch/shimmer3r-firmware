@@ -265,7 +265,7 @@ void S4_RTC_WakeUpSet(uint16_t period){
    uint32_t WakeUpAutoClr missing argument in the old Shimmer4*/
 #if defined(SHIMMER3R)
   if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, prescalar, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
-#else
+#elif defined(SHIMMER4_SDK)
   if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, prescalar, RTC_WAKEUPCLOCK_RTCCLK_DIV2) != HAL_OK)
 #endif
   {

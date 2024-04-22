@@ -46,6 +46,14 @@ extern SPI_HandleTypeDef hspi3;
 #if defined(SHIMMER3R)
 typedef enum
 {
+  SPI_BUSES_ENABLED_NONE,
+  SPI1_BUS_FLAG = 0x01,
+  SPI2_BUS_FLAG = 0x02,
+  SPI3_BUS_FLAG = 0x04
+} SPI_BUS_INDEX;
+
+typedef enum
+{
   SPI1_CHIP_INDEX_LSM6DSV,
   SPI1_CHIP_INDEX_ADXL371,
   SPI1_CHIP_INDEX_BMP390,
@@ -64,6 +72,68 @@ typedef enum
   SPI3_CHIP_INDEX_ADS1292R,
   SPI3_CHIP_QTY
 } SPI3_CHIP_INDEX;
+
+typedef enum{//i2c
+   SPI1_LSM6DSV_ACCEL = 0,
+   SPI1_LSM6DSV_GYRO,
+   SPI1_ADXL371_ACCEL,
+   SPI1_BMP390_PRESSURE_TEMP,
+   SPI2_LSM303AH_ACCEL,
+   SPI2_LSM303AH_MAG,
+   SPI2_LIS3MDL_MAG,
+   SPI3_ADS1292R_EXG1,
+   SPI3_ADS1292R_EXG2
+} SPI_SENSOR;
+
+typedef enum
+{
+  SPI_STAT_IDLE = 0,
+  SPI_STAT_LSM6DSV_STATUS_GET,
+  SPI_STAT_LSM6DSV_ACCEL_GET,
+  SPI_STAT_LSM6DSV_GYRO_GET,
+  SPI_STAT_ADXL371_ACCEL_GET,
+  SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET,
+  SPI_STAT_LSM303AH_ACCEL_GET,
+  SPI_STAT_LSM303AH_MAG_GET,
+  SPI_STAT_LIS3MDL_MAG_GET,
+  SPI_STAT_ADS1292R_EXG1_GET,
+  SPI_STAT_ADS1292R_EXG2_GET
+} SPI_STATUS;
+
+typedef enum {
+   SPI_FIRST_SENSOR = 0,
+   SPI_NEXT_SENSOR,
+}SPI_SENSING_TYPE;
+
+typedef struct
+{
+  uint8_t lsm6dsvAccelBuf[1+6];
+  uint8_t lsm6dsvGyroBuf[1+6];
+  uint8_t adxl371Buf[1+6];
+  uint8_t bmp390Buf[1+5];
+} spi1ReadBuf;
+
+typedef struct
+{
+  uint8_t lsm303AccelBuf[1+6];
+  uint8_t lsm303MagBuf[1+6];
+  uint8_t lis3mdlMagBuf[1+6];
+} spi2ReadBuf;
+
+typedef struct
+{
+  uint8_t ads1292rExg1Buf[1+7];
+  uint8_t ads1292rExg2Buf[1+7];
+} spi3ReadBuf;
+
+typedef struct {//spi - Sensors
+  SPI_STATUS status;
+  SPI_SENSOR sensorList[20];
+  uint8_t sensorLen;
+  uint8_t sensorCnt;
+  SPI_BUS_INDEX busId;
+} SPITypeDef;
+
 #endif
 
 /* USER CODE END Private defines */
@@ -89,8 +159,19 @@ void SpiStep3Start(void);
 void SpiStepDone(void);
 
 #if defined(SHIMMER3R)
+void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start);
+void SpiSens_sensorNext(SPITypeDef *spiSensingInfo);
+
+void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
+void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
+void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
+void SPI3_TxCpltCallback(SPI_HandleTypeDef *hspi);
+void SPI3_RxCpltCallback(SPI_HandleTypeDef *hspi);
+void SPI_ErrorCallback(SPI_HandleTypeDef *hspi);
+
 void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex);
 void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex);
+bool areSpiChannelsEnabled(void);
 #endif
 
 /* USER CODE END Prototypes */
