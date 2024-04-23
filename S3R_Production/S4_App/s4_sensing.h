@@ -146,4 +146,6 @@ void S4Sens_step5Start(void);
 #endif
 void S4Sens_stepDone(void);
 
+void saveData(void);
+
 #endif // S4_SENSING_H

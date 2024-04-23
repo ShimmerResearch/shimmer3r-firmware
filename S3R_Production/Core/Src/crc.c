@@ -40,8 +40,8 @@ void MX_CRC_Init(void)
   hcrc.Instance = CRC;
   hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_DISABLE;
   hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_DISABLE;
-  hcrc.Init.GeneratingPolynomial = 69665;
-  hcrc.Init.CRCLength = CRC_POLYLENGTH_32B;
+  hcrc.Init.GeneratingPolynomial = 4129;
+  hcrc.Init.CRCLength = CRC_POLYLENGTH_16B;
   hcrc.Init.InitValue = 0xB0CA;
   hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
   hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;

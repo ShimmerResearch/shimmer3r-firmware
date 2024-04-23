@@ -22,7 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 
-uint64_t rtcConfigTime64;
+uint64_t rwcConfigTime64;
 uint32_t S4_RTC_Status = RTC_STATUS_ZERO;
 
 /* USER CODE END 0 */
@@ -163,8 +163,8 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
 /* USER CODE BEGIN 1 */
 
-void     S4_RTC_setConfigTime(uint64_t val){   rtcConfigTime64 = val;}// 64bits = 8bytes
-uint64_t S4_RTC_getConfigTime(void)        {   return rtcConfigTime64;}
+void     S4_RWC_setConfigTime(uint64_t val){   rwcConfigTime64 = val;}// 64bits = 8bytes
+uint64_t S4_RWC_getConfigTime(void)        {   return rwcConfigTime64;}
 
 /* Days in a month */
 uint8_t S4_RTC_Months[2][12] = {
@@ -192,7 +192,7 @@ void S4_RTC_Init(){//  RTC_HandleTypeDef *hrtc
    //s4rtc_hrtc = hrtc;
    S4_RTC_t data;
 
-   rtcConfigTime64 = 0;
+   rwcConfigTime64 = 0;
 
    hrtc.Instance = RTC;
 
@@ -551,7 +551,6 @@ void S4_RTC_Ticks2RTC(S4_RTC_t* data, uint64_t ticks) {
   data->date = unix + 1;
 }
 
-
 void RTC_init(uint64_t ticks){
    S4_RTC_t data;
    S4_RTC_Ticks2RTC(&data, ticks);
@@ -559,7 +558,7 @@ void RTC_init(uint64_t ticks){
 #if RTC_FAST
    rtc64_reg = data.ticks & 0xffffffffffff8000;
 #endif
-   S4_RTC_setConfigTime(ticks);
+   S4_RWC_setConfigTime(ticks);
 }
 
 uint64_t RTC_get64(void){
@@ -594,6 +593,10 @@ uint32_t RTC_get32(void){
 #endif
 }
 
+uint8_t isRwcTimeSet(void)
+{
+    return ((rwcConfigTime64 > 0) ? 1 : 0);
+}
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {

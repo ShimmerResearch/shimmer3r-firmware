@@ -607,6 +607,16 @@ void lsm303ah_power_off(void)
   set_power_spi2_bus(false, SPI2_CHIP_INDEX_LSM303AH);
 }
 
+void lsm303ah_SelectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
+}
+
+void lsm303ah_UnselectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+}
+
 void lsm303ah_accelInit(uint8_t samplingRate, uint8_t range, uint8_t lowPower,
     uint8_t highresolution)
 {

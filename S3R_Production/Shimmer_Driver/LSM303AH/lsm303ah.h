@@ -16,6 +16,8 @@ void lsm303ah_self_test(void);
 void lsm303ah_driver_init(void);
 void lsm303ah_power_on(void);
 void lsm303ah_power_off(void);
+void lsm303ah_SelectDevice(void);
+void lsm303ah_UnselectDevice(void);
 
 //initialize the accelerometer
 void lsm303ah_accelInit(uint8_t samplingrate, uint8_t range, uint8_t lowpower, uint8_t highresolution);

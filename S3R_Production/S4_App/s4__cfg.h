@@ -4,7 +4,6 @@
 #define SHIMMER4_SDK_CONFIG_H
 
 #define IS_CONNECTED_EEPROM 0
-#define IS_CONNECTED_DIG_SENSORS 0
 
 #define USE_DEFAULT_SENSOR    0
 #define RTC_FAST              0 // need to increase rtc alarm interrupt priority before enabling this option

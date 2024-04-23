@@ -396,10 +396,10 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
 #elif defined(SPC584B_DIS)
   i2c_lld_write(handle,  LSM6DSV_I2C_ADD_H & 0xFE, reg, (uint8_t*) bufp, len);
 #elif defined(SHIMMER3R)
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
+  lsm6dsv_SelectDevice();
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
   HAL_SPI_Transmit(handle, (uint8_t*) bufp, len, 1000);
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+  lsm6dsv_UnselectDevice();
 #endif
   return 0;
 }
@@ -430,12 +430,21 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
   i2c_lld_read(handle, LSM6DSV_I2C_ADD_H & 0xFE, reg, bufp, len);
 #elif defined(SHIMMER3R)
   reg |= 0x80;
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
+  lsm6dsv_SelectDevice();
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
   HAL_SPI_Receive(handle, bufp, len, 1000);
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+  lsm6dsv_UnselectDevice();
 #endif
   return 0;
+}
+
+static int32_t platform_read_raw_data_dma(void *handle, uint8_t *txBufp,
+    uint8_t *rxBufp, uint8_t len)
+{
+  HAL_StatusTypeDef ret;
+  lsm6dsv_SelectDevice();
+  ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
+  return ret;
 }
 
 /*
@@ -554,23 +563,17 @@ void lsm6dsv_status_get(void)
 
 HAL_StatusTypeDef lsm6dsv_accel_get(uint8_t *buf)
 {
-  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_A | 0x80, 0, 0, 0, 0, 0, 0 };
   HAL_StatusTypeDef ret;
-
-  lsm6dsv_SelectDevice();
-  ret = HAL_SPI_TransmitReceive_DMA(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
-//  ret = HAL_SPI_TransmitReceive(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff), 1000);
-
-//  platform_read(dev_ctx.handle, LSM6DSV_OUTX_L_A, buf, 6);
-
+  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_A | 0x80, 0, 0, 0, 0, 0, 0 };
+  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
   return ret;
 }
 
 HAL_StatusTypeDef lsm6dsv_gyro_get(uint8_t *buf)
 {
-  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_G | 0x80, 0, 0, 0, 0, 0, 0 };
   HAL_StatusTypeDef ret;
-  ret = HAL_SPI_TransmitReceive_DMA(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
+  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_G | 0x80, 0, 0, 0, 0, 0, 0 };
+  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
   return ret;
 }
 

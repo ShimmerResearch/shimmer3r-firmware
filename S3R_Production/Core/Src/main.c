@@ -243,7 +243,7 @@ int main(void)
 #endif
 
   Init();
-  //Task_set(TASK_STARTSENSING);
+//  S4_NORM_Task_set(TASK_STARTSENSING);
 
 //  SD_test();
 //  SD_test_alternative();

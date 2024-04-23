@@ -43,6 +43,8 @@ extern SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN Private defines */
 
+#define SPI_DMA_TXRX_OFFSET 1
+
 #if defined(SHIMMER3R)
 typedef enum
 {
@@ -107,23 +109,23 @@ typedef enum {
 
 typedef struct
 {
-  uint8_t lsm6dsvAccelBuf[1+6];
-  uint8_t lsm6dsvGyroBuf[1+6];
-  uint8_t adxl371Buf[1+6];
-  uint8_t bmp390Buf[1+5];
+  uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET+6];
+  uint8_t lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET+6];
+  uint8_t adxl371Buf[SPI_DMA_TXRX_OFFSET+6];
+  uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET+5];
 } spi1ReadBuf;
 
 typedef struct
 {
-  uint8_t lsm303AccelBuf[1+6];
-  uint8_t lsm303MagBuf[1+6];
-  uint8_t lis3mdlMagBuf[1+6];
+  uint8_t lsm303AccelBuf[SPI_DMA_TXRX_OFFSET+6];
+  uint8_t lsm303MagBuf[SPI_DMA_TXRX_OFFSET+6];
+  uint8_t lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET+6];
 } spi2ReadBuf;
 
 typedef struct
 {
-  uint8_t ads1292rExg1Buf[1+7];
-  uint8_t ads1292rExg2Buf[1+7];
+  uint8_t ads1292rExg1Buf[SPI_DMA_TXRX_OFFSET+7];
+  uint8_t ads1292rExg2Buf[SPI_DMA_TXRX_OFFSET+7];
 } spi3ReadBuf;
 
 typedef struct {//spi - Sensors

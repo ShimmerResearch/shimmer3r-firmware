@@ -224,7 +224,7 @@ void MX_SPI3_Init(void)
   }
   /* USER CODE BEGIN SPI3_Init 2 */
 
-  //TODO
+  //TODO switch over approach to match that being implemented by SPI1 and SPI2
 //  HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI3_TxRxCpltCallback);
   HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_COMPLETE_CB_ID, SPI3_TxCpltCallback);
   HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_RX_COMPLETE_CB_ID, SPI3_RxCpltCallback);
@@ -944,7 +944,7 @@ void SPI_pollSensors()
 
 void SPI_stopSensing()
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+//  gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
 #if defined(SHIMMER3R)
   //TODO
@@ -956,6 +956,8 @@ void SPI_stopSensing()
   lsm6dsv_UnselectDevice();
   bmp3_UnselectDevice();
   adxl371_UnselectDevice();
+  lis3mdl_UnselectDevice();
+  lsm303ah_UnselectDevice();
 
   //TODO do we need to deinit the SPI buses to save power?
 
@@ -1055,12 +1057,10 @@ void SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
   switch (spiSensingInfo->sensorList[spiSensingInfo->sensorCnt])
   {
   case SPI1_LSM6DSV_ACCEL:
-    //TODO
     spiSensingInfo->status = SPI_STAT_LSM6DSV_ACCEL_GET;
     lsm6dsv_accel_get(spi1Sens_buf.lsm6dsvAccelBuf);
     break;
   case SPI1_LSM6DSV_GYRO:
-    //TODO
     spiSensingInfo->status = SPI_STAT_LSM6DSV_GYRO_GET;
     lsm6dsv_gyro_get(spi1Sens_buf.lsm6dsvGyroBuf);
     break;
@@ -1118,20 +1118,33 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   {
   case SPI1_LSM6DSV_ACCEL:
     lsm6dsv_UnselectDevice();
+    memcpy(sensing.dataBuf + sensing.ptr.accel1,
+        &spi1Sens_buf.lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi1Sens_buf.lsm6dsvAccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_LSM6DSV_GYRO:
     lsm6dsv_UnselectDevice();
+    memcpy(sensing.dataBuf + sensing.ptr.gyro,
+        &spi1Sens_buf.lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi1Sens_buf.lsm6dsvGyroBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_ADXL371_ACCEL:
     adxl371_UnselectDevice();
+    memcpy(sensing.dataBuf + sensing.ptr.accel3,
+        &spi1Sens_buf.adxl371Buf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
     bmp3_UnselectDevice();
+    memcpy(sensing.dataBuf + sensing.ptr.pressure,
+        &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET);
     break;
   default:
     break;
   }
 
+  spi1Sens.status = SPI_STAT_IDLE;
   SpiSensing(&spi1Sens, SPI_NEXT_SENSOR);
 }
 
@@ -1140,32 +1153,56 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   switch (spi2Sens.sensorList[spi2Sens.sensorCnt])
   {
   case SPI2_LSM303AH_ACCEL:
-//    BMP180RxDoneHandler();
+    lsm303ah_UnselectDevice();
+    memcpy(sensing.dataBuf + sensing.ptr.accel2,
+        &spi2Sens_buf.lsm303AccelBuf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi2Sens_buf.lsm303AccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI2_LSM303AH_MAG:
-//    BMP280RxDoneHandler();
+    lsm303ah_UnselectDevice();
+    memcpy(sensing.dataBuf + sensing.ptr.mag1,
+        &spi2Sens_buf.lsm303MagBuf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi2Sens_buf.lsm303MagBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI2_LIS3MDL_MAG:
-//    MPU9250GyroRxDoneHandler();
+    lis3mdl_UnselectDevice();
+    memcpy(sensing.dataBuf + sensing.ptr.mag2,
+        &spi2Sens_buf.lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi2Sens_buf.lis3mdlMagBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   default:
     break;
   }
+
+  spi2Sens.status = SPI_STAT_IDLE;
+  SpiSensing(&spi2Sens, SPI_NEXT_SENSOR);
 }
 
 void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  switch (spi2Sens.sensorList[spi2Sens.sensorCnt])
+  switch (spi3Sens.sensorList[spi3Sens.sensorCnt])
   {
   case SPI3_ADS1292R_EXG1:
-//    BMP180RxDoneHandler();
+    //TODO harmonise the "UnselectDevice" approach being implemented for SPI1 and SPI2 with the #defines as was previously implemented for the Shimmer4_SDK
+//    ads1292r_exg1_UnselectDevice();
+    Board_ECG_CS(0);
+    memcpy(sensing.dataBuf + sensing.ptr.exg1,
+        &spi3Sens_buf.ads1292rExg1Buf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi3Sens_buf.ads1292rExg1Buf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI3_ADS1292R_EXG2:
-//    BMP280RxDoneHandler();
+//    ads1292r_exg2_UnselectDevice();
+    Board_RESP_CS(0);
+    memcpy(sensing.dataBuf + sensing.ptr.exg2,
+        &spi3Sens_buf.ads1292rExg2Buf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi3Sens_buf.ads1292rExg2Buf) - SPI_DMA_TXRX_OFFSET);
     break;
   default:
     break;
   }
+
+  spi3Sens.status = SPI_STAT_IDLE;
+  SpiSensing(&spi3Sens, SPI_NEXT_SENSOR);
 }
 
 void SPI3_TxCpltCallback(SPI_HandleTypeDef *hspi)

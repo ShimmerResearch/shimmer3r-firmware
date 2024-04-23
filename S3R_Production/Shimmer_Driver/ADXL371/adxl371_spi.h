@@ -26,9 +26,9 @@ typedef struct
   void *handle;
 } dev_ctx_t;
 
-
 void adxl371_driver_init(void);
+void adxl371_SelectDevice(void);
+void adxl371_UnselectDevice(void);
 void adxl371_self_test(void);
-
 
 #endif /* ADXL371_ADXL371_SPI_H_ */

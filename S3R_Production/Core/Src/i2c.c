@@ -530,6 +530,7 @@ void I2cSens_stopSensing(void)
 {
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
+#if defined(SHIMMER4_SDK)
   if (configBytes->chEnGyro || configBytes->chEnAltAccel || configBytes->chEnAltMag)
   {
     MPU9250_wake(0);
@@ -540,6 +541,7 @@ void I2cSens_stopSensing(void)
   }
   HAL_Delay(10);
   Board_SW_I2C(0);
+#endif
 }
 
 #if defined(SHIMMER4_SDK)
@@ -911,19 +913,6 @@ void BMP280RxDoneHandler(void)
   }
 }
 
-void STC3100Sample(void) {
-  i2cBatt.status = I2C_STAT_STC3100_DATA_GET;
-  STC3100_readData_it(stc3100_buf);
-}
-
-void STC3100BatteryRxDoneHandler(void)
-{
-  //static uint8_t i=0;
-  memcpy(sensing.dataBuf + sensing.ptr.stc3100Batt, stc3100_buf, STC3100_DATA_LEN);
-  i2cBatt.status = I2C_STAT_IDLE;
-  I2cBattMonitor(I2C_NEXT_SENSOR);
-}
-
 void MPU9250GyroSample(void)
 {
   i2cSens.status = I2C_STAT_MPU9250_GYRO_GET_T;
@@ -1053,6 +1042,19 @@ void Lsm303dlhcMagRxDoneHandler(void)
   memcpy(sensing.dataBuf + sensing.ptr.mag1, i2cSens_buf.lsm303MagBuf, 6);
   i2cSens.status = I2C_STAT_IDLE;
   I2cSensing(I2C_NEXT_SENSOR); // goto next sensor
+}
+
+void STC3100Sample(void) {
+  i2cBatt.status = I2C_STAT_STC3100_DATA_GET;
+  STC3100_readData_it(stc3100_buf);
+}
+
+void STC3100BatteryRxDoneHandler(void)
+{
+  //static uint8_t i=0;
+  memcpy(sensing.dataBuf + sensing.ptr.stc3100Batt, stc3100_buf, STC3100_DATA_LEN);
+  i2cBatt.status = I2C_STAT_IDLE;
+  I2cBattMonitor(I2C_NEXT_SENSOR);
 }
 
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)

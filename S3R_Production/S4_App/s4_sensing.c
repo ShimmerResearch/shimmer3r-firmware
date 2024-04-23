@@ -81,6 +81,21 @@ void S4Sens_configureChannels(void) {
    S4_ADC_configureChannels();
    I2C_configureChannels();
    SPI_configureChannels();
+
+   expectedCbFlags = 0;
+   //TODO uncomment
+//   if (areAdcChannelsEnabled())
+//   {
+//     expectedCbFlags |= STAT_PERI_ADC;
+//   }
+   if (areI2cChannelsEnabled())
+   {
+     expectedCbFlags |= STAT_PERI_I2C_SENS;
+   }
+   if (areSpiChannelsEnabled())
+   {
+     expectedCbFlags |= STAT_PERI_SPI_SENS;
+   }
 }
 
 uint8_t S4Sens_checkStartSensorConditions(void){
@@ -88,7 +103,7 @@ uint8_t S4Sens_checkStartSensorConditions(void){
       return 0;
    }
    if(!((stat.sdlogCmd == 1    && stat.isSdInserted) || 
-        (stat.btstreamCmd == 1 && stat.isBtConnected))){      
+        (stat.btstreamCmd == BT_STREAM_CMD_STATE_START && stat.isBtConnected))){
       return 0;
    }        
    return 1;
@@ -110,20 +125,29 @@ uint8_t S4Sens_checkStartLoggingConditions(void){
    }
    return 0;
 }
-uint8_t S4Sens_checkStartStreamingConditions(void){
-   if(stat.isBtConnected){
-      if((!stat.isStreaming) && (stat.btstreamCmd == 1 )){
-         stat.isStreaming = 1;
-         stat.btstreamCmd = 0;
-      }
-      if((stat.isStreaming) && (stat.btstreamCmd == 2 )){
-         stat.isStreaming = 0;
-         stat.btstreamCmd = 0;
-      }
-   } else{       
+
+uint8_t S4Sens_checkStartStreamingConditions(void)
+{
+  if (stat.isBtConnected)
+  {
+    if (!stat.isStreaming && (stat.btstreamCmd == BT_STREAM_CMD_STATE_START))
+    {
+      stat.isStreaming = 1;
+      stat.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
+    }
+    if (stat.isStreaming && (stat.btstreamCmd == BT_STREAM_CMD_STATE_STOP))
+    {
       stat.isStreaming = 0;
-   }
-   return 0;
+      setBtCrcMode(CRC_OFF);
+      stat.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
+    }
+  }
+  else
+  {
+    stat.isStreaming = 0;
+    setBtCrcMode(CRC_OFF);
+  }
+  return 0;
 }
 
 void S4Sens_startSensing(void) {
@@ -149,7 +173,8 @@ void S4Sens_startSensing(void) {
       sensing.clkInterval4096 = (uint16_t)4096 / sensing.freq;//216000000 = 8192*26367 or 108000000 = 4096*26367 
       sensing.clkInterval16k = sampling_rate/2;
       
-      S4_ADC_startSensing();
+      //TODO uncomment
+//      S4_ADC_startSensing();
       I2C_startSensing();
       SPI_startSensing();
 
@@ -179,7 +204,7 @@ void S4Sens_startSensing(void) {
 
 uint8_t S4Sens_checkStopSensorConditions(void){
    if(!stat.isLogging && stat.isStreaming){// streaming only case
-      if(stat.btstreamCmd != 2){
+      if(stat.btstreamCmd != BT_STREAM_CMD_STATE_STOP){
          return 0;
       }
    }else if (stat.isLogging && !stat.isStreaming){// logging only case
@@ -187,7 +212,7 @@ uint8_t S4Sens_checkStopSensorConditions(void){
          return 0;
       }
    }else if (stat.isLogging && stat.isStreaming){
-      if((stat.btstreamCmd != 2) || (stat.sdlogCmd != 2)){
+      if((stat.btstreamCmd != BT_STREAM_CMD_STATE_STOP) || (stat.sdlogCmd != 2)){
          return 0;
       }
    }else{
@@ -215,6 +240,8 @@ void S4Sens_stopSensing(void) {
    if(S4Sens_checkStopSensorConditions()){
       stat.isConfiguring = 1;
       stat.isSensing = 0;
+      stat.isStreaming = 0;
+      setBtCrcMode(CRC_OFF);
       sensing.startTs = 0;
       //sensing.isSampling = 0;
       S4Sens_stopPeripherals();
@@ -222,7 +249,7 @@ void S4Sens_stopSensing(void) {
    }
    
    //stat.sdlogCmd = 0;
-   stat.btstreamCmd = 0;
+   stat.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
    stat.isConfiguring = 0;
 }
 
@@ -237,10 +264,8 @@ void S4Sens_stopPeripherals(void) {
    S4_ADC_stopSensing();     
    HAL_Delay(10); // Send ACK command needs delay here...
    BtUart_sendRsp();   
-#if IS_CONNECTED_DIG_SENSORS
    I2C_stopSensing();
    SPI_stopSensing();
-#endif
 }
 
 void S4Sens_streamData(void) {
@@ -259,38 +284,22 @@ void S4Sens_streamData(void) {
    
    //ExpUart_TxIT(sensing.dataBuf, sensing.dataLen);
 
+#if defined(SHIMMER4_SDK)
 //   HAL_Delay(500);
-#if USE_SD
-   if(stat.isLogging){
-      PeriStat_Set(STAT_PERI_SDMMC);
-      SD_writeToBuff(sensing.dataBuf + 1, sensing.dataLen - 1);
-      PeriStat_Clr(STAT_PERI_SDMMC);
-   }
-#endif 
-#if USE_BT
-   S4Sens_checkStartStreamingConditions();
-   if(stat.isStreaming){
-      if(BT_write(sensing.dataBuf, sensing.dataLen) == HAL_OK){
-      }
-   }
-#endif   
-   
-   if((!stat.isLogging) && (!stat.isStreaming)){
-      S4_Task_set(TASK_STOPSENSING);
-   }
+   saveData();
+#endif
       
    //sensing.isSampling = 0;
 }
 
-void S4Sens_bufPoll() {
-
+void S4Sens_bufPoll()
+{
    // adc channels
    S4_ADC_bufPoll();
    
    I2C_pollSensors();
    
    SPI_pollSensors();
-
 }
 
 // this is to be called in the ISR
@@ -320,21 +329,6 @@ void S4Sens_stepInit(void){
   S4_ADC_gatherDataCb(sensing_adcCompleteCb);
   I2cSens_gatherDataCb(sensing_i2cCompleteCb);
   SPI_gatherDataCb(sensing_spiCompleteCb);
-
-  expectedCbFlags = 0;
-  if (areAdcChannelsEnabled())
-  {
-    expectedCbFlags |= STAT_PERI_ADC;
-  }
-  if (areI2cChannelsEnabled())
-  {
-    expectedCbFlags |= STAT_PERI_I2C_SENS;
-  }
-  if (areSpiChannelsEnabled())
-  {
-    expectedCbFlags |= STAT_PERI_SPI_SENS;
-  }
-
 #elif defined(SHIMMER4_SDK)
   S4_ADC_gatherDataCb(S4Sens_step2Start);
 //  I2C_gatherDataInit(S4Sens_step3Start);
@@ -373,7 +367,7 @@ void sensing_stageCompleteCb(uint8_t stage)
   currentCbFlags |= stage;
   if (currentCbFlags == expectedCbFlags)
   {
-    //TODO
+    saveData();
   }
 }
 
@@ -427,3 +421,33 @@ void S4Sens_stepDone(void)
 //void S4Sens_step5End(void){S4Sens_step6Start();}
 //void S4Sens_step6End(void){}
 #endif
+
+void saveData(void)
+{
+#if USE_SD
+   if(stat.isLogging){
+      PeriStat_Set(STAT_PERI_SDMMC);
+      SD_writeToBuff(sensing.dataBuf + 1, sensing.dataLen - 1);
+      PeriStat_Clr(STAT_PERI_SDMMC);
+   }
+#endif
+#if USE_BT
+   S4Sens_checkStartStreamingConditions();
+   if(stat.isStreaming)
+   {
+     uint8_t crcMode = getBtCrcMode();
+     if (crcMode != CRC_OFF)
+     {
+         calculateCrcAndInsert(crcMode, sensing.dataBuf, sensing.dataLen);
+     }
+
+      if(BT_write(sensing.dataBuf, sensing.dataLen + crcMode) == HAL_OK){
+      }
+   }
+#endif
+
+   if((!stat.isLogging) && (!stat.isStreaming)){
+      S4_Task_set(TASK_STOPSENSING);
+   }
+}
+

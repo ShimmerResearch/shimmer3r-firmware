@@ -204,6 +204,13 @@ void I2cSens_stopSensing(void);
 void I2cBatt_stopSensing(void);
 #endif
 
+void I2cSens_sensorNext(void);
+
+#if defined(SHIMMER3R)
+bool areI2cChannelsEnabled(void);
+#elif defined(SHIMMER4_SDK)
+void I2cBatt_sensorNext(void);
+#endif
 
 #if defined(SHIMMER4_SDK)
 void BMP180Setup(void);
@@ -233,16 +240,8 @@ void Lsm303dlhcMagSample(void);
 void Lsm303dlhcMagTxDoneHandler(void);
 void Lsm303dlhcMagRxDoneHandler(void);
 void STC3100Sample(void);
-void STC3100BatteryTxDoneHandler(void);
+//void STC3100BatteryTxDoneHandler(void);
 void STC3100BatteryRxDoneHandler(void);
-#endif
-
-void I2cSens_sensorNext(void);
-
-#if defined(SHIMMER3R)
-bool areI2cChannelsEnabled(void);
-#elif defined(SHIMMER4_SDK)
-void I2cBatt_sensorNext(void);
 #endif
 
 /* USER CODE END Prototypes */

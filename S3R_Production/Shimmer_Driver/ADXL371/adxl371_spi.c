@@ -19,16 +19,6 @@
 
 static dev_ctx_t dev_ctx;
 
-void adxl371_SelectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
-}
-
-void adxl371_UnselectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
-}
-
 /*
  * @brief  Write generic device register (platform dependent)
  *
@@ -100,6 +90,16 @@ void adxl371_driver_init(void)
   dev_ctx.read_reg = platform_read;
   dev_ctx.mdelay = platform_delay;
   dev_ctx.handle = &SENSOR_BUS;
+}
+
+void adxl371_SelectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
+}
+
+void adxl371_UnselectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
 void adxl371_self_test(void)
