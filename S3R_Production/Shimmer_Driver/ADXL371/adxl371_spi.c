@@ -102,7 +102,7 @@ void adxl371_UnselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-void adxl371_self_test(void)
+uint8_t adxl371_self_test(void)
 {
   uint8_t buf[4];
   platform_read(dev_ctx.handle, 0x00, &buf[0], 4);
@@ -110,11 +110,12 @@ void adxl371_self_test(void)
   if (buf[0] == 0xAD && buf[1] == 0x1D && buf[2] == 0xFA && buf[3] == 0xFB)
   {
     printf("Self Test - PASS\r\n");
+    return 0;
   }
   else
   {
     printf("Self Test - FAIL\r\n");
+    return 1;
   }
-
 }
 

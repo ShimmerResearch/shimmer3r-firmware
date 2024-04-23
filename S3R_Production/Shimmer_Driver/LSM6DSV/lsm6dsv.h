@@ -8,7 +8,7 @@
 #ifndef LSM6DSV_LSM6DSV_H_
 #define LSM6DSV_LSM6DSV_H_
 
-void lsm6dsv_self_test(void);
+uint8_t lsm6dsv_self_test(void);
 
 void lsm6dsv_driver_init(void);
 void lsm6dsv_power_on(void);

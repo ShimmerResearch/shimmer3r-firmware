@@ -9,11 +9,22 @@
 #define BMP3_BMP3_SENSORAPI_HAL_BMP3_H_
 
 #include <stdint.h>
+#include "stm32u5xx.h"
 
-void bmp3_SelectDevice(void);
-void bmp3_UnselectDevice(void);
+/*!
+ *  @brief Prints the execution status of the APIs.
+ *
+ *  @param[in] api_name : Name of the API whose execution status has to be printed.
+ *  @param[in] rslt     : Error code returned by the API whose execution status has to be printed.
+ *
+ *  @return void.
+ */
+void bmp3_check_rslt(const char api_name[], int8_t rslt);
 
 void bmp390_driver_init(void);
+void bmp3_SelectDevice(void);
+void bmp3_UnselectDevice(void);
+HAL_StatusTypeDef bmp3_pressure_temperature_get(uint8_t *buf);
 int8_t bmp390_self_test(void);
 
 #endif /* BMP3_BMP3_SENSORAPI_HAL_BMP3_H_ */

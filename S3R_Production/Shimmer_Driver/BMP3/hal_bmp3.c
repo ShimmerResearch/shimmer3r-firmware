@@ -25,16 +25,6 @@ struct bmp3_dev bmp3;
 /* Variable to store the device address */
 static uint8_t dev_addr;
 
-void bmp3_SelectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
-}
-
-void bmp3_UnselectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
-}
-
 /*!
  * SPI read function map to Shimmer platform
  */
@@ -50,7 +40,7 @@ static BMP3_INTF_RET_TYPE bmp3_spi_read(uint8_t reg_addr, uint8_t *reg_data,
     bmp3_UnselectDevice();
     return 1;
   }
-  retVal = HAL_SPI_Transmit(&SENSOR_BUS, (uint8_t*) reg_data, (uint16_t) len,
+  retVal = HAL_SPI_Receive(&SENSOR_BUS, (uint8_t*) reg_data, (uint16_t) len,
       1000);
   if (retVal)
   {
@@ -76,7 +66,7 @@ static BMP3_INTF_RET_TYPE bmp3_spi_write(uint8_t reg_addr,
     bmp3_UnselectDevice();
     return 1;
   }
-  retVal = HAL_SPI_Receive(&SENSOR_BUS, (uint8_t*) reg_data, (uint16_t) len,
+  retVal = HAL_SPI_Transmit(&SENSOR_BUS, (uint8_t*) reg_data, (uint16_t) len,
       1000);
   if (retVal)
   {
@@ -87,12 +77,56 @@ static BMP3_INTF_RET_TYPE bmp3_spi_write(uint8_t reg_addr,
   return ( BMP3_INTF_RET_TYPE ) retVal;
 }
 
+static int32_t platform_read_raw_data_dma(void *handle, uint8_t *txBufp,
+    uint8_t *rxBufp, uint8_t len)
+{
+  HAL_StatusTypeDef ret;
+  bmp3_SelectDevice();
+  ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
+  return ret;
+}
+
 /*!
  * Delay function map to COINES platform
  */
 static void bmp3_delay_us(uint32_t period, void *intf_ptr)
 {
   HAL_Delay(period / 1000);
+}
+
+void bmp3_check_rslt(const char api_name[], int8_t rslt)
+{
+    switch (rslt)
+    {
+        case BMP3_OK:
+
+            /* Do nothing */
+            break;
+        case BMP3_E_NULL_PTR:
+            printf("API [%s] Error [%d] : Null pointer\r\n", api_name, rslt);
+            break;
+        case BMP3_E_COMM_FAIL:
+            printf("API [%s] Error [%d] : Communication failure\r\n", api_name, rslt);
+            break;
+        case BMP3_E_INVALID_LEN:
+            printf("API [%s] Error [%d] : Incorrect length parameter\r\n", api_name, rslt);
+            break;
+        case BMP3_E_DEV_NOT_FOUND:
+            printf("API [%s] Error [%d] : Device not found\r\n", api_name, rslt);
+            break;
+        case BMP3_E_CONFIGURATION_ERR:
+            printf("API [%s] Error [%d] : Configuration Error\r\n", api_name, rslt);
+            break;
+        case BMP3_W_SENSOR_NOT_ENABLED:
+            printf("API [%s] Error [%d] : Warning when Sensor not enabled\r\n", api_name, rslt);
+            break;
+        case BMP3_W_INVALID_FIFO_REQ_FRAME_CNT:
+            printf("API [%s] Error [%d] : Warning when Fifo watermark level is not in limit\r\n", api_name, rslt);
+            break;
+        default:
+            printf("API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
+            break;
+    }
 }
 
 void bmp390_driver_init(void)
@@ -103,6 +137,24 @@ void bmp390_driver_init(void)
   bmp3.delay_us = bmp3_delay_us;
   bmp3.intf_ptr = &dev_addr;
   bmp3.dummy_byte = 1;
+}
+
+void bmp3_SelectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
+}
+
+void bmp3_UnselectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+}
+
+HAL_StatusTypeDef bmp3_pressure_temperature_get(uint8_t *buf)
+{
+  HAL_StatusTypeDef ret;
+  static uint8_t txBuff[] = { BMP3_REG_DATA | 0x80, 0, 0, 0, 0, 0, 0, 0 };
+  ret = platform_read_raw_data_dma(&SENSOR_BUS, &txBuff[0], buf, sizeof(txBuff));
+  return ret;
 }
 
 int8_t bmp390_self_test(void)
@@ -117,6 +169,7 @@ int8_t bmp390_self_test(void)
   else
   {
     printf("Self Test - FAIL\r\n");
+    bmp3_check_rslt("BMP390", result);
   }
 
   return result;

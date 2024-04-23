@@ -669,7 +669,7 @@ void SPI_configureChannels()
     *channel_contents_ptr++ = BMP_PRESSURE;
     nbr_spi_chans += 2; //TEMP & PRES, ON/OFF together
     sensing.ptr.temperature = sensing.dataLen;
-    sensing.dataLen += 2;
+    sensing.dataLen += 3;
     sensing.ptr.pressure = sensing.dataLen;
     sensing.dataLen += 3;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_BMP390_PRESSURE_TEMP;
@@ -1068,7 +1068,8 @@ void SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     //TODO
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
-    //TODO
+    spiSensingInfo->status = SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET;
+    bmp3_pressure_temperature_get(spi1Sens_buf.bmp390Buf);
     break;
   case SPI2_LSM303AH_ACCEL:
     //TODO
@@ -1137,8 +1138,8 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   case SPI1_BMP390_PRESSURE_TEMP:
     bmp3_UnselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.pressure,
-        &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET],
-        sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET);
+        &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
+        sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;
   default:
     break;

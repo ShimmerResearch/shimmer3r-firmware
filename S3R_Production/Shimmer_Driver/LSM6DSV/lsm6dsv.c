@@ -158,7 +158,7 @@ static void platform_init(void);
 #endif
 
 /* Main Example --------------------------------------------------------------*/
-void lsm6dsv_self_test(void)
+uint8_t lsm6dsv_self_test(void)
 {
   lsm6dsv_all_sources_t all_sources;
   int16_t data_raw[3];
@@ -175,7 +175,7 @@ void lsm6dsv_self_test(void)
   lsm6dsv_device_id_get(&dev_ctx, &whoamI);
 
   if (whoamI != LSM6DSV_ID)
-    while (1);
+    return 1;
 
   /* Restore default configuration */
   lsm6dsv_reset_set(&dev_ctx, LSM6DSV_RESTORE_CTRL_REGS);
@@ -370,6 +370,7 @@ void lsm6dsv_self_test(void)
   }
 
   tx_com(tx_buffer, strlen((char const *)tx_buffer));
+  return (st_result == ST_PASS? 0:1);
 }
 
 /*
