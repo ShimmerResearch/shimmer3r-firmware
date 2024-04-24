@@ -334,9 +334,9 @@ void S4_NORM_ADC_startSensing(){
       //hadcSens.Instance = ADC2;
 #if defined(SHIMMER3R)
       sConfig.SamplingTime = ADC_SAMPLETIME_5CYCLES;
-      //without OFFSET hard fault in channel configuration.
+      sConfig.SingleDiff = ADC_SINGLE_ENDED;
       sConfig.OffsetNumber = ADC_OFFSET_NONE;
-      sConfig.Offset = 0xFF;
+      sConfig.Offset = 0;
       hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
       hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
       hadcSensPtr->Init.GainCompensation = 0;
