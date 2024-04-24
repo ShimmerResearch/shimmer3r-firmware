@@ -82,6 +82,9 @@
 /* SHIMMER3R: Define communication interface */
 #define SENSOR_BUS hspi2
 
+#define CS_PORT CS_LIS3MDL_GPIO_Port
+#define CS_PIN CS_LIS3MDL_Pin
+
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -168,7 +171,6 @@ void lis3mdl_self_test(void)
   uint8_t st_result;
   uint8_t whoamI;
   uint8_t drdy;
-  uint8_t rst;
   uint8_t i;
   uint8_t j;
 
@@ -178,12 +180,7 @@ void lis3mdl_self_test(void)
   if (whoamI != LIS3MDL_ID)
     while (1);
 
-  /* Restore default configuration */
-  lis3mdl_reset_set(&dev_ctx, PROPERTY_ENABLE);
-
-  do {
-    lis3mdl_reset_get(&dev_ctx, &rst);
-  } while (rst);
+  lis3mdl_restore_default_config();
 
   /* Enable Block Data Update */
   lis3mdl_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
@@ -324,10 +321,10 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
 #elif defined(SHIMMER3R)
   /* Write multiple command */
   reg |= 0x40;
-  HAL_GPIO_WritePin(CS_LIS3DML_GPIO_Port, CS_LIS3DML_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
   HAL_SPI_Transmit(handle, (uint8_t*) bufp, len, 1000);
-  HAL_GPIO_WritePin(CS_LIS3DML_GPIO_Port, CS_LIS3DML_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 #endif
   return 0;
 }
@@ -364,10 +361,10 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
 #elif defined(SHIMMER3R)
   /* Read multiple command */
   reg |= 0xC0;
-  HAL_GPIO_WritePin(CS_LIS3DML_GPIO_Port, CS_LIS3DML_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
   HAL_SPI_Receive(handle, bufp, len, 1000);
-  HAL_GPIO_WritePin(CS_LIS3DML_GPIO_Port, CS_LIS3DML_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 #endif
   return 0;
 }
@@ -441,4 +438,27 @@ void lis3mdl_power_off(void)
 {
   set_power_spi2_bus(false, SPI2_CHIP_INDEX_LIS3MDL);
 }
+
+void lis3mdl_SelectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
+}
+
+void lis3mdl_UnselectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+}
+
+void lis3mdl_restore_default_config(void)
+{
+  uint8_t rst;
+
+  /* Restore default configuration */
+  lis3mdl_reset_set(&dev_ctx, PROPERTY_ENABLE);
+
+  do {
+    lis3mdl_reset_get(&dev_ctx, &rst);
+  } while (rst);
+}
+
 #endif

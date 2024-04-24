@@ -805,7 +805,7 @@ void BtUart_processCmd(void) {
       toggleLedRed ^= 1;
       break;
    case START_STREAMING_COMMAND:
-      stat.btstreamCmd = 1;
+      stat.btstreamCmd = BT_STREAM_CMD_STATE_START;
       S4_Task_set(TASK_STARTSENSING);
       break;
    case START_LOGGING_COMMAND:
@@ -813,7 +813,7 @@ void BtUart_processCmd(void) {
       S4_Task_set(TASK_STARTSENSING);
       break;
    case START_SDBT_COMMAND:
-      stat.btstreamCmd = 1;
+      stat.btstreamCmd = BT_STREAM_CMD_STATE_START;
       stat.sdlogCmd = 1;
       S4_Task_set(TASK_STARTSENSING);
       break;
@@ -821,7 +821,7 @@ void BtUart_processCmd(void) {
 //      crcChecksum = args[0];
 //      break;
    case STOP_STREAMING_COMMAND:
-      stat.btstreamCmd = 2;
+      stat.btstreamCmd = BT_STREAM_CMD_STATE_STOP;
       S4_Task_set(TASK_STOPSENSING);
       break;
    case STOP_LOGGING_COMMAND:
@@ -829,7 +829,7 @@ void BtUart_processCmd(void) {
       S4_Task_set(TASK_STOPSENSING);
       break;
    case STOP_SDBT_COMMAND:
-      stat.btstreamCmd = 2;
+      stat.btstreamCmd = BT_STREAM_CMD_STATE_STOP;
       stat.sdlogCmd = 2;
       S4_Task_set(TASK_STOPSENSING);
       break;
@@ -2048,7 +2048,7 @@ void DockUart_sendRsp() {
       *(uartRespBuf + uart_resp_len++) = 10;
       *(uartRespBuf + uart_resp_len++) = UART_COMP_SHIMMER;
       *(uartRespBuf + uart_resp_len++) = UART_PROP_RTC_CFG_TIME;
-      uint64_t temp_rtcConfigTime = S4_RTC_getConfigTime();
+      uint64_t temp_rtcConfigTime = S4_RWC_getConfigTime();
       memcpy(uartRespBuf + uart_resp_len, (uint8_t*)(&temp_rtcConfigTime), 8);
       //memset(uartRespBuf + uart_resp_len, 0, 8);
       uart_resp_len += 8;

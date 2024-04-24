@@ -754,7 +754,12 @@ void S4_NORM_ADC_readBatt(void) {
    S4_ADC_rankBatt();
 }
 
-
+#if defined(SHIMMER3R)
+bool areAdcChannelsEnabled(void)
+{
+  return adc.sensorLen > 0 ? true : false;
+}
+#endif
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {

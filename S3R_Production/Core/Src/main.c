@@ -102,6 +102,7 @@ STATTypeDef stat;
 
 volatile uint32_t time_start, time_end, time_diff;
 
+uint8_t accelBuf[7];
 
 extern UART_HandleTypeDef *huartBt;
 #if defined(SHIMMER3R)
@@ -242,10 +243,14 @@ int main(void)
 #endif
 
   Init();
-  //Task_set(TASK_STARTSENSING);
+//  S4_NORM_Task_set(TASK_STARTSENSING);
 
 //  SD_test();
 //  SD_test_alternative();
+
+  lsm6dsv_self_test();
+  bmp390_self_test();
+  adxl371_self_test();
 
   //TODO move to "s4_adc.c"
   //https://www.youtube.com/watch?v=GBr6bQ-PzV8

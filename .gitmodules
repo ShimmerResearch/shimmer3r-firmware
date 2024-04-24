@@ -7,3 +7,6 @@
 [submodule "S3R_Production/Shimmer_Driver/LIS3MDL/lis3mdl-pid"]
 	path = S3R_Production/Shimmer_Driver/LIS3MDL/lis3mdl-pid
 	url = https://github.com/STMicroelectronics/lis3mdl-pid/
+[submodule "S3R_Production/Shimmer_Driver/BMP3/BMP3_SensorAPI"]
+	path = S3R_Production/Shimmer_Driver/BMP3/BMP3_SensorAPI
+	url = https://github.com/ShimmerEngineering/BMP3_SensorAPI

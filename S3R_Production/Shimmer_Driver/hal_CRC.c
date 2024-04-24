@@ -3,33 +3,31 @@
  *
  *  Created on: 23 Sep 2014
  *      Author: WeiboP
+ *  Updated on: 23 Apr 2024
+ *      Author: Mark Nolan
  */
 #include "hal_CRC.h"
-//#include "msp430.h"
 #include "stm32u5xx.h"
-//#include "stm32u5xx_hal_crc.h"
 
 CRC_HandleTypeDef *hcrcToUse;
 
 uint32_t CRC_data(uint8_t *buf, uint8_t len){
-//   uint8_t i;
-//   uint16_t crc_val=0;
-//
-//   CRCINIRES = CRC_INIT;
-//   if(len & 0x01){
-//      for(i=0; i<(uint8_t)((len-1) >> 1); i++) {
-//         CRCDIRB = *(((uint16_t *)buf)+i);
-//      }
-//      CRCDIRB = (uint16_t)(buf[(uint8_t)(len-1)]);
-//   } else {
-//      for(i=0; i<(uint8_t)(len >> 1); i++) {
-//         CRCDIRB = *(((uint16_t *)buf)+i);
-//      }
-//   }
-//   crc_val = CRCINIRES;
-//   return crc_val;
+  HAL_CRC_Calculate(hcrcToUse, (uint32_t *)buf, (uint32_t)len);
 
-  return HAL_CRC_Calculate(hcrcToUse, buf, (uint32_t)len);
+  /* In order to match what's done in other Shimmer3 microcontrollers, we need
+   * to add a 0x00 padding byte if the length is an odd number. */
+  if (len & 0x01)
+  {
+    /* Change CRC peripheral state */
+    hcrcToUse->State = HAL_CRC_STATE_BUSY;
+
+    *(__IO uint8_t*) (__IO void*) (&hcrcToUse->Instance->DR) = 0x00;
+
+    /* Change CRC peripheral state */
+    hcrcToUse->State = HAL_CRC_STATE_READY;
+  }
+
+  return hcrcToUse->Instance->DR;
 }
 
 void calculateCrcAndInsert(uint8_t crcMode, uint8_t *aryPtr, uint8_t len)
@@ -71,5 +69,34 @@ uint8_t checkCrc(uint8_t crcMode, uint8_t *aryPtr, uint8_t payloadLen)
 void setCrcHandleToUse(CRC_HandleTypeDef *hcrc)
 {
   hcrcToUse = hcrc;
+}
+
+uint8_t testCrcDriver(void)
+{
+  uint8_t crcTestArray0Remainder[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x00, 0x00};
+  calculateCrcAndInsert(CRC_2BYTES_ENABLED, crcTestArray0Remainder, 8);
+  if(crcTestArray0Remainder[8] != 0xAA || crcTestArray0Remainder[9] != 0x48)
+  {
+    return 1;
+  }
+  uint8_t crcTestArray1Remainder[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00};
+  calculateCrcAndInsert(CRC_2BYTES_ENABLED, crcTestArray1Remainder, 9);
+  if(crcTestArray1Remainder[9] != 0x5D || crcTestArray1Remainder[10] != 0x2A)
+  {
+    return 1;
+  }
+  uint8_t crcTestArray2Remainder[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x00, 0x00};
+  calculateCrcAndInsert(CRC_2BYTES_ENABLED, crcTestArray2Remainder, 10);
+  if(crcTestArray2Remainder[10] != 0x17 || crcTestArray2Remainder[11] != 0x8B)
+  {
+    return 1;
+  }
+  uint8_t crcTestArray3Remainder[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x00, 0x00};
+  calculateCrcAndInsert(CRC_2BYTES_ENABLED, crcTestArray3Remainder, 11);
+  if(crcTestArray3Remainder[11] != 0x4E || crcTestArray3Remainder[12] != 0x79)
+  {
+    return 1;
+  }
+  return 0;
 }
 

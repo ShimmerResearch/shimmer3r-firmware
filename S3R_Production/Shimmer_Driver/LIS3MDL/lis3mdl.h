@@ -13,5 +13,8 @@ void lis3mdl_self_test(void);
 void lis3mdl_driver_init(void);
 void lis3mdl_power_on(void);
 void lis3mdl_power_off(void);
+void lis3mdl_SelectDevice(void);
+void lis3mdl_UnselectDevice(void);
+void lis3mdl_restore_default_config(void);
 
 #endif /* LIS3MDL_LIS3MDL_H_ */

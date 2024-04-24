@@ -50,12 +50,6 @@ HAL_StatusTypeDef cat24c16_result;
 
 void CAT24C16_init(I2C_HandleTypeDef *hi2c){
    eeprom_hi2c = hi2c;
-   //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_SET);//EXP_RESET_N
-#if defined(SHIMMER4_SDK)
-   Board_SW_EXP(1);
-#elif defined(SHIMMER3R)
-   Board_SW_I2C(1);
-#endif
 }
 
 void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length) {

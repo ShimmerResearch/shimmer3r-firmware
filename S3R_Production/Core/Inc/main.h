@@ -172,8 +172,8 @@ void Error_Handler(void);
 #define LED_UPR_GR_GPIO_Port GPIOB
 #define LED_UPR_BLU_Pin GPIO_PIN_9
 #define LED_UPR_BLU_GPIO_Port GPIOB
-#define CS_LIS3DML_Pin GPIO_PIN_0
-#define CS_LIS3DML_GPIO_Port GPIOE
+#define CS_LIS3MDL_Pin GPIO_PIN_0
+#define CS_LIS3MDL_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
 
