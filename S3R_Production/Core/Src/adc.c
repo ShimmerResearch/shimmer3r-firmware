@@ -46,14 +46,14 @@ void MX_ADC1_Init(void)
   /** Common config
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
-  hadc1.Init.Resolution = ADC_RESOLUTION_14B;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.GainCompensation = 0;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -62,7 +62,7 @@ void MX_ADC1_Init(void)
   hadc1.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc1.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
-  hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
+  hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT;
   hadc1.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
@@ -82,7 +82,9 @@ void MX_ADC1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN ADC1_Init 2 */
-  HAL_ADC_DeInit(&hadc1);
+
+  //TODO come back to deint/init this ADC when needed
+//  HAL_ADC_DeInit(&hadc1);
   /* USER CODE END ADC1_Init 2 */
 
 }
@@ -103,7 +105,7 @@ void MX_ADC2_Init(void)
   /** Common config
   */
   hadc2.Instance = ADC2;
-  hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
   hadc2.Init.Resolution = ADC_RESOLUTION_12B;
   hadc2.Init.GainCompensation = 0;
   hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
@@ -205,7 +207,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     handle_GPDMA1_Channel2.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
     handle_GPDMA1_Channel2.Init.Direction = DMA_PERIPH_TO_MEMORY;
     handle_GPDMA1_Channel2.Init.SrcInc = DMA_SINC_FIXED;
-    handle_GPDMA1_Channel2.Init.DestInc = DMA_DINC_FIXED;
+    handle_GPDMA1_Channel2.Init.DestInc = DMA_DINC_INCREMENTED;
     handle_GPDMA1_Channel2.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_HALFWORD;
     handle_GPDMA1_Channel2.Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
     handle_GPDMA1_Channel2.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;

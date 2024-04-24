@@ -248,9 +248,12 @@ int main(void)
 //  SD_test();
 //  SD_test_alternative();
 
-  lsm6dsv_self_test();
-  bmp390_self_test();
-  adxl371_self_test();
+  if(lsm6dsv_self_test()
+      || bmp390_self_test()
+      || adxl371_self_test())
+  {
+    printf("Self Test - FAIL\r\n" );
+  }
 
   //TODO move to "s4_adc.c"
   //https://www.youtube.com/watch?v=GBr6bQ-PzV8
