@@ -83,11 +83,10 @@ void S4Sens_configureChannels(void) {
    SPI_configureChannels();
 
    expectedCbFlags = 0;
-   //TODO uncomment
-//   if (areAdcChannelsEnabled())
-//   {
-//     expectedCbFlags |= STAT_PERI_ADC;
-//   }
+   if (areAdcChannelsEnabled())
+   {
+     expectedCbFlags |= STAT_PERI_ADC;
+   }
    if (areI2cChannelsEnabled())
    {
      expectedCbFlags |= STAT_PERI_I2C_SENS;
@@ -173,8 +172,7 @@ void S4Sens_startSensing(void) {
       sensing.clkInterval4096 = (uint16_t)4096 / sensing.freq;//216000000 = 8192*26367 or 108000000 = 4096*26367 
       sensing.clkInterval16k = sampling_rate/2;
       
-      //TODO uncomment
-//      S4_ADC_startSensing();
+      S4_ADC_startSensing();
       I2C_startSensing();
       SPI_startSensing();
 

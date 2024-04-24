@@ -248,6 +248,10 @@ int main(void)
 //  SD_test();
 //  SD_test_alternative();
 
+  lsm6dsv_self_test();
+  bmp390_self_test();
+  adxl371_self_test();
+
   //TODO move to "s4_adc.c"
   //https://www.youtube.com/watch?v=GBr6bQ-PzV8
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
@@ -257,12 +261,6 @@ int main(void)
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
   i = 0;
-
-  lsm6dsv_self_test();
-  bmp390_self_test();
-  adxl371_self_test();
-
-//  lsm6dsv_config_accel(S4Ram_getStoredConfig()->gyroRate, S4Ram_getStoredConfig()->altAccelRange);
 
   /* USER CODE END 2 */
 
@@ -279,14 +277,6 @@ int main(void)
 //    printf("Hello World \n");
     rgb_led_lwr_color(i, i, i);
     i+=5;
-
-//    if(hspi1.State == HAL_SPI_STATE_READY)
-//    {
-//      if(hspi1.hdmarx->State == HAL_DMA_STATE_READY && hspi1.hdmatx->State == HAL_DMA_STATE_READY)
-//      {
-//        lsm6dsv_accel_get(&accelBuf[0]);
-//      }
-//    }
   }
   /* USER CODE END 3 */
 }
