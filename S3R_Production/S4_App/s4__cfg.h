@@ -18,7 +18,7 @@
 #define USE_DEFAULT_LED       1
 #define USE_I2C_VBATT_REPORT  1
 #define SKIP_50MS             1
-#define USE_VBATT_ALWAYS      1
+#define USE_VBATT_ALWAYS      0
 #define HAL_TEST_INFOMEM      0
 #define USE_BT                1
 #define USE_SD                1

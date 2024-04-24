@@ -72,7 +72,8 @@ void HAL_MspInit(void)
   /* System interrupt init*/
 
   /* USER CODE BEGIN MspInit 1 */
-
+//TODO This may be needed to get the ADC working
+  HAL_PWREx_EnableVddA();
   /* USER CODE END MspInit 1 */
 }
 

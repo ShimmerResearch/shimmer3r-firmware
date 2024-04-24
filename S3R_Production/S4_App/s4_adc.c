@@ -55,9 +55,9 @@
 ADCTypeDef adc;
 #if defined(SHIMMER4_SDK)
 ADC_HandleTypeDef hadcResv; //reserved for user use
-#endif
 ADC_HandleTypeDef hadcSens;
 ADC_HandleTypeDef hadcBatt;
+#endif
 
 ADC_HandleTypeDef *hadcSensPtr;
 ADC_HandleTypeDef *hadcBattPtr;
@@ -327,24 +327,40 @@ void S4_NORM_ADC_startSensing(){
    ADC_ChannelConfTypeDef sConfig;
    uint8_t adc_counter_sens = 1;//, adc_counter_resv = 0;   
    adcConfig = ADC_CONFIG_SENS;
-#if defined(SHIMMER3R)
-   sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
-#elif defined(SHIMMER4_SDK)
-   sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
-#endif
       
    if(adc.sensorLen > 0){  
-      HAL_ADC_DeInit(hadcSensPtr);
-      
+     HAL_ADC_DeInit(hadcSensPtr);
       //memcpy((uint8_t*)hadcSensPtr.Init, (uint8_t*)&hadcBattPtr->Init, sizeof(ADC_InitTypeDef));
       //hadcSens.Instance = ADC2;
 #if defined(SHIMMER3R)
+      sConfig.SamplingTime = ADC_SAMPLETIME_5CYCLES;
+      //without OFFSET hard fault in channel configuration.
+      sConfig.OffsetNumber = ADC_OFFSET_NONE;
+      sConfig.Offset = 0xFF;
       hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-#elif defined(SHIMMER4_SDK)
-      hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
-#endif
       hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
-      //hadcSensPtr->Init.ScanConvMode = DISABLE;
+      hadcSensPtr->Init.GainCompensation = 0;
+      hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
+      hadcSensPtr->Init.ScanConvMode = ADC_SCAN_DISABLE;
+      hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+      hadcSensPtr->Init.LowPowerAutoWait = DISABLE;
+      hadcSensPtr->Init.ContinuousConvMode = ENABLE;
+      hadcSensPtr->Init.NbrOfConversion = adc.sensorLen;
+      hadcSensPtr->Init.DiscontinuousConvMode = DISABLE;
+      hadcSensPtr->Init.ExternalTrigConv = ADC_SOFTWARE_START;
+      hadcSensPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+      hadcSensPtr->Init.DMAContinuousRequests = ENABLE;
+      hadcSensPtr->Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
+      hadcSensPtr->Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
+      hadcSensPtr->Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
+      hadcSensPtr->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT;
+      hadcSensPtr->Init.OversamplingMode = DISABLE;
+
+#elif defined(SHIMMER4_SDK)
+      sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
+      hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+      hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
+      hadcSensPtr->Init.ScanConvMode = DISABLE;
       hadcSensPtr->Init.ContinuousConvMode = DISABLE;
       hadcSensPtr->Init.DiscontinuousConvMode = DISABLE;
       hadcSensPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -352,17 +368,12 @@ void S4_NORM_ADC_startSensing(){
       //hadcSensPtr->Init.NbrOfConversion = 3;
       hadcSensPtr->Init.DMAContinuousRequests = ENABLE;
       //hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
-      
+#endif
       if(adc.sensorLen > 1){
-         hadcSensPtr->Init.ScanConvMode = ENABLE;
          hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
       } else {
-         hadcSensPtr->Init.ScanConvMode = DISABLE;
          hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
       }
-      
-      hadcSensPtr->Init.NbrOfConversion = adc.sensorLen;
-      
       if (HAL_ADC_Init(hadcSensPtr) != HAL_OK)
       {
          Error_Handler();
