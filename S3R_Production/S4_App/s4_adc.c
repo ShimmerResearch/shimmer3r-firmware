@@ -365,7 +365,7 @@ void S4_NORM_ADC_startSensing(){
       hadcSensPtr->Init.DiscontinuousConvMode = DISABLE;
       hadcSensPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
       hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
-      //hadcSensPtr->Init.NbrOfConversion = 3;
+      hadcSensPtr->Init.NbrOfConversion = adc.sensorLen;
       hadcSensPtr->Init.DMAContinuousRequests = ENABLE;
       //hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
 #endif
