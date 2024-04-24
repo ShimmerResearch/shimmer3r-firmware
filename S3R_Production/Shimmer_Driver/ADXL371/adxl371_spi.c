@@ -119,3 +119,8 @@ uint8_t adxl371_self_test(void)
   }
 }
 
+void adxl371_restore_default_config(void)
+{
+  //TODO
+//  adxl371_reset(dev);
+}

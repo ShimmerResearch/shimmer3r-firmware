@@ -959,6 +959,15 @@ void SPI_stopSensing()
   lis3mdl_UnselectDevice();
   lsm303ah_UnselectDevice();
 
+  //TOOD reset chips to default config (especially to stop them sampling and put them in standby)
+//  lsm6dsv_restore_default_config();
+//  bmp390_restore_default_config();
+//  adxl371_restore_default_config();
+//  lis3mdl_restore_default_config();
+//  //TODO pick approach below:
+////  lsm303ah_sleep();
+//  lsm303ah_restore_default_config();
+
   //TODO do we need to deinit the SPI buses to save power?
 
 

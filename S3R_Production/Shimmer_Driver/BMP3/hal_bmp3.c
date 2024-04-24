@@ -174,3 +174,11 @@ int8_t bmp390_self_test(void)
 
   return result;
 }
+
+void bmp390_restore_default_config(void)
+{
+  int8_t rslt;
+  /* Reset the sensor */
+  rslt = bmp3_soft_reset(&bmp3);
+}
+

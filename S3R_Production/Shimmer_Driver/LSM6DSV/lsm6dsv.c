@@ -538,7 +538,7 @@ void lsm6dsv_config_accel(uint8_t rate, uint8_t range)
    * Selected data rate have to be equal or greater with respect
    * with MLC data rate.
    */
-  lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_120Hz);
+  lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_1920Hz);
   /* Set full scale */
   lsm6dsv_xl_full_scale_set(&dev_ctx, (lsm6dsv_xl_full_scale_t) range);
 
@@ -553,7 +553,8 @@ void lsm6dsv_config_accel(uint8_t rate, uint8_t range)
 
 void lsm6dsv_config_gyro(uint8_t rate, uint8_t range)
 {
-//  lsm6dsv_flag_data_ready_get(&dev_ctx, &drdy);
+  lsm6dsv_gy_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_1920Hz);
+  lsm6dsv_gy_full_scale_set(&dev_ctx, range);
 }
 
 void lsm6dsv_status_get(void)

@@ -171,7 +171,6 @@ void lis3mdl_self_test(void)
   uint8_t st_result;
   uint8_t whoamI;
   uint8_t drdy;
-  uint8_t rst;
   uint8_t i;
   uint8_t j;
 
@@ -181,12 +180,7 @@ void lis3mdl_self_test(void)
   if (whoamI != LIS3MDL_ID)
     while (1);
 
-  /* Restore default configuration */
-  lis3mdl_reset_set(&dev_ctx, PROPERTY_ENABLE);
-
-  do {
-    lis3mdl_reset_get(&dev_ctx, &rst);
-  } while (rst);
+  lis3mdl_restore_default_config();
 
   /* Enable Block Data Update */
   lis3mdl_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
@@ -453,6 +447,18 @@ void lis3mdl_SelectDevice(void)
 void lis3mdl_UnselectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+}
+
+void lis3mdl_restore_default_config(void)
+{
+  uint8_t rst;
+
+  /* Restore default configuration */
+  lis3mdl_reset_set(&dev_ctx, PROPERTY_ENABLE);
+
+  do {
+    lis3mdl_reset_get(&dev_ctx, &rst);
+  } while (rst);
 }
 
 #endif

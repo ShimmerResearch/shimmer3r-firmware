@@ -237,24 +237,12 @@ void lsm303ah_self_test(void)
     while (1)
       ; /*manage here device not found */
 
-  /* Restore default configuration */
-  lsm303ah_xl_reset_set(&dev_ctx_xl, PROPERTY_ENABLE);
-
-  do
-  {
-    lsm303ah_xl_reset_get(&dev_ctx_xl, &reg.byte);
-  } while (reg.byte);
-
-  lsm303ah_mg_reset_set(&dev_ctx_mg, PROPERTY_ENABLE);
-
-  do
-  {
-    lsm303ah_mg_reset_get(&dev_ctx_mg, &reg.byte);
-  } while (reg.byte);
+  lsm303ah_restore_default_config();
 
   /* Enable Block Data Update. */
   lsm303ah_xl_block_data_update_set(&dev_ctx_xl, PROPERTY_ENABLE);
   lsm303ah_mg_block_data_update_set(&dev_ctx_mg, PROPERTY_ENABLE);
+
   /* Set full scale to 2g. */
   lsm303ah_xl_full_scale_set(&dev_ctx_xl, LSM303AH_XL_2g);
   /* Set Output Data Rate. */
@@ -668,6 +656,9 @@ void lsm303ah_accelInit(uint8_t samplingRate, uint8_t range, uint8_t lowPower,
   reg.ctrl1_a.bdu = PROPERTY_DISABLE;
   lsm303ah_write_reg(&dev_ctx_xl, LSM303AH_CTRL1_A, &reg.byte, 1);
 #endif
+
+  /* Enable Block Data Update. */
+  lsm303ah_xl_block_data_update_set(&dev_ctx_xl, PROPERTY_ENABLE);
 }
 
 void lsm303ah_magInit(uint8_t samplingrate)
@@ -690,6 +681,9 @@ void lsm303ah_magInit(uint8_t samplingrate)
   reg.cfg_reg_a_m.md = LSM303AH_MG_CONTINUOUS_MODE;
   lsm303ah_write_reg(&dev_ctx_mg, LSM303AH_CFG_REG_A_M, &reg.byte, 1);
 #endif
+
+  /* Enable Block Data Update. */
+  lsm303ah_mg_block_data_update_set(&dev_ctx_mg, PROPERTY_ENABLE);
 }
 
 void lsm303ah_getAccel(uint8_t *buf)
@@ -738,6 +732,24 @@ void lsm303ah_sleep(void)
 {
   lsm303ah_xl_data_rate_set(&dev_ctx_xl, LSM303AH_XL_ODR_OFF);
   lsm303ah_mg_operating_mode_set(&dev_ctx_mg, LSM303AH_MG_POWER_DOWN);
+}
+
+void lsm303ah_restore_default_config(void)
+{
+  lsm303ah_reg_t reg;
+
+  /* Restore default configuration */
+  lsm303ah_xl_reset_set(&dev_ctx_xl, PROPERTY_ENABLE);
+  do
+  {
+    lsm303ah_xl_reset_get(&dev_ctx_xl, &reg.byte);
+  } while (reg.byte);
+
+  lsm303ah_mg_reset_set(&dev_ctx_mg, PROPERTY_ENABLE);
+  do
+  {
+    lsm303ah_mg_reset_get(&dev_ctx_mg, &reg.byte);
+  } while (reg.byte);
 }
 
 #endif

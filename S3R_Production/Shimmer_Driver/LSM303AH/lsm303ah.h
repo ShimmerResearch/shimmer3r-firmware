@@ -34,4 +34,6 @@ void lsm303ah_getMag(uint8_t *buf);
 //powers down the lsm303ah
 void lsm303ah_sleep(void);
 
+void lsm303ah_restore_default_config(void);
+
 #endif /* LSM303AH_LSM303AH_H_ */
