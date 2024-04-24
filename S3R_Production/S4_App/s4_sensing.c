@@ -82,6 +82,7 @@ void S4Sens_configureChannels(void) {
    I2C_configureChannels();
    SPI_configureChannels();
 
+#if defined(SHIMMER3R)
    expectedCbFlags = 0;
    if (areAdcChannelsEnabled())
    {
@@ -95,6 +96,7 @@ void S4Sens_configureChannels(void) {
    {
      expectedCbFlags |= STAT_PERI_SPI_SENS;
    }
+#endif
 }
 
 uint8_t S4Sens_checkStartSensorConditions(void){
