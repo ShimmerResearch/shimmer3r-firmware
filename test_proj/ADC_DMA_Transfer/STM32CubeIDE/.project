@@ -44,6 +44,26 @@
 			<locationURI>PARENT-1-PROJECT_LOC/README.md</locationURI>
 		</link>
 		<link>
+			<name>Application/User/linked_list.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Src/linked_list.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/main.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Src/main.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/stm32u5xx_hal_msp.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Src/stm32u5xx_hal_msp.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/stm32u5xx_it.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Src/stm32u5xx_it.c</locationURI>
+		</link>
+		<link>
 			<name>Drivers/CMSIS/system_stm32u5xx.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Src/system_stm32u5xx.c</locationURI>
