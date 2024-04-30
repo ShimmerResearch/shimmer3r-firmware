@@ -39,70 +39,248 @@
  * @author Weibo Pan
  * @date May, 2016
  */
- 
+
 #include "hal_Board.h"
 
 #include "stm32u5xx_hal.h"
+
+#if defined(SHIMMER3R)
+
+static uint8_t ledStateLwrRed = 0, ledStateLwrGreen = 0, ledStateLwrBlue = 0;
+static uint8_t ledStateUprRed = 0, ledStateUprGreen = 0, ledStateUprBlue = 0;
+
+TIM_HandleTypeDef *htimLwrLedsPtr;
+TIM_HandleTypeDef *htimUprLedsPtr;
+
+static void updateLedState(uint8_t updateMode, uint8_t ledMask);
+
+//https://www.youtube.com/watch?v=GBr6bQ-PzV8
+void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
+    TIM_HandleTypeDef *htimUprLeds)
+{
+  htimLwrLedsPtr = htimLwrLeds;
+  htimUprLedsPtr = htimUprLeds;
+
+  HAL_TIM_PWM_Start(htimLwrLedsPtr, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(htimLwrLedsPtr, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(htimLwrLedsPtr, TIM_CHANNEL_3);
+
+  HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_4);
+}
+
+void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue)
+{
+  if (htimLwrLedsPtr)
+  {
+    htimLwrLedsPtr->Instance->CCR1 = red;
+    htimLwrLedsPtr->Instance->CCR2 = green;
+    htimLwrLedsPtr->Instance->CCR3 = blue;
+  }
+}
+
+void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue)
+{
+  if (htimUprLedsPtr)
+  {
+    htimUprLedsPtr->Instance->CCR2 = red;
+    htimUprLedsPtr->Instance->CCR3 = green;
+    htimUprLedsPtr->Instance->CCR4 = blue;
+  }
+}
+
+void Board_ledLwrSetColour(uint32_t ledMask)
+{
+  ledStateLwrRed = ledMask>>16;
+  ledStateLwrGreen = ledMask>>8;
+  ledStateLwrBlue = ledMask;
+  rgb_led_lwr_color(ledStateLwrRed, ledStateLwrGreen, ledStateLwrBlue);
+}
+
+void Board_ledLwrSetColourRgb(int16_t red, int16_t green, int16_t blue)
+{
+  if (red != -1)
+  {
+    ledStateLwrRed = red;
+  }
+  if (green != -1)
+  {
+    ledStateLwrGreen = green;
+  }
+  if (blue != -1)
+  {
+    ledStateLwrBlue = blue;
+  }
+  rgb_led_lwr_color(ledStateLwrRed, ledStateLwrGreen, ledStateLwrBlue);
+}
+
+void Board_ledUprSetColour(uint32_t ledMask)
+{
+  ledStateUprRed = ledMask>>16;
+  ledStateUprGreen = ledMask>>8;
+  ledStateUprBlue = ledMask;
+  rgb_led_upr_color(ledStateUprRed, ledStateUprGreen, ledStateUprBlue);
+}
+
+void Board_ledUprSetColourRgb(int16_t red, int16_t green, int16_t blue)
+{
+  if (red != -1)
+  {
+    ledStateUprRed = red;
+  }
+  if (green != -1)
+  {
+    ledStateUprGreen = green;
+  }
+  if (blue != -1)
+  {
+    ledStateUprBlue = blue;
+  }
+  rgb_led_upr_color(ledStateUprRed, ledStateUprGreen, ledStateUprBlue);
+}
+
+static void updateLedState(uint8_t updateMode, uint8_t ledMask)
+{
+  if (updateMode == 0 || updateMode == 1)
+  {
+    uint8_t valueToSet = updateMode ? LED_PWM_ON : LED_PWM_OFF;
+
+    if (ledMask & LED_RED)
+    {
+      ledStateLwrRed = valueToSet;
+    }
+    if (ledMask & LED_GREEN0)
+    {
+      ledStateLwrGreen = valueToSet;
+    }
+    if (ledMask & LED_YELLOW)
+    {
+      ledStateLwrRed = valueToSet;
+      ledStateLwrGreen = valueToSet;
+    }
+    if (ledMask & LED_GREEN1)
+    {
+      ledStateUprGreen = valueToSet;
+    }
+    if (ledMask & LED_BLUE)
+    {
+      ledStateUprBlue = valueToSet;
+    }
+  }
+  else if (updateMode == 3)
+  {
+    if (ledMask & LED_RED)
+    {
+      ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
+    }
+    if (ledMask & LED_GREEN0)
+    {
+      ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
+    }
+    if (ledMask & LED_YELLOW)
+    {
+      ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
+      ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
+    }
+    if (ledMask & LED_GREEN1)
+    {
+      ledStateUprGreen = ledStateUprGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
+    }
+    if (ledMask & LED_BLUE)
+    {
+      ledStateUprBlue = ledStateUprBlue == LED_PWM_ON ? 0 : LED_PWM_ON;
+    }
+  }
+}
+
+#endif
+
 
 /***************************************************************************//**
  * @brief  Turn on LEDs
  * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn on
  * @return none
  ******************************************************************************/
-void Board_ledOn(uint8_t ledMask) {
+#if defined(SHIMMER3R)
+void Board_ledOn(uint8_t ledMask)
+{
+  updateLedState(1, ledMask);
+  rgb_led_lwr_color(ledMask>>16, ledMask>>8, ledMask);
+  rgb_led_upr_color(ledMask>>16, ledMask>>8, ledMask);
+}
+#elif if defined(SHIMMER4_SDK)
+void Board_ledOn(uint8_t ledMask)
+{
    if (ledMask & LED_RED)        HAL_GPIO_WritePin(LED_RED_GPIO, LED_RED_PIN,GPIO_PIN_RESET);//red   
    if (ledMask & LED_GREEN0)     HAL_GPIO_WritePin(LED_GR0_GPIO, LED_GR0_PIN,GPIO_PIN_RESET);//green0
    if (ledMask & LED_YELLOW)     HAL_GPIO_WritePin(LED_YEL_GPIO, LED_YEL_PIN,GPIO_PIN_RESET);//orange
    if (ledMask & LED_GREEN1)     HAL_GPIO_WritePin(LED_GR1_GPIO, LED_GR1_PIN,GPIO_PIN_RESET);//green1
    if (ledMask & LED_BLUE)       HAL_GPIO_WritePin(LED_BLU_GPIO, LED_BLU_PIN,GPIO_PIN_RESET);//blue
-   
-   
-   
 }
-
+#endif
 
 /***************************************************************************//**
  * @brief  Turn off LEDs
  * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn off
  * @return none
  ******************************************************************************/
-void Board_ledOff(uint8_t ledMask) {
+#if defined(SHIMMER3R)
+void Board_ledOff(uint8_t ledMask)
+{
+  updateLedState(0, ledMask);
+  rgb_led_lwr_color(ledMask>>16, ledMask>>8, ledMask);
+  rgb_led_upr_color(ledMask>>16, ledMask>>8, ledMask);
+}
+#elif if defined(SHIMMER4_SDK)
+void Board_ledOff(uint8_t ledMask)
+{
    if (ledMask & LED_RED)        HAL_GPIO_WritePin(LED_RED_GPIO, LED_RED_PIN,GPIO_PIN_SET);//red   
    if (ledMask & LED_GREEN0)     HAL_GPIO_WritePin(LED_GR0_GPIO, LED_GR0_PIN,GPIO_PIN_SET);//green0
    if (ledMask & LED_YELLOW)     HAL_GPIO_WritePin(LED_YEL_GPIO, LED_YEL_PIN,GPIO_PIN_SET);//orange
    if (ledMask & LED_GREEN1)     HAL_GPIO_WritePin(LED_GR1_GPIO, LED_GR1_PIN,GPIO_PIN_SET);//green1
    if (ledMask & LED_BLUE)       HAL_GPIO_WritePin(LED_BLU_GPIO, LED_BLU_PIN,GPIO_PIN_SET);//blue
 }
-
+#endif
 
 /***************************************************************************//**
  * @brief  Toggle LEDs
  * @param  ledMask   Use values defined in HAL_board.h for the LEDs to toggle
  * @return none
  ******************************************************************************/
-void Board_ledToggle(uint8_t ledMask) {
+#if defined(SHIMMER3R)
+void Board_ledToggle(uint8_t ledMask)
+{
+  updateLedState(2, ledMask);
+  rgb_led_lwr_color(ledStateLwrRed, ledStateLwrGreen, ledStateLwrBlue);
+  rgb_led_upr_color(ledStateUprRed, ledStateUprGreen, ledStateUprBlue);
+}
+#elif if defined(SHIMMER4_SDK)
+void Board_ledToggle(uint8_t ledMask)
+{
    if (ledMask & LED_RED)        HAL_GPIO_TogglePin(LED_RED_GPIO, LED_RED_PIN);//red   
    if (ledMask & LED_GREEN0)     HAL_GPIO_TogglePin(LED_GR0_GPIO, LED_GR0_PIN);//green0
    if (ledMask & LED_YELLOW)     HAL_GPIO_TogglePin(LED_YEL_GPIO, LED_YEL_PIN);//orange
    if (ledMask & LED_GREEN1)     HAL_GPIO_TogglePin(LED_GR1_GPIO, LED_GR1_PIN);//green1
    if (ledMask & LED_BLUE)       HAL_GPIO_TogglePin(LED_BLU_GPIO, LED_BLU_PIN);//blue
 }
-
+#endif
 
 /***************************************************************************//**
  * @brief  SD power cycle
  * @param  none
  * @return none
  ******************************************************************************/
-void Board_sdPowerCycle(void) {
-   Board_detectN(1);
-   Board_sdPower(0);
-   Board_arm0pc1(0);
-   HAL_Delay(120);
-   Board_sdPower(1);
-   HAL_Delay(50);
-   SD_mount(0);
-   SD_mount(1);   
+void Board_sdPowerCycle(void)
+{
+  Board_detectN(1);
+  Board_sdPower(0);
+  Board_arm0pc1(0);
+  HAL_Delay(120);
+  Board_sdPower(1);
+  HAL_Delay(50);
+  SD_mount(0);
+  SD_mount(1);
 }
 
 /***************************************************************************//**
@@ -110,20 +288,21 @@ void Board_sdPowerCycle(void) {
  * @param  none
  * @return none
  ******************************************************************************/
-void Board_sd2Pc(void) {
-   
-   //Board_sdPowerCycle();
-   
-   //Board_detectN(1);
-   HAL_Delay(120);
-   Board_sdPower(0);
-   Board_arm0pc1(1);
-   //Board_detectN(GPIO_PIN_RESET);
-   HAL_Delay(120);
-   Board_sdPower(1);
-   HAL_Delay(50);
-   Board_detectN(0);
-   SD_mount(0);
+void Board_sd2Pc(void)
+{
+
+  //Board_sdPowerCycle();
+
+  //Board_detectN(1);
+  HAL_Delay(120);
+  Board_sdPower(0);
+  Board_arm0pc1(1);
+  //Board_detectN(GPIO_PIN_RESET);
+  HAL_Delay(120);
+  Board_sdPower(1);
+  HAL_Delay(50);
+  Board_detectN(0);
+  SD_mount(0);
 }
 
 /***************************************************************************//**
@@ -131,18 +310,18 @@ void Board_sd2Pc(void) {
  * @param  none
  * @return none
  ******************************************************************************/
-void Board_sd2Arm(void) {
-   Board_detectN(1);
-   HAL_Delay(120);
-   Board_sdPower(0);
-   Board_arm0pc1(0);
-   HAL_Delay(120);
-   Board_sdPower(1);
-   HAL_Delay(50);
-   SD_mount(0);
-   SD_mount(1);   
+void Board_sd2Arm(void)
+{
+  Board_detectN(1);
+  HAL_Delay(120);
+  Board_sdPower(0);
+  Board_arm0pc1(0);
+  HAL_Delay(120);
+  Board_sdPower(1);
+  HAL_Delay(50);
+  SD_mount(0);
+  SD_mount(1);
 }
-
 
 ///***************************************************************************//**
 // * @brief  SD power on/off, toggling pin SW_FLASH
@@ -164,24 +343,24 @@ void Board_sd2Arm(void) {
 //   }
 //}
 
-
 /***************************************************************************//**
  * use while loop to do delay microseconds
  ******************************************************************************/
 uint32_t multiplier;
 
-void Board_delayMicrosInit(void) {	
-	/* While loop takes 2 cycles */
-	/* For 1 us delay, we need to divide with 2M */
-	multiplier = HAL_RCC_GetSysClockFreq()/ 2000000;// HAL_RCC_GetSysClockFreq? HAL_RCC_GetHCLKFreq?
+void Board_delayMicrosInit(void)
+{
+  /* While loop takes 2 cycles */
+  /* For 1 us delay, we need to divide with 2M */
+  multiplier = HAL_RCC_GetSysClockFreq() / 2000000; // HAL_RCC_GetSysClockFreq? HAL_RCC_GetHCLKFreq?
 }
-void Board_delayMicros(uint32_t micros) {
-	/* Multiply micros with multipler */
-	/* Substract 10 */
-	micros = (micros * multiplier - 10);
-	/* 4 cycles for one loop */
-	while (micros--);
+void Board_delayMicros(uint32_t micros)
+{
+  /* Multiply micros with multipler */
+  /* Substract 10 */
+  micros = (micros * multiplier - 10);
+  /* 4 cycles for one loop */
+  while (micros--)
+    ;
 }
-
-
 

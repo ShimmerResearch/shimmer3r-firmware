@@ -549,7 +549,7 @@ typedef volatile struct STATTypeDef_t{//STATUS
    uint8_t     isLedRed;
    uint8_t     isDockUartStep;   
    uint8_t     battStat;
-   uint8_t     battStatLed;
+   uint32_t     battStatLed;
    uint8_t     battVal[3];
    uint8_t     battDigital[10];
    uint8_t     badFile;

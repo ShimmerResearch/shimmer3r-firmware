@@ -602,14 +602,17 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
 //   static uint8_t green0_cnt = 0;
 
-   if(stat.isSensing && !stat.isConfiguring){
+   if(stat.isSensing && !stat.isConfiguring)
+   {
 //      if(!green0_cnt++){
 //         Board_ledToggle(LED_GREEN0);
 //      }
 #if !SENS_CLK_RTC0TIM1
       S4Sens_gatherData();
 #endif
-   }else{
+   }
+   else
+   {
       S4Led_Blink();
    }
   /* Prevent unused argument(s) compilation warning */

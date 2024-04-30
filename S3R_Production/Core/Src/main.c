@@ -87,9 +87,6 @@ void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
-//TODO move to "s4_adc.c"
-void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue);
-void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
 #endif
 
 /* USER CODE END PFP */
@@ -121,6 +118,10 @@ int _write(int file, char *ptr, int len)
 }
 
 void Init() {
+#if defined(SHIMMER3R)
+  Board_ledTimersStart(&htim3, &htim4);
+#endif
+
    Board_ledOn(LED_ALL);
    memset((uint8_t*)&stat, 0, sizeof(STATTypeDef));
    stat.battStatLed = LED_YELLOW;
@@ -248,19 +249,12 @@ int main(void)
 //  SD_test();
 //  SD_test_alternative();
 
+  led_test();
   lsm6dsv_self_test();
   bmp390_self_test();
   adxl371_self_test();
-
-  //TODO move to "s4_adc.c"
-  //https://www.youtube.com/watch?v=GBr6bQ-PzV8
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
-  i = 0;
+  lsm303ah_self_test();
+  lis3mdl_self_test();
 
   /* USER CODE END 2 */
 
@@ -275,8 +269,6 @@ int main(void)
 
     //TODO remove the following debug code
 //    printf("Hello World \n");
-    rgb_led_lwr_color(i, i, i);
-    i+=5;
   }
   /* USER CODE END 3 */
 }
@@ -517,22 +509,6 @@ void setBtConnectionState(bool state)
 bool isBtConnected(void)
 {
   return stat.isBtConnected;
-}
-
-//TODO move to "s4_adc.c"
-void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue)
-{
-  htim3.Instance->CCR1 = red;
-  htim3.Instance->CCR2 = green;
-  htim3.Instance->CCR3 = blue;
-}
-
-//TODO move to "s4_adc.c"
-void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue)
-{
-  htim3.Instance->CCR2 = red;
-  htim3.Instance->CCR3 = green;
-  htim3.Instance->CCR4 = blue;
 }
 
 #endif
