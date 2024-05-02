@@ -55,10 +55,8 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel3;
-extern ADC_HandleTypeDef hadc1;
-extern ADC_HandleTypeDef hadc2;
+extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
 extern I2C_HandleTypeDef hi2c2;
 extern RTC_HandleTypeDef hrtc;
 extern SD_HandleTypeDef hsd1;
@@ -371,21 +369,6 @@ void GPDMA1_Channel7_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel7_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel7_IRQn 1 */
-}
-
-/**
-  * @brief This function handles ADC1_2 global interrupt.
-  */
-void ADC1_2_IRQHandler(void)
-{
-  /* USER CODE BEGIN ADC1_2_IRQn 0 */
-
-  /* USER CODE END ADC1_2_IRQn 0 */
-  HAL_ADC_IRQHandler(&hadc1);
-  HAL_ADC_IRQHandler(&hadc2);
-  /* USER CODE BEGIN ADC1_2_IRQn 1 */
-
-  /* USER CODE END ADC1_2_IRQn 1 */
 }
 
 /**

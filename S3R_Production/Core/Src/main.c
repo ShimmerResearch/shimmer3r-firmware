@@ -42,7 +42,6 @@
 #include <stdlib.h>
 #include "s4.h"
 #include "s4__cfg.h"
-
 #define TIM_MEASURE_START time_start = SysTick->VAL
 #define TIM_MEASURE_END time_end = SysTick->VAL;            \
   time_diff = time_start - time_end
@@ -79,7 +78,6 @@ static void SystemPower_Config(void);
 
 void Init(void);
 uint32_t FullTest(void);
-
 //TODO move out of here
 #if defined(SHIMMER3R)
 void btInitialise(void);
@@ -99,11 +97,11 @@ void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
 
 STATTypeDef stat;
 //SENSINGTypeDef *pSensing;
-
+uint32_t   aADCxConvertedData[32];
 volatile uint32_t time_start, time_end, time_diff;
 
 uint8_t accelBuf[7];
-
+uint8_t flag = 0;
 extern UART_HandleTypeDef *huartBt;
 #if defined(SHIMMER3R)
 extern UART_HandleTypeDef *huartBsl;
@@ -167,7 +165,7 @@ void Init() {
    //BT_disable(huartBt);
    DockUart_enable();
    stat.isConfiguring = 0;
-   S4Sens_stopPeripherals();
+//   S4Sens_stopPeripherals();
    S4_RTC_WakeUpSetSlow();
    Board_ledOff(LED_ALL);
 //   while(1){
@@ -223,7 +221,6 @@ int main(void)
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
-  MX_ADC2_Init();
   MX_USB_OTG_HS_PCD_Init();
   MX_USART2_UART_Init();
   MX_ICACHE_Init();
@@ -232,8 +229,9 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_MDF1_Init();
-  MX_ADC1_Init();
   MX_SPI3_Init();
+  MX_ADC1_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
 #if USE_FATFS
   MX_FATFS_Init();
@@ -242,15 +240,19 @@ int main(void)
   MX_USB_DEVICE_Init();
 #endif
 
+  linkedListConfig(&hadc1);
+
   Init();
 //  S4_NORM_Task_set(TASK_STARTSENSING);
 
 //  SD_test();
 //  SD_test_alternative();
 
+/*
   lsm6dsv_self_test();
   bmp390_self_test();
   adxl371_self_test();
+*/
 
   //TODO move to "s4_adc.c"
   //https://www.youtube.com/watch?v=GBr6bQ-PzV8
@@ -261,7 +263,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
   i = 0;
-
+  HAL_ADCEx_Calibration_Start(&hadc1,ADC_CALIB_OFFSET,ADC_SINGLE_ENDED);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -273,6 +275,11 @@ int main(void)
     /* USER CODE BEGIN 3 */
     S4_Task_manage();
 
+/*    if (HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,2) != HAL_OK)
+    {
+      Error_Handler();
+    }
+    HAL_Delay(50);*/
     //TODO remove the following debug code
 //    printf("Hello World \n");
     rgb_led_lwr_color(i, i, i);
