@@ -71,7 +71,7 @@ typedef enum
 #define LED_PWM_ON 255
 #define LED_PWM_OFF 0
 
-void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds, TIM_HandleTypeDef *htimUprLeds);
+void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds, TIM_HandleTypeDef *htimUprLeds, TIM_HandleTypeDef *htimLedBlink);
 
 void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue);
 void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
@@ -81,6 +81,8 @@ void Board_ledLwrSetColourRgb(int16_t red, int16_t green, int16_t blue);
 void Board_ledUprSetColour(uint32_t ledMask);
 void Board_ledUprSetColourRgb(int16_t red, int16_t green, int16_t blue);
 
+uint8_t isLedOnUprBlue(void);
+uint8_t isLedOnUprGreen(void);
 #endif
 
 extern void Board_ledOn(uint8_t ledMask);

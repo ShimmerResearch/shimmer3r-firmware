@@ -197,6 +197,17 @@ void S4Led_Blink(void)
       {
         blueUprStateToSet = (cntBlink == 0) ? 1 : 0;
       }
+      else if (stat.isStreaming)
+      {
+        if (!(cntBlink % 10))
+        {
+          blueUprStateToSet = isLedOnUprBlue() ? 0 : 1;
+        }
+        else
+        {
+          blueUprStateToSet = isLedOnUprBlue();
+        }
+      }
       else
       {
         blueUprStateToSet = 1;
@@ -218,20 +229,26 @@ void S4Led_Blink(void)
     }
 #endif
 
-    //TODO handle different LED blinks for logging/streaming
 #if defined(SHIMMER3R)
-    if (stat.isStreaming && stat.isLogging)
-    {
-
-    }
-    else if (stat.isStreaming)
-    {
-      blueUprStateToSet = (cntBlink % 10) ? 0 : 1;
-    }
-    else if (stat.isLogging)
-    {
-      greenUprStateToSet = (cntBlink % 10) ? 0 : 1;
-    }
+    //TODO handle different LED blinks for logging/streaming
+//    if (stat.isStreaming && stat.isLogging)
+//    {
+//
+//    }
+//    else if (stat.isStreaming)
+//    {
+//      if(!(cntBlink % 10))
+//      {
+//        blueUprStateToSet = isLedOnUprBlue()? 0:1;
+//      }
+//    }
+//    else if (stat.isLogging)
+//    {
+//      if(!(cntBlink % 10))
+//      {
+//        greenUprStateToSet = isLedOnUprGreen()? 0:1;
+//      }
+//    }
 
     Board_ledUprSetColourRgb(-1, greenUprStateToSet ? LED_PWM_ON : LED_PWM_OFF,
         blueUprStateToSet ? LED_PWM_ON : LED_PWM_OFF);
@@ -335,8 +352,8 @@ void led_test(void)
   HAL_Delay(2000);
   Board_ledOn(LED_ALL);
   HAL_Delay(2000);
-#endif
 
   S4_RTC_WakeUpSetSlow();
+#endif
 }
 

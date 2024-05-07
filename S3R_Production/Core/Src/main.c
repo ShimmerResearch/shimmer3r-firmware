@@ -119,7 +119,7 @@ int _write(int file, char *ptr, int len)
 
 void Init() {
 #if defined(SHIMMER3R)
-  Board_ledTimersStart(&htim3, &htim4);
+  Board_ledTimersStart(&htim3, &htim4, &htim6);
 #endif
 
    Board_ledOn(LED_ALL);
@@ -169,7 +169,9 @@ void Init() {
    DockUart_enable();
    stat.isConfiguring = 0;
    S4Sens_stopPeripherals();
+#if defined(SHIMMER4_SDK)
    S4_RTC_WakeUpSetSlow();
+#endif
    Board_ledOff(LED_ALL);
 //   while(1){
 //      //__NOP();
@@ -235,6 +237,7 @@ int main(void)
   MX_MDF1_Init();
   MX_ADC1_Init();
   MX_SPI3_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 #if USE_FATFS
   MX_FATFS_Init();

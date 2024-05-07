@@ -56,7 +56,7 @@ static void updateLedState(uint8_t updateMode, uint8_t ledMask);
 
 //https://www.youtube.com/watch?v=GBr6bQ-PzV8
 void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
-    TIM_HandleTypeDef *htimUprLeds)
+    TIM_HandleTypeDef *htimUprLeds, TIM_HandleTypeDef *htimLedBlink)
 {
   htimLwrLedsPtr = htimLwrLeds;
   htimUprLedsPtr = htimUprLeds;
@@ -68,6 +68,8 @@ void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
   HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_4);
+
+  HAL_TIM_Base_Start_IT(htimLedBlink);
 }
 
 void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue)
@@ -192,6 +194,16 @@ static void updateLedState(uint8_t updateMode, uint8_t ledMask)
       ledStateUprBlue = ledStateUprBlue == LED_PWM_ON ? 0 : LED_PWM_ON;
     }
   }
+}
+
+uint8_t isLedOnUprBlue(void)
+{
+  return ledStateUprBlue == LED_PWM_ON ? 1 : 0;
+}
+
+uint8_t isLedOnUprGreen(void)
+{
+  return ledStateUprGreen == LED_PWM_ON ? 1 : 0;
 }
 
 #endif

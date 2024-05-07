@@ -97,7 +97,7 @@ void MX_RTC_Init(void)
 
   /** Enable the WakeUp
   */
-  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV16, 0) != HAL_OK)
+  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
   {
     Error_Handler();
   }
@@ -272,10 +272,10 @@ void S4_RTC_WakeUpSet(uint16_t period){
     Error_Handler();
   }
 }
+
 void S4_RTC_WakeUpSetSlow(){
    S4_RTC_WakeUpSet(3276);
 }
-
 
 uint8_t S4_RTC_SetDateTime(S4_RTC_t* data) {
    uint32_t format = RTC_FORMAT_BIN;
@@ -613,10 +613,12 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
       S4Sens_gatherData();
 #endif
    }
+#if defined(SHIMMER4_SDK)
    else
    {
       S4Led_Blink();
    }
+#endif
   /* Prevent unused argument(s) compilation warning */
   UNUSED(hrtc);
 
