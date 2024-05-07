@@ -163,12 +163,16 @@ void S4Led_Blink(void)
     }
     else if (stat.isSensing)
     {
+#if defined(SHIMMER4_SDK)
       greenUprStateToSet = (cntBlink >= 10) ? 0 : 1;
+#endif
     }
+#if defined(SHIMMER4_SDK)
     else if (stat.isSdInserted)
     {
       greenUprStateToSet = (cntBlink == 0) ? 1 : 0;
     }
+#endif
     else
     {
       greenUprStateToSet = 0;
@@ -214,7 +218,21 @@ void S4Led_Blink(void)
     }
 #endif
 
+    //TODO handle different LED blinks for logging/streaming
 #if defined(SHIMMER3R)
+    if (stat.isStreaming && stat.isLogging)
+    {
+
+    }
+    else if (stat.isStreaming)
+    {
+      blueUprStateToSet = (cntBlink % 10) ? 0 : 1;
+    }
+    else if (stat.isLogging)
+    {
+      greenUprStateToSet = (cntBlink % 10) ? 0 : 1;
+    }
+
     Board_ledUprSetColourRgb(-1, greenUprStateToSet ? LED_PWM_ON : LED_PWM_OFF,
         blueUprStateToSet ? LED_PWM_ON : LED_PWM_OFF);
 #endif
@@ -247,34 +265,46 @@ void S4Led_Blink(void)
 
 void led_test(void)
 {
+  SHIMMER_PRINTF("Starting LED test...\r\n");
+
   S4_RTC_WakeUpOff();
 
 #if defined(SHIMMER3R)
   Board_ledLwrSetColour(LED_RGB_ALL_OFF);
   Board_ledUprSetColour(LED_RGB_ALL_OFF);
 
+  SHIMMER_PRINTF("Lower Red LED on\r\n");
   Board_ledLwrSetColour(LED_RGB_RED);
   HAL_Delay(2000);
+  SHIMMER_PRINTF("Lower Green LED on\r\n");
   Board_ledLwrSetColour(LED_RGB_GREEN);
   HAL_Delay(2000);
+  SHIMMER_PRINTF("Lower Blue LED on\r\n");
   Board_ledLwrSetColour(LED_RGB_BLUE);
   HAL_Delay(2000);
   Board_ledLwrSetColour(LED_RGB_ALL_OFF);
 
+  SHIMMER_PRINTF("Upper Red LED on\r\n");
   Board_ledUprSetColour(LED_RGB_RED);
   HAL_Delay(2000);
+  SHIMMER_PRINTF("Upper Green LED on\r\n");
   Board_ledUprSetColour(LED_RGB_GREEN);
   HAL_Delay(2000);
+  SHIMMER_PRINTF("Upper Blue LED on\r\n");
   Board_ledUprSetColour(LED_RGB_BLUE);
   HAL_Delay(2000);
+  SHIMMER_PRINTF("All LEDs off\r\n");
   Board_ledUprSetColour(LED_RGB_ALL_OFF);
 
   HAL_Delay(2000);
+  SHIMMER_PRINTF("All LEDs on\r\n");
   Board_ledLwrSetColour(LED_RGB_ALL_ON);
   Board_ledUprSetColour(LED_RGB_ALL_ON);
   HAL_Delay(2000);
   Board_ledLwrSetColour(LED_RGB_ALL_OFF);
   Board_ledUprSetColour(LED_RGB_ALL_OFF);
+
+  SHIMMER_PRINTF("Finished LED test.\r\n");
 
 #elif defined (SHIMMER4_SDK)
   Board_ledOff(LED_ALL);

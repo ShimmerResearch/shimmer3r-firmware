@@ -21,6 +21,9 @@
 #include "sdmmc.h"
 
 /* USER CODE BEGIN 0 */
+#include "s4.h"
+
+extern STATTypeDef stat;
 
 /* USER CODE END 0 */
 
@@ -37,6 +40,11 @@ void MX_SDMMC1_SD_Init(void)
 
   /* USER CODE BEGIN SDMMC1_Init 1 */
 
+  // Initialise will fail if an SD card is not detected
+  SD_insertedCheck();
+  stat.badFile = 1;
+  if (stat.isSdInserted)
+  {
   /* USER CODE END SDMMC1_Init 1 */
   hsd1.Instance = SDMMC1;
   hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
@@ -49,7 +57,11 @@ void MX_SDMMC1_SD_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SDMMC1_Init 2 */
-
+    else
+    {
+      stat.badFile = 0;
+    }
+  }
   /* USER CODE END SDMMC1_Init 2 */
 
 }

@@ -22,9 +22,9 @@
  * This example was developed using the following STMicroelectronics
  * evaluation boards:
  *
- * - STEVAL_MKI109V3 + STEVAL-MKI137V1
- * - NUCLEO_F411RE + X-NUCLEO-IKS01A1
- * - DISCOVERY_SPC584B + STEVAL-MKI137V1
+ * - STEVAL_MKI109V3 + STEVAL-MKI181V1
+ * - NUCLEO_F411RE + X_NUCLEO_IKS01A3
+ * - DISCOVERY_SPC584B + STEVAL-MKI181V1
  *
  * and STM32CubeMX tool with STM32CubeF4 MCU Package
  *
@@ -34,7 +34,7 @@
  *                    - Sensor side: SPI(Default) / I2C(supported)
  *
  * NUCLEO_STM32F411RE - Host side: UART(COM) to USB bridge
- *                    - Sensor side: I2C(Default) / SPI(supported)
+ *                    - I2C(Default) / SPI(supported)
  *
  * DISCOVERY_SPC584B  - Host side: UART(COM) to USB bridge
  *                    - Sensor side: I2C(Default) / SPI(supported)
@@ -61,9 +61,6 @@
  *            header file of the driver (_reg.h).
  */
 
-// Based on https://github.com/STMicroelectronics/STMems_Standard_C_drivers/tree/master/lis3mdl_STdC/examples
-
-
 #if defined(STEVAL_MKI109V3)
 /* MKI109V3: Define communication interface */
 #define SENSOR_BUS hspi2
@@ -79,29 +76,22 @@
 #define SENSOR_BUS I2CD1
 
 #elif defined(SHIMMER3R)
-/* SHIMMER3R: Define communication interface */
-#define SENSOR_BUS hspi2
-
-#define CS_PORT CS_LIS3MDL_GPIO_Port
-#define CS_PIN CS_LIS3MDL_Pin
+#define SENSOR_BUS hi2c2
 
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
 #include <stdio.h>
+#include "lis2mdl-pid/lis2mdl_reg.h"
 
 #if defined(NUCLEO_F411RE)
-#include "lis3mdl_reg.h"
-
 #include "stm32f4xx_hal.h"
 #include "usart.h"
 #include "gpio.h"
 #include "i2c.h"
 
 #elif defined(STEVAL_MKI109V3)
-#include "lis3mdl_reg.h"
-
 #include "stm32f4xx_hal.h"
 #include "usbd_cdc_if.h"
 #include "gpio.h"
@@ -109,33 +99,30 @@
 #include "tim.h"
 
 #elif defined(SPC584B_DIS)
-#include "lis3mdl_reg.h"
-
 #include "components.h"
 
 #elif defined(SHIMMER3R)
-#include "lis3mdl-pid/lis3mdl_reg.h"
-
 #include "stm32u5xx_hal.h"
 #include "gpio.h"
-#include "spi.h"
+#include "i2c.h"
 #include "tim.h"
 #endif
 
 /* Private macro -------------------------------------------------------------*/
-#define    WAIT_TIME_00     20 //ms
+
+#define    BOOT_TIME        20 //ms
 #define    WAIT_TIME_01     20 //ms
 #define    WAIT_TIME_02     60 //ms
 
-#define    SAMPLES           5 //number of samples
+#define    SAMPLES          50 //number of samples
+
+/* Self test limits. */
+#define    MIN_ST_LIMIT_mG         15.0f
+#define    MAX_ST_LIMIT_mG        500.0f
 
 /* Self test results. */
 #define    ST_PASS     1U
 #define    ST_FAIL     0U
-
-/* Self test limits in gauss*/
-static const float min_st_limit[] = {1.0f, 1.0f, 0.1f};
-static const float max_st_limit[] = {3.0f, 3.0f, 1.0f};
 
 /* Private variables ---------------------------------------------------------*/
 static stmdev_ctx_t dev_ctx;
@@ -156,15 +143,12 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
                              uint16_t len);
 static void tx_com( uint8_t *tx_buffer, uint16_t len );
 static void platform_delay(uint32_t ms);
-#if defined(SHIMMER3R)
-static int32_t platform_read_raw_data_dma(void *handle, uint8_t *txBufp,
-    uint8_t *rxBufp, uint8_t len);
-#else
+#if !defined(SHIMMER3R)
 static void platform_init(void);
 #endif
 
 /* Main Example --------------------------------------------------------------*/
-uint8_t lis3mdl_self_test(void)
+void lis2mdl_self_test(void)
 {
   uint8_t tx_buffer[1000];
   int16_t data_raw[3];
@@ -177,49 +161,62 @@ uint8_t lis3mdl_self_test(void)
   uint8_t i;
   uint8_t j;
 
-  /* Check device ID */
-  lis3mdl_device_id_get(&dev_ctx, &whoamI);
+#if !defined(SHIMMER3R)
+  lis2mdl_driver_init()
+  /* Initialize platform specific hardware */
+  platform_init();
+#endif
+  /* Wait sensor boot time */
+  platform_delay(BOOT_TIME);
 
-  if (whoamI != LIS3MDL_ID)
+#if defined(STEVAL_MKI109V3)
+  /* Default SPI mode is 3 wire, so enable 4 wire mode */
+  lis2mdl_spi_mode_set(&dev_ctx, LIS2MDL_SPI_4_WIRE);
+#endif
+
+  /* Check device ID */
+  lis2mdl_device_id_get(&dev_ctx, &whoamI);
+
+  if (whoamI != LIS2MDL_ID)
   {
     st_result = ST_FAIL;
   }
   else
   {
-    lis3mdl_restore_default_config();
+    lis2mdl_set_default_config();
 
-    /* Set Full Scale */
-    lis3mdl_full_scale_set(&dev_ctx, LIS3MDL_12_GAUSS);
+    /* Set restore magnetic condition policy */
+    lis2mdl_set_rst_mode_set(&dev_ctx, LIS2MDL_SET_SENS_ODR_DIV_63);
+    /* Set power mode */
+    lis2mdl_power_mode_set(&dev_ctx, LIS2MDL_HIGH_RESOLUTION);
     /* Set Output Data Rate */
-    lis3mdl_data_rate_set(&dev_ctx, LIS3MDL_LP_80Hz);
-    /* Wait */
-    platform_delay(WAIT_TIME_00);
+    lis2mdl_data_rate_set(&dev_ctx, LIS2MDL_ODR_100Hz);
     /* Set Operating mode */
-    lis3mdl_operating_mode_set(&dev_ctx, LIS3MDL_CONTINUOUS_MODE);
+    lis2mdl_operating_mode_set(&dev_ctx, LIS2MDL_CONTINUOUS_MODE);
     /* Wait stable output */
     platform_delay(WAIT_TIME_01);
 
     /* Check if new value available */
     do {
-      lis3mdl_mag_data_ready_get(&dev_ctx, &drdy);
+      lis2mdl_mag_data_ready_get(&dev_ctx, &drdy);
     } while (!drdy);
 
     /* Read dummy data and discard it */
-    lis3mdl_magnetic_raw_get(&dev_ctx, data_raw);
+    lis2mdl_magnetic_raw_get(&dev_ctx, data_raw);
     /* Read samples and get the average vale for each axis */
     memset(val_st_off, 0x00, 3 * sizeof(float));
 
     for (i = 0; i < SAMPLES; i++) {
       /* Check if new value available */
       do {
-        lis3mdl_mag_data_ready_get(&dev_ctx, &drdy);
+        lis2mdl_mag_data_ready_get(&dev_ctx, &drdy);
       } while (!drdy);
 
       /* Read data and accumulate the mg value */
-      lis3mdl_magnetic_raw_get(&dev_ctx, data_raw);
+      lis2mdl_magnetic_raw_get(&dev_ctx, data_raw);
 
       for (j = 0; j < 3; j++) {
-        val_st_off[j] += lis3mdl_from_fs12_to_gauss(data_raw[j]);
+        val_st_off[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
       }
     }
 
@@ -229,31 +226,23 @@ uint8_t lis3mdl_self_test(void)
     }
 
     /* Enable Self Test */
-    lis3mdl_self_test_set(&dev_ctx, PROPERTY_ENABLE);
+    lis2mdl_self_test_set(&dev_ctx, PROPERTY_ENABLE);
     /* Wait stable output */
     platform_delay(WAIT_TIME_02);
-
-    /* Check if new value available */
-    do {
-      lis3mdl_mag_data_ready_get(&dev_ctx, &drdy);
-    } while (!drdy);
-
-    /* Read dummy data and discard it */
-    lis3mdl_magnetic_raw_get(&dev_ctx, data_raw);
     /* Read samples and get the average vale for each axis */
     memset(val_st_on, 0x00, 3 * sizeof(float));
 
     for (i = 0; i < SAMPLES; i++) {
       /* Check if new value available */
       do {
-        lis3mdl_mag_data_ready_get(&dev_ctx, &drdy);
+        lis2mdl_mag_data_ready_get(&dev_ctx, &drdy);
       } while (!drdy);
 
       /* Read data and accumulate the mg value */
-      lis3mdl_magnetic_raw_get(&dev_ctx, data_raw);
+      lis2mdl_magnetic_raw_get(&dev_ctx, data_raw);
 
       for (j = 0; j < 3; j++) {
-        val_st_on[j] += lis3mdl_from_fs12_to_gauss(data_raw[j]);
+        val_st_on[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
       }
     }
 
@@ -271,29 +260,27 @@ uint8_t lis3mdl_self_test(void)
 
     /* Check self test limit */
     for (i = 0; i < 3; i++) {
-      if (( min_st_limit[i] > test_val[i] ) ||
-          ( test_val[i] > max_st_limit[i])) {
+      if (( MIN_ST_LIMIT_mG > test_val[i] ) ||
+          ( test_val[i] > MAX_ST_LIMIT_mG)) {
         st_result = ST_FAIL;
       }
     }
 
     /* Disable Self Test */
-    lis3mdl_self_test_set(&dev_ctx, PROPERTY_DISABLE);
+    lis2mdl_self_test_set(&dev_ctx, PROPERTY_DISABLE);
     /* Disable sensor. */
-    lis3mdl_operating_mode_set(&dev_ctx, LIS3MDL_POWER_DOWN);
+    lis2mdl_operating_mode_set(&dev_ctx, LIS2MDL_POWER_DOWN);
   }
 
   if (st_result == ST_PASS) {
-    sprintf((char *)tx_buffer, "LIS3MDL Self Test - PASS\r\n" );
+    sprintf((char *)tx_buffer, "LIS2MDL Self Test - PASS\r\n" );
   }
 
   else {
-    sprintf((char *)tx_buffer, "LIS3MDL Self Test - FAIL\r\n" );
+    sprintf((char *)tx_buffer, "LIS2MDL Self Test - FAIL\r\n" );
   }
 
   tx_com(tx_buffer, strlen((char const *)tx_buffer));
-
-  return st_result == ST_PASS? 0:1;
 }
 
 /*
@@ -312,31 +299,24 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
 #if defined(NUCLEO_F411RE)
   /* Write multiple command */
   reg |= 0x80;
-  HAL_I2C_Mem_Write(handle, LIS3MDL_I2C_ADD_L, reg,
-                    I2C_MEMADD_SIZE_8BIT, (uint8_t*) bufp, len, 1000);
+  HAL_I2C_Mem_Write(handle, LIS2MDL_I2C_ADD, reg,
+                    I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
 #elif defined(STEVAL_MKI109V3)
   /* Write multiple command */
   reg |= 0x40;
   HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_RESET);
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Transmit(handle, (uint8_t*) bufp, len, 1000);
+  HAL_SPI_Transmit(handle, (uint8_t*)bufp, len, 1000);
   HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_SET);
 #elif defined(SPC584B_DIS)
   /* Write multiple command */
   reg |= 0x80;
-  i2c_lld_write(handle,  LIS3MDL_I2C_ADD_L & 0xFE, reg, (uint8_t*) bufp, len);
+  i2c_lld_write(handle,  LIS2MDL_I2C_ADD & 0xFE, reg, (uint8_t*)bufp, len);
 #elif defined(SHIMMER3R)
   /* Write multiple command */
-  reg |= 0x40;
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Transmit(handle, (uint8_t*) bufp, len, 1000);
-
-//  uint8_t txBuf[2] = { 0 };
-//  txBuf[0] = reg;
-//  txBuf[1] = *bufp;
-//  HAL_SPI_Transmit(handle, &txBuf[0], 2, 1000);
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+  reg |= 0x80;
+  HAL_I2C_Mem_Write(handle, LIS2MDL_I2C_ADD, reg,
+                    I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
 #endif
   return 0;
 }
@@ -357,7 +337,7 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
 #if defined(NUCLEO_F411RE)
   /* Read multiple command */
   reg |= 0x80;
-  HAL_I2C_Mem_Read(handle, LIS3MDL_I2C_ADD_L, reg,
+  HAL_I2C_Mem_Read(handle, LIS2MDL_I2C_ADD, reg,
                    I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
 #elif defined(STEVAL_MKI109V3)
   /* Read multiple command */
@@ -369,24 +349,21 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
 #elif defined(SPC584B_DIS)
   /* Read multiple command */
   reg |= 0x80;
-  i2c_lld_read(handle, LIS3MDL_I2C_ADD_L & 0xFE, reg, bufp, len);
+  i2c_lld_read(handle, LIS2MDL_I2C_ADD & 0xFE, reg, bufp, len);
 #elif defined(SHIMMER3R)
-//  /* Read multiple command */
-  reg |= 0xC0;
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Receive(handle, bufp, len, 1000);
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+  /* Read multiple command */
+  reg |= 0x80;
+  HAL_I2C_Mem_Read(handle, LIS2MDL_I2C_ADD, reg,
+                   I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
 #endif
   return 0;
 }
 
-static int32_t platform_read_raw_data_dma(void *handle, uint8_t *txBufp,
-    uint8_t *rxBufp, uint8_t len)
+static int32_t platform_read_raw_data_dma(void *handle, uint8_t reg, uint8_t *bufp,
+                             uint16_t len)
 {
   HAL_StatusTypeDef ret;
-  lis3mdl_SelectDevice();
-  ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
+  ret = HAL_I2C_Mem_Read_DMA(handle, LIS2MDL_I2C_ADD, reg, I2C_MEMADD_SIZE_8BIT, bufp, len);
   return ret;
 }
 
@@ -406,7 +383,7 @@ static void tx_com(uint8_t *tx_buffer, uint16_t len)
 #elif defined(SPC584B_DIS)
   sd_lld_write(&SD2, tx_buffer, len);
 #elif defined(SHIMMER3R)
-  SHIMMER_PRINTF((char *) tx_buffer, len);
+  SHIMMER_PRINTF((char*) tx_buffer, len);
 #endif
 }
 
@@ -422,6 +399,7 @@ static void platform_delay(uint32_t ms)
   HAL_Delay(ms);
 #elif defined(SPC584B_DIS)
   osalThreadDelayMilliseconds(ms);
+#elif defined(SHIMMER3R)
 #endif
 }
 
@@ -431,7 +409,7 @@ static void platform_delay(uint32_t ms)
  */
 static void platform_init(void)
 {
-#if defined(STEVAL_MKI109V3)
+#ifdef STEVAL_MKI109V3
   TIM3->CCR1 = PWM_3V3;
   TIM3->CCR2 = PWM_3V3;
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
@@ -441,7 +419,7 @@ static void platform_init(void)
 }
 
 #elif defined(SHIMMER3R)
-void lis3mdl_driver_init(void)
+void lis2mdl_driver_init(void)
 {
   /* Initialize mems driver interface */
   dev_ctx.write_reg = platform_write;
@@ -450,79 +428,53 @@ void lis3mdl_driver_init(void)
   dev_ctx.handle = &SENSOR_BUS;
 }
 
-void lis3mdl_power_on(void)
-{
-  set_power_spi2_bus(true, SPI2_CHIP_INDEX_LIS3MDL);
-}
-
-void lis3mdl_power_off(void)
-{
-  set_power_spi2_bus(false, SPI2_CHIP_INDEX_LIS3MDL);
-}
-
-void lis3mdl_SelectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
-}
-
-void lis3mdl_UnselectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
-}
-
-void lis3mdl_restore_default_config(void)
+void lis2mdl_set_default_config(void)
 {
   uint8_t rst;
 
   /* Restore default configuration */
-  lis3mdl_reset_set(&dev_ctx, PROPERTY_ENABLE);
+  lis2mdl_reset_set(&dev_ctx, PROPERTY_ENABLE);
 
   do {
-    lis3mdl_reset_get(&dev_ctx, &rst);
+    lis2mdl_reset_get(&dev_ctx, &rst);
   } while (rst);
 
   /* Enable Block Data Update */
-  lis3mdl_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
+  lis2mdl_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
+  /* Temperature compensation enable */
+  lis2mdl_offset_temp_comp_set(&dev_ctx, PROPERTY_ENABLE);
 }
 
-void lis3mdl_spi_three_wire_set(void)
-{
-  int32_t ret;
-
-  lis3mdl_ctrl_reg3_t ctrl_reg3;
-  ctrl_reg3.not_used_02 = 0; // Default = 0
-  ctrl_reg3.lp          = 0; // Default = 0
-  ctrl_reg3.not_used_01 = 0; // Default = 0
-  ctrl_reg3.sim         = LIS3MDL_SPI_3_WIRE;
-  ctrl_reg3.md          = 3; // Default = 3
-
-  ret = lis3mdl_write_reg(&dev_ctx, LIS3MDL_CTRL_REG3, (uint8_t *)&ctrl_reg3, 1);
-}
-
-void lis3mdl_config_mag(uint8_t rate, uint8_t range)
+void lis2mdl_config_mag(uint8_t rate, uint8_t range)
 {
   //TODO fill in config
 
-  lis3mdl_restore_default_config();
+  lis2mdl_set_default_config();
 
-  /* Set Full Scale */
-  lis3mdl_full_scale_set(&dev_ctx, LIS3MDL_12_GAUSS);
+  /* Set restore magnetic condition policy */
+  lis2mdl_set_rst_mode_set(&dev_ctx, LIS2MDL_SET_SENS_ODR_DIV_63);
+  /* Set power mode */
+  lis2mdl_power_mode_set(&dev_ctx, LIS2MDL_HIGH_RESOLUTION);
   /* Set Output Data Rate */
-  lis3mdl_data_rate_set(&dev_ctx, LIS3MDL_UHP_80Hz);
-  /* Wait */
-  platform_delay(WAIT_TIME_00);
+  lis2mdl_data_rate_set(&dev_ctx, LIS2MDL_ODR_100Hz);
   /* Set Operating mode */
-  lis3mdl_operating_mode_set(&dev_ctx, LIS3MDL_CONTINUOUS_MODE);
+  lis2mdl_operating_mode_set(&dev_ctx, LIS2MDL_CONTINUOUS_MODE);
   /* Wait stable output */
   platform_delay(WAIT_TIME_01);
+
 }
 
-HAL_StatusTypeDef lis3mdl_mag_get(uint8_t *buf)
+HAL_StatusTypeDef lis2mdl_mag_get(uint8_t *buf)
 {
   HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { LIS3MDL_OUT_X_L | 0xC0, 0, 0, 0, 0, 0, 0 };
-  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
+  ret = platform_read_raw_data_dma(dev_ctx.handle, LIS2MDL_OUTX_L_REG, buf, 6);
   return ret;
 }
 
+void lis2mdl_sleep(void)
+{
+  lis2mdl_operating_mode_set(&dev_ctx, LIS2MDL_POWER_DOWN);
+}
+
 #endif
+

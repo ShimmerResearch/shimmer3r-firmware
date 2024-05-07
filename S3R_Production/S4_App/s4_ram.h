@@ -152,7 +152,7 @@ typedef union
     uint8_t chEnGsr :1;
     uint8_t chEnExg2_24Bit :1;
     uint8_t chEnExg1_24Bit :1;
-    uint8_t chEnMag :1;     // S3/S4_SDK = LSM303DLHC/LSM303AH, S3R = LSM303AH Mag
+    uint8_t chEnMag :1;     // S3/S4_SDK = LSM303DLHC/LSM303AH, S3R = LIS2MDL Mag
     uint8_t chEnGyro :1;    // S3/S4_SDK = MPU9x50/ICM20948, S3R = LSM6DSV Gyro
     uint8_t chEnLnAccel :1; // S3/S4_SDK = KXRB5-2042/KXTC9-2050, S3R = LSM6DSV Accel
 
@@ -168,7 +168,7 @@ typedef union
     uint8_t chEnIntADC3 :1;  // S3R = ADC17, S4_SDK = ADC2
     uint8_t chEnExtADC2 :1;  // S3R = ADC12, S4_SDK = ADC1
 #endif
-    uint8_t chEnWrAccel :1; // S3/S4_SDK = LSM303DLHC/LSM303AH, S3R = LSM303AH Accel
+    uint8_t chEnWrAccel :1; // S3/S4_SDK = LSM303DLHC/LSM303AH, S3R = LIS2DW12 Accel
     uint8_t chEnVBattery :1;
 #if defined(SHIMMER4_SDK)
     uint8_t chEnPpgApp :1;

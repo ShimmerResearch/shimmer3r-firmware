@@ -602,6 +602,8 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
 //   static uint8_t green0_cnt = 0;
 
+  //TODO carried from Shimmer4, LED blinking only works when not sensing
+
    if(stat.isSensing && !stat.isConfiguring)
    {
 //      if(!green0_cnt++){

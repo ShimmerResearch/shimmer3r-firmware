@@ -246,15 +246,7 @@ int main(void)
   Init();
 //  S4_NORM_Task_set(TASK_STARTSENSING);
 
-//  SD_test();
-//  SD_test_alternative();
-
-  led_test();
-  lsm6dsv_self_test();
-  bmp390_self_test();
-  adxl371_self_test();
-  lsm303ah_self_test();
-  lis3mdl_self_test();
+//  FullTest();
 
   /* USER CODE END 2 */
 
@@ -268,7 +260,7 @@ int main(void)
     S4_Task_manage();
 
     //TODO remove the following debug code
-//    printf("Hello World \n");
+//    SHIMMER_PRINTF("Hello World \n");
   }
   /* USER CODE END 3 */
 }
@@ -359,18 +351,37 @@ STATTypeDef * GetStatus(){
    return &stat;
 }
 
+//TODO trigger from (BSL?) UART command?
 uint32_t FullTest(void) {
    //uint32_t test_result = 0;
 
+  SHIMMER_PRINTF("Self-test - Start\r\n");
+
+  uint32_t format = RTC_FORMAT_BIN;
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef sDate;
+  /* Get time */
+   HAL_RTC_GetTime(&hrtc, &sTime, format);
+  /* Get date */
+   HAL_RTC_GetDate(&hrtc, &sDate, format);
+  SHIMMER_PRINTF("Date (yyyy-mm-dd): %.4u-%.2u-%.2u\r\n",sDate.Year,sDate.Month,sDate.Date);
+  SHIMMER_PRINTF("Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n",sTime.Hours,sTime.Minutes,sTime.Seconds);
+
+  led_test();
+
    stat.testResult += I2C_test();
 
+   SHIMMER_PRINTF("SD Card test:\r\n");
    stat.testResult += SD_test()<<6;
+   //  SD_test_alternative();
 
    stat.testResult += (!stat.isBtPoweredOn)<<7;
 
    stat.testResult += InfoMem_test()<<8;
 
    stat.testResult += SPI_test()<<16;
+
+   SHIMMER_PRINTF("Self-test - End\r\n");
 
    return stat.testResult ;
 }
@@ -379,7 +390,7 @@ uint32_t FullTest(void) {
 #if defined(SHIMMER3R)
 void btInitialise(void)
 {
-  printf("\r\nBT init start\r\n");
+  SHIMMER_PRINTF("\r\nBT init start\r\n");
 
   // 20 * 100ms = 2s per baud rate attempt
   btCommWithDiffBaudRates(true, 20U);
@@ -395,12 +406,12 @@ void btInitialise(void)
 
   stat.isBtPoweredOn = 1;
 
-  printf("BT init end\r\n");
+  SHIMMER_PRINTF("BT init end\r\n");
 }
 
 void btFactoryResetViaFw(void)
 {
-  printf("\r\nBT factory reset start\r\n");
+  SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
 
   // 50 * 100ms = 5s per baud rate attempt
   btCommWithDiffBaudRates(false, 50U);
@@ -408,7 +419,7 @@ void btFactoryResetViaFw(void)
   // Abort transfer operations to release UART for subsequent requests.
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
 
-  printf("BT factory reset end\r\n");
+  SHIMMER_PRINTF("BT factory reset end\r\n");
 }
 
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
@@ -418,7 +429,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
 
   setBtLpMode(false);
 
-  printf("Attempting %lu Baud\r\n", baudToTry);
+  SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
   usartBtUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
 
   if (isInit)
@@ -475,12 +486,12 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
           baudToTry = 500000;
         }
 
-        printf("Attempting %lu Baud\r\n", baudToTry);
+        SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
         usartBtUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
       }
       else
       {
-        printf("Operation failed, performing system reset\r\n");
+        SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
         // software POR reset
         NVIC_SystemReset();
       }

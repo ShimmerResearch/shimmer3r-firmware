@@ -69,7 +69,7 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
  */
 static void tx_com(uint8_t *tx_buffer, uint16_t len)
 {
-  printf((char *) tx_buffer, len);
+  SHIMMER_PRINTF((char *) tx_buffer, len);
 }
 
 /*
@@ -109,12 +109,12 @@ uint8_t adxl371_self_test(void)
 
   if (buf[0] == 0xAD && buf[1] == 0x1D && buf[2] == 0xFA && buf[3] == 0xFB)
   {
-    printf("Self Test - PASS\r\n");
+    SHIMMER_PRINTF("ADXL371 Self Test - PASS\r\n");
     return 0;
   }
   else
   {
-    printf("Self Test - FAIL\r\n");
+    SHIMMER_PRINTF("ADXL371 Self Test - FAIL\r\n");
     return 1;
   }
 }

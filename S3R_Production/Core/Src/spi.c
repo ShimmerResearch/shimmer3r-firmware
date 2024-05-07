@@ -134,17 +134,17 @@ void MX_SPI2_Init(void)
   /* USER CODE END SPI2_Init 1 */
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
-  hspi2.Init.Direction = SPI_DIRECTION_1LINE;
+  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
-  hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
+  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
   hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi2.Init.CRCPolynomial = 0x7;
-  hspi2.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  hspi2.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
   hspi2.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
   hspi2.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
   hspi2.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
@@ -170,8 +170,10 @@ void MX_SPI2_Init(void)
   HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI2_TxRxCpltCallback);
   HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
 
-  lsm303ah_driver_init();
+#if defined(SHIMMER3R)
   lis3mdl_driver_init();
+  lis2dw12_driver_init();
+#endif
 
   /* USER CODE END SPI2_Init 2 */
 
@@ -356,9 +358,10 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**SPI2 GPIO Configuration
     PB13     ------> SPI2_SCK
+    PB14     ------> SPI2_MISO
     PB15     ------> SPI2_MOSI
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_15;
+    GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -560,9 +563,10 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 
     /**SPI2 GPIO Configuration
     PB13     ------> SPI2_SCK
+    PB14     ------> SPI2_MISO
     PB15     ------> SPI2_MOSI
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_13|GPIO_PIN_15);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15);
 
     /* SPI2 DMA DeInit */
     HAL_DMA_DeInit(spiHandle->hdmatx);
@@ -619,10 +623,28 @@ uint8_t SPI_test(void)
 {
   uint8_t ret_val = 0;
 #if defined(SHIMMER3R)
+  SHIMMER_PRINTF("SPI1:\r\n");
+  set_power_spi1_bus(1, SPI1_CHIP_ALL);
+  HAL_Delay(50);
   lsm6dsv_self_test();
+  bmp390_self_test();
+  adxl371_self_test();
+  set_power_spi1_bus(0, SPI1_CHIP_ALL);
+
+  SHIMMER_PRINTF("SPI2:\r\n");
+  set_power_spi2_bus(1, SPI2_CHIP_ALL);
+  HAL_Delay(50);
+  lis3mdl_self_test();
+  lis2dw12_self_test();
+  set_power_spi2_bus(0, SPI2_CHIP_ALL);
 #endif
-  EXG_init(hspiExg);
-  ret_val |= EXG_test();
+
+  if (isAds1292Present())
+  {
+    EXG_init(hspiExg);
+    ret_val |= EXG_test();
+  }
+
   return ret_val;
 }
 
@@ -694,18 +716,7 @@ void SPI_configureChannels()
     nbr_spi_chans += 3;
     sensing.ptr.accel2 = sensing.dataLen;
     sensing.dataLen += 6;
-    spi2Sens.sensorList[spi2Sens.sensorLen++] = SPI2_LSM303AH_ACCEL;
-  }
-
-  if (configBytes->chEnMag)
-  {
-    *channel_contents_ptr++ = X_MAG_1;
-    *channel_contents_ptr++ = Z_MAG_1;
-    *channel_contents_ptr++ = Y_MAG_1;
-    nbr_spi_chans += 3;
-    sensing.ptr.mag1 = sensing.dataLen;
-    sensing.dataLen += 6;
-    spi2Sens.sensorList[spi2Sens.sensorLen++] = SPI2_LSM303AH_MAG;
+    spi2Sens.sensorList[spi2Sens.sensorLen++] = SPI2_LIS2DW12_ACCEL;
   }
 
   if (configBytes->chEnAltMag)
@@ -826,22 +837,18 @@ void SPI_startSensing()
 
   if (configBytes->chEnPressureAndTemperature)
   {
-  }
-
-  if (configBytes->chEnAltAccel)
-  {
+    bmp390_config_set(configBytes->pressurePrecision);
   }
 
   if (configBytes->chEnWrAccel)
   {
+    lis2dw12_config_accel(configBytes->wrAccelRate, configBytes->wrAccelRange);
   }
 
   if (configBytes->chEnMag)
   {
-  }
-
-  if (configBytes->chEnAltMag)
-  {
+//    lis3mdl_config_mag(configBytes->altMagRate, configBytes->altMagRange);
+    lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);
   }
 
 #endif
@@ -906,7 +913,7 @@ void SPI_startSensing()
   }
 }
 
-void SPI_pollSensors()
+void SPI_pollSensors(void)
 {
 #if defined(SHIMMER3R)
   currentSpiBusCbFlags = 0;
@@ -947,29 +954,31 @@ void SPI_stopSensing()
 //  gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
 #if defined(SHIMMER3R)
-  //TODO
-//  set_power_spi1_bus(0, chipIndex);
-//  set_power_spi2_bus(0, chipIndex);
-//  set_power_spi3_bus(0, chipIndex);
-
-  //TODO unselect all chips
-  lsm6dsv_UnselectDevice();
-  bmp3_UnselectDevice();
-  adxl371_UnselectDevice();
-  lis3mdl_UnselectDevice();
-  lsm303ah_UnselectDevice();
-
-  //TOOD reset chips to default config (especially to stop them sampling and put them in standby)
+  //TODO reset chips to default config (especially to stop them sampling and put them in standby)?
 //  lsm6dsv_restore_default_config();
 //  bmp390_restore_default_config();
 //  adxl371_restore_default_config();
 //  lis3mdl_restore_default_config();
 //  //TODO pick approach below:
-////  lsm303ah_sleep();
-//  lsm303ah_restore_default_config();
+////  lis2dw12_sleep();
+//  lis2dw12_restore_default_config();
+
+  //TODO un-select all chips
+  //SPI1
+  lsm6dsv_UnselectDevice();
+  adxl371_UnselectDevice();
+  bmp3_UnselectDevice();
+
+  //SPI2
+  lis3mdl_UnselectDevice();
+  lis2dw12_UnselectDevice();
+
+  set_power_spi1_bus(0, SPI1_CHIP_ALL);
+  set_power_spi2_bus(0, SPI2_CHIP_ALL);
+  //TODO
+//  set_power_spi3_bus(0, chipIndex);
 
   //TODO do we need to deinit the SPI buses to save power?
-
 
 #elif
   if (isAds1292Present())
@@ -1015,6 +1024,7 @@ void SPI_busGatherDataDone_cb(uint8_t flag)
 }
 #endif
 
+#if defined(SHIMMER4_SDK)
 void SPI_gatherDataStart(void)
 {
   SpiStep1Start();
@@ -1036,6 +1046,7 @@ void SpiStepDone(void)
 {
   SPI_gatherDataDone_cb();
 }
+#endif
 
 #if defined(SHIMMER3R)
 void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
@@ -1080,42 +1091,19 @@ void SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     spiSensingInfo->status = SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET;
     bmp3_pressure_temperature_get(spi1Sens_buf.bmp390Buf);
     break;
-  case SPI2_LSM303AH_ACCEL:
-    //TODO
-    break;
-  case SPI2_LSM303AH_MAG:
-    //TODO
+  case SPI2_LIS2DW12_ACCEL:
+    spiSensingInfo->status = SPI_STAT_LIS2DW12_ACCEL_GET;
+    lis2dw12_accel_get(spi2Sens_buf.lis2dw12AccelBuf);
     break;
   case SPI2_LIS3MDL_MAG:
-    //TODO
+    spiSensingInfo->status = SPI_STAT_LIS3MDL_MAG_GET;
+    lis3mdl_mag_get(spi2Sens_buf.lis3mdlMagBuf);
     break;
   case SPI3_ADS1292R_EXG1:
     //TODO
     break;
   case SPI3_ADS1292R_EXG2:
     //TODO
-    break;
-
-//  case I2C_LSM303DLHC_ACCEL:
-//    Lsm303dlhcAccelSample();
-//    break;
-//  case I2C_LSM303DLHC_MAG:
-//    Lsm303dlhcMagSample();
-//    break;
-//  case I2C_MPU9250_GYRO:
-//    MPU9250GyroSample();
-//    break;
-//  case I2C_MPU9250_ACCEL:
-//    MPU9250AccelSample();
-//    break;
-//  case I2C_MPU9250_MAG:
-//    MPU9250MagSample();
-//    break;
-//  case I2C_BMP180:
-//    BMP180Sample();
-//    break;
-//  case I2C_BMP280:
-//    BMP280Sample();
     break;
   default:
     break;
@@ -1162,17 +1150,11 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
   switch (spi2Sens.sensorList[spi2Sens.sensorCnt])
   {
-  case SPI2_LSM303AH_ACCEL:
-    lsm303ah_UnselectDevice();
+  case SPI2_LIS2DW12_ACCEL:
+    lis2dw12_UnselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.accel2,
-        &spi2Sens_buf.lsm303AccelBuf[SPI_DMA_TXRX_OFFSET],
-        sizeof(spi2Sens_buf.lsm303AccelBuf) - SPI_DMA_TXRX_OFFSET);
-    break;
-  case SPI2_LSM303AH_MAG:
-    lsm303ah_UnselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.mag1,
-        &spi2Sens_buf.lsm303MagBuf[SPI_DMA_TXRX_OFFSET],
-        sizeof(spi2Sens_buf.lsm303MagBuf) - SPI_DMA_TXRX_OFFSET);
+        &spi2Sens_buf.lis2dw12AccelBuf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi2Sens_buf.lis2dw12AccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI2_LIS3MDL_MAG:
     lis3mdl_UnselectDevice();
@@ -1260,15 +1242,27 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex)
 {
   bool stateToSet = false;
-  spi1BusChipPwrFlags[chipIndex] = state;
 
-  for (uint8_t i = 0; i < sizeof(spi1BusChipPwrFlags); i++)
+  if (chipIndex == SPI1_CHIP_ALL)
   {
-    // If any chips should be on, set power on.
-    if (spi1BusChipPwrFlags[i])
+    stateToSet = state;
+    for (uint8_t i = 0; i < sizeof(spi1BusChipPwrFlags); i++)
     {
-      stateToSet = true;
-      break;
+      spi1BusChipPwrFlags[i] = state;
+    }
+  }
+  else
+  {
+    spi1BusChipPwrFlags[chipIndex] = state;
+
+    for (uint8_t i = 0; i < sizeof(spi1BusChipPwrFlags); i++)
+    {
+      // If any chips should be on, set power on.
+      if (spi1BusChipPwrFlags[i])
+      {
+        stateToSet = true;
+        break;
+      }
     }
   }
 
@@ -1282,15 +1276,27 @@ void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex)
 void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex)
 {
   bool stateToSet = false;
-  spi2BusChipPwrFlags[chipIndex] = state;
 
-  for (uint8_t i = 0; i < sizeof(spi2BusChipPwrFlags); i++)
+  if (chipIndex == SPI2_CHIP_ALL)
   {
-    // If any chips should be on, set power on.
-    if (spi2BusChipPwrFlags[i])
+    stateToSet = state;
+    for (uint8_t i = 0; i < sizeof(spi2BusChipPwrFlags); i++)
     {
-      stateToSet = true;
-      break;
+      spi2BusChipPwrFlags[i] = state;
+    }
+  }
+  else
+  {
+    spi2BusChipPwrFlags[chipIndex] = state;
+
+    for (uint8_t i = 0; i < sizeof(spi2BusChipPwrFlags); i++)
+    {
+      // If any chips should be on, set power on.
+      if (spi2BusChipPwrFlags[i])
+      {
+        stateToSet = true;
+        break;
+      }
     }
   }
 

@@ -27,5 +27,6 @@ void bmp3_UnselectDevice(void);
 HAL_StatusTypeDef bmp3_pressure_temperature_get(uint8_t *buf);
 int8_t bmp390_self_test(void);
 void bmp390_restore_default_config(void);
+void bmp390_config_set(uint8_t precision);
 
 #endif /* BMP3_BMP3_SENSORAPI_HAL_BMP3_H_ */

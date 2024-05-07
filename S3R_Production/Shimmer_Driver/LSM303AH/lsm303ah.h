@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-void lsm303ah_self_test(void);
+uint8_t lsm303ah_self_test(void);
 
 void lsm303ah_driver_init(void);
 void lsm303ah_power_on(void);
@@ -35,5 +35,6 @@ void lsm303ah_getMag(uint8_t *buf);
 void lsm303ah_sleep(void);
 
 void lsm303ah_restore_default_config(void);
+void lsm303ah_spi_three_wire_set(void);
 
 #endif /* LSM303AH_LSM303AH_H_ */
