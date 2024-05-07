@@ -240,7 +240,7 @@ int main(void)
   MX_USB_DEVICE_Init();
 #endif
 
-  linkedListConfig(&hadc1);
+  linkedListConfig(&hadc1); //configure linkedlist for ADC
 
   Init();
 //  S4_NORM_Task_set(TASK_STARTSENSING);
@@ -263,7 +263,6 @@ int main(void)
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
   i = 0;
-  HAL_ADCEx_Calibration_Start(&hadc1,ADC_CALIB_OFFSET,ADC_SINGLE_ENDED);
   /* USER CODE END 2 */
 
   /* Infinite loop */

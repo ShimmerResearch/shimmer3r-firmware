@@ -109,6 +109,7 @@
 #define X_GYRO                            0x0A
 #define Y_GYRO                            0x0B
 #define Z_GYRO                            0x0C
+#if defined(SHIMMER3R)
 #define EXTERNAL_ADC_7                    0x0D
 #define EXTERNAL_ADC_6                    0x0E
 #define EXTERNAL_ADC_15                   0x0F
@@ -116,6 +117,7 @@
 #define INTERNAL_ADC_12                   0x11
 #define INTERNAL_ADC_13                   0x12
 #define INTERNAL_ADC_14                   0x13
+#endif
 #define X_ACCEL_3                         0x14
 #define Y_ACCEL_3                         0x15
 #define Z_ACCEL_3                         0x16
@@ -143,17 +145,15 @@
 #define STC3100_CH_3                      0x2B
 #define STC3100_CH_4                      0x2C
 #define STC3100_CH_5                      0x2D
-#endif
-#define EXT_ADC_0                         0x2E
-#define EXT_ADC_1                         0x2F
-#define EXT_ADC_2                         0x30
-#define INT_ADC_0                        0x31
-#if defined(SHIMMER4_SDK)
-#define INT_ADC_4                        0x32
-#endif
-#define INT_ADC_1                        0x33
-#define INT_ADC_2                         0x34
+#define EXTERNAL_ADC_0                    0x2E
+#define EXTERNAL_ADC_1                    0x2F
+#define EXTERNAL_ADC_15                   0x30
+#define INTERNAL_ADC_1                    0x31
+#define INTERNAL_ADC_12                   0x32
+#define INTERNAL_ADC_13                   0x33
+#define INTERNAL_ADC_14                   0x34
 #define INT_ADC_3                         0x35
+#endif
 #define PPG_1                             0x36
 #define PPG_2                             0x37
 

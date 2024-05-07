@@ -246,38 +246,38 @@ void S4_NORM_ADC_configureChannels(void){
 
    //External ADC 0
    if (configBytes->chEnExtADC0) {
-      *channel_contents_ptr++ = EXT_ADC_0;
+      *channel_contents_ptr++ = EXTERNAL_ADC_7;
       nbr_adc_chans += 1;
       sensing.ptr.extADC0 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = EXT_ADC_0;
+      adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_7;
    }
    
    //External ADC 1
    if (configBytes->chEnExtADC1) {
-      *channel_contents_ptr++ = EXT_ADC_1;
+      *channel_contents_ptr++ = EXTERNAL_ADC_6;
       nbr_adc_chans += 1;
       sensing.ptr.extADC1 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = EXT_ADC_1;
+      adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_6;
    }
    
    //External ADC 2
    if (configBytes->chEnExtADC2) {
-      *channel_contents_ptr++ = EXT_ADC_2;
+      *channel_contents_ptr++ = EXTERNAL_ADC_15;
       nbr_adc_chans += 1;
       sensing.ptr.extADC2 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = EXT_ADC_2;
+      adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_15;
    }   
    
    //Internal ADC 0
    if (configBytes->chEnIntADC0) {
-      *channel_contents_ptr++ = INT_ADC_0;
+      *channel_contents_ptr++ = INTERNAL_ADC_1;
       nbr_adc_chans += 1;
       sensing.ptr.intADC0 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INT_ADC_0;
+      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_1;
    }
    
 #if defined(SHIMMER4_SDK)
@@ -293,30 +293,30 @@ void S4_NORM_ADC_configureChannels(void){
    
    //Internal ADC 1
    if (configBytes->chEnIntADC1) {
-      *channel_contents_ptr++ = INT_ADC_1;
+      *channel_contents_ptr++ = INTERNAL_ADC_12;
       nbr_adc_chans += 1;
       sensing.ptr.intADC1 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INT_ADC_1;
+      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_12;
    }
    
    //Internal ADC 2
    if (configBytes->chEnIntADC2) {
-      *channel_contents_ptr++ = INT_ADC_2;
+      *channel_contents_ptr++ = INTERNAL_ADC_13;
       nbr_adc_chans += 1;
       sensing.ptr.intADC2 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INT_ADC_2;
+      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_13;
    }
    
    //Internal ADC 3
    if (configBytes->chEnIntADC3) {
-      *channel_contents_ptr++ = INT_ADC_3;
+      *channel_contents_ptr++ = INTERNAL_ADC_14;
       nbr_adc_chans += 1;
       sensing.ptr.intADC3 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INT_ADC_3;
-   }   
+      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_14;
+   }
 
    sensing.nbrAdcChans += nbr_adc_chans;
    sensing.ccLen += nbr_adc_chans;
@@ -326,13 +326,11 @@ void S4_NORM_ADC_startSensing(){
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
    ADC_ChannelConfTypeDef sConfig = {0};
 
-
 #if defined(SHIMMER3R)
 #define ADC_RANK_OFFSET  6U;//for Shimmer3R the rank is multiple of 6
 #elif defined(SHIMMER4_SDK)
 #define ADC_RANK_OFFSET  1U;//, adc_counter_resv = 0;
 #endif
-
 
    uint8_t adc_counter_sens = 0; //adc channel rank counter
    adcConfig = ADC_CONFIG_SENS;
@@ -387,7 +385,6 @@ void S4_NORM_ADC_startSensing(){
       }
 #if defined(SHIMMER3R)
       linkedListConfig(hadcSensPtr);
-      HAL_ADCEx_Calibration_Start(hadcSensPtr,ADC_CALIB_OFFSET,ADC_SINGLE_ENDED);
 
       sConfig.SamplingTime = ADC_SAMPLETIME_5CYCLES;
       sConfig.SingleDiff = ADC_SINGLE_ENDED;
