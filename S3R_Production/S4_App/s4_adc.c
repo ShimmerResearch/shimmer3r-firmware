@@ -409,9 +409,7 @@ void S4_NORM_ADC_startSensing(){
 #if defined(SHIMMER3R)
       linkedListConfig(hadcSensPtr);
 
-      //TODO revisit
-      sConfig.SamplingTime = ADC_SAMPLETIME_5CYCLES;
-      //sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
+      sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES;
       sConfig.SingleDiff = ADC_SINGLE_ENDED;
       sConfig.OffsetNumber = ADC_OFFSET_NONE;
       sConfig.Offset = 0;
