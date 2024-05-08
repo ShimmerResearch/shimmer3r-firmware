@@ -73,6 +73,9 @@ typedef enum
 
 void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds, TIM_HandleTypeDef *htimUprLeds, TIM_HandleTypeDef *htimLedBlink);
 
+void startLedBlinkTimer(void);
+void stopLedBlinkTimer(void);
+
 void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue);
 void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
 

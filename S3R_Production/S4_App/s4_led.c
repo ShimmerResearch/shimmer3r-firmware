@@ -284,9 +284,9 @@ void led_test(void)
 {
   SHIMMER_PRINTF("Starting LED test...\r\n");
 
-  S4_RTC_WakeUpOff();
-
 #if defined(SHIMMER3R)
+  stopLedBlinkTimer();
+
   Board_ledLwrSetColour(LED_RGB_ALL_OFF);
   Board_ledUprSetColour(LED_RGB_ALL_OFF);
 
@@ -323,7 +323,11 @@ void led_test(void)
 
   SHIMMER_PRINTF("Finished LED test.\r\n");
 
+  startLedBlinkTimer();
+
 #elif defined (SHIMMER4_SDK)
+  S4_RTC_WakeUpOff();
+
   Board_ledOff(LED_ALL);
   Board_ledOn(LED_BLUE_LWR);
   HAL_Delay(2000);
@@ -355,5 +359,6 @@ void led_test(void)
 
   S4_RTC_WakeUpSetSlow();
 #endif
+
 }
 

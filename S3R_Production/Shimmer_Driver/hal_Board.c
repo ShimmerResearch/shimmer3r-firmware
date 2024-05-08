@@ -51,6 +51,7 @@ static uint8_t ledStateUprRed = 0, ledStateUprGreen = 0, ledStateUprBlue = 0;
 
 TIM_HandleTypeDef *htimLwrLedsPtr;
 TIM_HandleTypeDef *htimUprLedsPtr;
+TIM_HandleTypeDef *htimLedBlinkPtr;
 
 static void updateLedState(uint8_t updateMode, uint8_t ledMask);
 
@@ -60,6 +61,7 @@ void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
 {
   htimLwrLedsPtr = htimLwrLeds;
   htimUprLedsPtr = htimUprLeds;
+  htimLedBlinkPtr = htimLedBlink;
 
   HAL_TIM_PWM_Start(htimLwrLedsPtr, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(htimLwrLedsPtr, TIM_CHANNEL_2);
@@ -69,7 +71,17 @@ void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
   HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_4);
 
-  HAL_TIM_Base_Start_IT(htimLedBlink);
+  startLedBlinkTimer();
+}
+
+void startLedBlinkTimer(void)
+{
+  HAL_TIM_Base_Start_IT(htimLedBlinkPtr);
+}
+
+void stopLedBlinkTimer(void)
+{
+  HAL_TIM_Base_Stop(htimLedBlinkPtr);
 }
 
 void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue)

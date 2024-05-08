@@ -355,8 +355,9 @@ STATTypeDef * GetStatus(){
 }
 
 //TODO trigger from (BSL?) UART command?
-uint32_t FullTest(void) {
-   //uint32_t test_result = 0;
+uint32_t FullTest(void)
+{
+  //uint32_t test_result = 0;
 
   SHIMMER_PRINTF("Self-test - Start\r\n");
 
@@ -364,29 +365,29 @@ uint32_t FullTest(void) {
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
   /* Get time */
-   HAL_RTC_GetTime(&hrtc, &sTime, format);
+  HAL_RTC_GetTime(&hrtc, &sTime, format);
   /* Get date */
-   HAL_RTC_GetDate(&hrtc, &sDate, format);
-  SHIMMER_PRINTF("Date (yyyy-mm-dd): %.4u-%.2u-%.2u\r\n",sDate.Year,sDate.Month,sDate.Date);
-  SHIMMER_PRINTF("Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n",sTime.Hours,sTime.Minutes,sTime.Seconds);
+  HAL_RTC_GetDate(&hrtc, &sDate, format);
+  SHIMMER_PRINTF("Date (yyyy-mm-dd): %.2u-%.2u-%.2u\r\n", sDate.Year, sDate.Month, sDate.Date);
+  SHIMMER_PRINTF("Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
 
   led_test();
 
-   stat.testResult += I2C_test();
+  stat.testResult += I2C_test();
 
-   SHIMMER_PRINTF("SD Card test:\r\n");
-   stat.testResult += SD_test()<<6;
-   //  SD_test_alternative();
+  stat.testResult += SD_test() << 6;
+  //  SD_test_alternative();
+  SHIMMER_PRINTF("SD Card test: %s\r\n", stat.badFile ? "FAIL" : "PASS");
 
-   stat.testResult += (!stat.isBtPoweredOn)<<7;
+  stat.testResult += (!stat.isBtPoweredOn) << 7;
 
-   stat.testResult += InfoMem_test()<<8;
+  stat.testResult += InfoMem_test() << 8;
 
-   stat.testResult += SPI_test()<<16;
+  stat.testResult += SPI_test() << 16;
 
-   SHIMMER_PRINTF("Self-test - End\r\n");
+  SHIMMER_PRINTF("Self-test - End\r\n");
 
-   return stat.testResult ;
+  return stat.testResult;
 }
 
 //TODO move out of here

@@ -72,6 +72,14 @@ void MX_RTC_Init(void)
 
   /* USER CODE BEGIN Check_RTC_BKUP */
 
+  //Copied from RTC_Calendar example for STM32U575
+
+  /* Set Date and Time (if not already done before)*/
+  /* Read the Back Up Register 0 Data */
+  if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) != 0x32F2)
+  {
+  /* Configure RTC Calendar */
+
   /* USER CODE END Check_RTC_BKUP */
 
   /** Initialize RTC and set the Time and Date
@@ -88,7 +96,7 @@ void MX_RTC_Init(void)
   sDate.WeekDay = RTC_WEEKDAY_MONDAY;
   sDate.Month = RTC_MONTH_JANUARY;
   sDate.Date = 0x1;
-  sDate.Year = 0x0;
+  sDate.Year = 0x70;
 
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
   {
@@ -102,6 +110,27 @@ void MX_RTC_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN RTC_Init 2 */
+  /* Writes a data in a RTC Backup data Register0 */
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x32F2);
+  }
+  else
+  {
+//    /* Check if the Power On Reset flag is set */
+//    if (__HAL_RCC_GET_FLAG(RCC_FLAG_BORRST) != RESET)
+//    {
+//      /* Turn on LED6: Power on reset occurred */
+//      BSP_LED_On(LED6);
+//    }
+//
+//    /* Check if Pin Reset flag is set */
+//    if (__HAL_RCC_GET_FLAG(RCC_FLAG_PINRST) != RESET)
+//    {
+//      /* Turn on LED6: External reset occurred */
+//      BSP_LED_On(LED6);
+//    }
+  }
+//  /* Clear source Reset Flag */
+//  __HAL_RCC_CLEAR_RESET_FLAGS();
 
   /* USER CODE END RTC_Init 2 */
 
