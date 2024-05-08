@@ -31,8 +31,6 @@
 #include "main.h"
 
 /* Exported types ------------------------------------------------------------*/
- extern DMA_NodeTypeDef ADCNode;
- extern DMA_QListTypeDef ADCQueue;
 /* Exported constants --------------------------------------------------------*/
 HAL_StatusTypeDef MX_ADCQueue_Config(void);
 

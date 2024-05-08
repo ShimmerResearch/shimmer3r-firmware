@@ -295,7 +295,12 @@ void S4Sens_streamData(void) {
 void S4Sens_bufPoll()
 {
    // adc channels
-   S4_ADC_bufPoll();
+  //TODO just use the following line once we get HAL_ADC_ConvCpltCallback working
+//   S4_NORM_ADC_gatherDataStart();
+
+   S4_NORM_ADC_bufPoll();
+   S4_NORM_ADC_gatherDataStart();
+   sensing_adcCompleteCb();
    
    I2C_pollSensors();
    

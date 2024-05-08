@@ -62,10 +62,34 @@ ADC_HandleTypeDef hadcBatt;
 ADC_HandleTypeDef *hadcSensPtr;
 ADC_HandleTypeDef *hadcBattPtr;
 
+#if defined(SHIMMER3R)
+uint16_t adc_battVal, adcBufSens[8];// max 8 channels, each of 16 bits
+#elif defined(SHIMMER4_SDK)
 uint32_t adc_battVal, adcBufSens[12], adcBufResv[12];// max 12 channels, each of 16 bits
+#endif
 //uint32_t adcBuf3[12];
 uint8_t gsrActiveResistor;
 uint8_t adcConfig;
+
+#if defined(SHIMMER3R)
+static ADC_RANK_ARRAY[] = {
+    ADC_REGULAR_RANK_1,
+    ADC_REGULAR_RANK_2,
+    ADC_REGULAR_RANK_3,
+    ADC_REGULAR_RANK_4,
+    ADC_REGULAR_RANK_5,
+    ADC_REGULAR_RANK_6,
+    ADC_REGULAR_RANK_7,
+    ADC_REGULAR_RANK_8,
+    ADC_REGULAR_RANK_9,
+    ADC_REGULAR_RANK_10,
+    ADC_REGULAR_RANK_11,
+    ADC_REGULAR_RANK_12,
+    ADC_REGULAR_RANK_13,
+    ADC_REGULAR_RANK_14,
+    ADC_REGULAR_RANK_15,
+    ADC_REGULAR_RANK_16};
+#endif
 
 
 void S4_NORM_ADC_init(void){   
@@ -246,38 +270,38 @@ void S4_NORM_ADC_configureChannels(void){
 
    //External ADC 0
    if (configBytes->chEnExtADC0) {
-      *channel_contents_ptr++ = EXTERNAL_ADC_7;
+      *channel_contents_ptr++ = EXT_ADC_0;
       nbr_adc_chans += 1;
       sensing.ptr.extADC0 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_7;
+      adc.sensorList[adc.sensorLen++] = EXT_ADC_0;
    }
    
    //External ADC 1
    if (configBytes->chEnExtADC1) {
-      *channel_contents_ptr++ = EXTERNAL_ADC_6;
+      *channel_contents_ptr++ = EXT_ADC_1;
       nbr_adc_chans += 1;
       sensing.ptr.extADC1 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_6;
+      adc.sensorList[adc.sensorLen++] = EXT_ADC_1;
    }
    
    //External ADC 2
    if (configBytes->chEnExtADC2) {
-      *channel_contents_ptr++ = EXTERNAL_ADC_15;
+      *channel_contents_ptr++ = EXT_ADC_2;
       nbr_adc_chans += 1;
       sensing.ptr.extADC2 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_15;
+      adc.sensorList[adc.sensorLen++] = EXT_ADC_2;
    }   
    
    //Internal ADC 0
    if (configBytes->chEnIntADC0) {
-      *channel_contents_ptr++ = INTERNAL_ADC_1;
+      *channel_contents_ptr++ = INT_ADC_0;
       nbr_adc_chans += 1;
       sensing.ptr.intADC0 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_1;
+      adc.sensorList[adc.sensorLen++] = INT_ADC_0;
    }
    
 #if defined(SHIMMER4_SDK)
@@ -293,30 +317,30 @@ void S4_NORM_ADC_configureChannels(void){
    
    //Internal ADC 1
    if (configBytes->chEnIntADC1) {
-      *channel_contents_ptr++ = INTERNAL_ADC_12;
+      *channel_contents_ptr++ = INT_ADC_1;
       nbr_adc_chans += 1;
       sensing.ptr.intADC1 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_12;
+      adc.sensorList[adc.sensorLen++] = INT_ADC_1;
    }
    
    //Internal ADC 2
    if (configBytes->chEnIntADC2) {
-      *channel_contents_ptr++ = INTERNAL_ADC_13;
+      *channel_contents_ptr++ = INT_ADC_2;
       nbr_adc_chans += 1;
       sensing.ptr.intADC2 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_13;
+      adc.sensorList[adc.sensorLen++] = INT_ADC_2;
    }
    
    //Internal ADC 3
    if (configBytes->chEnIntADC3) {
-      *channel_contents_ptr++ = INTERNAL_ADC_14;
+      *channel_contents_ptr++ = INT_ADC_3;
       nbr_adc_chans += 1;
       sensing.ptr.intADC3 = sensing.dataLen;
       sensing.dataLen += 2;
-      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_14;
-   }
+      adc.sensorList[adc.sensorLen++] = INT_ADC_3;
+   }   
 
    sensing.nbrAdcChans += nbr_adc_chans;
    sensing.ccLen += nbr_adc_chans;
@@ -325,26 +349,23 @@ void S4_NORM_ADC_configureChannels(void){
 void S4_NORM_ADC_startSensing(){
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
    ADC_ChannelConfTypeDef sConfig = {0};
-
 #if defined(SHIMMER3R)
-#define ADC_RANK_OFFSET  6U;//for Shimmer3R the rank is multiple of 6
-#elif defined(SHIMMER4_SDK)
-#define ADC_RANK_OFFSET  1U;//, adc_counter_resv = 0;
-#endif
-
    uint8_t adc_counter_sens = 0; //adc channel rank counter
+#elif defined(SHIMMER4_SDK)
+   uint8_t adc_counter_sens = 1; //adc channel rank counter
+#endif
    adcConfig = ADC_CONFIG_SENS;
       
    if(adc.sensorLen > 0){
-     HAL_ADC_DeInit(&hadc1);
       //memcpy((uint8_t*)hadcSensPtr.Init, (uint8_t*)&hadcBattPtr->Init, sizeof(ADC_InitTypeDef));
       //hadcSens.Instance = ADC2;
 #if defined(SHIMMER3R)
      hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
-     hadcSensPtr->Init.Resolution = ADC_RESOLUTION_14B;
+     hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
      hadcSensPtr->Init.GainCompensation = 0;
      hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
      hadcSensPtr->Init.ScanConvMode = ADC_SCAN_DISABLE;
+     hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
      hadcSensPtr->Init.LowPowerAutoWait = DISABLE;
      hadcSensPtr->Init.ContinuousConvMode = ENABLE;
      hadcSensPtr->Init.NbrOfConversion = adc.sensorLen;
@@ -360,7 +381,6 @@ void S4_NORM_ADC_startSensing(){
 
 
 #elif defined(SHIMMER4_SDK)
-      sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
       hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
       hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
       hadcSensPtr->Init.ScanConvMode = DISABLE;
@@ -373,10 +393,13 @@ void S4_NORM_ADC_startSensing(){
       //hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
 #endif
 
-      if(adc.sensorLen > 1){
+      // Override EOCSelection depending on number of enabled channels
+      if(adc.sensorLen > 1)
+      {
          hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
       }
-      else {
+      else
+      {
          hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
       }
       if (HAL_ADC_Init(hadcSensPtr) != HAL_OK)
@@ -386,10 +409,14 @@ void S4_NORM_ADC_startSensing(){
 #if defined(SHIMMER3R)
       linkedListConfig(hadcSensPtr);
 
+      //TODO revisit
       sConfig.SamplingTime = ADC_SAMPLETIME_5CYCLES;
+      //sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
       sConfig.SingleDiff = ADC_SINGLE_ENDED;
       sConfig.OffsetNumber = ADC_OFFSET_NONE;
       sConfig.Offset = 0;
+#elif defined(SHIMMER4_SDK)
+      sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
 #endif
    }
    
@@ -430,73 +457,92 @@ void S4_NORM_ADC_startSensing(){
 #endif
    
 #if USE_VBATT_ALWAYS
-   if (1) {
+   if (1)
 #else
-   if (configBytes->chEnVBattery) {
-#endif   
+   if (configBytes->chEnVBattery)
+#endif
+   {
       sConfig.Channel = ADC_CHANNEL_VBATT;
-      adc_counter_sens += ADC_RANK_OFFSET;
-      sConfig.Rank = adc_counter_sens;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
    
    //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
    if (configBytes->chEnExtADC0) {
       sConfig.Channel = ADC_CHANNEL_EXT_A0;
-      adc_counter_sens += ADC_RANK_OFFSET;
-      sConfig.Rank = adc_counter_sens;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
    
    //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
    if (configBytes->chEnExtADC1) {
       sConfig.Channel = ADC_CHANNEL_EXT_A1;
-      adc_counter_sens += ADC_RANK_OFFSET;
-      sConfig.Rank = adc_counter_sens;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
    
    if (configBytes->chEnExtADC2) {
       sConfig.Channel = ADC_CHANNEL_EXT_A2;
-      adc_counter_sens += ADC_RANK_OFFSET;
-      sConfig.Rank = adc_counter_sens;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 
    if (configBytes->chEnIntADC3) {
       sConfig.Channel = ADC_CHANNEL_INT_A3;
-      adc_counter_sens += ADC_RANK_OFFSET;
-      sConfig.Rank = adc_counter_sens;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 
    if (configBytes->chEnIntADC0) {
       sConfig.Channel = ADC_CHANNEL_INT_A0;
-      adc_counter_sens += ADC_RANK_OFFSET;
-      sConfig.Rank = adc_counter_sens;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 
    if (configBytes->chEnIntADC1) {
       sConfig.Channel = ADC_CHANNEL_INT_A1;
-      adc_counter_sens += ADC_RANK_OFFSET;
-      sConfig.Rank = adc_counter_sens;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 
    if (configBytes->chEnIntADC2) {
       sConfig.Channel = ADC_CHANNEL_INT_A2;
-      adc_counter_sens += ADC_RANK_OFFSET;
-      sConfig.Rank = adc_counter_sens;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 
 #if defined(SHIMMER4_SDK)
    if (configBytes->chEnIntADC4) {
-      sConfig.Channel = ADC_CHANNEL_INT_A4;
+     sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
       adc_counter_sens += ADC_RANK_OFFSET;
-      sConfig.Rank = adc_counter_sens;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 #endif
 
@@ -515,10 +561,10 @@ void S4_NORM_ADC_gatherDataStart(void){
 #endif
    if(adc.sensorLen > 0){
       HAL_ADC_Start_DMA(hadcSensPtr, (uint32_t *)adcBufSens, (uint32_t)adc.sensorLen);
-      //for(uint16_t i = 0; i < 144/2; i++);
-      
-      ADC_gatherDataDone_cb();
-      //HAL_ADC_Start(hadcSens);
+//      for(uint16_t i = 0; i < 144/2; i++);
+//
+//      ADC_gatherDataDone_cb();
+//      //HAL_ADC_Start(hadcSens);
    }
 }
    
@@ -526,7 +572,7 @@ void S4_NORM_ADC_bufPoll(){
    uint8_t adc_offset_sens = 0;//, adc_offset_resv = 0;   
    //uint8_t adc_vbattery[2];
    gConfigBytes *configBytes = S4Ram_getStoredConfig();
-   S4_NORM_ADC_gatherDataStart();
+
 //   if(adc.chanCntBatt > 0){
 //      ADC_readBatt();
 //   }
@@ -785,29 +831,26 @@ bool areAdcChannelsEnabled(void)
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-#if defined(SHIMMER4_SDK)
+#if defined(SHIMMER3R)
+  if (hadc->Instance == hadcSensPtr->Instance)
+  {
+    S4_NORM_ADC_bufPoll();
+    ADC_gatherDataDone_cb();
+  }
+#elif defined(SHIMMER4_SDK)
    if (hadc->Instance == hadcResv.Instance) {//adc1
       __NOP();
    }
-#endif
-   if (hadc->Instance == hadc1.Instance) {//adc2
+   if (hadc->Instance == hadcSensPtr->Instance) {//adc2
       __NOP();
       //ADC_gatherDataDone_cb();
    }
    __NOP();
    __NOP();
    __NOP();
+#endif
 }
 
-void linkedListConfig(ADC_HandleTypeDef *hadc)
-{
-  MX_ADCQueue_Config();
-  __HAL_LINKDMA(hadc, DMA_Handle, handle_GPDMA1_Channel2);
-  if (HAL_DMAEx_List_LinkQ(&handle_GPDMA1_Channel2, &ADCQueue) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
 //void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 //{
 //   if (hadc->Instance == ADC1) {

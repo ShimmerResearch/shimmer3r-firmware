@@ -110,6 +110,14 @@
 #define Y_GYRO                            0x0B
 #define Z_GYRO                            0x0C
 #if defined(SHIMMER3R)
+#define EXT_ADC_0                         0x0D
+#define EXT_ADC_1                         0x0E
+#define EXT_ADC_2                         0x0F
+#define INT_ADC_0                         0x10
+#define INT_ADC_1                         0x11
+#define INT_ADC_2                         0x12
+#define INT_ADC_3                         0x13
+#elif defined(SHIMMER3)
 #define EXTERNAL_ADC_7                    0x0D
 #define EXTERNAL_ADC_6                    0x0E
 #define EXTERNAL_ADC_15                   0x0F

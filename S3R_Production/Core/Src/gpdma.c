@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+extern DMA_QListTypeDef ADCQueue;
+
 /* USER CODE END 0 */
 
 DMA_HandleTypeDef handle_GPDMA1_Channel3;
@@ -106,5 +108,15 @@ void MX_GPDMA1_Init(void)
 }
 
 /* USER CODE BEGIN 1 */
+
+void linkedListConfig(ADC_HandleTypeDef *hadc)
+{
+  MX_ADCQueue_Config();
+  __HAL_LINKDMA(hadc, DMA_Handle, handle_GPDMA1_Channel2);
+  if (HAL_DMAEx_List_LinkQ(&handle_GPDMA1_Channel2, &ADCQueue) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
 
 /* USER CODE END 1 */

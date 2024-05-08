@@ -78,7 +78,6 @@ void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void));
 void S4_NORM_ADC_gatherDataStart(void); 
 void S4_NORM_ADC_readBatt(void);
 void S4_NORM_ADC_rankBatt(void);
-void linkedListConfig(ADC_HandleTypeDef *hadc);
 
 #if defined(SHIMMER3R)
 bool areAdcChannelsEnabled(void);

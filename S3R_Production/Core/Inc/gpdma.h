@@ -44,6 +44,8 @@ void MX_GPDMA1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+void linkedListConfig(ADC_HandleTypeDef *hadc);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
