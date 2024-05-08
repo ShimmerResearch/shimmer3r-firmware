@@ -146,8 +146,8 @@ typedef union
     uint8_t chEnExtADC6 :1;
     uint8_t chEnExtADC7 :1;
 #else
-    uint8_t chEnExtADC1 :1;   // S3R = ADC11, S4_SDK = ADC8
-    uint8_t chEnExtADC0 :1;   // S3R = ADC9, S4_SDK = ADC9
+    uint8_t chEnExtADC1 :1;   // S3 = ADC6, S3R = ADC11, S4_SDK = ADC8
+    uint8_t chEnExtADC0 :1;   // S3 = ADC7, S3R = ADC9, S4_SDK = ADC9
 #endif
     uint8_t chEnGsr :1;
     uint8_t chEnExg2_24Bit :1;
@@ -163,10 +163,10 @@ typedef union
     uint8_t chEnIntADC1 :1;
     uint8_t chEnExtADC15 :1;
 #else
-    uint8_t chEnIntADC1 :1;  // S3R = ADC15, S4_SDK = ADC11
-    uint8_t chEnIntADC0 :1;  // S3R = ADC10, S4_SDK = ADC10
-    uint8_t chEnIntADC3 :1;  // S3R = ADC17, S4_SDK = ADC2
-    uint8_t chEnExtADC2 :1;  // S3R = ADC12, S4_SDK = ADC1
+    uint8_t chEnIntADC1 :1;  // S3 = ADC13, S3R = ADC15, S4_SDK = ADC11
+    uint8_t chEnIntADC0 :1;  // S3 = ADC12, S3R = ADC10, S4_SDK = ADC10
+    uint8_t chEnIntADC3 :1;  // S3 = ADC1, S3R = ADC17, S4_SDK = ADC2
+    uint8_t chEnExtADC2 :1;  // S3 = ADC15, S3R = ADC12, S4_SDK = ADC1
 #endif
     uint8_t chEnWrAccel :1; // S3/S4_SDK = LSM303DLHC/LSM303AH, S3R = LSM303AH Accel
     uint8_t chEnVBattery :1;

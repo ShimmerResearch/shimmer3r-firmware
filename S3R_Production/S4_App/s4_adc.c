@@ -62,7 +62,11 @@ ADC_HandleTypeDef hadcBatt;
 ADC_HandleTypeDef *hadcSensPtr;
 ADC_HandleTypeDef *hadcBattPtr;
 
+#if defined(SHIMMER3R)
+uint16_t adc_battVal, adcBufSens[8];// max 8 channels, each of 16 bits
+#elif defined(SHIMMER4_SDK)
 uint32_t adc_battVal, adcBufSens[12], adcBufResv[12];// max 12 channels, each of 16 bits
+#endif
 //uint32_t adcBuf3[12];
 uint8_t gsrActiveResistor;
 uint8_t adcConfig;
@@ -333,10 +337,6 @@ void S4_NORM_ADC_startSensing(){
       //memcpy((uint8_t*)hadcSensPtr.Init, (uint8_t*)&hadcBattPtr->Init, sizeof(ADC_InitTypeDef));
       //hadcSens.Instance = ADC2;
 #if defined(SHIMMER3R)
-      sConfig.SamplingTime = ADC_SAMPLETIME_5CYCLES;
-      sConfig.SingleDiff = ADC_SINGLE_ENDED;
-      sConfig.OffsetNumber = ADC_OFFSET_NONE;
-      sConfig.Offset = 0;
       hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
       hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
       hadcSensPtr->Init.GainCompensation = 0;
@@ -357,7 +357,6 @@ void S4_NORM_ADC_startSensing(){
       hadcSensPtr->Init.OversamplingMode = DISABLE;
 
 #elif defined(SHIMMER4_SDK)
-      sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
       hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
       hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
       hadcSensPtr->Init.ScanConvMode = DISABLE;
@@ -369,6 +368,8 @@ void S4_NORM_ADC_startSensing(){
       hadcSensPtr->Init.DMAContinuousRequests = ENABLE;
       //hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
 #endif
+
+      // Override EOCSelection depending on number of enabled channels
       if(adc.sensorLen > 1){
          hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
       } else {
@@ -378,6 +379,16 @@ void S4_NORM_ADC_startSensing(){
       {
          Error_Handler();
       }
+
+#if defined(SHIMMER3R)
+      sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
+      sConfig.SingleDiff = ADC_SINGLE_ENDED;
+      sConfig.OffsetNumber = ADC_OFFSET_NONE;
+      sConfig.Offset = 0;
+#elif defined(SHIMMER4_SDK)
+      sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
+#endif
+
    }
    
 #if defined(SHIMMER4_SDK)
@@ -417,64 +428,92 @@ void S4_NORM_ADC_startSensing(){
 #endif
    
 #if USE_VBATT_ALWAYS
-   if (1) {
+   if (1)
 #else
-   if (configBytes->chEnVBattery) {
-#endif   
+   if (configBytes->chEnVBattery)
+#endif
+   {
       sConfig.Channel = ADC_CHANNEL_VBATT;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
    
    //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
    if (configBytes->chEnExtADC0) {
       sConfig.Channel = ADC_CHANNEL_EXT_A0;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
    
    //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
    if (configBytes->chEnExtADC1) {
       sConfig.Channel = ADC_CHANNEL_EXT_A1;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
    
    if (configBytes->chEnExtADC2) {
       sConfig.Channel = ADC_CHANNEL_EXT_A2;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 
    if (configBytes->chEnIntADC3) {
       sConfig.Channel = ADC_CHANNEL_INT_A3;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 
    if (configBytes->chEnIntADC0) {
       sConfig.Channel = ADC_CHANNEL_INT_A0;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 
    if (configBytes->chEnIntADC1) {
       sConfig.Channel = ADC_CHANNEL_INT_A1;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 
    if (configBytes->chEnIntADC2) {
       sConfig.Channel = ADC_CHANNEL_INT_A2;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 
 #if defined(SHIMMER4_SDK)
    if (configBytes->chEnIntADC4) {
       sConfig.Channel = ADC_CHANNEL_INT_A4;
       sConfig.Rank = adc_counter_sens++;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+      {
+        Error_Handler();
+      }
    }
 #endif
 
@@ -492,11 +531,11 @@ void S4_NORM_ADC_gatherDataStart(void){
    }
 #endif
    if(adc.sensorLen > 0){
-      HAL_ADC_Start_DMA(hadcSensPtr, adcBufSens, (uint32_t)adc.sensorLen);
-      for(uint16_t i = 0; i < 144/2; i++);
-      
-      ADC_gatherDataDone_cb();
-      //HAL_ADC_Start(hadcSens);
+      HAL_ADC_Start_DMA(hadcSensPtr, (uint32_t*)adcBufSens, (uint32_t)adc.sensorLen);
+//      for(uint16_t i = 0; i < 144/2; i++);
+//
+//      ADC_gatherDataDone_cb();
+//      //HAL_ADC_Start(hadcSens);
    }
 }
    
@@ -763,11 +802,16 @@ bool areAdcChannelsEnabled(void)
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-#if defined(SHIMMER4_SDK)
+#if defined(SHIMMER3R)
+  if (hadc->Instance == hadcSensPtr->Instance)
+  {
+    S4_NORM_ADC_bufPoll();
+    ADC_gatherDataDone_cb();
+  }
+#elif defined(SHIMMER4_SDK)
    if (hadc->Instance == hadcResv.Instance) {//adc1
       __NOP();
    }
-#endif
    if (hadc->Instance == hadcSensPtr->Instance) {//adc2
       __NOP();
       //ADC_gatherDataDone_cb();
@@ -775,6 +819,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
    __NOP();
    __NOP();
    __NOP();
+#endif
 }
 
 //void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
