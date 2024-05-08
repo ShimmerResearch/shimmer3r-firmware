@@ -25,7 +25,8 @@
 
 /* USER CODE END Includes */
 
-
+DMA_NodeTypeDef ADCNode;
+DMA_QListTypeDef ADCQueue;
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
@@ -34,8 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-DMA_NodeTypeDef ADCNode;
-DMA_QListTypeDef ADCQueue;
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
