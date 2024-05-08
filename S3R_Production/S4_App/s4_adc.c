@@ -349,9 +349,9 @@ void S4_NORM_ADC_startSensing(){
       hadcSensPtr->Init.DiscontinuousConvMode = DISABLE;
       hadcSensPtr->Init.ExternalTrigConv = ADC_SOFTWARE_START;
       hadcSensPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-      hadcSensPtr->Init.DMAContinuousRequests = DISABLE;
+      hadcSensPtr->Init.DMAContinuousRequests = ENABLE;
       hadcSensPtr->Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
-      hadcSensPtr->Init.Overrun = ADC_OVR_DATA_PRESERVED;
+      hadcSensPtr->Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
       hadcSensPtr->Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
       hadcSensPtr->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT;
       hadcSensPtr->Init.OversamplingMode = DISABLE;
