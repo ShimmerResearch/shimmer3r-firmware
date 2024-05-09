@@ -199,7 +199,9 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN ADC1_MspInit 1 */
-
+    HAL_GPIO_DeInit(VBAT_SENSE_GPIO_Port,VBAT_SENSE_Pin);
+    HAL_GPIO_DeInit(GPIOA,GPIO_ADC_EXT_EXP0_Pin|GPIO_ADC_INT_EXP0_Pin|GPIO_ADC_EXT_EXP1_Pin|GPIO_ADC_EXT_EXP2_Pin);
+    HAL_GPIO_DeInit(GPIOB,GPIO_ADC_INT_EXP1_Pin|GPIO_ADC_INT_EXP2_Pin|GPIO_ADC_INT_EXP3_Pin);
   /* USER CODE END ADC1_MspInit 1 */
   }
   else if(adcHandle->Instance==ADC2)
