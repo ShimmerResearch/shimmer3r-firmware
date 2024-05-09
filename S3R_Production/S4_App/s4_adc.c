@@ -232,7 +232,6 @@ void S4_NORM_ADC_configureChannels(void){
       sensing.ptr.batteryAnalog = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = VBATT;
-      adcGpioInit(VBAT_SENSE_Pin);
    }     
 #endif
 
@@ -276,7 +275,6 @@ void S4_NORM_ADC_configureChannels(void){
       sensing.ptr.extADC0 = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = EXT_ADC_0;
-      adcGpioInit(GPIO_ADC_EXT_EXP0_Pin);
    }
    
    //External ADC 1
@@ -286,7 +284,6 @@ void S4_NORM_ADC_configureChannels(void){
       sensing.ptr.extADC1 = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = EXT_ADC_1;
-      adcGpioInit(GPIO_ADC_EXT_EXP1_Pin);
    }
    
    //External ADC 2
@@ -296,7 +293,6 @@ void S4_NORM_ADC_configureChannels(void){
       sensing.ptr.extADC2 = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = EXT_ADC_2;
-      adcGpioInit(GPIO_ADC_EXT_EXP2_Pin);
    }   
    
    //Internal ADC 0
@@ -306,7 +302,6 @@ void S4_NORM_ADC_configureChannels(void){
       sensing.ptr.intADC0 = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = INT_ADC_0;
-      adcGpioInit(GPIO_ADC_INT_EXP0_Pin);
    }
    
 #if defined(SHIMMER4_SDK)
@@ -327,7 +322,6 @@ void S4_NORM_ADC_configureChannels(void){
       sensing.ptr.intADC1 = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = INT_ADC_1;
-      adcGpioInit(GPIO_ADC_INT_EXP1_Pin);
    }
    
    //Internal ADC 2
@@ -337,7 +331,6 @@ void S4_NORM_ADC_configureChannels(void){
       sensing.ptr.intADC2 = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = INT_ADC_2;
-      adcGpioInit(GPIO_ADC_INT_EXP2_Pin);
    }
    
    //Internal ADC 3
@@ -347,7 +340,6 @@ void S4_NORM_ADC_configureChannels(void){
       sensing.ptr.intADC3 = sensing.dataLen;
       sensing.dataLen += 2;
       adc.sensorList[adc.sensorLen++] = INT_ADC_3;
-      adcGpioInit(GPIO_ADC_INT_EXP3_Pin);
    }   
 
    sensing.nbrAdcChans += nbr_adc_chans;
@@ -474,6 +466,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
+      adcGpioInit(VBAT_SENSE_Pin);
    }
    
    //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
@@ -484,6 +477,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
+      adcGpioInit(GPIO_ADC_EXT_EXP0_Pin);
    }
    
    //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
@@ -494,6 +488,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
+      adcGpioInit(GPIO_ADC_EXT_EXP1_Pin);
    }
    
    if (configBytes->chEnExtADC2) {
@@ -503,6 +498,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
+      adcGpioInit(GPIO_ADC_EXT_EXP2_Pin);
    }
 
    if (configBytes->chEnIntADC3) {
@@ -512,6 +508,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
+      adcGpioInit(GPIO_ADC_INT_EXP3_Pin);
    }
 
    if (configBytes->chEnIntADC0) {
@@ -521,6 +518,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
+      adcGpioInit(GPIO_ADC_INT_EXP0_Pin);
    }
 
    if (configBytes->chEnIntADC1) {
@@ -530,6 +528,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
+      adcGpioInit(GPIO_ADC_INT_EXP1_Pin);
    }
 
    if (configBytes->chEnIntADC2) {
@@ -539,6 +538,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
+      adcGpioInit(GPIO_ADC_INT_EXP2_Pin);
    }
 
 #if defined(SHIMMER4_SDK)
