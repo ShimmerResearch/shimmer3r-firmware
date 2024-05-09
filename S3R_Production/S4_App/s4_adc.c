@@ -834,6 +834,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
   {
     S4_NORM_ADC_bufPoll();
     ADC_gatherDataDone_cb();
+    HAL_ADC_Stop_DMA(hadcSensPtr);
   }
 #elif defined(SHIMMER4_SDK)
    if (hadc->Instance == hadcResv.Instance) {//adc1
