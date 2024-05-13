@@ -355,6 +355,8 @@ void S4_NORM_ADC_startSensing(){
    uint8_t adc_counter_sens = 1; //adc channel rank counter
 #endif
    adcConfig = ADC_CONFIG_SENS;
+   uint32_t adcGpioPinA = 0;
+   uint32_t adcGpioPinB = 0;
       
    if(adc.sensorLen > 0){
       //memcpy((uint8_t*)hadcSensPtr.Init, (uint8_t*)&hadcBattPtr->Init, sizeof(ADC_InitTypeDef));
@@ -466,7 +468,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
-      adcGpioInit(VBAT_SENSE_Pin);
+      adcGpioInit(VBAT_SENSE_Pin, VBAT_SENSE_GPIO_Port);
    }
    
    //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
@@ -477,7 +479,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
-      adcGpioInit(GPIO_ADC_EXT_EXP0_Pin);
+      adcGpioPinA |= GPIO_ADC_EXT_EXP0_Pin;
    }
    
    //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
@@ -488,7 +490,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
-      adcGpioInit(GPIO_ADC_EXT_EXP1_Pin);
+      adcGpioPinA |= GPIO_ADC_EXT_EXP1_Pin;
    }
    
    if (configBytes->chEnExtADC2) {
@@ -498,7 +500,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
-      adcGpioInit(GPIO_ADC_EXT_EXP2_Pin);
+      adcGpioPinA |= GPIO_ADC_EXT_EXP2_Pin;
    }
 
    if (configBytes->chEnIntADC3) {
@@ -508,7 +510,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
-      adcGpioInit(GPIO_ADC_INT_EXP3_Pin);
+      adcGpioPinB |= GPIO_ADC_INT_EXP3_Pin;
    }
 
    if (configBytes->chEnIntADC0) {
@@ -518,7 +520,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
-      adcGpioInit(GPIO_ADC_INT_EXP0_Pin);
+      adcGpioPinA |= GPIO_ADC_INT_EXP0_Pin;
    }
 
    if (configBytes->chEnIntADC1) {
@@ -528,7 +530,7 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
-      adcGpioInit(GPIO_ADC_INT_EXP1_Pin);
+      adcGpioPinB |= GPIO_ADC_INT_EXP1_Pin;
    }
 
    if (configBytes->chEnIntADC2) {
@@ -538,7 +540,16 @@ void S4_NORM_ADC_startSensing(){
       {
         Error_Handler();
       }
-      adcGpioInit(GPIO_ADC_INT_EXP2_Pin);
+      adcGpioPinB |= GPIO_ADC_INT_EXP2_Pin;
+   }
+   /*GPIO init as per configuration*/
+   if(adcGpioPinA != 0)
+   {
+     adcGpioInit(adcGpioPinA, GPIOA);
+   }
+   if(adcGpioPinB != 0)
+   {
+     adcGpioInit(adcGpioPinB, GPIOB);
    }
 
 #if defined(SHIMMER4_SDK)
@@ -785,12 +796,12 @@ void S4_NORM_ADC_readBatt(void) {
       }      
       adcConfig = ADC_CONFIG_BATT;
       
-      HAL_ADC_DeInit(hadcSensPtr);
-      hadcSensPtr->Init = hadcBattPtr->Init;
-      hadcSensPtr->Init.ScanConvMode = DISABLE;
-      hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-      hadcSensPtr->Init.NbrOfConversion = 1;
-      HAL_ADC_Init(hadcSensPtr);
+      HAL_ADC_DeInit(hadcBattPtr);
+      //hadcSensPtr->Init = hadcBattPtr->Init;
+      hadcBattPtr->Init.ScanConvMode = DISABLE;
+      hadcBattPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+      hadcBattPtr->Init.NbrOfConversion = 1;
+      HAL_ADC_Init(hadcBattPtr);
 #if defined(SHIMMER3R)
       // Copied from MX_ADC1_Init function
       sConfig.Rank = ADC_REGULAR_RANK_1;
@@ -803,7 +814,7 @@ void S4_NORM_ADC_readBatt(void) {
 #endif
       sConfig.Channel = ADC_CHANNEL_VBATT;
       sConfig.Rank = 1;
-      HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig);
+      HAL_ADC_ConfigChannel(hadcBattPtr, &sConfig);
    }   
 #if defined(SHIMMER3R)
    //TODO hadcSensPtr is configured above from Shimmer4 code but we're using hadcBattPtr below which I can't make sense of.
@@ -857,62 +868,26 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
    __NOP();
 #endif
 }
-void adcGpioInit(uint8_t pin)
+void adcGpioInit(uint32_t pin, GPIO_TypeDef* port)
 {
-  GPIO_InitTypeDef GPIO_InitStruct =
-  { 0 };
-  if (pin == VBAT_SENSE_Pin || pin == 0xFF) //all pins = 0xFF
+  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+  if (port == VBAT_SENSE_GPIO_Port)
   {
-    GPIO_InitStruct.Pin = VBAT_SENSE_Pin;
+    GPIO_InitStruct.Pin = pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(VBAT_SENSE_GPIO_Port, &GPIO_InitStruct);
   }
-  else if (pin == GPIO_ADC_EXT_EXP0_Pin || pin == 0xFF)
+  else if (port == GPIOA)
   {
-    GPIO_InitStruct.Pin = GPIO_ADC_EXT_EXP0_Pin;
+    GPIO_InitStruct.Pin = pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   }
-  else if (pin == GPIO_ADC_INT_EXP0_Pin || pin == 0xFF)
+  else if (port == GPIOB)
   {
-    GPIO_InitStruct.Pin = GPIO_ADC_INT_EXP0_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  }
-  else if (pin == GPIO_ADC_EXT_EXP1_Pin || pin == 0xFF)
-  {
-    GPIO_InitStruct.Pin = GPIO_ADC_EXT_EXP1_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  }
-  else if (pin == GPIO_ADC_EXT_EXP2_Pin || pin == 0xFF)
-  {
-    GPIO_InitStruct.Pin = GPIO_ADC_EXT_EXP2_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  }
-  else if (pin == GPIO_ADC_INT_EXP1_Pin || pin == 0xFF)
-  {
-    GPIO_InitStruct.Pin = GPIO_ADC_INT_EXP1_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-  }
-  else if (pin == GPIO_ADC_INT_EXP2_Pin || pin == 0xFF)
-  {
-    GPIO_InitStruct.Pin = GPIO_ADC_INT_EXP2_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-  }
-  else if (pin == GPIO_ADC_INT_EXP3_Pin || pin == 0xFF)
-  {
-    GPIO_InitStruct.Pin = GPIO_ADC_INT_EXP3_Pin;
+    GPIO_InitStruct.Pin = pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);

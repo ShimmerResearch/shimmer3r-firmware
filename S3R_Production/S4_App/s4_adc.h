@@ -78,7 +78,7 @@ void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void));
 void S4_NORM_ADC_gatherDataStart(void); 
 void S4_NORM_ADC_readBatt(void);
 void S4_NORM_ADC_rankBatt(void);
-void adcGpioInit(uint8_t pin);
+void adcGpioInit(uint32_t pin, GPIO_TypeDef* port);
 
 #if defined(SHIMMER3R)
 bool areAdcChannelsEnabled(void);
