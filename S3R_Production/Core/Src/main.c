@@ -102,24 +102,21 @@ volatile uint32_t time_start, time_end, time_diff;
 uint8_t accelBuf[7];
 
 extern UART_HandleTypeDef *huartBt;
-#if defined(SHIMMER3R)
-extern UART_HandleTypeDef *huartBsl;
-#endif
 
 int _write(int file, char *ptr, int len)
 {
-//  int DataIdx;
-//  for (DataIdx = 0; DataIdx < len; DataIdx++)
-//  {
-//    ITM_SendChar(*ptr++);
-//  }
-  HAL_UART_Transmit(huartBsl, (uint8_t *) ptr++, (uint16_t) len, 0xFFFF);
+  int DataIdx;
+  for (DataIdx = 0; DataIdx < len; DataIdx++)
+  {
+    ITM_SendChar(*ptr++);
+  }
+//  HAL_UART_Transmit(huartBsl, (uint8_t *) ptr++, (uint16_t) len, 0xFFFF);
   return len;
 }
 
 void Init() {
 #if defined(SHIMMER3R)
-  Board_ledTimersStart(&htim3, &htim4, &htim6);
+  Board_ledTimersStart(&htim3, &htim2, &htim6);
 #endif
 
    Board_ledOn(LED_ALL);
@@ -219,7 +216,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
-  MX_I2C2_Init();
   MX_RNG_Init();
   MX_RTC_Init();
   MX_SDMMC1_SD_Init();
@@ -228,16 +224,16 @@ int main(void)
   MX_USART3_UART_Init();
   MX_ADC2_Init();
   MX_USB_OTG_HS_PCD_Init();
-  MX_USART2_UART_Init();
   MX_ICACHE_Init();
   MX_CRC_Init();
   MX_SPI1_Init();
   MX_TIM3_Init();
-  MX_TIM4_Init();
   MX_MDF1_Init();
   MX_ADC1_Init();
   MX_SPI3_Init();
   MX_TIM6_Init();
+  MX_TIM2_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 #if USE_FATFS
   MX_FATFS_Init();
@@ -249,7 +245,7 @@ int main(void)
   Init();
 //  S4_NORM_Task_set(TASK_STARTSENSING);
 
-//  FullTest();
+  FullTest();
 
   /* USER CODE END 2 */
 
@@ -354,7 +350,7 @@ STATTypeDef * GetStatus(){
    return &stat;
 }
 
-//TODO trigger from (BSL?) UART command?
+//TODO trigger from UART command?
 uint32_t FullTest(void)
 {
   //uint32_t test_result = 0;
@@ -371,7 +367,7 @@ uint32_t FullTest(void)
   SHIMMER_PRINTF("Date (yyyy-mm-dd): %.2u-%.2u-%.2u\r\n", sDate.Year, sDate.Month, sDate.Date);
   SHIMMER_PRINTF("Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
 
-  led_test();
+//  led_test();
 
   stat.testResult += I2C_test();
 

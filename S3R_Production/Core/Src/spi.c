@@ -845,7 +845,7 @@ void SPI_startSensing()
     lis2dw12_config_accel(configBytes->wrAccelRate, configBytes->wrAccelRange);
   }
 
-  if (configBytes->chEnMag)
+  if (configBytes->chEnAltMag)
   {
 //    lis3mdl_config_mag(configBytes->altMagRate, configBytes->altMagRange);
     lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);

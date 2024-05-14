@@ -312,26 +312,28 @@ void lis2dw12_self_test(void)
   lis2dw12_device_id_get(&dev_ctx, &whoamI);
 
   if (whoamI != LIS2DW12_ID)
-    while (1) {
-      /* manage here device not found */
-    }
+  {
+    st_result = ST_FAIL;
+  }
 
-  /* Start self test */
-//  while (1) {
-  st_result = test_self_test_lis2dw12(&dev_ctx);
-//  }
+  if (st_result == ST_PASS)
+  {
+    /* Start self test */
+  //  while (1) {
+    st_result = test_self_test_lis2dw12(&dev_ctx);
+  //  }
+  }
 
-    if (st_result == ST_PASS)
-    {
-      sprintf((char*) tx_buffer, "LIS2DW12 Self Test - PASS\r\n");
-    }
-    else
-    {
-      sprintf((char*) tx_buffer, "LIS2DW12 Self Test - FAIL\r\n");
-    }
+  if (st_result == ST_PASS)
+  {
+    sprintf((char*) tx_buffer, "LIS2DW12 Self Test - PASS\r\n");
+  }
+  else
+  {
+    sprintf((char*) tx_buffer, "LIS2DW12 Self Test - FAIL\r\n");
+  }
 
-    tx_com(tx_buffer, strlen((char const*) tx_buffer));
-
+  tx_com(tx_buffer, strlen((char const*) tx_buffer));
 }
 
 /*

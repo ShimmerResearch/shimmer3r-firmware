@@ -76,7 +76,7 @@
 #define SENSOR_BUS I2CD1
 
 #elif defined(SHIMMER3R)
-#define SENSOR_BUS hi2c2
+#define SENSOR_BUS hi2c1
 
 #endif
 

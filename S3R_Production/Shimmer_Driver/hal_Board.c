@@ -67,7 +67,7 @@ void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
   HAL_TIM_PWM_Start(htimLwrLedsPtr, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(htimLwrLedsPtr, TIM_CHANNEL_3);
 
-  HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(htimUprLedsPtr, TIM_CHANNEL_4);
 
@@ -98,7 +98,7 @@ void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue)
 {
   if (htimUprLedsPtr)
   {
-    htimUprLedsPtr->Instance->CCR2 = red;
+    htimUprLedsPtr->Instance->CCR1 = red;
     htimUprLedsPtr->Instance->CCR3 = green;
     htimUprLedsPtr->Instance->CCR4 = blue;
   }
