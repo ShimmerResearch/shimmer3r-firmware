@@ -186,6 +186,14 @@
 //#define BT_RX_COMMS_TIMEOUT_TICKS                     3277U /* 32768*0.1s = 3276.8  */
 #define BT_RX_COMMS_TIMEOUT_TICKS                     328U /* 32768*0.01s = 327.68  */
 
+
+enum
+{
+  BT_STREAM_CMD_STATE_IDLE = 0,
+  BT_STREAM_CMD_STATE_START = 1,
+  BT_STREAM_CMD_STATE_STOP = 2
+};
+
 #if BT_DMA_USED_FOR_RX
 //uint8_t Dma2ConversionDone(void);
 uint8_t Dma2ConversionDone(uint8_t *rxBuff);

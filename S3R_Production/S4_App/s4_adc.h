@@ -78,6 +78,9 @@ void S4_NORM_ADC_gatherDataStart(void);
 void S4_NORM_ADC_readBatt(void);
 void S4_NORM_ADC_rankBatt(void);
 
+#if defined(SHIMMER3R)
+bool areAdcChannelsEnabled(void);
+#endif
    
 #endif /* S4_ADC_H */
 

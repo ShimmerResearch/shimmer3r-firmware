@@ -21,6 +21,9 @@
 #include "sdmmc.h"
 
 /* USER CODE BEGIN 0 */
+#include "s4.h"
+
+extern STATTypeDef stat;
 
 /* USER CODE END 0 */
 
@@ -37,6 +40,11 @@ void MX_SDMMC1_SD_Init(void)
 
   /* USER CODE BEGIN SDMMC1_Init 1 */
 
+  // Initialise will fail if an SD card is not detected
+  SD_insertedCheck();
+  stat.badFile = 1;
+  if (stat.isSdInserted)
+  {
   /* USER CODE END SDMMC1_Init 1 */
   hsd1.Instance = SDMMC1;
   hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
@@ -49,7 +57,11 @@ void MX_SDMMC1_SD_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SDMMC1_Init 2 */
-
+    else
+    {
+      stat.badFile = 0;
+    }
+  }
   /* USER CODE END SDMMC1_Init 2 */
 
 }
@@ -89,19 +101,19 @@ void HAL_SD_MspInit(SD_HandleTypeDef* sdHandle)
     PD2     ------> SDMMC1_CMD
     */
     GPIO_InitStruct.Pin = SDMMC1_D0_Pin|SDMMC1_D1_Pin|SDMMC1_D2_Pin|SDMMC1_D3_Pin
-                          |SD_CLK_Pin;
+                          |SDMMC1_CK_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = SD_CMD_Pin;
+    GPIO_InitStruct.Pin = SDMMC1_CMD_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
-    HAL_GPIO_Init(SD_CMD_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(SDMMC1_CMD_GPIO_Port, &GPIO_InitStruct);
 
     /* SDMMC1 interrupt Init */
     HAL_NVIC_SetPriority(SDMMC1_IRQn, 14, 0);
@@ -132,9 +144,9 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef* sdHandle)
     PD2     ------> SDMMC1_CMD
     */
     HAL_GPIO_DeInit(GPIOC, SDMMC1_D0_Pin|SDMMC1_D1_Pin|SDMMC1_D2_Pin|SDMMC1_D3_Pin
-                          |SD_CLK_Pin);
+                          |SDMMC1_CK_Pin);
 
-    HAL_GPIO_DeInit(SD_CMD_GPIO_Port, SD_CMD_Pin);
+    HAL_GPIO_DeInit(SDMMC1_CMD_GPIO_Port, SDMMC1_CMD_Pin);
 
     /* SDMMC1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(SDMMC1_IRQn);

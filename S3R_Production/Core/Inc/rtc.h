@@ -86,9 +86,10 @@ void S4_RTC_Unix2RTC(S4_RTC_t* data, uint32_t unix);
 void RTC_init(uint64_t ticks);
 uint32_t RTC_get32(void);
 uint64_t RTC_get64(void);
+uint8_t isRwcTimeSet(void);
 
-void S4_RTC_setConfigTime(uint64_t val);
-uint64_t S4_RTC_getConfigTime(void);
+void S4_RWC_setConfigTime(uint64_t val);
+uint64_t S4_RWC_getConfigTime(void);
 
 void S4_RTC_WakeUpOff(void);
 void S4_RTC_WakeUpSet(uint16_t period);

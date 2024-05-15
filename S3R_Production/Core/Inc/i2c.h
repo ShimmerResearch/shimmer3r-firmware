@@ -35,12 +35,15 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-extern I2C_HandleTypeDef hi2c2;
+extern I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN Private defines */
 
 typedef enum{//i2c
    I2C_STAT_IDLE = 0,
+#if defined(SHIMMER3R)
+   I2C_STAT_LIS2MDL_MAG_GET,
+#elif defined(SHIMMER4_SDK)
    I2C_STAT_LSM303DLHC_ACCEL_GET_T,
    I2C_STAT_LSM303DLHC_ACCEL_GET_R,
    I2C_STAT_LSM303DLHC_MAG_GET_T,
@@ -66,6 +69,7 @@ typedef enum{//i2c
    I2C_STAT_STC3100_START,
    I2C_STAT_STC3100_ALL_GET,
    I2C_STAT_STC3100_DATA_GET,
+#endif
 }I2C_STATUS;
 
 typedef enum {
@@ -74,6 +78,9 @@ typedef enum {
 }I2C_SENSING_TYPE;
 
 typedef enum{//i2c
+#if defined(SHIMMER3R)
+  I2C_LIS2MDL_MAG = 0,
+#elif defined(SHIMMER4_SDK)
    I2C_LSM303DLHC_ACCEL = 0,
    I2C_LSM303DLHC_MAG,
    I2C_ANALOG_ACCEL,
@@ -83,6 +90,7 @@ typedef enum{//i2c
    I2C_BMP180,
    I2C_BMP280,
    I2C_STC3100,
+#endif
 }I2C_SENSOR;
 
 typedef struct {//i2c_1 - Sensors
@@ -100,6 +108,7 @@ typedef struct {//i2c_1 - Sensors
 //   uint8_t sensorCnt;
 //} I2CBatteryTypeDef;
 
+#if defined(SHIMMER4_SDK)
 typedef struct {//bmp180
    uint8_t en;
    //uint16_t freq;
@@ -130,8 +139,12 @@ typedef struct {//mpu9250Mag
    uint16_t max;
    uint16_t cnt;
 } MPU9250MagTypeDef;
+#endif
 
 typedef struct {
+#if defined(SHIMMER3R)
+  uint8_t lis2mdlMagBuf[6];
+#elif defined(SHIMMER4_SDK)
    uint8_t lsm303AccelBuf[6];
    uint8_t lsm303MagBuf[6];
    uint8_t mpu9250AccelBuf[6];
@@ -139,16 +152,18 @@ typedef struct {
    uint8_t mpu9250GyroBuf[6];
 //   uint8_t tempBuf[6]; // temp and pres don't need buf
 //   uint8_t presBuf[6];
+#endif
 } i2cReadBufTypeDef;
 
 /* USER CODE END Private defines */
 
-void MX_I2C2_Init(void);
+void MX_I2C1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
 void I2C_init(void);
 uint8_t I2C_test(void);
+void set_power_i2c_main_bus(uint8_t state);
 void I2C_scan(I2C_HandleTypeDef *hi2c);
 I2C_HandleTypeDef * I2C_getHandlerSensor(void);
 #if defined(SHIMMER4_SDK)
@@ -201,7 +216,16 @@ void I2cSens_stopSensing(void);
 void I2cBatt_stopSensing(void);
 #endif
 
+void I2cSens_sensorNext(void);
 
+#if defined(SHIMMER3R)
+bool areI2cChannelsEnabled(void);
+void I2C2_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
+#elif defined(SHIMMER4_SDK)
+void I2cBatt_sensorNext(void);
+#endif
+
+#if defined(SHIMMER4_SDK)
 void BMP180Setup(void);
 void BMP180Sample(void);
 void BMP180TxDoneHandler(void);
@@ -228,15 +252,9 @@ void Lsm303dlhcAccelRxDoneHandler(void);
 void Lsm303dlhcMagSample(void);
 void Lsm303dlhcMagTxDoneHandler(void);
 void Lsm303dlhcMagRxDoneHandler(void);
-#if defined(SHIMMER4_SDK)
 void STC3100Sample(void);
-void STC3100BatteryTxDoneHandler(void);
+//void STC3100BatteryTxDoneHandler(void);
 void STC3100BatteryRxDoneHandler(void);
-#endif
-
-void I2cSens_sensorNext(void);
-#if defined(SHIMMER4_SDK)
-void I2cBatt_sensorNext(void);
 #endif
 
 /* USER CODE END Prototypes */

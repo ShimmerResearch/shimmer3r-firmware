@@ -3065,7 +3065,10 @@ void BtUart_sendRsp(void) {
        *(bt_tx_data + packet_length++) = ACK_COMMAND_PROCESSED;
        sendAck = 0;
      }
-      if (inquiryBtRsp) {//todo:
+      if (inquiryBtRsp) {
+        /* Channel order/packet structure need to be assembled before sending the inquiry response so that the information is correct. */
+        S4Sens_configureChannels();
+
          *(bt_tx_data + packet_length++) = INQUIRY_RESPONSE;
          //*(uint16_t *)(bt_tx_data + packet_length) = *(uint16_t *)(storedConfig + NV_SAMPLING_RATE); //ADC sampling rate
          S4Ram_storedConfigGet(bt_tx_data + packet_length, NV_SAMPLING_RATE, 2);
@@ -3099,9 +3102,14 @@ void BtUart_sendRsp(void) {
       } else if (dockStatusBtRsp) {
          *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
          *(bt_tx_data + packet_length++) = STATUS_RESPONSE;
-         *(bt_tx_data + packet_length++) = ((stat.isStreaming & 0x01) << 4) +
-                                         ((stat.isLogging & 0x01) << 3) + ((0 & 0x01) << 2) +
-                                         ((stat.isSensing & 0x01) << 1) + (stat.isDocked & 0x01);
+         *(bt_tx_data + packet_length++) = ((toggleLedRed & 0x01) << 7)
+          + ((stat.badFile & 0x01) << 6)
+          + ((stat.isSdInserted & 0x01) << 5)
+          + ((stat.isStreaming & 0x01) << 4)
+          + ((stat.isLogging & 0x01) << 3)
+          + (isRwcTimeSet() << 2)
+          + ((stat.isSensing & 0x01) << 1)
+          + (stat.isDocked & 0x01);
          dockStatusBtRsp = 0;
 #if defined(SHIMMER4_SDK)
       } else if (i2cvBattBtRsp) {
@@ -3396,7 +3404,16 @@ uint16_t getBtRxShimmerCommsWaitByteCount(void)
 
 void setBtCrcMode(COMMS_CRC_MODE btCrcModeNew)
 {
-    btCrcMode = btCrcModeNew;
+  btCrcMode = btCrcModeNew;
+  //TODO turn on/off peripheral when needed to save power
+//  if (btCrcMode == CRC_OFF)
+//  {
+//    HAL_CRC_DeInit(hcrc);
+//  }
+//  else
+//  {
+//    MX_CRC_Init();
+//  }
 }
 
 COMMS_CRC_MODE getBtCrcMode(void)

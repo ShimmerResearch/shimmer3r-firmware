@@ -678,10 +678,17 @@ void S4_NORM_ADC_rankBatt(void) {
       }
    }
    switch(stat.battStat){
+#if defined(SHIMMER3R)
+   case BATT_LOW:    stat.battStatLed = LED_RGB_RED;       break;
+   case BATT_MID:    stat.battStatLed = LED_RGB_YELLOW;    break;
+   case BATT_HIGH:   stat.battStatLed = LED_RGB_GREEN;    break;
+   default: stat.battStatLed = LED_RED;                break;
+#elif defined(SHIMMER4_SDK)
       case BATT_LOW:    stat.battStatLed = LED_RED;       break;
       case BATT_MID:    stat.battStatLed = LED_YELLOW;    break;
-      case BATT_HIGH:   stat.battStatLed = LED_GREEN0;    break;
-      default: stat.battStatLed = LED_RED;                break;
+      case BATT_HIGH:   stat.battStatLed = LED_GREEN;    break;
+      default: stat.battStatLed = LED_RED_LWR;                break;
+#endif
    }
 }
   
@@ -743,7 +750,12 @@ void S4_NORM_ADC_readBatt(void) {
    S4_ADC_rankBatt();
 }
 
-
+#if defined(SHIMMER3R)
+bool areAdcChannelsEnabled(void)
+{
+  return adc.sensorLen > 0 ? true : false;
+}
+#endif
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {

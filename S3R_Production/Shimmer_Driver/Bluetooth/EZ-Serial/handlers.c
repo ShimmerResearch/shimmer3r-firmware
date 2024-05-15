@@ -131,7 +131,7 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data) {
     ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *)data, length);
 
     if(ret_val != HAL_OK){
-      printf("DMA problem in appOutput\r\n");
+      SHIMMER_PRINTF("DMA problem in appOutput\r\n");
     }
 
     return EZS_OUTPUT_RESULT_DATA_WRITTEN;
@@ -187,11 +187,11 @@ HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length) {
 
   HAL_StatusTypeDef status = HAL_UART_Receive_DMA(huartBtPtr, &rxBuf[0], expectedByteCount);
 
-//  printf("%d\r\n", length);
+//  SHIMMER_PRINTF("%d\r\n", length);
 
   if(status!=HAL_OK)
   {
-    printf("setDmaWaitingForResponse fault\r\n");
+    SHIMMER_PRINTF("setDmaWaitingForResponse fault\r\n");
   }
 
   return status;
@@ -207,8 +207,8 @@ void setBtUartInstance(UART_HandleTypeDef *huartToUse) {
 
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 {
-//  printf("byte received\r\n");
-//  printf("%c", rxBuf[0]);
+//  SHIMMER_PRINTF("byte received\r\n");
+//  SHIMMER_PRINTF("%c", rxBuf[0]);
 
   // if start byte is CYW header byte or if in middle of waiting for full CYW response
 //  if(!waitingForArgs
@@ -262,7 +262,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
             && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
     {
       // Parse as Shimmer packet
-      printf("S1=0x%x\n", rxBuf[i]);
+      SHIMMER_PRINTF("S1=0x%x\n", rxBuf[i]);
       count = getBtRxShimmerCommsWaitByteCount();
       Dma2ConversionDone(&rxBuf[i]);
       i += count;
@@ -298,7 +298,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
            * Serial packet, send to Shimmer parser */
           if (getEzsPacketLength() == 0)
           {
-            printf("S2=0x%x\n", rxBuf[i]);
+            SHIMMER_PRINTF("S2=0x%x\n", rxBuf[i]);
           }
         }
       }
@@ -501,7 +501,7 @@ HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len) {
 //   memcpy(bt_txBuf, buf, len);
 //   ret_val = HAL_UART_Transmit_DMA(huart, bt_txBuf, len);
 
-   //printf("BT_write=%d\n", len);
+   //SHIMMER_PRINTF("BT_write=%d\n", len);
 
    pushBytesToBtTxBuf(buf, len);
 

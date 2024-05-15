@@ -8,10 +8,18 @@
 #ifndef LSM6DSV_LSM6DSV_H_
 #define LSM6DSV_LSM6DSV_H_
 
-void lsm6dsv_self_test(void);
+uint8_t lsm6dsv_self_test(void);
 
 void lsm6dsv_driver_init(void);
 void lsm6dsv_power_on(void);
 void lsm6dsv_power_off(void);
+void lsm6dsv_SelectDevice(void);
+void lsm6dsv_UnselectDevice(void);
+void lsm6dsv_config_accel(uint8_t rate, uint8_t range);
+void lsm6dsv_config_gyro(uint8_t rate, uint8_t range);
+void lsm6dsv_status_get(void);
+HAL_StatusTypeDef lsm6dsv_accel_get(uint8_t *buf);
+HAL_StatusTypeDef lsm6dsv_gyro_get(uint8_t *buf);
+void lsm6dsv_restore_default_config(void);
 
 #endif /* LSM6DSV_LSM6DSV_H_ */

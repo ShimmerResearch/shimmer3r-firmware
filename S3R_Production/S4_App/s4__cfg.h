@@ -4,7 +4,6 @@
 #define SHIMMER4_SDK_CONFIG_H
 
 #define IS_CONNECTED_EEPROM 0
-#define IS_CONNECTED_DIG_SENSORS 0
 
 #define USE_DEFAULT_SENSOR    0
 #define RTC_FAST              0 // need to increase rtc alarm interrupt priority before enabling this option
@@ -18,7 +17,7 @@
 #define USE_DEFAULT_LED       1
 #define USE_I2C_VBATT_REPORT  1
 #define SKIP_50MS             1
-#define USE_VBATT_ALWAYS      1
+#define USE_VBATT_ALWAYS      0
 #define HAL_TEST_INFOMEM      0
 #define USE_BT                1
 #define USE_SD                1
@@ -26,6 +25,13 @@
 #define NUM_SDWRBUF           64
 #define USE_FATFS             1
 #define USE_USBX              0
+#define SHIMMER_ENABLE_PRINTF  1
+
+#ifdef SHIMMER_ENABLE_PRINTF
+  #define SHIMMER_PRINTF(...) printf(__VA_ARGS__)
+#else /* SHIMMER_ENABLE_PRINTF */
+  #define SHIMMER_PRINTF(...)
+#endif /* SHIMMER_ENABLE_PRINTF */
 
 #include <string.h>
 #include <ctype.h>
@@ -44,6 +50,7 @@
 #include "STC3100.h"
 #endif
 #include "gsr.h"
+#include "../Shimmer_Driver/shimmer_boards/shimmer_boards.h"
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/Bluetooth/CYW20820.h"
 #include "../Shimmer_Driver/Bluetooth/shimmer_bt_comms.h"
@@ -53,8 +60,12 @@
 #endif
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/LIS3MDL/lis3mdl.h"
-#include "../Shimmer_Driver/LSM303AH/lsm303ah.h"
+#include "../Shimmer_Driver/LIS2MDL/lis2mdl.h"
+#include "../Shimmer_Driver/LIS2DW12/lis2dw12.h"
 #include "../Shimmer_Driver/LSM6DSV/lsm6dsv.h"
+#include "../Shimmer_Driver/BMP3/hal_bmp3.h"
+#include "../Shimmer_Driver/ADXL371/adxl371.h"
+#include "../Shimmer_Driver/ADXL371/adxl371_spi.h"
 #endif
 #include "lsm303dlhc.h"
 #include "mpu9250.h"

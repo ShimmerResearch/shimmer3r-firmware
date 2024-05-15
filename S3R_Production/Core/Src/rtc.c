@@ -22,7 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 
-uint64_t rtcConfigTime64;
+uint64_t rwcConfigTime64;
 uint32_t S4_RTC_Status = RTC_STATUS_ZERO;
 
 /* USER CODE END 0 */
@@ -72,6 +72,14 @@ void MX_RTC_Init(void)
 
   /* USER CODE BEGIN Check_RTC_BKUP */
 
+  //Copied from RTC_Calendar example for STM32U575
+
+  /* Set Date and Time (if not already done before)*/
+  /* Read the Back Up Register 0 Data */
+  if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) != 0x32F2)
+  {
+  /* Configure RTC Calendar */
+
   /* USER CODE END Check_RTC_BKUP */
 
   /** Initialize RTC and set the Time and Date
@@ -88,7 +96,7 @@ void MX_RTC_Init(void)
   sDate.WeekDay = RTC_WEEKDAY_MONDAY;
   sDate.Month = RTC_MONTH_JANUARY;
   sDate.Date = 0x1;
-  sDate.Year = 0x0;
+  sDate.Year = 0x70;
 
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
   {
@@ -97,11 +105,32 @@ void MX_RTC_Init(void)
 
   /** Enable the WakeUp
   */
-  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV16, 0) != HAL_OK)
+  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN RTC_Init 2 */
+  /* Writes a data in a RTC Backup data Register0 */
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x32F2);
+  }
+  else
+  {
+//    /* Check if the Power On Reset flag is set */
+//    if (__HAL_RCC_GET_FLAG(RCC_FLAG_BORRST) != RESET)
+//    {
+//      /* Turn on LED6: Power on reset occurred */
+//      BSP_LED_On(LED6);
+//    }
+//
+//    /* Check if Pin Reset flag is set */
+//    if (__HAL_RCC_GET_FLAG(RCC_FLAG_PINRST) != RESET)
+//    {
+//      /* Turn on LED6: External reset occurred */
+//      BSP_LED_On(LED6);
+//    }
+  }
+//  /* Clear source Reset Flag */
+//  __HAL_RCC_CLEAR_RESET_FLAGS();
 
   /* USER CODE END RTC_Init 2 */
 
@@ -163,8 +192,8 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
 /* USER CODE BEGIN 1 */
 
-void     S4_RTC_setConfigTime(uint64_t val){   rtcConfigTime64 = val;}// 64bits = 8bytes
-uint64_t S4_RTC_getConfigTime(void)        {   return rtcConfigTime64;}
+void     S4_RWC_setConfigTime(uint64_t val){   rwcConfigTime64 = val;}// 64bits = 8bytes
+uint64_t S4_RWC_getConfigTime(void)        {   return rwcConfigTime64;}
 
 /* Days in a month */
 uint8_t S4_RTC_Months[2][12] = {
@@ -192,7 +221,7 @@ void S4_RTC_Init(){//  RTC_HandleTypeDef *hrtc
    //s4rtc_hrtc = hrtc;
    S4_RTC_t data;
 
-   rtcConfigTime64 = 0;
+   rwcConfigTime64 = 0;
 
    hrtc.Instance = RTC;
 
@@ -265,17 +294,17 @@ void S4_RTC_WakeUpSet(uint16_t period){
    uint32_t WakeUpAutoClr missing argument in the old Shimmer4*/
 #if defined(SHIMMER3R)
   if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, prescalar, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
-#else
+#elif defined(SHIMMER4_SDK)
   if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, prescalar, RTC_WAKEUPCLOCK_RTCCLK_DIV2) != HAL_OK)
 #endif
   {
     Error_Handler();
   }
 }
+
 void S4_RTC_WakeUpSetSlow(){
    S4_RTC_WakeUpSet(3276);
 }
-
 
 uint8_t S4_RTC_SetDateTime(S4_RTC_t* data) {
    uint32_t format = RTC_FORMAT_BIN;
@@ -551,7 +580,6 @@ void S4_RTC_Ticks2RTC(S4_RTC_t* data, uint64_t ticks) {
   data->date = unix + 1;
 }
 
-
 void RTC_init(uint64_t ticks){
    S4_RTC_t data;
    S4_RTC_Ticks2RTC(&data, ticks);
@@ -559,7 +587,7 @@ void RTC_init(uint64_t ticks){
 #if RTC_FAST
    rtc64_reg = data.ticks & 0xffffffffffff8000;
 #endif
-   S4_RTC_setConfigTime(ticks);
+   S4_RWC_setConfigTime(ticks);
 }
 
 uint64_t RTC_get64(void){
@@ -594,21 +622,32 @@ uint32_t RTC_get32(void){
 #endif
 }
 
+uint8_t isRwcTimeSet(void)
+{
+    return ((rwcConfigTime64 > 0) ? 1 : 0);
+}
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
 //   static uint8_t green0_cnt = 0;
 
-   if(stat.isSensing && !stat.isConfiguring){
+  //TODO carried from Shimmer4, LED blinking only works when not sensing
+
+   if(stat.isSensing && !stat.isConfiguring)
+   {
 //      if(!green0_cnt++){
 //         Board_ledToggle(LED_GREEN0);
 //      }
 #if !SENS_CLK_RTC0TIM1
       S4Sens_gatherData();
 #endif
-   }else{
+   }
+#if defined(SHIMMER4_SDK)
+   else
+   {
       S4Led_Blink();
    }
+#endif
   /* Prevent unused argument(s) compilation warning */
   UNUSED(hrtc);
 

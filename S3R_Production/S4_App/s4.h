@@ -17,13 +17,6 @@
 #define FW_VER_REL            23     // internal version number: 0-255
 #endif
 
-#if !IS_CONNECTED_EEPROM & defined(SHIMMER3R)
-#define EXP_BRD_ID_MAJOR      31 //0xFF//47
-#define EXP_BRD_ID_MINOR      9  //0xFF//1
-#define EXP_BRD_ID_INTERNAL   0  //0xFF//0
-#endif
-
-
 //typedef uint8_t bool;
 //#define TRUE 1
 //#define FALSE 0
@@ -103,19 +96,19 @@
                                        //3xLSM303DLHCAccel + 3xMPU9250Accel + 3xMPU9250MAG +
                                        //BMP180TEMP + BMP180PRESS + batteryVoltage + 5stc3100
                                        //3xexternalADC + 5xinternalADC
-#define X_A_ACCEL                         0x00
-#define Y_A_ACCEL                         0x01
-#define Z_A_ACCEL                         0x02
+#define X_ACCEL_1                         0x00
+#define Y_ACCEL_1                         0x01
+#define Z_ACCEL_1                         0x02
 #define VBATT                             0x03
-#define X_LSM303DLHC_ACCEL                0x04
-#define Y_LSM303DLHC_ACCEL                0x05
-#define Z_LSM303DLHC_ACCEL                0x06
-#define X_LSM303DLHC_MAG                  0x07
-#define Y_LSM303DLHC_MAG                  0x08
-#define Z_LSM303DLHC_MAG                  0x09
-#define X_MPU9250_GYRO                    0x0A
-#define Y_MPU9250_GYRO                    0x0B
-#define Z_MPU9250_GYRO                    0x0C
+#define X_ACCEL_2                         0x04
+#define Y_ACCEL_2                         0x05
+#define Z_ACCEL_2                         0x06
+#define X_MAG_1                           0x07
+#define Y_MAG_1                           0x08
+#define Z_MAG_1                           0x09
+#define X_GYRO                            0x0A
+#define Y_GYRO                            0x0B
+#define Z_GYRO                            0x0C
 #define EXTERNAL_ADC_7                    0x0D
 #define EXTERNAL_ADC_6                    0x0E
 #define EXTERNAL_ADC_15                   0x0F
@@ -123,14 +116,14 @@
 #define INTERNAL_ADC_12                   0x11
 #define INTERNAL_ADC_13                   0x12
 #define INTERNAL_ADC_14                   0x13
-#define X_MPU9250_ACCEL                   0x14
-#define Y_MPU9250_ACCEL                   0x15
-#define Z_MPU9250_ACCEL                   0x16
-#define X_MPU9250_MAG                     0x17
-#define Y_MPU9250_MAG                     0x18
-#define Z_MPU9250_MAG                     0x19
-#define BMP180_TEMP                       0x1A
-#define BMP180_PRESSURE                   0x1B
+#define X_ACCEL_3                         0x14
+#define Y_ACCEL_3                         0x15
+#define Z_ACCEL_3                         0x16
+#define X_MAG_2                           0x17
+#define Y_MAG_2                           0x18
+#define Z_MAG_2                           0x19
+#define BMP_TEMPERATURE                   0x1A
+#define BMP_PRESSURE                      0x1B
 #define GSR_RAW                           0x1C
 #define EXG_ADS1292R_1_STATUS             0x1D
 #define EXG_ADS1292R_1_CH1_24BIT          0x1E
@@ -144,11 +137,13 @@
 #define EXG_ADS1292R_2_CH2_16BIT          0x26
 #define STRAIN_HIGH                       0x27
 #define STRAIN_LOW                        0x28
+#if defined(SHIMMER4_SDK)
 #define STC3100_CH_1                      0x29
 #define STC3100_CH_2                      0x2A
 #define STC3100_CH_3                      0x2B
 #define STC3100_CH_4                      0x2C
 #define STC3100_CH_5                      0x2D
+#endif
 #define EXT_ADC_0                         0x2E
 #define EXT_ADC_1                         0x2F
 #define EXT_ADC_2                         0x30
@@ -528,7 +523,9 @@
 
 #define STAT_PERI_ADC               0x01
 #define STAT_PERI_I2C_SENS          0x02
+#if defined (SHIMMER4_SDK)
 #define STAT_PERI_I2C_BATT          0x04
+#endif
 #define STAT_PERI_SPI_SENS          0x08
 #define STAT_PERI_SDMMC             0x10
 #define STAT_PERI_BT                0x20
@@ -552,7 +549,7 @@ typedef volatile struct STATTypeDef_t{//STATUS
    uint8_t     isLedRed;
    uint8_t     isDockUartStep;   
    uint8_t     battStat;
-   uint8_t     battStatLed;
+   uint32_t     battStatLed;
    uint8_t     battVal[3];
    uint8_t     battDigital[10];
    uint8_t     badFile;

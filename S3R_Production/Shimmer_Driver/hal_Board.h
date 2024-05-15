@@ -48,14 +48,45 @@
 #ifndef HAL_BOARD_H
 #define HAL_BOARD_H
 
-#define LED_RED 	   0x01 // == BATT_LOW
-#define LED_YELLOW   0x02 // == BATT_MID
-#define LED_GREEN0	0x04 // == BATT_HIGH
-#define LED_ALL_BATT (LED_RED + LED_YELLOW + LED_GREEN0)
-#define LED_GREEN1	0x08
-#define LED_BLUE	   0x10
-#define LED_ALL	   0xFF
-   
+//Legacy approach for 5 individual LEDs before two RGB LEDs were introduced
+#define LED_RED       0x01 // == BATT_LOW
+#define LED_YELLOW    0x02 // == BATT_MID
+#define LED_GREEN0    0x04 // == BATT_HIGH
+#define LED_ALL_BATT  (LED_RED + LED_YELLOW + LED_GREEN0)
+#define LED_GREEN1    0x08
+#define LED_BLUE      0x10
+#define LED_ALL       0xFF
+
+#if defined (SHIMMER3R)
+typedef enum
+{
+  LED_RGB_ALL_OFF = 0x000000,
+  LED_RGB_RED = 0xFF0000,
+  LED_RGB_GREEN = 0x00FF00,
+  LED_RGB_BLUE = 0x0000FF,
+  LED_RGB_YELLOW = 0xFFFF00,
+  LED_RGB_ALL_ON = 0xFFFFFF,
+} led_rgb_t;
+
+#define LED_PWM_ON 255
+#define LED_PWM_OFF 0
+
+void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds, TIM_HandleTypeDef *htimUprLeds, TIM_HandleTypeDef *htimLedBlink);
+
+void startLedBlinkTimer(void);
+void stopLedBlinkTimer(void);
+
+void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue);
+void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
+
+void Board_ledLwrSetColour(uint32_t ledMask);
+void Board_ledLwrSetColourRgb(int16_t red, int16_t green, int16_t blue);
+void Board_ledUprSetColour(uint32_t ledMask);
+void Board_ledUprSetColourRgb(int16_t red, int16_t green, int16_t blue);
+
+uint8_t isLedOnUprBlue(void);
+uint8_t isLedOnUprGreen(void);
+#endif
 
 extern void Board_ledOn(uint8_t ledMask);
 extern void Board_ledOff(uint8_t ledMask);
@@ -69,21 +100,7 @@ extern void Board_sdPowerCycle(void);
 extern void Board_delayMicrosInit(void);
 extern void Board_delayMicros(uint32_t micros);
 
-// pin/gpios might be different for sdk and Shimmer4, or any later developed boards
-#ifdef SHIMMER4_SDK_CONFIG_H
-
 #if defined(SHIMMER3R)
-#define LED_RED_GPIO GPIOG
-#define LED_RED_PIN  LED_LWR_RD_Pin
-#define LED_GR0_GPIO LED_LWR_RD_GPIO_Port
-#define LED_GR0_PIN  LED_LWR_GR_Pin
-#define LED_YEL_GPIO LED_LWR_GR_GPIO_Port
-#define LED_YEL_PIN  LED_LWR_BLU_Pin
-#define LED_GR1_GPIO LED_UPR_GR_GPIO_Port
-#define LED_GR1_PIN  LED_UPR_GR_Pin
-#define LED_BLU_GPIO LED_UPR_BLU_GPIO_Port
-#define LED_BLU_PIN  LED_UPR_BLU_Pin
-
 #define ECG_CS_GPIO  GPIO_ADC_INT_EXP1_GPIO_Port
 #define ECG_CS_PIN   GPIO_ADC_INT_EXP1_Pin
 #define RESP_CS_GPIO GPIO_ADC_INT_EXP0_GPIO_Port
@@ -104,7 +121,6 @@ extern void Board_delayMicros(uint32_t micros);
 #define ADC_CHANNEL_ACCEL_Z ADC_CHANNEL_2
 #define ADC_CHANNEL_VBATT ADC_CHANNEL_VBAT
 
-#if defined(SHIMMER3R)
 #define ADC_CHANNEL_EXT_A0 ADC_CHANNEL_9
 #define ADC_CHANNEL_EXT_A1 ADC_CHANNEL_11
 #define ADC_CHANNEL_EXT_A2 ADC_CHANNEL_12
@@ -112,16 +128,6 @@ extern void Board_delayMicros(uint32_t micros);
 #define ADC_CHANNEL_INT_A1 ADC_CHANNEL_15
 #define ADC_CHANNEL_INT_A2 ADC_CHANNEL_16
 #define ADC_CHANNEL_INT_A3 ADC_CHANNEL_17
-#elif defined(SHIMMER4_SDK)
-//TODO check Shimmer4 channel numbers
-#define ADC_CHANNEL_EXT_A0 ADC_CHANNEL_9
-#define ADC_CHANNEL_EXT_A1 ADC_CHANNEL_10
-#define ADC_CHANNEL_EXT_A2 ADC_CHANNEL_11
-#define ADC_CHANNEL_INT_A0 ADC_CHANNEL_12
-#define ADC_CHANNEL_INT_A1 ADC_CHANNEL_15
-#define ADC_CHANNEL_INT_A2 ADC_CHANNEL_16
-#define ADC_CHANNEL_INT_A3 ADC_CHANNEL_17
-#endif
 
 #elif defined(SHIMMER4_SDK)
 
@@ -183,12 +189,11 @@ extern void Board_delayMicros(uint32_t micros);
 #define ADC_CHANNEL_INT_A2 ADC_CHANNEL_0
 #define ADC_CHANNEL_INT_A3 ADC_CHANNEL_2
 #define ADC_CHANNEL_INT_A4 ADC_CHANNEL_12
-
 #endif
 
 //exp_reset_n is used by RESETN of exg*2 and VCC of eeprom
 #if defined(SHIMMER3R)
-#define Board_SW_I2C(x)       HAL_GPIO_WritePin(SW_I2C2_GPIO_Port, SW_I2C2_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
+#define Board_SW_I2C(x)       HAL_GPIO_WritePin(SW_I2C1_GPIO_Port, SW_I2C1_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
 #define Board_EXG_RESET_N(x)  HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
 #elif defined(SHIMMER4_SDK)
 #define Board_SW_EXP(x)       HAL_GPIO_WritePin(EXP_RESET_N_GPIO_Port, EXP_RESET_N_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
@@ -203,12 +208,5 @@ extern void Board_delayMicros(uint32_t micros);
 #define Board_arm0pc1(x)      HAL_GPIO_WritePin(GPIOG, SW_SD_MCU_DOCK_Pin,  x?GPIO_PIN_SET:GPIO_PIN_RESET)  //EXT_MEM: 0 for arm, 1 for pc
 #define Board_sdPower(x)      HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, x?GPIO_PIN_SET:GPIO_PIN_RESET)
 #define Board_detectN(x)      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12,  x?GPIO_PIN_SET:GPIO_PIN_RESET)
-#endif //SHIMMER4_SDK_CONFIG_H
-
-
-#ifdef SHIMMER4_CONFIG_H
-
-
-#endif //SHIMMER4_CONFIG_H
 
 #endif
