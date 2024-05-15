@@ -258,7 +258,13 @@ void S4Sens_stopPeripherals(void) {
 #if SENS_CLK_RTC0TIM1
    TIM_stopSensing();
 #else
+
+#if defined(SHIMMER4_SDK)
    S4_RTC_WakeUpSetSlow();
+#elif defined(SHIMMER3R)
+   S4_RTC_WakeUpOff();
+#endif
+
 #endif
    
    S4_ADC_stopSensing();     

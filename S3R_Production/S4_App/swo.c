@@ -8,6 +8,7 @@
 #include "swo.h"
 #include <stdint.h>
 #include "stm32u5a5xx.h"
+#include "stdio.h"
 
 //struct __FILE
 //{

@@ -85,9 +85,6 @@ void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
-//TODO move to "s4_adc.c"
-void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue);
-void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
 #endif
 
 /* USER CODE END PFP */
@@ -97,28 +94,29 @@ void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
 
 STATTypeDef stat;
 //SENSINGTypeDef *pSensing;
-uint32_t   aADCxConvertedData[32];
+
 volatile uint32_t time_start, time_end, time_diff;
 
 uint8_t accelBuf[7];
-uint8_t flag = 0;
+
 extern UART_HandleTypeDef *huartBt;
-#if defined(SHIMMER3R)
-extern UART_HandleTypeDef *huartBsl;
-#endif
 
 int _write(int file, char *ptr, int len)
 {
-//  int DataIdx;
-//  for (DataIdx = 0; DataIdx < len; DataIdx++)
-//  {
-//    ITM_SendChar(*ptr++);
-//  }
-  HAL_UART_Transmit(huartBsl, (uint8_t *) ptr++, (uint16_t) len, 0xFFFF);
+  int DataIdx;
+  for (DataIdx = 0; DataIdx < len; DataIdx++)
+  {
+    ITM_SendChar(*ptr++);
+  }
+//  HAL_UART_Transmit(huartBsl, (uint8_t *) ptr++, (uint16_t) len, 0xFFFF);
   return len;
 }
 
 void Init() {
+#if defined(SHIMMER3R)
+  Board_ledTimersStart(&htim3, &htim2, &htim6);
+#endif
+
    Board_ledOn(LED_ALL);
    memset((uint8_t*)&stat, 0, sizeof(STATTypeDef));
    stat.battStatLed = LED_YELLOW;
@@ -165,8 +163,10 @@ void Init() {
    //BT_disable(huartBt);
    DockUart_enable();
    stat.isConfiguring = 0;
-//   S4Sens_stopPeripherals();
+   S4Sens_stopPeripherals();
+#if defined(SHIMMER4_SDK)
    S4_RTC_WakeUpSetSlow();
+#endif
    Board_ledOff(LED_ALL);
 //   while(1){
 //      //__NOP();
@@ -214,7 +214,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
-  MX_I2C2_Init();
   MX_RNG_Init();
   MX_RTC_Init();
   MX_SDMMC1_SD_Init();
@@ -222,16 +221,17 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   MX_USB_OTG_HS_PCD_Init();
-  MX_USART2_UART_Init();
   MX_ICACHE_Init();
   MX_CRC_Init();
   MX_SPI1_Init();
   MX_TIM3_Init();
-  MX_TIM4_Init();
   MX_MDF1_Init();
   MX_SPI3_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
+  MX_TIM6_Init();
+  MX_TIM2_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 #if USE_FATFS
   MX_FATFS_Init();
@@ -245,24 +245,8 @@ int main(void)
   Init();
 //  S4_NORM_Task_set(TASK_STARTSENSING);
 
-//  SD_test();
-//  SD_test_alternative();
+  //FullTest();
 
-/*
-  lsm6dsv_self_test();
-  bmp390_self_test();
-  adxl371_self_test();
-*/
-
-  //TODO move to "s4_adc.c"
-  //https://www.youtube.com/watch?v=GBr6bQ-PzV8
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
-  i = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -273,16 +257,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     S4_Task_manage();
-
-/*    if (HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,2) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    HAL_Delay(50);*/
-    //TODO remove the following debug code
-//    printf("Hello World \n");
-    rgb_led_lwr_color(i, i, i);
-    i+=5;
   }
   /* USER CODE END 3 */
 }
@@ -373,27 +347,47 @@ STATTypeDef * GetStatus(){
    return &stat;
 }
 
-uint32_t FullTest(void) {
-   //uint32_t test_result = 0;
+//TODO trigger from UART command?
+uint32_t FullTest(void)
+{
+  //uint32_t test_result = 0;
 
-   stat.testResult += I2C_test();
+  SHIMMER_PRINTF("Self-test - Start\r\n");
 
-   stat.testResult += SD_test()<<6;
+  uint32_t format = RTC_FORMAT_BIN;
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef sDate;
+  /* Get time */
+  HAL_RTC_GetTime(&hrtc, &sTime, format);
+  /* Get date */
+  HAL_RTC_GetDate(&hrtc, &sDate, format);
+  SHIMMER_PRINTF("Date (yyyy-mm-dd): %.2u-%.2u-%.2u\r\n", sDate.Year, sDate.Month, sDate.Date);
+  SHIMMER_PRINTF("Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
 
-   stat.testResult += (!stat.isBtPoweredOn)<<7;
+//  led_test();
 
-   stat.testResult += InfoMem_test()<<8;
+  stat.testResult += I2C_test();
 
-   stat.testResult += SPI_test()<<16;
+  stat.testResult += SD_test() << 6;
+  //  SD_test_alternative();
+  SHIMMER_PRINTF("SD Card test: %s\r\n", stat.badFile ? "FAIL" : "PASS");
 
-   return stat.testResult ;
+  stat.testResult += (!stat.isBtPoweredOn) << 7;
+
+  stat.testResult += InfoMem_test() << 8;
+
+  stat.testResult += SPI_test() << 16;
+
+  SHIMMER_PRINTF("Self-test - End\r\n");
+
+  return stat.testResult;
 }
 
 //TODO move out of here
 #if defined(SHIMMER3R)
 void btInitialise(void)
 {
-  printf("\r\nBT init start\r\n");
+  SHIMMER_PRINTF("\r\nBT init start\r\n");
 
   // 20 * 100ms = 2s per baud rate attempt
   btCommWithDiffBaudRates(true, 20U);
@@ -409,12 +403,12 @@ void btInitialise(void)
 
   stat.isBtPoweredOn = 1;
 
-  printf("BT init end\r\n");
+  SHIMMER_PRINTF("BT init end\r\n");
 }
 
 void btFactoryResetViaFw(void)
 {
-  printf("\r\nBT factory reset start\r\n");
+  SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
 
   // 50 * 100ms = 5s per baud rate attempt
   btCommWithDiffBaudRates(false, 50U);
@@ -422,7 +416,7 @@ void btFactoryResetViaFw(void)
   // Abort transfer operations to release UART for subsequent requests.
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
 
-  printf("BT factory reset end\r\n");
+  SHIMMER_PRINTF("BT factory reset end\r\n");
 }
 
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
@@ -432,7 +426,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
 
   setBtLpMode(false);
 
-  printf("Attempting %lu Baud\r\n", baudToTry);
+  SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
   usartBtUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
 
   if (isInit)
@@ -489,12 +483,12 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
           baudToTry = 500000;
         }
 
-        printf("Attempting %lu Baud\r\n", baudToTry);
+        SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
         usartBtUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
       }
       else
       {
-        printf("Operation failed, performing system reset\r\n");
+        SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
         // software POR reset
         NVIC_SystemReset();
       }
@@ -523,22 +517,6 @@ void setBtConnectionState(bool state)
 bool isBtConnected(void)
 {
   return stat.isBtConnected;
-}
-
-//TODO move to "s4_adc.c"
-void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue)
-{
-  htim3.Instance->CCR1 = red;
-  htim3.Instance->CCR2 = green;
-  htim3.Instance->CCR3 = blue;
-}
-
-//TODO move to "s4_adc.c"
-void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue)
-{
-  htim3.Instance->CCR2 = red;
-  htim3.Instance->CCR3 = green;
-  htim3.Instance->CCR4 = blue;
 }
 
 #endif

@@ -55,49 +55,56 @@ uint16_t i2c_batt_report_interval = I2C_BATT_REPORT_INTERVAL_DEFAULT;
 
 /* USER CODE END 0 */
 
-I2C_HandleTypeDef hi2c2;
+I2C_HandleTypeDef hi2c1;
+DMA_HandleTypeDef handle_GPDMA1_Channel10;
 
-/* I2C2 init function */
-void MX_I2C2_Init(void)
+/* I2C1 init function */
+void MX_I2C1_Init(void)
 {
 
-  /* USER CODE BEGIN I2C2_Init 0 */
+  /* USER CODE BEGIN I2C1_Init 0 */
 
-  /* USER CODE END I2C2_Init 0 */
+  /* USER CODE END I2C1_Init 0 */
 
-  /* USER CODE BEGIN I2C2_Init 1 */
+  /* USER CODE BEGIN I2C1_Init 1 */
 
-  /* USER CODE END I2C2_Init 1 */
-  hi2c2.Instance = I2C2;
-  hi2c2.Init.Timing = 0x2010091A;
-  hi2c2.Init.OwnAddress1 = 0;
-  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c2.Init.OwnAddress2 = 0;
-  hi2c2.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x2010091A;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Configure Analogue filter
   */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c2, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Configure Digital filter
   */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c2, 0) != HAL_OK)
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN I2C2_Init 2 */
+  /* USER CODE BEGIN I2C1_Init 2 */
 
-  /* USER CODE END I2C2_Init 2 */
+#if defined(SHIMMER3R)
+  HAL_I2C_RegisterCallback(&hi2c1, HAL_I2C_MEM_RX_COMPLETE_CB_ID, I2C2_MemRxCpltCallback);
+
+  lis2mdl_driver_init();
+#endif
+
+  /* USER CODE END I2C1_Init 2 */
 
 }
 
@@ -106,72 +113,103 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  if(i2cHandle->Instance==I2C2)
+  if(i2cHandle->Instance==I2C1)
   {
-  /* USER CODE BEGIN I2C2_MspInit 0 */
+  /* USER CODE BEGIN I2C1_MspInit 0 */
 
-  /* USER CODE END I2C2_MspInit 0 */
+  /* USER CODE END I2C1_MspInit 0 */
 
   /** Initializes the peripherals clock
   */
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C2;
-    PeriphClkInit.I2c2ClockSelection = RCC_I2C2CLKSOURCE_PCLK1;
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1;
+    PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
       Error_Handler();
     }
 
     __HAL_RCC_GPIOB_CLK_ENABLE();
-    /**I2C2 GPIO Configuration
-    PB10     ------> I2C2_SCL
-    PB11     ------> I2C2_SDA
+    /**I2C1 GPIO Configuration
+    PB8     ------> I2C1_SCL
+    PB9     ------> I2C1_SDA
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11;
+    GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF4_I2C2;
+    GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    /* I2C2 clock enable */
-    __HAL_RCC_I2C2_CLK_ENABLE();
+    /* I2C1 clock enable */
+    __HAL_RCC_I2C1_CLK_ENABLE();
 
-    /* I2C2 interrupt Init */
-    HAL_NVIC_SetPriority(I2C2_EV_IRQn, 8, 0);
-    HAL_NVIC_EnableIRQ(I2C2_EV_IRQn);
-    HAL_NVIC_SetPriority(I2C2_ER_IRQn, 8, 0);
-    HAL_NVIC_EnableIRQ(I2C2_ER_IRQn);
-  /* USER CODE BEGIN I2C2_MspInit 1 */
+    /* I2C1 DMA Init */
+    /* GPDMA1_REQUEST_I2C1_RX Init */
+    handle_GPDMA1_Channel10.Instance = GPDMA1_Channel10;
+    handle_GPDMA1_Channel10.Init.Request = GPDMA1_REQUEST_I2C1_RX;
+    handle_GPDMA1_Channel10.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+    handle_GPDMA1_Channel10.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    handle_GPDMA1_Channel10.Init.SrcInc = DMA_SINC_FIXED;
+    handle_GPDMA1_Channel10.Init.DestInc = DMA_DINC_INCREMENTED;
+    handle_GPDMA1_Channel10.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel10.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
+    handle_GPDMA1_Channel10.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
+    handle_GPDMA1_Channel10.Init.SrcBurstLength = 1;
+    handle_GPDMA1_Channel10.Init.DestBurstLength = 1;
+    handle_GPDMA1_Channel10.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel10.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+    handle_GPDMA1_Channel10.Init.Mode = DMA_NORMAL;
+    if (HAL_DMA_Init(&handle_GPDMA1_Channel10) != HAL_OK)
+    {
+      Error_Handler();
+    }
 
-  /* USER CODE END I2C2_MspInit 1 */
+    __HAL_LINKDMA(i2cHandle, hdmarx, handle_GPDMA1_Channel10);
+
+    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel10, DMA_CHANNEL_NPRIV) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* I2C1 interrupt Init */
+    HAL_NVIC_SetPriority(I2C1_EV_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_SetPriority(I2C1_ER_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
+  /* USER CODE BEGIN I2C1_MspInit 1 */
+
+  /* USER CODE END I2C1_MspInit 1 */
   }
 }
 
 void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 {
 
-  if(i2cHandle->Instance==I2C2)
+  if(i2cHandle->Instance==I2C1)
   {
-  /* USER CODE BEGIN I2C2_MspDeInit 0 */
+  /* USER CODE BEGIN I2C1_MspDeInit 0 */
 
-  /* USER CODE END I2C2_MspDeInit 0 */
+  /* USER CODE END I2C1_MspDeInit 0 */
     /* Peripheral clock disable */
-    __HAL_RCC_I2C2_CLK_DISABLE();
+    __HAL_RCC_I2C1_CLK_DISABLE();
 
-    /**I2C2 GPIO Configuration
-    PB10     ------> I2C2_SCL
-    PB11     ------> I2C2_SDA
+    /**I2C1 GPIO Configuration
+    PB8     ------> I2C1_SCL
+    PB9     ------> I2C1_SDA
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_10);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8);
 
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_11);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_9);
 
-    /* I2C2 interrupt Deinit */
-    HAL_NVIC_DisableIRQ(I2C2_EV_IRQn);
-    HAL_NVIC_DisableIRQ(I2C2_ER_IRQn);
-  /* USER CODE BEGIN I2C2_MspDeInit 1 */
+    /* I2C1 DMA DeInit */
+    HAL_DMA_DeInit(i2cHandle->hdmarx);
 
-  /* USER CODE END I2C2_MspDeInit 1 */
+    /* I2C1 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_DisableIRQ(I2C1_ER_IRQn);
+  /* USER CODE BEGIN I2C1_MspDeInit 1 */
+
+  /* USER CODE END I2C1_MspDeInit 1 */
   }
 }
 
@@ -184,7 +222,7 @@ void I2C_init(void)
 #endif
 
 #if defined(SHIMMER3R)
-  hi2cMainBus  = &hi2c2;
+  hi2cMainBus  = &hi2c1;
 #elif defined(SHIMMER4_SDK)
   hi2cMainBus  = &hi2c1;
   hi2cBattery = &hi2c2;
@@ -234,7 +272,6 @@ uint8_t I2C_test(void)
   }
 
   Board_SW_EXP(1);
-#endif
 
   CAT24C16_init(I2C_getHandlerSensor());
   //HAL_Delay(1000);
@@ -242,7 +279,21 @@ uint8_t I2C_test(void)
   {
     ret_val |= 0x08;
   }
-  Board_SW_I2C(1);
+#elif defined(SHIMMER3R)
+  SHIMMER_PRINTF("I2C:\r\n");
+  lis2mdl_self_test();
+  uint8_t eeprom_result = CAT24C16_test();
+  if (eeprom_result == 0)
+  {
+    SHIMMER_PRINTF("EEPROM Self Test - PASS\r\n");
+  }
+  else
+  {
+    SHIMMER_PRINTF("EEPROM Self Test - FAIL\r\n");
+  }
+#endif
+
+  set_power_i2c_main_bus(0);
 
 #if defined(SHIMMER4_SDK)
   if(bmp280_test(hi2cMainBus))
@@ -336,7 +387,19 @@ void I2cSens_configureChannels(void)
   uint8_t nbr_i2c1_chans = 0;
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
-#if defined(SHIMMER4_SDK)
+#if defined(SHIMMER3R)
+  //Mag (LIS2MDL)
+  if (configBytes->chEnMag)
+  {
+    *channel_contents_ptr++ = X_MAG_1;
+    *channel_contents_ptr++ = Z_MAG_1;
+    *channel_contents_ptr++ = Y_MAG_1;
+    nbr_i2c1_chans += 3;
+    sensing.ptr.mag1 = sensing.dataLen;
+    sensing.dataLen += 6;
+    i2cSens.sensorList[i2cSens.sensorLen++] = I2C_LIS2MDL_MAG;
+  }
+#elif defined(SHIMMER4_SDK)
   //Digi Gyro (MPU9250)
   if (configBytes->chEnGyro)
   {
@@ -446,14 +509,20 @@ void I2C_startSensing(void)
   memset((uint8_t*) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
 
   if ((0 != i2cSens.sensorLen)
-      && (HAL_GPIO_ReadPin(SW_I2C2_GPIO_Port, SW_I2C2_Pin) == GPIO_PIN_RESET))
+      && (HAL_GPIO_ReadPin(SW_I2C1_GPIO_Port, SW_I2C1_Pin) == GPIO_PIN_RESET))
   {
     //HAL_GPIO_WritePin(SW_I2C_GPIO_Port, SW_I2C_Pin, GPIO_PIN_SET);//I2C
     Board_SW_I2C(1);
     HAL_Delay(1000);
   }
 
-#if defined(SHIMMER4_SDK)
+#if defined(SHIMMER3R)
+  if (configBytes->chEnMag)
+  {
+    lis2mdl_config_mag(configBytes->magRate, configBytes->magRange);
+  }
+
+#elif defined(SHIMMER4_SDK)
   if (configBytes->chEnStc3100)
   {
     STC3100_wake(1);
@@ -513,6 +582,10 @@ void I2C_startSensing(void)
 
 void I2C_pollSensors(void)
 {
+  if (i2cSens.sensorLen > 0)
+  {
+    I2cSensing(I2C_FIRST_SENSOR);
+  }
 }
 
 void I2C_stopSensing(void)
@@ -530,7 +603,12 @@ void I2cSens_stopSensing(void)
 {
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
-#if defined(SHIMMER4_SDK)
+#if defined(SHIMMER3R)
+  if (configBytes->chEnMag)
+  {
+    lis2mdl_sleep();
+  }
+#elif defined(SHIMMER4_SDK)
   if (configBytes->chEnGyro || configBytes->chEnAltAccel || configBytes->chEnAltMag)
   {
     MPU9250_wake(0);
@@ -539,9 +617,9 @@ void I2cSens_stopSensing(void)
   {
     LSM303DLHC_sleep();
   }
+#endif
   HAL_Delay(10);
   Board_SW_I2C(0);
-#endif
 }
 
 #if defined(SHIMMER4_SDK)
@@ -646,7 +724,12 @@ void I2cSens_sensorNext(void)
 {
   switch (i2cSens.sensorList[i2cSens.sensorCnt])
   {
-#if defined(SHIMMER4_SDK)
+#if defined(SHIMMER3R)
+  case I2C_LIS2MDL_MAG:
+    i2cSens.status = I2C_STAT_LIS2MDL_MAG_GET;
+    lis2mdl_mag_get(i2cSens_buf.lis2mdlMagBuf);
+    break;
+#elif defined(SHIMMER4_SDK)
   case I2C_LSM303DLHC_ACCEL:
     Lsm303dlhcAccelSample();
     break;
@@ -679,6 +762,24 @@ bool areI2cChannelsEnabled(void)
 {
   return i2cSens.sensorLen > 0 ? true : false;
 }
+
+void I2C2_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+  switch (i2cSens.sensorList[i2cSens.sensorCnt])
+  {
+  case I2C_LIS2MDL_MAG:
+    memcpy(sensing.dataBuf + sensing.ptr.mag1,
+        &i2cSens_buf.lis2mdlMagBuf[0],
+        sizeof(i2cSens_buf.lis2mdlMagBuf));
+    break;
+  default:
+    break;
+  }
+
+  i2cSens.status = I2C_STAT_IDLE;
+  I2cSensing(I2C_NEXT_SENSOR);
+}
+
 #elif defined(SHIMMER4_SDK)
 void I2cBatt_sensorNext(void)
 {

@@ -44,6 +44,7 @@ extern SPI_HandleTypeDef hspi3;
 /* USER CODE BEGIN Private defines */
 
 #define SPI_DMA_TXRX_OFFSET 1
+#define SPI_READ_REGISTER          0x80
 
 #if defined(SHIMMER3R)
 typedef enum
@@ -59,14 +60,16 @@ typedef enum
   SPI1_CHIP_INDEX_LSM6DSV,
   SPI1_CHIP_INDEX_ADXL371,
   SPI1_CHIP_INDEX_BMP390,
-  SPI1_CHIP_QTY
+  SPI1_CHIP_QTY,
+  SPI1_CHIP_ALL
 } SPI1_CHIP_INDEX;
 
 typedef enum
 {
-  SPI2_CHIP_INDEX_LSM303AH,
+  SPI2_CHIP_INDEX_LIS2DW12,
   SPI2_CHIP_INDEX_LIS3MDL,
-  SPI2_CHIP_QTY
+  SPI2_CHIP_QTY,
+  SPI2_CHIP_ALL
 } SPI2_CHIP_INDEX;
 
 typedef enum
@@ -80,8 +83,7 @@ typedef enum{//i2c
    SPI1_LSM6DSV_GYRO,
    SPI1_ADXL371_ACCEL,
    SPI1_BMP390_PRESSURE_TEMP,
-   SPI2_LSM303AH_ACCEL,
-   SPI2_LSM303AH_MAG,
+   SPI2_LIS2DW12_ACCEL,
    SPI2_LIS3MDL_MAG,
    SPI3_ADS1292R_EXG1,
    SPI3_ADS1292R_EXG2
@@ -95,8 +97,7 @@ typedef enum
   SPI_STAT_LSM6DSV_GYRO_GET,
   SPI_STAT_ADXL371_ACCEL_GET,
   SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET,
-  SPI_STAT_LSM303AH_ACCEL_GET,
-  SPI_STAT_LSM303AH_MAG_GET,
+  SPI_STAT_LIS2DW12_ACCEL_GET,
   SPI_STAT_LIS3MDL_MAG_GET,
   SPI_STAT_ADS1292R_EXG1_GET,
   SPI_STAT_ADS1292R_EXG2_GET
@@ -117,8 +118,7 @@ typedef struct
 
 typedef struct
 {
-  uint8_t lsm303AccelBuf[SPI_DMA_TXRX_OFFSET+6];
-  uint8_t lsm303MagBuf[SPI_DMA_TXRX_OFFSET+6];
+  uint8_t lis2dw12AccelBuf[SPI_DMA_TXRX_OFFSET+6];
   uint8_t lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET+6];
 } spi2ReadBuf;
 
@@ -154,11 +154,15 @@ void SPI_pollSensors(void);
 void SPI_stopSensing(void);
 
 void SPI_gatherDataCb(void (*done_cb)(void));
+#if defined(SHIMMER3R)
+void SPI_busGatherDataDone_cb(uint8_t flag);
+#elif defined(SHIMMER4_SDK)
 void SPI_gatherDataStart(void);
 void SpiStep1Start(void);
 void SpiStep2Start(void);
 void SpiStep3Start(void);
 void SpiStepDone(void);
+#endif
 
 #if defined(SHIMMER3R)
 void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start);

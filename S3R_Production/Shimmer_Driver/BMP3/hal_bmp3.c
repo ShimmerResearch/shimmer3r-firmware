@@ -96,37 +96,36 @@ static void bmp3_delay_us(uint32_t period, void *intf_ptr)
 
 void bmp3_check_rslt(const char api_name[], int8_t rslt)
 {
-    switch (rslt)
-    {
-        case BMP3_OK:
-
-            /* Do nothing */
-            break;
-        case BMP3_E_NULL_PTR:
-            printf("API [%s] Error [%d] : Null pointer\r\n", api_name, rslt);
-            break;
-        case BMP3_E_COMM_FAIL:
-            printf("API [%s] Error [%d] : Communication failure\r\n", api_name, rslt);
-            break;
-        case BMP3_E_INVALID_LEN:
-            printf("API [%s] Error [%d] : Incorrect length parameter\r\n", api_name, rslt);
-            break;
-        case BMP3_E_DEV_NOT_FOUND:
-            printf("API [%s] Error [%d] : Device not found\r\n", api_name, rslt);
-            break;
-        case BMP3_E_CONFIGURATION_ERR:
-            printf("API [%s] Error [%d] : Configuration Error\r\n", api_name, rslt);
-            break;
-        case BMP3_W_SENSOR_NOT_ENABLED:
-            printf("API [%s] Error [%d] : Warning when Sensor not enabled\r\n", api_name, rslt);
-            break;
-        case BMP3_W_INVALID_FIFO_REQ_FRAME_CNT:
-            printf("API [%s] Error [%d] : Warning when Fifo watermark level is not in limit\r\n", api_name, rslt);
-            break;
-        default:
-            printf("API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
-            break;
-    }
+  switch (rslt)
+  {
+    case BMP3_OK:
+      /* Do nothing */
+      break;
+    case BMP3_E_NULL_PTR:
+      SHIMMER_PRINTF("API [%s] Error [%d] : Null pointer\r\n", api_name, rslt);
+      break;
+    case BMP3_E_COMM_FAIL:
+      SHIMMER_PRINTF("API [%s] Error [%d] : Communication failure\r\n", api_name, rslt);
+      break;
+    case BMP3_E_INVALID_LEN:
+      SHIMMER_PRINTF("API [%s] Error [%d] : Incorrect length parameter\r\n", api_name, rslt);
+      break;
+    case BMP3_E_DEV_NOT_FOUND:
+      SHIMMER_PRINTF("API [%s] Error [%d] : Device not found\r\n", api_name, rslt);
+      break;
+    case BMP3_E_CONFIGURATION_ERR:
+      SHIMMER_PRINTF("API [%s] Error [%d] : Configuration Error\r\n", api_name, rslt);
+      break;
+    case BMP3_W_SENSOR_NOT_ENABLED:
+      SHIMMER_PRINTF("API [%s] Error [%d] : Warning when Sensor not enabled\r\n", api_name, rslt);
+      break;
+    case BMP3_W_INVALID_FIFO_REQ_FRAME_CNT:
+      SHIMMER_PRINTF("API [%s] Error [%d] : Warning when Fifo watermark level is not in limit\r\n", api_name, rslt);
+      break;
+    default:
+      SHIMMER_PRINTF("API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
+      break;
+  }
 }
 
 void bmp390_driver_init(void)
@@ -152,7 +151,7 @@ void bmp3_UnselectDevice(void)
 HAL_StatusTypeDef bmp3_pressure_temperature_get(uint8_t *buf)
 {
   HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { BMP3_REG_DATA | 0x80, 0, 0, 0, 0, 0, 0, 0 };
+  static uint8_t txBuff[] = { BMP3_REG_DATA | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0, 0 };
   ret = platform_read_raw_data_dma(&SENSOR_BUS, &txBuff[0], buf, sizeof(txBuff));
   return ret;
 }
@@ -164,11 +163,11 @@ int8_t bmp390_self_test(void)
 
   if (result == BMP3_SENSOR_OK)
   {
-    printf("Self Test - PASS\r\n");
+    SHIMMER_PRINTF("BMP390 Self Test - PASS\r\n");
   }
   else
   {
-    printf("Self Test - FAIL\r\n");
+    SHIMMER_PRINTF("BMP390 Self Test - FAIL\r\n");
     bmp3_check_rslt("BMP390", result);
   }
 
@@ -182,3 +181,31 @@ void bmp390_restore_default_config(void)
   rslt = bmp3_soft_reset(&bmp3);
 }
 
+//TODO fill in config
+void bmp390_config_set(uint8_t precision)
+{
+  int8_t rslt;
+
+  /* Used to select the settings user needs to change */
+  uint16_t settings_sel;
+
+  struct bmp3_settings settings;
+
+  /* Select the pressure and temperature sensor to be enabled */
+  settings.press_en = BMP3_ENABLE;
+  settings.temp_en = BMP3_ENABLE;
+
+  /* Select the output data rate and over sampling settings for pressure and temperature */
+  settings.odr_filter.press_os = BMP3_NO_OVERSAMPLING;
+  settings.odr_filter.temp_os = BMP3_NO_OVERSAMPLING;
+  settings.odr_filter.odr = BMP3_ODR_25_HZ;
+
+  /* Assign the settings which needs to be set in the sensor */
+  settings_sel = BMP3_SEL_PRESS_EN | BMP3_SEL_TEMP_EN | BMP3_SEL_PRESS_OS | BMP3_SEL_TEMP_OS | BMP3_SEL_ODR;
+  rslt = bmp3_set_sensor_settings(settings_sel, &settings, &bmp3);
+  if (rslt == BMP3_SENSOR_OK)
+  {
+      settings.op_mode = BMP3_MODE_NORMAL;
+      rslt = bmp3_set_op_mode(&settings, &bmp3);
+  }
+}
