@@ -151,7 +151,7 @@ void S4_NORM_ADC_initBatt(void){
 #if defined(SHIMMER3R)
    // Copied from MX_ADC1_Init function
    sConfig.Rank = ADC_REGULAR_RANK_1;
-   sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
+   sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES;
    sConfig.SingleDiff = ADC_SINGLE_ENDED;
    sConfig.OffsetNumber = ADC_OFFSET_NONE;
    sConfig.Offset = 0;
@@ -362,11 +362,11 @@ void S4_NORM_ADC_startSensing(){
       //memcpy((uint8_t*)hadcSensPtr.Init, (uint8_t*)&hadcBattPtr->Init, sizeof(ADC_InitTypeDef));
       //hadcSens.Instance = ADC2;
 #if defined(SHIMMER3R)
-     hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
-     hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
+     hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+     hadcSensPtr->Init.Resolution = ADC_RESOLUTION_14B;
      hadcSensPtr->Init.GainCompensation = 0;
      hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
-     hadcSensPtr->Init.ScanConvMode = ADC_SCAN_DISABLE;
+     hadcSensPtr->Init.ScanConvMode = ADC_SCAN_ENABLE;
      hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
      hadcSensPtr->Init.LowPowerAutoWait = DISABLE;
      hadcSensPtr->Init.ContinuousConvMode = ENABLE;
@@ -551,6 +551,7 @@ void S4_NORM_ADC_startSensing(){
    {
      adcGpioInit(adcGpioPinB, GPIOB);
    }
+   HAL_ADCEx_Calibration_Start(hadcSensPtr,ADC_CALIB_OFFSET,ADC_SINGLE_ENDED);//can be removed later
 
 #if defined(SHIMMER4_SDK)
    if (configBytes->chEnIntADC4) {
