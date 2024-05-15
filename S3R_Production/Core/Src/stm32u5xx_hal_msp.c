@@ -73,10 +73,7 @@ void HAL_MspInit(void)
   /* System interrupt init*/
 
   /* USER CODE BEGIN MspInit 1 */
-//TODO
-  /*Driver is not adding this in by default. We need this to get ADCs working. However, we may need to track it
-   * in future to switch OFF/ON whenever needed.*/
-  HAL_PWREx_EnableVddA();
+
   /* USER CODE END MspInit 1 */
 }
 
