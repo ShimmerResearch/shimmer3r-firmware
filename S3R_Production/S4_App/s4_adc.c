@@ -799,9 +799,11 @@ void S4_NORM_ADC_readBatt(void) {
    
    if(adcConfig != ADC_CONFIG_BATT){
       ADC_ChannelConfTypeDef sConfig;
+#if defined(SHIMMER4_SDK)
       if(adcConfig == ADC_CONFIG_SENS && stat.isSensing){
          need_to_restore = 1;
-      }      
+      }
+#endif
       adcConfig = ADC_CONFIG_BATT;
       
       HAL_ADC_DeInit(hadcBattPtr);
@@ -839,9 +841,11 @@ void S4_NORM_ADC_readBatt(void) {
    stat.battVal[2] = 0;
    stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)<<7;
    stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)<<6;
+#if defined(SHIMMER4_SDK)
    if(need_to_restore){
       S4_ADC_startSensing();
    }
+#endif
    //*(uint16_t*)(stat.battVal) = adc_battVal & 0xffff;
    
    S4_ADC_rankBatt();
