@@ -100,7 +100,7 @@ void S4_NORM_Task_manage(void){
       //case TASK_NEXTSENSOR:      I2C_sensorNext();       break;
       case TASK_SDWRITE:         SD_writeToCard();       break;
       case TASK_BATTREAD:     
-         S4_ADC_readBatt();
+        // S4_ADC_readBatt();
 #if defined(SHIMMER4_SDK)
          I2C_readBatt();
 #endif

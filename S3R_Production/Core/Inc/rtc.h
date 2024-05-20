@@ -76,7 +76,8 @@ typedef struct {
 void MX_RTC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+#define ALARM_RESET 0
+#define SET_NEXT_ALARM 1
 void S4_RTC_Init(void);//RTC_HandleTypeDef *hrtc
 uint8_t S4_RTC_SetDateTime(S4_RTC_t* data);
 void S4_RTC_GetDateTime(S4_RTC_t* data) ;
@@ -94,6 +95,7 @@ uint64_t S4_RWC_getConfigTime(void);
 void S4_RTC_WakeUpOff(void);
 void S4_RTC_WakeUpSet(uint16_t period);
 void S4_RTC_WakeUpSetSlow(void);
+void enableRTCAlarm(uint8_t state);
 
 /* USER CODE END Prototypes */
 

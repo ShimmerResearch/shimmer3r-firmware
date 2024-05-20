@@ -40,6 +40,7 @@ void MX_RTC_Init(void)
   RTC_PrivilegeStateTypeDef privilegeState = {0};
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
+  RTC_AlarmTypeDef sAlarm = {0};
 
   /* USER CODE BEGIN RTC_Init 1 */
 
@@ -99,6 +100,22 @@ void MX_RTC_Init(void)
   sDate.Year = 0x70;
 
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Enable the Alarm A
+  */
+  sAlarm.AlarmTime.Hours = 0x0;
+  sAlarm.AlarmTime.Minutes = 0x0;
+  sAlarm.AlarmTime.Seconds = 0x0;
+  sAlarm.AlarmTime.SubSeconds = 0x0;
+  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.AlarmDateWeekDay = 0x1;
+  sAlarm.Alarm = RTC_ALARM_A;
+  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
@@ -658,9 +675,54 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
    //Board_ledToggle(LED_GREEN0);
+  S4_ADC_readBatt();
+  enableRTCAlarm(SET_NEXT_ALARM);
 #if RTC_FAST
    //rtc64_reg += 0x8000; // this is not working well as the interrupt priority is not the highest
 #endif
+}
+
+void enableRTCAlarm(uint8_t state)
+{
+  RTC_AlarmTypeDef sAlarm;
+  uint32_t hobb_time;
+  /* FROM : https://community.st.com/t5/stm32-mcus-products/rtc-alarm-eventcallback-called-only-1-time/td-p/594938*/
+  __HAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF); // Does not seem to change the ISR register
+  hobb_time = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1);
+  // Write the new hobbs incremented value to backup register
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, ++hobb_time);
+
+  /*Setting up alarm for the first time/after RTC time set frmo BT/dock.*/
+  if(!state)
+  {
+    RTC_TimeTypeDef sTime;
+    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+    sAlarm.AlarmTime.Hours = sTime.Hours;
+    sAlarm.AlarmTime.Minutes = sTime.Minutes +1;
+    sAlarm.AlarmTime.Seconds = sTime.Seconds;
+    sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+    sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_NONE;
+    sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+    sAlarm.AlarmDateWeekDay = 0x1;
+    sAlarm.Alarm = RTC_ALARM_A;
+  }
+  else /* Re-setting alarm after previous trigger*/
+  {
+    HAL_RTC_GetAlarm(&hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN);
+    if(sAlarm.AlarmTime.Minutes > 58)
+    {
+      sAlarm.AlarmTime.Minutes = 0;
+    }
+    else
+    {
+      sAlarm.AlarmTime.Minutes = sAlarm.AlarmTime.Minutes + 1;
+    }
+  }
+  if(HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
 }
 
 /* USER CODE END 1 */
