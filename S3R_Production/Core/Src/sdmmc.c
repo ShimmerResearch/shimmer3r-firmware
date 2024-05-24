@@ -158,4 +158,62 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef* sdHandle)
 
 /* USER CODE BEGIN 1 */
 
+void printSdCardInfo(void)
+{
+  HAL_SD_CardCIDTypeDef pCID;
+  HAL_SD_GetCardCID(&hsd1, &pCID);
+
+  printf("Manufacturer: ");
+  switch(pCID.ManufacturerID)
+  {
+  case 0x000001:
+    printf("Panasonic");
+    break;
+  case 0x000002:
+    printf("Toshiba");
+    break;
+  case 0x000003:
+    printf("SanDisk");
+    break;
+  case 0x00001b:
+    printf("Samsung");
+    break;
+  case 0x00001d:
+    printf("AData");
+    break;
+  case 0x000027:
+    printf("Phison");
+    break;
+  case 0x000028:
+    printf("Lexar");
+    break;
+  case 0x000031:
+    printf("Silicon Power");
+    break;
+  case 0x000041:
+    printf("Kingston");
+    break;
+  case 0x000074:
+    printf("Transcend");
+    break;
+  case 0x000076:
+    printf("Patriot");
+    break;
+  case 0x000082:
+  case 0x00009c:
+    printf("Sony");
+    break;
+  default:
+    break;
+  }
+
+  printf(", Size=%.2lfGB", (hsd1.SdCard.BlockSize * ((float)hsd1.SdCard.BlockNbr/1024/1024/1024)));
+  printf(", Manufacture Date=%d-%02d", (pCID.ManufactDate/10)+1990, pCID.ManufactDate%10);
+
+
+  printf("\r\n");
+
+
+}
+
 /* USER CODE END 1 */
