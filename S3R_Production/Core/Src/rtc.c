@@ -676,7 +676,10 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
    //Board_ledToggle(LED_GREEN0);
-  S4_ADC_readBatt();
+  if(!stat.isSesing || !storedConfig.chEnVBattery) //if sensing and if vbat enabled use previous reading
+  {
+    S4_ADC_readBatt();
+  }
   enableRTCAlarm();
 #if RTC_FAST
    //rtc64_reg += 0x8000; // this is not working well as the interrupt priority is not the highest
