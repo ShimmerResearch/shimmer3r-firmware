@@ -284,6 +284,7 @@ void S4_RTC_Init(){//  RTC_HandleTypeDef *hrtc
 
 //   S4_RTC_Status = RTC_STATUS_INIT_OK;
 //   HAL_RTCEx_BKUPWrite(&hrtc, RTC_STATUS_REG, S4_RTC_Status);
+   HAL_RTC_DeactivateAlarm(&hrtc, RTC_ALARM_A); //deactivate alarm
 }
 
 
@@ -676,7 +677,8 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
    //Board_ledToggle(LED_GREEN0);
-  if(!stat.isSesing || !storedConfig.chEnVBattery) //if sensing and if vbat enabled use previous reading
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  if(!stat.isSensing || !configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
     S4_ADC_readBatt();
   }
@@ -698,13 +700,10 @@ void enableRTCAlarm(void)
 
     HAL_RTC_GetAlarm(&hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN);
     sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY|RTC_ALARMMASK_HOURS|RTC_ALARMMASK_SECONDS;
+    sAlarm.AlarmTime.Minutes = sAlarm.AlarmTime.Minutes + 1;
     if(sAlarm.AlarmTime.Minutes > 58)
     {
       sAlarm.AlarmTime.Minutes = 0;
-    }
-    else
-    {
-      sAlarm.AlarmTime.Minutes = sAlarm.AlarmTime.Minutes + 1;
     }
   if(HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
   {
