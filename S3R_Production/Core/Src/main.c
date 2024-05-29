@@ -174,7 +174,6 @@ void Init() {
 //      //Power_SleepUntilInterrupt();
 //   }
    //Power_StopUntilInterrupt();
-   enableRTCAlarm(); //re-enable battery alarm after the setup is complete.
 }
 
 /* USER CODE END 0 */

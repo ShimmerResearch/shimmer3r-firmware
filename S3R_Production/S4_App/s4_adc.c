@@ -620,8 +620,8 @@ void S4_NORM_ADC_bufPoll(){
    }  
 #else
    if (configBytes->chEnVBattery) {
-      stat.battVal[0] = sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-      stat.battVal[1] = sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+       sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+       sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }     
 #endif   
    S4_ADC_rankBatt();

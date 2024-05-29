@@ -107,7 +107,7 @@ void MX_RTC_Init(void)
   /** Enable the Alarm A
   */
   sAlarm.AlarmTime.Hours = 0x0;
-  sAlarm.AlarmTime.Minutes = 0x0;
+  sAlarm.AlarmTime.Minutes = 0x1;
   sAlarm.AlarmTime.Seconds = 0x0;
   sAlarm.AlarmTime.SubSeconds = 0x0;
   sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY|RTC_ALARMMASK_HOURS
@@ -681,36 +681,37 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   {
     S4_ADC_readBatt();
   }
-  enableRTCAlarm();
+  enableRTCAlarm(hrtc);
 #if RTC_FAST
    //rtc64_reg += 0x8000; // this is not working well as the interrupt priority is not the highest
 #endif
 }
 
-void enableRTCAlarm(void)
+void enableRTCAlarm(RTC_HandleTypeDef *hrtc)
 {
   RTC_AlarmTypeDef sAlarm;
   uint32_t hobb_time;
   /* FROM : https://community.st.com/t5/stm32-mcus-products/rtc-alarm-eventcallback-called-only-1-time/td-p/594938*/
   __HAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF); // Does not seem to change the ISR register
-  hobb_time = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1);
+  hobb_time = HAL_RTCEx_BKUPRead(hrtc, RTC_BKP_DR1);
   // Write the new hobbs incremented value to backup register
-  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, ++hobb_time);
-
-    HAL_RTC_GetAlarm(&hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN);
+    HAL_RTCEx_BKUPWrite(hrtc, RTC_BKP_DR1, ++hobb_time);
+    HAL_RTC_GetAlarm(hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN);
+    sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+    sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+    sAlarm.Alarm = RTC_ALARM_A;
     sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY|RTC_ALARMMASK_HOURS|RTC_ALARMMASK_SECONDS;
+
     if(sAlarm.AlarmTime.Minutes > 58)
     {
       sAlarm.AlarmTime.Minutes = 0;
     }
     else
     {
-      sAlarm.AlarmTime.Minutes = sAlarm.AlarmTime.Minutes + 1;
+      sAlarm.AlarmTime.Minutes =sAlarm.AlarmTime.Minutes +1;
     }
-  if(HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
-  {
-    Error_Handler();
-  }
+
+    while(HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK){}
 
 }
 

@@ -93,7 +93,7 @@ uint64_t S4_RWC_getConfigTime(void);
 void S4_RTC_WakeUpOff(void);
 void S4_RTC_WakeUpSet(uint16_t period);
 void S4_RTC_WakeUpSetSlow(void);
-void enableRTCAlarm(void);
+void enableRTCAlarm(RTC_HandleTypeDef *hrtc);
 
 /* USER CODE END Prototypes */
 

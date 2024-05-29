@@ -3024,7 +3024,7 @@ void BtUart_processCmd(void) {
       memcpy((uint8_t*)(&temp64), btArgs, 8);// 64bits = 8bytes
       RTC_init(temp64);
       S4Ram_getStoredConfig()->rtcSetByBt = 1;
-      enableRTCAlarm(); //configure RTC alarm after time set from BT.
+      enableRTCAlarm(&hrtc); //configure RTC alarm after time set from BT.
       //InfoMem_update();
       break;
    default:;

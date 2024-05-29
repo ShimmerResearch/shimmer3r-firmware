@@ -1807,7 +1807,7 @@ void DockUart_processCmd() {
                      InfoMem_update();
                      //sdHeadText[SDH_TRIAL_CONFIG0] = storedConfig[NV_SD_TRIAL_CONFIG0];
                      uartSendRspAck = 1;
-                     enableRTCAlarm(); //configure Alarm after time set from dock
+                     enableRTCAlarm(&hrtc); //configure Alarm after time set from dock
                   }
                   else
                      uartSendRspBadArg = 1;
