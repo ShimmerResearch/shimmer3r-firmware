@@ -107,11 +107,11 @@ void MX_RTC_Init(void)
   /** Enable the Alarm A
   */
   sAlarm.AlarmTime.Hours = 0x0;
-  sAlarm.AlarmTime.Minutes = 0x1;
-  sAlarm.AlarmTime.Seconds = 0x0;
+  sAlarm.AlarmTime.Minutes = 0x0;
+  sAlarm.AlarmTime.Seconds = 0x10;
   sAlarm.AlarmTime.SubSeconds = 0x0;
   sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY|RTC_ALARMMASK_HOURS
-                              |RTC_ALARMMASK_SECONDS;
+                              |RTC_ALARMMASK_MINUTES;
   sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.AlarmDateWeekDay = 0x1;
@@ -677,7 +677,13 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
    //Board_ledToggle(LED_GREEN0);
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  if(!stat.isSensing || !configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
+  if(stat.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
+  {
+    stat.battVal[0]= sensing.dataBuf[sensing.ptr.batteryAnalog + 0];
+    stat.battVal[1]= sensing.dataBuf[sensing.ptr.batteryAnalog + 1];
+    S4_ADC_rankBatt();
+  }
+  else
   {
     S4_ADC_readBatt();
   }
@@ -690,29 +696,29 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 void enableRTCAlarm(RTC_HandleTypeDef *hrtc)
 {
   RTC_AlarmTypeDef sAlarm;
+  RTC_TimeTypeDef sTime;
   uint32_t hobb_time;
   /* FROM : https://community.st.com/t5/stm32-mcus-products/rtc-alarm-eventcallback-called-only-1-time/td-p/594938*/
-  __HAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF); // Does not seem to change the ISR register
+  __HAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF);
   hobb_time = HAL_RTCEx_BKUPRead(hrtc, RTC_BKP_DR1);
   // Write the new hobbs incremented value to backup register
-    HAL_RTCEx_BKUPWrite(hrtc, RTC_BKP_DR1, ++hobb_time);
-    HAL_RTC_GetAlarm(hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN);
-    sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-    sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-    sAlarm.Alarm = RTC_ALARM_A;
-    sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY|RTC_ALARMMASK_HOURS|RTC_ALARMMASK_SECONDS;
+  HAL_RTCEx_BKUPWrite(hrtc, RTC_BKP_DR1, ++hobb_time);
+  //HAL_RTC_GetAlarm(hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN);
+  HAL_RTC_GetTime(hrtc, &sTime, RTC_FORMAT_BIN); //added since it was randomly missing interrupt.
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.Alarm = RTC_ALARM_A;
+  sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS | RTC_ALARMMASK_SECONDS;
+  if (sTime.Minutes > 58)
+  {
+    sAlarm.AlarmTime.Minutes = 0;
+  }
+  else
+  {
+    sAlarm.AlarmTime.Minutes = sTime.Minutes + 1;
+  }
 
-    if(sAlarm.AlarmTime.Minutes > 58)
-    {
-      sAlarm.AlarmTime.Minutes = 0;
-    }
-    else
-    {
-      sAlarm.AlarmTime.Minutes =sAlarm.AlarmTime.Minutes +1;
-    }
-
-    while(HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK){}
-
+  while (HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK){}
 }
 
 /* USER CODE END 1 */

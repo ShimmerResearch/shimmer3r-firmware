@@ -623,8 +623,7 @@ void S4_NORM_ADC_bufPoll(){
        sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
        sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }     
-#endif   
-   S4_ADC_rankBatt();
+#endif
    
    //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
    if (configBytes->chEnExtADC0) {
