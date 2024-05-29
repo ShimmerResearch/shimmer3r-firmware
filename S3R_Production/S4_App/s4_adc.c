@@ -72,7 +72,7 @@ uint8_t gsrActiveResistor;
 uint8_t adcConfig;
 
 #if defined(SHIMMER3R)
-static ADC_RANK_ARRAY[] = {
+static uint16_t ADC_RANK_ARRAY[] = {
     ADC_REGULAR_RANK_1,
     ADC_REGULAR_RANK_2,
     ADC_REGULAR_RANK_3,
@@ -579,10 +579,6 @@ void S4_NORM_ADC_gatherDataStart(void){
 #endif
    if(adc.sensorLen > 0){
       HAL_ADC_Start_DMA(hadcSensPtr, (uint32_t *)adcBufSens, (uint32_t)adc.sensorLen);
-//      for(uint16_t i = 0; i < 144/2; i++);
-//
-//      ADC_gatherDataDone_cb();
-//      //HAL_ADC_Start(hadcSens);
    }
 }
    
