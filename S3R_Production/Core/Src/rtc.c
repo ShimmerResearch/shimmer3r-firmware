@@ -709,15 +709,7 @@ void enableRTCAlarm(RTC_HandleTypeDef *hrtc)
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.Alarm = RTC_ALARM_A;
   sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS | RTC_ALARMMASK_SECONDS;
-  if (sTime.Minutes > 58)
-  {
-    sAlarm.AlarmTime.Minutes = 0;
-  }
-  else
-  {
-    sAlarm.AlarmTime.Minutes = sTime.Minutes + 1;
-  }
-
+  sAlarm.AlarmTime.Minutes = sTime.Minutes > 58 ? 0 : sTime.Minutes + 1;
   while (HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK){}
 }
 
