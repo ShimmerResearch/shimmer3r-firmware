@@ -695,22 +695,21 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 
 void enableRTCAlarm(RTC_HandleTypeDef *hrtc)
 {
-  RTC_AlarmTypeDef sAlarm;
-  RTC_TimeTypeDef sTime;
+  RTC_AlarmTypeDef alarm;
+  S4_RTC_t data;
   uint32_t hobb_time;
   /* FROM : https://community.st.com/t5/stm32-mcus-products/rtc-alarm-eventcallback-called-only-1-time/td-p/594938*/
   __HAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF);
   hobb_time = HAL_RTCEx_BKUPRead(hrtc, RTC_BKP_DR1);
   // Write the new hobbs incremented value to backup register
   HAL_RTCEx_BKUPWrite(hrtc, RTC_BKP_DR1, ++hobb_time);
-  //HAL_RTC_GetAlarm(hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN);
-  HAL_RTC_GetTime(hrtc, &sTime, RTC_FORMAT_BIN); //added since it was randomly missing interrupt.
-  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  sAlarm.Alarm = RTC_ALARM_A;
-  sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS | RTC_ALARMMASK_SECONDS;
-  sAlarm.AlarmTime.Minutes = sTime.Minutes > 58 ? 0 : sTime.Minutes + 1;
-  while (HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK){}
+  S4_RTC_GetDateTime(&data); //added since it was randomly missing interrupt when using HAL_RTC_GetAlarm().
+  alarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  alarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  alarm.Alarm = RTC_ALARM_A;
+  alarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS | RTC_ALARMMASK_SECONDS;
+  alarm.AlarmTime.Minutes = data.minutes > 58 ? 0 : data.minutes + 1U;
+  while (HAL_RTC_SetAlarm_IT(hrtc, &alarm, RTC_FORMAT_BIN) != HAL_OK){}
 }
 
 /* USER CODE END 1 */

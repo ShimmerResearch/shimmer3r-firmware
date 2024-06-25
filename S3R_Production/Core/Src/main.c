@@ -174,6 +174,7 @@ void Init() {
 //      //Power_SleepUntilInterrupt();
 //   }
    //Power_StopUntilInterrupt();
+   enableRTCAlarm(&hrtc);
 }
 
 /* USER CODE END 0 */
