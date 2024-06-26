@@ -921,6 +921,22 @@ void adcGpioInit(uint32_t pin, GPIO_TypeDef* port)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
   }
 }
+
+void updateVbattOnRtcAlarmTrigger(void)
+{
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  if(stat.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
+  {
+    stat.battVal[0]= sensing.dataBuf[sensing.ptr.batteryAnalog + 0];
+    stat.battVal[1]= sensing.dataBuf[sensing.ptr.batteryAnalog + 1];
+    S4_ADC_rankBatt();
+  }
+  else
+  {
+    S4_ADC_readBatt();
+  }
+}
+
 //void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 //{
 //   if (hadc->Instance == ADC1) {

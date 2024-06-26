@@ -99,9 +99,11 @@ void S4_NORM_Task_manage(void){
       case TASK_STOPSENSING:     S4Sens_stopSensing();   break;
       //case TASK_NEXTSENSOR:      I2C_sensorNext();       break;
       case TASK_SDWRITE:         SD_writeToCard();       break;
-      case TASK_BATTREAD:     
-        // S4_ADC_readBatt();
-#if defined(SHIMMER4_SDK)
+      case TASK_BATTREAD:
+#if defined(SHIMMER3R)
+        updateVbattOnRtcAlarmTrigger();
+#elif defined(SHIMMER4_SDK)
+         S4_ADC_readBatt();
          I2C_readBatt();
 #endif
          break;

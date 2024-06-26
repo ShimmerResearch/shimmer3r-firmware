@@ -675,21 +675,12 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 }
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
-   //Board_ledToggle(LED_GREEN0);
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  if(stat.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
-  {
-    stat.battVal[0]= sensing.dataBuf[sensing.ptr.batteryAnalog + 0];
-    stat.battVal[1]= sensing.dataBuf[sensing.ptr.batteryAnalog + 1];
-    S4_ADC_rankBatt();
-  }
-  else
-  {
-    S4_ADC_readBatt();
-  }
-  enableRTCAlarm(hrtc);
+  S4_Task_set(TASK_BATTREAD);
+  enableRTCAlarm(hrtc); // Set next alarm
+#if defined(SHIMMER4_SDK)
 #if RTC_FAST
    //rtc64_reg += 0x8000; // this is not working well as the interrupt priority is not the highest
+#endif
 #endif
 }
 
