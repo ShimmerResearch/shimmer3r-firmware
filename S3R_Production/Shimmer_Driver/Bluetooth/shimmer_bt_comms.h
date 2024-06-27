@@ -254,5 +254,6 @@ COMMS_CRC_MODE getBtCrcMode(void);
 
 uint8_t BT_getMacAddressAscii(char *macAscii);
 uint8_t BT_getMacAddressHex(uint8_t *macHex);
+void CalibSaveFromInfoMemToCalibDump(uint8_t id);
 
 #endif /* SHIMMER3_COMMON_SOURCE_BLUETOOTH_SD_SHIMMER_BT_COMMS_H_ */

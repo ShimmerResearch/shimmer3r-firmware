@@ -2815,6 +2815,9 @@ void BtUart_processCmd(void) {
     memcpy(&storedConfig[NV_A_ACCEL_CALIBRATION], args, 21);
     InfoMem_write((void*)NV_A_ACCEL_CALIBRATION, &storedConfig[NV_A_ACCEL_CALIBRATION], 21);
     memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION], &storedConfig[NV_A_ACCEL_CALIBRATION], 21);
+
+     CalibSaveFromInfoMemToCalibDump(SC_SENSOR_ANALOG_ACCEL);
+
     calib_update = 1;
     calib_sensor = S_ACCEL_A;
     break;
@@ -2825,6 +2828,9 @@ void BtUart_processCmd(void) {
     memcpy(&storedConfig[NV_MPU9250_GYRO_CALIBRATION], args, 21);
     InfoMem_write((void*)NV_MPU9250_GYRO_CALIBRATION, &storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21);
     memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION], &storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21);
+
+    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_MPU9250_GYRO);
+
     calib_update = 1;
     calib_sensor = S_GYRO;
     calib_range = storedConfig[NV_CONFIG_SETUP_BYTE2] & 0x03;
@@ -2836,6 +2842,9 @@ void BtUart_processCmd(void) {
     memcpy(&storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], args, 21);
     InfoMem_write((void*)NV_LSM303DLHC_MAG_CALIBRATION, &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21);
     memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION], &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21);
+
+     CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM303DLHC_MAG);
+
     calib_update = 1;
     calib_sensor = S_MAG;
     calib_range = (storedConfig[NV_CONFIG_SETUP_BYTE2]>>5) & 0x07;
@@ -2847,6 +2856,9 @@ void BtUart_processCmd(void) {
     memcpy(&storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], args, 21);
     InfoMem_write((void*)NV_LSM303DLHC_ACCEL_CALIBRATION, &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21);
     memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION], &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21);
+
+     CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM303DLHC_ACCEL);
+
     calib_update = 1;
     calib_sensor = S_ACCEL_D;
     calib_range = (storedConfig[NV_CONFIG_SETUP_BYTE0]>>2)&0x03;
@@ -3006,6 +3018,47 @@ void BtUart_processCmd(void) {
          S4Ram_storedConfigGet(temp_btMacHex, NV_MAC_ADDRESS, 6);
          S4Ram_storedConfigSet(&btArgs[3], btInfomemOffset, btInfomemLength);
          S4Ram_storedConfigSet(temp_btMacHex, NV_MAC_ADDRESS, 6);
+      /*   if (infomemOffset == (INFOMEM_SEG_C_ADDR - INFOMEM_OFFSET))
+                   {
+                        Read MAC address so it is not forgotten
+                       InfoMem_read((uint8_t*) NV_MAC_ADDRESS, getMacIdBytesPtr(), 6);
+                   }
+                   if (infomemOffset == (INFOMEM_SEG_D_ADDR - INFOMEM_OFFSET))
+                   {
+                        Check if unit is SR47-4 or greater.
+                        * If so, amend configuration byte 2 of ADS chip 1 to have bit 3 set to 1.
+                        * This ensures clock lines on ADS chip are correct
+
+                       if ((daughtCardId[DAUGHT_CARD_ID] == EXP_BRD_EXG_UNIFIED)
+                               && (daughtCardId[DAUGHT_CARD_REV] >= 4))
+                       {
+                           *(args + 3 + NV_EXG_ADS1292R_1_CONFIG2) |= 8;
+                       }
+                   }
+       #if !IS_SUPPORTED_TCXO
+                   if (infomemOffset <= NV_SD_TRIAL_CONFIG1 && NV_SD_TRIAL_CONFIG1 <= infomemOffset + infomemLength)
+                   {
+                       uint8_t tcxoInfomemOffset = NV_SD_TRIAL_CONFIG1 - infomemOffset;
+                       args[3 + tcxoInfomemOffset] &= ~SDH_TCXO;
+                   }
+       #endif
+
+                   InfoMem_write((void*) infomemOffset, args + 3, infomemLength);
+
+                   if (infomemOffset == (INFOMEM_SEG_C_ADDR - INFOMEM_OFFSET))
+                   {
+                        Re-write MAC address to Infomem
+                       InfoMem_write((uint8_t*) NV_MAC_ADDRESS, getMacIdBytesPtr(), 6);
+                   }
+
+                   InfoMem_read((uint8_t*) infomemOffset, storedConfig + infomemOffset,
+                                infomemLength);
+
+
+                   if (infomemOffset == (INFOMEM_SEG_D_ADDR - INFOMEM_OFFSET))
+                   {
+                       CalibSaveFromInfoMemToCalibDump(0xFF);
+                   }*/
          //InfoMem_update();
          //Infomem2Names();
          //update_sdconfig = 1;
@@ -3437,6 +3490,40 @@ uint8_t BT_getMacAddressAscii(char *macAscii) {
    }
 #endif
 }
+
+
+void CalibSaveFromInfoMemToCalibDump(uint8_t id)
+{
+    if (id==0xFF || id==SC_SENSOR_ANALOG_ACCEL)
+    {
+        ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_ANALOG_ACCEL,
+                                                  SC_SENSOR_RANGE_ANALOG_ACCEL,
+                                                  SC_DATA_LEN_ANALOG_ACCEL,
+                                                  &storedConfig[NV_A_ACCEL_CALIBRATION]);
+    }
+    if (id==0xFF || id==SC_SENSOR_MPU9150_GYRO)
+    {
+        ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_MPU9150_GYRO,
+                                                  storedConfig[NV_CONFIG_SETUP_BYTE2] & 0x03,
+                                                  SC_DATA_LEN_MPU9250_GYRO,
+                                                  &storedConfig[NV_MPU9150_GYRO_CALIBRATION]);
+    }
+    if (id==0xFF || id==SC_SENSOR_LSM303DLHC_MAG)
+    {
+        ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_LSM303DLHC_MAG,
+                                                  (storedConfig[NV_CONFIG_SETUP_BYTE2] >> 5) & 0x07,
+                                                  SC_DATA_LEN_LSM303DLHC_MAG,
+                                                  &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION]);
+    }
+    if (id==0xFF || id==SC_SENSOR_LSM303DLHC_ACCEL)
+    {
+        ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_LSM303DLHC_ACCEL,
+                                                  (storedConfig[NV_CONFIG_SETUP_BYTE0] >> 2) & 0x03,
+                                                  SC_DATA_LEN_LSM303DLHC_ACCEL,
+                                                  &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION]);
+    }
+}
+
 
 uint8_t BT_getMacAddressHex(uint8_t *macHex) {
 #if defined(SHIMMER3R)
