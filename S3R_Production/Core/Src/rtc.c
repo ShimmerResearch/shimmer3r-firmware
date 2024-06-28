@@ -107,11 +107,11 @@ void MX_RTC_Init(void)
   /** Enable the Alarm A
   */
   sAlarm.AlarmTime.Hours = 0x0;
-  sAlarm.AlarmTime.Minutes = 0x0;
-  sAlarm.AlarmTime.Seconds = 0x10;
+  sAlarm.AlarmTime.Minutes = 0x1;
+  sAlarm.AlarmTime.Seconds = 0x0;
   sAlarm.AlarmTime.SubSeconds = 0x0;
   sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY|RTC_ALARMMASK_HOURS
-                              |RTC_ALARMMASK_MINUTES;
+                              |RTC_ALARMMASK_SECONDS;
   sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.AlarmDateWeekDay = 0x1;
@@ -675,8 +675,9 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 }
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
+  /* FROM : https://community.st.com/t5/stm32-mcus-products/rtc-alarm-eventcallback-called-only-1-time/td-p/594938*/
+  __HAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF);
   S4_Task_set(TASK_BATTREAD);
-  enableRTCAlarm(hrtc); // Set next alarm
 #if defined(SHIMMER4_SDK)
 #if RTC_FAST
    //rtc64_reg += 0x8000; // this is not working well as the interrupt priority is not the highest
@@ -687,23 +688,18 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 void enableRTCAlarm(RTC_HandleTypeDef *hrtc)
 {
   RTC_AlarmTypeDef alarm;
-  uint32_t hobb_time;
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
-  /* FROM : https://community.st.com/t5/stm32-mcus-products/rtc-alarm-eventcallback-called-only-1-time/td-p/594938*/
-  __HAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF);
-  hobb_time = HAL_RTCEx_BKUPRead(hrtc, RTC_BKP_DR1);
-  // Write the new hobbs incremented value to backup register
-  HAL_RTCEx_BKUPWrite(hrtc, RTC_BKP_DR1, ++hobb_time);
+  HAL_RTC_GetAlarm(hrtc, &alarm, RTC_ALARM_A, RTC_FORMAT_BIN); //to update the previous alarm.
  /* Get time added since it was randomly missing interrupt when using HAL_RTC_GetAlarm().*/
-  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetTime(hrtc, &sTime, RTC_FORMAT_BIN);
   /* From GetTime() notes : You must call HAL_RTC_GetDate() after HAL_RTC_GetTime() to unlock the values....*/
-  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(hrtc, &sDate, RTC_FORMAT_BIN);
   alarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
   alarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   alarm.Alarm = RTC_ALARM_A;
   alarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS | RTC_ALARMMASK_SECONDS;
-  alarm.AlarmTime.Minutes = sTime.Minutes > 58 ? 0 : sTime.Minutes + 1U;
+  alarm.AlarmTime.Minutes = sTime.Minutes  > 58 ? 0 : sTime.Minutes  + 1U;
   while (HAL_RTC_SetAlarm_IT(hrtc, &alarm, RTC_FORMAT_BIN) != HAL_OK){}
 }
 

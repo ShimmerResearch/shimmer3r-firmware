@@ -789,7 +789,9 @@ void S4_NORM_ADC_rankBatt(void) {
 }
   
 void S4_NORM_ADC_readBatt(void) {
+#if defined(SHIMMER4_SDK)
    uint8_t need_to_restore = 0;   
+#endif
    static uint8_t cnt = 0;
    //TODO remove when Solution found
    //first call from RTC interrupt is causing hard faults hence added this check to to collect data only from second call
@@ -935,6 +937,7 @@ void updateVbattOnRtcAlarmTrigger(void)
   {
     S4_ADC_readBatt();
   }
+  enableRTCAlarm(&hrtc);
 }
 
 //void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
