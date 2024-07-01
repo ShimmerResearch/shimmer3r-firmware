@@ -379,6 +379,17 @@
 #define SDH_LSM303DLHC_MAG_CALIBRATION    118//0x76
 #define SDH_A_ACCEL_CALIBRATION           139//0x8b
 #define SDH_TEMP_PRES_CALIBRATION         160
+#define SDH_LSM303DLHC_ACCEL_CALIB_TS     (182)//+8
+#define SDH_MPU9250_GYRO_CALIB_TS         (190) //+8
+#define SDH_LSM303DLHC_MAG_CALIB_TS       (198) //+8
+#define SDH_A_ACCEL_CALIB_TS              (206) //+8
+#define SDH_DAUGHTER_CARD_ID_BYTE0        (214) //+3
+#define SDH_DERIVED_CHANNELS_3            (217)
+#define SDH_DERIVED_CHANNELS_4            (218)
+#define SDH_DERIVED_CHANNELS_5            (219)
+#define SDH_DERIVED_CHANNELS_6            (220)
+#define SDH_DERIVED_CHANNELS_7            (221)
+#define BMP280_XTRA_CALIB_BYTES           (222)
 #define SDH_MY_LOCALTIME_0TH              248
 #define SDH_MY_LOCALTIME_5TH              251
 #define SDH_MY_LOCALTIME                  252   //252-255

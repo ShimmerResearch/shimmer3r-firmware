@@ -155,5 +155,13 @@ extern uint8_t ShimmerCalib_ramRead(uint8_t* buf, uint8_t length, uint16_t offse
 void ShimmerCalib_default(uint8_t sensor);
 void ShimmerCalib_singleSensorWriteFromInfoMem(uint16_t id, uint8_t range, uint8_t data_len, uint8_t *ptr);
 void ShimmerCalib_defaultAll(void);
+void ShimmerCalib_singleSensorWriteFromInfoMem(uint16_t id, uint8_t range, uint8_t data_len, uint8_t *ptr);
+void CalibSaveFromInfoMemToCalibDump(uint8_t id);
+
+void ShimmerCalibInitFromInfoAll(void);
+void ShimmerCalibUpdateFromInfoAll(void);
+void ShimmerCalibFromInfo(uint8_t sensor, uint8_t use_sys_time);
+void ShimmerCalibSyncFromDumpRamAll(void);
+void ShimmerCalibSyncFromDumpRamSingleSensor(uint8_t sensor);
 
 #endif //S4_CALIB_H

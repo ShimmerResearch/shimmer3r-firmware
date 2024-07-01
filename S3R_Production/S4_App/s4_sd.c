@@ -41,11 +41,14 @@ extern FIL SDFile;       /* File object for SD */
 
 #endif
 
-void SD_init(void){
+void SD_init(void)
+{
    sdBufSens = sdBufWr = 0;
    //fileNum = 0;
 }
+
 #define TEST_TEXT_LEN 40
+
 uint8_t SD_test(void){
 #if USE_FATFS
    FIL test_file;
@@ -127,7 +130,7 @@ uint8_t SD_test_alternative(void)
 #endif
 }
 
-void SD_setShimmerName()
+void SD_setShimmerName(void)
 {
   uint8_t i;
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
@@ -142,7 +145,7 @@ void SD_setShimmerName()
   memcpy((char*) shimmerName, &(configBytes->shimmerName[0]), sizeof(configBytes->shimmerName));
 }
 
-void SD_setExpIdName()
+void SD_setExpIdName(void)
 {
   uint8_t i;
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
@@ -158,7 +161,7 @@ void SD_setExpIdName()
 //  strcpy((char*)expIdName,"DefaultTrial");
 }
 
-void SD_setCfgTime(){
+void SD_setCfgTime(void){
    uint32_t cfg_time_temp = S4Ram_getStoredConfig()->configTime;
    if(cfg_time_temp){
       S4Calc_itoaNo0((uint64_t)cfg_time_temp, configTimeText, UINT32_LEN);
@@ -167,13 +170,13 @@ void SD_setCfgTime(){
    }
 }
 
-void SD_infomem2Names(){
+void SD_infomem2Names(void){
    SD_setShimmerName();
    SD_setExpIdName();
    SD_setCfgTime();
 }
 
-uint8_t SD_setBasedir() {
+uint8_t SD_setBasedir(void) {
 #if USE_FATFS
    FILINFO fno;
    //volatile uint8_t res;
@@ -258,7 +261,7 @@ uint8_t SD_setBasedir() {
 #endif
 }
 
-uint8_t SD_makeBasedir() {
+uint8_t SD_makeBasedir(void) {
    memset(dirName,0,64);
 
    char dir_counter_text[4];

@@ -83,44 +83,55 @@ uint8_t* ShimmerCalib_getRam(void){
    return shimmerCalib_ram;
 }
 
-void ShimmerCalib_ram2File(){
-//   char cal_file_name[48];//buffer[66],
-//   DIR gdc;
-//   FIL gfc;
-//   //sc_t sc1;
-//   UINT bw;
-//   FRESULT res;
-//   uint8_t this_write_size;
+void ShimmerCalib_ram2File(void)
+{
+    char cal_file_name[48]; //buffer[66],
+    DIR gdc;
+    FIL gfc;
+    //sc_t sc1;
+    UINT bw;
+    FRESULT res;
+    uint8_t this_write_size;
 
-//   shimmerCalib_ramLen = min(*(uint16_t*)shimmerCalib_ram, SHIMMER_CALIB_RAM_MAX-2);
+    shimmerCalib_ramLen = min(*(uint16_t* )shimmerCalib_ram,
+                              SHIMMER_CALIB_RAM_MAX-2);
 
-//   if(shimmerCalib_ramLen > 0){
-//      strcpy((char*)cal_file_name, "/Calibration");
-//      if(res = f_opendir(&gdc, "/Calibration")){
-//         if(res = f_opendir(&gdc, "/calibration")){
-//            if(res == FR_NO_PATH){   // we'll have to make /Calibration first
-//               res = f_mkdir("/Calibration");
-//            }
-//         }else{
-//            strcpy((char*)cal_file_name, "/calibration");
-//         }
-//      }
-//      strcat(cal_file_name, "/calib_");
-//      strcat(cal_file_name, (char*)shimmerCalib_macId);
+    if (shimmerCalib_ramLen > 0)
+    {
+        strcpy((char*) cal_file_name, "/Calibration");
+        if ((res = f_opendir(&gdc, "/Calibration")))
+        {
+            if ((res = f_opendir(&gdc, "/calibration")))
+            {
+                if (res == FR_NO_PATH)
+                {   // we'll have to make /Calibration first
+                    res = f_mkdir("/Calibration");
+                }
+            }
+            else
+            {
+                strcpy((char*) cal_file_name, "/calibration");
+            }
+        }
+        strcat(cal_file_name, "/calib_");
+        strcat(cal_file_name, (char*) shimmerCalib_macId);
 
-//      res = f_open(&gfc, cal_file_name, (FA_WRITE | FA_CREATE_ALWAYS));
-//      if(res == FR_NO_FILE) {
-//         return;
-//      }
+        res = f_open(&gfc, cal_file_name, (FA_WRITE | FA_CREATE_ALWAYS));
+        if (res == FR_NO_FILE)
+        {
+            return;
+        }
 
-//      while(gfc.fptr < shimmerCalib_ramLen+2){
-//         this_write_size = min(shimmerCalib_ramLen+2 - gfc.fptr, SHIMMER_CALIB_COPY_SIZE);
-//         f_write(&gfc, shimmerCalib_ram+gfc.fptr, this_write_size, &bw);
-//      }
+        while (gfc.fptr < shimmerCalib_ramLen + 2)
+        {
+            this_write_size = min(shimmerCalib_ramLen + 2 - gfc.fptr,
+                                  SHIMMER_CALIB_COPY_SIZE);
+            f_write(&gfc, shimmerCalib_ram + gfc.fptr, this_write_size, &bw);
+        }
 
-//      f_close(&gfc);
-//      HAL_Delay(50);
-//   }
+        f_close(&gfc);
+        HAL_Delay(50);   //50ms
+    }
 }
 
 /*
@@ -443,5 +454,184 @@ void ShimmerCalib_default(uint8_t sensor){
    }
 }
 
+void ShimmerCalib_singleSensorWriteFromInfoMem(uint16_t id, uint8_t range, uint8_t data_len, uint8_t *ptr)
+{
+    sc_t sc1;
+    sc1.id = id;
+    sc1.range = range;
+    sc1.data_len = data_len;
+    *(uint64_t*) (sc1.ts) = RTC_get64();
+    memcpy(sc1.data.raw, ptr, sc1.data_len);
+    ShimmerCalib_singleSensorWrite(&sc1);
+}
 
+void CalibSaveFromInfoMemToCalibDump(uint8_t id)
+{
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+    if (id==0xFF || id==SC_SENSOR_ANALOG_ACCEL)
+    {
+        ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_ANALOG_ACCEL,
+                                                  SC_SENSOR_RANGE_ANALOG_ACCEL,
+                                                  SC_DATA_LEN_ANALOG_ACCEL,
+                                                  &configBytes->lnAccelCalib.rawBytes[0]);
+    }
+    if (id==0xFF || id==SC_SENSOR_MPU9150_GYRO)
+    {
+        ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_MPU9150_GYRO,
+                                                  configBytes->gyroRange,
+                                                  SC_DATA_LEN_MPU9250_GYRO,
+                                                  &configBytes->gyroCalib.rawBytes[0]);
+    }
+    if (id==0xFF || id==SC_SENSOR_LSM303DLHC_MAG)
+    {
+        ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_LSM303DLHC_MAG,
+                                                  configBytes->magRange,
+                                                  SC_DATA_LEN_LSM303DLHC_MAG,
+                                                  &configBytes->magCalib.rawBytes[0]);
+    }
+    if (id==0xFF || id==SC_SENSOR_LSM303DLHC_ACCEL)
+    {
+        ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_LSM303DLHC_ACCEL,
+                                                  configBytes->wrAccelRange,
+                                                  SC_DATA_LEN_LSM303DLHC_ACCEL,
+                                                  &configBytes->wrAccelCalib.rawBytes[0]);
+    }
+}
 
+void ShimmerCalibInitFromInfoAll(void)
+{
+    ShimmerCalibFromInfo(SC_SENSOR_ANALOG_ACCEL, 0);
+    ShimmerCalibFromInfo(SC_SENSOR_MPU9150_GYRO, 0);
+    ShimmerCalibFromInfo(SC_SENSOR_LSM303DLHC_ACCEL, 0);
+    ShimmerCalibFromInfo(SC_SENSOR_LSM303DLHC_MAG, 0);
+}
+
+void ShimmerCalibUpdateFromInfoAll(void)
+{
+    ShimmerCalibFromInfo(SC_SENSOR_ANALOG_ACCEL, 1);
+    ShimmerCalibFromInfo(SC_SENSOR_MPU9150_GYRO, 1);
+    ShimmerCalibFromInfo(SC_SENSOR_LSM303DLHC_ACCEL, 1);
+    ShimmerCalibFromInfo(SC_SENSOR_LSM303DLHC_MAG, 1);
+}
+
+void ShimmerCalibFromInfo(uint8_t sensor, uint8_t use_sys_time)
+{
+    uint8_t info_config, info_valid = 0;
+    uint8_t offset;
+    int byte_cnt = 0;
+    sc_t sc1;
+
+    sc1.id = sensor;
+    if (use_sys_time)
+    {
+        memset(sc1.ts, 0, 8);
+    }
+    else
+    {
+        *(uint64_t*) (sc1.ts) = RTC_get64();
+    }
+
+    if (sc1.id == SC_SENSOR_ANALOG_ACCEL)
+    {
+        offset = NV_A_ACCEL_CALIBRATION;
+        sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
+        sc1.data_len = SC_DATA_LEN_ANALOG_ACCEL;
+    }
+    else if (sc1.id == SC_SENSOR_MPU9150_GYRO)
+    {
+        offset = NV_MPU9250_GYRO_CALIBRATION;
+        sc1.data_len = SC_DATA_LEN_MPU9250_GYRO;
+        InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE2, 1);
+        sc1.range = info_config & 0x03;
+    }
+    else if (sc1.id == SC_SENSOR_LSM303DLHC_ACCEL)
+    {
+        offset = NV_LSM303DLHC_ACCEL_CALIBRATION;
+        sc1.data_len = SC_DATA_LEN_LSM303DLHC_ACCEL;
+        InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE0, 1);
+        sc1.range = (info_config & 0x0c) >> 2;
+    }
+    else if (sc1.id == SC_SENSOR_LSM303DLHC_MAG)
+    {
+        offset = NV_LSM303DLHC_MAG_CALIBRATION;
+        sc1.data_len = SC_DATA_LEN_LSM303DLHC_MAG;
+        InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE2, 1);
+        sc1.range = (info_config & 0xe0) >> 5;
+    }
+    else
+    {
+        return;
+    }
+
+    InfoMem_readRam(&S4Ram_getStoredConfig()->rawBytes[offset], offset, 21);
+    for (byte_cnt = 21; byte_cnt > 0; byte_cnt--)
+    {
+        if (S4Ram_getStoredConfig()->rawBytes[offset + byte_cnt] != 0xff)
+        {
+            info_valid = 1;
+            break;
+        }
+    }
+
+    if (info_valid)
+    {
+        /* if not all 0xff in infomem */
+        memcpy(sc1.data.raw, &S4Ram_getStoredConfig()->rawBytes[offset], sc1.data_len);
+        ShimmerCalib_singleSensorWrite(&sc1);
+    }
+}
+
+void ShimmerCalibSyncFromDumpRamAll(void)
+{
+    ShimmerCalibSyncFromDumpRamSingleSensor(SC_SENSOR_ANALOG_ACCEL);
+    ShimmerCalibSyncFromDumpRamSingleSensor(SC_SENSOR_MPU9150_GYRO);
+    ShimmerCalibSyncFromDumpRamSingleSensor(SC_SENSOR_LSM303DLHC_MAG);
+    ShimmerCalibSyncFromDumpRamSingleSensor(SC_SENSOR_LSM303DLHC_ACCEL);
+}
+
+void ShimmerCalibSyncFromDumpRamSingleSensor(uint8_t sensor)
+{
+    sc_t sc1;
+    uint16_t scs_infomem_offset, scs_sdhead_offset, scs_sdhead_ts;
+    sc1.id = sensor;
+    sc1.data_len = ShimmerCalib_findLength(&sc1);
+    switch (sensor)
+    {
+    case SC_SENSOR_ANALOG_ACCEL:
+        scs_infomem_offset = NV_A_ACCEL_CALIBRATION;
+        scs_sdhead_offset = SDH_A_ACCEL_CALIBRATION;
+        scs_sdhead_ts = SDH_A_ACCEL_CALIB_TS;
+        sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
+        break;
+    case SC_SENSOR_MPU9150_GYRO:
+        scs_infomem_offset = NV_MPU9250_GYRO_CALIBRATION;
+        scs_sdhead_offset = SDH_MPU9250_GYRO_CALIBRATION;
+        scs_sdhead_ts = SDH_MPU9250_GYRO_CALIB_TS;
+        sc1.range = S4Ram_getStoredConfig()->gyroRange;
+        break;
+    case SC_SENSOR_LSM303DLHC_MAG:
+        scs_infomem_offset = NV_LSM303DLHC_MAG_CALIBRATION;
+        scs_sdhead_offset = SDH_LSM303DLHC_MAG_CALIBRATION;
+        scs_sdhead_ts = SDH_LSM303DLHC_MAG_CALIB_TS;
+        sc1.range = S4Ram_getStoredConfig()->magRange;
+        break;
+    case SC_SENSOR_LSM303DLHC_ACCEL:
+        scs_infomem_offset = NV_LSM303DLHC_ACCEL_CALIBRATION;
+        scs_sdhead_offset = SDH_LSM303DLHC_ACCEL_CALIBRATION;
+        scs_sdhead_ts = SDH_LSM303DLHC_ACCEL_CALIB_TS;
+        sc1.range = S4Ram_getStoredConfig()->wrAccelRange;
+        break;
+    default:
+        scs_infomem_offset = NV_A_ACCEL_CALIBRATION;
+        scs_sdhead_offset = SDH_A_ACCEL_CALIBRATION;
+        scs_sdhead_ts = SDH_A_ACCEL_CALIB_TS;
+        sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
+        break;
+    }
+
+    ShimmerCalib_singleSensorRead(&sc1);
+    memcpy(&S4Ram_getStoredConfig()->rawBytes[scs_infomem_offset], sc1.data.raw, sc1.data_len);
+    InfoMem_update();
+    memcpy(S4Ram_getSdHeadText() + scs_sdhead_offset, sc1.data.raw, sc1.data_len);
+    memcpy(S4Ram_getSdHeadText() + scs_sdhead_ts, sc1.ts, 8);
+}

@@ -162,8 +162,8 @@
 #define SET_CALIB_DUMP_COMMAND                        0x98
 #define RSP_CALIB_DUMP_COMMAND                        0x99
 #define GET_CALIB_DUMP_COMMAND                        0x9A
-//#define UPD_CALIB_DUMP_COMMAND                        0x9B
-#define UPD_FLASH_COMMAND                             0x9B
+#define UPD_CALIB_DUMP_COMMAND                        0x9B
+//#define UPD_FLASH_COMMAND                             0x9B
 #define UPD_SDLOG_CFG_COMMAND                         0x9C
 #if defined(SHIMMER4_SDK)
 #define SET_I2C_BATT_STATUS_FREQ_COMMAND              0x9C
@@ -177,6 +177,8 @@
 #define SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE        0xA3
 #define SET_DATA_RATE_TEST                            0xA4
 #define DATA_RATE_TEST_RESPONSE                       0xA5
+#define PRESSURE_CALIBRATION_COEFFICIENTS_RESPONSE    0xA6
+#define GET_PRESSURE_CALIBRATION_COEFFICIENTS_COMMAND 0xA7
 #if !USE_OLD_SD_SYNC_APPROACH
 #define SET_SD_SYNC_COMMAND                           0xE0
 #define SD_SYNC_RESPONSE                              0xE1
