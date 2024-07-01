@@ -20,7 +20,7 @@ void setDaugherCardIdPage(uint8_t *pagePtr)
 
 uint8_t isAds1292Present(void)
 {
-  return isAds1292PresentForSrId(daughterCardIdPage.expansion_brd.exp_brd_id_major);
+  return isAds1292PresentForSrId(daughterCardIdPage.expansion_brd.exp_brd_id);
 }
 
 uint8_t isAds1292PresentForSrId(uint8_t srId)
@@ -89,5 +89,10 @@ void setEepromIsPresent(uint8_t eeprom_is_preset)
 uint8_t isEepromIsPresent(void)
 {
     return eepromIsPresent;
+}
+
+shimmer_expansion_brd* getDaughtCardIdPtr(void)
+{
+    return &daughterCardIdPage.expansion_brd;
 }
 

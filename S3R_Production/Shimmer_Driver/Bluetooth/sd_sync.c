@@ -160,10 +160,7 @@ uint8_t getSyncCnt(void)
 
 void saveLocalTime(void)
 {
-//    myLocalTimeLong = getRwcTime();
-    //TODO revisit for Shimmer3r
     myLocalTimeLong = RTC_get64();
-
 }
 
 void resetSyncRcNodeR10Cnt(void)
@@ -432,7 +429,7 @@ void SyncCenterT10(void)
     *(resPacket + packet_length++) = SET_SD_SYNC_COMMAND;
 #endif
     *(resPacket + packet_length++) = stat.isSensing;
-    myLocalTimeLong = getRwcTime();
+    myLocalTimeLong = RTC_get64();
     *(uint64_t*) (resPacket + packet_length) = myLocalTimeLong;
     packet_length += 8;
 

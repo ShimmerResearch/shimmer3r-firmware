@@ -126,6 +126,13 @@ yes      IROM1    0x8008000   0xf8000
 #define WORD_BYTE_SIZE          4
 #define QUAD_WORD_BYTE_SIZE     16
 
+/* Definitions used within the Shimmer3 comms protocol */
+#define INFOMEM_OFFSET_MSP430     0x1800
+#define INFOMEM_SEG_A_ADDR_MSP430 0x1980
+#define INFOMEM_SEG_B_ADDR_MSP430 0x1900
+#define INFOMEM_SEG_C_ADDR_MSP430 0x1880
+#define INFOMEM_SEG_D_ADDR_MSP430 0x1800
+
 //returns 0 if successful, 1 if failure
 
 void InfoMem_init(void);

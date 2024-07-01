@@ -13,10 +13,15 @@
 void SD_init(void);
 uint8_t SD_test(void);
 uint8_t SD_test_alternative(void);
-void SD_insertedCheck(void);
+void SD_setShimmerName(void);
+void SD_setExpIdName(void);
+void SD_setCfgTime(void);
+void SD_infomem2Names(void);
+uint8_t SD_setBasedir(void);
+uint8_t SD_makeBasedir(void);
+void SD_makeFileName(char* name_buf);
 void SD_fileInit(void);
 void SD_close(void);
-void SD_makeFileName(char* name_buf);
 void SD_writeToBuff(uint8_t *buf, uint16_t len);
 void SD_writeToCard(void);
 //void SD_config2SdHead(void);

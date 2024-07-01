@@ -25,6 +25,9 @@ struct bmp3_dev bmp3;
 /* Variable to store the device address */
 static uint8_t dev_addr;
 
+/* Array to store calibration data */
+uint8_t calib_bytes[BMP3_LEN_CALIB_DATA] = { 0 };
+
 /*!
  * SPI read function map to Shimmer platform
  */
@@ -94,6 +97,17 @@ static void bmp3_delay_us(uint32_t period, void *intf_ptr)
   HAL_Delay(period / 1000);
 }
 
+static int8_t save_calib_data_bytes(void)
+{
+  int8_t rslt;
+  uint8_t reg_addr = BMP3_REG_CALIB_DATA;
+
+  /* Read the calibration data from the sensor */
+  rslt = bmp3_get_regs(reg_addr, calib_bytes, BMP3_LEN_CALIB_DATA, &bmp3);
+
+  return rslt;
+}
+
 void bmp3_check_rslt(const char api_name[], int8_t rslt)
 {
   switch (rslt)
@@ -136,6 +150,8 @@ void bmp390_driver_init(void)
   bmp3.delay_us = bmp3_delay_us;
   bmp3.intf_ptr = &dev_addr;
   bmp3.dummy_byte = 1;
+
+  save_calib_data_bytes();
 }
 
 void bmp3_SelectDevice(void)
@@ -174,11 +190,13 @@ int8_t bmp390_self_test(void)
   return result;
 }
 
-void bmp390_restore_default_config(void)
+int8_t bmp390_restore_default_config(void)
 {
   int8_t rslt;
   /* Reset the sensor */
   rslt = bmp3_soft_reset(&bmp3);
+
+  return rslt;
 }
 
 //TODO fill in config
@@ -208,4 +226,9 @@ void bmp390_config_set(uint8_t precision)
       settings.op_mode = BMP3_MODE_NORMAL;
       rslt = bmp3_set_op_mode(&settings, &bmp3);
   }
+}
+
+uint8_t* get_bmp3_calib_data_bytes(void)
+{
+  return &calib_bytes[0];
 }

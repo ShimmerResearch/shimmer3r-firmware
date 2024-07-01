@@ -41,10 +41,11 @@
  */
  
 #include "s4_ram.h"
-
+#include "bmp3_defs.h"
 
 uint8_t sdHeadText[SD_HEAD_SIZE], btMacAscii[14], btMacHex[6];
 gConfigBytes storedConfig;
+uint8_t calibRamFlag = 0;
 
 void S4Ram_init(void){     
    // init RAM (storedConfig) 
@@ -328,7 +329,13 @@ void S4Ram_config2SdHead(void) {
    sdHeadText[SDH_DERIVED_CHANNELS_0] = storedConfig.rawBytes[NV_DERIVED_CHANNELS_0];
    sdHeadText[SDH_DERIVED_CHANNELS_1] = storedConfig.rawBytes[NV_DERIVED_CHANNELS_1];
    sdHeadText[SDH_DERIVED_CHANNELS_2] = storedConfig.rawBytes[NV_DERIVED_CHANNELS_2];
-   // sd config
+   sdHeadText[SDH_DERIVED_CHANNELS_3] = storedConfig.rawBytes[NV_DERIVED_CHANNELS_3];
+   sdHeadText[SDH_DERIVED_CHANNELS_4] = storedConfig.rawBytes[NV_DERIVED_CHANNELS_4];
+   sdHeadText[SDH_DERIVED_CHANNELS_5] = storedConfig.rawBytes[NV_DERIVED_CHANNELS_5];
+   sdHeadText[SDH_DERIVED_CHANNELS_6] = storedConfig.rawBytes[NV_DERIVED_CHANNELS_6];
+   sdHeadText[SDH_DERIVED_CHANNELS_7] = storedConfig.rawBytes[NV_DERIVED_CHANNELS_7];
+
+   /* sd config */
    sdHeadText[SDH_MYTRIAL_ID] = storedConfig.rawBytes[NV_SD_MYTRIAL_ID];
    sdHeadText[SDH_NSHIMMER] = storedConfig.rawBytes[NV_SD_NSHIMMER];
    sdHeadText[SDH_EST_EXP_LEN_MSB] = storedConfig.rawBytes[NV_EST_EXP_LEN_MSB];
@@ -351,10 +358,19 @@ void S4Ram_config2SdHead(void) {
    memcpy(&sdHeadText[SDH_MAC_ADDR], &storedConfig.rawBytes[NV_MAC_ADDRESS], 6);
    memcpy(&sdHeadText[SDH_CONFIG_TIME_0], &storedConfig.rawBytes[NV_SD_CONFIG_TIME], 4);
 
+  /* BMP180 had 22 bytes stored in index SDH_TEMP_PRES_CALIBRATION. BMP280 had
+   * 24 bytes spread accross the 22 available bytes in SDH_TEMP_PRES_CALIBRATION
+   * and a further 2 bytes in BMP280_XTRA_CALIB_BYTES. BMP390 uses 21 bytes */
+  memcpy(&sdHeadText[SDH_TEMP_PRES_CALIBRATION], get_bmp3_calib_data_bytes(),
+      BMP3_LEN_CALIB_DATA);
+
 //   memcpy(&sdHeadText[SDH_MPU9150_GYRO_CALIBRATION], &storedConfig.rawBytes[NV_MPU9150_GYRO_CALIBRATION], 21);
 //   memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION], &storedConfig.rawBytes[NV_LSM303DLHC_MAG_CALIBRATION], 21);
 //   memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION], &storedConfig.rawBytes[NV_LSM303DLHC_ACCEL_CALIBRATION], 21);
 //   memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION], &storedConfig.rawBytes[NV_A_ACCEL_CALIBRATION], 21);
+
+   ShimmerCalibSyncFromDumpRamAll();
+   memcpy(&sdHeadText[SDH_DAUGHTER_CARD_ID_BYTE0], &getDaughtCardIdPtr()->exp_brd_id, 3);
 }
 
 void setDefaultShimmerName(void)
@@ -367,3 +383,36 @@ void setDefaultTrialId(void)
 {
   memcpy(&storedConfig.expIdName[0], "DefaultTrial", 12);
 }
+
+void SetSdCfgFlag(uint8_t flag)
+{
+    if (flag)
+    {
+        if (!storedConfig.sdCfgFlag)
+        {
+          storedConfig.infoSdcfg |= 0x01;
+        }
+        else
+        {
+          storedConfig.infoSdcfg = 0x01;
+        }
+    }
+    else
+    {
+      storedConfig.infoSdcfg &= ~0x01;
+    }
+    InfoMem_update();
+}
+
+uint8_t GetRamCalibFlag(void)
+{
+    return calibRamFlag;
+}
+
+void SetRamCalibFlag(uint8_t flag)
+{
+// flag == 1: Ram>File, ShimmerCalib_ram2File()
+//         0: File>Ram, ShimmerCalib_file2Ram()
+    calibRamFlag = flag;
+}
+
