@@ -81,7 +81,7 @@ uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream
         dirResponse, nshimmerResponse, myIDResponse, lsm303dlhcAccelSamplingRateResponse, i2cvBattBtRsp,
         lsm303dlhcAccelHRModeResponse, mpu9250GyroRangeResponse, bmp180CalibCoeffBtRsp, mpu9250SamplingRateResponse,
         mpu9250AccelRangeResponse, bmp180OversamplingRatioResponse, internalExpPowerEnableResponse,
-        exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, blinkLedBtRsp, infomemBtRsp, dcIdBtRsp, dcMemBtRsp,
+        exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, blinkLedBtRsp, gsrRangeResponse, infomemBtRsp, dcIdBtRsp, dcMemBtRsp,
         mpu9250MagSensAdjValsResponse, lsm303dlhcAccelLPModeResponse, deviceVersionBtRsp, rwcResponse,
         calibRamResponse, btDataRateResponse, btVerResponse, bmp280CalibrationCoefficientsResponse, bmpGenericCalibrationCoefficientsResponse;//btIsConnected,
 uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
@@ -2444,6 +2444,7 @@ void resetBtResponseBools(void)
   configSetupBytesResponse = 0;
   fwVersionBtRsp = 0;
   blinkLedBtRsp = 0;
+  gsrRangeResponse = 0;
 }
 
 uint8_t getBtVerStrLen(void)
@@ -2988,10 +2989,11 @@ void BtUart_processCmd(void) {
      /*
      case GET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
      dAccelCalibrationResponse = 1;
-     break;
+     break; */
      case GET_GSR_RANGE_COMMAND:
-     gsrRangeResponse = 1;
+       gsrRangeResponse = 1;
      break;
+/*
      case GET_ALL_CALIBRATION_COMMAND:
      allCalibrationResponse = 1;
      break;
@@ -3020,13 +3022,14 @@ void BtUart_processCmd(void) {
          dcIdBtRsp = 1;
       break;
    case SET_DAUGHTER_CARD_ID_COMMAND:
-      btDcMemLength = args[0];
-      btDcMemOffset = args[1];
+      btDcMemLength = btArgs[0];
+      btDcMemOffset = btArgs[1];
       if((btDcMemLength<=16) && (btDcMemOffset<=15) && (btDcMemLength+btDcMemOffset<=16)) {
-    	  CAT24C16_init();
-          CAT24C16_write(btDcMemOffset, btDcMemLength, args+2);
-          CAT24C16_powerOff();
-          //eepromReadWrite(dcMemOffset, dcMemLength, args + 2U, EEPROM_WRITE);
+        //TODO come back to this
+//          CAT24C16_init();
+//          CAT24C16_write(btDcMemOffset, &btArgs[2], btDcMemLength);
+//          CAT24C16_powerOff();
+//          eepromReadWrite(dcMemOffset, dcMemLength, args + 2U, EEPROM_WRITE);
       }
       break;
    case GET_DAUGHTER_CARD_MEM_COMMAND:
@@ -3218,7 +3221,7 @@ void BtUart_sendRsp(void) {
          samplingRateBtRsp = 0;
       } else if(lsm303dlhcAccelRangeResponse) {
          *(bt_tx_data + packet_length++) = LSM303DLHC_ACCEL_RANGE_RESPONSE;
-         *(bt_tx_data + packet_length++) = storedConfig.wrAccelRange;
+         *(bt_tx_data + packet_length++) = storedConfig->wrAccelRange;
          lsm303dlhcAccelRangeResponse = 0;
 //      } else if(lsm303dlhcMagGainResponse) {
 //         *(bt_tx_data + packet_length++) = LSM303DLHC_MAG_GAIN_RESPONSE;
@@ -3226,7 +3229,7 @@ void BtUart_sendRsp(void) {
 //         lsm303dlhcMagGainResponse = 0;
       } else if(lsm303dlhcMagSamplingRateResponse) {
          *(bt_tx_data + packet_length++) = LSM303DLHC_MAG_SAMPLING_RATE_RESPONSE;
-         *(bt_tx_data + packet_length++) = storedConfig.magRate;
+         *(bt_tx_data + packet_length++) = storedConfig->magRate;
          lsm303dlhcMagSamplingRateResponse = 0;
       } else if (dockStatusBtRsp) {
          *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
@@ -3300,7 +3303,7 @@ void BtUart_sendRsp(void) {
 //         nshimmerResponse = 0;
       } else if(myIDResponse) {
           *(bt_tx_data + packet_length++) = MYID_RESPONSE;
-          *(bt_tx_data + packet_length++) = storedConfig.myTrialID; //is myId and MytrialId same ?
+          *(bt_tx_data + packet_length++) = storedConfig->myTrialID; //is myId and MytrialId same ?
           myIDResponse = 0;
 //      } else if(lsm303dlhcAccelSamplingRateResponse) {
 //          *(bt_tx_data + packet_length++) = LSM303DLHC_ACCEL_SAMPLING_RATE_RESPONSE;
@@ -3308,15 +3311,15 @@ void BtUart_sendRsp(void) {
 //          lsm303dlhcAccelSamplingRateResponse = 0;
       } else if(lsm303dlhcAccelLPModeResponse) {
          *(bt_tx_data + packet_length++) = LSM303DLHC_ACCEL_LPMODE_RESPONSE;
-         *(bt_tx_data + packet_length++) = storedConfig.wrAccelLPM;
+         *(bt_tx_data + packet_length++) = storedConfig->wrAccelLPM;
          lsm303dlhcAccelLPModeResponse = 0;
       } else if(lsm303dlhcAccelHRModeResponse) {
          *(bt_tx_data + packet_length++) = LSM303DLHC_ACCEL_HRMODE_RESPONSE;
-         *(bt_tx_data + packet_length++) = storedConfig.wrAccelLPM;
+         *(bt_tx_data + packet_length++) = storedConfig->wrAccelLPM;
          lsm303dlhcAccelHRModeResponse = 0;
       } else if(mpu9250GyroRangeResponse) {
-         *(bt_tx_data + packet_length++) = MPU9250_GYRO_RANGE_RESPONSE;
-         *(bt_tx_data + packet_length++) = storedConfig.gyroRange;
+         *(bt_tx_data + packet_length++) = MPU9150_GYRO_RANGE_RESPONSE;
+         *(bt_tx_data + packet_length++) = storedConfig->gyroRange;
          mpu9250GyroRangeResponse = 0;
       } else if (bmp180CalibCoeffBtRsp) {
          *(bt_tx_data + packet_length++) = BMP180_CALIBRATION_COEFFICIENTS_RESPONSE;
@@ -3360,7 +3363,7 @@ void BtUart_sendRsp(void) {
 //         bmp180OversamplingRatioResponse = 0;
       } else if(internalExpPowerEnableResponse) {
          *(bt_tx_data + packet_length++) = INTERNAL_EXP_POWER_ENABLE_RESPONSE;
-         *(bt_tx_data + packet_length++) = storedConfig.expPwr;
+         *(bt_tx_data + packet_length++) = storedConfig->expPwr;
          internalExpPowerEnableResponse = 0;
       } else if (configSetupBytesResponse) {
          *(bt_tx_data + packet_length++) = CONFIG_SETUP_BYTES_RESPONSE;
@@ -3398,7 +3401,7 @@ void BtUart_sendRsp(void) {
 //         dAccelCalibrationResponse = 0;
       } else if(gsrRangeResponse) {
          *(bt_tx_data + packet_length++) = GSR_RANGE_RESPONSE;
-         *(bt_tx_data + packet_length++) = storedConfig.gsrRange;
+         *(bt_tx_data + packet_length++) = storedConfig->gsrRange;
          gsrRangeResponse = 0;
 //      } else if(allCalibrationResponse) {
 //         *(bt_tx_data + packet_length++) = ALL_CALIBRATION_RESPONSE;
@@ -3432,7 +3435,7 @@ void BtUart_sendRsp(void) {
          blinkLedBtRsp = 0;
       } else if (bufferSizeResponse) {
          *(bt_tx_data + packet_length++) = BUFFER_SIZE_RESPONSE;
-         *(bt_tx_data + packet_length++) = storedConfig.bufferSize;
+         *(bt_tx_data + packet_length++) = storedConfig->bufferSize;
          bufferSizeResponse = 0;
 //      } else if (uniqueSerialResponse) {
 //         *(bt_tx_data + packet_length++) = UNIQUE_SERIAL_RESPONSE;
@@ -3444,9 +3447,9 @@ void BtUart_sendRsp(void) {
          *(bt_tx_data + packet_length++) = exgLength;
          if(exgLength) {
             if(exgChip)
-               memcpy((bt_tx_data+packet_length), storedConfig.chEnExg2_16Bit, exgLength);
+               memcpy((bt_tx_data+packet_length), storedConfig->chEnExg2_16Bit, exgLength);
             else
-               memcpy((bt_tx_data+packet_length), storedConfig.chEnExg1_16Bit, exgLength);
+               memcpy((bt_tx_data+packet_length), storedConfig->chEnExg1_16Bit, exgLength);
             packet_length += exgLength;
          }
          exgRegsResponse = 0;
@@ -3472,7 +3475,7 @@ void BtUart_sendRsp(void) {
          dcMemBtRsp = 0;
       } else if (btCommsBaudRateResponse) {
          *(bt_tx_data + packet_length++) = BT_COMMS_BAUD_RATE_RESPONSE;
-         *(bt_tx_data + packet_length++) = storedConfig.btCommsBaudRate;
+         *(bt_tx_data + packet_length++) = storedConfig->btCommsBaudRate;
          btCommsBaudRateResponse = 0;
       } else if (infomemBtRsp) {
          *(bt_tx_data + packet_length++) = INFOMEM_RESPONSE;
