@@ -3156,6 +3156,9 @@ void BtUart_sendRsp(void) {
    //STATTypeDef * stat = GetStatus();
    uint8_t bt_tx_data[RESPONSE_PACKET_SIZE];
    packet_length = 0;
+
+   gConfigBytes *storedConfig = S4Ram_getStoredConfig();
+
    if (stat.isBtConnected) {
      if (sendAck)
      {
@@ -3344,11 +3347,11 @@ void BtUart_sendRsp(void) {
          ShimmerCalib_ramRead(bt_tx_data+packet_length, btCalibRamLength, btCalibRamOffset);
          packet_length += btCalibRamLength;
          calibRamResponse = 0;
-//      } else if(aAccelCalibrationResponse) {
-//         *(bt_tx_data + packet_length++) = A_ACCEL_CALIBRATION_RESPONSE;
-//         memcpy((bt_tx_data+packet_length), &storedConfig[NV_A_ACCEL_CALIBRATION], 21);
-//         packet_length += 21;
-//         aAccelCalibrationResponse = 0;
+      } else if(aAccelCalibrationResponse) {
+         *(bt_tx_data + packet_length++) = A_ACCEL_CALIBRATION_RESPONSE;
+         memcpy((bt_tx_data+packet_length), &storedConfig->lnAccelCalib.rawBytes[0], 21);
+         packet_length += 21;
+         aAccelCalibrationResponse = 0;
 //      } else if(gyroCalibrationResponse) {
 //         *(bt_tx_data + packet_length++) = MPU9250_GYRO_CALIBRATION_RESPONSE;
 //         memcpy((bt_tx_data+packet_length), &storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21);
