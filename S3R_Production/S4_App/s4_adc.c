@@ -71,6 +71,8 @@ uint32_t adc_battVal, adcBufSens[12], adcBufResv[12];// max 12 channels, each of
 uint8_t gsrActiveResistor;
 uint8_t adcConfig;
 
+static uint8_t firstRtcAlarm = 1;
+
 uint32_t battInterval = BATT_INTERVAL_D;
 uint8_t battCriticalCount = 0;
 
@@ -619,11 +621,10 @@ void S4_NORM_ADC_bufPoll(){
    }  
 #else
    if (configBytes->chEnVBattery) {
-      stat.battVal[0] = sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-      stat.battVal[1] = sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+       sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+       sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
    }     
-#endif   
-   S4_ADC_rankBatt();
+#endif
    
    //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
    if (configBytes->chEnExtADC0) {
@@ -789,64 +790,83 @@ void S4_NORM_ADC_rankBatt(void) {
 }
   
 void S4_NORM_ADC_readBatt(void) {
+#if defined(SHIMMER4_SDK)
    uint8_t need_to_restore = 0;   
-   static uint8_t cnt = 0;
-   
-   if(!(++cnt%2)){
-      return;
+#endif
+   //TODO remove when Solution found
+   //first call from RTC interrupt is causing hard faults hence added this check to collect data only from second call
+   if(firstRtcAlarm)
+   {
+     firstRtcAlarm = 0;
+     return;
    }
-   
-   if(adcConfig != ADC_CONFIG_BATT){
+#if defined(SHIMMER4_SDK)
+     if(adcConfig != ADC_CONFIG_BATT){
+#endif
       ADC_ChannelConfTypeDef sConfig;
 #if defined(SHIMMER4_SDK)
       if(adcConfig == ADC_CONFIG_SENS && stat.isSensing){
          need_to_restore = 1;
       }
-#endif
       adcConfig = ADC_CONFIG_BATT;
-      
+#endif
+
       HAL_ADC_DeInit(hadcBattPtr);
-      //hadcSensPtr->Init = hadcBattPtr->Init;
-      hadcBattPtr->Init.ScanConvMode = DISABLE;
+      hadcBattPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+      hadcBattPtr->Init.Resolution = ADC_RESOLUTION_14B;
+      hadcBattPtr->Init.GainCompensation = 0;
+      hadcBattPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
+      hadcBattPtr->Init.ScanConvMode = ADC_SCAN_ENABLE;
       hadcBattPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+      hadcBattPtr->Init.LowPowerAutoWait = DISABLE;
+      hadcBattPtr->Init.ContinuousConvMode = DISABLE;
       hadcBattPtr->Init.NbrOfConversion = 1;
+      hadcBattPtr->Init.DiscontinuousConvMode = DISABLE;
+      hadcBattPtr->Init.ExternalTrigConv = ADC_SOFTWARE_START;
+      hadcBattPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+      hadcBattPtr->Init.DMAContinuousRequests = DISABLE;
+      hadcBattPtr->Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
+      hadcBattPtr->Init.Overrun = ADC_OVR_DATA_PRESERVED;
+      hadcBattPtr->Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
+      hadcBattPtr->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
+      hadcBattPtr->Init.OversamplingMode = DISABLE;
       HAL_ADC_Init(hadcBattPtr);
 #if defined(SHIMMER3R)
       // Copied from MX_ADC1_Init function
+      sConfig.Channel = ADC_CHANNEL_VBATT;
       sConfig.Rank = ADC_REGULAR_RANK_1;
-      sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES_5;
+      sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES;
       sConfig.SingleDiff = ADC_SINGLE_ENDED;
       sConfig.OffsetNumber = ADC_OFFSET_NONE;
       sConfig.Offset = 0;
 #elif defined(SHIMMER4_SDK)
       sConfig.SamplingTime = ADC_SAMPLETIME_112CYCLES;
 #endif
-      sConfig.Channel = ADC_CHANNEL_VBATT;
-      sConfig.Rank = 1;
       HAL_ADC_ConfigChannel(hadcBattPtr, &sConfig);
-   }   
+#if defined(SHIMMER4_SDK)
+   }
+#endif
 #if defined(SHIMMER3R)
    //TODO hadcSensPtr is configured above from Shimmer4 code but we're using hadcBattPtr below which I can't make sense of.
    //TODO A bit of cross-over here between the two ADCs (presumably to handle whether the device is streaming or not) but I think this can probably be cleaned up a lot.
    //TODO Shimmer4 implementation called DMA operation here and then delayed for a number of samples, I think calling HAL_ADC_Start may be better here but needs testing
-   HAL_ADC_Start(hadcBattPtr);
-   adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
+   //HAL_ADC_Start(hadcBattPtr);
+   //adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
+   HAL_ADC_Start_IT(hadcBattPtr);
 #elif defined(SHIMMER4_SDK)
    HAL_ADC_Start_DMA(hadcBattPtr, &adc_battVal, 1);
    for(uint16_t i = 0; i < 144; i++);
-#endif
    stat.battVal[0] = adc_battVal & 0xff;
    stat.battVal[1] = (adc_battVal>>8) & 0xff;
    stat.battVal[2] = 0;
    stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)<<7;
    stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)<<6;
-#if defined(SHIMMER4_SDK)
-   if(need_to_restore){
+   if(need_to_restore)
+   {
       S4_ADC_startSensing();
    }
 #endif
    //*(uint16_t*)(stat.battVal) = adc_battVal & 0xffff;
-   
    S4_ADC_rankBatt();
 }
 
@@ -865,6 +885,15 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     S4_NORM_ADC_bufPoll();
     ADC_gatherDataDone_cb();
     HAL_ADC_Stop_DMA(hadcSensPtr);
+  }
+  if (hadc->Instance == hadcBattPtr->Instance)
+  {
+    adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
+    stat.battVal[0] = adc_battVal & 0xff;
+    stat.battVal[1] = (adc_battVal>>8) & 0xff;
+    stat.battVal[2] = 0;
+    stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)<<7;
+    stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)<<6;
   }
 #elif defined(SHIMMER4_SDK)
    if (hadc->Instance == hadcResv.Instance) {//adc1
@@ -904,6 +933,26 @@ void adcGpioInit(uint32_t pin, GPIO_TypeDef* port)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
   }
 }
+
+void updateVbattOnRtcAlarmTrigger(void)
+{
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  if(stat.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
+  {
+    stat.battVal[0]= sensing.dataBuf[sensing.ptr.batteryAnalog + 0];
+    stat.battVal[1]= sensing.dataBuf[sensing.ptr.batteryAnalog + 1];
+    stat.battVal[2] = 0;
+    stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)<<7;
+    stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)<<6;
+    S4_ADC_rankBatt();
+  }
+  else
+  {
+    S4_ADC_readBatt();
+  }
+  enableRTCAlarm(&hrtc);
+}
+
 //void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 //{
 //   if (hadc->Instance == ADC1) {
