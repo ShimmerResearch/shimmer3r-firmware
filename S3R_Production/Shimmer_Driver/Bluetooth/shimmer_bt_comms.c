@@ -72,7 +72,7 @@ uint16_t numBytesInBtRxBufWhenLastProcessed = 0;
 uint16_t indexOfFirstEol;
 uint32_t firstProcessFailTicks = 0;
 
-uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream, enableSdlog,
+uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, //toggleLedRed, enableBtstream, enableSdlog,
         aAccelCalibrationResponse, gyroCalibrationResponse,
         magCalibrationResponse, dAccelCalibrationResponse,
         allCalibrationResponse,
@@ -83,7 +83,8 @@ uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream
         mpu9250AccelRangeResponse, bmp180OversamplingRatioResponse, internalExpPowerEnableResponse,
         exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, blinkLedBtRsp, infomemBtRsp, dcIdBtRsp, dcMemBtRsp,
         mpu9250MagSensAdjValsResponse, lsm303dlhcAccelLPModeResponse, deviceVersionBtRsp, rwcResponse,
-        calibRamResponse, btDataRateResponse, btVerResponse, bmp280CalibrationCoefficientsResponse, bmpGenericCalibrationCoefficientsResponse;//btIsConnected,
+        calibRamResponse, btDataRateResponse, btVerResponse, bmp280CalibrationCoefficientsResponse, bmpGenericCalibrationCoefficientsResponse,
+        useAckPrefixForInstreamResponses;//btIsConnected,
 uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
 uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
 
@@ -2386,7 +2387,6 @@ void resetBtResponseBools(void)
   i2cvBattBtRsp = 0;
   inquiryBtRsp = 0;
   samplingRateBtRsp = 0;
-  toggleLedRed = 0;
   lsm303dlhcAccelRangeResponse = 0;
   lsm303dlhcMagGainResponse = 0;
   lsm303dlhcMagSamplingRateResponse = 0;
@@ -2464,7 +2464,7 @@ void BtUart_processCmd(void) {
       samplingRateBtRsp = 1;
       break;
    case TOGGLE_LED_COMMAND:
-      toggleLedRed ^= 1;
+     stat.toggleLedRedCmd ^= 1;
       break;
    case START_STREAMING_COMMAND:
       stat.btstreamCmd = 1;
@@ -3138,7 +3138,7 @@ void BtUart_processCmd(void) {
    {
        SetSdCfgFlag(1);
    }
-   if (update_calib_dump_file && stat.isSdInserted && !stat.badFile)
+   if (update_calib_dump_file && CheckSdInslot() && !stat.badFile)
    {
        if (!stat.isDocked)
        {
@@ -3202,7 +3202,7 @@ void BtUart_sendRsp(void) {
       } else if (dockStatusBtRsp) {
          *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
          *(bt_tx_data + packet_length++) = STATUS_RESPONSE;
-         *(bt_tx_data + packet_length++) = ((toggleLedRed & 0x01) << 7)
+         *(bt_tx_data + packet_length++) = (stat.toggleLedRedCmd << 7)
           + ((stat.badFile & 0x01) << 6)
           + ((stat.isSdInserted & 0x01) << 5)
           + ((stat.isStreaming & 0x01) << 4)
@@ -3572,4 +3572,37 @@ uint8_t BT_getMacAddressHex(uint8_t *macHex) {
     return 1;
   }
 #endif
+}
+
+void BtsdSelfcmd(void)
+{
+    if (isBtConnected())
+    {
+        uint8_t i = 0;
+        uint8_t selfcmd[6]; /* max is 6 bytes */
+
+        if (useAckPrefixForInstreamResponses)
+        {
+            selfcmd[i++] = ACK_COMMAND_PROCESSED;
+        }
+        selfcmd[i++] = INSTREAM_CMD_RESPONSE;
+        selfcmd[i++] = STATUS_RESPONSE;
+        selfcmd[i++] = (stat.toggleLedRedCmd << 7)
+                | (stat.badFile << 6)
+                | (stat.isSdInserted << 5)
+                | (stat.isStreaming << 4)
+                | (stat.isLogging << 3)
+                | (isRwcTimeSet() << 2)
+                | (stat.isSensing << 1)
+                | stat.isDocked;
+
+        uint8_t crcMode = getBtCrcMode();
+        if (crcMode != CRC_OFF)
+        {
+            calculateCrcAndInsert(crcMode, &selfcmd[0], i);
+            i += crcMode;  // Ordinal of enum is how many bytes are used
+        }
+
+        BT_write(selfcmd, i);
+    }
 }

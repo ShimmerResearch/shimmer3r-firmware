@@ -79,7 +79,8 @@ typedef enum {
    TASK_STARTSENSING    = 0x1<<9,
    TASK_STOPSENSING     = 0x1<<10,
    TASK_STREAMDATA      = 0x1<<11,
-   TASK_RADIOTX         = 0x1<<12,
+//   TASK_RADIOTX         = 0x1<<12,
+   TASK_SDLOG_CFG_UPDATE = 0x1<<12,
    TASK_BATTREAD        = 0x1<<13,
    //TASK_HRCALC        = 0x1<<14,
    //TASK_TESTLEDS      = 0x1<<15,
@@ -105,6 +106,7 @@ uint8_t S4_NORM_Task_set(uint32_t task_id);
 uint32_t S4_NORM_Task_getList(void);
 
 uint8_t setTaskNewBtCmdToProcess(void);
+void SetStartSensing(void);
 
 #endif //S4_TASKLIST_H
 

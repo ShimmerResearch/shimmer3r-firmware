@@ -41,6 +41,8 @@
  */
  
 #include "s4_ram.h"
+
+#include "Bluetooth/sd_sync.h"
 #include "bmp3_defs.h"
 
 uint8_t sdHeadText[SD_HEAD_SIZE], btMacAscii[14], btMacHex[6];
@@ -270,6 +272,11 @@ void S4Ram_SetDefaultInfomem(void) {
    storedConfig.sdErrorEnable = 1;
    storedConfig.btInterval = 54;
 
+   storedConfig.experimentLengthMaxInMinutes = 0;
+
+   storedConfig.experimentLengthEstimatedInSec = 1;
+   setSyncEstExpLen((uint32_t) storedConfig.experimentLengthEstimatedInSec);
+
    InfoMem_update();
 }
 
@@ -384,24 +391,38 @@ void setDefaultTrialId(void)
   memcpy(&storedConfig.expIdName[0], "DefaultTrial", 12);
 }
 
+uint8_t GetSdCfgFlag(void)
+{
+  uint8_t sd_config_delay_flag = 0;
+  InfoMem_readRam(&sd_config_delay_flag, NV_SD_CONFIG_DELAY_FLAG, 1);
+  if (!(sd_config_delay_flag & 0x80))
+  {
+      if (sd_config_delay_flag & 0x01)
+          return 1;
+  }
+  return 0;
+}
+
 void SetSdCfgFlag(uint8_t flag)
 {
+  gConfigBytes temp_storedConfig;
+  InfoMem_readRam(temp_storedConfig.rawBytes, 0, STOREDCONFIG_SIZE);
     if (flag)
     {
-        if (!storedConfig.sdCfgFlag)
+        if (!temp_storedConfig.sdCfgFlag)
         {
-          storedConfig.infoSdcfg |= 0x01;
+          temp_storedConfig.infoSdcfg |= 0x01;
         }
         else
         {
-          storedConfig.infoSdcfg = 0x01;
+          temp_storedConfig.infoSdcfg = 0x01;
         }
     }
     else
     {
-      storedConfig.infoSdcfg &= ~0x01;
+      temp_storedConfig.infoSdcfg &= ~0x01;
     }
-    InfoMem_update();
+    InfoMem_updateFrom(temp_storedConfig.rawBytes);
 }
 
 uint8_t GetRamCalibFlag(void)

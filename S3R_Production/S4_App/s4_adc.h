@@ -81,7 +81,10 @@ void S4_NORM_ADC_rankBatt(void);
 #if defined(SHIMMER3R)
 bool areAdcChannelsEnabled(void);
 #endif
-   
+
+void setBatteryInterval(uint32_t value);
+void resetBatteryCriticalCount(void);
+
 #endif /* S4_ADC_H */
 
 

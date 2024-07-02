@@ -67,6 +67,8 @@ uint32_t adc_battVal, adcBufSens[12], adcBufResv[12];// max 12 channels, each of
 uint8_t gsrActiveResistor;
 uint8_t adcConfig;
 
+uint32_t battInterval = BATT_INTERVAL_D;
+uint8_t battCriticalCount = 0;
 
 void S4_NORM_ADC_init(void){   
    
@@ -780,6 +782,16 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 //   }
 //}
 
+
+void setBatteryInterval(uint32_t value)
+{
+  battInterval = value;
+}
+
+void resetBatteryCriticalCount(void)
+{
+  battCriticalCount = 0;
+}
 
 /* USER CODE END 1 */
 

@@ -49,6 +49,9 @@
 #include "s4.h"
 #include "s4__cfg.h"
 
+// LogAndStream Shimmer3 function names
+#define IniReadInfoMem S4Ram_init
+
 #define STOREDCONFIG_SIZE 512
 
 // Infomem contents
@@ -59,6 +62,7 @@
 #define NV_NUM_SD_BYTES                   37
 #define NV_TOTAL_NUM_CONFIG_BYTES         384//NV_NUM_SETTINGS_BYTES + NV_NUM_CALIBRATION_BYTES + NV_NUM_SD_BYTES
 #define NV_NUM_RWMEM_BYTES                512
+#define NV_NUM_BYTES_SYNC_CENTER_NODE_ADDRS 126
 
 #define NV_SAMPLING_RATE                  0
 #define NV_BUFFER_SIZE                    2
@@ -169,8 +173,8 @@ typedef union
     uint8_t chEnExtADC6 :1;
     uint8_t chEnExtADC7 :1;
 #else
-    uint8_t chEnExtADC1 :1;   // S3R = ADC11, S4_SDK = ADC8
-    uint8_t chEnExtADC0 :1;   // S3R = ADC9, S4_SDK = ADC9
+    uint8_t chEnExtADC1 :1;   // S3 = ADC6, S3R = ADC11, S4_SDK = ADC8
+    uint8_t chEnExtADC0 :1;   // S3 = ADC7, S3R = ADC9, S4_SDK = ADC9
 #endif
     uint8_t chEnGsr :1;
     uint8_t chEnExg2_24Bit :1;
@@ -186,10 +190,10 @@ typedef union
     uint8_t chEnIntADC1 :1;
     uint8_t chEnExtADC15 :1;
 #else
-    uint8_t chEnIntADC1 :1;  // S3R = ADC15, S4_SDK = ADC11
-    uint8_t chEnIntADC0 :1;  // S3R = ADC10, S4_SDK = ADC10
-    uint8_t chEnIntADC3 :1;  // S3R = ADC17, S4_SDK = ADC2
-    uint8_t chEnExtADC2 :1;  // S3R = ADC12, S4_SDK = ADC1
+    uint8_t chEnIntADC1 :1;  // S3 = ADC13, S3R = ADC15, S4_SDK = ADC11
+    uint8_t chEnIntADC0 :1;  // S3 = ADC12, S3R = ADC10, S4_SDK = ADC10
+    uint8_t chEnIntADC3 :1;  // S3 = ADC1, S3R = ADC17, S4_SDK = ADC2
+    uint8_t chEnExtADC2 :1;  // S3 = ADC15, S3R = ADC12, S4_SDK = ADC1
 #endif
     uint8_t chEnWrAccel :1; // S3/S4_SDK = LSM303DLHC/LSM303AH, S3R = LIS2DW12 Accel
     uint8_t chEnVBattery :1;
@@ -218,7 +222,7 @@ typedef union
 #if defined(SHIMMER3)
     uint8_t chEnIntADC14 :1;
 #else
-    uint8_t chEnIntADC2 :1;  // S3R = ADC16, S4_SDK = ADC0
+    uint8_t chEnIntADC2 :1;  // S3 = ADC14, S3R = ADC16, S4_SDK = ADC0
 #endif
 
     //Config setup Byte0
@@ -236,7 +240,7 @@ typedef union
     uint8_t magRange :3;
 
     //Config setup Byte3
-    uint8_t expPwr :1;
+    uint8_t expansionBoardPower :1;
     uint8_t gsrRange :3;
     uint8_t pressurePrecision :2;
     uint8_t altAccelRange :2; // S3/S4_SDK MPU9x50/ICM20948 Accel, S3R = LSM6DSV Accel
@@ -389,8 +393,8 @@ typedef union
     uint8_t singleTouchStart :1;
 
     uint8_t btInterval;
-    uint16_t estExpLen;
-    uint16_t maxExPLen;
+    uint16_t experimentLengthEstimatedInSec;  // Used for SD Sync (min = 1)
+    uint16_t experimentLengthMaxInMinutes;    // Used for auto-stop (0ff = 0)
     uint8_t macAddr[6];
 
     //SDConfigDelayFlag;
@@ -483,6 +487,7 @@ void S4Ram_config2SdHead(void);
 
 void setDefaultShimmerName(void);
 void setDefaultTrialId(void);
+uint8_t GetSdCfgFlag(void);
 void SetSdCfgFlag(uint8_t flag);
 uint8_t GetRamCalibFlag(void);
 void SetRamCalibFlag(uint8_t flag);

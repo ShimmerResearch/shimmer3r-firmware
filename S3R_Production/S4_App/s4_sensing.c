@@ -250,6 +250,12 @@ void S4Sens_stopSensing(void) {
    
    //stat.sdlogCmd = 0;
    stat.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
+
+   if (isSdInfoSyncDelayed())
+   {
+       SdInfoSync();
+   }
+
    stat.isConfiguring = 0;
 }
 

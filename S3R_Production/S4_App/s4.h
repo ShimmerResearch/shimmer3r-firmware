@@ -455,6 +455,8 @@
 #define BATT_LOW        0x01
 #define BATT_MID        0x02
 #define BATT_HIGH       0x04
+#define BATT_INTERVAL   600  // 600 seconds = 10min interval
+#define BATT_INTERVAL_D 30 // 30 seconds
 
 //LSM303DLHC Accel Range
 //Corresponds to the FS field of the LSM303DLHC's CTRL_REG4_A register
@@ -563,6 +565,8 @@ typedef volatile struct STATTypeDef_t{//STATUS
    uint32_t     battStatLed;
    uint8_t     battVal[3];
    uint8_t     battDigital[10];
+   uint8_t     sdlogReady;
+   uint8_t     enableSdlog;
    uint8_t     badFile;
 //   uint8_t     sdlogEn;
 //   uint8_t     btstreamEn;
