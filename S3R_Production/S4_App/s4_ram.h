@@ -134,6 +134,29 @@
 
 typedef union
 {
+  uint8_t rawBytes[21];
+  struct __attribute__((packed))
+  {
+    int16_t calibOffset_B0;
+    int16_t calibOffset_B1;
+    int16_t calibOffset_B2;
+    int16_t calibSensitivity_K0;
+    int16_t calibSensitivity_K1;
+    int16_t calibSensitivity_K2;
+    int8_t calibAlignment_R00;
+    int8_t calibAlignment_R01;
+    int8_t calibAlignment_R02;
+    int8_t calibAlignment_R10;
+    int8_t calibAlignment_R11;
+    int8_t calibAlignment_R12;
+    int8_t calibAlignment_R20;
+    int8_t calibAlignment_R21;
+    int8_t calibAlignment_R22;
+  };
+} gImuConfig;
+
+typedef union
+{
   uint8_t rawBytes[STOREDCONFIG_SIZE];
   struct __attribute__((packed))
   {
@@ -270,69 +293,10 @@ typedef union
     uint8_t chEnSixDofLnQuat :1;
     uint8_t chEnSixDofLnEuler :1;
 
-    int16_t accelCalibOffset_B0;
-    int16_t accelCalibOffset_B1;
-    int16_t accelCalibOffset_B2;
-    int16_t accelCalibSensitivity_K0;
-    int16_t accelCalibSensitivity_K1;
-    int16_t accelCalibSensitivity_K2;
-    int8_t accelCalibAlignment_R00;
-    int8_t accelCalibAlignment_R01;
-    int8_t accelCalibAlignment_R02;
-    int8_t accelCalibAlignment_R10;
-    int8_t accelCalibAlignment_R11;
-    int8_t accelCalibAlignment_R12;
-    int8_t accelCalibAlignment_R20;
-    int8_t accelCalibAlignment_R21;
-    int8_t accelCalibAlignment_R22;
-
-    int16_t gyroCalibOffset_B0;
-    int16_t gyroCalibOffset_B1;
-    int16_t gyroCalibOffset_B2;
-    int16_t gyroCalibSensitivity_K0;
-    int16_t gyroCalibSensitivity_K1;
-    int16_t gyroCalibSensitivity_K2;
-    int8_t gyroCalibAlignment_R00;
-    int8_t gyroCalibAlignment_R01;
-    int8_t gyroCalibAlignment_R02;
-    int8_t gyroCalibAlignment_R10;
-    int8_t gyroCalibAlignment_R11;
-    int8_t gyroCalibAlignment_R12;
-    int8_t gyroCalibAlignment_R20;
-    int8_t gyroCalibAlignment_R21;
-    int8_t gyroCalibAlignment_R22;
-
-    int16_t magCalibOffset_B0;
-    int16_t magCalibOffset_B1;
-    int16_t magCalibOffset_B2;
-    int16_t magCalibSensitivtiy_K0;
-    int16_t magCalibSensitivity_K1;
-    int16_t magCalibSensitivity_K2;
-    int8_t magCalibAlignment_R00;
-    int8_t magCalibAlignment_R01;
-    int8_t magCalibAlignment_R02;
-    int8_t magCalibAlignment_R10;
-    int8_t magCalibAlignment_R11;
-    int8_t magCalibAlignment_R12;
-    int8_t magCalibAlignment_R20;
-    int8_t magCalibAlignment_R21;
-    int8_t magCalibAlignment_R22;
-
-    int16_t wrAccelCalibOffset_B0;
-    int16_t wrAccelCalibOffset_B1;
-    int16_t wrAccelCalibOffset_B2;
-    int16_t wrAccelCalibSensitivity_K0;
-    int16_t wrAccelCalibSensitivity_K1;
-    int16_t wrAccelCalibSensitivity_K2;
-    int8_t wrAccelCalibAlignment_R00;
-    int8_t wrAccelCalibAlignment_R01;
-    int8_t wrAccelCalibAlignment_R02;
-    int8_t wrAccelCalibAlignment_R10;
-    int8_t wrAccelCalibAlignment_R11;
-    int8_t wrAccelCalibAlignment_R12;
-    int8_t wrAccelCalibAlignment_R20;
-    int8_t wrAccelCalibAlignment_R21;
-    int8_t wrAccelCalibAlignment_R22;
+    gImuConfig lnAccelCalib;
+    gImuConfig gyroCalib;
+    gImuConfig magCalib;
+    gImuConfig wrAccelCalib;
 
     //cfg in SDlog line InfoMem 118-122
     //nVDerivedChannels3
@@ -519,5 +483,8 @@ void S4Ram_config2SdHead(void);
 
 void setDefaultShimmerName(void);
 void setDefaultTrialId(void);
+void SetSdCfgFlag(uint8_t flag);
+uint8_t GetRamCalibFlag(void);
+void SetRamCalibFlag(uint8_t flag);
 
 #endif //S4Ram_H
