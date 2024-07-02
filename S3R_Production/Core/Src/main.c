@@ -184,7 +184,6 @@ void Init() {
 //      //Power_SleepUntilInterrupt();
 //   }
    //Power_StopUntilInterrupt();
-   setupNextRtcMinuteAlarm(); /*Enable RTC Alarm is necessary as in most cases it is not enabled from init due to failing backup read condition*/
 }
 
 /* USER CODE END 0 */
@@ -592,7 +591,7 @@ void SetupDock(void)
     stat.isConfiguring = 1;
     if (stat.isDocked)
     {
-        setBatteryInterval(BATT_INTERVAL_D);
+        setBatteryInterval(BATT_INTERVAL_DOCKED);
         resetBattCriticalCount();
         stat.enableSdlog = 0;
         stat.sdlogReady = 0;
@@ -608,7 +607,7 @@ void SetupDock(void)
     }
     else
     {
-      setBatteryInterval(BATT_INTERVAL);
+        setBatteryInterval(BATT_INTERVAL_UNDOCKED);
         if (!stat.isSensing)
         {
             UART_deactivate();

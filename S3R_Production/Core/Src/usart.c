@@ -2117,9 +2117,12 @@ uint8_t DockUart_interruptCheck(void) {
 void DockUart_setup(void) {
    if (stat.isDocked) {
       Board_sd2Pc();
+      setBatteryInterval(BATT_INTERVAL_DOCKED);
    } else {
       Board_sd2Arm();
+      setBatteryInterval(BATT_INTERVAL_UNDOCKED);
    }
+   setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
 }
 
 //HAL_StatusTypeDef BtUart_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)

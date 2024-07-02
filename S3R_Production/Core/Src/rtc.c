@@ -700,11 +700,23 @@ void setupNextRtcMinuteAlarm(void)
   HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
   sAlarm.AlarmTime.Hours = 0x0;
-  sAlarm.AlarmTime.Minutes = sTime.Minutes > 58 ? 0 : sTime.Minutes + 1U;
+  sAlarm.AlarmTime.Minutes = 0x0;
   sAlarm.AlarmTime.Seconds = 0x0;
   sAlarm.AlarmTime.SubSeconds = 0x0;
-  sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY|RTC_ALARMMASK_HOURS
-                              |RTC_ALARMMASK_SECONDS;
+  /* If docked alarm fires every 30s and if un-docked fires every 10 minutes*/
+  battAlarmInterval_t battAlarm = getBatteryInterval();
+  if(battAlarm == BATT_INTERVAL_DOCKED) //docked
+  {
+    sAlarm.AlarmTime.Seconds = sTime.Seconds > 29 ? 0 : sTime.Seconds + BATT_INTERVAL_DOCKED;
+    sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS
+        | RTC_ALARMMASK_MINUTES;
+  }
+  else //un-docked
+  {
+    sAlarm.AlarmTime.Minutes = sTime.Minutes > 49 ? 0 : sTime.Minutes + BATT_INTERVAL_UNDOCKED;
+    sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS
+        | RTC_ALARMMASK_SECONDS;
+  }
   sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.AlarmDateWeekDay = 0x1;
