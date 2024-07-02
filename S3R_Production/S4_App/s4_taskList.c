@@ -104,7 +104,7 @@ void S4_NORM_Task_manage(void){
       case TASK_SDWRITE:         SD_writeToCard();       break;
       case TASK_BATTREAD:
 #if defined(SHIMMER3R)
-        updateVbattOnRtcAlarmTrigger();
+        manageReadBatt();
 #elif defined(SHIMMER4_SDK)
          S4_ADC_readBatt();
          I2C_readBatt();
