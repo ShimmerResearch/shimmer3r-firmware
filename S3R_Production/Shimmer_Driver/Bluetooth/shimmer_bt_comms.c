@@ -83,7 +83,7 @@ uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream
         mpu9250AccelRangeResponse, bmp180OversamplingRatioResponse, internalExpPowerEnableResponse,
         exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, blinkLedBtRsp, gsrRangeResponse, infomemBtRsp, dcIdBtRsp, dcMemBtRsp,
         mpu9250MagSensAdjValsResponse, lsm303dlhcAccelLPModeResponse, deviceVersionBtRsp, rwcResponse,
-        calibRamResponse, btDataRateResponse, btVerResponse, bmp280CalibrationCoefficientsResponse, bmpGenericCalibrationCoefficientsResponse;//btIsConnected,
+        calibRamResponse, btDataRateResponse, btVerResponse, btCommsBaudRateResponse, bmp280CalibrationCoefficientsResponse, bmpGenericCalibrationCoefficientsResponse;//btIsConnected,
 uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
 uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
 
@@ -331,7 +331,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #endif
             if (btWaitingForArgs)
             {
-                if ((!btWaitingForArgsLength)&& (waitingForArgs == 3)
+                if ((!btWaitingForArgsLength)&& (btWaitingForArgs == 3)
 #if defined(SHIMMER3)
                         && (*(gActionPtr) == SET_INFOMEM_COMMAND
                                 || *(gActionPtr) == SET_CALIB_DUMP_COMMAND
@@ -401,8 +401,8 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     return 0;
                 }
 
-                 else if ((!waitingForArgsLength) && (waitingForArgs == 1)
-                		 && (*(gActionPtr) == SET_CENTER_COMMAND
+//                 else if ((!btWaitingForArgsLength) && (btWaitingForArgs == 1)
+//                		 && (*(gActionPtr) == SET_CENTER_COMMAND
                 // else if ((!btWaitingForArgsLength) && (
                 //                ((*(gActionPtr) == SET_DAUGHTER_CARD_ID_COMMAND) && (btWaitingForArgs == 1)) ||
 #if defined(SHIMMER3)
@@ -2445,6 +2445,7 @@ void resetBtResponseBools(void)
   fwVersionBtRsp = 0;
   blinkLedBtRsp = 0;
   gsrRangeResponse = 0;
+  btCommsBaudRateResponse = 0;
 }
 
 uint8_t getBtVerStrLen(void)
@@ -3045,7 +3046,7 @@ void BtUart_processCmd(void) {
          CAT24C16_write(btDcMemOffset + 16, &btArgs[3], btDcMemLength);
       }
       break;
-   /*   case GET_BT_COMMS_BAUD_RATE:
+      case GET_BT_COMMS_BAUD_RATE:
     btCommsBaudRateResponse = 1;
     break;
     case SET_BT_COMMS_BAUD_RATE:
@@ -3057,16 +3058,16 @@ void BtUart_processCmd(void) {
       }
     }
     break;
-    case GET_DERIVED_CHANNEL_BYTES:
-    derivedChannelResponse = 1;
-    break;
-    case SET_DERIVED_CHANNEL_BYTES:
-    memcpy(&storedConfig[NV_DERIVED_CHANNELS_0], &args[0], 3);
-    InfoMem_write((void*)NV_DERIVED_CHANNELS_0, &storedConfig[NV_DERIVED_CHANNELS_0], 3);
-    memcpy(&sdHeadText[SDH_DERIVED_CHANNELS_0], &storedConfig[NV_DERIVED_CHANNELS_0], 3);
-    update_sdconfig = 1;
-    break;
-   */
+//    case GET_DERIVED_CHANNEL_BYTES:
+//    derivedChannelResponse = 1;
+//    break;
+//    case SET_DERIVED_CHANNEL_BYTES:
+//    memcpy(&storedConfig[NV_DERIVED_CHANNELS_0], &args[0], 3);
+//    InfoMem_write((void*)NV_DERIVED_CHANNELS_0, &storedConfig[NV_DERIVED_CHANNELS_0], 3);
+//    memcpy(&sdHeadText[SDH_DERIVED_CHANNELS_0], &storedConfig[NV_DERIVED_CHANNELS_0], 3);
+//    update_sdconfig = 1;
+//    break;
+
    case GET_INFOMEM_COMMAND:
       btInfomemLength = btArgs[0];
       btInfomemOffset = btArgs[1] + (btArgs[2] << 8);
