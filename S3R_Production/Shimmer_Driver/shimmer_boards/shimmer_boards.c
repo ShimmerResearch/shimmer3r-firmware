@@ -76,6 +76,11 @@ void parseDaughterCardId(uint8_t srId)
     }
 }
 
+shimmer_expansion_brd* getDaughtCardId(void)
+{
+    return &daughterCardIdPage.expansion_brd;
+}
+
 char* getDaughtCardIdStrPtr(void)
 {
     return &daughtCardIdStr[0];
