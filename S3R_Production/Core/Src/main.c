@@ -367,20 +367,30 @@ uint32_t FullTest(void)
   HAL_RTC_GetTime(&hrtc, &sTime, format);
   /* Get date */
   HAL_RTC_GetDate(&hrtc, &sDate, format);
-  SHIMMER_PRINTF("Date (yyyy-mm-dd): %.2u-%.2u-%.2u\r\n", sDate.Year, sDate.Month, sDate.Date);
+  SHIMMER_PRINTF("Date (yyyy-mm-dd): %.4u-%.2u-%.2u\r\n", (2000 + sDate.Year), sDate.Month, sDate.Date);
   SHIMMER_PRINTF("Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
 
 //  led_test();
 
-  stat.testResult += I2C_test();
+  SHIMMER_PRINTF("SD Card Detection: %s\r\n", stat.isSdInserted ? "PASS" : "FAIL");
+  if (stat.isSdInserted)
+  {
+    printSdCardInfo();
 
-  stat.testResult += SD_test() << 6;
-  //  SD_test_alternative();
-  SHIMMER_PRINTF("SD Card test: %s\r\n", stat.badFile ? "FAIL" : "PASS");
+    stat.testResult += SD_test() << 6;
+    //  SD_test_alternative();
+    SHIMMER_PRINTF("SD Card test: %s\r\n", stat.badFile ? "FAIL" : "PASS");
+  }
 
+  if(stat.isBtPoweredOn)
+  {
+    SHIMMER_PRINTF("BT Module: %.*s\r\n", getBtVerStrLen(), getBtVerStrPtr());
+  }
   stat.testResult += (!stat.isBtPoweredOn) << 7;
 
   stat.testResult += InfoMem_test() << 8;
+
+  stat.testResult += I2C_test();
 
   stat.testResult += SPI_test() << 16;
 
