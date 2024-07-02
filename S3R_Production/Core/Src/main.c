@@ -173,6 +173,10 @@ void Init() {
 #if defined(SHIMMER4_SDK)
    S4_RTC_WakeUpSetSlow();
 #endif
+
+   /* Take initial measurment to update LED state */
+   S4_NORM_ADC_readBatt();
+
    Board_ledOff(LED_ALL);
 //   while(1){
 //      //__NOP();
@@ -180,7 +184,7 @@ void Init() {
 //      //Power_SleepUntilInterrupt();
 //   }
    //Power_StopUntilInterrupt();
-   enableRTCAlarm(&hrtc); /*Enable RTC Alarm is necessary as in most cases it is not enabled from init due to failing backup read condition*/
+   setupNextRtcMinuteAlarm(); /*Enable RTC Alarm is necessary as in most cases it is not enabled from init due to failing backup read condition*/
 }
 
 /* USER CODE END 0 */

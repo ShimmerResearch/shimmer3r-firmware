@@ -675,8 +675,11 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 }
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  /* FROM : https://community.st.com/t5/stm32-mcus-products/rtc-alarm-eventcallback-called-only-1-time/td-p/594938*/
-  __HAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF);
+  /* Disable alarm and interrupt - this is stopping the alarm from triggering
+   * multiple times while debugging */
+  __HAL_RTC_ALARMA_DISABLE(hrtc);
+  __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
+
   S4_Task_set(TASK_BATTREAD);
 #if defined(SHIMMER4_SDK)
 #if RTC_FAST
@@ -685,22 +688,29 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 #endif
 }
 
-void enableRTCAlarm(RTC_HandleTypeDef *hrtc)
+void setupNextRtcMinuteAlarm(void)
 {
-  RTC_AlarmTypeDef alarm;
+  RTC_AlarmTypeDef sAlarm;
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
-  HAL_RTC_GetAlarm(hrtc, &alarm, RTC_ALARM_A, RTC_FORMAT_BIN); //to update the previous alarm.
+  HAL_RTC_GetAlarm(&hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN); //to update the previous alarm.
  /* Get time added since it was randomly missing interrupt when using HAL_RTC_GetAlarm().*/
-  HAL_RTC_GetTime(hrtc, &sTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   /* From GetTime() notes : You must call HAL_RTC_GetDate() after HAL_RTC_GetTime() to unlock the values....*/
-  HAL_RTC_GetDate(hrtc, &sDate, RTC_FORMAT_BIN);
-  alarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-  alarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  alarm.Alarm = RTC_ALARM_A;
-  alarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS | RTC_ALARMMASK_SECONDS;
-  alarm.AlarmTime.Minutes = sTime.Minutes  > 58 ? 0 : sTime.Minutes  + 1U;
-  while (HAL_RTC_SetAlarm_IT(hrtc, &alarm, RTC_FORMAT_BIN) != HAL_OK){}
+  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+  sAlarm.AlarmTime.Hours = 0x0;
+  sAlarm.AlarmTime.Minutes = sTime.Minutes > 58 ? 0 : sTime.Minutes + 1U;
+  sAlarm.AlarmTime.Seconds = 0x0;
+  sAlarm.AlarmTime.SubSeconds = 0x0;
+  sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY|RTC_ALARMMASK_HOURS
+                              |RTC_ALARMMASK_SECONDS;
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.AlarmDateWeekDay = 0x1;
+  sAlarm.Alarm = RTC_ALARM_A;
+
+  while (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK){}
 }
 
 /* USER CODE END 1 */
