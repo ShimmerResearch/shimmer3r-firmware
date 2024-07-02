@@ -42,7 +42,6 @@
 #include <stdlib.h>
 #include "s4.h"
 #include "s4__cfg.h"
-
 #define TIM_MEASURE_START time_start = SysTick->VAL
 #define TIM_MEASURE_END time_end = SysTick->VAL;            \
   time_diff = time_start - time_end
@@ -79,7 +78,6 @@ static void SystemPower_Config(void);
 
 void Init(void);
 uint32_t FullTest(void);
-
 //TODO move out of here
 #if defined(SHIMMER3R)
 void btInitialise(void);
@@ -248,10 +246,12 @@ int main(void)
   MX_USB_DEVICE_Init();
 #endif
 
+  linkedListConfig(&hadc1); //configure linkedlist for ADC
+
   Init();
 //  S4_NORM_Task_set(TASK_STARTSENSING);
 
-  FullTest();
+  //FullTest();
 
   /* USER CODE END 2 */
 
@@ -263,9 +263,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     S4_Task_manage();
-
-    //TODO remove the following debug code
-//    SHIMMER_PRINTF("Hello World \n");
   }
   /* USER CODE END 3 */
 }

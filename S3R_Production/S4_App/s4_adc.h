@@ -7,6 +7,7 @@
 
 #include "s4.h"
 #include "s4__cfg.h"
+#include "linked_list.h"
 
 typedef struct {//adc - Sensors
    uint8_t rxBuf[130];
@@ -77,6 +78,7 @@ void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void));
 void S4_NORM_ADC_gatherDataStart(void); 
 void S4_NORM_ADC_readBatt(void);
 void S4_NORM_ADC_rankBatt(void);
+void adcGpioInit(uint32_t pin, GPIO_TypeDef* port);
 
 #if defined(SHIMMER3R)
 bool areAdcChannelsEnabled(void);
