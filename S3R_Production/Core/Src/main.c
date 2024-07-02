@@ -174,6 +174,7 @@ void Init() {
 //      //Power_SleepUntilInterrupt();
 //   }
    //Power_StopUntilInterrupt();
+   enableRTCAlarm(&hrtc); /*Enable RTC Alarm is necessary as in most cases it is not enabled from init due to failing backup read condition*/
 }
 
 /* USER CODE END 0 */

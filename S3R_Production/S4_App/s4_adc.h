@@ -79,6 +79,7 @@ void S4_NORM_ADC_gatherDataStart(void);
 void S4_NORM_ADC_readBatt(void);
 void S4_NORM_ADC_rankBatt(void);
 void adcGpioInit(uint32_t pin, GPIO_TypeDef* port);
+void updateVbattOnRtcAlarmTrigger(void);
 
 #if defined(SHIMMER3R)
 bool areAdcChannelsEnabled(void);
