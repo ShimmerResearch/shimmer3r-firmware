@@ -50,6 +50,11 @@ void GPIO_userButtonCheck(void);
 void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising);
 #endif
 
+void SdPowerOn(void);
+void SdPowerOff(void);
+uint8_t isSdPowerOn(void);
+void setMcuHasSdcardControl(uint8_t state);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

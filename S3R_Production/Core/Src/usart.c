@@ -1807,6 +1807,7 @@ void DockUart_processCmd() {
                      InfoMem_update();
                      //sdHeadText[SDH_TRIAL_CONFIG0] = storedConfig[NV_SD_TRIAL_CONFIG0];
                      uartSendRspAck = 1;
+                     setupNextRtcMinuteAlarm(); //configure Alarm after time set from dock
                   }
                   else
                      uartSendRspBadArg = 1;
@@ -1847,7 +1848,16 @@ void DockUart_processCmd() {
                   uartDcMemLength = dockRxBuf[UART_RXBUF_DATA];
                   uartDcMemOffset = (uint16_t)dockRxBuf[UART_RXBUF_DATA + 1];
                   if ((uartDcMemLength <= 16) && (uartDcMemOffset <= 15) && ((uint16_t)uartDcMemLength + uartDcMemOffset <= 16)) {
-                     CAT24C16_write(uartDcMemOffset, dockRxBuf + UART_RXBUF_DATA + 2, uartDcMemLength);
+
+                    // Write (up to) 16 bytes to eeprom
+                    eepromWrite(uartDcMemOffset,
+                                    (uint16_t) uartDcMemLength,
+                                    dockRxBuf + UART_RXBUF_DATA + 2U);
+                    // Copy new bytes to active daughter card byte array
+                    memcpy(getDaughtCardId() + ((uint8_t) uartDcMemOffset),
+                           dockRxBuf + UART_RXBUF_DATA + 2,
+                           uartDcMemLength);
+
                      uartSendRspAck = 1;
                   }
                   else
@@ -1857,7 +1867,11 @@ void DockUart_processCmd() {
                   uartDcMemLength = dockRxBuf[UART_RXBUF_DATA];
                   uartDcMemOffset = (uint16_t)dockRxBuf[UART_RXBUF_DATA + 1] + (((uint16_t)dockRxBuf[UART_RXBUF_DATA + 2]) << 8);
                   if ((uartDcMemLength <= 128) && (uartDcMemOffset <= 2031) && ((uint16_t)uartDcMemLength + uartDcMemOffset <= 2032)) {
-                     CAT24C16_write(uartDcMemOffset + 16, dockRxBuf + UART_RXBUF_DATA + 3, uartDcMemLength);
+
+                     eepromWrite(uartDcMemOffset + 16U,
+                                     (uint16_t) uartDcMemLength,
+                                     dockRxBuf + UART_RXBUF_DATA + 3U);
+
                      uartSendRspAck = 1;
                   }
                   else

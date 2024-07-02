@@ -49,11 +49,10 @@ RingFifoRx_t *gBtRxFifoPtr;
 /* isRn4678CmdDetectedOnBoot is a workaround to know if it's RN42 or RN4678 before version is parsed */
 uint8_t isRn4678CmdDetectedOnBoot = 0;
 #endif
+volatile COMMS_CRC_MODE btCrcMode;
 
-#if defined(SHIMMER3)
 uint8_t *gActionPtr;
 uint8_t *gArgsPtr;
-#endif
 
 #if defined(SHIMMER3)
 volatile char btVerStrResponse[BT_VER_RESPONSE_LARGEST+1U]; /* +1 to always have a null char */
@@ -72,7 +71,7 @@ uint16_t numBytesInBtRxBufWhenLastProcessed = 0;
 uint16_t indexOfFirstEol;
 uint32_t firstProcessFailTicks = 0;
 
-uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream, enableSdlog,
+uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, //toggleLedRed, enableBtstream, enableSdlog,
         aAccelCalibrationResponse, gyroCalibrationResponse,
         magCalibrationResponse, dAccelCalibrationResponse,
         allCalibrationResponse,
@@ -81,15 +80,17 @@ uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream
         dirResponse, nshimmerResponse, myIDResponse, lsm303dlhcAccelSamplingRateResponse, i2cvBattBtRsp,
         lsm303dlhcAccelHRModeResponse, mpu9250GyroRangeResponse, bmp180CalibCoeffBtRsp, mpu9250SamplingRateResponse,
         mpu9250AccelRangeResponse, bmp180OversamplingRatioResponse, internalExpPowerEnableResponse,
-        exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, blinkLedBtRsp, gsrRangeResponse, infomemBtRsp, dcIdBtRsp, dcMemBtRsp,
+        exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, bufferSizeResponse, blinkLedBtRsp, gsrRangeResponse, infomemBtRsp, dcIdBtRsp, dcMemBtRsp,
         mpu9250MagSensAdjValsResponse, lsm303dlhcAccelLPModeResponse, deviceVersionBtRsp, rwcResponse,
-        calibRamResponse, btDataRateResponse, btVerResponse, btCommsBaudRateResponse, bmp280CalibrationCoefficientsResponse, bmpGenericCalibrationCoefficientsResponse;//btIsConnected,
+        calibRamResponse, btDataRateResponse, btVerResponse, btCommsBaudRateResponse, bmp280CalibrationCoefficientsResponse, bmpGenericCalibrationCoefficientsResponse,
+        useAckPrefixForInstreamResponses;//btIsConnected,
 uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
 uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
 
-uint16_t btRxWaitByteCount = 0;
+//ExG
+uint8_t exgLength, exgChip, exgStartAddr; /*, exgForcedOff;*/
 
-volatile COMMS_CRC_MODE btCrcMode;
+uint16_t btRxWaitByteCount = 0;
 
 #if BT_DMA_USED_FOR_RX
 /* Return of 1 brings MSP out of low-power mode */
@@ -100,18 +101,14 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if defined(SHIMMER3)
     uint8_t bt_waitForStartCmd, bt_waitForMacAddress, bt_waitForVersion, bt_waitForInitialBoot, bt_waitForReturnNewLine;
     uint8_t expectedlen = 0U;
-#endif
 
-#if defined(SHIMMER3)
     DMA2AndCtsDisable();
     bt_waitForStartCmd = BT_getWaitForStartCmd();
     bt_waitForMacAddress = BT_getWaitForMacAddress();
     bt_waitForVersion = BT_getWaitForVersion();
     bt_waitForInitialBoot = BT_getWaitForInitialBoot();
     bt_waitForReturnNewLine = BT_getWaitForReturnNewLine();
-#endif
 
-#if defined(SHIMMER3)
     if (!*btRxExp
             && (areBtStatusStringsEnabled()
                     || (isBtConnected() || bt_waitForStartCmd || bt_waitForMacAddress || bt_waitForVersion || bt_waitForInitialBoot || bt_waitForReturnNewLine)))
@@ -329,127 +326,55 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
         else
         {
 #endif
-            if (btWaitingForArgs)
+          if (btWaitingForArgs)
+          {
+            if ((!btWaitingForArgsLength) && (btWaitingForArgs == 3)
+                && (*(gActionPtr) == SET_INFOMEM_COMMAND
+                    || *(gActionPtr) == SET_CALIB_DUMP_COMMAND
+                    || *(gActionPtr) == SET_DAUGHTER_CARD_MEM_COMMAND
+                    || *(gActionPtr) == SET_EXG_REGS_COMMAND))
             {
-                if ((!btWaitingForArgsLength)&& (btWaitingForArgs == 3)
-#if defined(SHIMMER3)
-                        && (*(gActionPtr) == SET_INFOMEM_COMMAND
-                                || *(gActionPtr) == SET_CALIB_DUMP_COMMAND
-                                || *(gActionPtr) == SET_DAUGHTER_CARD_MEM_COMMAND
-                                || *(gActionPtr) == SET_EXG_REGS_COMMAND))
-#else
-                        && ((btAction == SET_EXG_REGS_COMMAND)
-#endif
-                                && (btWaitingForArgs == 3)))
-                {
-#if defined(SHIMMER3)
-                    gArgsPtr[0] = btRxBuffPtr[0];
-                    gArgsPtr[1] = btRxBuffPtr[1];
-                    gArgsPtr[2] = btRxBuffPtr[2];
-                 //   btWaitingForArgsLength = gArgsPtr[2]; was here before
-                    if (*(gActionPtr) == SET_EXG_REGS_COMMAND)
-				   {
-					   waitingForArgsLength = gArgsPtr[2];
-				   }
-				   else
-				   {
-					   waitingForArgsLength = gArgsPtr[0];
-				   }
-#else
-                    btArgs[0] = btRxBuffPtr[0];
-                    btArgs[1] = btRxBuffPtr[1];
-                    btArgs[2] = btRxBuffPtr[2];
-                    btWaitingForArgsLength = btArgs[2];
-#endif
-                    setDmaWaitingForResponse(btWaitingForArgsLength);
-                    return 0;
-                }
-                else if ((!btWaitingForArgsLength)
-#if defined(SHIMMER3)
-                      //  && (((*(gActionPtr) == SET_INFOMEM_COMMAND)
-                		 ((!waitingForArgsLength) && (waitingForArgs == 2)
-                		       && (*(gActionPtr) == SET_DAUGHTER_CARD_ID_COMMAND))
-#else
-                        && (((btAction == SET_INFOMEM_COMMAND)
-#endif
-                                && (btWaitingForArgs == 3))
-#if defined(SHIMMER3)
-//                                || ((*(gActionPtr) == SET_CALIB_DUMP_COMMAND)
-#else
-                                || ((btAction == SET_CALIB_DUMP_COMMAND)
-#endif
-                                        && (btWaitingForArgs == 3))))
-                {
-#if defined(SHIMMER3)
-                    gArgsPtr[0] = btRxBuffPtr[0];
-                    gArgsPtr[1] = btRxBuffPtr[1];
-//                    gArgsPtr[2] = btRxBuffPtr[2];
-//                    btWaitingForArgsLength = gArgsPtr[2];
-                    if (gArgsPtr[0])
-					{
-						waitingForArgsLength = gArgsPtr[0];
-						setDmaWaitingForResponse(waitingForArgsLength);
-					}
+              gArgsPtr[0] = btRxBuffPtr[0];
+              gArgsPtr[1] = btRxBuffPtr[1];
+              gArgsPtr[2] = btRxBuffPtr[2];
+              if (*(gActionPtr) == SET_EXG_REGS_COMMAND)
+              {
+                btWaitingForArgsLength = gArgsPtr[2];
+              }
+              else
+              {
+                btWaitingForArgsLength = gArgsPtr[0];
+              }
+              setDmaWaitingForResponse(btWaitingForArgsLength);
+              return 0;
+            }
+            else if ((!btWaitingForArgsLength) && (btWaitingForArgs == 2)
+                && (*(gActionPtr) == SET_DAUGHTER_CARD_ID_COMMAND))
+            {
+              gArgsPtr[0] = btRxBuffPtr[0];
+              gArgsPtr[1] = btRxBuffPtr[1];
+              if (gArgsPtr[0])
+              {
+                btWaitingForArgsLength = gArgsPtr[0];
+                setDmaWaitingForResponse(btWaitingForArgsLength);
+              }
+              return 0;
+            }
+            else if ((!btWaitingForArgsLength) && (btWaitingForArgs == 1)
+                && (*(gActionPtr) == SET_CENTER_COMMAND
+                    || *(gActionPtr) == SET_CONFIGTIME_COMMAND
+                    || *(gActionPtr) == SET_EXPID_COMMAND
+                    || *(gActionPtr) == SET_SHIMMERNAME_COMMAND))
+            {
+              gArgsPtr[0] = btRxBuffPtr[0];
+              if (gArgsPtr[0])
+              {
+                btWaitingForArgsLength = gArgsPtr[0];
+                setDmaWaitingForResponse(btWaitingForArgsLength);
+                return 0;
+              }
+            }
 
-#else
-                    btArgs[0] = btRxBuffPtr[0];
-                    btArgs[1] = btRxBuffPtr[1];
-                    btArgs[2] = btRxBuffPtr[2];
-                    btWaitingForArgsLength = btArgs[0];
-#endif
-                    setDmaWaitingForResponse(btWaitingForArgsLength);
-                    return 0;
-                }
-
-//                 else if ((!btWaitingForArgsLength) && (btWaitingForArgs == 1)
-//                		 && (*(gActionPtr) == SET_CENTER_COMMAND
-                // else if ((!btWaitingForArgsLength) && (
-                //                ((*(gActionPtr) == SET_DAUGHTER_CARD_ID_COMMAND) && (btWaitingForArgs == 1)) ||
-#if defined(SHIMMER3)
-//                        ((*(gActionPtr) == SET_DAUGHTER_CARD_MEM_COMMAND)
-//                            && (btWaitingForArgs == 1))
-//                            || ((*(gActionPtr) == SET_CENTER_COMMAND)
-//                                    && (btWaitingForArgs == 1))
-//                            || ((*(gActionPtr) == SET_CONFIGTIME_COMMAND)
-//                                    && (btWaitingForArgs == 1))
-//                            || ((*(gActionPtr) == SET_EXPID_COMMAND)
-//                                    && (btWaitingForArgs == 1))
-//                            || ((*(gActionPtr) == SET_SHIMMERNAME_COMMAND)
-//                                    && (btWaitingForArgs == 1))))
-                			|| *(gActionPtr) == SET_CONFIGTIME_COMMAND
-						    || *(gActionPtr) == SET_EXPID_COMMAND
-						    || *(gActionPtr) == SET_SHIMMERNAME_COMMAND))
-
-#else
-                        ((btAction == SET_DAUGHTER_CARD_MEM_COMMAND)
-                            && (btWaitingForArgs == 1))
-                            || ((btAction == SET_CENTER_COMMAND)
-                                    && (btWaitingForArgs == 1))
-                            || ((btAction == SET_CONFIGTIME_COMMAND)
-                                    && (btWaitingForArgs == 1))
-                            || ((btAction == SET_EXPID_COMMAND)
-                                    && (btWaitingForArgs == 1))
-                            || ((btAction == SET_SHIMMERNAME_COMMAND)
-                                    && (btWaitingForArgs == 1))))
-#endif
-                {
-#if defined(SHIMMER3)
-                    gArgsPtr[0] = btRxBuffPtr[0];
-                    if (gArgsPtr[0])
-#else
-                    btArgs[0] = btRxBuffPtr[0];
-                    if (btArgs[0])
-#endif
-                    {
-#if defined(SHIMMER3)
-                      btWaitingForArgsLength = gArgsPtr[0];
-#else
-                      btWaitingForArgsLength = btArgs[0];
-#endif
-                        setDmaWaitingForResponse(btWaitingForArgsLength);
-                        return 0;
-                    }
-                }
 #if defined(SHIMMER3)
                 else if (*(gActionPtr) == RN4678_STATUS_STRING_SEPARATOR)
                 {
@@ -877,11 +802,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     return bringUcOutOfSleep;
                 }
 #endif
-#if defined(SHIMMER3)
                 else if (*(gActionPtr) == ACK_COMMAND_PROCESSED)
-#else
-                else if (btAction == ACK_COMMAND_PROCESSED)
-#endif
                 {
 #if USE_OLD_SD_SYNC_APPROACH
                     /* Store local time as early as possible after sync bytes have been received */
@@ -891,11 +812,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     if(!btWaitingForArgsLength)
                     {
                         /* Save command byte */
-#if defined(SHIMMER3)
                         gArgsPtr[0] = btRxBuffPtr[0];
-#else
-                        btArgs[0] = btRxBuffPtr[0];
-#endif
 
                         if (btRxBuffPtr[0] == SD_SYNC_RESPONSE)
                         {
@@ -910,19 +827,11 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 
                 if (btWaitingForArgsLength)
                 {
-#if defined(SHIMMER3)
                     memcpy(gArgsPtr + btWaitingForArgs, btRxBuffPtr, btWaitingForArgsLength);
-#else
-                    memcpy(&btArgs[btWaitingForArgs], btRxBuffPtr, btWaitingForArgsLength);
-#endif
                 }
                 else
                 {
-#if defined(SHIMMER3)
                     memcpy(gArgsPtr, btRxBuffPtr, btWaitingForArgs);
-#else
-                    memcpy(&btArgs[0], btRxBuffPtr, btWaitingForArgs);
-#endif
                 }
 
                 btWaitingForArgsLength = 0;
@@ -1003,11 +912,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case UPD_CALIB_DUMP_COMMAND:
 //                case UPD_FLASH_COMMAND:
                 case GET_BT_VERSION_STR_COMMAND:
-#if defined(SHIMMER3)
                     *(gActionPtr) = data;
-#else
-                    btAction = data;
-#endif
                     if(newBtCmdToProcess_cb)
                     {
                         newBtCmdToProcess_cb();
@@ -1039,21 +944,13 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case SET_CRC_COMMAND:
                 case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
                 case SET_DATA_RATE_TEST:
-#if defined(SHIMMER3)
                     *(gActionPtr) = data;
-#else
-                    btAction = data;
-#endif
                     btWaitingForArgs = 1U;
                     break;
                 case SET_SAMPLING_RATE_COMMAND:
                 case GET_DAUGHTER_CARD_ID_COMMAND:
-                    //                case SET_DAUGHTER_CARD_ID_COMMAND:
-#if defined(SHIMMER3)
+                case SET_DAUGHTER_CARD_ID_COMMAND:
                     *(gActionPtr) = data;
-#else
-                    btAction = data;
-#endif
                     btWaitingForArgs = 2U;
                     break;
                 case SET_SENSORS_COMMAND:
@@ -1066,39 +963,23 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case SET_INFOMEM_COMMAND:
                 case GET_CALIB_DUMP_COMMAND:
                 case SET_CALIB_DUMP_COMMAND:
-#if defined(SHIMMER3)
                     *(gActionPtr) = data;
-#else
-                    btAction = data;
-#endif
                     btWaitingForArgs = 3U;
                     break;
                 case SET_CONFIG_SETUP_BYTES_COMMAND:
-#if defined(SHIMMER3)
                     *(gActionPtr) = data;
-#else
-                    btAction = data;
-#endif
                     btWaitingForArgs = 4U;
                     break;
                 case SET_RWC_COMMAND:
                 case SET_DERIVED_CHANNEL_BYTES:
-#if defined(SHIMMER3)
                     *(gActionPtr) = data;
-#else
-                    btAction = data;
-#endif
                     btWaitingForArgs = 8U;
                     break;
                 case SET_A_ACCEL_CALIBRATION_COMMAND:
                 case SET_MPU9150_GYRO_CALIBRATION_COMMAND:
                 case SET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
                 case SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
-#if defined(SHIMMER3)
                     *(gActionPtr) = data;
-#else
-                    btAction = data;
-#endif
                     btWaitingForArgs = 21U;
                     break;
 #endif
@@ -1121,22 +1002,14 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #else
                 case ACK_COMMAND_PROCESSED:
                     /* Wait for command byte */
-#if defined(SHIMMER3)
                     *(gActionPtr) = data;
-#else
-                    btAction = data;
-#endif
                     btWaitingForArgs = 1U;
                     break;
                 case SET_SD_SYNC_COMMAND:
                     /* Store local time as early as possible after sync bytes have been received */
                     saveLocalTime();
 
-#if defined(SHIMMER3)
                     *(gActionPtr) = data;
-#else
-                    btAction = data;
-#endif
                     btWaitingForArgs = SYNC_PACKET_PAYLOAD_SIZE + BT_SD_SYNC_CRC_MODE;
                     break;
 #endif
@@ -1176,12 +1049,8 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 
 void resetBtRxVariablesOnConnect(void)
 {
-#if defined(SHIMMER3)
     /* Reset to unsupported command */
     *(gActionPtr) = ACK_COMMAND_PROCESSED-1U;
-#else
-    btAction = ACK_COMMAND_PROCESSED-1U;
-#endif
     btWaitingForArgs = 0;
     btWaitingForArgsLength = 0;
 }
@@ -2334,6 +2203,9 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void))
 
     gActionPtr = actionPtr;
     gArgsPtr = argsPtr;
+#else
+    gActionPtr = &btAction;
+    gArgsPtr = &btArgs;
 #endif
 
 #if !BT_DMA_USED_FOR_RX
@@ -2414,7 +2286,6 @@ void resetBtResponseBools(void)
   i2cvBattBtRsp = 0;
   inquiryBtRsp = 0;
   samplingRateBtRsp = 0;
-  toggleLedRed = 0;
   lsm303dlhcAccelRangeResponse = 0;
   lsm303dlhcMagGainResponse = 0;
   lsm303dlhcMagSamplingRateResponse = 0;
@@ -2446,6 +2317,7 @@ void resetBtResponseBools(void)
   blinkLedBtRsp = 0;
   gsrRangeResponse = 0;
   btCommsBaudRateResponse = 0;
+  useAckPrefixForInstreamResponses = 1U;
 }
 
 uint8_t getBtVerStrLen(void)
@@ -2494,7 +2366,7 @@ void BtUart_processCmd(void) {
       samplingRateBtRsp = 1;
       break;
    case TOGGLE_LED_COMMAND:
-      toggleLedRed ^= 1;
+     stat.toggleLedRedCmd ^= 1;
       break;
    case START_STREAMING_COMMAND:
       stat.btstreamCmd = 1;
@@ -2512,6 +2384,9 @@ void BtUart_processCmd(void) {
    case SET_CRC_COMMAND:
       setBtCrcMode(btArgs[0]);
       break;
+   case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
+       useAckPrefixForInstreamResponses = btArgs[0];
+       break;
    case STOP_STREAMING_COMMAND:
       stat.btstreamCmd = 2;
       S4_Task_set(TASK_STOPSENSING);
@@ -2577,9 +2452,9 @@ void BtUart_processCmd(void) {
     shimmerNameResponse = 1;
     break;
    case SET_SHIMMERNAME_COMMAND:
-    name_len = btArgs[0]<(MAX_CHARS-1)?args[0]:(MAX_CHARS-1);
+    name_len = btArgs[0]<(MAX_CHARS-1)?btArgs[0]:(MAX_CHARS-1);
     memset((uint8_t*)(storedConfig+NV_SD_SHIMMER_NAME), 0, MAX_CHARS-1);
-    memcpy((uint8_t*)(storedConfig+NV_SD_SHIMMER_NAME), &args[1], name_len);
+    memcpy((uint8_t*)(storedConfig+NV_SD_SHIMMER_NAME), &btArgs[1], name_len);
     InfoMem_write((uint8_t*)NV_SD_SHIMMER_NAME, storedConfig+NV_SD_SHIMMER_NAME, MAX_CHARS-1);
     SetShimmerName();
     update_sdconfig = 1;
@@ -2588,9 +2463,9 @@ void BtUart_processCmd(void) {
     expIDResponse = 1;
     break;
    case SET_EXPID_COMMAND:
-    name_len = args[0]<(MAX_CHARS-1)?args[0]:(MAX_CHARS-1);
+    name_len = btArgs[0]<(MAX_CHARS-1)?btArgs[0]:(MAX_CHARS-1);
     memset((uint8_t*)(storedConfig+NV_SD_EXP_ID_NAME), 0, MAX_CHARS-1);
-    memcpy((uint8_t*)(storedConfig+NV_SD_EXP_ID_NAME), &args[1], name_len);
+    memcpy((uint8_t*)(storedConfig+NV_SD_EXP_ID_NAME), &btArgs[1], name_len);
     InfoMem_write((uint8_t*)NV_SD_EXP_ID_NAME, storedConfig+NV_SD_EXP_ID_NAME, MAX_CHARS-1);
     SetExpIdName();
     update_sdconfig = 1;
@@ -2602,9 +2477,9 @@ void BtUart_processCmd(void) {
     dirResponse = 1;
     break;
    case SET_CONFIGTIME_COMMAND:
-    name_len = args[0]<(MAX_CHARS-1)?args[0]:(MAX_CHARS-1);
-    memcpy(configTimeText, &args[1], name_len);
-    configTimeText[args[0]]='\0';
+    name_len = btArgs[0]<(MAX_CHARS-1)?btArgs[0]:(MAX_CHARS-1);
+    memcpy(configTimeText, &btArgs[1], name_len);
+    configTimeText[btArgs[0]]='\0';
     SetName();
     config_time = atol((char*)configTimeText);
     my_config_time[3] = *((uint8_t*)&config_time);
@@ -2620,8 +2495,8 @@ void BtUart_processCmd(void) {
     nshimmerResponse = 1;
     break;
    case SET_NSHIMMER_COMMAND:
-    storedConfig[NV_SD_NSHIMMER] = args[0];
-    sdHeadText[SDH_NSHIMMER] = args[0];
+    storedConfig[NV_SD_NSHIMMER] = btArgs[0];
+    sdHeadText[SDH_NSHIMMER] = btArgs[0];
     InfoMem_write((uint8_t*)NV_SD_NSHIMMER, storedConfig+NV_SD_NSHIMMER, 1);
     update_sdconfig = 1;
     break;
@@ -2629,14 +2504,14 @@ void BtUart_processCmd(void) {
     myIDResponse = 1;
     break;
    case SET_MYID_COMMAND:
-    storedConfig[NV_SD_MYTRIAL_ID] = args[0];
-    sdHeadText[SDH_MYTRIAL_ID] = args[0];
+    storedConfig[NV_SD_MYTRIAL_ID] = btArgs[0];
+    sdHeadText[SDH_MYTRIAL_ID] = btArgs[0];
     InfoMem_write((uint8_t*)NV_SD_MYTRIAL_ID, storedConfig+NV_SD_MYTRIAL_ID, 1);
     update_sdconfig = 1;
     break;
    case SET_LSM303DLHC_ACCEL_RANGE_COMMAND:
-    if(args[0] < 4)
-    storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0xF3) + ((args[0]&0x03)<<2);
+    if(btArgs[0] < 4)
+    storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0xF3) + ((btArgs[0]&0x03)<<2);
     else
     storedConfig[NV_CONFIG_SETUP_BYTE0] &= 0xF3;
     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE0, &storedConfig[NV_CONFIG_SETUP_BYTE0], 1);
@@ -2684,19 +2559,23 @@ void BtUart_processCmd(void) {
   case GET_MPU9250_MAG_SENS_ADJ_VALS_COMMAND:
     mpu9250MagSensAdjValsResponse = 1;
     break;
+*/
   case GET_EXG_REGS_COMMAND:
-    if(args[0]<2 && args[1]<10 && args[2]<11) {
-      exgChip = args[0];
-      exgStartAddr = args[1];
-      exgLength = args[2];
-    } else
+    if(btArgs[0]<2 && btArgs[1]<10 && btArgs[2]<11)
+    {
+      exgChip = btArgs[0];
+      exgStartAddr = btArgs[1];
+      exgLength = btArgs[2];
+    }
+    else
+    {
       exgLength = 0;
+    }
     exgRegsResponse = 1;
     break;
-*/
-   /*   case SET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
-    if(args[0] < 10)
-      storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0x0F) + ((args[0]&0x0F)<<4);
+/*   case SET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
+    if(btArgs[0] < 10)
+      storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0x0F) + ((btArgs[0]&0x0F)<<4);
     else
       storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0x0F) + (LSM303DLHC_ACCEL_100HZ<<4);
     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE0, &storedConfig[NV_CONFIG_SETUP_BYTE0], 1);
@@ -2708,8 +2587,8 @@ void BtUart_processCmd(void) {
     }
     break;
     case SET_LSM303DLHC_MAG_GAIN_COMMAND:
-    if(args[0]>0 && args[0]<8)
-      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0x1F) + ((args[0]&0x07)<<5);
+    if(btArgs[0]>0 && btArgs[0]<8)
+      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0x1F) + ((btArgs[0]&0x07)<<5);
     else
       storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0x1F) + (LSM303DLHC_MAG_1_3G<<5);
     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE2, &storedConfig[NV_CONFIG_SETUP_BYTE2], 1);
@@ -2721,8 +2600,8 @@ void BtUart_processCmd(void) {
     }
     break;
     case SET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
-    if(args[0] < 8)
-      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xE3) + ((args[0]&0x07)<<2);
+    if(btArgs[0] < 8)
+      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xE3) + ((btArgs[0]&0x07)<<2);
     else
       storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xE3) + (LSM303DLHC_MAG_75HZ<<2);
     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE2, &storedConfig[NV_CONFIG_SETUP_BYTE2], 1);
@@ -2734,7 +2613,7 @@ void BtUart_processCmd(void) {
     }
     break;
     case SET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
-    if(args[0] == 1){
+    if(btArgs[0] == 1){
       storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0xFD) + 0x02;
     }else{
       storedConfig[NV_CONFIG_SETUP_BYTE0] &= 0xFD;
@@ -2748,7 +2627,7 @@ void BtUart_processCmd(void) {
     }
     break;
     case SET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
-    if(args[0] == 1){
+    if(btArgs[0] == 1){
       storedConfig[NV_CONFIG_SETUP_BYTE0] = (storedConfig[NV_CONFIG_SETUP_BYTE0]&0xFE) + 0x01;
     }else{
       storedConfig[NV_CONFIG_SETUP_BYTE0] &= 0xFE;
@@ -2762,8 +2641,8 @@ void BtUart_processCmd(void) {
     }
     break;
     case SET_MPU9250_GYRO_RANGE_COMMAND:
-    if(args[0] < 4)
-      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xFC) + (args[0]&0x03);
+    if(btArgs[0] < 4)
+      storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xFC) + (btArgs[0]&0x03);
     else
       storedConfig[NV_CONFIG_SETUP_BYTE2] = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xFC) + MPU9250_GYRO_500DPS;
     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE2, &storedConfig[NV_CONFIG_SETUP_BYTE2], 1);
@@ -2775,7 +2654,7 @@ void BtUart_processCmd(void) {
     }
     break;
     case SET_MPU9250_SAMPLING_RATE_COMMAND:
-    storedConfig[NV_CONFIG_SETUP_BYTE1] = args[0];
+    storedConfig[NV_CONFIG_SETUP_BYTE1] = btArgs[0];
     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE1, &storedConfig[NV_CONFIG_SETUP_BYTE1], 1);
     sdHeadText[SDH_CONFIG_SETUP_BYTE1] = storedConfig[NV_CONFIG_SETUP_BYTE1];
     update_sdconfig = 1;
@@ -2785,8 +2664,8 @@ void BtUart_processCmd(void) {
     }
     break;
     case SET_MPU9250_ACCEL_RANGE_COMMAND:
-    if(args[0] < 4)
-      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0x3F) + ((args[0]&0x03)<<6);
+    if(btArgs[0] < 4)
+      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0x3F) + ((btArgs[0]&0x03)<<6);
     else
       storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0x3F) + (ACCEL_2G<<6);
     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE3, &storedConfig[NV_CONFIG_SETUP_BYTE3], 1);
@@ -2798,8 +2677,8 @@ void BtUart_processCmd(void) {
     }
     break;
     case SET_BMP180_PRES_OVERSAMPLING_RATIO_COMMAND:
-    if(args[0] < 4)
-      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0xCF) + ((args[0]&0x03)<<4);
+    if(btArgs[0] < 4)
+      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0xCF) + ((btArgs[0]&0x03)<<4);
     else
       storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0xCF) + (BMP180_OSS_1<<4);
     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE3, &storedConfig[NV_CONFIG_SETUP_BYTE3], 1);
@@ -2807,8 +2686,8 @@ void BtUart_processCmd(void) {
     update_sdconfig = 1;
     break;
     case SET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
-    if(args[0] == 1)
-      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0xFE) + (args[0]&0x01);
+    if(btArgs[0] == 1)
+      storedConfig[NV_CONFIG_SETUP_BYTE3] = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0xFE) + (btArgs[0]&0x01);
     else
       storedConfig[NV_CONFIG_SETUP_BYTE3] &= 0xFE;
     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE3, &storedConfig[NV_CONFIG_SETUP_BYTE3], 1);
@@ -3008,10 +2887,11 @@ void BtUart_processCmd(void) {
       break;
    case GET_CHARGE_STATUS_LED_COMMAND:
       blinkLedBtRsp = 1;
-      break;/*
+      break;
   case GET_BUFFER_SIZE_COMMAND:
     bufferSizeResponse = 1;
     break;
+/*
   case GET_UNIQUE_SERIAL_COMMAND:
     uniqueSerialResponse = 1;
     break;
@@ -3043,26 +2923,27 @@ void BtUart_processCmd(void) {
       btDcMemLength = btArgs[0];
       btDcMemOffset = btArgs[1] + (btArgs[2] << 8);
       if ((btDcMemLength <= 128) && (btDcMemOffset <= 2031) && (btDcMemLength + btDcMemOffset <= 2032)) {
-         CAT24C16_write(btDcMemOffset + 16, &btArgs[3], btDcMemLength);
+         eepromWrite(btDcMemOffset + 16U, (uint16_t) btDcMemLength, &btArgs[3]);
       }
       break;
-      case GET_BT_COMMS_BAUD_RATE:
-    btCommsBaudRateResponse = 1;
-    break;
+   case GET_BT_COMMS_BAUD_RATE:
+      btCommsBaudRateResponse = 1;
+      break;
     case SET_BT_COMMS_BAUD_RATE:
-    if(args[0] != storedConfig[NV_BT_COMMS_BAUD_RATE]) {
-      if(args[0]<11) {
-        changeBtBaudRate = args[0];
-      } else {
-        changeBtBaudRate = 9;
-      }
-    }
-    break;
+      //TODO changing BAUD rate is not going to be supported
+//      if(btArgs[0] != storedConfig->btCommsBaudRate) {
+//        if(btArgs[0]<11) {
+//          changeBtBaudRate = btArgs[0];
+//        } else {
+//          changeBtBaudRate = 9;
+//        }
+//      }
+      break;
 //    case GET_DERIVED_CHANNEL_BYTES:
 //    derivedChannelResponse = 1;
 //    break;
 //    case SET_DERIVED_CHANNEL_BYTES:
-//    memcpy(&storedConfig[NV_DERIVED_CHANNELS_0], &args[0], 3);
+//    memcpy(&storedConfig[NV_DERIVED_CHANNELS_0], &btArgs[0], 3);
 //    InfoMem_write((void*)NV_DERIVED_CHANNELS_0, &storedConfig[NV_DERIVED_CHANNELS_0], 3);
 //    memcpy(&sdHeadText[SDH_DERIVED_CHANNELS_0], &storedConfig[NV_DERIVED_CHANNELS_0], 3);
 //    update_sdconfig = 1;
@@ -3154,6 +3035,7 @@ void BtUart_processCmd(void) {
       memcpy((uint8_t*)(&temp64), btArgs, 8);// 64bits = 8bytes
       RTC_init(temp64);
       S4Ram_getStoredConfig()->rtcSetByBt = 1;
+      setupNextRtcMinuteAlarm(); //configure RTC alarm after time set from BT.
       //InfoMem_update();
       break;
    default:;
@@ -3171,7 +3053,7 @@ void BtUart_processCmd(void) {
    {
        SetSdCfgFlag(1);
    }
-   if (update_calib_dump_file && stat.isSdInserted && !stat.badFile)
+   if (update_calib_dump_file && CheckSdInslot() && !stat.badFile)
    {
        if (!stat.isDocked)
        {
@@ -3235,7 +3117,7 @@ void BtUart_sendRsp(void) {
       } else if (dockStatusBtRsp) {
          *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
          *(bt_tx_data + packet_length++) = STATUS_RESPONSE;
-         *(bt_tx_data + packet_length++) = ((toggleLedRed & 0x01) << 7)
+         *(bt_tx_data + packet_length++) = (stat.toggleLedRedCmd << 7)
           + ((stat.badFile & 0x01) << 6)
           + ((stat.isSdInserted & 0x01) << 5)
           + ((stat.isStreaming & 0x01) << 4)
@@ -3364,7 +3246,7 @@ void BtUart_sendRsp(void) {
 //         bmp180OversamplingRatioResponse = 0;
       } else if(internalExpPowerEnableResponse) {
          *(bt_tx_data + packet_length++) = INTERNAL_EXP_POWER_ENABLE_RESPONSE;
-         *(bt_tx_data + packet_length++) = storedConfig->expPwr;
+         *(bt_tx_data + packet_length++) = storedConfig->expansionBoardPower;
          internalExpPowerEnableResponse = 0;
       } else if (configSetupBytesResponse) {
          *(bt_tx_data + packet_length++) = CONFIG_SETUP_BYTES_RESPONSE;
@@ -3458,7 +3340,8 @@ void BtUart_sendRsp(void) {
          *(bt_tx_data + packet_length++) = DAUGHTER_CARD_ID_RESPONSE;
          *(bt_tx_data + packet_length++) = btDcMemLength;
 #if IS_CONNECTED_EEPROM
-         CAT24C16_read(btDcMemOffset, bt_tx_data + packet_length, btDcMemLength);
+         memcpy(bt_tx_data + packet_length, getDaughtCardId() + btDcMemOffset,
+             btDcMemLength);
 #else
          bt_tx_data[packet_length+0] = EXP_BRD_ID_MAJOR;
          bt_tx_data[packet_length+1] = EXP_BRD_ID_MINOR;
@@ -3470,7 +3353,14 @@ void BtUart_sendRsp(void) {
          *(bt_tx_data + packet_length++) = DAUGHTER_CARD_MEM_RESPONSE;
          *(bt_tx_data + packet_length++) = btDcMemLength;
 #if IS_CONNECTED_EEPROM
-         CAT24C16_read(btDcMemOffset + 16, bt_tx_data + packet_length, btDcMemLength);
+         if (!stat.isSensing)
+         {
+             eepromRead(btDcMemOffset + 16U, btDcMemLength, bt_tx_data + packet_length);
+         }
+         else
+         {
+             memset(bt_tx_data + packet_length, 0xff, btDcMemLength);
+         }
 #endif
          packet_length += btDcMemLength;
          dcMemBtRsp = 0;
@@ -3605,4 +3495,106 @@ uint8_t BT_getMacAddressHex(uint8_t *macHex) {
     return 1;
   }
 #endif
+}
+
+void BtsdSelfcmd(void)
+{
+    if (isBtConnected())
+    {
+        uint8_t i = 0;
+        uint8_t selfcmd[6]; /* max is 6 bytes */
+
+        if (useAckPrefixForInstreamResponses)
+        {
+            selfcmd[i++] = ACK_COMMAND_PROCESSED;
+        }
+        selfcmd[i++] = INSTREAM_CMD_RESPONSE;
+        selfcmd[i++] = STATUS_RESPONSE;
+        selfcmd[i++] = (stat.toggleLedRedCmd << 7)
+                | (stat.badFile << 6)
+                | (stat.isSdInserted << 5)
+                | (stat.isStreaming << 4)
+                | (stat.isLogging << 3)
+                | (isRwcTimeSet() << 2)
+                | (stat.isSensing << 1)
+                | stat.isDocked;
+
+        uint8_t crcMode = getBtCrcMode();
+        if (crcMode != CRC_OFF)
+        {
+            calculateCrcAndInsert(crcMode, &selfcmd[0], i);
+            i += crcMode;  // Ordinal of enum is how many bytes are used
+        }
+
+        BT_write(selfcmd, i);
+    }
+}
+
+void HandleBtRfCommStateChange(uint8_t isConnected)
+{
+  if (isConnected)
+   { //BT is connected
+#if BT_DMA_USED_FOR_RX
+       resetBtRxVariablesOnConnect();
+#endif
+
+       if(!S4Ram_getStoredConfig()->sync)
+       {
+          if (stat.syncEnabled)
+          {
+            stat.btstreamReady = 0;
+          }
+          else
+          {
+            stat.btstreamReady = 1;
+
+#if defined(SHIMMER3) & BT_DMA_USED_FOR_RX
+            setDmaWaitingForResponseIfStatusStrDisabled();
+#endif
+          }
+       }
+       else
+       {
+         if (S4Ram_getStoredConfig()->master)
+         {
+           // center sends sync packet and is waiting for response
+           if (isBtSdSyncRunning())
+           {
+#if defined(SHIMMER3) & BT_DMA_USED_FOR_RX
+               /* Only need to charge up the DMA if status strings aren't enabled. Otherwise this is handled within the setup/DMA code. */
+               setDmaWaitingForResponseIfStatusStrDisabled();
+#endif
+               SyncCenterT10();
+           }
+         }
+         else
+         {
+           resetSyncRcNodeR10Cnt();
+           // node is waiting for 1 byte ROUTINE_COMMUNICATION(0xE0)
+#if defined(SHIMMER3) & BT_DMA_USED_FOR_RX
+           /* Only need to charge up the DMA if status strings aren't enabled. Otherwise this is handled within the setup/DMA code. */
+           setDmaWaitingForResponseIfStatusStrDisabled();
+#endif
+         }
+       }
+   }
+   else
+   { //BT is disconnected
+     if(!S4Ram_getStoredConfig()->sync)
+     {
+       stat.btstreamReady = 0;
+       stat.enableBtstream = 0;
+
+       setBtDataRateTestState(0);
+
+       clearBtTxBuf(0);
+     }
+       setBtCrcMode(CRC_OFF);
+       /* Revert to default state if changed */
+       useAckPrefixForInstreamResponses = 1U;
+   }
+  if(!S4Ram_getStoredConfig()->sync)
+  {
+    S4_NORM_Task_set(TASK_SDLOG_CFG_UPDATE);
+  }
 }

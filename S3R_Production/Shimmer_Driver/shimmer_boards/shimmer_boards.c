@@ -10,7 +10,7 @@
 #include "shimmer_boards.h"
 
 daughter_card_id_page daughterCardIdPage;
-char daughtCardIdStr[25];
+char daughtCardIdStr[26];
 uint8_t eepromIsPresent;
 
 void setDaugherCardIdPage(uint8_t *pagePtr)
@@ -74,6 +74,11 @@ void parseDaughterCardId(uint8_t srId)
         sprintf(daughtCardIdStr, "SR%d", srId);
         break;
     }
+}
+
+shimmer_expansion_brd* getDaughtCardId(void)
+{
+    return &daughterCardIdPage.expansion_brd;
 }
 
 char* getDaughtCardIdStrPtr(void)

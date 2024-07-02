@@ -56,17 +56,16 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, CS_LIS3MDL_Pin|SW_I2C1_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(CS_LIS3MDL_GPIO_Port, CS_LIS3MDL_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, CS_LSM6DSV_Pin|BT_CP_ROLE_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SW_SPI1_GPIO_Port, SW_SPI1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, SW_SPI1_Pin|SW_I2C1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, BT_LP_MODE_Pin|BT_RST_Pin|SW_FLASH_Pin|CS_BMP390_Pin
-                          |CS_LIS2DW12_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, BT_LP_MODE_Pin|BT_RST_Pin|CS_BMP390_Pin|CS_LIS2DW12_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SW_BT_GPIO_Port, SW_BT_Pin, GPIO_PIN_RESET);
@@ -76,6 +75,9 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CS_HIGH_G_GPIO_Port, CS_HIGH_G_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PEPin PEPin PEPin PEPin
                            PEPin PEPin */
@@ -110,12 +112,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(DOCK_DETECT_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = GPIO_ADC_EXT_EXP1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIO_ADC_EXT_EXP1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = GPIO_ADC_INT_EXP1_Pin;
@@ -318,5 +314,25 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
    }
 }
 #endif
+
+void SdPowerOn(void)
+{
+  HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, GPIO_PIN_SET);
+}
+
+void SdPowerOff(void)
+{
+  HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, GPIO_PIN_RESET);
+}
+
+uint8_t isSdPowerOn(void)
+{
+  return HAL_GPIO_ReadPin(SW_FLASH_GPIO_Port, SW_FLASH_Pin);
+}
+
+void setMcuHasSdcardControl(uint8_t state)
+{
+  HAL_GPIO_WritePin(SW_SD_MCU_DOCK_GPIO_Port, SW_SD_MCU_DOCK_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
+}
 
 /* USER CODE END 2 */

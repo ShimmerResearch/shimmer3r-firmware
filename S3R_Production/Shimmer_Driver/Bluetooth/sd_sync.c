@@ -53,7 +53,7 @@ uint8_t (*taskSetCb)(TASK_FLAGS);
 extern SENSINGTypeDef sensing;
 extern STATTypeDef stat;
 extern uint8_t sdHeadText[SDHEAD_LEN];
-extern uint8_t all0xff[7U];
+static uint8_t all0xff[7U] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 void sdSyncInit(void (*btStart_cb)(void),
                 void (*btStop_cb)(uint8_t),

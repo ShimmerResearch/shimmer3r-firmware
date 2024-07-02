@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 #if !IS_CONNECTED_EEPROM & defined(SHIMMER3R)
-#define EXP_BRD_ID_MAJOR      31 //0xFF//47
+#define EXP_BRD_ID_MAJOR      EXP_BRD_PROTO3_DELUXE //0xFF//47
 #define EXP_BRD_ID_MINOR      9  //0xFF//1
 #define EXP_BRD_ID_INTERNAL   0  //0xFF//0
 #endif
@@ -55,6 +55,7 @@ typedef union
 void setDaugherCardIdPage(uint8_t *pagePtr);
 uint8_t isAds1292Present(void);
 uint8_t isAds1292PresentForSrId(uint8_t srId);
+shimmer_expansion_brd* getDaughtCardId(void);
 void parseDaughterCardId(uint8_t srId);
 char* getDaughtCardIdStrPtr(void);
 

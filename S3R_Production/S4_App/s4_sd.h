@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 
+#define CheckSdInslot SD_insertedCheck
+
 void SD_init(void);
 uint8_t SD_test(void);
 uint8_t SD_test_alternative(void);
@@ -26,6 +28,13 @@ void SD_writeToBuff(uint8_t *buf, uint16_t len);
 void SD_writeToCard(void);
 //void SD_config2SdHead(void);
 void SD_mount(uint8_t val);
-void SD_insertedCheck(void);
+uint8_t SD_insertedCheck(void);
+void UpdateSdConfig(void);
+void ParseConfig(void);
+
+void ItoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len);
+uint8_t isFileStatusOk(void);
+uint8_t isSdInfoSyncDelayed(void);
+void setSdInfoSyncDelayed(uint8_t state);
 
 #endif /* S4_SD_H_ */

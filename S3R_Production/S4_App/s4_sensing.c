@@ -250,6 +250,12 @@ void S4Sens_stopSensing(void) {
    
    //stat.sdlogCmd = 0;
    stat.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
+
+   if (isSdInfoSyncDelayed())
+   {
+       SdInfoSync();
+   }
+
    stat.isConfiguring = 0;
 }
 
@@ -300,8 +306,7 @@ void S4Sens_streamData(void) {
 
 void S4Sens_bufPoll()
 {
-   // adc channels
-   S4_ADC_bufPoll();
+   S4_NORM_ADC_gatherDataStart();
    
    I2C_pollSensors();
    
@@ -373,7 +378,8 @@ void sensing_stageCompleteCb(uint8_t stage)
   currentCbFlags |= stage;
   if (currentCbFlags == expectedCbFlags)
   {
-    saveData();
+//    saveData();
+    S4_Task_set(TASK_SAVEDATA);
   }
 }
 
