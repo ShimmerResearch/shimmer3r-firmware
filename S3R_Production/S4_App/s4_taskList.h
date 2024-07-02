@@ -81,7 +81,11 @@ typedef enum {
    TASK_STREAMDATA      = 0x1<<11,
    TASK_RADIOTX         = 0x1<<12,
    TASK_BATTREAD        = 0x1<<13,
+#if defined(SHIMMER3R)
+   TASK_SAVEDATA        = 0x1<<14,
+#else defined(SHIMMER4_SDK)
    //TASK_HRCALC        = 0x1<<14,
+#endif
    //TASK_TESTLEDS      = 0x1<<15,
    //TASK_DELAYEDRADIOISR = 0x1<<16,
    TASK_NEXTSENSOR      = 0x1<<17

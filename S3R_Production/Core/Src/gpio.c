@@ -56,17 +56,16 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, CS_LIS3MDL_Pin|SW_I2C1_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(CS_LIS3MDL_GPIO_Port, CS_LIS3MDL_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, CS_LSM6DSV_Pin|BT_CP_ROLE_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SW_SPI1_GPIO_Port, SW_SPI1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, SW_SPI1_Pin|SW_I2C1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, BT_LP_MODE_Pin|BT_RST_Pin|SW_FLASH_Pin|CS_BMP390_Pin
-                          |CS_LIS2DW12_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, BT_LP_MODE_Pin|BT_RST_Pin|CS_BMP390_Pin|CS_LIS2DW12_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SW_BT_GPIO_Port, SW_BT_Pin, GPIO_PIN_RESET);
@@ -76,6 +75,9 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CS_HIGH_G_GPIO_Port, CS_HIGH_G_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PEPin PEPin PEPin PEPin
                            PEPin PEPin */
