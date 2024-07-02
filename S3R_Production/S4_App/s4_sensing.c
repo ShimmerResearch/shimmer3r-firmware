@@ -372,7 +372,8 @@ void sensing_stageCompleteCb(uint8_t stage)
   currentCbFlags |= stage;
   if (currentCbFlags == expectedCbFlags)
   {
-    saveData();
+//    saveData();
+    S4_Task_set(TASK_SAVEDATA);
   }
 }
 

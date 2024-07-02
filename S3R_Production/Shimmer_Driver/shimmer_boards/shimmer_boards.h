@@ -55,6 +55,7 @@ typedef union
 void setDaugherCardIdPage(uint8_t *pagePtr);
 uint8_t isAds1292Present(void);
 uint8_t isAds1292PresentForSrId(uint8_t srId);
+shimmer_expansion_brd* getDaughtCardId(void);
 void parseDaughterCardId(uint8_t srId);
 char* getDaughtCardIdStrPtr(void);
 

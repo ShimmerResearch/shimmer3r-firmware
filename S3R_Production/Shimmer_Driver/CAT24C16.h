@@ -60,8 +60,20 @@
 #define CAT24C16_TEST_OFFSET     16
 #define CAT24C16_TEST_SIZE       128
 
+enum EEPROM_RW
+{
+    EEPROM_READ = 0,
+    EEPROM_WRITE = 1,
+};
+
 //pass over the i2c handler pointer
 extern void CAT24C16_init(I2C_HandleTypeDef *hi2c);
+
+//power on the CAT24C16 chip
+void CAT24C16_powerOn(void);
+
+//power off the CAT24C16 chip
+void CAT24C16_powerOff(void);
 
 //Read from the CAT24C16 EEPROM
 //address = starting address to read from
@@ -84,6 +96,11 @@ extern void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length)
 extern void CAT24C16_write(uint16_t address, uint8_t *data, uint16_t length);
 
 extern uint8_t CAT24C16_test(void);
+
+void eepromRead(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
+void eepromWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
+void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf,
+                     enum EEPROM_RW eepromRW);
 
 #endif
 

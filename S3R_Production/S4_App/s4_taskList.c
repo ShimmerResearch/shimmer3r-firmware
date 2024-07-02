@@ -95,6 +95,9 @@ void S4_NORM_Task_manage(void){
       case TASK_BTPROCESS:       BtUart_processCmd();    break;
       case TASK_BTRESPONSE:      BtUart_sendRsp();       break;
       case TASK_STREAMDATA:      S4Sens_streamData();    break;
+#if defined(SHIMMER3R)
+      case TASK_SAVEDATA:        saveData();             break;
+#endif
       case TASK_STARTSENSING:    S4Sens_startSensing();  break;
       case TASK_STOPSENSING:     S4Sens_stopSensing();   break;
       //case TASK_NEXTSENSOR:      I2C_sensorNext();       break;

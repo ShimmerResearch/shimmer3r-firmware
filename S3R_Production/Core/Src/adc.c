@@ -114,7 +114,7 @@ void MX_ADC2_Init(void)
   hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc2.Init.DMAContinuousRequests = DISABLE;
-  hadc2.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
+  hadc2.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_LOW;
   hadc2.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc2.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
   hadc2.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
