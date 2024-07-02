@@ -22,7 +22,11 @@
 
 /* USER CODE BEGIN 0 */
 
+extern DMA_QListTypeDef ADCQueue;
+
 /* USER CODE END 0 */
+
+DMA_HandleTypeDef handle_GPDMA1_Channel2;
 
 /* GPDMA1 init function */
 void MX_GPDMA1_Init(void)
@@ -62,6 +66,20 @@ void MX_GPDMA1_Init(void)
   /* USER CODE BEGIN GPDMA1_Init 1 */
 
   /* USER CODE END GPDMA1_Init 1 */
+  handle_GPDMA1_Channel2.Instance = GPDMA1_Channel2;
+  handle_GPDMA1_Channel2.InitLinkedList.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
+  handle_GPDMA1_Channel2.InitLinkedList.LinkStepMode = DMA_LSM_FULL_EXECUTION;
+  handle_GPDMA1_Channel2.InitLinkedList.LinkAllocatedPort = DMA_LINK_ALLOCATED_PORT0;
+  handle_GPDMA1_Channel2.InitLinkedList.TransferEventMode = DMA_TCEM_LAST_LL_ITEM_TRANSFER;
+  handle_GPDMA1_Channel2.InitLinkedList.LinkedListMode = DMA_LINKEDLIST_NORMAL;
+  if (HAL_DMAEx_List_Init(&handle_GPDMA1_Channel2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel2, DMA_CHANNEL_NPRIV) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN GPDMA1_Init 2 */
 
   /* USER CODE END GPDMA1_Init 2 */
@@ -69,5 +87,15 @@ void MX_GPDMA1_Init(void)
 }
 
 /* USER CODE BEGIN 1 */
+
+void linkedListConfig(ADC_HandleTypeDef *hadc)
+{
+  MX_ADCQueue_Config();
+  __HAL_LINKDMA(hadc, DMA_Handle, handle_GPDMA1_Channel2);
+  if (HAL_DMAEx_List_LinkQ(&handle_GPDMA1_Channel2, &ADCQueue) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
 
 /* USER CODE END 1 */
