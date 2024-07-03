@@ -14,4 +14,4 @@ jobs:
         exclude: '*/Drivers */Middlewares'
         extensions: 'h,c'
         clangFormatVersion: 17
-        style: file
+        style: GNU
