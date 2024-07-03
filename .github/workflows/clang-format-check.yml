@@ -11,4 +11,4 @@ jobs:
       with:
         clang-format-version: '13'
         check-path: 'src'
-        fallback-style: 'Allman' # optional
+        fallback-style: 'InheritParentConfig' # optional
