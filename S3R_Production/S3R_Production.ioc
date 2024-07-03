@@ -1,9 +1,8 @@
 #MicroXplorer Configuration settings - do not modify
 ADC1.Channel-45\#ChannelRegularConversion=ADC_CHANNEL_4
-ADC1.ClockPrescaler=ADC_CLOCK_ASYNC_DIV4
 ADC1.ContinuousConvMode=ENABLE
 ADC1.ConversionDataManagement=ADC_CONVERSIONDATA_DMA_ONESHOT
-ADC1.IPParameters=Rank-45\#ChannelRegularConversion,Channel-45\#ChannelRegularConversion,SamplingTime-45\#ChannelRegularConversion,OffsetNumber-45\#ChannelRegularConversion,MonitoredBy-45\#ChannelRegularConversion,NbrOfConversionFlag,ContinuousConvMode,ConversionDataManagement,TriggerFrequencyMode,Resolution,master,ClockPrescaler
+ADC1.IPParameters=Rank-45\#ChannelRegularConversion,Channel-45\#ChannelRegularConversion,SamplingTime-45\#ChannelRegularConversion,OffsetNumber-45\#ChannelRegularConversion,MonitoredBy-45\#ChannelRegularConversion,NbrOfConversionFlag,ContinuousConvMode,ConversionDataManagement,TriggerFrequencyMode,Resolution,master
 ADC1.MonitoredBy-45\#ChannelRegularConversion=__NULL
 ADC1.NbrOfConversionFlag=1
 ADC1.OffsetNumber-45\#ChannelRegularConversion=ADC_OFFSET_NONE
@@ -13,10 +12,10 @@ ADC1.SamplingTime-45\#ChannelRegularConversion=ADC_SAMPLETIME_814CYCLES
 ADC1.TriggerFrequencyMode=ADC_TRIGGER_FREQ_LOW
 ADC1.master=1
 ADC2.Channel-0\#ChannelRegularConversion=ADC_CHANNEL_4
-ADC2.ClockPrescaler=ADC_CLOCK_ASYNC_DIV4
+ADC2.ClockPrescaler=ADC_CLOCK_ASYNC_DIV1
 ADC2.ContinuousConvMode=DISABLE
 ADC2.ConversionDataManagement=ADC_CONVERSIONDATA_DR
-ADC2.IPParameters=Rank-0\#ChannelRegularConversion,Channel-0\#ChannelRegularConversion,SamplingTime-0\#ChannelRegularConversion,OffsetNumber-0\#ChannelRegularConversion,MonitoredBy-0\#ChannelRegularConversion,NbrOfConversionFlag,ContinuousConvMode,ConversionDataManagement,ClockPrescaler
+ADC2.IPParameters=Rank-0\#ChannelRegularConversion,Channel-0\#ChannelRegularConversion,SamplingTime-0\#ChannelRegularConversion,OffsetNumber-0\#ChannelRegularConversion,MonitoredBy-0\#ChannelRegularConversion,NbrOfConversionFlag,ContinuousConvMode,ConversionDataManagement,ClockPrescaler,TriggerFrequencyMode
 ADC2.MonitoredBy-0\#ChannelRegularConversion=__NULL
 ADC2.NbrOfConversionFlag=1
 ADC2.OffsetNumber-0\#ChannelRegularConversion=ADC_OFFSET_NONE
