@@ -11,7 +11,7 @@ jobs:
     - uses: DoozyX/clang-format-lint-action@v0.17
       with:
         source: './S3R_Production'
-        exclude: '*/Drivers */Middlewares'
+        exclude: '*/Drivers */Middlewares */BMP3_SensorAPI'
         extensions: 'h,c'
         clangFormatVersion: 17
         style: file
