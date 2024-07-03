@@ -812,7 +812,7 @@ void S4_NORM_ADC_readBatt(void) {
       hadcBattPtr->Init.ExternalTrigConv = ADC_SOFTWARE_START;
       hadcBattPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
       hadcBattPtr->Init.DMAContinuousRequests = DISABLE;
-      hadcBattPtr->Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
+      hadcBattPtr->Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_LOW;
       hadcBattPtr->Init.Overrun = ADC_OVR_DATA_PRESERVED;
       hadcBattPtr->Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
       hadcBattPtr->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
