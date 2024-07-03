@@ -1,4 +1,5 @@
 BasedOnStyle: LLVM
+AlignConsecutiveAssignments: 'true'
 AlignTrailingComments: 'false'
 BreakBeforeBraces: Allman
 ColumnLimit: '0'
