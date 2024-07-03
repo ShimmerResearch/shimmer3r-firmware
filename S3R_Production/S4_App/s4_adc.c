@@ -959,12 +959,12 @@ void updateBatteryStatus(uint16_t adc_battVal)
 //}
 
 
-void setBatteryInterval(uint8_t value)
+void setBatteryInterval(battAlarmInterval_t  value)
 {
   battAlarmInterval = value;
 }
 
-uint8_t getBatteryInterval(void)
+battAlarmInterval_t  getBatteryInterval(void)
 {
   return battAlarmInterval;
 }

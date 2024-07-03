@@ -590,8 +590,8 @@ typedef volatile struct STATTypeDef_t{//STATUS
 
 typedef enum
 {
-   BATT_INTERVAL_UNDOCKED = 10U, //10 Minutes
-   BATT_INTERVAL_DOCKED = 30U   // 30 Seconds
+   BATT_INTERVAL_UNDOCKED , //10 Minutes
+   BATT_INTERVAL_DOCKED  // 30 Seconds
 } battAlarmInterval_t;
 
 //STATTypeDef * GetStatus(void);

@@ -88,13 +88,13 @@ void S4_NORM_ADC_rankBatt(void);
 void adcGpioInit(uint32_t pin, GPIO_TypeDef* port);
 void manageReadBatt(void);
 void updateBatteryStatus(uint16_t adc_battVal);
-uint8_t getBatteryInterval(void);
+battAlarmInterval_t  getBatteryInterval(void);
 
 #if defined(SHIMMER3R)
 bool areAdcChannelsEnabled(void);
 #endif
 
-void setBatteryInterval(uint8_t value);
+void setBatteryInterval(battAlarmInterval_t  value);
 void resetBatteryCriticalCount(void);
 
 #endif /* S4_ADC_H */
