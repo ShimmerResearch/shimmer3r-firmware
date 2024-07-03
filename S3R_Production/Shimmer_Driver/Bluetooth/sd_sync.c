@@ -903,83 +903,93 @@ void handleSyncTimerTriggerNode(void)
 
 void startBtForSync(void)
 {
+#if defined(SHIMMER3)
     BT_init();
     BT_rn4xDisableRemoteConfig(1);
     BT_setUpdateBaudDuringBoot(1);
     btStartCb();
+#elif defined(SHIMMER3R)
+    //TODO
+#endif
 }
 
 //Timer2:
 //ccr1: for blink timer
 void CommTimerStart(void)
 {
-  //TODO
-//    TA0CTL = TASSEL_1 + MC_2 + TACLR;    //ACLK, continuous mode, clear TAR
-//    TA0CCTL1 = CCIE;
-//    TA0CCR1 = GetTA0() + 16384;
+#if defined(SHIMMER3)
+    TA0CTL = TASSEL_1 + MC_2 + TACLR;    //ACLK, continuous mode, clear TAR
+    TA0CCTL1 = CCIE;
+    TA0CCR1 = GetTA0() + 16384;
+#elif defined(SHIMMER3R)
+    //TODO
+#endif
 }
 
 inline void CommTimerStop(void)
 {
-  //TODO
-//    TA0CTL = MC_0; // StopTb0()
-//    //rcommStatus=0;
-//    TA0CCTL1 &= ~CCIE;
+#if defined(SHIMMER3)
+    TA0CTL = MC_0; // StopTb0()
+    //rcommStatus=0;
+    TA0CCTL1 &= ~CCIE;
+#elif defined(SHIMMER3R)
+    //TODO
+#endif
 }
 
+#if defined(SHIMMER3)
 inline uint16_t GetTA0(void)
 {
-  //TODO
-//    register uint16_t t0, t1;
-//    uint8_t ie;
-//    if (ie = (__get_SR_register() & GIE))   //interrupts enabled? // @suppress("Assignment in condition")
-//        __disable_interrupt();
-//    t1 = TA0R;
-//    do {t0=t1; t1=TA0R;} while(t0!=t1);
-//    if (ie)
-//        __enable_interrupt();
-//    return t1;
+    register uint16_t t0, t1;
+    uint8_t ie;
+    if (ie = (__get_SR_register() & GIE))   //interrupts enabled? // @suppress("Assignment in condition")
+        __disable_interrupt();
+    t1 = TA0R;
+    do {t0=t1; t1=TA0R;} while(t0!=t1);
+    if (ie)
+        __enable_interrupt();
+    return t1;
 }
 
-//TODO
-//#pragma vector=TIMER0_A1_VECTOR
-//__interrupt void TIMER0_A1_ISR(void)
-//{
-//    switch (__even_in_range(TA0IV, 14))
-//    {
-//    case 0:
-//        break;                           // No interrupt
-//    case 2:                                  // TA0CCR1
-//        TA0CCR1 += SYNC_PERIOD;
-//
-//        /* SDLog handles auto-stop in TIMER0_A1_VECTOR whereas LogAndStream handles it in TIMER0_B1_VECTOR */
-////        if (sensing && maxLen)
-////        {
-////            if (maxLenCnt < maxLen * SYNC_FACTOR)
-////                maxLenCnt++;
-////            else
-////            {
-////                stopLogging = 1;
-////                //stopSensing = 1;
-////                maxLenCnt = 0;
-////                return;
-////            }
-////        }
-//
-//        handleSyncTimerTrigger();
-//
-//        break;
-//    case 4:
-//        break;                           // TA0CCR2 not used
-//    case 6:
-//        break;                           // Reserved
-//    case 8:
-//        break;                           // Reserved
-//    case 10:
-//        break;                           // Reserved
-//    case 12:
-//        break;                           // Reserved
-//    case 14:
-//        break;                           // TAIFG overflow handler
-//    }
-//}
+#pragma vector=TIMER0_A1_VECTOR
+__interrupt void TIMER0_A1_ISR(void)
+{
+    switch (__even_in_range(TA0IV, 14))
+    {
+    case 0:
+        break;                           // No interrupt
+    case 2:                                  // TA0CCR1
+        TA0CCR1 += SYNC_PERIOD;
+
+        /* SDLog handles auto-stop in TIMER0_A1_VECTOR whereas LogAndStream handles it in TIMER0_B1_VECTOR */
+//        if (sensing && maxLen)
+//        {
+//            if (maxLenCnt < maxLen * SYNC_FACTOR)
+//                maxLenCnt++;
+//            else
+//            {
+//                stopLogging = 1;
+//                //stopSensing = 1;
+//                maxLenCnt = 0;
+//                return;
+//            }
+//        }
+
+        handleSyncTimerTrigger();
+
+        break;
+    case 4:
+        break;                           // TA0CCR2 not used
+    case 6:
+        break;                           // Reserved
+    case 8:
+        break;                           // Reserved
+    case 10:
+        break;                           // Reserved
+    case 12:
+        break;                           // Reserved
+    case 14:
+        break;                           // TAIFG overflow handler
+    }
+}
+#endif

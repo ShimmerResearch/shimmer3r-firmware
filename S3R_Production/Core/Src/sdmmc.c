@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 #include "s4.h"
+#include "stdio.h"
+#include "gpio.h"
 
 extern STATTypeDef stat;
 

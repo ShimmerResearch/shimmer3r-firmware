@@ -179,6 +179,7 @@ ezs_input_result_t appInput(uint8_t *inByte, uint16_t timeout) {
 //  setDmaRx(1);
 
 //    return EZS_INPUT_RESULT_NO_DATA;
+  return EZS_INPUT_RESULT_BYTE_READ;
 }
 
 HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length) {
@@ -424,22 +425,34 @@ void pushBytesToBtTxBuf(uint8_t *buf, uint8_t len)
     uint16_t spaceAfterHead = BT_TX_BUF_SIZE - (gBtTxFifo.wrIdx & BT_TX_BUF_MASK);
     if (spaceAfterHead > len)
     {
-        memcpy(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf, len);
+      memcpy_vout(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf, len);
         gBtTxFifo.wrIdx += len;
     }
     else
     {
         /* Fill from head to end of buf */
-        memcpy(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf, spaceAfterHead);
+      memcpy_vout(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf, spaceAfterHead);
         gBtTxFifo.wrIdx += spaceAfterHead;
 
         /* Fill from start of buf. We already checked above whether there is
          * enough space in the buf (getSpaceInBtTxBuf()) so we don't need to
          * worry about the tail position. */
         uint16_t remaining = len - spaceAfterHead;
-        memcpy(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf + spaceAfterHead, remaining);
+        memcpy_vout(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf + spaceAfterHead, remaining);
         gBtTxFifo.wrIdx += remaining;
     }
+}
+
+// https://stackoverflow.com/questions/54964154/is-memcpyvoid-dest-src-n-with-a-volatile-array-safe
+volatile void *memcpy_vout(volatile void *dest, const void *src, size_t n)
+{
+    const uint8_t *src_c       = (const uint8_t *)src;
+    volatile uint8_t *dest_c   = (volatile uint8_t *)dest;
+
+    for (size_t i = 0; i < n; i++)
+        dest_c[i]   = src_c[i];
+
+    return  dest;
 }
 
 uint16_t getUsedSpaceInBtTxBuf(void)
@@ -512,10 +525,16 @@ HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len) {
 //      PeriStat_Set(STAT_PERI_BT);
 //   }
 //   return ret_val;
+   return HAL_OK;
 }
 
 void resetEzsPendingResponse(void)
 {
   pending_response = 0;
+}
+
+void resetBtRxBuff(void)
+{
+    memset(rxBuf, 0, sizeof(rxBuf));
 }
 
