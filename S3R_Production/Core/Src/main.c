@@ -601,7 +601,7 @@ void SetupDock(void)
         }
         if (!stat.isSensing)
         {
-            UART_activate();
+            DockUart_enable();
         }
         BtsdSelfcmd();
     }
@@ -610,7 +610,7 @@ void SetupDock(void)
         setBatteryInterval(BATT_INTERVAL_UNDOCKED);
         if (!stat.isSensing)
         {
-            UART_deactivate();
+            DockUart_disable();
         }
         setMcuHasSdcardControl(1);
 
