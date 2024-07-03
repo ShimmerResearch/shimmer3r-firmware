@@ -1,14 +1,16 @@
-name: clang-format Check
-on: [push, pull_request]
+name: test-clang-format
+
+on: [push]
+
 jobs:
-  formatting-check:
-    name: Formatting Check
+  build:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Run clang-format style check for C/C++/Protobuf programs.
-      uses: jidicula/clang-format-action@v4.13.0
+    - uses: actions/checkout@v2
+    - uses: DoozyX/clang-format-lint-action@v0.17
       with:
-        clang-format-version: '13'
-        check-path: 'src'
-        fallback-style: 'InheritParentConfig' # optional
+        source: '.'
+        exclude: './Drivers ./Middlewares'
+        extensions: 'h,c'
+        clangFormatVersion: 17        
