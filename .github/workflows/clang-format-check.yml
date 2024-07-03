@@ -10,5 +10,5 @@ jobs:
       uses: jidicula/clang-format-action@v4.13.0
       with:
         clang-format-version: '13'
-        check-path: 'src'
-        fallback-style: file # optional
+        check-path: 'S3R_Production'
+        include-regex: '^.*\.((((c|C)?$)|((h|H)?$)))$'
