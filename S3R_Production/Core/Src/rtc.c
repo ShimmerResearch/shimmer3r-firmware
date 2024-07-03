@@ -707,13 +707,13 @@ void setupNextRtcMinuteAlarm(void)
   battAlarmInterval_t battAlarm = getBatteryInterval();
   if(battAlarm == BATT_INTERVAL_DOCKED) //docked
   {
-    sAlarm.AlarmTime.Seconds = sTime.Seconds > 29 ? 0 : sTime.Seconds + 30U;
+    sAlarm.AlarmTime.Seconds = sTime.Seconds > 28 ? 0 : sTime.Seconds + 30U;
     sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS
         | RTC_ALARMMASK_MINUTES;
   }
   else //un-docked
   {
-    sAlarm.AlarmTime.Minutes = sTime.Minutes > 49 ? 0 : sTime.Minutes + 10U;
+    sAlarm.AlarmTime.Minutes = sTime.Minutes > 48 ? 0 : sTime.Minutes + 10U;
     sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS
         | RTC_ALARMMASK_SECONDS;
   }

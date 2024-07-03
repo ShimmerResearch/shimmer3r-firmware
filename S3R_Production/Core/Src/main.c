@@ -592,12 +592,12 @@ void SetupDock(void)
     if (stat.isDocked)
     {
         setBatteryInterval(BATT_INTERVAL_DOCKED);
-        resetBattCriticalCount();
+        resetBatteryCriticalCount();
         stat.enableSdlog = 0;
         stat.sdlogReady = 0;
         if (CheckSdInslot())
         {
-            DockSdPowerCycle();
+            Board_sdPowerCycle();
         }
         if (!stat.isSensing)
         {
@@ -628,6 +628,7 @@ void SetupDock(void)
             setSdInfoSyncDelayed(1);
         }
     }
+    setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
     stat.isConfiguring = 0;
 }
 
