@@ -79,6 +79,7 @@ void sendNextChar(void);
 void clearBtTxBuf(uint8_t isCalledFromMain);
 void pushByteToBtTxBuf(uint8_t b);
 void pushBytesToBtTxBuf(uint8_t *buf, uint8_t len);
+volatile void *memcpy_vout(volatile void *dest, const void *src, size_t n);
 uint16_t getUsedSpaceInBtTxBuf(void);
 uint16_t getSpaceInBtTxBuf(void);
 
@@ -95,6 +96,7 @@ extern void ezsHandler(ezs_packet_t *packet) __attribute__((weak));
 
 HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len);
 void resetEzsPendingResponse(void);
+void resetBtRxBuff(void);
 
 #endif /* HANDLERS_H */
 

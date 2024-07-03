@@ -91,9 +91,9 @@ uint8_t SD_test(void){
 
 uint8_t SD_test_alternative(void)
 {
+  FRESULT res = FR_OK; /* FatFs function common result code */
 #if USE_FATFS
-  FRESULT res; /* FatFs function common result code */
-  uint32_t byteswritten, bytesread; /* File write/read counts */
+  uint32_t byteswritten; //, bytesread; /* File write/read counts */
   uint8_t wtext[] = "STM32 FATFS works great!"; /* File write buffer */
   uint8_t rtext[_MAX_SS];/* File read buffer */
   FIL SDFile;
@@ -134,6 +134,7 @@ uint8_t SD_test_alternative(void)
   }
   f_mount(&SDFatFS, (TCHAR const*)NULL, 0);
 #endif
+  return res;
 }
 
 void SD_setShimmerName(void)
@@ -299,7 +300,7 @@ uint8_t SD_makeBasedir(void) {
 
 void SD_makeFileName(char* name_buf) {
    //strcpy(file_name, "this_is_a_very_long_name_for_the_dataFile");
-   uint8_t temp_str[5];
+   uint8_t temp_str[7];
    sprintf((char*)temp_str, "/%03d", fileNum++);
 
    strcpy((char*)name_buf,(char*)dirName);
@@ -497,15 +498,6 @@ void SD_mount(uint8_t val){
 #endif
 }
 
-uint8_t SD_insertedCheck() {
-   if (HAL_GPIO_ReadPin(SD_DETECT_N_GPIO_Port, SD_DETECT_N_Pin) == GPIO_PIN_RESET) { //inserted
-      stat.isSdInserted = 1;
-   } else {
-      stat.isSdInserted = 0;
-   }
-   return stat.isSdInserted;
-}
-
 void UpdateSdConfig(void)
 {
     FIL cfgFile;
@@ -526,18 +518,18 @@ void UpdateSdConfig(void)
         char buffer[66], val_char[21];
         float val_num;
         uint16_t val_int, val_f;
-        uint32_t temp32;
+//        uint32_t temp32;
         uint64_t temp64;
 
         uint8_t i;
-        uint16_t temp16;
+//        uint16_t temp16;
         resetSyncVariablesBeforeParseConfig();
 
         UINT bw;
 
-        memset(shimmerName, 0, MAX_CHARS);
-        memset(expIdName, 0, MAX_CHARS);
-        memset(configTimeText, 0, MAX_CHARS);
+        memset(shimmerName, 0, sizeof(shimmerName));
+        memset(expIdName, 0, sizeof(expIdName));
+        memset(configTimeText, 0, sizeof(configTimeText));
 
         char cfgname[] = "sdlog.cfg";
 

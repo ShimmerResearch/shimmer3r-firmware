@@ -3429,14 +3429,16 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
 #define ezs_fcmd_system_get_transport() \
     ezs_cmd_va(EZS_IDX_CMD_SYSTEM_GET_TRANSPORT, 1)
 //-------------- Fix 04 Start -------------------------//
-//#define ezs_cmd_system_set_uart_parameters(baud, autobaud, autocorrect, flow, databits, parity, stopbits) \
-//    ezs_cmd_va(EZS_IDX_CMD_SYSTEM_SET_UART_PARAMETERS, 0, baud, autobaud, autocorrect, flow, databits, parity, stopbits)
-//#define ezs_fcmd_system_set_uart_parameters(baud, autobaud, autocorrect, flow, databits, parity, stopbits) \
-//    ezs_cmd_va(EZS_IDX_CMD_SYSTEM_SET_UART_PARAMETERS, 1, baud, autobaud, autocorrect, flow, databits, parity, stopbits)
-//#define ezs_cmd_system_get_uart_parameters() \
-//    ezs_cmd_va(EZS_IDX_CMD_SYSTEM_GET_UART_PARAMETERS, 0)
-//#define ezs_fcmd_system_get_uart_parameters() \
-//    ezs_cmd_va(EZS_IDX_CMD_SYSTEM_GET_UART_PARAMETERS, 1)
+/*
+#define ezs_cmd_system_set_uart_parameters(baud, autobaud, autocorrect, flow, databits, parity, stopbits) \
+    ezs_cmd_va(EZS_IDX_CMD_SYSTEM_SET_UART_PARAMETERS, 0, baud, autobaud, autocorrect, flow, databits, parity, stopbits)
+#define ezs_fcmd_system_set_uart_parameters(baud, autobaud, autocorrect, flow, databits, parity, stopbits) \
+    ezs_cmd_va(EZS_IDX_CMD_SYSTEM_SET_UART_PARAMETERS, 1, baud, autobaud, autocorrect, flow, databits, parity, stopbits)
+#define ezs_cmd_system_get_uart_parameters() \
+    ezs_cmd_va(EZS_IDX_CMD_SYSTEM_GET_UART_PARAMETERS, 0)
+#define ezs_fcmd_system_get_uart_parameters() \
+    ezs_cmd_va(EZS_IDX_CMD_SYSTEM_GET_UART_PARAMETERS, 1)
+*/
 
 #define ezs_cmd_system_set_uart_parameters(baud, autobaud, autocorrect, flow, databits, parity, stopbits, type) \
     ezs_cmd_va(EZS_IDX_CMD_SYSTEM_SET_UART_PARAMETERS, 0, baud, autobaud, autocorrect, flow, databits, parity, stopbits, type)
@@ -3466,8 +3468,10 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
 #define ezs_cmd_gap_delete_whitelist_entry(address, type) \
     ezs_cmd_va(EZS_IDX_CMD_GAP_DELETE_WHITELIST_ENTRY, 0, address, type)
 //-------------- Fix 03 Start -------------------------//
-//#define ezs_cmd_gap_start_adv(mode, type, interval, channels, filter, timeout) \
-//    ezs_cmd_va(EZS_IDX_CMD_GAP_START_ADV, 0, mode, type, interval, channels, filter, timeout)
+/*
+#define ezs_cmd_gap_start_adv(mode, type, interval, channels, filter, timeout) \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_START_ADV, 0, mode, type, interval, channels, filter, timeout)
+ */
 #define ezs_cmd_gap_start_adv(mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, direct_address, direct_address_type) \
     ezs_cmd_va(EZS_IDX_CMD_GAP_START_ADV, 0, mode, type, channels, high_interval, high_duration, low_interval, low_duration, flags, direct_address, direct_address_type)
 //-------------- Fix 03 Stop -------------------------//
@@ -3485,10 +3489,12 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
     ezs_cmd_va(EZS_IDX_CMD_GAP_QUERY_WHITELIST, 0)
 
 //-------------- Fix 01 Start -------------------------//
-//#define ezs_cmd_gap_set_device_name(name) \
-//    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_DEVICE_NAME, 0, name)
-//#define ezs_fcmd_gap_set_device_name(name) \
-//    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_DEVICE_NAME, 1, name)
+/*
+#define ezs_cmd_gap_set_device_name(name) \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_DEVICE_NAME, 0, name)
+#define ezs_fcmd_gap_set_device_name(name) \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_SET_DEVICE_NAME, 1, name)
+ */
 
 #define ezs_cmd_gap_set_device_name(type, name) \
     ezs_cmd_va(EZS_IDX_CMD_GAP_SET_DEVICE_NAME, 0, type, name)
@@ -3497,11 +3503,12 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...);
 //-------------- Fix 01 End -------------------------//
 
 //-------------- Fix 02 Start -------------------------//
-//#define ezs_cmd_gap_get_device_name() \
-//    ezs_cmd_va(EZS_IDX_CMD_GAP_GET_DEVICE_NAME, 0)
-//#define ezs_fcmd_gap_get_device_name() \
-//    ezs_cmd_va(EZS_IDX_CMD_GAP_GET_DEVICE_NAME, 1)
-
+/*
+#define ezs_cmd_gap_get_device_name() \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_GET_DEVICE_NAME, 0)
+#define ezs_fcmd_gap_get_device_name() \
+    ezs_cmd_va(EZS_IDX_CMD_GAP_GET_DEVICE_NAME, 1)
+ */
 
 #define ezs_cmd_gap_get_device_name(type) \
     ezs_cmd_va(EZS_IDX_CMD_GAP_GET_DEVICE_NAME, 0, type)

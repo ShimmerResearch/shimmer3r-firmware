@@ -315,6 +315,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 }
 #endif
 
+uint8_t SD_insertedCheck() {
+   if (HAL_GPIO_ReadPin(SD_DETECT_N_GPIO_Port, SD_DETECT_N_Pin) == GPIO_PIN_RESET) { //inserted
+      stat.isSdInserted = 1;
+   } else {
+      stat.isSdInserted = 0;
+   }
+   return stat.isSdInserted;
+}
+
 void SdPowerOn(void)
 {
   HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, GPIO_PIN_SET);

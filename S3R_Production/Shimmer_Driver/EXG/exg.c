@@ -44,7 +44,6 @@
 #include <string.h>
 
 static uint8_t data[9];
-uint8_t temp_buf;
 
 void EXG_init(SPI_HandleTypeDef *hspi) {
    ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
@@ -60,7 +59,7 @@ void EXG_init(SPI_HandleTypeDef *hspi) {
 
 uint8_t EXG_test(void){
    uint8_t temp_buf[2], ret_val = 0;
-   temp_buf[0] |= 0x08;
+   temp_buf[0] = 0x08;
    EXG_writeRegs(0, ADS1292R_CONFIG2, 1, temp_buf);
    EXG_readRegs(0, ADS1292R_DEVID, 1, temp_buf);// can read back to check if write is done successfully
    if(temp_buf[0] != 0x73){

@@ -593,12 +593,12 @@ void SetupDock(void)
     if (stat.isDocked)
     {
         setBatteryInterval(BATT_INTERVAL_D);
-        resetBattCriticalCount();
+        resetBatteryCriticalCount();
         stat.enableSdlog = 0;
         stat.sdlogReady = 0;
         if (CheckSdInslot())
         {
-            DockSdPowerCycle();
+            Board_sdPowerCycle();
         }
         if (!stat.isSensing)
         {

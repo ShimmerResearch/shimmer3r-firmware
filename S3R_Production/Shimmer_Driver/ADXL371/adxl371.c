@@ -47,6 +47,10 @@
 #include <string.h>
 #include "adxl371.h"
 
+//Shimmer added
+#include "no_os_alloc.h"
+#include "stm32u5xx_hal.h"
+
 /******************************************************************************/
 /************************** Functions Implementation **************************/
 /******************************************************************************/
@@ -812,8 +816,14 @@ int32_t adxl371_init(struct adxl371_dev **device,
     return ret;
   }
 error:
-  printf("adxl371 initialization error (%d)\n", ret);
+  printf("adxl371 initialization error (%ld)\n", ret);
   no_os_free(dev);
   no_os_mdelay(1000);
   return ret;
+}
+
+//Shimmer added
+void no_os_mdelay(uint32_t msecs)
+{
+  HAL_Delay(msecs);
 }

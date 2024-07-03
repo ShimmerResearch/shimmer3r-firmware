@@ -13,6 +13,7 @@
 //#include "../5xx_HAL/hal_CRC.h"
 //#include "../../shimmer_btsd.h"
 #include "crc.h"
+#include "s4_taskList.h"
 
 #define USE_OLD_SD_SYNC_APPROACH        0
 #define BT_SD_SYNC_CRC_MODE             CRC_1BYTES_ENABLED
@@ -116,6 +117,8 @@ void startBtForSync(void);
 
 void CommTimerStart(void);
 void CommTimerStop(void);
+#if defined(SHIMMER3)
 uint16_t GetTA0(void);
+#endif
 
 #endif /* SHIMMER3_COMMON_SOURCE_BLUETOOTH_SD_SD_SYNC_H_ */

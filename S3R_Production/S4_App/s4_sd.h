@@ -28,7 +28,6 @@ void SD_writeToBuff(uint8_t *buf, uint16_t len);
 void SD_writeToCard(void);
 //void SD_config2SdHead(void);
 void SD_mount(uint8_t val);
-uint8_t SD_insertedCheck(void);
 void UpdateSdConfig(void);
 void ParseConfig(void);
 

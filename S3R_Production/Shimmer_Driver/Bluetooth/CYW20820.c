@@ -10,12 +10,14 @@
 #include "CYW20820.h"
 
 #include "string.h"
+#include "stdio.h"
 
 #include "EZ-Serial/ezsapi.h"
 #include "EZ-Serial/handlers.h"
 
 //TODO remove the need for this include
 #include "main.h"
+#include "usart.h"
 
 /* convenience functions for pretty-printing binary data as zero-padded hexadecimal */
 #define printHex8(VARIABLE)     printHex((uint8_t *)&VARIABLE, 1, 1, 0)
@@ -1118,14 +1120,14 @@ uint8_t* BT_getCyw20820MacAddressPtr(void)
   return &rsp_system_get_bluetooth_address.address.addr[0];
 }
 
-void BT_getCyw20820FirmwareVersionStr(char *str)
+void BT_generateCyw20820FirmwareVersionStr(char *str)
 {
   sprintf(str, "CYW20820 app=v%02d.%02d.%02d.%02d, stack=0x%08x, protocol=0x%04x, hardware=0x%02x",
-      (rsp_system_query_firmware_version.app >> 24) & 0xFF,
-      (rsp_system_query_firmware_version.app >> 16) & 0xFF,
-      (rsp_system_query_firmware_version.app >> 8) & 0xFF,
-      (rsp_system_query_firmware_version.app >> 0) & 0xFF,
-      rsp_system_query_firmware_version.stack,
+      (uint8_t)(rsp_system_query_firmware_version.app >> 24),
+      (uint8_t)(rsp_system_query_firmware_version.app >> 16),
+      (uint8_t)(rsp_system_query_firmware_version.app >> 8),
+      (uint8_t)(rsp_system_query_firmware_version.app >> 0),
+      (uint16_t)rsp_system_query_firmware_version.stack,
       rsp_system_query_firmware_version.protocol,
       rsp_system_query_firmware_version.hardware);
 }
