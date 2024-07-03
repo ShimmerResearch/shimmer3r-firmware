@@ -1,4 +1,4 @@
-BasedOnStyle: None
+BasedOnStyle: GNU
 AlignTrailingComments: true
 BreakBeforeBraces: Allman
 ColumnLimit: 0
