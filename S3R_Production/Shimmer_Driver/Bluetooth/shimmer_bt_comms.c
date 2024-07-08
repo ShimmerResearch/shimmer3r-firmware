@@ -83,7 +83,7 @@ uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, //toggleLedRed, enableBtstream
         exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, bufferSizeResponse, blinkLedBtRsp, gsrRangeResponse, infomemBtRsp, dcIdBtRsp, dcMemBtRsp,
         mpu9250MagSensAdjValsResponse, lsm303dlhcAccelLPModeResponse, deviceVersionBtRsp, rwcResponse,
         calibRamResponse, btDataRateResponse, btVerResponse, btCommsBaudRateResponse, bmp280CalibrationCoefficientsResponse, bmpGenericCalibrationCoefficientsResponse,
-        useAckPrefixForInstreamResponses, derivedChannelResponse;//btIsConnected,
+        useAckPrefixForInstreamResponses, derivedChannelResponse, uniqueSerialResponse;
 uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
 uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
 
@@ -2319,6 +2319,7 @@ void resetBtResponseBools(void)
   btCommsBaudRateResponse = 0;
   useAckPrefixForInstreamResponses = 1U;
   derivedChannelResponse = 0;
+  uniqueSerialResponse = 0;
 }
 
 uint8_t getBtVerStrLen(void)
@@ -2892,11 +2893,9 @@ void BtUart_processCmd(void) {
   case GET_BUFFER_SIZE_COMMAND:
     bufferSizeResponse = 1;
     break;
-/*
   case GET_UNIQUE_SERIAL_COMMAND:
     uniqueSerialResponse = 1;
     break;
-*/
    case GET_DAUGHTER_CARD_ID_COMMAND:
       btDcMemLength = btArgs[0];
       btDcMemOffset = btArgs[1];
@@ -3329,11 +3328,15 @@ void BtUart_sendRsp(void) {
          *(bt_tx_data + packet_length++) = BUFFER_SIZE_RESPONSE;
          *(bt_tx_data + packet_length++) = storedConfig->bufferSize;
          bufferSizeResponse = 0;
-//      } else if (uniqueSerialResponse) {
-//         *(bt_tx_data + packet_length++) = UNIQUE_SERIAL_RESPONSE;
-//         memcpy((bt_tx_data+packet_length), dierecord, 8);
-//         packet_length += 8;
-//         uniqueSerialResponse = 0;
+      } else if (uniqueSerialResponse) {
+         *(bt_tx_data + packet_length++) = UNIQUE_SERIAL_RESPONSE;
+         uint32_t uid[3];
+         uid[0] = HAL_GetUIDw0();
+         uid[1] = HAL_GetUIDw1();
+         uid[2] = HAL_GetUIDw2();
+         memcpy((bt_tx_data+packet_length), (uint8_t *) &uid[0], 12);
+         packet_length += 12;
+         uniqueSerialResponse = 0;
       } else if (exgRegsResponse) {
          *(bt_tx_data + packet_length++) = EXG_REGS_RESPONSE;
          *(bt_tx_data + packet_length++) = exgLength;
