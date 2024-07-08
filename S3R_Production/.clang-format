@@ -422,14 +422,14 @@ AlignConsecutiveBitFields:
   AcrossComments: false
 
 AlignConsecutiveDeclarations:
-  Enabled: true
+  Enabled: false
   AcrossEmptyLines: true
   AcrossComments: false
 
 AlignConsecutiveMacros:
   Enabled: true
   AcrossEmptyLines: true
-  AcrossComments: false
+  AcrossComments: true
 
 AlignConsecutiveShortCaseStatements:
   Enabled: true
