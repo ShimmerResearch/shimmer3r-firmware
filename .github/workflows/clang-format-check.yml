@@ -16,10 +16,10 @@ jobs:
         extensions: 'h,c'
         clangFormatVersion: 17
         style: file
-#    - uses: EndBug/add-and-commit@v9
-#      with:
-#        author_name: Clang Robot
-#        author_email: robot@example.com
-#        message: 'Committing clang-format changes'
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: EndBug/add-and-commit@v9
+      with:
+        author_name: Engineering Admin
+        author_email: engineeringadmin@shimmersensing.com
+        message: 'Committing clang-format changes'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
