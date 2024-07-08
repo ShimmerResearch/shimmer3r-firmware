@@ -48,61 +48,62 @@
 #include "s4__cfg.h"
 
 #if USE_FREERTOS
-#define S4_Task_init       S4_RTOS_Task_init 
-#define S4_Task_manage     S4_RTOS_Task_manage 
-#define S4_Task_getCurrent S4_RTOS_Task_getCurrent 
-#define S4_Task_clear      S4_RTOS_Task_clear 
-#define S4_Task_set        S4_RTOS_Task_set 
-#define S4_Task_getList    S4_RTOS_Task_getList 
+#define S4_Task_init       S4_RTOS_Task_init
+#define S4_Task_manage     S4_RTOS_Task_manage
+#define S4_Task_getCurrent S4_RTOS_Task_getCurrent
+#define S4_Task_clear      S4_RTOS_Task_clear
+#define S4_Task_set        S4_RTOS_Task_set
+#define S4_Task_getList    S4_RTOS_Task_getList
 #else
-#define S4_Task_init       S4_NORM_Task_init 
-#define S4_Task_manage     S4_NORM_Task_manage 
-#define S4_Task_getCurrent S4_NORM_Task_getCurrent 
-#define S4_Task_clear      S4_NORM_Task_clear 
-#define S4_Task_set        S4_NORM_Task_set 
-#define S4_Task_getList    S4_NORM_Task_getList 
+#define S4_Task_init       S4_NORM_Task_init
+#define S4_Task_manage     S4_NORM_Task_manage
+#define S4_Task_getCurrent S4_NORM_Task_getCurrent
+#define S4_Task_clear      S4_NORM_Task_clear
+#define S4_Task_set        S4_NORM_Task_set
+#define S4_Task_getList    S4_NORM_Task_getList
 #endif //USE_FREERTOS
 
-#define TASK_SIZE    31
-typedef enum {
-   TASK_NONE = 0,
-   //TASK_TESTSDSTOP    = 0x1,
-   //TASK_TESTSDSTART   = 0x1<<1,
-   TASK_DOCKSETUP       = 0x1<<2, 
-   //TASK_SETCONFIG       = 0x1<<2,
-   TASK_UARTPROCESS     = 0x1<<3,
-   TASK_UARTRESPONSE    = 0x1<<4,
-   TASK_BTPROCESS       = 0x1<<5,
-   TASK_BTRESPONSE      = 0x1<<6,
-   //TASK_CFGCH         = 0x1<<7,
-   TASK_SDWRITE         = 0x1<<8,
-   TASK_STARTSENSING    = 0x1<<9,
-   TASK_STOPSENSING     = 0x1<<10,
-   TASK_STREAMDATA      = 0x1<<11,
-   TASK_RADIOTX         = 0x1<<12,
-   TASK_BATTREAD        = 0x1<<13,
+#define TASK_SIZE 31
+typedef enum
+{
+  TASK_NONE = 0,
+  //TASK_TESTSDSTOP    = 0x1,
+  //TASK_TESTSDSTART   = 0x1<<1,
+  TASK_DOCKSETUP = 0x1 << 2,
+  //TASK_SETCONFIG       = 0x1<<2,
+  TASK_UARTPROCESS = 0x1 << 3,
+  TASK_UARTRESPONSE = 0x1 << 4,
+  TASK_BTPROCESS = 0x1 << 5,
+  TASK_BTRESPONSE = 0x1 << 6,
+  //TASK_CFGCH         = 0x1<<7,
+  TASK_SDWRITE = 0x1 << 8,
+  TASK_STARTSENSING = 0x1 << 9,
+  TASK_STOPSENSING = 0x1 << 10,
+  TASK_STREAMDATA = 0x1 << 11,
+  TASK_RADIOTX = 0x1 << 12,
+  TASK_BATTREAD = 0x1 << 13,
 #if defined(SHIMMER3R)
-   TASK_SAVEDATA        = 0x1<<14,
+  TASK_SAVEDATA = 0x1 << 14,
 #else defined(SHIMMER4_SDK)
-   //TASK_HRCALC        = 0x1<<14,
+//TASK_HRCALC        = 0x1<<14,
 #endif
-   //TASK_TESTLEDS      = 0x1<<15,
-   //TASK_DELAYEDRADIOISR = 0x1<<16,
-   TASK_NEXTSENSOR      = 0x1<<17
+  //TASK_TESTLEDS      = 0x1<<15,
+  //TASK_DELAYEDRADIOISR = 0x1<<16,
+  TASK_NEXTSENSOR = 0x1 << 17
 } TASK_FLAGS;
 //return the task id of the current task
 
 
 void S4_NORM_Task_init(void);
-   
+
 void S4_NORM_Task_manage(void);
-   
+
 uint32_t S4_NORM_Task_getCurrent(void);
 
-// clear the task from the tasklist
+//clear the task from the tasklist
 void S4_NORM_Task_clear(uint32_t task_id);
 
-// add the task to the tasklist
+//add the task to the tasklist
 uint8_t S4_NORM_Task_set(uint32_t task_id);
 
 //return the whole tasklist
@@ -111,6 +112,3 @@ uint32_t S4_NORM_Task_getList(void);
 uint8_t setTaskNewBtCmdToProcess(void);
 
 #endif //S4_TASKLIST_H
-
-
-

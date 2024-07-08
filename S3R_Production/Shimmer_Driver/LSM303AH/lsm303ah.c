@@ -57,12 +57,12 @@
  *            header file of the driver (_reg.h).
  */
 
-// Based on https://github.com/STMicroelectronics/STMems_Standard_C_drivers/tree/master/lsm303ah_STdC/examples
+//Based on https://github.com/STMicroelectronics/STMems_Standard_C_drivers/tree/master/lsm303ah_STdC/examples
 #if defined(STEVAL_MKI109V3)
 /* MKI109V3: Define communication interface */
 #define SENSOR_BUS hspi2
 /* MKI109V3: Vdd and Vddio power supply values */
-#define PWM_3V3 915
+#define PWM_3V3    915
 
 #elif defined(NUCLEO_F411RE)
 /* NUCLEO_F411RE: Define communication interface */
@@ -81,32 +81,32 @@
 #else
 #define SENSOR_BUS hspi2
 
-#define CS_PORT CS_LSM303AH_GPIO_Port
-#define CS_PIN CS_LSM303AH_Pin
+#define CS_PORT    CS_LSM303AH_GPIO_Port
+#define CS_PIN     CS_LSM303AH_Pin
 #endif
 
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 #if defined(NUCLEO_F411RE)
 #include "lsm303ah_reg.h"
 
-#include "stm32f4xx_hal.h"
-#include "usart.h"
 #include "gpio.h"
 #include "i2c.h"
+#include "stm32f4xx_hal.h"
+#include "usart.h"
 
 #elif defined(STEVAL_MKI109V3)
 #include "lsm303ah_reg.h"
 
-#include "stm32f4xx_hal.h"
-#include "usbd_cdc_if.h"
 #include "gpio.h"
 #include "spi.h"
+#include "stm32f4xx_hal.h"
 #include "tim.h"
+#include "usbd_cdc_if.h"
 
 #elif defined(SPC584B_DIS)
 #include "lsm303ah_reg.h"
@@ -114,14 +114,14 @@
 #include "components.h"
 
 #elif defined(SHIMMER3R)
-#include "lsm303ah.h"
 #include "lsm303ah-pid/lsm303ah_reg.h"
+#include "lsm303ah.h"
 
-#include "stm32u5xx_hal.h"
-#include "usart.h"
 #include "gpio.h"
 #include "spi.h"
+#include "stm32u5xx_hal.h"
 #include "tim.h"
+#include "usart.h"
 
 #endif
 
@@ -141,70 +141,38 @@ typedef struct
 
 /* Private macro -------------------------------------------------------------*/
 
-#define    BOOT_TIME            20 //ms
-#define    WAIT_XL_TIME        200 //ms
-#define    WAIT_MAG_TIME_01     20 //ms
-#define    WAIT_MAG_TIME_02     60 //ms
+#define BOOT_TIME                 20  //ms
+#define WAIT_XL_TIME              200 //ms
+#define WAIT_MAG_TIME_01          20  //ms
+#define WAIT_MAG_TIME_02          60  //ms
 
-#define    SELF_TEST_SAMPLES_XL            5 //number of samples
-#define    SELF_TEST_SAMPLES_MAG          50 //number of samples
+#define SELF_TEST_SAMPLES_XL      5  //number of samples
+#define SELF_TEST_SAMPLES_MAG     50 //number of samples
 
 /* Self test limits. */
-#define    SELF_TEST_MIN_ST_LIMIT_mg      70.0f
-#define    SELF_TEST_MAX_ST_LIMIT_mg    1500.0f
-#define    SELF_TEST_MIN_ST_LIMIT_mG      15.0f
-#define    SELF_TEST_MAX_ST_LIMIT_mG     500.0f
+#define SELF_TEST_MIN_ST_LIMIT_mg 70.0f
+#define SELF_TEST_MAX_ST_LIMIT_mg 1500.0f
+#define SELF_TEST_MIN_ST_LIMIT_mG 15.0f
+#define SELF_TEST_MAX_ST_LIMIT_mG 500.0f
 
 /* Self test results. */
-#define    ST_PASS     1U
-#define    ST_FAIL     0U
+#define ST_PASS                   1U
+#define ST_FAIL                   0U
 
 /* Private variables ---------------------------------------------------------*/
 #if defined(STEVAL_MKI109V3)
-static sensbus_t xl_bus  = {&SENSOR_BUS,
-                            0,
-                            CS_up_GPIO_Port,
-                            CS_up_Pin
-                           };
-static sensbus_t mag_bus = {&SENSOR_BUS,
-                            0,
-                            CS_up_GPIO_Port,
-                            CS_up_Pin
-                           };
+static sensbus_t xl_bus = { &SENSOR_BUS, 0, CS_up_GPIO_Port, CS_up_Pin };
+static sensbus_t mag_bus = { &SENSOR_BUS, 0, CS_up_GPIO_Port, CS_up_Pin };
 #elif defined(NUCLEO_F411RE) || defined(SPC584B_DIS)
-static sensbus_t xl_bus  = {&SENSOR_BUS,
-                            LSM303AH_I2C_ADD_XL,
-                            0,
-                            0
-                           };
-static sensbus_t mag_bus = {&SENSOR_BUS,
-                            LSM303AH_I2C_ADD_MG,
-                            0,
-                            0
-                           };
+static sensbus_t xl_bus = { &SENSOR_BUS, LSM303AH_I2C_ADD_XL, 0, 0 };
+static sensbus_t mag_bus = { &SENSOR_BUS, LSM303AH_I2C_ADD_MG, 0, 0 };
 #elif defined(SHIMMER3R)
 #ifdef LSM303AH_ON_I2C
-static sensbus_t xl_bus = {&SENSOR_BUS,
-    LSM303AH_I2C_ADD_XL,
-                           0,
-                           0
-                          };
-static sensbus_t mag_bus = {&SENSOR_BUS,
-    LSM303AH_I2C_ADD_MG,
-                            0,
-                            0
-                          };
+static sensbus_t xl_bus = { &SENSOR_BUS, LSM303AH_I2C_ADD_XL, 0, 0 };
+static sensbus_t mag_bus = { &SENSOR_BUS, LSM303AH_I2C_ADD_MG, 0, 0 };
 #else
-static sensbus_t xl_bus = {&SENSOR_BUS,
-                           0,
-                           CS_PORT,
-                           CS_PIN
-                          };
-static sensbus_t mag_bus = {&SENSOR_BUS,
-                            0,
-                            CS_PORT,
-                            CS_PIN
-                          };
+static sensbus_t xl_bus = { &SENSOR_BUS, 0, CS_PORT, CS_PIN };
+static sensbus_t mag_bus = { &SENSOR_BUS, 0, CS_PORT, CS_PIN };
 #endif
 
 #endif
@@ -221,10 +189,8 @@ static stmdev_ctx_t dev_ctx_mg;
  *   and are strictly related to the hardware platform used.
  *
  */
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
-    uint16_t len);
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
-    uint16_t len);
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
 static void tx_com(uint8_t *tx_buffer, uint16_t len);
 static void platform_delay(uint32_t ms);
 #if !defined(SHIMMER3R)
@@ -356,8 +322,7 @@ uint8_t lsm303ah_self_test(void)
       /* Check self test limit */
       for (i = 0; i < 3; i++)
       {
-        if (( SELF_TEST_MIN_ST_LIMIT_mg > test_val[i])
-            || (test_val[i] > SELF_TEST_MAX_ST_LIMIT_mg))
+        if ((SELF_TEST_MIN_ST_LIMIT_mg > test_val[i]) || (test_val[i] > SELF_TEST_MAX_ST_LIMIT_mg))
         {
           st_result = ST_FAIL;
         }
@@ -455,8 +420,7 @@ uint8_t lsm303ah_self_test(void)
       /* Check self test limit */
       for (i = 0; i < 3; i++)
       {
-        if (( SELF_TEST_MIN_ST_LIMIT_mG > test_val[i])
-            || (test_val[i] > SELF_TEST_MAX_ST_LIMIT_mG))
+        if ((SELF_TEST_MIN_ST_LIMIT_mG > test_val[i]) || (test_val[i] > SELF_TEST_MAX_ST_LIMIT_mG))
         {
           st_result = ST_FAIL;
         }
@@ -471,16 +435,16 @@ uint8_t lsm303ah_self_test(void)
 
   if (st_result == ST_PASS)
   {
-    sprintf((char*) tx_buffer, "LSM303AH Self Test - PASS\r\n");
+    sprintf((char *) tx_buffer, "LSM303AH Self Test - PASS\r\n");
   }
   else
   {
-    sprintf((char*) tx_buffer, "LSM303AH Self Test - FAIL\r\n");
+    sprintf((char *) tx_buffer, "LSM303AH Self Test - FAIL\r\n");
   }
 
-  tx_com(tx_buffer, strlen((char const*) tx_buffer));
+  tx_com(tx_buffer, strlen((char const *) tx_buffer));
 
-  return st_result == ST_PASS? 0:1;
+  return st_result == ST_PASS ? 0 : 1;
 }
 
 /*
@@ -493,38 +457,36 @@ uint8_t lsm303ah_self_test(void)
  * @param  len       number of consecutive register to write
  *
  */
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
-    uint16_t len)
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len)
 {
-  sensbus_t *sensbus = (sensbus_t*) handle;
+  sensbus_t *sensbus = (sensbus_t *) handle;
 #if defined(NUCLEO_F411RE)
   /* Write multiple command */
   reg |= 0x80;
   HAL_I2C_Mem_Write(sensbus->hbus, sensbus->i2c_address, reg,
-                    I2C_MEMADD_SIZE_8BIT, (uint8_t*) bufp, len, 1000);
+      I2C_MEMADD_SIZE_8BIT, (uint8_t *) bufp, len, 1000);
 #elif defined(STEVAL_MKI109V3)
   /* Write multiple command */
   reg |= 0x40;
   HAL_GPIO_WritePin(sensbus->cs_port, sensbus->cs_pin, GPIO_PIN_RESET);
   HAL_SPI_Transmit(sensbus->hbus, &reg, 1, 1000);
-  HAL_SPI_Transmit(sensbus->hbus, (uint8_t*) bufp, len, 1000);
+  HAL_SPI_Transmit(sensbus->hbus, (uint8_t *) bufp, len, 1000);
   HAL_GPIO_WritePin(sensbus->cs_port, sensbus->cs_pin, GPIO_PIN_SET);
 #elif defined(SPC584B_DIS)
   reg |= 0x80;
-  i2c_lld_write(sensbus->hbus, sensbus->i2c_address & 0xFE, reg,
-               (uint8_t*) bufp, len);
+  i2c_lld_write(sensbus->hbus, sensbus->i2c_address & 0xFE, reg, (uint8_t *) bufp, len);
 #elif defined(SHIMMER3R)
 #ifdef LSM303AH_ON_I2C
   /* Write multiple command */
   reg |= 0x80;
   HAL_I2C_Mem_Write(sensbus->hbus, sensbus->i2c_address, reg,
-                    I2C_MEMADD_SIZE_8BIT, (uint8_t*) bufp, len, 1000);
+      I2C_MEMADD_SIZE_8BIT, (uint8_t *) bufp, len, 1000);
 #else
-//  reg |= 0x40;
+  //reg |= 0x40;
 
   HAL_GPIO_WritePin(sensbus->cs_port, sensbus->cs_pin, GPIO_PIN_RESET);
-//  HAL_SPI_Transmit(sensbus->hbus, &reg, 1, 1000);
-//  HAL_SPI_Transmit(sensbus->hbus, (uint8_t*) bufp, len, 1000);
+  //HAL_SPI_Transmit(sensbus->hbus, &reg, 1, 1000);
+  //HAL_SPI_Transmit(sensbus->hbus, (uint8_t*) bufp, len, 1000);
 
   uint8_t txBuf[2] = { 0 };
   txBuf[0] = reg;
@@ -548,15 +510,14 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
  * @param  len       number of consecutive register to read
  *
  */
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
-    uint16_t len)
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len)
 {
-  sensbus_t *sensbus = (sensbus_t*) handle;
+  sensbus_t *sensbus = (sensbus_t *) handle;
 #if defined(NUCLEO_F411RE)
   /* Read multiple command */
   reg |= 0x80;
   HAL_I2C_Mem_Read(sensbus->hbus, sensbus->i2c_address, reg,
-                   I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
+      I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
 #elif defined(STEVAL_MKI109V3)
   /* Read multiple command */
   reg |= 0xC0;
@@ -565,16 +526,15 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
   HAL_SPI_Receive(sensbus->hbus, bufp, len, 1000);
   HAL_GPIO_WritePin(sensbus->cs_port, sensbus->cs_pin, GPIO_PIN_SET);
 #elif defined(SPC584B_DIS)
-  i2c_lld_read(sensbus->hbus, sensbus->i2c_address & 0xFE, reg, bufp,
-               len);
+  i2c_lld_read(sensbus->hbus, sensbus->i2c_address & 0xFE, reg, bufp, len);
 #elif defined(SHIMMER3R)
 #ifdef LSM303AH_ON_I2C
   /* Read multiple command */
   reg |= 0x80;
   HAL_I2C_Mem_Read(sensbus->hbus, sensbus->i2c_address, reg,
-                   I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
+      I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
 #else
-//  reg |= 0xC0;
+  //reg |= 0xC0;
   reg |= SPI_READ_REGISTER;
   HAL_GPIO_WritePin(sensbus->cs_port, sensbus->cs_pin, GPIO_PIN_RESET);
   HAL_SPI_Transmit(sensbus->hbus, &reg, 1, 1000);
@@ -602,7 +562,7 @@ static void tx_com(uint8_t *tx_buffer, uint16_t len)
 #elif defined(SPC584B_DIS)
   sd_lld_write(&SD2, tx_buffer, len);
 #elif defined(SHIMMER3R)
-  SHIMMER_PRINTF((char*) tx_buffer, len);
+  SHIMMER_PRINTF((char *) tx_buffer, len);
 #endif
 }
 
@@ -642,10 +602,10 @@ void lsm303ah_driver_init(void)
   /* Initialize mems driver interface */
   dev_ctx_xl.write_reg = platform_write;
   dev_ctx_xl.read_reg = platform_read;
-  dev_ctx_xl.handle = (void*) &xl_bus;
+  dev_ctx_xl.handle = (void *) &xl_bus;
   dev_ctx_mg.write_reg = platform_write;
   dev_ctx_mg.read_reg = platform_read;
-  dev_ctx_mg.handle = (void*) &mag_bus;
+  dev_ctx_mg.handle = (void *) &mag_bus;
 }
 
 void lsm303ah_power_on(void)
@@ -668,8 +628,7 @@ void lsm303ah_UnselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-void lsm303ah_accelInit(uint8_t samplingRate, uint8_t range, uint8_t lowPower,
-    uint8_t highresolution)
+void lsm303ah_accelInit(uint8_t samplingRate, uint8_t range, uint8_t lowPower, uint8_t highresolution)
 {
 #if defined(SHIMMER3)
   uint8_t i2c_buffer[2];
@@ -684,19 +643,18 @@ void lsm303ah_accelInit(uint8_t samplingRate, uint8_t range, uint8_t lowPower,
     switch (samplingRate)
     {
     case 8:
-      // 1600 Hz => ODR[3:0] 0101 = 5
+      //1600 Hz => ODR[3:0] 0101 = 5
       samplingRate = 0x05;
       break;
     case 9:
-      // 3200 Hz => ODR[3:0] 0110 = 6
+      //3200 Hz => ODR[3:0] 0110 = 6
       samplingRate = 0x06;
       break;
     case 10:
-      // 6400 Hz => ODR[3:0] 0111 = 7
+      //6400 Hz => ODR[3:0] 0111 = 7
       samplingRate = 0x07;
       break;
-    default:
-      break;
+    default: break;
     }
   }
   else
@@ -820,16 +778,16 @@ void lsm303ah_spi_three_wire_set(void)
   int32_t ret;
 
   lsm303ah_ctrl2_a_t ctrl2_a;
-  ctrl2_a.boot        = 0; // Default = 0
-  ctrl2_a.soft_reset  = 0; // Default = 0
-  ctrl2_a.not_used_01 = 0; // Default = 0
-  ctrl2_a.func_cfg_en = 0; // Default = 0
-  ctrl2_a.fds_slope   = 0; // Default = 0
-  ctrl2_a.if_add_inc  = 1; // Default = 1
+  ctrl2_a.boot = 0;        //Default = 0
+  ctrl2_a.soft_reset = 0;  //Default = 0
+  ctrl2_a.not_used_01 = 0; //Default = 0
+  ctrl2_a.func_cfg_en = 0; //Default = 0
+  ctrl2_a.fds_slope = 0;   //Default = 0
+  ctrl2_a.if_add_inc = 1;  //Default = 1
   ctrl2_a.i2c_disable = LSM303AH_XL_I2C_DISABLE;
-  ctrl2_a.sim         = LSM303AH_XL_SPI_3_WIRE;
+  ctrl2_a.sim = LSM303AH_XL_SPI_3_WIRE;
 
-  ret = lsm303ah_write_reg(&dev_ctx_xl, LSM303AH_CTRL2_A, (uint8_t *)&ctrl2_a, 1);
+  ret = lsm303ah_write_reg(&dev_ctx_xl, LSM303AH_CTRL2_A, (uint8_t *) &ctrl2_a, 1);
 }
 
 #endif
