@@ -39,62 +39,72 @@
  * @author Weibo Pan
  * @date May, 2016
  */
- 
+
 #include "s4_calc.h"
 
-uint16_t crcByte(uint16_t crc, uint8_t b) {
-	crc = (uint8_t)(crc >> 8) | (crc << 8);
-	crc ^= b;
-	crc ^= (uint8_t)(crc & 0xff) >> 4;
-	crc ^= crc << 12;
-	crc ^= (crc & 0xff) << 5;
-	return crc;
+uint16_t crcByte(uint16_t crc, uint8_t b)
+{
+  crc = (uint8_t) (crc >> 8) | (crc << 8);
+  crc ^= b;
+  crc ^= (uint8_t) (crc & 0xff) >> 4;
+  crc ^= crc << 12;
+  crc ^= (crc & 0xff) << 5;
+  return crc;
 }
 
-uint16_t S4Calc_crcCalc(uint8_t *msg, uint8_t len) {
-	uint16_t crcCalc;
-	uint8_t i;
+uint16_t S4Calc_crcCalc(uint8_t *msg, uint8_t len)
+{
+  uint16_t crcCalc;
+  uint8_t i;
 
-	crcCalc = crcByte(CRC_INIT, *msg);
-	for(i=1; i<len; i++) {
-		crcCalc = crcByte(crcCalc, *(msg+i));
-	}
-	if(len%2) {
-		crcCalc = crcByte(crcCalc, 0x00);
-	}
-	return crcCalc;
+  crcCalc = crcByte(CRC_INIT, *msg);
+  for (i = 1; i < len; i++)
+  {
+    crcCalc = crcByte(crcCalc, *(msg + i));
+  }
+  if (len % 2)
+  {
+    crcCalc = crcByte(crcCalc, 0x00);
+  }
+  return crcCalc;
 }
 
-uint8_t S4Calc_crcCheck(uint8_t *msg, uint8_t len) {
-	uint16_t crc;
+uint8_t S4Calc_crcCheck(uint8_t *msg, uint8_t len)
+{
+  uint16_t crc;
 
-	crc = S4Calc_crcCalc(msg, len-2);
+  crc = S4Calc_crcCalc(msg, len - 2);
 
-	if(((crc&0xFF) == msg[len-2]) && (((crc&0xFF00)>>8) == msg[len-1]))
-		return 1;//TRUE
-	else
-		return 0;//FALSE
+  if (((crc & 0xFF) == msg[len - 2]) && (((crc & 0xFF00) >> 8) == msg[len - 1]))
+    return 1; //TRUE
+  else
+    return 0; //FALSE
 }
 
 
-void S4Calc_itoaWith0(uint64_t num, uint8_t* buf, uint8_t len) { // len = actual len + 1 extra '\0' at the end
-   memset(buf, 0, len--);
-   while (len--) {
-      buf[len] = '0' + num % 10;
-      num /= 10;
-   }
+void S4Calc_itoaWith0(uint64_t num, uint8_t *buf, uint8_t len)
+{ //len = actual len + 1 extra '\0' at the end
+  memset(buf, 0, len--);
+  while (len--)
+  {
+    buf[len] = '0' + num % 10;
+    num /= 10;
+  }
 }
 
-void S4Calc_itoaNo0(uint64_t num, uint8_t* buf, uint8_t max_len){// len = actual len + 1 extra '\0' at the end
-   uint8_t idx, i_move;
-   memset(buf,0,max_len);
-   if(!num){
-      buf[0] = '0';
-   }
-   for(idx = 0; (idx < max_len-1) && (num>0); idx++){
-      for(i_move = idx; i_move>0; i_move--)
-         buf[i_move] = buf[i_move-1];
-      buf[0]='0'+num%10;
-      num/=10;
-   }
+void S4Calc_itoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len)
+{ //len = actual len + 1 extra '\0' at the end
+  uint8_t idx, i_move;
+  memset(buf, 0, max_len);
+  if (!num)
+  {
+    buf[0] = '0';
+  }
+  for (idx = 0; (idx < max_len - 1) && (num > 0); idx++)
+  {
+    for (i_move = idx; i_move > 0; i_move--)
+      buf[i_move] = buf[i_move - 1];
+    buf[0] = '0' + num % 10;
+    num /= 10;
+  }
 }

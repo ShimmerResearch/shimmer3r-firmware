@@ -43,9 +43,9 @@
 #ifndef EXG_H
 #define EXG_H
 
-#include <stdint.h>
-#include "stm32u5xx_hal.h"
 #include "ads1292.h"
+#include "stm32u5xx_hal.h"
+#include <stdint.h>
 
 //ADS1292R registers
 //There are two of these chips on the ExG board
@@ -68,7 +68,7 @@ void EXG_init(SPI_HandleTypeDef *hspi);
 
 uint8_t EXG_test(void);
 
-void EXG_setRdatac(uint8_t chip, uint8_t en); 
+void EXG_setRdatac(uint8_t chip, uint8_t en);
 
 //put ADS1292R chip in RDATAC mode and start sampling
 //also enable data ready interrupts for selected chip
@@ -136,16 +136,16 @@ void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf);
 
 
 //Tell the driver that the data is ready to be read from chipX
-#define EXG_dataReadyChip1 ADS1292_dataReadyChip1
+#define EXG_dataReadyChip1  ADS1292_dataReadyChip1
 //#define EXG_dataReadyChip2 ADS1292_dataReadyChip2
 //#define EXG_dataReadFromChip1 ADS1292_dataReadFromChip1
 //#define EXG_dataReadFromChip2 ADS1292_dataReadFromChip2
-#define EXG_gatherDataInit      ADS1292_gatherDataInit
-#define EXG_gatherDataStart     ADS1292_gatherDataStart
+#define EXG_gatherDataInit  ADS1292_gatherDataInit
+#define EXG_gatherDataStart ADS1292_gatherDataStart
 
-#define EXG_spiRxIsr ADS1292_spiRxIsr
-#define EXG_spiTxIsr ADS1292_spiTxIsr
+#define EXG_spiRxIsr        ADS1292_spiRxIsr
+#define EXG_spiTxIsr        ADS1292_spiTxIsr
 
-#define EXG_enableChip2 ADS1292_enableChip2
+#define EXG_enableChip2     ADS1292_enableChip2
 
 #endif //EXG_H

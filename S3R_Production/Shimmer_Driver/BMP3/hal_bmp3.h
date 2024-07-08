@@ -8,8 +8,8 @@
 #ifndef BMP3_BMP3_SENSORAPI_HAL_BMP3_H_
 #define BMP3_BMP3_SENSORAPI_HAL_BMP3_H_
 
-#include <stdint.h>
 #include "stm32u5xx.h"
+#include <stdint.h>
 
 /*!
  *  @brief Prints the execution status of the APIs.

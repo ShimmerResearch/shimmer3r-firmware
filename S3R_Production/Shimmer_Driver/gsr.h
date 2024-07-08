@@ -45,10 +45,10 @@
 
 #include <stdint.h>
 
-#define HW_RES_40K   0
-#define HW_RES_287K  1
-#define HW_RES_1M    2
-#define HW_RES_3M3   3
+#define HW_RES_40K    0
+#define HW_RES_287K   1
+#define HW_RES_1M     2
+#define HW_RES_3M3    3
 #define GSR_AUTORANGE 4
 
 void GSR_init(uint8_t gsrRange, uint16_t gsrSamplingRate, uint8_t gsrAutoRange);
@@ -68,7 +68,7 @@ void GSR_setRange(uint8_t range);
 
 
 void GSR_setResistor(uint8_t res);
-   
+
 
 //Calculates resistance from a raw ADC value using linear fit to conductance
 //ADC_val: the ADC value to be used in the calculation
@@ -91,8 +91,8 @@ void GSR_initSmoothing(uint8_t active_resistor);
 
 //Smooths ADC values during autorange transition settling time.
 //active_resistor: currently selected HW resistor
-//sampling_period: sampling period of shimmer. Determines number of transient samples
-//returns 1 if transient and 0 otherwise.
+//sampling_period: sampling period of shimmer. Determines number of transient
+//samples returns 1 if transient and 0 otherwise.
 uint8_t GSR_smoothTransition(uint8_t *dummy_active_resistor, uint32_t sampling_period);
 
 //Smooths the GSR values
