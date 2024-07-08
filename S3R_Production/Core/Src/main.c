@@ -184,7 +184,6 @@ void Init() {
 //      //Power_SleepUntilInterrupt();
 //   }
    //Power_StopUntilInterrupt();
-   setupNextRtcMinuteAlarm(); /*Enable RTC Alarm is necessary as in most cases it is not enabled from init due to failing backup read condition*/
 }
 
 /* USER CODE END 0 */
@@ -594,26 +593,26 @@ void SetupDock(void)
     stat.isConfiguring = 1;
     if (stat.isDocked)
     {
-        setBatteryInterval(BATT_INTERVAL_D);
-        resetBattCriticalCount();
+        setBatteryInterval(BATT_INTERVAL_DOCKED);
+        resetBatteryCriticalCount();
         stat.enableSdlog = 0;
         stat.sdlogReady = 0;
         if (CheckSdInslot())
         {
-            DockSdPowerCycle();
+            Board_sdPowerCycle();
         }
         if (!stat.isSensing)
         {
-            UART_activate();
+            DockUart_enable();
         }
         BtsdSelfcmd();
     }
     else
     {
-      setBatteryInterval(BATT_INTERVAL);
+        setBatteryInterval(BATT_INTERVAL_UNDOCKED);
         if (!stat.isSensing)
         {
-            UART_deactivate();
+            DockUart_disable();
         }
         setMcuHasSdcardControl(1);
 
@@ -631,6 +630,7 @@ void SetupDock(void)
             setSdInfoSyncDelayed(1);
         }
     }
+    setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
     stat.isConfiguring = 0;
 }
 

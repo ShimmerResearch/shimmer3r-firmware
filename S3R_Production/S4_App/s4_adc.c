@@ -73,6 +73,7 @@ uint8_t adcConfig;
 
 uint32_t battInterval = BATT_INTERVAL_D;
 uint8_t battCriticalCount = 0;
+battAlarmInterval_t battAlarmInterval;
 
 #if defined(SHIMMER3R)
 static uint16_t ADC_RANK_ARRAY[] = {
@@ -815,7 +816,7 @@ void S4_NORM_ADC_readBatt(void) {
       hadcBattPtr->Init.ExternalTrigConv = ADC_SOFTWARE_START;
       hadcBattPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
       hadcBattPtr->Init.DMAContinuousRequests = DISABLE;
-      hadcBattPtr->Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
+      hadcBattPtr->Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_LOW;
       hadcBattPtr->Init.Overrun = ADC_OVR_DATA_PRESERVED;
       hadcBattPtr->Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
       hadcBattPtr->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
@@ -958,9 +959,14 @@ void updateBatteryStatus(uint16_t adc_battVal)
 //}
 
 
-void setBatteryInterval(uint32_t value)
+void setBatteryInterval(battAlarmInterval_t  value)
 {
-  battInterval = value;
+  battAlarmInterval = value;
+}
+
+battAlarmInterval_t  getBatteryInterval(void)
+{
+  return battAlarmInterval;
 }
 
 void resetBatteryCriticalCount(void)

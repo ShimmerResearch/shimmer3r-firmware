@@ -58,7 +58,7 @@ uint8_t *gArgsPtr;
 volatile char btVerStrResponse[BT_VER_RESPONSE_LARGEST+1U]; /* +1 to always have a null char */
 #else
 //TODO decide on size
-volatile char btVerStrResponse[100U];
+char btVerStrResponse[100U];
 #endif
 
 uint8_t (*newBtCmdToProcess_cb)(void);
@@ -1055,10 +1055,10 @@ void resetBtRxVariablesOnConnect(void)
     btWaitingForArgsLength = 0;
 }
 
-void resetBtRxBuff(void)
-{
-    memset(btRxBuffPtr, 0, sizeof(btRxBuffPtr));
-}
+//void resetBtRxBuff(void)
+//{
+//    memset(btRxBuffPtr, 0, sizeof(btRxBuffPtr));
+//}
 
 #else
 void processBtUartBuf(void)
@@ -2205,7 +2205,7 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void))
     gArgsPtr = argsPtr;
 #else
     gActionPtr = &btAction;
-    gArgsPtr = &btArgs;
+    gArgsPtr = &btArgs[0];
 #endif
 
 #if !BT_DMA_USED_FOR_RX
@@ -2335,7 +2335,7 @@ char * getBtVerStrPtr(void)
 void updateBtVer(void)
 {
 #if defined(SHIMMER3R)
-  BT_getCyw20820FirmwareVersionStr(&btVerStrResponse[0]);
+  BT_generateCyw20820FirmwareVersionStr(&btVerStrResponse[0]);
 #endif
 }
 

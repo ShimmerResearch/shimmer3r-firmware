@@ -200,7 +200,7 @@ enum
 //uint8_t Dma2ConversionDone(void);
 uint8_t Dma2ConversionDone(uint8_t *rxBuff);
 void resetBtRxVariablesOnConnect(void);
-void resetBtRxBuff(void);
+//void resetBtRxBuff(void);
 #else
 void processBtUartBuf(void);
 void handleBtRxTimeout(void);

@@ -21,8 +21,10 @@
 #include "tim.h"
 
 /* USER CODE BEGIN 0 */
+#include "s4_led.h"
 
-static void ledBlinkTimerCallback(void);
+//static void ledBlinkTimerCallback(void);
+static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim);
 
 /* USER CODE END 0 */
 
@@ -72,7 +74,7 @@ void MX_TIM2_Init(void)
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
@@ -134,7 +136,7 @@ void MX_TIM3_Init(void)
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
@@ -326,7 +328,8 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
 /* USER CODE BEGIN 1 */
 
-static void ledBlinkTimerCallback(void)
+//void ledBlinkTimerCallback(void)
+static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
   S4Led_Blink();
 }
