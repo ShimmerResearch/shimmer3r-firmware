@@ -176,6 +176,12 @@ void SD_setCfgTime(void){
    }
 }
 
+void SD_setFileName(void)
+{
+  if (strlen((char*) fileName) == 0)
+      strcpy((char*) fileName, "no_file   ");
+}
+
 void SD_infomem2Names(void){
    SD_setShimmerName();
    SD_setExpIdName();
@@ -290,7 +296,7 @@ uint8_t SD_makeBasedir(void) {
    memset(fileName,0,64);
    strcpy((char*)fileName,(char*)dirName);
    dirLen = strlen((char*)dirName);
-   //strcat((char*)fileName,"/000");
+   strcat((char*) fileName, "/000");
    fileNum = 0;
    //sprintf((char*)fileName, "/%03d", fileNum++);
 
@@ -1202,6 +1208,7 @@ void ParseConfig(void)
 
         S4Ram_config2SdHead();
         SD_setCfgTime();
+        SD_setFileName();
 
         InfoMem_update();
 
@@ -1242,4 +1249,14 @@ uint8_t isSdInfoSyncDelayed(void)
 void setSdInfoSyncDelayed(uint8_t state)
 {
   sdInfoSyncDelayed = state;
+}
+
+uint8_t* getConfigTimeTextPtr(void)
+{
+  return &configTimeText[0];
+}
+
+uint8_t* getFileNamePtr(void)
+{
+  return &fileName[0];
 }

@@ -161,6 +161,24 @@ typedef union
 
 typedef union
 {
+  uint8_t rawBytes[10];
+  struct __attribute__((packed))
+  {
+    uint8_t config1;
+    uint8_t config2;
+    uint8_t loff;
+    uint8_t ch1set;
+    uint8_t ch2set;
+    uint8_t rldSens;
+    uint8_t loffSens;
+    uint8_t loffStat;
+    uint8_t resp1;
+    uint8_t resp2;
+  };
+} gExgADS1292rRegs;
+
+typedef union
+{
   uint8_t rawBytes[STOREDCONFIG_SIZE];
   struct __attribute__((packed))
   {
@@ -245,26 +263,9 @@ typedef union
     uint8_t pressurePrecision :2;
     uint8_t altAccelRange :2; // S3/S4_SDK MPU9x50/ICM20948 Accel, S3R = LSM6DSV Accel
 
-    uint8_t exgADS1292R_1_CONFIG1;
-    uint8_t exgADS1292R_1_CONFIG2;
-    uint8_t exgADS1292R_1_LOFF;
-    uint8_t exgADS1292R_1_CH1SET;
-    uint8_t exgADS1292R_1_CH2SET;
-    uint8_t exgADS1292R_1_RLD_SENS;
-    uint8_t exgADS1292R_1_LOFF_SENS;
-    uint8_t exgADS1292R_1_LOFF_STAT;
-    uint8_t exgADS1292R_1_RESP1;
-    uint8_t exgADS1292R_1_RESP2;
-    uint8_t exgADS1292R_2_CONFIG1;
-    uint8_t exgADS1292R_2_CONFIG2;
-    uint8_t exgADS1292R_2_LOFF;
-    uint8_t exgADS1292R_2_CH1SET;
-    uint8_t exgADS1292R_2_CH2SET;
-    uint8_t exgADS1292R_2_RLD_SENS;
-    uint8_t exgADS1292R_2_LOFF_SENS;
-    uint8_t exgADS1292R_2_LOFF_STAT;
-    uint8_t exgADS1292R_2_RESP1;
-    uint8_t exgADS1292R_2_RESP2;
+    gExgADS1292rRegs exgADS1292rRegsCh1;
+    gExgADS1292rRegs exgADS1292rRegsCh2;
+
     uint8_t btCommsBaudRate;
 
     //nvDerivedChannels0(lsb);
