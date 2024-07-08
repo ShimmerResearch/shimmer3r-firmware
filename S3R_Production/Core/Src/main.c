@@ -135,7 +135,7 @@ void Init() {
    S4_Task_init();
    S4Sens_init();
    // ==== 0.86ma ====
-   //SD_init();
+   SD_init();
    //GPIO_init();
    I2C_init();
    S4_ADC_init();

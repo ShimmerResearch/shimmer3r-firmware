@@ -51,6 +51,11 @@ void SD_init(void)
 {
    sdBufSens = sdBufWr = 0;
    //fileNum = 0;
+
+//   *configTimeText = '\0';
+//   *fileName = '\0';
+   SD_setCfgTime();
+   SD_setFileName();
 }
 
 #define TEST_TEXT_LEN 40
