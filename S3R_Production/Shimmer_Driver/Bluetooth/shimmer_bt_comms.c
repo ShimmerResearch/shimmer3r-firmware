@@ -3185,7 +3185,6 @@ void BtUart_sendRsp(void) {
          dirResponse = 0;
       } else if(nshimmerResponse) {
          *(bt_tx_data + packet_length++) = NSHIMMER_RESPONSE;
-//         *(bt_tx_data + packet_length++) = storedConfig[NV_SD_NSHIMMER];
          *(bt_tx_data + packet_length++) = storedConfig->numberOfShimmers;
          nshimmerResponse = 0;
       } else if(myIDResponse) {
