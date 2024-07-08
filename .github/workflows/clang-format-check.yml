@@ -1,5 +1,5 @@
 # https://github.com/marketplace/actions/clang-format-lint
-name: test-clang-format
+name: clang-format-lint
 
 on: [push, pull_request]
 
