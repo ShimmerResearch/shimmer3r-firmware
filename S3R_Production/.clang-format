@@ -414,4 +414,25 @@ SpacesInSquareBrackets: false
 # How many spaces are allowed at the start of a line comment. To disable the maximum set it to -1, apart from that the maximum takes precedence over the minimum.
 SpacesInLineCommentPrefix:
   Minimum: 0
-  Maximum: 0 
+  Maximum: 0
+
+AlignConsecutiveBitFields:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
+
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
+
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
+
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+  AlignCaseColons: false
