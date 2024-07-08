@@ -219,7 +219,7 @@ ConstructorInitializerIndentWidth: 0
 
 # ContinuationIndentWidth (unsigned)
 # Indent width for line continuations.
-ContinuationIndentWidth: 0
+ContinuationIndentWidth: 4
 
 # Cpp11BracedListStyle (bool)
 # If true, format braced lists as best suited for C++11 braced lists.
@@ -399,6 +399,8 @@ SpacesInParentheses: false
 # If true, spaces will be inserted after [ and before ].
 SpacesInSquareBrackets: false
 
+# Mark Nolan added
+
 # SpaceAroundPointerQualifiers  (SpaceAroundPointerQualifiersStyle)
 # Defines in which cases to put a space before or after pointer qualifiers.
 # Possible values:
@@ -407,3 +409,9 @@ SpacesInSquareBrackets: false
 #   SAPQ_After (in configuration: After) Ensure that there is a space after pointer qualifiers.
 #   SAPQ_Both (in configuration: Both) Ensure that there is a space both before and after pointer qualifiers.
 #SpaceAroundPointerQualifiers = Default
+
+# SpacesInLineCommentPrefix (SpacesInLineComment)
+# How many spaces are allowed at the start of a line comment. To disable the maximum set it to -1, apart from that the maximum takes precedence over the minimum.
+SpacesInLineCommentPrefix:
+  Minimum: 0
+  Maximum: 0 
