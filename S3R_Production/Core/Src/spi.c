@@ -960,8 +960,8 @@ void SPI_stopSensing()
   //gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
 #if defined(SHIMMER3R)
-  //TODO reset chips to default config (especially to stop them sampling and put them in standby)?
-  //lsm6dsv_restore_default_config();
+  //TODO reset chips to default config (especially to stop them sampling and put
+  //them in standby)? lsm6dsv_restore_default_config();
   //bmp390_restore_default_config();
   //adxl371_restore_default_config();
   //lis3mdl_restore_default_config();
@@ -1179,8 +1179,9 @@ void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   switch (spi3Sens.sensorList[spi3Sens.sensorCnt])
   {
   case SPI3_ADS1292R_EXG1:
-    //TODO harmonise the "UnselectDevice" approach being implemented for SPI1 and SPI2 with the #defines as was previously implemented for the Shimmer4_SDK
-    //ads1292r_exg1_UnselectDevice();
+    //TODO harmonise the "UnselectDevice" approach being implemented for SPI1
+    //and SPI2 with the #defines as was previously implemented for the
+    //Shimmer4_SDK ads1292r_exg1_UnselectDevice();
     Board_ECG_CS(0);
     memcpy(sensing.dataBuf + sensing.ptr.exg1,
         &spi3Sens_buf.ads1292rExg1Buf[SPI_DMA_TXRX_OFFSET],

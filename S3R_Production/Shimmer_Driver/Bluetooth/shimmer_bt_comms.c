@@ -2631,31 +2631,28 @@ void BtUart_processCmd(void)
   /*   case SET_A_ACCEL_CALIBRATION_COMMAND:
    memcpy(&storedConfig[NV_A_ACCEL_CALIBRATION], args, 21);
    InfoMem_write((void*)NV_A_ACCEL_CALIBRATION,
-   &storedConfig[NV_A_ACCEL_CALIBRATION], 21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION],
-   &storedConfig[NV_A_ACCEL_CALIBRATION], 21); calib_update = 1; calib_sensor =
-   S_ACCEL_A; break; case GET_A_ACCEL_CALIBRATION_COMMAND: aAccelCalibrationResponse
-   = 1; break; case SET_MPU9250_GYRO_CALIBRATION_COMMAND: memcpy(&storedConfig[NV_MPU9250_GYRO_CALIBRATION],
-   args, 21); InfoMem_write((void*)NV_MPU9250_GYRO_CALIBRATION,
-   &storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21); memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION],
-   &storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21); calib_update = 1; calib_sensor
-   = S_GYRO; calib_range = storedConfig[NV_CONFIG_SETUP_BYTE2] & 0x03; break; case
-   GET_MPU9250_GYRO_CALIBRATION_COMMAND: gyroCalibrationResponse = 1; break; case
-   SET_LSM303DLHC_MAG_CALIBRATION_COMMAND: memcpy(&storedConfig[NV_LSM303DLHC_MAG_CALIBRATION],
-   args, 21); InfoMem_write((void*)NV_LSM303DLHC_MAG_CALIBRATION,
-   &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21); memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION],
-   &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21); calib_update = 1; calib_sensor
-   = S_MAG; calib_range = (storedConfig[NV_CONFIG_SETUP_BYTE2]>>5) & 0x07;
-   break;
-   case GET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
-   magCalibrationResponse = 1;
-   break;
-   case SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
-   memcpy(&storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], args, 21);
-   InfoMem_write((void*)NV_LSM303DLHC_ACCEL_CALIBRATION,
-   &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21); memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION],
-   &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21); calib_update = 1; calib_sensor
-   = S_ACCEL_D; calib_range = (storedConfig[NV_CONFIG_SETUP_BYTE0]>>2)&0x03;
-   break;*/
+   &storedConfig[NV_A_ACCEL_CALIBRATION], 21);
+   memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION], &storedConfig[NV_A_ACCEL_CALIBRATION],
+   21); calib_update = 1; calib_sensor = S_ACCEL_A; break; case
+   GET_A_ACCEL_CALIBRATION_COMMAND: aAccelCalibrationResponse = 1; break; case
+   SET_MPU9250_GYRO_CALIBRATION_COMMAND:
+   memcpy(&storedConfig[NV_MPU9250_GYRO_CALIBRATION], args, 21);
+   InfoMem_write((void*)NV_MPU9250_GYRO_CALIBRATION, &storedConfig[NV_MPU9250_GYRO_CALIBRATION],
+   21); memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION], &storedConfig[NV_MPU9250_GYRO_CALIBRATION],
+   21); calib_update = 1; calib_sensor = S_GYRO; calib_range =
+   storedConfig[NV_CONFIG_SETUP_BYTE2] & 0x03; break; case GET_MPU9250_GYRO_CALIBRATION_COMMAND:
+   gyroCalibrationResponse = 1; break; case SET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
+   memcpy(&storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], args, 21);
+   InfoMem_write((void*)NV_LSM303DLHC_MAG_CALIBRATION, &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION],
+   21); memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION], &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION],
+   21); calib_update = 1; calib_sensor = S_MAG; calib_range =
+   (storedConfig[NV_CONFIG_SETUP_BYTE2]>>5) & 0x07; break; case
+   GET_LSM303DLHC_MAG_CALIBRATION_COMMAND: magCalibrationResponse = 1; break; case
+   SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND: memcpy(&storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION],
+   args, 21); InfoMem_write((void*)NV_LSM303DLHC_ACCEL_CALIBRATION, &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION],
+   21); memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION], &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION],
+   21); calib_update = 1; calib_sensor = S_ACCEL_D; calib_range =
+   (storedConfig[NV_CONFIG_SETUP_BYTE0]>>2)&0x03; break;*/
   case SET_GSR_RANGE_COMMAND:
     if (btArgs[0] <= 4)
     {
@@ -2718,18 +2715,14 @@ void BtUart_processCmd(void)
     case RESET_CALIBRATION_VALUE_COMMAND:
     memset(&storedConfig[NV_A_ACCEL_CALIBRATION], 0xFF,
     NV_NUM_CALIBRATION_BYTES); InfoMem_write((void*)NV_A_ACCEL_CALIBRATION,
-    &storedConfig[NV_A_ACCEL_CALIBRATION], NV_NUM_CALIBRATION_BYTES); memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION],
-    &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21); memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION],
-    &storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21); memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION],
-    &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION],
-    &storedConfig[NV_A_ACCEL_CALIBRATION], 21); calib_update = 1; break; case
-    GET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND: dAccelCalibrationResponse = 1;
-    break;
-    case GET_GSR_RANGE_COMMAND:
-    gsrRangeResponse = 1;
-    break;
-    case GET_ALL_CALIBRATION_COMMAND:
-    allCalibrationResponse = 1;
+    &storedConfig[NV_A_ACCEL_CALIBRATION], NV_NUM_CALIBRATION_BYTES);
+    memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION], &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION],
+    21); memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION], &storedConfig[NV_MPU9250_GYRO_CALIBRATION],
+    21); memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION], &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION],
+    21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION], &storedConfig[NV_A_ACCEL_CALIBRATION],
+    21); calib_update = 1; break; case GET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
+    dAccelCalibrationResponse = 1; break; case GET_GSR_RANGE_COMMAND: gsrRangeResponse
+    = 1; break; case GET_ALL_CALIBRATION_COMMAND: allCalibrationResponse = 1;
     break;
   */
   case DEPRECATED_GET_DEVICE_VERSION_COMMAND:

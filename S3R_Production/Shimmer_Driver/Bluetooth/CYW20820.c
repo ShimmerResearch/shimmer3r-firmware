@@ -631,10 +631,9 @@ void btFactoryResetCommands(void)
     printf("Reset BT Address\r\n");
     setExpectedResponse(EZS_IDX_CMD_SYSTEM_SET_BLUETOOTH_ADDRESS);
 
-    //TODO EZ-Serial user guide states that setting to 0 will restore original MAC ID but I haven't been able to get this working
-    //macaddr_t addr;
-    //memset(addr.addr, 0, sizeof(addr.addr));
-    //ezs_fcmd_system_set_bluetooth_address(&addr);
+    //TODO EZ-Serial user guide states that setting to 0 will restore original
+    //MAC ID but I haven't been able to get this working macaddr_t addr; memset(addr.addr,
+    //0, sizeof(addr.addr)); ezs_fcmd_system_set_bluetooth_address(&addr);
 
     ezs_fcmd_system_set_bluetooth_address(
         &rsp_system_get_bluetooth_address.address.addr);

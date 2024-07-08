@@ -558,9 +558,9 @@ void lsm6dsv_UnselectDevice(void)
 
 void lsm6dsv_config_accel(uint8_t rate, uint8_t range)
 {
-  //TODO if chip sampling rate is lower than Shimmer sampling, enable pin interrupt to only read data from chip when it's ready
-  //pin_int.drdy_xl = PROPERTY_ENABLE;
-  //lsm6dsv_pin_int1_route_set(&dev_ctx, &pin_int);
+  //TODO if chip sampling rate is lower than Shimmer sampling, enable pin
+  //interrupt to only read data from chip when it's ready pin_int.drdy_xl =
+  //PROPERTY_ENABLE; lsm6dsv_pin_int1_route_set(&dev_ctx, &pin_int);
 
   /* Set Output Data Rate.
    * Selected data rate have to be equal or greater with respect

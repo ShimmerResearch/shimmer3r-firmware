@@ -383,10 +383,11 @@ void S4Ram_config2SdHead(void)
   memcpy(&sdHeadText[SDH_CONFIG_TIME_0], &storedConfig.rawBytes[NV_SD_CONFIG_TIME], 4);
 
   //memcpy(&sdHeadText[SDH_MPU9150_GYRO_CALIBRATION],
-  //&storedConfig.rawBytes[NV_MPU9150_GYRO_CALIBRATION], 21); memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION],
-  //&storedConfig.rawBytes[NV_LSM303DLHC_MAG_CALIBRATION], 21); memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION],
-  //&storedConfig.rawBytes[NV_LSM303DLHC_ACCEL_CALIBRATION], 21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION],
-  //&storedConfig.rawBytes[NV_A_ACCEL_CALIBRATION], 21);
+  //&storedConfig.rawBytes[NV_MPU9150_GYRO_CALIBRATION], 21);
+  //memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION], &storedConfig.rawBytes[NV_LSM303DLHC_MAG_CALIBRATION],
+  //21); memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION], &storedConfig.rawBytes[NV_LSM303DLHC_ACCEL_CALIBRATION],
+  //21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION], &storedConfig.rawBytes[NV_A_ACCEL_CALIBRATION],
+  //21);
 }
 
 void setDefaultShimmerName(void)
