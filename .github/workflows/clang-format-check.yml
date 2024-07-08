@@ -12,7 +12,7 @@ jobs:
     - uses: DoozyX/clang-format-lint-action@v0.17
       with:
         source: './S3R_Production'
-        exclude: '*/Drivers */Middlewares */BMP3_SensorAPI */lis2dw12-pid */lis2mdl-pid */lis3mdl-pid */lis303ah-pid */lsm6dsv-pid */SR7 */BMP280_driver ezsapi.* */FATFS swo.*'
+        exclude: '*/Drivers */Middlewares */BMP3_SensorAPI */lis2dw12-pid */lis2mdl-pid */lis3mdl-pid */lis303ah-pid */lsm6dsv-pid */SR7 */BMP280_driver ezsapi.* */FATFS swo. no_os_alloc.* no_os_util.h*'
         extensions: 'h,c'
         clangFormatVersion: 17
         style: file
