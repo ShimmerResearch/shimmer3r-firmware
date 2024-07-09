@@ -94,19 +94,19 @@ void S4_NORM_Task_manage(void)
   {
     switch (taskCurrent)
     {
-    case TASK_DOCKSETUP:    DockUart_setup(); break;
-    case TASK_UARTPROCESS:  DockUart_processCmd(); break;
+    case TASK_DOCKSETUP: DockUart_setup(); break;
+    case TASK_UARTPROCESS: DockUart_processCmd(); break;
     case TASK_UARTRESPONSE: DockUart_sendRsp(); break;
-    case TASK_BTPROCESS:    BtUart_processCmd(); break;
-    case TASK_BTRESPONSE:   BtUart_sendRsp(); break;
-    case TASK_STREAMDATA:   S4Sens_streamData(); break;
+    case TASK_BTPROCESS: BtUart_processCmd(); break;
+    case TASK_BTRESPONSE: BtUart_sendRsp(); break;
+    case TASK_STREAMDATA: S4Sens_streamData(); break;
 #if defined(SHIMMER3R)
     case TASK_SAVEDATA: saveData(); break;
 #endif
     case TASK_STARTSENSING: S4Sens_startSensing(); break;
-    case TASK_STOPSENSING:  S4Sens_stopSensing(); break;
+    case TASK_STOPSENSING: S4Sens_stopSensing(); break;
     //case TASK_NEXTSENSOR:      I2C_sensorNext();       break;
-    case TASK_SDWRITE:      SD_writeToCard(); break;
+    case TASK_SDWRITE: SD_writeToCard(); break;
     case TASK_SDLOG_CFG_UPDATE:
       if (!stat.isDocked && !stat.isSensing && stat.isSdInserted && GetSdCfgFlag())
       {

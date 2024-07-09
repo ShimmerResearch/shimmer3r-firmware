@@ -2135,7 +2135,7 @@ uint8_t isShimmerBtCmd(uint8_t data)
   case SET_SD_SYNC_COMMAND:
 #endif
   case ACK_COMMAND_PROCESSED: return 1;
-  default:                    return 0;
+  default: return 0;
   }
 }
 
@@ -2333,10 +2333,10 @@ void BtUart_processCmd(void)
 
   switch (btAction)
   {
-  case INQUIRY_COMMAND:           inquiryBtRsp = 1; break;
-  case DUMMY_COMMAND:             break;
+  case INQUIRY_COMMAND: inquiryBtRsp = 1; break;
+  case DUMMY_COMMAND: break;
   case GET_SAMPLING_RATE_COMMAND: samplingRateBtRsp = 1; break;
-  case TOGGLE_LED_COMMAND:        stat.toggleLedRedCmd ^= 1; break;
+  case TOGGLE_LED_COMMAND: stat.toggleLedRedCmd ^= 1; break;
   case START_STREAMING_COMMAND:
     stat.btstreamCmd = 1;
     S4_Task_set(TASK_STARTSENSING);
@@ -2385,7 +2385,7 @@ void BtUart_processCmd(void)
     I2C_readBattSetFreq(temp16);
     break;
 #endif
-  case GET_VBATT_COMMAND:        vbattBtRsp = 1; break;
+  case GET_VBATT_COMMAND: vbattBtRsp = 1; break;
   case GET_TRIAL_CONFIG_COMMAND: trialConfigResponse = 1; break;
   case SET_TRIAL_CONFIG_COMMAND:
     S4Ram_storedConfigSetByte(NV_SD_TRIAL_CONFIG0, btArgs[0]);
@@ -2788,8 +2788,8 @@ void BtUart_processCmd(void)
     break;
   */
   case DEPRECATED_GET_DEVICE_VERSION_COMMAND:
-  case GET_DEVICE_VERSION_COMMAND:            deviceVersionBtRsp = 1; break;
-  case GET_FW_VERSION_COMMAND:                fwVersionBtRsp = 1; break;
+  case GET_DEVICE_VERSION_COMMAND: deviceVersionBtRsp = 1; break;
+  case GET_FW_VERSION_COMMAND: fwVersionBtRsp = 1; break;
   case GET_CHARGE_STATUS_LED_COMMAND:
     blinkLedBtRsp = 1;
     break; /*
