@@ -45,102 +45,120 @@
 
 static uint8_t data[9];
 
-void EXG_init(SPI_HandleTypeDef *hspi) {
-   ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
-   ADS1292_init(hspi);
-   ADS1292_resetPulse();
+void EXG_init(SPI_HandleTypeDef *hspi)
+{
+  ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
+  ADS1292_init(hspi);
+  ADS1292_resetPulse();
 
-   ADS1292_chip1CsEnable(1);
-   ADS1292_readDataContinuousMode(0); 
-   ADS1292_chip2CsEnable(1);
-   ADS1292_readDataContinuousMode(0);
-   ADS1292_chip2CsEnable(0);
+  ADS1292_chip1CsEnable(1);
+  ADS1292_readDataContinuousMode(0);
+  ADS1292_chip2CsEnable(1);
+  ADS1292_readDataContinuousMode(0);
+  ADS1292_chip2CsEnable(0);
 }
 
-uint8_t EXG_test(void){
-   uint8_t temp_buf[2], ret_val = 0;
-   temp_buf[0] = 0x08;
-   EXG_writeRegs(0, ADS1292R_CONFIG2, 1, temp_buf);
-   EXG_readRegs(0, ADS1292R_DEVID, 1, temp_buf);// can read back to check if write is done successfully
-   if(temp_buf[0] != 0x73){
-      ret_val |= 0x01;
-   }
-   HAL_Delay(100);   //100ms
-   EXG_setRdatac(1, 0);
-   EXG_readRegs(1, ADS1292R_DEVID, 1, temp_buf);
-   if(temp_buf[0] != 0x73){
-      ret_val |= 0x02;
-   }   
-   //EXG_stop(1);     //probably not needed
-   //EXG_stop(0);     //probably not needed
-   EXG_powerOff();
-   return ret_val;
+uint8_t EXG_test(void)
+{
+  uint8_t temp_buf[2], ret_val = 0;
+  temp_buf[0] = 0x08;
+  EXG_writeRegs(0, ADS1292R_CONFIG2, 1, temp_buf);
+  EXG_readRegs(0, ADS1292R_DEVID, 1, temp_buf); //can read back to check if write is done successfully
+  if (temp_buf[0] != 0x73)
+  {
+    ret_val |= 0x01;
+  }
+  HAL_Delay(100); //100ms
+  EXG_setRdatac(1, 0);
+  EXG_readRegs(1, ADS1292R_DEVID, 1, temp_buf);
+  if (temp_buf[0] != 0x73)
+  {
+    ret_val |= 0x02;
+  }
+  //EXG_stop(1);     //probably not needed
+  //EXG_stop(0);     //probably not needed
+  EXG_powerOff();
+  return ret_val;
 }
-void EXG_setRdatac(uint8_t chip, uint8_t en){
-   if(chip){
-      ADS1292_chip2CsEnable(1);
-      ADS1292_readDataContinuousMode(en);
-      ADS1292_chip2CsEnable(0);
-   }else {
-      ADS1292_chip1CsEnable(1);
-      ADS1292_readDataContinuousMode(en);
-      ADS1292_chip1CsEnable(0);
-   }
+void EXG_setRdatac(uint8_t chip, uint8_t en)
+{
+  if (chip)
+  {
+    ADS1292_chip2CsEnable(1);
+    ADS1292_readDataContinuousMode(en);
+    ADS1292_chip2CsEnable(0);
+  }
+  else
+  {
+    ADS1292_chip1CsEnable(1);
+    ADS1292_readDataContinuousMode(en);
+    ADS1292_chip1CsEnable(0);
+  }
 }
 
 
-void EXG_start(uint8_t chip) {
-   if(!chip) {
-      ADS1292_chip1CsEnable(1);
-      ADS1292_readDataContinuousMode(1);
+void EXG_start(uint8_t chip)
+{
+  if (!chip)
+  {
+    ADS1292_chip1CsEnable(1);
+    ADS1292_readDataContinuousMode(1);
 
-      ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1);
+    ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1);
 
-      ADS1292_start(1);
-      ADS1292_chip1CsEnable(0);
-   } else if (chip == 1) {
-      ADS1292_chip2CsEnable(1);
-      ADS1292_readDataContinuousMode(1);
+    ADS1292_start(1);
+    ADS1292_chip1CsEnable(0);
+  }
+  else if (chip == 1)
+  {
+    ADS1292_chip2CsEnable(1);
+    ADS1292_readDataContinuousMode(1);
 
-      ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP2);
+    ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP2);
 
-      ADS1292_start(1);
-      ADS1292_chip2CsEnable(0);
-   } else {
-      //Put both chips in RDATAC mode then start both one after
-      //the other as quickly as possible
-      ADS1292_chip2CsEnable(1);
-      ADS1292_readDataContinuousMode(1);
-      ADS1292_chip1CsEnable(1);
-      ADS1292_readDataContinuousMode(1);
+    ADS1292_start(1);
+    ADS1292_chip2CsEnable(0);
+  }
+  else
+  {
+    //Put both chips in RDATAC mode then start both one after
+    //the other as quickly as possible
+    ADS1292_chip2CsEnable(1);
+    ADS1292_readDataContinuousMode(1);
+    ADS1292_chip1CsEnable(1);
+    ADS1292_readDataContinuousMode(1);
 
-      ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
+    ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
 
-      ADS1292_start(1);
-      ADS1292_chip2CsEnable(1);
-      ADS1292_start(1);
-      ADS1292_chip2CsEnable(0);
-   }
+    ADS1292_start(1);
+    ADS1292_chip2CsEnable(1);
+    ADS1292_start(1);
+    ADS1292_chip2CsEnable(0);
+  }
 }
 
 //stop ADC1292R chip sampling and put in SDATAC mode
 //also disable data ready interrupt
-void EXG_stop(uint8_t chip) {
-   if(chip) {
-      ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP2);
+void EXG_stop(uint8_t chip)
+{
+  if (chip)
+  {
+    ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP2);
 
-      ADS1292_chip2CsEnable(1);
-      ADS1292_start(0);
-      ADS1292_readDataContinuousMode(0);
-      ADS1292_chip2CsEnable(0);
-   } else {
-      ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1);
+    ADS1292_chip2CsEnable(1);
+    ADS1292_start(0);
+    ADS1292_readDataContinuousMode(0);
+    ADS1292_chip2CsEnable(0);
+  }
+  else
+  {
+    ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1);
 
-      ADS1292_chip1CsEnable(1);
-      ADS1292_start(0);
-      ADS1292_readDataContinuousMode(0);
-      ADS1292_chip1CsEnable(0);
-   }
+    ADS1292_chip1CsEnable(1);
+    ADS1292_start(0);
+    ADS1292_readDataContinuousMode(0);
+    ADS1292_chip1CsEnable(0);
+  }
 }
 
 //power off both ExG chips
@@ -148,96 +166,122 @@ void EXG_stop(uint8_t chip) {
 //   ADS1292_powerOff();
 //}
 
-void EXG_resetRegs(uint8_t chip) {
-   if(chip) {
-      ADS1292_chip2CsEnable(1);
-      ADS1292_resetRegs();
-      ADS1292_chip2CsEnable(0);
-   } else {
-      ADS1292_chip1CsEnable(1);
-      ADS1292_resetRegs();
-      ADS1292_chip1CsEnable(0);
-   }
+void EXG_resetRegs(uint8_t chip)
+{
+  if (chip)
+  {
+    ADS1292_chip2CsEnable(1);
+    ADS1292_resetRegs();
+    ADS1292_chip2CsEnable(0);
+  }
+  else
+  {
+    ADS1292_chip1CsEnable(1);
+    ADS1292_resetRegs();
+    ADS1292_chip1CsEnable(0);
+  }
 }
 
-void EXG_offsetCal(uint8_t chip) {
-   if(chip) {
-      ADS1292_chip2CsEnable(1);
-      ADS1292_offsetCal();
-      ADS1292_chip2CsEnable(0);
-   }
-   else {
-      ADS1292_chip1CsEnable(1);
-      ADS1292_offsetCal();
-      ADS1292_chip1CsEnable(0);
-   }
+void EXG_offsetCal(uint8_t chip)
+{
+  if (chip)
+  {
+    ADS1292_chip2CsEnable(1);
+    ADS1292_offsetCal();
+    ADS1292_chip2CsEnable(0);
+  }
+  else
+  {
+    ADS1292_chip1CsEnable(1);
+    ADS1292_offsetCal();
+    ADS1292_chip1CsEnable(0);
+  }
 }
 
-void EXG_readRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *rdata) {
-   if(chip)
-      ADS1292_chip2CsEnable(1);
-   else
-      ADS1292_chip1CsEnable(1);
+void EXG_readRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *rdata)
+{
+  if (chip)
+    ADS1292_chip2CsEnable(1);
+  else
+    ADS1292_chip1CsEnable(1);
 
-   ADS1292_regRead(startaddress, size, rdata);
+  ADS1292_regRead(startaddress, size, rdata);
 
-   if(chip)
-      ADS1292_chip2CsEnable(0);
-   else
-      ADS1292_chip1CsEnable(0);
-
+  if (chip)
+    ADS1292_chip2CsEnable(0);
+  else
+    ADS1292_chip1CsEnable(0);
 }
 
-void EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wdata) {
-   if(chip)
-      ADS1292_chip2CsEnable(1);
-   else
-      ADS1292_chip1CsEnable(1);
+void EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wdata)
+{
+  if (chip)
+    ADS1292_chip2CsEnable(1);
+  else
+    ADS1292_chip1CsEnable(1);
 
-   ADS1292_regWrite(startaddress, size, wdata);
+  ADS1292_regWrite(startaddress, size, wdata);
 
-   if(chip)
-      ADS1292_chip2CsEnable(0);
-   else
-      ADS1292_chip1CsEnable(0);
+  if (chip)
+    ADS1292_chip2CsEnable(0);
+  else
+    ADS1292_chip1CsEnable(0);
 }
 
-void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf) {
-   if(chip) {
-      if(ADS1292_readDataChip2(data)) {
-         //valid data
-         *buf = ((*data & 0x4F)<<1) + ((*(data+1) & 0x80)>>7);
-         if(size) {
-            //16-bit
-            buf[1] = (uint8_t)(((data[4]>>7) & 0x01) + ((data[3]<<1) & 0x7E)) + (data[3] & 0x80);
-            buf[2] = (uint8_t)(((data[5]>>7) & 0x01) + ((data[4]<<1) & 0xFE));
-            buf[3] = (uint8_t)(((data[7]>>7) & 0x01) + ((data[6]<<1) & 0x7E)) + (data[6] & 0x80);
-            buf[4] = (uint8_t)(((data[8]>>7) & 0x01) + ((data[7]<<1) & 0xFE));
-         } else {
-            //24-bit
-            memcpy(buf+1, data+3, 6);
-         }
-      } else {
-         *buf &= 0x7F;
+void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf)
+{
+  if (chip)
+  {
+    if (ADS1292_readDataChip2(data))
+    {
+      //valid data
+      *buf = ((*data & 0x4F) << 1) + ((*(data + 1) & 0x80) >> 7);
+      if (size)
+      {
+        //16-bit
+        buf[1] = (uint8_t) (((data[4] >> 7) & 0x01) + ((data[3] << 1) & 0x7E))
+            + (data[3] & 0x80);
+        buf[2] = (uint8_t) (((data[5] >> 7) & 0x01) + ((data[4] << 1) & 0xFE));
+        buf[3] = (uint8_t) (((data[7] >> 7) & 0x01) + ((data[6] << 1) & 0x7E))
+            + (data[6] & 0x80);
+        buf[4] = (uint8_t) (((data[8] >> 7) & 0x01) + ((data[7] << 1) & 0xFE));
       }
-   } else {
-      if(ADS1292_readDataChip1(data)) {
-         //valid data
-         *buf = ((*data & 0x4F)<<1) + ((*(data+1) & 0x80)>>7);
-         if(size) {
-            //16-bit
-            buf[1] = (uint8_t)(((data[4]>>7) & 0x01) + ((data[3]<<1) & 0xFE));
-            buf[2] = (uint8_t)(((data[5]>>7) & 0x01) + ((data[4]<<1) & 0xFE));
-            buf[3] = (uint8_t)(((data[7]>>7) & 0x01) + ((data[6]<<1) & 0xFE));
-            buf[4] = (uint8_t)(((data[8]>>7) & 0x01) + ((data[7]<<1) & 0xFE));
-         } else {
-            //24-bit
-            memcpy(buf+1, data+3, 6);
-         }
-      } else {
-         *buf &= 0x7F;
+      else
+      {
+        //24-bit
+        memcpy(buf + 1, data + 3, 6);
       }
-   }
+    }
+    else
+    {
+      *buf &= 0x7F;
+    }
+  }
+  else
+  {
+    if (ADS1292_readDataChip1(data))
+    {
+      //valid data
+      *buf = ((*data & 0x4F) << 1) + ((*(data + 1) & 0x80) >> 7);
+      if (size)
+      {
+        //16-bit
+        buf[1] = (uint8_t) (((data[4] >> 7) & 0x01) + ((data[3] << 1) & 0xFE));
+        buf[2] = (uint8_t) (((data[5] >> 7) & 0x01) + ((data[4] << 1) & 0xFE));
+        buf[3] = (uint8_t) (((data[7] >> 7) & 0x01) + ((data[6] << 1) & 0xFE));
+        buf[4] = (uint8_t) (((data[8] >> 7) & 0x01) + ((data[7] << 1) & 0xFE));
+      }
+      else
+      {
+        //24-bit
+        memcpy(buf + 1, data + 3, 6);
+      }
+    }
+    else
+    {
+      *buf &= 0x7F;
+    }
+  }
 }
 //void EXG_dataReadyChip1() {
 //   ADS1292_dataReadyChip1();

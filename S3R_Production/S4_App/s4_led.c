@@ -48,7 +48,7 @@ uint8_t cnt1 = 0;
 void S4Led_Blink(void)
 {
 #if USE_DEFAULT_LED
-  // batt leds:
+  //batt leds:
   uint32_t batt_led = 0;
   if (!stat.isDocked)
   {
@@ -60,7 +60,7 @@ void S4Led_Blink(void)
   else
   {
     if (((stat.battVal[2] & 0x80) == 0) && ((stat.battVal[2] & 0x40) != 0))
-    { // charge done
+    { //charge done
 #if defined(SHIMMER3R)
       batt_led = LED_RGB_GREEN;
 #elif defined(SHIMMER4_SDK)
@@ -68,7 +68,7 @@ void S4Led_Blink(void)
 #endif
     }
     else if (((stat.battVal[2] & 0x80) != 0) && ((stat.battVal[2] & 0x40) == 0))
-    { // charge in progress
+    { //charge in progress
 #if defined(SHIMMER3R)
       batt_led = LED_RGB_YELLOW;
 #elif defined(SHIMMER4_SDK)
@@ -76,7 +76,7 @@ void S4Led_Blink(void)
 #endif
     }
     else if (((stat.battVal[2] & 0x80) != 0) && ((stat.battVal[2] & 0x40) != 0))
-    { // stand by
+    { //stand by
 #if defined(SHIMMER3R)
       batt_led = LED_RGB_ALL_OFF;
 #elif defined(SHIMMER4_SDK)
@@ -84,7 +84,7 @@ void S4Led_Blink(void)
 #endif
     }
     else
-    { // bad battery
+    { //bad battery
 #if defined(SHIMMER3R)
       batt_led = LED_RGB_RED;
 #elif defined(SHIMMER4_SDK)
@@ -98,15 +98,15 @@ void S4Led_Blink(void)
   Board_ledOn(batt_led);
   Board_ledOff(LED_ALL_BATT - batt_led);
 #endif
-//      //yellow = stat1
-//      //green0 = stat2
-//      Board_ledOff(LED_RED + LED_YELLOW + LED_GREEN0);
-//      if((stat.battVal[2]&0x80) == 0){
-//         Board_ledOn(LED_GREEN0);
-//      }
-//      if((stat.battVal[2]&0x40) == 0){
-//         Board_ledOn(LED_YELLOW);
-//      } 
+  ////yellow = stat1
+  ////green0 = stat2
+  //Board_ledOff(LED_RED + LED_YELLOW + LED_GREEN0);
+  //if((stat.battVal[2]&0x80) == 0){
+  //   Board_ledOn(LED_GREEN0);
+  //}
+  //if((stat.battVal[2]&0x40) == 0){
+  //   Board_ledOn(LED_YELLOW);
+  //}
 
   if (stat.testResult)
   {
@@ -155,7 +155,7 @@ void S4Led_Blink(void)
   }
   else
   {
-    // green1
+    //green1
     uint8_t greenUprStateToSet = 0;
     if (stat.isConfiguring)
     {
@@ -179,7 +179,7 @@ void S4Led_Blink(void)
     }
 
 #if defined(SHIMMER4_SDK)
-    if(greenUprStateToSet)
+    if (greenUprStateToSet)
     {
       Board_ledOn(LED_GREEN_UPR);
     }
@@ -219,7 +219,7 @@ void S4Led_Blink(void)
     }
 
 #if defined(SHIMMER4_SDK)
-    if(blueUprStateToSet)
+    if (blueUprStateToSet)
     {
       Board_ledOn(LED_BLUE_UPR);
     }
@@ -231,29 +231,28 @@ void S4Led_Blink(void)
 
 #if defined(SHIMMER3R)
     //TODO handle different LED blinks for logging/streaming
-//    if (stat.isStreaming && stat.isLogging)
-//    {
-//
-//    }
-//    else if (stat.isStreaming)
-//    {
-//      if(!(cntBlink % 10))
-//      {
-//        blueUprStateToSet = isLedOnUprBlue()? 0:1;
-//      }
-//    }
-//    else if (stat.isLogging)
-//    {
-//      if(!(cntBlink % 10))
-//      {
-//        greenUprStateToSet = isLedOnUprGreen()? 0:1;
-//      }
-//    }
+    //if (stat.isStreaming && stat.isLogging)
+    //{
+    //
+    //}
+    //else if (stat.isStreaming)
+    //{
+    //  if(!(cntBlink % 10))
+    //  {
+    //    blueUprStateToSet = isLedOnUprBlue()? 0:1;
+    //  }
+    //}
+    //else if (stat.isLogging)
+    //{
+    //  if(!(cntBlink % 10))
+    //  {
+    //    greenUprStateToSet = isLedOnUprGreen()? 0:1;
+    //  }
+    //}
 
     Board_ledUprSetColourRgb(-1, greenUprStateToSet ? LED_PWM_ON : LED_PWM_OFF,
         blueUprStateToSet ? LED_PWM_ON : LED_PWM_OFF);
 #endif
-
   }
 
   if (++cntBlink >= 20)
@@ -269,9 +268,9 @@ void S4Led_Blink(void)
 #if defined(SHIMMER4_SDK)
   if (!(cntBlink % 10))
   {
-#if USE_VBATT_ALWAYS   
-         if(!(stat.isSensing || stat.isConfiguring))
-#endif        
+#if USE_VBATT_ALWAYS
+    if (!(stat.isSensing || stat.isConfiguring))
+#endif
     {
       S4_Task_set(TASK_BATTREAD);
     }
@@ -327,7 +326,7 @@ void led_test(void)
 
   startLedBlinkTimer();
 
-#elif defined (SHIMMER4_SDK)
+#elif defined(SHIMMER4_SDK)
   S4_RTC_WakeUpOff();
 
   Board_ledOff(LED_ALL);
@@ -361,6 +360,4 @@ void led_test(void)
 
   S4_RTC_WakeUpSetSlow();
 #endif
-
 }
-

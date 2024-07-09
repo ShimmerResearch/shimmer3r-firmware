@@ -11,28 +11,28 @@
 #include <stdint.h>
 
 #if !IS_CONNECTED_EEPROM & defined(SHIMMER3R)
-#define EXP_BRD_ID_MAJOR      EXP_BRD_PROTO3_DELUXE //0xFF//47
-#define EXP_BRD_ID_MINOR      9  //0xFF//1
-#define EXP_BRD_ID_INTERNAL   0  //0xFF//0
+#define EXP_BRD_ID_MAJOR    EXP_BRD_PROTO3_DELUXE //0xFF//47
+#define EXP_BRD_ID_MINOR    9                     //0xFF//1
+#define EXP_BRD_ID_INTERNAL 0                     //0xFF//0
 #endif
 
 enum SR_BOARD_CODES
 {
-    EXP_BRD_BR_AMP              = 8,
-    EXP_BRD_GSR                 = 14,
-    SHIMMER3_IMU                = 31,
-    EXP_BRD_PROTO3_MINI         = 36,
-    EXP_BRD_EXG                 = 37,
-    EXP_BRD_PROTO3_DELUXE       = 38,
-    EXP_BRD_ADXL377_ACCEL_200G  = 44,
-    EXP_BRD_EXG_UNIFIED         = 47,
-    EXP_BRD_GSR_UNIFIED         = 48,
-    EXP_BRD_BR_AMP_UNIFIED      = 49,
-    EXP_BRD_H3LIS331DL_ACCEL_HIGH_G     = 55,
-    SHIMMER_GQ_LR               = 56,
-    SHIMMER_GQ_SR               = 57,
-    SHIMMER4_SDK                = 58,
-    SHIMMER_ECG_MD              = 59
+  EXP_BRD_BR_AMP = 8,
+  EXP_BRD_GSR = 14,
+  SHIMMER3_IMU = 31,
+  EXP_BRD_PROTO3_MINI = 36,
+  EXP_BRD_EXG = 37,
+  EXP_BRD_PROTO3_DELUXE = 38,
+  EXP_BRD_ADXL377_ACCEL_200G = 44,
+  EXP_BRD_EXG_UNIFIED = 47,
+  EXP_BRD_GSR_UNIFIED = 48,
+  EXP_BRD_BR_AMP_UNIFIED = 49,
+  EXP_BRD_H3LIS331DL_ACCEL_HIGH_G = 55,
+  SHIMMER_GQ_LR = 56,
+  SHIMMER_GQ_SR = 57,
+  SHIMMER4_SDK = 58,
+  SHIMMER_ECG_MD = 59
 };
 
 typedef struct
@@ -55,13 +55,13 @@ typedef union
 void setDaugherCardIdPage(uint8_t *pagePtr);
 uint8_t isAds1292Present(void);
 uint8_t isAds1292PresentForSrId(uint8_t srId);
-shimmer_expansion_brd* getDaughtCardId(void);
+shimmer_expansion_brd *getDaughtCardId(void);
 void parseDaughterCardId(uint8_t srId);
-char* getDaughtCardIdStrPtr(void);
+char *getDaughtCardIdStrPtr(void);
 
 void setEepromIsPresent(uint8_t eeprom_is_preset);
 uint8_t isEepromIsPresent(void);
 
-shimmer_expansion_brd* getDaughtCardIdPtr(void);
+shimmer_expansion_brd *getDaughtCardIdPtr(void);
 
 #endif /* SHIMMER3_COMMON_SOURCE_SHIMMER_BOARDS_SHIMMER_BOARDS_H_ */

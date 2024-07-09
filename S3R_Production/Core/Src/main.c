@@ -1,26 +1,27 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
 #include "crc.h"
 #include "gpdma.h"
+#include "gpio.h"
 #include "i2c.h"
 #include "icache.h"
 #include "mdf.h"
@@ -32,18 +33,18 @@
 #include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include "s4.h"
 #include "s4__cfg.h"
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #define TIM_MEASURE_START time_start = SysTick->VAL
-#define TIM_MEASURE_END time_end = SysTick->VAL;            \
+#define TIM_MEASURE_END    \
+  time_end = SysTick->VAL; \
   time_diff = time_start - time_end
 
 /* USER CODE END Includes */
@@ -113,92 +114,94 @@ int _write(int file, char *ptr, int len)
   {
     ITM_SendChar(*ptr++);
   }
-//  HAL_UART_Transmit(huartBsl, (uint8_t *) ptr++, (uint16_t) len, 0xFFFF);
+  //HAL_UART_Transmit(huartBsl, (uint8_t *) ptr++, (uint16_t) len, 0xFFFF);
   return len;
 }
 
-void Init() {
+void Init()
+{
 #if defined(SHIMMER3R)
   Board_ledTimersStart(&htim3, &htim2, &htim6);
 #endif
 
-   Board_ledOn(LED_ALL);
-   memset((uint8_t*)&stat, 0, sizeof(STATTypeDef));
-   stat.battStatLed = LED_YELLOW;
-   stat.isConfiguring = 1;
+  Board_ledOn(LED_ALL);
+  memset((uint8_t *) &stat, 0, sizeof(STATTypeDef));
+  stat.battStatLed = LED_YELLOW;
+  stat.isConfiguring = 1;
 
-   // ==== 0.86ma ====
+  //==== 0.86ma ====
 #if defined(SHIMMER4_SDK)
-   TIM_init();
+  TIM_init();
 #endif
-   InfoMem_init();
-   S4_Task_init();
-   S4Sens_init();
-   // ==== 0.86ma ====
-   //SD_init();
-   //GPIO_init();
-   I2C_init();
-   S4_ADC_init();
-   SPI_init();
-   // ==== 0.86ma ====
-   DockUart_init();
-   DockUart_disable();
-   // ==== 0.89ma ====
-   S4_RTC_Init();
-   // ==== 24.60ma ====
-   Board_delayMicrosInit();
-   DockUart_interruptCheck();
-   SD_insertedCheck();
-   //GPIO_userButtonCheck();
+  InfoMem_init();
+  S4_Task_init();
+  S4Sens_init();
+  //==== 0.86ma ====
+  //SD_init();
+  //GPIO_init();
+  I2C_init();
+  S4_ADC_init();
+  SPI_init();
+  //==== 0.86ma ====
+  DockUart_init();
+  DockUart_disable();
+  //==== 0.89ma ====
+  S4_RTC_Init();
+  //==== 24.60ma ====
+  Board_delayMicrosInit();
+  DockUart_interruptCheck();
+  SD_insertedCheck();
+  //GPIO_userButtonCheck();
 #if defined(SHIMMER3R)
-   setCrcHandleToUse(getCrcHandle());
-   btCommsProtocolInit(setTaskNewBtCmdToProcess);
- //  btFactoryResetViaFw();
-   btInitialise();
-   updateBtVer();
+  setCrcHandleToUse(getCrcHandle());
+  btCommsProtocolInit(setTaskNewBtCmdToProcess);
+  //btFactoryResetViaFw();
+  btInitialise();
+  updateBtVer();
 #elif defined(SHIMMER4_SDK)
-   BtUart_init();
+  BtUart_init();
 #endif
 
-   loadSensorConfigurationAndCalibration();
+  loadSensorConfigurationAndCalibration();
 
-   // ==== 13.8ma ====
+  //==== 13.8ma ====
 #if FULL_TEST_MODE
-   FullTest();
+  FullTest();
 #endif
-   //BT_disable(huartBt);
-   DockUart_enable();
-   stat.isConfiguring = 0;
-   S4Sens_stopPeripherals();
+  //BT_disable(huartBt);
+  DockUart_enable();
+  stat.isConfiguring = 0;
+  S4Sens_stopPeripherals();
 #if defined(SHIMMER4_SDK)
-   S4_RTC_WakeUpSetSlow();
+  S4_RTC_WakeUpSetSlow();
 #endif
 
-   /* Take initial measurment to update LED state */
-   S4_NORM_ADC_readBatt();
+  /* Take initial measurment to update LED state */
+  S4_NORM_ADC_readBatt();
 
-   Board_ledOff(LED_ALL);
-//   while(1){
-//      //__NOP();
-//      Power_StopUntilInterrupt();
-//      //Power_SleepUntilInterrupt();
-//   }
-   //Power_StopUntilInterrupt();
+  Board_ledOff(LED_ALL);
+  //while(1){
+  //   //__NOP();
+  //   Power_StopUntilInterrupt();
+  //   //Power_SleepUntilInterrupt();
+  //}
+  //Power_StopUntilInterrupt();
 }
 
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
 
   /* USER CODE BEGIN 1 */
 
   uint32_t i = 0;
-  while(i++ < 1000000);
+  while (i++ < 1000000)
+    ;
 
   /* USER CODE END 1 */
 
@@ -253,7 +256,7 @@ int main(void)
   linkedListConfig(&hadc1); //configure linkedlist for ADC
 
   Init();
-//  S4_NORM_Task_set(TASK_STARTSENSING);
+  //S4_NORM_Task_set(TASK_STARTSENSING);
 
   //FullTest();
 
@@ -272,31 +275,30 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
 
   /** Configure the main internal regulator output voltage
-  */
+   */
   if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Configure LSE Drive Capability
-  */
+   */
   HAL_PWR_EnableBkUpAccess();
   __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI
-                              |RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE
-                              |RCC_OSCILLATORTYPE_MSI;
+   */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_HSI
+      | RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -312,10 +314,9 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
-                              |RCC_CLOCKTYPE_PCLK3;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+      | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -329,9 +330,9 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief Power Configuration
-  * @retval None
-  */
+ * @brief Power Configuration
+ * @retval None
+ */
 static void SystemPower_Config(void)
 {
 
@@ -347,14 +348,15 @@ static void SystemPower_Config(void)
   {
     Error_Handler();
   }
-/* USER CODE BEGIN PWR */
-/* USER CODE END PWR */
+  /* USER CODE BEGIN PWR */
+  /* USER CODE END PWR */
 }
 
 /* USER CODE BEGIN 4 */
 
-STATTypeDef * GetStatus(){
-   return &stat;
+STATTypeDef *GetStatus()
+{
+  return &stat;
 }
 
 //TODO trigger from UART command?
@@ -371,10 +373,12 @@ uint32_t FullTest(void)
   HAL_RTC_GetTime(&hrtc, &sTime, format);
   /* Get date */
   HAL_RTC_GetDate(&hrtc, &sDate, format);
-  SHIMMER_PRINTF("Date (yyyy-mm-dd): %.4u-%.2u-%.2u\r\n", (2000 + sDate.Year), sDate.Month, sDate.Date);
-  SHIMMER_PRINTF("Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
+  SHIMMER_PRINTF("Date (yyyy-mm-dd): %.4u-%.2u-%.2u\r\n", (2000 + sDate.Year),
+      sDate.Month, sDate.Date);
+  SHIMMER_PRINTF("Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n", sTime.Hours,
+      sTime.Minutes, sTime.Seconds);
 
-//  led_test();
+  //led_test();
 
   SHIMMER_PRINTF("SD Card Detection: %s\r\n", stat.isSdInserted ? "PASS" : "FAIL");
   if (stat.isSdInserted)
@@ -382,11 +386,11 @@ uint32_t FullTest(void)
     printSdCardInfo();
 
     stat.testResult += SD_test() << 6;
-    //  SD_test_alternative();
+    //SD_test_alternative();
     SHIMMER_PRINTF("SD Card test: %s\r\n", stat.badFile ? "FAIL" : "PASS");
   }
 
-  if(stat.isBtPoweredOn)
+  if (stat.isBtPoweredOn)
   {
     SHIMMER_PRINTF("BT Module: %.*s\r\n", getBtVerStrLen(), getBtVerStrPtr());
   }
@@ -409,7 +413,7 @@ void btInitialise(void)
 {
   SHIMMER_PRINTF("\r\nBT init start\r\n");
 
-  // 20 * 100ms = 2s per baud rate attempt
+  //20 * 100ms = 2s per baud rate attempt
   btCommWithDiffBaudRates(true, 20U);
 
   /* Shouldn't get past btCommWithDiffBaudRates() if BT isn't initialised so
@@ -430,10 +434,10 @@ void btFactoryResetViaFw(void)
 {
   SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
 
-  // 50 * 100ms = 5s per baud rate attempt
+  //50 * 100ms = 5s per baud rate attempt
   btCommWithDiffBaudRates(false, 50U);
 
-  // Abort transfer operations to release UART for subsequent requests.
+  //Abort transfer operations to release UART for subsequent requests.
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
 
   SHIMMER_PRINTF("BT factory reset end\r\n");
@@ -447,7 +451,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
   setBtLpMode(false);
 
   SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
-  usartBtUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
+  usartBtUpdate(baudToTry, baudToTry == 115200 ? 0 : FLOW_CONTROL);
 
   if (isInit)
   {
@@ -461,7 +465,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
   while ((isBtInitCmdsRunning() && !isBtIsInitialised())
       || (isBtFactoryResetCmdsRunning() && !isBtIsFactoryResetted()))
   {
-//    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+    //HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
     /* Insert delay 100 ms */
     HAL_Delay(100);
 
@@ -504,12 +508,12 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
         }
 
         SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
-        usartBtUpdate(baudToTry, baudToTry==115200? 0:FLOW_CONTROL);
+        usartBtUpdate(baudToTry, baudToTry == 115200 ? 0 : FLOW_CONTROL);
       }
       else
       {
         SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
-        // software POR reset
+        //software POR reset
         NVIC_SystemReset();
       }
 
@@ -531,7 +535,7 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
 void setBtConnectionState(bool state)
 {
   stat.isBtConnected = state;
-//  HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
+  //HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
 }
 
 bool isBtConnected(void)
@@ -543,165 +547,164 @@ bool isBtConnected(void)
 
 void loadSensorConfigurationAndCalibration(void)
 {
-    ShimmerCalib_init();
-    ShimmerCalibInitFromInfoAll();
+  ShimmerCalib_init();
+  ShimmerCalibInitFromInfoAll();
 
-    if (!stat.isDocked && CheckSdInslot())
-    {  //sd card ready to access
-        if (!isSdPowerOn())
-        {
-            // Hits here when undocked
-            SdPowerOn();
-        }
-        if (GetSdCfgFlag())
-        { // info > sdcard
-            S4Ram_init();
-            UpdateSdConfig();
-            SetSdCfgFlag(0);
-            if (isFileStatusOk())
-            {
-              stat.sdlogReady = 0;
-                stat.badFile = 1;
-            }
-        }
-        else
-        {
-            // Hits here when undocked
-            ReadSdConfiguration();
-        }
-
-        if (ShimmerCalib_file2Ram())
-        {
-            //fail, i.e. no such file. use current DumpRam to generate a file
-            ShimmerCalib_ram2File();
-            S4Ram_init();
-        }
+  if (!stat.isDocked && CheckSdInslot())
+  { //sd card ready to access
+    if (!isSdPowerOn())
+    {
+      //Hits here when undocked
+      SdPowerOn();
+    }
+    if (GetSdCfgFlag())
+    { //info > sdcard
+      S4Ram_init();
+      UpdateSdConfig();
+      SetSdCfgFlag(0);
+      if (isFileStatusOk())
+      {
+        stat.sdlogReady = 0;
+        stat.badFile = 1;
+      }
     }
     else
-    {   // sd card not available
-        S4Ram_init();
-        //CalibFromInfoAll();
+    {
+      //Hits here when undocked
+      ReadSdConfiguration();
     }
 
-    ShimmerCalibSyncFromDumpRamAll();
+    if (ShimmerCalib_file2Ram())
+    {
+      //fail, i.e. no such file. use current DumpRam to generate a file
+      ShimmerCalib_ram2File();
+      S4Ram_init();
+    }
+  }
+  else
+  { //sd card not available
+    S4Ram_init();
+    //CalibFromInfoAll();
+  }
+
+  ShimmerCalibSyncFromDumpRamAll();
 }
 
-void SetupDock(void){
-    stat.isConfiguring = 1;
-    if (stat.isDocked)
+void SetupDock(void)
+{
+  stat.isConfiguring = 1;
+  if (stat.isDocked)
+  {
+    setBatteryInterval(BATT_INTERVAL_DOCKED);
+    resetBatteryCriticalCount();
+    stat.enableSdlog = 0;
+    stat.sdlogReady = 0;
+    if (CheckSdInslot())
     {
-        setBatteryInterval(BATT_INTERVAL_DOCKED);
-        resetBatteryCriticalCount();
-        stat.enableSdlog = 0;
-        stat.sdlogReady = 0;
-        if (CheckSdInslot())
-        {
-            Board_sdPowerCycle();
-        }
-        if (!stat.isSensing)
-        {
-            DockUart_enable();
-        }
-        BtsdSelfcmd();
+      Board_sdPowerCycle();
+    }
+    if (!stat.isSensing)
+    {
+      DockUart_enable();
+    }
+    BtsdSelfcmd();
+  }
+  else
+  {
+    setBatteryInterval(BATT_INTERVAL_UNDOCKED);
+    if (!stat.isSensing)
+    {
+      DockUart_disable();
+    }
+    setMcuHasSdcardControl(1);
+
+    //SendStatusByte();
+    BtsdSelfcmd();
+    SdPowerOff();
+    if (CheckSdInslot() && !stat.isSensing && !stat.badFile)
+    {
+      HAL_Delay(120); //120ms
+      SdPowerOn();
+      SdInfoSync();
     }
     else
     {
-        setBatteryInterval(BATT_INTERVAL_UNDOCKED);
-        if (!stat.isSensing)
-        {
-            DockUart_disable();
-        }
-        setMcuHasSdcardControl(1);
-
-        //SendStatusByte();
-        BtsdSelfcmd();
-        SdPowerOff();
-        if (CheckSdInslot() && !stat.isSensing && !stat.badFile)
-        {
-            HAL_Delay(120); // 120ms
-            SdPowerOn();
-            SdInfoSync();
-        }
-        else
-        {
-            setSdInfoSyncDelayed(1);
-        }
+      setSdInfoSyncDelayed(1);
     }
-    setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
-    stat.isConfiguring = 0;
+  }
+  setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
+  stat.isConfiguring = 0;
 }
 
 void SdInfoSync(void)
 {
   setSdInfoSyncDelayed(0);
-    if (GetSdCfgFlag())
-    { // info > sdcard
-        IniReadInfoMem();
-        UpdateSdConfig();
-        SetSdCfgFlag(0);
+  if (GetSdCfgFlag())
+  { //info > sdcard
+    IniReadInfoMem();
+    UpdateSdConfig();
+    SetSdCfgFlag(0);
+  }
+  else
+  {
+    ReadSdConfiguration();
+  }
+
+  if (GetRamCalibFlag())
+  {
+    ShimmerCalib_ram2File();
+    SetRamCalibFlag(0);
+  }
+  else
+  {
+    if (ShimmerCalib_file2Ram())
+    {
+      ShimmerCalib_ram2File();
     }
     else
     {
-        ReadSdConfiguration();
+      //only need to do this when file2Ram succeeds
+      ShimmerCalibSyncFromDumpRamAll();
     }
+  }
 
-    if (GetRamCalibFlag())
-    {
-        ShimmerCalib_ram2File();
-        SetRamCalibFlag(0);
-    }
-    else
-    {
-        if (ShimmerCalib_file2Ram())
-        {
-            ShimmerCalib_ram2File();
-        }
-        else
-        {
-            // only need to do this when file2Ram succeeds
-            ShimmerCalibSyncFromDumpRamAll();
-        }
-
-    }
-
-    S4Sens_configureChannels();
+  S4Sens_configureChannels();
 #if BT_ENABLE_BAUD_RATE_CHANGE
-    ChangeBtBaudRateFunc();
+  ChangeBtBaudRateFunc();
 #endif
-    CheckOnDefault();
+  CheckOnDefault();
 }
 
 uint8_t CheckOnDefault(void)
 {
-    if (!S4Ram_getStoredConfig()->singleTouchStart
-        && !S4Ram_getStoredConfig()->userButtonEnable
-        && stat.sdlogReady && !stat.isSensing && !stat.badFile)
-    {   //state == BTSD_IDLESD
-        //startSensing = 1;
-        SetStartSensing();
-        //        enableSdlog = (SD_ERROR) ? 0 : 1;
-        stat.enableSdlog = 1;
-        stat.isSensing = 1;
-        BtsdSelfcmd();
-        stat.isSensing = 0;
-        return 1;
-    }
-    return 0;
+  if (!S4Ram_getStoredConfig()->singleTouchStart && !S4Ram_getStoredConfig()->userButtonEnable
+      && stat.sdlogReady && !stat.isSensing && !stat.badFile)
+  { //state == BTSD_IDLESD
+    //startSensing = 1;
+    SetStartSensing();
+    //enableSdlog = (SD_ERROR) ? 0 : 1;
+    stat.enableSdlog = 1;
+    stat.isSensing = 1;
+    BtsdSelfcmd();
+    stat.isSensing = 0;
+    return 1;
+  }
+  return 0;
 }
 
 void ReadSdConfiguration(void)
 {
-    S4_NORM_Task_clear(TASK_STREAMDATA); // this will skip one sample
-    SdPowerOn();
-    ParseConfig();
+  S4_NORM_Task_clear(TASK_STREAMDATA); //this will skip one sample
+  SdPowerOn();
+  ParseConfig();
 }
 
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -713,14 +716,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */

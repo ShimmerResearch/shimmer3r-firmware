@@ -2,7 +2,7 @@
  *   @file   no_os_alloc.h
  *   @brief  Header file of memory allocator.
  *   @author GMois (george.mois@analog.com)
-********************************************************************************
+ ********************************************************************************
  * Copyright 2023(c) Analog Devices, Inc.
  *
  * All rights reserved.
@@ -35,7 +35,7 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 #ifndef _NO_OS_ALLOC_H_
 #define _NO_OS_ALLOC_H_
 
@@ -52,4 +52,4 @@ void *no_os_calloc(size_t nitems, size_t size);
  * no_os_malloc */
 void no_os_free(void *ptr);
 
-#endif // _NO_OS_ALLOC_H_
+#endif //_NO_OS_ALLOC_H_

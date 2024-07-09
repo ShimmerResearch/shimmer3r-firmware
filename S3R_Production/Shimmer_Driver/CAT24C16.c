@@ -44,8 +44,8 @@
  */
 
 #include "CAT24C16.h"
-#include "s4__cfg.h"
 #include "hal_Board.h"
+#include "s4__cfg.h"
 
 I2C_HandleTypeDef *eeprom_hi2c;
 HAL_StatusTypeDef cat24c16_result;
@@ -59,12 +59,12 @@ void CAT24C16_powerOn(void)
 {
   //TODO initialise I2C if not on?
   HAL_GPIO_WritePin(SW_I2C1_GPIO_Port, SW_I2C1_Pin, GPIO_PIN_SET);
-  HAL_Delay(2);  //2ms
+  HAL_Delay(2); //2ms
 }
 
 void CAT24C16_powerOff(void)
 {
-  HAL_Delay(5);  //5ms to ensure no writes pending
+  HAL_Delay(5); //5ms to ensure no writes pending
   HAL_GPIO_WritePin(SW_I2C1_GPIO_Port, SW_I2C1_Pin, GPIO_PIN_RESET);
   //TODO deinitialise I2C?
 }
@@ -73,14 +73,13 @@ void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length)
 {
   if ((!length) || (length > 2048) || (address + length > 2048))
     return;
-  // I2C_Set_Slave_Address(CAT24C16_ADDR|(address>>8));
+  //I2C_Set_Slave_Address(CAT24C16_ADDR|(address>>8));
   uint8_t addr_hi = CAT24C16_ADDR | (address >> 8);
   uint8_t addr_lo = address & 0xff;
 
-  cat24c16_result = HAL_I2C_Master_Transmit(eeprom_hi2c, addr_hi << 1, &addr_lo,
-      1, 1000);
-  cat24c16_result = HAL_I2C_Master_Receive(eeprom_hi2c, addr_hi << 1, outBuffer,
-      length, 1000);
+  cat24c16_result = HAL_I2C_Master_Transmit(eeprom_hi2c, addr_hi << 1, &addr_lo, 1, 1000);
+  cat24c16_result
+      = HAL_I2C_Master_Receive(eeprom_hi2c, addr_hi << 1, outBuffer, length, 1000);
 }
 
 void CAT24C16_write(uint16_t address, uint8_t *data, uint16_t length)
@@ -91,7 +90,7 @@ void CAT24C16_write(uint16_t address, uint8_t *data, uint16_t length)
   uint8_t addr_hi = CAT24C16_ADDR | (address >> 8);
   //uint8_t addr_lo = address & 0xff;
 
-  uint8_t buf[17], margin, this_write, inc_addr;      // 17 = PAGE_SIZE+1
+  uint8_t buf[17], margin, this_write, inc_addr; //17 = PAGE_SIZE+1
   uint16_t mem_ptr, buf_offset;
 
   inc_addr = 0;
@@ -105,24 +104,24 @@ void CAT24C16_write(uint16_t address, uint8_t *data, uint16_t length)
     if (inc_addr)
     {
       inc_addr = 0;
-      // I2C_Set_Slave_Address(++final_addr);
+      //I2C_Set_Slave_Address(++final_addr);
       ++addr_hi;
     }
 
-    // delay
+    //delay
 
-    // bounds check
+    //bounds check
     margin = CAT24C16_PAGE_SIZE - (mem_ptr % CAT24C16_PAGE_SIZE);
     this_write = min(margin, address + length - mem_ptr);
 
     //set byte address
     buf[0] = mem_ptr & 0xff;
-    // data copy
+    //data copy
     memcpy(buf + 1, data + buf_offset, this_write);
 
-    // Write to EEPROM:
-    cat24c16_result = HAL_I2C_Master_Transmit(eeprom_hi2c, addr_hi << 1, buf,
-        this_write + 1, 1000);
+    //Write to EEPROM:
+    cat24c16_result = HAL_I2C_Master_Transmit(
+        eeprom_hi2c, addr_hi << 1, buf, this_write + 1, 1000);
     HAL_Delay(5);
 
     __NOP();
@@ -130,7 +129,7 @@ void CAT24C16_write(uint16_t address, uint8_t *data, uint16_t length)
     mem_ptr += this_write;
     buf_offset += this_write;
 
-    // if reaches edge of flash mem, reassign the slave address
+    //if reaches edge of flash mem, reassign the slave address
     if (!(mem_ptr % CAT24C16_BLOCK_SIZE))
       inc_addr = 1;
   }
@@ -188,12 +187,11 @@ void eepromWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf)
   eepromReadWrite(dataAddr, dataSize, dataBuf, EEPROM_WRITE);
 }
 
-void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf,
-    enum EEPROM_RW eepromRW)
+void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enum EEPROM_RW eepromRW)
 {
   CAT24C16_powerOn();
 
-  // EEPROM needs to be updated with latest bt baud rate, configure here
+  //EEPROM needs to be updated with latest bt baud rate, configure here
   if (eepromRW == EEPROM_READ)
   {
     CAT24C16_read(dataAddr, dataBuf, dataSize);
@@ -203,6 +201,6 @@ void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf,
     CAT24C16_write(dataAddr, dataBuf, dataSize);
   }
 
-  // Wind down EEPROM and required timing peripherals
+  //Wind down EEPROM and required timing peripherals
   CAT24C16_powerOff();
 }
