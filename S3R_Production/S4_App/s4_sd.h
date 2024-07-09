@@ -38,5 +38,7 @@ uint8_t isSdInfoSyncDelayed(void);
 void setSdInfoSyncDelayed(uint8_t state);
 uint8_t *getConfigTimeTextPtr(void);
 uint8_t *getFileNamePtr(void);
+uint8_t *getShimmerNamePtr(void);
+uint8_t *getExpIdPtr(void);
 
 #endif /* S4_SD_H_ */

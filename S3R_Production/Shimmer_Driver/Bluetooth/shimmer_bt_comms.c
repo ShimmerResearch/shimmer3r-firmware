@@ -3187,6 +3187,7 @@ void BtUart_sendRsp(void)
     {
       SD_setShimmerName();
       uint8_t shimmer_name_len = strlen((char *) storedConfig->shimmerName);
+      shimmer_name_len = shimmer_name_len > (MAX_CHARS-1) ? (MAX_CHARS-1) : shimmer_name_len;
       *(bt_tx_data + packet_length++) = SHIMMERNAME_RESPONSE;
       *(bt_tx_data + packet_length++) = shimmer_name_len;
       memcpy((bt_tx_data + packet_length), &storedConfig->shimmerName[0], shimmer_name_len);
@@ -3197,6 +3198,7 @@ void BtUart_sendRsp(void)
     {
       SD_setExpIdName();
       uint8_t exp_id_name_len = strlen((char *) storedConfig->expIdName);
+      exp_id_name_len = exp_id_name_len > (MAX_CHARS-1) ? (MAX_CHARS-1) : exp_id_name_len;
       *(bt_tx_data + packet_length++) = EXPID_RESPONSE;
       *(bt_tx_data + packet_length++) = exp_id_name_len;
       memcpy((bt_tx_data + packet_length), &storedConfig->expIdName[0], exp_id_name_len);
