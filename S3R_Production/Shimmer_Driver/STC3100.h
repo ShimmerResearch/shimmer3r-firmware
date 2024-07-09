@@ -48,240 +48,239 @@
 #include "stm32u5xx_hal.h"
 #include <stdint.h>
 
-#define STC3100_ADDR           0x70 << 1  //7 bit address I2C address of the STC3100
+#define STC3100_ADDR             0x70 << 1 //7 bit address I2C address of the STC3100
 
-// Control registers
-#define STC3100_REG_MODE              0x00
-#define STC3100_REG_CTRL              0x01
-#define STC3100_REG_CHARGE_LOW        0x02
-#define STC3100_REG_CHARGE_HIGH       0x03
-#define STC3100_REG_COUNTER_LOW       0x04
-#define STC3100_REG_COUNTER_HIGH      0x05
-#define STC3100_REG_CURRENT_LOW       0x06
-#define STC3100_REG_CURRENT_HIGH      0x07
-#define STC3100_REG_VOLTAGE_LOW       0x08
-#define STC3100_REG_VOLTAGE_HIGH      0x09
-#define STC3100_REG_TEMP_LOW          0x0A
-#define STC3100_REG_TEMP_HIGH         0x0B
+//Control registers
+#define STC3100_REG_MODE         0x00
+#define STC3100_REG_CTRL         0x01
+#define STC3100_REG_CHARGE_LOW   0x02
+#define STC3100_REG_CHARGE_HIGH  0x03
+#define STC3100_REG_COUNTER_LOW  0x04
+#define STC3100_REG_COUNTER_HIGH 0x05
+#define STC3100_REG_CURRENT_LOW  0x06
+#define STC3100_REG_CURRENT_HIGH 0x07
+#define STC3100_REG_VOLTAGE_LOW  0x08
+#define STC3100_REG_VOLTAGE_HIGH 0x09
+#define STC3100_REG_TEMP_LOW     0x0A
+#define STC3100_REG_TEMP_HIGH    0x0B
 
-// Device ID Registers
-#define STC3100_REG_ID0               0x18      // part type ID = 10h
-#define STC3100_REG_ID7               0x1F      // device ID CRC
+//Device ID Registers
+#define STC3100_REG_ID0          0x18 //part type ID = 10h
+#define STC3100_REG_ID7          0x1F //device ID CRC
 
-// REG operations
-#define REG_CTRL_STARTUP              0x02      // 0b 0000 0010
-#define REG_MODE_STARTUP_14B          0x10      // 0b 0001 0000 - 14 bit resolution
-#define REG_MODE_STARTUP_13B          0x12      // 0b 0001 0010 - 13 bit resolution
-#define REG_MODE_STARTUP_12B          0x14      // 0b 0001 0100 - 12 bit resolution
-#define REG_MODE_ADC_CALIBRATION      0x18      // 0b 0001 1000
-#define DEVICE_SHUTDOWN               0x00
+//REG operations
+#define REG_CTRL_STARTUP         0x02 //0b 0000 0010
+#define REG_MODE_STARTUP_14B     0x10 //0b 0001 0000 - 14 bit resolution
+#define REG_MODE_STARTUP_13B     0x12 //0b 0001 0010 - 13 bit resolution
+#define REG_MODE_STARTUP_12B     0x14 //0b 0001 0100 - 12 bit resolution
+#define REG_MODE_ADC_CALIBRATION 0x18 //0b 0001 1000
+#define DEVICE_SHUTDOWN          0x00
 
-// I2C operations
-#define STC3100_TIMEOUT               5
+//I2C operations
+#define STC3100_TIMEOUT          5
 
-// Battery gas gauge RAM register
-#define STC3100_REG_VOLT_INITIAL      0x32
+//Battery gas gauge RAM register
+#define STC3100_REG_VOLT_INITIAL 0x32
 
-#define STC3100_DATA_LEN 10
+#define STC3100_DATA_LEN         10
 
 /**
  * Register map of the STC3100 chip. All the accessible registers are mapped here.
  */
 typedef union
 {
-    /**Used for simpler readings of the chip.*/
-    unsigned char ByteArray[64];
+  /**Used for simpler readings of the chip.*/
+  unsigned char ByteArray[64];
 
-    struct
-    {
-        /**Mode register*/
-        unsigned char Mode;
-        /**Control and status register*/
-        unsigned char ControlStatus;
-        /**Gas gauge charge data, bits 0-7*/
-        unsigned char ChargeLow;
-        /**Gas gauge charge data, bits 8-15*/
-        unsigned char ChargeHigh;
-        /**Number of conversions, bits 0-7*/
-        unsigned char CounterLow;
-        /**Number of conversions, bits 8-15*/
-        unsigned char CounterHigh;
-        /**Battery current value, bits 0-7*/
-        unsigned char CurrentLow;
-        /**Battery current value, bits 8-15*/
-        unsigned char CurrentHigh;
-        /**Battery voltage value, bits 0-7*/
-        unsigned char VoltageLow;
-        /**Battery voltage value, bits 8-15*/
-        unsigned char VoltageHigh;
-        /**Temperature value, bits 0-7*/
-        unsigned char TemperatureLow;
-        /**Temperature value, bits 8-15*/
-        unsigned char TemperatureHigh;
-        /**Not implemented*/
-        unsigned char Reserved[13];
-        /**Part type ID = 10h*/
-        unsigned char ID0;
-        /**Unique part ID, bits 0-7*/
-        unsigned char ID1;
-        /**Unique part ID, bits 8-15*/
-        unsigned char ID2;
-        /**Unique part ID, bits 16-23*/
-        unsigned char ID3;
-        /**Unique part ID, bits 24-31*/
-        unsigned char ID4;
-        /**Unique part ID, bits 32-39*/
-        unsigned char ID5;
-        /**Unique part ID, bits 40-47*/
-        unsigned char ID6;
-        /**Device ID CRC*/
-        unsigned char ID7;
-        /**General-purpose RAM register 0*/
-        unsigned char RAM0;
-        /**General-purpose RAM register 1*/
-        unsigned char RAM1;
-        /**General-purpose RAM register 2*/
-        unsigned char RAM2;
-        /**General-purpose RAM register 3*/
-        unsigned char RAM3;
-        /**General-purpose RAM register 4*/
-        unsigned char RAM4;
-        /**General-purpose RAM register 5*/
-        unsigned char RAM5;
-        /**General-purpose RAM register 6*/
-        unsigned char RAM6;
-        /**General-purpose RAM register 7*/
-        unsigned char RAM7;
-        /**General-purpose RAM register 8*/
-        unsigned char RAM8;
-        /**General-purpose RAM register 9*/
-        unsigned char RAM9;
-        /**General-purpose RAM register 10*/
-        unsigned char RAM10;
-        /**General-purpose RAM register 11*/
-        unsigned char RAM11;
-        /**General-purpose RAM register 12*/
-        unsigned char RAM12;
-        /**General-purpose RAM register 13*/
-        unsigned char RAM13;
-        /**General-purpose RAM register 14*/
-        unsigned char RAM14;
-        /**General-purpose RAM register 15*/
-        unsigned char RAM15;
-        /**General-purpose RAM register 16*/
-        unsigned char RAM16;
-        /**General-purpose RAM register 17*/
-        unsigned char RAM17;
-        /**General-purpose RAM register 18*/
-        unsigned char RAM18;
-        /**General-purpose RAM register 19*/
-        unsigned char RAM19;
-        /**General-purpose RAM register 20*/
-        unsigned char RAM20;
-        /**General-purpose RAM register 21*/
-        unsigned char RAM21;
-        /**General-purpose RAM register 22*/
-        unsigned char RAM22;
-        /**General-purpose RAM register 23*/
-        unsigned char RAM23;
-        /**General-purpose RAM register 24*/
-        unsigned char RAM24;
-        /**General-purpose RAM register 25*/
-        unsigned char RAM25;
-        /**General-purpose RAM register 26*/
-        unsigned char RAM26;
-        /**General-purpose RAM register 27*/
-        unsigned char RAM27;
-        /**General-purpose RAM register 28*/
-        unsigned char RAM28;
-        /**General-purpose RAM register 29*/
-        unsigned char RAM29;
-        /**General-purpose RAM register 30*/
-        unsigned char RAM30;
-        /**General-purpose RAM register 31*/
-        unsigned char RAM31;
-    };
+  struct
+  {
+    /**Mode register*/
+    unsigned char Mode;
+    /**Control and status register*/
+    unsigned char ControlStatus;
+    /**Gas gauge charge data, bits 0-7*/
+    unsigned char ChargeLow;
+    /**Gas gauge charge data, bits 8-15*/
+    unsigned char ChargeHigh;
+    /**Number of conversions, bits 0-7*/
+    unsigned char CounterLow;
+    /**Number of conversions, bits 8-15*/
+    unsigned char CounterHigh;
+    /**Battery current value, bits 0-7*/
+    unsigned char CurrentLow;
+    /**Battery current value, bits 8-15*/
+    unsigned char CurrentHigh;
+    /**Battery voltage value, bits 0-7*/
+    unsigned char VoltageLow;
+    /**Battery voltage value, bits 8-15*/
+    unsigned char VoltageHigh;
+    /**Temperature value, bits 0-7*/
+    unsigned char TemperatureLow;
+    /**Temperature value, bits 8-15*/
+    unsigned char TemperatureHigh;
+    /**Not implemented*/
+    unsigned char Reserved[13];
+    /**Part type ID = 10h*/
+    unsigned char ID0;
+    /**Unique part ID, bits 0-7*/
+    unsigned char ID1;
+    /**Unique part ID, bits 8-15*/
+    unsigned char ID2;
+    /**Unique part ID, bits 16-23*/
+    unsigned char ID3;
+    /**Unique part ID, bits 24-31*/
+    unsigned char ID4;
+    /**Unique part ID, bits 32-39*/
+    unsigned char ID5;
+    /**Unique part ID, bits 40-47*/
+    unsigned char ID6;
+    /**Device ID CRC*/
+    unsigned char ID7;
+    /**General-purpose RAM register 0*/
+    unsigned char RAM0;
+    /**General-purpose RAM register 1*/
+    unsigned char RAM1;
+    /**General-purpose RAM register 2*/
+    unsigned char RAM2;
+    /**General-purpose RAM register 3*/
+    unsigned char RAM3;
+    /**General-purpose RAM register 4*/
+    unsigned char RAM4;
+    /**General-purpose RAM register 5*/
+    unsigned char RAM5;
+    /**General-purpose RAM register 6*/
+    unsigned char RAM6;
+    /**General-purpose RAM register 7*/
+    unsigned char RAM7;
+    /**General-purpose RAM register 8*/
+    unsigned char RAM8;
+    /**General-purpose RAM register 9*/
+    unsigned char RAM9;
+    /**General-purpose RAM register 10*/
+    unsigned char RAM10;
+    /**General-purpose RAM register 11*/
+    unsigned char RAM11;
+    /**General-purpose RAM register 12*/
+    unsigned char RAM12;
+    /**General-purpose RAM register 13*/
+    unsigned char RAM13;
+    /**General-purpose RAM register 14*/
+    unsigned char RAM14;
+    /**General-purpose RAM register 15*/
+    unsigned char RAM15;
+    /**General-purpose RAM register 16*/
+    unsigned char RAM16;
+    /**General-purpose RAM register 17*/
+    unsigned char RAM17;
+    /**General-purpose RAM register 18*/
+    unsigned char RAM18;
+    /**General-purpose RAM register 19*/
+    unsigned char RAM19;
+    /**General-purpose RAM register 20*/
+    unsigned char RAM20;
+    /**General-purpose RAM register 21*/
+    unsigned char RAM21;
+    /**General-purpose RAM register 22*/
+    unsigned char RAM22;
+    /**General-purpose RAM register 23*/
+    unsigned char RAM23;
+    /**General-purpose RAM register 24*/
+    unsigned char RAM24;
+    /**General-purpose RAM register 25*/
+    unsigned char RAM25;
+    /**General-purpose RAM register 26*/
+    unsigned char RAM26;
+    /**General-purpose RAM register 27*/
+    unsigned char RAM27;
+    /**General-purpose RAM register 28*/
+    unsigned char RAM28;
+    /**General-purpose RAM register 29*/
+    unsigned char RAM29;
+    /**General-purpose RAM register 30*/
+    unsigned char RAM30;
+    /**General-purpose RAM register 31*/
+    unsigned char RAM31;
+  };
 
+  /**
+   * Mode register bits.
+   */
+  struct
+  {
+    /**32,768 Hz clock source: 0: auto-detect, 1: external clock*/
+    unsigned char ClockSource : 1;
+    /**Gas gauge ADC resolution: 00:14 bits, 01:13 bits, 10:12 bits*/
+    unsigned char GasGaugeADCResolution : 2;
+    /**ADC Calibration: 0: no effect, 1: used to calibrate the AD converters*/
+    unsigned char CalibrateAD : 1;
     /**
-     * Mode register bits.
+     * 0: standby mode. Accumulator and counter registers are frozen, gas
+     * gauge and battery monitor functions are in standby.
+     * 1: operating mode.
      */
-    struct
-    {
-        /**32,768 Hz clock source: 0: auto-detect, 1: external clock*/
-        unsigned char ClockSource : 1;
-        /**Gas gauge ADC resolution: 00:14 bits, 01:13 bits, 10:12 bits*/
-        unsigned char GasGaugeADCResolution : 2;
-        /**ADC Calibration: 0: no effect, 1: used to calibrate the AD converters*/
-        unsigned char CalibrateAD : 1;
-        /**
-         * 0: standby mode. Accumulator and counter registers are frozen, gas
-         * gauge and battery monitor functions are in standby.
-         * 1: operating mode.
-         */
-        unsigned char StandbyOperating : 1;
-        /**Unused*/
-        unsigned char : 3;
-    } MODEbits;
+    unsigned char StandbyOperating : 1;
+    /**Unused*/
+    unsigned char : 3;
+  } MODEbits;
 
+  /**
+   * Control / Status Register detailed.
+   */
+  struct
+  {
+    /**Unused*/
+    unsigned char : 8;
     /**
-     * Control / Status Register detailed.
+     * Port IO0 data status:
+     * 0 = IO0 input is low
+     * 1 = IO0 input is high
+     *
+     * Port IO0 data output drive:
+     * 0 = IO0 output is driven low
+     * 1 = IO0 output is open
      */
-    struct
-    {
-        /**Unused*/
-        unsigned char : 8;
-        /**
-         * Port IO0 data status:
-         * 0 = IO0 input is low
-         * 1 = IO0 input is high
-         *
-         * Port IO0 data output drive:
-         * 0 = IO0 output is driven low
-         * 1 = IO0 output is open
-         */
-        unsigned char IO0Data : 1;
-        /**
-         * Gas Gauge Reset
-         * 0: no effect
-         * 1: resets the charge accumulator and conversion counter
-         * GG_RST is a self-clearing bit.
-         */
-        unsigned char GaugeReset : 1;
-        /**
-         * Set at the end of a battery current conversion cycle.
-         * Clears upon reading.
-         */
-        unsigned char CurrentConvertionStatus : 1;
-        /**
-         * Set at the end of a battery voltage or temperature conversion cycle.
-         * Clears upon reading.
-         */
-        unsigned char VoltageTemperatureConvertionStatus : 1;
-        /**
-         * Power on reset (POR) detection bit:
-         * 0 = no POR event occurred,
-         * 1 = POR event occurred
-         *
-         * Soft reset:
-         * 0 = release the soft-reset and clear the POR detection bit,
-         * 1 = assert the soft-reset and set the POR detection bit
-         */
-        unsigned char PowerOnReset : 1;
-        /**Unused*/
-        unsigned char : 3;
-    } CONTROLSTATUSbits;
+    unsigned char IO0Data : 1;
+    /**
+     * Gas Gauge Reset
+     * 0: no effect
+     * 1: resets the charge accumulator and conversion counter
+     * GG_RST is a self-clearing bit.
+     */
+    unsigned char GaugeReset : 1;
+    /**
+     * Set at the end of a battery current conversion cycle.
+     * Clears upon reading.
+     */
+    unsigned char CurrentConvertionStatus : 1;
+    /**
+     * Set at the end of a battery voltage or temperature conversion cycle.
+     * Clears upon reading.
+     */
+    unsigned char VoltageTemperatureConvertionStatus : 1;
+    /**
+     * Power on reset (POR) detection bit:
+     * 0 = no POR event occurred,
+     * 1 = POR event occurred
+     *
+     * Soft reset:
+     * 0 = release the soft-reset and clear the POR detection bit,
+     * 1 = assert the soft-reset and set the POR detection bit
+     */
+    unsigned char PowerOnReset : 1;
+    /**Unused*/
+    unsigned char : 3;
+  } CONTROLSTATUSbits;
 
 
 } tSTC31000Data;
 
 
-
 extern tSTC31000Data STC3100Data;
 
-// Initialise the STC3100 handler
+//Initialise the STC3100 handler
 extern void STC3100_init(I2C_HandleTypeDef *hi2c);
 
-// Read all 64 bytes of data from the chip and store in STC3100Data
+//Read all 64 bytes of data from the chip and store in STC3100Data
 void STC3100_readChip(void);
 
 /*
@@ -293,11 +292,11 @@ The battery voltage is coded in binary format, and the LSB value is 2.44 mV.
 The temperature value is coded in 2's complement format, and the LSB value is 0.125� C.
 The temperature of 0� C corresponds to code 0.
 */
-void STC3100_readData(uint8_t* buf);
-void STC3100_readData_it(uint8_t* buf);
+void STC3100_readData(uint8_t *buf);
+void STC3100_readData_it(uint8_t *buf);
 
-// If wakeup is 0 puts STC3100 to sleep
-// else wakes it up
+//If wakeup is 0 puts STC3100 to sleep
+//else wakes it up
 void STC3100_wake(int wakeup);
 
 
