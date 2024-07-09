@@ -1,7 +1,7 @@
 # https://github.com/marketplace/actions/clang-format-lint
 name: clang-format-lint
 
-on: pull_request
+on: [push, pull_request]
 
 jobs:
   build:
