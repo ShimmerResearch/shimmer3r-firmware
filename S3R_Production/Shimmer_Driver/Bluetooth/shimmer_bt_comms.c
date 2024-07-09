@@ -3085,21 +3085,18 @@ void BtUart_sendRsp(void) {
         S4Sens_configureChannels();
 
          *(bt_tx_data + packet_length++) = INQUIRY_RESPONSE;
-         //*(uint16_t *)(bt_tx_data + packet_length) = *(uint16_t *)(storedConfig + NV_SAMPLING_RATE); //ADC sampling rate
-         S4Ram_storedConfigGet(bt_tx_data + packet_length, NV_SAMPLING_RATE, 2);
+         *(uint16_t *)(bt_tx_data + packet_length) = storedConfig->samplingRateTicks; //ADC sampling rate
          packet_length += 2;
-//         memcpy((bt_tx_data + packet_length), (storedConfig + NV_CONFIG_SETUP_BYTE0), 4);           //4 config bytes
-         S4Ram_storedConfigGet(bt_tx_data + packet_length, NV_CONFIG_SETUP_BYTE0, 4);
+         memcpy(bt_tx_data + packet_length, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
          packet_length += 4;
          *(bt_tx_data + packet_length++) = sensing.nbrAdcChans + sensing.nbrDigiChans;                        //number of data channels
-         *(bt_tx_data + packet_length++) = S4Ram_storedConfigGetByte(NV_BUFFER_SIZE);                      //buffer size
+         *(bt_tx_data + packet_length++) = storedConfig->bufferSize;                      //buffer size
          memcpy((bt_tx_data + packet_length), sensing.cc, (sensing.nbrAdcChans + sensing.nbrDigiChans));
          packet_length += sensing.nbrAdcChans + sensing.nbrDigiChans;
          inquiryBtRsp = 0;
       } else if (samplingRateBtRsp) {
          *(bt_tx_data + packet_length++) = SAMPLING_RATE_RESPONSE;
-         //*(uint16_t *)(bt_tx_data + packet_length) = *(uint16_t *)(storedConfig + NV_SAMPLING_RATE); //ADC sampling rate
-         S4Ram_storedConfigGet(bt_tx_data + packet_length, NV_SAMPLING_RATE, 2);
+         *(uint16_t *)(bt_tx_data + packet_length) = storedConfig->samplingRateTicks; //ADC sampling rate
          packet_length += 2;
          samplingRateBtRsp = 0;
       } else if(lsm303dlhcAccelRangeResponse) {
@@ -3143,7 +3140,7 @@ void BtUart_sendRsp(void) {
          vbattBtRsp = 0;
       } else if(trialConfigResponse) {
          *(bt_tx_data + packet_length++) = TRIAL_CONFIG_RESPONSE;
-         memcpy((bt_tx_data + packet_length), (storedConfig+NV_SD_TRIAL_CONFIG0), 3);  //2 trial config bytes + 1 interval byte
+         memcpy((bt_tx_data + packet_length), storedConfig->rawBytes[NV_SD_TRIAL_CONFIG0], 3);  //2 trial config bytes + 1 interval byte
          packet_length+=3;
          trialConfigResponse = 0;
       } else if(centerResponse) {
@@ -3242,18 +3239,17 @@ void BtUart_sendRsp(void) {
          *(bt_tx_data + packet_length++) = MPU9150_ACCEL_RANGE_RESPONSE;
          *(bt_tx_data + packet_length++) = storedConfig->altAccelRange;
          mpu9250AccelRangeResponse = 0;
-//      } else if(bmp180OversamplingRatioResponse) {
-//         *(bt_tx_data + packet_length++) = BMP180_PRES_OVERSAMPLING_RATIO_RESPONSE;
-//         *(bt_tx_data + packet_length++) = (storedConfig[NV_CONFIG_SETUP_BYTE3]&0x30) >> 4;
-//         bmp180OversamplingRatioResponse = 0;
+      } else if(bmp180OversamplingRatioResponse) {
+         *(bt_tx_data + packet_length++) = BMPX80_PRES_OVERSAMPLING_RATIO_RESPONSE;
+         *(bt_tx_data + packet_length++) = storedConfig->pressurePrecision;
+         bmp180OversamplingRatioResponse = 0;
       } else if(internalExpPowerEnableResponse) {
          *(bt_tx_data + packet_length++) = INTERNAL_EXP_POWER_ENABLE_RESPONSE;
          *(bt_tx_data + packet_length++) = storedConfig->expansionBoardPower;
          internalExpPowerEnableResponse = 0;
       } else if (configSetupBytesResponse) {
          *(bt_tx_data + packet_length++) = CONFIG_SETUP_BYTES_RESPONSE;
-         //memcpy((bt_tx_data + packet_length), &storedConfig[NV_CONFIG_SETUP_BYTE0], 4);
-         S4Ram_storedConfigGet(bt_tx_data + packet_length, NV_CONFIG_SETUP_BYTE0, 4);
+         memcpy(bt_tx_data + packet_length, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
          packet_length += 4;
          configSetupBytesResponse = 0;
       } else if(calibRamResponse) {
@@ -3290,7 +3286,7 @@ void BtUart_sendRsp(void) {
          gsrRangeResponse = 0;
       } else if(allCalibrationResponse) {
          *(bt_tx_data + packet_length++) = ALL_CALIBRATION_RESPONSE;
-         memcpy((bt_tx_data+packet_length), &storedConfig[NV_A_ACCEL_CALIBRATION], NV_NUM_CALIBRATION_BYTES);
+         memcpy((bt_tx_data+packet_length), &storedConfig->rawBytes[NV_A_ACCEL_CALIBRATION], NV_NUM_CALIBRATION_BYTES);
          packet_length += NV_NUM_CALIBRATION_BYTES;
          allCalibrationResponse = 0;
       } else if (deviceVersionBtRsp) {
@@ -3299,17 +3295,23 @@ void BtUart_sendRsp(void) {
          deviceVersionBtRsp = 0;
       } else if(mpu9250MagSensAdjValsResponse) {
 #if defined(SHIMMER3) || defined(SHIMMER4_SDK)
-         MPU9250_init();
-         MPU9250_wake(1);
-         MPU9250_wake(0);
+         // Mag sensitivity adj feature is not present in ICM-20948
+         if(isGyroInUseMpu9x50())
+         {
+             MPU9150_init();
+             MPU9150_wake(1);
+             MPU9150_wake(0);
+             *(bt_tx_data + packet_length++) = MPU9150_MAG_SENS_ADJ_VALS_RESPONSE;
+             MPU9150_getMagSensitivityAdj(bt_tx_data + packet_length);
+             packet_length += 3;
+         }
+         else
+         {
 #endif
-         *(bt_tx_data + packet_length++) = MPU9150_MAG_SENS_ADJ_VALS_RESPONSE;
+             *(bt_tx_data + packet_length++) = ACK_COMMAND_PROCESSED;
 #if defined(SHIMMER3) || defined(SHIMMER4_SDK)
-         MPU9250_getMagSensitivityAdj(bt_tx_data+packet_length);
-#elif defined(SHIMMER3R)
-         *(bt_tx_data + packet_length++) = storedConfig->altMagRange;
+         }
 #endif
-         packet_length += 3;
          mpu9250MagSensAdjValsResponse = 0;
       } else if (fwVersionBtRsp) {
          *(bt_tx_data + packet_length++) = FW_VERSION_RESPONSE;
