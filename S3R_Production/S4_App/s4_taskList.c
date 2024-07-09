@@ -99,6 +99,8 @@ void S4_NORM_Task_manage(void)
     case TASK_UARTRESPONSE: DockUart_sendRsp(); break;
     case TASK_BTPROCESS:    BtUart_processCmd(); break;
     case TASK_BTRESPONSE:   BtUart_sendRsp(); break;
+    case TASK_RCCENTERR1:   SyncCenterR1(); break;
+    case TASK_RCNODER10:    SyncNodeR10(); break;
     case TASK_STREAMDATA:   S4Sens_streamData(); break;
 #if defined(SHIMMER3R)
     case TASK_SAVEDATA: saveData(); break;
