@@ -2766,11 +2766,12 @@ void BtUart_processCmd(void)
   case RESET_CALIBRATION_VALUE_COMMAND:
     //memset(&storedConfig[NV_A_ACCEL_CALIBRATION], 0xFF,
     //NV_NUM_CALIBRATION_BYTES); InfoMem_write((void*)NV_A_ACCEL_CALIBRATION,
-    //&storedConfig[NV_A_ACCEL_CALIBRATION], NV_NUM_CALIBRATION_BYTES); memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION],
-    //&storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21); memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION],
-    //&storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21); memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION],
-    //&storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION],
-    //&storedConfig[NV_A_ACCEL_CALIBRATION], 21); calib_update = 1;
+    //&storedConfig[NV_A_ACCEL_CALIBRATION], NV_NUM_CALIBRATION_BYTES);
+    //memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION], &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION],
+    //21); memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION], &storedConfig[NV_MPU9250_GYRO_CALIBRATION],
+    //21); memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION], &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION],
+    //21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION], &storedConfig[NV_A_ACCEL_CALIBRATION],
+    //21); calib_update = 1;
     ShimmerCalib_init();
     ShimmerCalibSyncFromDumpRamAll();
     update_calib_dump_file = 1;

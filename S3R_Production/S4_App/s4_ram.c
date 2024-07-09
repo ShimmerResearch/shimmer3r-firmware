@@ -402,10 +402,11 @@ void S4Ram_config2SdHead(void)
   memcpy(&sdHeadText[SDH_TEMP_PRES_CALIBRATION], get_bmp3_calib_data_bytes(), BMP3_LEN_CALIB_DATA);
 
   //memcpy(&sdHeadText[SDH_MPU9150_GYRO_CALIBRATION],
-  //&storedConfig.rawBytes[NV_MPU9150_GYRO_CALIBRATION], 21); memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION],
-  //&storedConfig.rawBytes[NV_LSM303DLHC_MAG_CALIBRATION], 21); memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION],
-  //&storedConfig.rawBytes[NV_LSM303DLHC_ACCEL_CALIBRATION], 21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION],
-  //&storedConfig.rawBytes[NV_A_ACCEL_CALIBRATION], 21);
+  //&storedConfig.rawBytes[NV_MPU9150_GYRO_CALIBRATION], 21);
+  //memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION], &storedConfig.rawBytes[NV_LSM303DLHC_MAG_CALIBRATION],
+  //21); memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION], &storedConfig.rawBytes[NV_LSM303DLHC_ACCEL_CALIBRATION],
+  //21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION], &storedConfig.rawBytes[NV_A_ACCEL_CALIBRATION],
+  //21);
 
   ShimmerCalibSyncFromDumpRamAll();
   memcpy(&sdHeadText[SDH_DAUGHTER_CARD_ID_BYTE0], &getDaughtCardIdPtr()->exp_brd_id, 3);

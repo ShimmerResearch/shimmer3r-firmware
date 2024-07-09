@@ -228,8 +228,8 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
   //SHIMMER_PRINTF("byte received\r\n");
   //SHIMMER_PRINTF("%c", rxBuf[0]);
 
-  //if start byte is CYW header byte or if in middle of waiting for full CYW response
-  //if(!waitingForArgs
+  //if start byte is CYW header byte or if in middle of waiting for full CYW
+  //response if(!waitingForArgs
   //    && (ezs_rx_packet_length != 0 || (b & EZS_BINARY_SOF_MASK) != 0)) {
   //
   //  ezs_input_result_t result = EZSerial_Parse(b);
