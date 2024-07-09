@@ -73,24 +73,28 @@ uint16_t numBytesInBtRxBufWhenLastProcessed = 0;
 uint16_t indexOfFirstEol;
 uint32_t firstProcessFailTicks = 0;
 
-uint8_t sendAck, inquiryBtRsp,
-    samplingRateBtRsp, //toggleLedRed, enableBtstream, enableSdlog,
-    aAccelCalibrationResponse, gyroCalibrationResponse, magCalibrationResponse,
-    dAccelCalibrationResponse, allCalibrationResponse, lsm303dlhcAccelRangeResponse,
-    lsm303dlhcMagGainResponse, lsm303dlhcMagSamplingRateResponse,
-    dockStatusBtRsp, vbattBtRsp, trialConfigResponse, centerResponse,
-    shimmerNameResponse, expIDResponse, configTimeResponse, dirResponse,
-    nshimmerResponse, myIDResponse, lsm303dlhcAccelSamplingRateResponse,
-    i2cvBattBtRsp, lsm303dlhcAccelHRModeResponse, mpu9250GyroRangeResponse,
-    bmp180CalibCoeffBtRsp, mpu9250SamplingRateResponse, mpu9250AccelRangeResponse,
-    bmp180OversamplingRatioResponse, internalExpPowerEnableResponse,
-    exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp,
-    bufferSizeResponse, blinkLedBtRsp, gsrRangeResponse, infomemBtRsp, dcIdBtRsp,
-    dcMemBtRsp, mpu9250MagSensAdjValsResponse, lsm303dlhcAccelLPModeResponse,
-    deviceVersionBtRsp, rwcResponse, calibRamResponse, btDataRateResponse,
-    btVerResponse, btCommsBaudRateResponse, bmp280CalibrationCoefficientsResponse,
-    bmpGenericCalibrationCoefficientsResponse, useAckPrefixForInstreamResponses,
-    derivedChannelResponse, uniqueSerialResponse;
+uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, aAccelCalibrationResponse,
+    gyroCalibrationResponse, magCalibrationResponse, dAccelCalibrationResponse,
+    allCalibrationResponse, deviceVersionBtRsp, fwVersionBtRsp,
+    bufferSizeResponse, uniqueSerialResponse, configSetupBytesResponse,
+    lsm303dlhcAccelRangeResponse, lsm303dlhcMagGainResponse,
+    lsm303dlhcMagSamplingRateResponse, lsm303dlhcAccelSamplingRateResponse,
+    lsm303dlhcAccelLPModeResponse, lsm303dlhcAccelHRModeResponse,
+    mpu9250GyroRangeResponse, mpu9250SamplingRateResponse,
+    mpu9250AccelRangeResponse, mpu9250MagSensAdjValsResponse,
+    bmp180OversamplingRatioResponse, blinkLedBtRsp, gsrRangeResponse,
+    internalExpPowerEnableResponse, exgRegsResponse, dcIdBtRsp, dcMemBtRsp,
+    dockStatusBtRsp, trialConfigResponse, centerResponse, shimmerNameResponse,
+    expIDResponse, nshimmerResponse, myIDResponse, configTimeResponse,
+    dirResponse, btCommsBaudRateResponse, derivedChannelResponse, infomemBtRsp,
+    rwcResponse, vbattBtRsp, calibRamResponse, btVerResponse,
+    useAckPrefixForInstreamResponses, btDataRateResponse,
+    bmpGenericCalibrationCoefficientsResponse;
+uint8_t bmp180CalibCoeffBtRsp, bmp280CalibrationCoefficientsResponse;
+#if defined(SHIMMER4_SDK)
+uint8_t i2cvBattBtRsp;
+#endif
+
 uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
 uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
 
@@ -2265,7 +2269,9 @@ void resetBtResponseBools(void)
 
   sendAck = 0;
 
+#if defined(SHIMMER4_SDK)
   i2cvBattBtRsp = 0;
+#endif
   inquiryBtRsp = 0;
   samplingRateBtRsp = 0;
   lsm303dlhcAccelRangeResponse = 0;
