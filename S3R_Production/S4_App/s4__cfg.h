@@ -37,6 +37,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "s4_led.h"
 #include "s4_calc.h"

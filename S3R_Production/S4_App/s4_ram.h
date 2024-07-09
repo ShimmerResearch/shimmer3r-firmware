@@ -49,6 +49,9 @@
 #include "s4.h"
 #include "s4__cfg.h"
 
+// LogAndStream Shimmer3 function names
+#define IniReadInfoMem S4Ram_init
+
 #define STOREDCONFIG_SIZE 512
 
 // Infomem contents
@@ -59,6 +62,7 @@
 #define NV_NUM_SD_BYTES                   37
 #define NV_TOTAL_NUM_CONFIG_BYTES         384//NV_NUM_SETTINGS_BYTES + NV_NUM_CALIBRATION_BYTES + NV_NUM_SD_BYTES
 #define NV_NUM_RWMEM_BYTES                512
+#define NV_NUM_BYTES_SYNC_CENTER_NODE_ADDRS 126
 
 #define NV_SAMPLING_RATE                  0
 #define NV_BUFFER_SIZE                    2
@@ -134,6 +138,29 @@
 
 typedef union
 {
+  uint8_t rawBytes[21];
+  struct __attribute__((packed))
+  {
+    int16_t calibOffset_B0;
+    int16_t calibOffset_B1;
+    int16_t calibOffset_B2;
+    int16_t calibSensitivity_K0;
+    int16_t calibSensitivity_K1;
+    int16_t calibSensitivity_K2;
+    int8_t calibAlignment_R00;
+    int8_t calibAlignment_R01;
+    int8_t calibAlignment_R02;
+    int8_t calibAlignment_R10;
+    int8_t calibAlignment_R11;
+    int8_t calibAlignment_R12;
+    int8_t calibAlignment_R20;
+    int8_t calibAlignment_R21;
+    int8_t calibAlignment_R22;
+  };
+} gImuConfig;
+
+typedef union
+{
   uint8_t rawBytes[STOREDCONFIG_SIZE];
   struct __attribute__((packed))
   {
@@ -195,7 +222,7 @@ typedef union
 #if defined(SHIMMER3)
     uint8_t chEnIntADC14 :1;
 #else
-    uint8_t chEnIntADC2 :1;  // S3R = ADC16, S4_SDK = ADC0
+    uint8_t chEnIntADC2 :1;  // S3 = ADC14, S3R = ADC16, S4_SDK = ADC0
 #endif
 
     //Config setup Byte0
@@ -213,7 +240,7 @@ typedef union
     uint8_t magRange :3;
 
     //Config setup Byte3
-    uint8_t expPwr :1;
+    uint8_t expansionBoardPower :1;
     uint8_t gsrRange :3;
     uint8_t pressurePrecision :2;
     uint8_t altAccelRange :2; // S3/S4_SDK MPU9x50/ICM20948 Accel, S3R = LSM6DSV Accel
@@ -270,69 +297,10 @@ typedef union
     uint8_t chEnSixDofLnQuat :1;
     uint8_t chEnSixDofLnEuler :1;
 
-    int16_t accelCalibOffset_B0;
-    int16_t accelCalibOffset_B1;
-    int16_t accelCalibOffset_B2;
-    int16_t accelCalibSensitivity_K0;
-    int16_t accelCalibSensitivity_K1;
-    int16_t accelCalibSensitivity_K2;
-    int8_t accelCalibAlignment_R00;
-    int8_t accelCalibAlignment_R01;
-    int8_t accelCalibAlignment_R02;
-    int8_t accelCalibAlignment_R10;
-    int8_t accelCalibAlignment_R11;
-    int8_t accelCalibAlignment_R12;
-    int8_t accelCalibAlignment_R20;
-    int8_t accelCalibAlignment_R21;
-    int8_t accelCalibAlignment_R22;
-
-    int16_t gyroCalibOffset_B0;
-    int16_t gyroCalibOffset_B1;
-    int16_t gyroCalibOffset_B2;
-    int16_t gyroCalibSensitivity_K0;
-    int16_t gyroCalibSensitivity_K1;
-    int16_t gyroCalibSensitivity_K2;
-    int8_t gyroCalibAlignment_R00;
-    int8_t gyroCalibAlignment_R01;
-    int8_t gyroCalibAlignment_R02;
-    int8_t gyroCalibAlignment_R10;
-    int8_t gyroCalibAlignment_R11;
-    int8_t gyroCalibAlignment_R12;
-    int8_t gyroCalibAlignment_R20;
-    int8_t gyroCalibAlignment_R21;
-    int8_t gyroCalibAlignment_R22;
-
-    int16_t magCalibOffset_B0;
-    int16_t magCalibOffset_B1;
-    int16_t magCalibOffset_B2;
-    int16_t magCalibSensitivtiy_K0;
-    int16_t magCalibSensitivity_K1;
-    int16_t magCalibSensitivity_K2;
-    int8_t magCalibAlignment_R00;
-    int8_t magCalibAlignment_R01;
-    int8_t magCalibAlignment_R02;
-    int8_t magCalibAlignment_R10;
-    int8_t magCalibAlignment_R11;
-    int8_t magCalibAlignment_R12;
-    int8_t magCalibAlignment_R20;
-    int8_t magCalibAlignment_R21;
-    int8_t magCalibAlignment_R22;
-
-    int16_t wrAccelCalibOffset_B0;
-    int16_t wrAccelCalibOffset_B1;
-    int16_t wrAccelCalibOffset_B2;
-    int16_t wrAccelCalibSensitivity_K0;
-    int16_t wrAccelCalibSensitivity_K1;
-    int16_t wrAccelCalibSensitivity_K2;
-    int8_t wrAccelCalibAlignment_R00;
-    int8_t wrAccelCalibAlignment_R01;
-    int8_t wrAccelCalibAlignment_R02;
-    int8_t wrAccelCalibAlignment_R10;
-    int8_t wrAccelCalibAlignment_R11;
-    int8_t wrAccelCalibAlignment_R12;
-    int8_t wrAccelCalibAlignment_R20;
-    int8_t wrAccelCalibAlignment_R21;
-    int8_t wrAccelCalibAlignment_R22;
+    gImuConfig lnAccelCalib;
+    gImuConfig gyroCalib;
+    gImuConfig magCalib;
+    gImuConfig wrAccelCalib;
 
     //cfg in SDlog line InfoMem 118-122
     //nVDerivedChannels3
@@ -425,8 +393,8 @@ typedef union
     uint8_t singleTouchStart :1;
 
     uint8_t btInterval;
-    uint16_t estExpLen;
-    uint16_t maxExPLen;
+    uint16_t experimentLengthEstimatedInSec;  // Used for SD Sync (min = 1)
+    uint16_t experimentLengthMaxInMinutes;    // Used for auto-stop (0ff = 0)
     uint8_t macAddr[6];
 
     //SDConfigDelayFlag;
@@ -519,5 +487,9 @@ void S4Ram_config2SdHead(void);
 
 void setDefaultShimmerName(void);
 void setDefaultTrialId(void);
+uint8_t GetSdCfgFlag(void);
+void SetSdCfgFlag(uint8_t flag);
+uint8_t GetRamCalibFlag(void);
+void SetRamCalibFlag(uint8_t flag);
 
 #endif //S4Ram_H

@@ -71,6 +71,10 @@ uint32_t adc_battVal, adcBufSens[12], adcBufResv[12];// max 12 channels, each of
 uint8_t gsrActiveResistor;
 uint8_t adcConfig;
 
+uint32_t battInterval = BATT_INTERVAL_D;
+uint8_t battCriticalCount = 0;
+battAlarmInterval_t battAlarmInterval;
+
 #if defined(SHIMMER3R)
 static uint16_t ADC_RANK_ARRAY[] = {
     ADC_REGULAR_RANK_1,
@@ -954,6 +958,21 @@ void updateBatteryStatus(uint16_t adc_battVal)
 //   }
 //}
 
+
+void setBatteryInterval(battAlarmInterval_t  value)
+{
+  battAlarmInterval = value;
+}
+
+battAlarmInterval_t  getBatteryInterval(void)
+{
+  return battAlarmInterval;
+}
+
+void resetBatteryCriticalCount(void)
+{
+  battCriticalCount = 0;
+}
 
 /* USER CODE END 1 */
 

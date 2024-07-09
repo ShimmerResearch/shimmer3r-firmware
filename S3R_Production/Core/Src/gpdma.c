@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "linked_list.h"
+
 extern DMA_QListTypeDef ADCQueue;
 
 /* USER CODE END 0 */

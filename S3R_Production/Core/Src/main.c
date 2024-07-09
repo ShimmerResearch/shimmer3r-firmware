@@ -85,6 +85,11 @@ void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
+void loadSensorConfigurationAndCalibration(void);
+void SetupDock(void);
+void SdInfoSync(void);
+uint8_t CheckOnDefault(void);
+void ReadSdConfiguration(void);
 #endif
 
 /* USER CODE END PFP */
@@ -154,8 +159,9 @@ void Init() {
 #elif defined(SHIMMER4_SDK)
    BtUart_init();
 #endif
-   S4Ram_init();
-   ShimmerCalib_init();
+
+   loadSensorConfigurationAndCalibration();
+
    // ==== 13.8ma ====
 #if FULL_TEST_MODE
    FullTest();
@@ -178,7 +184,6 @@ void Init() {
 //      //Power_SleepUntilInterrupt();
 //   }
    //Power_StopUntilInterrupt();
-   setupNextRtcMinuteAlarm(); /*Enable RTC Alarm is necessary as in most cases it is not enabled from init due to failing backup read condition*/
 }
 
 /* USER CODE END 0 */
@@ -535,6 +540,162 @@ bool isBtConnected(void)
 }
 
 #endif
+
+void loadSensorConfigurationAndCalibration(void)
+{
+    ShimmerCalib_init();
+    ShimmerCalibInitFromInfoAll();
+
+    if (!stat.isDocked && CheckSdInslot())
+    {  //sd card ready to access
+        if (!isSdPowerOn())
+        {
+            // Hits here when undocked
+            SdPowerOn();
+        }
+        if (GetSdCfgFlag())
+        { // info > sdcard
+            S4Ram_init();
+            UpdateSdConfig();
+            SetSdCfgFlag(0);
+            if (isFileStatusOk())
+            {
+              stat.sdlogReady = 0;
+                stat.badFile = 1;
+            }
+        }
+        else
+        {
+            // Hits here when undocked
+            ReadSdConfiguration();
+        }
+
+        if (ShimmerCalib_file2Ram())
+        {
+            //fail, i.e. no such file. use current DumpRam to generate a file
+            ShimmerCalib_ram2File();
+            S4Ram_init();
+        }
+    }
+    else
+    {   // sd card not available
+        S4Ram_init();
+        //CalibFromInfoAll();
+    }
+
+    ShimmerCalibSyncFromDumpRamAll();
+}
+
+void SetupDock(void)
+{
+    stat.isConfiguring = 1;
+    if (stat.isDocked)
+    {
+        setBatteryInterval(BATT_INTERVAL_DOCKED);
+        resetBatteryCriticalCount();
+        stat.enableSdlog = 0;
+        stat.sdlogReady = 0;
+        if (CheckSdInslot())
+        {
+            Board_sdPowerCycle();
+        }
+        if (!stat.isSensing)
+        {
+            DockUart_enable();
+        }
+        BtsdSelfcmd();
+    }
+    else
+    {
+        setBatteryInterval(BATT_INTERVAL_UNDOCKED);
+        if (!stat.isSensing)
+        {
+            DockUart_disable();
+        }
+        setMcuHasSdcardControl(1);
+
+        //SendStatusByte();
+        BtsdSelfcmd();
+        SdPowerOff();
+        if (CheckSdInslot() && !stat.isSensing && !stat.badFile)
+        {
+            HAL_Delay(120); // 120ms
+            SdPowerOn();
+            SdInfoSync();
+        }
+        else
+        {
+            setSdInfoSyncDelayed(1);
+        }
+    }
+    setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
+    stat.isConfiguring = 0;
+}
+
+void SdInfoSync(void)
+{
+  setSdInfoSyncDelayed(0);
+    if (GetSdCfgFlag())
+    { // info > sdcard
+        IniReadInfoMem();
+        UpdateSdConfig();
+        SetSdCfgFlag(0);
+    }
+    else
+    {
+        ReadSdConfiguration();
+    }
+
+    if (GetRamCalibFlag())
+    {
+        ShimmerCalib_ram2File();
+        SetRamCalibFlag(0);
+    }
+    else
+    {
+        if (ShimmerCalib_file2Ram())
+        {
+            ShimmerCalib_ram2File();
+        }
+        else
+        {
+            // only need to do this when file2Ram succeeds
+            ShimmerCalibSyncFromDumpRamAll();
+        }
+
+    }
+
+    S4Sens_configureChannels();
+#if BT_ENABLE_BAUD_RATE_CHANGE
+    ChangeBtBaudRateFunc();
+#endif
+    CheckOnDefault();
+}
+
+uint8_t CheckOnDefault(void)
+{
+    if (!S4Ram_getStoredConfig()->singleTouchStart
+        && !S4Ram_getStoredConfig()->userButtonEnable
+        && stat.sdlogReady && !stat.isSensing && !stat.badFile)
+    {   //state == BTSD_IDLESD
+        //startSensing = 1;
+        SetStartSensing();
+        //        enableSdlog = (SD_ERROR) ? 0 : 1;
+        stat.enableSdlog = 1;
+        stat.isSensing = 1;
+        BtsdSelfcmd();
+        stat.isSensing = 0;
+        return 1;
+    }
+    return 0;
+}
+
+void ReadSdConfiguration(void)
+{
+    S4_NORM_Task_clear(TASK_STREAMDATA); // this will skip one sample
+    SdPowerOn();
+    ParseConfig();
+}
 
 /* USER CODE END 4 */
 

@@ -21,8 +21,10 @@
 #include "tim.h"
 
 /* USER CODE BEGIN 0 */
+#include "s4_led.h"
 
-static void ledBlinkTimerCallback(void);
+//static void ledBlinkTimerCallback(void);
+static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim);
 
 /* USER CODE END 0 */
 
@@ -326,7 +328,8 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
 /* USER CODE BEGIN 1 */
 
-static void ledBlinkTimerCallback(void)
+//void ledBlinkTimerCallback(void)
+static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
   S4Led_Blink();
 }

@@ -1807,7 +1807,6 @@ void DockUart_processCmd() {
                      InfoMem_update();
                      //sdHeadText[SDH_TRIAL_CONFIG0] = storedConfig[NV_SD_TRIAL_CONFIG0];
                      uartSendRspAck = 1;
-                     setupNextRtcMinuteAlarm(); //configure Alarm after time set from dock
                   }
                   else
                      uartSendRspBadArg = 1;
@@ -2120,6 +2119,7 @@ void DockUart_setup(void) {
    } else {
       Board_sd2Arm();
    }
+   SetupDock();
 }
 
 //HAL_StatusTypeDef BtUart_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)
