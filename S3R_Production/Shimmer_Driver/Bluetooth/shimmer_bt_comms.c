@@ -2561,83 +2561,90 @@ void BtUart_processCmd(void)
     }
     exgRegsResponse = 1;
     break;
-    /*   case SET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
-     if(btArgs[0] < 10)
-     storedConfig[NV_CONFIG_SETUP_BYTE0] =
-     (storedConfig[NV_CONFIG_SETUP_BYTE0]&0x0F) + ((btArgs[0]&0x0F)<<4); else
-     storedConfig[NV_CONFIG_SETUP_BYTE0] =
-     (storedConfig[NV_CONFIG_SETUP_BYTE0]&0x0F) + (LSM303DLHC_ACCEL_100HZ<<4);
-     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE0,
-     &storedConfig[NV_CONFIG_SETUP_BYTE0], 1); sdHeadText[SDH_CONFIG_SETUP_BYTE0]
-     = storedConfig[NV_CONFIG_SETUP_BYTE0]; update_sdconfig = 1; if(isSensing)
-     { stopSensing = 1; startSensing = 1;
-     }
-     break;
-     case SET_LSM303DLHC_MAG_GAIN_COMMAND:
-     if(btArgs[0]>0 && btArgs[0]<8)
-     storedConfig[NV_CONFIG_SETUP_BYTE2] =
-     (storedConfig[NV_CONFIG_SETUP_BYTE2]&0x1F) + ((btArgs[0]&0x07)<<5); else
-     storedConfig[NV_CONFIG_SETUP_BYTE2] =
-     (storedConfig[NV_CONFIG_SETUP_BYTE2]&0x1F) + (LSM303DLHC_MAG_1_3G<<5); InfoMem_write((void*)NV_CONFIG_SETUP_BYTE2,
-     &storedConfig[NV_CONFIG_SETUP_BYTE2], 1); sdHeadText[SDH_CONFIG_SETUP_BYTE2]
-     = storedConfig[NV_CONFIG_SETUP_BYTE2]; update_sdconfig = 1; if(isSensing)
-     { stopSensing = 1; startSensing = 1;
-     }
-     break;
-     case SET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
-     if(btArgs[0] < 8)
-     storedConfig[NV_CONFIG_SETUP_BYTE2] =
-     (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xE3) + ((btArgs[0]&0x07)<<2); else
-     storedConfig[NV_CONFIG_SETUP_BYTE2] =
-     (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xE3) + (LSM303DLHC_MAG_75HZ<<2); InfoMem_write((void*)NV_CONFIG_SETUP_BYTE2,
-     &storedConfig[NV_CONFIG_SETUP_BYTE2], 1); sdHeadText[SDH_CONFIG_SETUP_BYTE2]
-     = storedConfig[NV_CONFIG_SETUP_BYTE2]; update_sdconfig = 1; if(isSensing)
-     { stopSensing = 1; startSensing = 1;
-     }
-     break;
-     case SET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
-     if(btArgs[0] == 1){
-     storedConfig[NV_CONFIG_SETUP_BYTE0] =
-     (storedConfig[NV_CONFIG_SETUP_BYTE0]&0xFD) + 0x02; }else{ storedConfig[NV_CONFIG_SETUP_BYTE0]
-     &= 0xFD;
-     }
-     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE0,
-     &storedConfig[NV_CONFIG_SETUP_BYTE0], 1); sdHeadText[SDH_CONFIG_SETUP_BYTE0]
-     = storedConfig[NV_CONFIG_SETUP_BYTE0]; update_sdconfig = 1; if(isSensing)
-     { stopSensing = 1; startSensing = 1;
-     }
-     break;
-     case SET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
-     if(btArgs[0] == 1){
-     storedConfig[NV_CONFIG_SETUP_BYTE0] =
-     (storedConfig[NV_CONFIG_SETUP_BYTE0]&0xFE) + 0x01; }else{ storedConfig[NV_CONFIG_SETUP_BYTE0]
-     &= 0xFE;
-     }
-     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE0,
-     &storedConfig[NV_CONFIG_SETUP_BYTE0], 1); sdHeadText[SDH_CONFIG_SETUP_BYTE0]
-     = storedConfig[NV_CONFIG_SETUP_BYTE0]; update_sdconfig = 1; if(isSensing)
-     { stopSensing = 1; startSensing = 1;
-     }
-     break;
-     case SET_MPU9250_GYRO_RANGE_COMMAND:
-     if(btArgs[0] < 4)
-     storedConfig[NV_CONFIG_SETUP_BYTE2] =
-     (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xFC) + (btArgs[0]&0x03); else storedConfig[NV_CONFIG_SETUP_BYTE2]
-     = (storedConfig[NV_CONFIG_SETUP_BYTE2]&0xFC) + MPU9250_GYRO_500DPS; InfoMem_write((void*)NV_CONFIG_SETUP_BYTE2,
-     &storedConfig[NV_CONFIG_SETUP_BYTE2], 1); sdHeadText[SDH_CONFIG_SETUP_BYTE2]
-     = storedConfig[NV_CONFIG_SETUP_BYTE2]; update_sdconfig = 1; if(isSensing)
-     { stopSensing = 1; startSensing = 1;
-     }
-     break;
-     case SET_MPU9250_SAMPLING_RATE_COMMAND:
-     storedConfig[NV_CONFIG_SETUP_BYTE1] = btArgs[0];
-     InfoMem_write((void*)NV_CONFIG_SETUP_BYTE1,
-     &storedConfig[NV_CONFIG_SETUP_BYTE1], 1); sdHeadText[SDH_CONFIG_SETUP_BYTE1]
-     = storedConfig[NV_CONFIG_SETUP_BYTE1]; update_sdconfig = 1; if(isSensing)
-     { stopSensing = 1; startSensing = 1;
-     }
-     break;
-     */
+  case SET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
+    storedConfig->wrAccelRate = (btArgs[0] <= LSM303DLHC_ACCEL_1_344kHz)? btArgs[0] : LSM303DLHC_ACCEL_100HZ;
+    InfoMem_write(NV_CONFIG_SETUP_BYTE0,
+        &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 1);
+    S4Ram_sdHeadTextSetByte(SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
+    update_sdconfig = 1;
+    if (stat.isSensing)
+    {
+      setStopSensing();
+      setStartSensing();
+    }
+    break;
+  case SET_LSM303DLHC_MAG_GAIN_COMMAND:
+    storedConfig->magRange = (btArgs[0] <= LSM303DLHC_MAG_8_1G)? btArgs[0] : LSM303DLHC_MAG_1_3G;
+    InfoMem_write(NV_CONFIG_SETUP_BYTE2,
+        &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2], 1);
+    S4Ram_sdHeadTextSetByte(SDH_CONFIG_SETUP_BYTE2, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2]);
+    update_sdconfig = 1;
+    if (stat.isSensing)
+    {
+      setStopSensing();
+      setStartSensing();
+    }
+    break;
+  case SET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
+    storedConfig->magRate = (btArgs[0] <= LSM303DLHC_MAG_220HZ)? btArgs[0] : LSM303DLHC_MAG_75HZ;
+    InfoMem_write(NV_CONFIG_SETUP_BYTE2,
+        &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2], 1);
+    S4Ram_sdHeadTextSetByte(SDH_CONFIG_SETUP_BYTE2, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2]);
+    update_sdconfig = 1;
+    if (stat.isSensing)
+    {
+      setStopSensing();
+      setStartSensing();
+    }
+    break;
+  case SET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
+    storedConfig->wrAccelLPM = (btArgs[0] == 1)? 1 : 0;
+    InfoMem_write(NV_CONFIG_SETUP_BYTE0,
+        &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 1);
+    S4Ram_sdHeadTextSetByte(SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
+    update_sdconfig = 1;
+    if (stat.isSensing)
+    {
+      setStopSensing();
+      setStartSensing();
+    }
+    break;
+  case SET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
+    storedConfig->wrAccelHRM = (btArgs[0] == 1)? 1 : 0;
+    InfoMem_write(NV_CONFIG_SETUP_BYTE0,
+        &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 1);
+    S4Ram_sdHeadTextSetByte(SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
+    update_sdconfig = 1;
+    if (stat.isSensing)
+    {
+      setStopSensing();
+      setStartSensing();
+    }
+    break;
+  case SET_MPU9150_GYRO_RANGE_COMMAND:
+    storedConfig->gyroRange = (btArgs[0] <= MPU9250_GYRO_2000DPS)? btArgs[0] : MPU9250_GYRO_500DPS;
+    InfoMem_write(NV_CONFIG_SETUP_BYTE2,
+        &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2], 1);
+    S4Ram_sdHeadTextSetByte(SDH_CONFIG_SETUP_BYTE2, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2]);
+    update_sdconfig = 1;
+    if (stat.isSensing)
+    {
+      setStopSensing();
+      setStartSensing();
+    }
+    break;
+  case SET_MPU9150_SAMPLING_RATE_COMMAND:
+    storedConfig->gyroRate = btArgs[0];
+    InfoMem_write(NV_CONFIG_SETUP_BYTE1,
+        &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE1], 1);
+    S4Ram_sdHeadTextSetByte(SDH_CONFIG_SETUP_BYTE1, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE1]);
+    update_sdconfig = 1;
+    if (stat.isSensing)
+    {
+      setStopSensing();
+      setStartSensing();
+    }
+    break;
   case SET_MPU9150_ACCEL_RANGE_COMMAND:
     storedConfig->altAccelRange = (btArgs[0] < 4)? (btArgs[0] & 0x03) : ACCEL_2G;
     InfoMem_write(NV_CONFIG_SETUP_BYTE3,
@@ -3133,7 +3140,7 @@ void BtUart_sendRsp(void)
     else if (lsm303dlhcMagGainResponse)
     {
       *(bt_tx_data + packet_length++) = LSM303DLHC_MAG_GAIN_RESPONSE;
-      *(bt_tx_data + packet_length++) = storedConfig->chEnMag;
+      *(bt_tx_data + packet_length++) = storedConfig->magRange;
       lsm303dlhcMagGainResponse = 0;
     }
     else if (lsm303dlhcMagSamplingRateResponse)
@@ -3295,7 +3302,7 @@ void BtUart_sendRsp(void)
     else if (mpu9250SamplingRateResponse)
     {
       *(bt_tx_data + packet_length++) = MPU9150_SAMPLING_RATE_RESPONSE;
-      *(bt_tx_data + packet_length++) = storedConfig->chEnMpu9x50MplSamplingRate;
+      *(bt_tx_data + packet_length++) = storedConfig->gyroRate;
       mpu9250SamplingRateResponse = 0;
     }
     else if (mpu9250AccelRangeResponse)
