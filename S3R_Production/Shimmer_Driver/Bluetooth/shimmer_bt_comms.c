@@ -2143,7 +2143,7 @@ uint8_t isShimmerBtCmd(uint8_t data)
   case SET_SD_SYNC_COMMAND:
 #endif
   case ACK_COMMAND_PROCESSED: return 1;
-  default:                    return 0;
+  default: return 0;
   }
 }
 
@@ -2355,14 +2355,14 @@ void BtUart_processCmd(void)
   uint8_t name_len;
 
   uint8_t update_sdconfig = 0, update_calib_dump_file = 0;
-  uint8_t fullSyncResp[SYNC_PACKET_MAX_SIZE] = {0};
+  uint8_t fullSyncResp[SYNC_PACKET_MAX_SIZE] = { 0 };
 
   switch (btAction)
   {
-  case INQUIRY_COMMAND:           inquiryResponse = 1; break;
-  case DUMMY_COMMAND:             break;
+  case INQUIRY_COMMAND: inquiryResponse = 1; break;
+  case DUMMY_COMMAND: break;
   case GET_SAMPLING_RATE_COMMAND: samplingRateResponse = 1; break;
-  case TOGGLE_LED_COMMAND:        stat.toggleLedRedCmd ^= 1; break;
+  case TOGGLE_LED_COMMAND: stat.toggleLedRedCmd ^= 1; break;
   case START_STREAMING_COMMAND:
     stat.btstreamCmd = 1;
     S4_Task_set(TASK_STARTSENSING);
@@ -2414,7 +2414,7 @@ void BtUart_processCmd(void)
     I2C_readBattSetFreq(temp16);
     break;
 #endif
-  case GET_VBATT_COMMAND:        btVbattResponse = 1; break;
+  case GET_VBATT_COMMAND: btVbattResponse = 1; break;
   case GET_TRIAL_CONFIG_COMMAND: trialConfigResponse = 1; break;
   case SET_TRIAL_CONFIG_COMMAND:
     storedConfig->rawBytes[NV_SD_TRIAL_CONFIG0] = btArgs[0];
@@ -2443,9 +2443,7 @@ void BtUart_processCmd(void)
     break;
   case GET_CENTER_COMMAND: centerResponse = 1; break;
   case SET_CENTER_COMMAND: break;
-  case GET_SHIMMERNAME_COMMAND:
-    shimmerNameResponse = 1;
-    break;
+  case GET_SHIMMERNAME_COMMAND: shimmerNameResponse = 1; break;
   case SET_SHIMMERNAME_COMMAND:
     name_len = btArgs[0] < (MAX_CHARS - 1) ? btArgs[0] : (MAX_CHARS - 1);
     memset(&storedConfig->rawBytes[NV_SD_SHIMMER_NAME], 0, MAX_CHARS - 1);
@@ -2455,20 +2453,18 @@ void BtUart_processCmd(void)
     SD_setShimmerName();
     update_sdconfig = 1;
     break;
-  case GET_EXPID_COMMAND:
-    expIDResponse = 1;
-    break;
+  case GET_EXPID_COMMAND: expIDResponse = 1; break;
   case SET_EXPID_COMMAND:
     name_len = btArgs[0] < (MAX_CHARS - 1) ? btArgs[0] : (MAX_CHARS - 1);
     memset(&storedConfig->rawBytes[NV_SD_EXP_ID_NAME], 0, MAX_CHARS - 1);
     memcpy(&storedConfig->rawBytes[NV_SD_EXP_ID_NAME], &btArgs[1], name_len);
-    InfoMem_write(NV_SD_EXP_ID_NAME,
-        &storedConfig->rawBytes[NV_SD_EXP_ID_NAME], MAX_CHARS - 1);
+    InfoMem_write(NV_SD_EXP_ID_NAME, &storedConfig->rawBytes[NV_SD_EXP_ID_NAME],
+        MAX_CHARS - 1);
     SD_setExpIdName();
     update_sdconfig = 1;
     break;
   case GET_CONFIGTIME_COMMAND: configTimeResponse = 1; break;
-  case GET_DIR_COMMAND:        dirResponse = 1; break;
+  case GET_DIR_COMMAND: dirResponse = 1; break;
   case SET_CONFIGTIME_COMMAND:
     name_len = btArgs[0] < (MAX_CHARS - 1) ? btArgs[0] : (MAX_CHARS - 1);
     uint8_t *configTimeTextPtr = getConfigTimeTextPtr();
@@ -2486,18 +2482,14 @@ void BtUart_processCmd(void)
     InfoMem_write(NV_SD_CONFIG_TIME, &storedConfig->rawBytes[NV_SD_CONFIG_TIME], 4);
     update_sdconfig = 1;
     break;
-  case GET_NSHIMMER_COMMAND:
-    nshimmerResponse = 1;
+  case GET_NSHIMMER_COMMAND: nshimmerResponse = 1; break;
+  case SET_NSHIMMER_COMMAND:
+    storedConfig->numberOfShimmers = btArgs[0];
+    S4Ram_sdHeadTextSetByte(SDH_NSHIMMER, btArgs[0]);
+    InfoMem_write(NV_SD_NSHIMMER, &storedConfig->rawBytes[NV_SD_NSHIMMER], 1);
+    update_sdconfig = 1;
     break;
-    case SET_NSHIMMER_COMMAND:
-     storedConfig->numberOfShimmers = btArgs[0];
-     S4Ram_sdHeadTextSetByte(SDH_NSHIMMER, btArgs[0]);
-     InfoMem_write(NV_SD_NSHIMMER, &storedConfig->rawBytes[NV_SD_NSHIMMER], 1);
-     update_sdconfig = 1;
-     break;
-  case GET_MYID_COMMAND:
-    myIDResponse = 1;
-    break;
+  case GET_MYID_COMMAND: myIDResponse = 1; break;
   case SET_MYID_COMMAND:
     storedConfig->myTrialID = btArgs[0];
     S4Ram_sdHeadTextSetByte(SDH_MYTRIAL_ID, btArgs[0]);
@@ -2639,10 +2631,10 @@ void BtUart_processCmd(void)
      break;
      */
   case SET_MPU9150_ACCEL_RANGE_COMMAND:
-    storedConfig->altAccelRange = (btArgs[0] < 4)? (btArgs[0] & 0x03) : ACCEL_2G;
-    InfoMem_write(NV_CONFIG_SETUP_BYTE3,
-        &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3], 1);
-    S4Ram_sdHeadTextSetByte(SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
+    storedConfig->altAccelRange = (btArgs[0] < 4) ? (btArgs[0] & 0x03) : ACCEL_2G;
+    InfoMem_write(NV_CONFIG_SETUP_BYTE3, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3], 1);
+    S4Ram_sdHeadTextSetByte(
+        SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
 
     update_sdconfig = 1;
     if (stat.isSensing)
@@ -2652,17 +2644,17 @@ void BtUart_processCmd(void)
     }
     break;
   case SET_BMPX80_PRES_OVERSAMPLING_RATIO_COMMAND:
-    storedConfig->pressurePrecision = (btArgs[0] < 4)? (btArgs[0] & 0x03) : BMP180_OSS_1;
-    InfoMem_write(NV_CONFIG_SETUP_BYTE3,
-        &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3], 1);
-    S4Ram_sdHeadTextSetByte(SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
+    storedConfig->pressurePrecision = (btArgs[0] < 4) ? (btArgs[0] & 0x03) : BMP180_OSS_1;
+    InfoMem_write(NV_CONFIG_SETUP_BYTE3, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3], 1);
+    S4Ram_sdHeadTextSetByte(
+        SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
     update_sdconfig = 1;
     break;
   case SET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
-    storedConfig->expansionBoardPower = (btArgs[0] == 1)? 1 : 0;
-    InfoMem_write(NV_CONFIG_SETUP_BYTE3,
-        &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3], 1);
-    S4Ram_sdHeadTextSetByte(SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
+    storedConfig->expansionBoardPower = (btArgs[0] == 1) ? 1 : 0;
+    InfoMem_write(NV_CONFIG_SETUP_BYTE3, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3], 1);
+    S4Ram_sdHeadTextSetByte(
+        SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
     update_sdconfig = 1;
     if (stat.isSensing)
     {
@@ -2845,7 +2837,7 @@ void BtUart_processCmd(void)
     S4Ram_config2SdHead();
     update_sdconfig = 1;
     //TODO decide if this is needed
-//    TaskSet(TASK_CFGCH);
+    //TaskSet(TASK_CFGCH);
     if (stat.isSensing)
     {
       setStopSensing();
@@ -2869,15 +2861,15 @@ void BtUart_processCmd(void)
   case GET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
     dAccelCalibrationResponse = 1;
     break;
-  case GET_GSR_RANGE_COMMAND:                 gsrRangeResponse = 1; break;
-  case GET_ALL_CALIBRATION_COMMAND:           allCalibrationResponse = 1; break;
+  case GET_GSR_RANGE_COMMAND: gsrRangeResponse = 1; break;
+  case GET_ALL_CALIBRATION_COMMAND: allCalibrationResponse = 1; break;
 
   case DEPRECATED_GET_DEVICE_VERSION_COMMAND:
-  case GET_DEVICE_VERSION_COMMAND:            deviceVersionResponse = 1; break;
-  case GET_FW_VERSION_COMMAND:                fwVersionResponse = 1; break;
-  case GET_CHARGE_STATUS_LED_COMMAND:         blinkLedResponse = 1; break;
-  case GET_BUFFER_SIZE_COMMAND:               bufferSizeResponse = 1; break;
-  case GET_UNIQUE_SERIAL_COMMAND:             uniqueSerialResponse = 1; break;
+  case GET_DEVICE_VERSION_COMMAND: deviceVersionResponse = 1; break;
+  case GET_FW_VERSION_COMMAND: fwVersionResponse = 1; break;
+  case GET_CHARGE_STATUS_LED_COMMAND: blinkLedResponse = 1; break;
+  case GET_BUFFER_SIZE_COMMAND: bufferSizeResponse = 1; break;
+  case GET_UNIQUE_SERIAL_COMMAND: uniqueSerialResponse = 1; break;
   case GET_DAUGHTER_CARD_ID_COMMAND:
     btDcMemLength = btArgs[0];
     btDcMemOffset = btArgs[1];
@@ -2925,18 +2917,16 @@ void BtUart_processCmd(void)
     //  }
     //}
     break;
-  case GET_DERIVED_CHANNEL_BYTES:
-    derivedChannelResponse = 1;
-    break;
+  case GET_DERIVED_CHANNEL_BYTES: derivedChannelResponse = 1; break;
   case SET_DERIVED_CHANNEL_BYTES:
     memcpy(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_0], &btArgs[0], 3);
     memcpy(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_3], &btArgs[3], 5);
-    InfoMem_write((void*) NV_DERIVED_CHANNELS_0,
-                  &storedConfig[NV_DERIVED_CHANNELS_0], 3);
-    InfoMem_write((void*) NV_DERIVED_CHANNELS_3,
-                  &storedConfig[NV_DERIVED_CHANNELS_3], 5);
-    S4Ram_sdHeadTextSet(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_0], SDH_DERIVED_CHANNELS_0, 3);
-    S4Ram_sdHeadTextSet(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_3], SDH_DERIVED_CHANNELS_3, 5);
+    InfoMem_write((void *) NV_DERIVED_CHANNELS_0, &storedConfig[NV_DERIVED_CHANNELS_0], 3);
+    InfoMem_write((void *) NV_DERIVED_CHANNELS_3, &storedConfig[NV_DERIVED_CHANNELS_3], 5);
+    S4Ram_sdHeadTextSet(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_0],
+        SDH_DERIVED_CHANNELS_0, 3);
+    S4Ram_sdHeadTextSet(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_3],
+        SDH_DERIVED_CHANNELS_3, 5);
     update_sdconfig = 1;
     break;
   case GET_INFOMEM_COMMAND:
@@ -3036,25 +3026,25 @@ void BtUart_processCmd(void)
     setupNextRtcMinuteAlarm(); //configure RTC alarm after time set from BT.
     break;
 #if USE_OLD_SD_SYNC_APPROACH
-    case ACK_COMMAND_PROCESSED:
+  case ACK_COMMAND_PROCESSED:
 #else
-    case SET_SD_SYNC_COMMAND:
+  case SET_SD_SYNC_COMMAND:
 #endif
-        /* Reassemble full packet so that original RcNodeR10() will work without modificiation */
-        fullSyncResp[0] = btAction;
-        memcpy(&fullSyncResp[1], &btArgs[0], SYNC_PACKET_MAX_SIZE-SYNC_PACKET_SIZE_CMD);
-        setSyncResp(&fullSyncResp[0], SYNC_PACKET_MAX_SIZE);
-        S4_NORM_Task_set(TASK_RCNODER10);
+    /* Reassemble full packet so that original RcNodeR10() will work without modificiation */
+    fullSyncResp[0] = btAction;
+    memcpy(&fullSyncResp[1], &btArgs[0], SYNC_PACKET_MAX_SIZE - SYNC_PACKET_SIZE_CMD);
+    setSyncResp(&fullSyncResp[0], SYNC_PACKET_MAX_SIZE);
+    S4_NORM_Task_set(TASK_RCNODER10);
 #if !USE_OLD_SD_SYNC_APPROACH
-    case ACK_COMMAND_PROCESSED:
-        /* Slave response received by Master */
-        if (btArgs[0] == SD_SYNC_RESPONSE)
-        {
-            /* SD Sync Center - get's into this case when the center is waiting for a 0x01 or 0xFF from a node */
-            setSyncResp(&btArgs[1], 1U);
-            S4_NORM_Task_set(TASK_RCCENTERR1);
-        }
-        break;
+  case ACK_COMMAND_PROCESSED:
+    /* Slave response received by Master */
+    if (btArgs[0] == SD_SYNC_RESPONSE)
+    {
+      /* SD Sync Center - get's into this case when the center is waiting for a 0x01 or 0xFF from a node */
+      setSyncResp(&btArgs[1], 1U);
+      S4_NORM_Task_set(TASK_RCCENTERR1);
+    }
+    break;
 #endif
   default:;
   }

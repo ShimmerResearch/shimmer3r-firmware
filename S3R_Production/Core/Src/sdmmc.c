@@ -180,7 +180,7 @@ void printSdCardInfo(void)
   case 0x000076: printf("Patriot"); break;
   case 0x000082:
   case 0x00009c: printf("Sony"); break;
-  default:       break;
+  default: break;
   }
 
   printf(", Size=%.2lfGB",
