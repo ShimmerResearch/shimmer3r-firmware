@@ -73,23 +73,23 @@ uint16_t numBytesInBtRxBufWhenLastProcessed = 0;
 uint16_t indexOfFirstEol;
 uint32_t firstProcessFailTicks = 0;
 
-uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, aAccelCalibrationResponse,
+uint8_t sendAck, inquiryResponse, samplingRateResponse, aAccelCalibrationResponse,
     gyroCalibrationResponse, magCalibrationResponse, dAccelCalibrationResponse,
-    allCalibrationResponse, deviceVersionBtRsp, fwVersionBtRsp, bufferSizeResponse,
+    allCalibrationResponse, deviceVersionResponse, fwVersionResponse, bufferSizeResponse,
     uniqueSerialResponse, configSetupBytesResponse, lsm303dlhcAccelRangeResponse,
     lsm303dlhcMagGainResponse, lsm303dlhcMagSamplingRateResponse,
     lsm303dlhcAccelSamplingRateResponse, lsm303dlhcAccelLPModeResponse,
     lsm303dlhcAccelHRModeResponse, mpu9250GyroRangeResponse,
     mpu9250SamplingRateResponse, mpu9250AccelRangeResponse,
     mpu9250MagSensAdjValsResponse, bmp180OversamplingRatioResponse,
-    blinkLedBtRsp, gsrRangeResponse, internalExpPowerEnableResponse,
-    exgRegsResponse, dcIdBtRsp, dcMemBtRsp, dockStatusBtRsp, trialConfigResponse,
+    blinkLedResponse, gsrRangeResponse, internalExpPowerEnableResponse,
+    exgRegsResponse, dcIdResponse, dcMemResponse, dockedResponse, trialConfigResponse,
     centerResponse, shimmerNameResponse, expIDResponse, nshimmerResponse,
     myIDResponse, configTimeResponse, dirResponse, btCommsBaudRateResponse,
-    derivedChannelResponse, infomemBtRsp, rwcResponse, vbattBtRsp,
+    derivedChannelResponse, infomemResponse, rwcResponse, btVbattResponse,
     calibRamResponse, btVerResponse, useAckPrefixForInstreamResponses,
-    btDataRateResponse, bmpGenericCalibrationCoefficientsResponse;
-uint8_t bmp180CalibCoeffBtRsp, bmp280CalibrationCoefficientsResponse;
+    btDataRateTestResponse, bmpGenericCalibrationCoefficientsResponse;
+uint8_t bmp180CalibrationCoefficientsResponse, bmp280CalibrationCoefficientsResponse;
 #if defined(SHIMMER4_SDK)
 uint8_t i2cvBattBtRsp;
 #endif
@@ -2260,24 +2260,14 @@ void triggerShimmerErrorState(void)
 
 void resetBtResponseBools(void)
 {
-  deviceVersionBtRsp = 0;
-  rwcResponse = 0;
-  dcIdBtRsp = 0;
-  dcMemBtRsp = 0;
-  infomemBtRsp = 0;
-
   sendAck = 0;
-
-#if defined(SHIMMER4_SDK)
-  i2cvBattBtRsp = 0;
-#endif
-  inquiryBtRsp = 0;
-  samplingRateBtRsp = 0;
+  inquiryResponse = 0;
+  samplingRateResponse = 0;
+  aAccelCalibrationResponse = 0;
   lsm303dlhcAccelRangeResponse = 0;
   lsm303dlhcMagGainResponse = 0;
   lsm303dlhcMagSamplingRateResponse = 0;
-  dockStatusBtRsp = 0;
-  vbattBtRsp = 0;
+  dockedResponse = 0;
   trialConfigResponse = 0;
   centerResponse = 0;
   shimmerNameResponse = 0;
@@ -2290,23 +2280,43 @@ void resetBtResponseBools(void)
   lsm303dlhcAccelLPModeResponse = 0;
   lsm303dlhcAccelHRModeResponse = 0;
   mpu9250GyroRangeResponse = 0;
-  bmp180CalibCoeffBtRsp = 0;
+  bmp180CalibrationCoefficientsResponse = 0;
   bmp280CalibrationCoefficientsResponse = 0;
-  bmpGenericCalibrationCoefficientsResponse = 0;
+  setEepromIsPresent(0);
   mpu9250SamplingRateResponse = 0;
   mpu9250AccelRangeResponse = 0;
   bmp180OversamplingRatioResponse = 0;
   internalExpPowerEnableResponse = 0;
+  configSetupBytesResponse = 0;
+  gyroCalibrationResponse = 0;
+  magCalibrationResponse = 0;
+  dAccelCalibrationResponse = 0;
+  allCalibrationResponse = 0;
+  deviceVersionResponse = 0;
+  fwVersionResponse = 0;
+  bufferSizeResponse = 0;
+  uniqueSerialResponse = 0;
   mpu9250MagSensAdjValsResponse = 0;
   exgRegsResponse = 0;
-  configSetupBytesResponse = 0;
-  fwVersionBtRsp = 0;
-  blinkLedBtRsp = 0;
+  dcIdResponse = 0;
+  dcMemResponse = 0;
+  infomemResponse = 0;
+  calibRamResponse = 0;
+  btVerResponse = 0;
+  rwcResponse = 0;
+  btVbattResponse = 0;
+  blinkLedResponse = 0;
   gsrRangeResponse = 0;
   btCommsBaudRateResponse = 0;
-  useAckPrefixForInstreamResponses = 1U;
   derivedChannelResponse = 0;
-  uniqueSerialResponse = 0;
+  btDataRateTestResponse = 0;
+  bmpGenericCalibrationCoefficientsResponse = 0;
+
+  useAckPrefixForInstreamResponses = 1U;
+
+#if defined(SHIMMER4_SDK)
+  i2cvBattBtRsp = 0;
+#endif
 }
 
 uint8_t getBtVerStrLen(void)
@@ -2348,9 +2358,9 @@ void BtUart_processCmd(void)
 
   switch (btAction)
   {
-  case INQUIRY_COMMAND:           inquiryBtRsp = 1; break;
+  case INQUIRY_COMMAND:           inquiryResponse = 1; break;
   case DUMMY_COMMAND:             break;
-  case GET_SAMPLING_RATE_COMMAND: samplingRateBtRsp = 1; break;
+  case GET_SAMPLING_RATE_COMMAND: samplingRateResponse = 1; break;
   case TOGGLE_LED_COMMAND:        stat.toggleLedRedCmd ^= 1; break;
   case START_STREAMING_COMMAND:
     stat.btstreamCmd = 1;
@@ -2395,7 +2405,7 @@ void BtUart_processCmd(void)
   case GET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
     lsm303dlhcMagSamplingRateResponse = 1;
     break;
-  case GET_STATUS_COMMAND: dockStatusBtRsp = 1; break;
+  case GET_STATUS_COMMAND: dockedResponse = 1; break;
 #if defined(SHIMMER4_SDK)
   case GET_I2C_BATT_STATUS_COMMAND: i2cvBattBtRsp = 1; break;
   case SET_I2C_BATT_STATUS_FREQ_COMMAND:
@@ -2403,7 +2413,7 @@ void BtUart_processCmd(void)
     I2C_readBattSetFreq(temp16);
     break;
 #endif
-  case GET_VBATT_COMMAND:        vbattBtRsp = 1; break;
+  case GET_VBATT_COMMAND:        btVbattResponse = 1; break;
   case GET_TRIAL_CONFIG_COMMAND: trialConfigResponse = 1; break;
   case SET_TRIAL_CONFIG_COMMAND:
     S4Ram_storedConfigSetByte(NV_SD_TRIAL_CONFIG0, btArgs[0]);
@@ -2496,7 +2506,7 @@ void BtUart_processCmd(void)
     break;
   case GET_MPU9150_GYRO_RANGE_COMMAND: mpu9250GyroRangeResponse = 1; break;
   case GET_BMP180_CALIBRATION_COEFFICIENTS_COMMAND:
-    bmp180CalibCoeffBtRsp = 1;
+    bmp180CalibrationCoefficientsResponse = 1;
     break;
   case GET_BMP280_CALIBRATION_COEFFICIENTS_COMMAND:
     bmp280CalibrationCoefficientsResponse = 1;
@@ -2777,7 +2787,7 @@ void BtUart_processCmd(void)
       setBtDataRateTestState(0);
       clearBtTxBuf(1);
     }
-    btDataRateResponse = 1;
+    btDataRateTestResponse = 1;
     break;
 
     /*     case RESET_TO_DEFAULT_CONFIGURATION_COMMAND:
@@ -2811,9 +2821,9 @@ void BtUart_processCmd(void)
   case GET_ALL_CALIBRATION_COMMAND:           allCalibrationResponse = 1; break;
 
   case DEPRECATED_GET_DEVICE_VERSION_COMMAND:
-  case GET_DEVICE_VERSION_COMMAND:            deviceVersionBtRsp = 1; break;
-  case GET_FW_VERSION_COMMAND:                fwVersionBtRsp = 1; break;
-  case GET_CHARGE_STATUS_LED_COMMAND:         blinkLedBtRsp = 1; break;
+  case GET_DEVICE_VERSION_COMMAND:            deviceVersionResponse = 1; break;
+  case GET_FW_VERSION_COMMAND:                fwVersionResponse = 1; break;
+  case GET_CHARGE_STATUS_LED_COMMAND:         blinkLedResponse = 1; break;
   case GET_BUFFER_SIZE_COMMAND:               bufferSizeResponse = 1; break;
   case GET_UNIQUE_SERIAL_COMMAND:             uniqueSerialResponse = 1; break;
   case GET_DAUGHTER_CARD_ID_COMMAND:
@@ -2821,7 +2831,7 @@ void BtUart_processCmd(void)
     btDcMemOffset = btArgs[1];
     if ((btDcMemLength <= 16) && (btDcMemOffset <= 15)
         && (btDcMemLength + btDcMemOffset <= 16))
-      dcIdBtRsp = 1;
+      dcIdResponse = 1;
     break;
   case SET_DAUGHTER_CARD_ID_COMMAND:
     btDcMemLength = btArgs[0];
@@ -2841,7 +2851,7 @@ void BtUart_processCmd(void)
     btDcMemOffset = btArgs[1] + (btArgs[2] << 8);
     if ((btDcMemLength <= 128) && (btDcMemOffset <= 2031)
         && (btDcMemLength + btDcMemOffset <= 2032))
-      dcMemBtRsp = 1;
+      dcMemResponse = 1;
     break;
   case SET_DAUGHTER_CARD_MEM_COMMAND:
     btDcMemLength = btArgs[0];
@@ -2877,7 +2887,7 @@ void BtUart_processCmd(void)
     btInfomemOffset = btArgs[1] + (btArgs[2] << 8);
     if ((btInfomemLength <= 128) && (btInfomemOffset <= (NV_NUM_RWMEM_BYTES - 1))
         && (btInfomemLength + btInfomemOffset <= NV_NUM_RWMEM_BYTES))
-      infomemBtRsp = 1;
+      infomemResponse = 1;
     break;
   case SET_INFOMEM_COMMAND:
     uint8_t temp_btMacHex[6];
@@ -2999,7 +3009,7 @@ void BtUart_sendRsp(void)
       *(bt_tx_data + packet_length++) = ACK_COMMAND_PROCESSED;
       sendAck = 0;
     }
-    if (inquiryBtRsp)
+    if (inquiryResponse)
     {
       /* Channel order/packet structure need to be assembled before sending the inquiry response so that the information is correct. */
       S4Sens_configureChannels();
@@ -3014,14 +3024,14 @@ void BtUart_sendRsp(void)
       memcpy((bt_tx_data + packet_length), sensing.cc,
           (sensing.nbrAdcChans + sensing.nbrDigiChans));
       packet_length += sensing.nbrAdcChans + sensing.nbrDigiChans;
-      inquiryBtRsp = 0;
+      inquiryResponse = 0;
     }
-    else if (samplingRateBtRsp)
+    else if (samplingRateResponse)
     {
       *(bt_tx_data + packet_length++) = SAMPLING_RATE_RESPONSE;
       *(uint16_t *) (bt_tx_data + packet_length) = storedConfig->samplingRateTicks; //ADC sampling rate
       packet_length += 2;
-      samplingRateBtRsp = 0;
+      samplingRateResponse = 0;
     }
     else if (lsm303dlhcAccelRangeResponse)
     {
@@ -3041,7 +3051,7 @@ void BtUart_sendRsp(void)
       *(bt_tx_data + packet_length++) = storedConfig->magRate;
       lsm303dlhcMagSamplingRateResponse = 0;
     }
-    else if (dockStatusBtRsp)
+    else if (dockedResponse)
     {
       *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(bt_tx_data + packet_length++) = STATUS_RESPONSE;
@@ -3050,7 +3060,7 @@ void BtUart_sendRsp(void)
           + ((stat.isStreaming & 0x01) << 4) + ((stat.isLogging & 0x01) << 3)
           + (isRwcTimeSet() << 2) + ((stat.isSensing & 0x01) << 1)
           + (stat.isDocked & 0x01);
-      dockStatusBtRsp = 0;
+      dockedResponse = 0;
 #if defined(SHIMMER4_SDK)
     }
     else if (i2cvBattBtRsp)
@@ -3062,14 +3072,14 @@ void BtUart_sendRsp(void)
       i2cvBattBtRsp = 0;
 #endif
     }
-    else if (vbattBtRsp)
+    else if (btVbattResponse)
     {
       //ReadBatt();
       *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(bt_tx_data + packet_length++) = VBATT_RESPONSE;
       memcpy((uint8_t *) (bt_tx_data + packet_length), (uint8_t *) stat.battVal, 3);
       packet_length += 3;
-      vbattBtRsp = 0;
+      btVbattResponse = 0;
     }
     else if (trialConfigResponse)
     {
@@ -3160,12 +3170,12 @@ void BtUart_sendRsp(void)
       *(bt_tx_data + packet_length++) = MPU9150_GYRO_RANGE_RESPONSE;
       *(bt_tx_data + packet_length++) = storedConfig->gyroRange;
       mpu9250GyroRangeResponse = 0;
-      //} else if (bmp180CalibCoeffBtRsp) {
+      //} else if (bmp180CalibrationCoefficientsResponse) {
       //   *(bt_tx_data + packet_length++) =
       //   BMP180_CALIBRATION_COEFFICIENTS_RESPONSE; BMP180_init(hi2cSensor);//todo:
       //   pre read at init BMP180_getCalib(bt_tx_data + packet_length); packet_length
       //   += 22; memset((bt_tx_data + packet_length), 0, 24); packet_length +=
-      //   24; bmp180CalibCoeffBtRsp = 0;
+      //   24; bmp180CalibrationCoefficientsResponse = 0;
     }
     else if (bmp280CalibrationCoefficientsResponse)
     {
@@ -3274,11 +3284,11 @@ void BtUart_sendRsp(void)
       packet_length += NV_NUM_CALIBRATION_BYTES;
       allCalibrationResponse = 0;
     }
-    else if (deviceVersionBtRsp)
+    else if (deviceVersionResponse)
     {
       *(bt_tx_data + packet_length++) = DEVICE_VERSION_RESPONSE;
       *(bt_tx_data + packet_length++) = DEVICE_VER;
-      deviceVersionBtRsp = 0;
+      deviceVersionResponse = 0;
     }
     else if (mpu9250MagSensAdjValsResponse)
     {
@@ -3302,7 +3312,7 @@ void BtUart_sendRsp(void)
 #endif
       mpu9250MagSensAdjValsResponse = 0;
     }
-    else if (fwVersionBtRsp)
+    else if (fwVersionResponse)
     {
       *(bt_tx_data + packet_length++) = FW_VERSION_RESPONSE;
       *(bt_tx_data + packet_length++) = FW_IDENTIFIER & 0xFF;
@@ -3311,13 +3321,13 @@ void BtUart_sendRsp(void)
       *(bt_tx_data + packet_length++) = (FW_VER_MAJOR & 0xFF00) >> 8;
       *(bt_tx_data + packet_length++) = FW_VER_MINOR;
       *(bt_tx_data + packet_length++) = FW_VER_REL;
-      fwVersionBtRsp = 0;
+      fwVersionResponse = 0;
     }
-    else if (blinkLedBtRsp)
+    else if (blinkLedResponse)
     {
       *(bt_tx_data + packet_length++) = CHARGE_STATUS_LED_RESPONSE;
       *(bt_tx_data + packet_length++) = stat.battStat;
-      blinkLedBtRsp = 0;
+      blinkLedResponse = 0;
     }
     else if (bufferSizeResponse)
     {
@@ -3352,7 +3362,7 @@ void BtUart_sendRsp(void)
       }
       exgRegsResponse = 0;
     }
-    else if (dcIdBtRsp)
+    else if (dcIdResponse)
     {
       *(bt_tx_data + packet_length++) = DAUGHTER_CARD_ID_RESPONSE;
       *(bt_tx_data + packet_length++) = btDcMemLength;
@@ -3364,9 +3374,9 @@ void BtUart_sendRsp(void)
       bt_tx_data[packet_length + 2] = EXP_BRD_ID_INTERNAL;
 #endif
       packet_length += btDcMemLength;
-      dcIdBtRsp = 0;
+      dcIdResponse = 0;
     }
-    else if (dcMemBtRsp)
+    else if (dcMemResponse)
     {
       *(bt_tx_data + packet_length++) = DAUGHTER_CARD_MEM_RESPONSE;
       *(bt_tx_data + packet_length++) = btDcMemLength;
@@ -3381,7 +3391,7 @@ void BtUart_sendRsp(void)
       }
 #endif
       packet_length += btDcMemLength;
-      dcMemBtRsp = 0;
+      dcMemResponse = 0;
     }
     else if (btCommsBaudRateResponse)
     {
@@ -3389,14 +3399,14 @@ void BtUart_sendRsp(void)
       *(bt_tx_data + packet_length++) = storedConfig->btCommsBaudRate;
       btCommsBaudRateResponse = 0;
     }
-    else if (infomemBtRsp)
+    else if (infomemResponse)
     {
       *(bt_tx_data + packet_length++) = INFOMEM_RESPONSE;
       *(bt_tx_data + packet_length++) = btInfomemLength;
       //memcpy((bt_tx_data + packet_length), &storedConfig[btInfomemOffset], btInfomemLength);
       S4Ram_storedConfigGet(bt_tx_data + packet_length, btInfomemOffset, btInfomemLength);
       packet_length += btInfomemLength;
-      infomemBtRsp = 0;
+      infomemResponse = 0;
     }
     else if (derivedChannelResponse)
     {
@@ -3430,7 +3440,7 @@ void BtUart_sendRsp(void)
 
       btVerResponse = 0;
     }
-    else if (btDataRateResponse)
+    else if (btDataRateTestResponse)
     {
       /* Start test after ACK is sent - this will be handled by the
        * interrupt after ACK byte is transmitted */
@@ -3438,7 +3448,7 @@ void BtUart_sendRsp(void)
       {
         setBtDataRateTestState(1);
       }
-      btDataRateResponse = 0;
+      btDataRateTestResponse = 0;
     }
 
     uint8_t crcMode = getBtCrcMode();
