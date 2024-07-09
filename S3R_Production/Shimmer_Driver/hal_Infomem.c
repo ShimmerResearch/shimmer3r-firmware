@@ -255,3 +255,8 @@ uint8_t InfoMem_test(void)
   return 0;
 }
 #endif //HAL_TEST_INFOMEM
+
+uint8_t InfoMem_write(uint8_t addr, uint8_t *buf, uint16_t size)
+{
+  InfoMem_update();
+}

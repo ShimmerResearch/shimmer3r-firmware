@@ -684,7 +684,7 @@ uint8_t CheckOnDefault(void)
       && stat.sdlogReady && !stat.isSensing && !stat.badFile)
   { //state == BTSD_IDLESD
     //startSensing = 1;
-    SetStartSensing();
+    setStartSensing();
     //enableSdlog = (SD_ERROR) ? 0 : 1;
     stat.enableSdlog = 1;
     stat.isSensing = 1;

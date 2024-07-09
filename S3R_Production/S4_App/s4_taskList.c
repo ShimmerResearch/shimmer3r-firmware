@@ -174,8 +174,13 @@ uint8_t setTaskNewBtCmdToProcess(void)
   return S4_Task_set(TASK_BTPROCESS);
 }
 
-void SetStartSensing(void)
+void setStartSensing(void)
 {
   S4_NORM_Task_set(TASK_SDLOG_CFG_UPDATE);
   S4_NORM_Task_set(TASK_STARTSENSING);
+}
+
+void setStopSensing(void)
+{
+  S4_NORM_Task_set(TASK_STOPSENSING);
 }
