@@ -3017,7 +3017,7 @@ void BtUart_sendRsp(void)
       *(bt_tx_data + packet_length++) = INQUIRY_RESPONSE;
       *(uint16_t *) (bt_tx_data + packet_length) = storedConfig->samplingRateTicks; //ADC sampling rate
       packet_length += 2;
-      memcpy(bt_tx_data + packet_length, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
+      memcpy(bt_tx_data + packet_length, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
       packet_length += 4;
       *(bt_tx_data + packet_length++) = sensing.nbrAdcChans + sensing.nbrDigiChans; //number of data channels
       *(bt_tx_data + packet_length++) = storedConfig->bufferSize; //buffer size
@@ -3084,7 +3084,7 @@ void BtUart_sendRsp(void)
     else if (trialConfigResponse)
     {
       *(bt_tx_data + packet_length++) = TRIAL_CONFIG_RESPONSE;
-      memcpy((bt_tx_data + packet_length), storedConfig->rawBytes[NV_SD_TRIAL_CONFIG0],
+      memcpy((bt_tx_data + packet_length), &storedConfig->rawBytes[NV_SD_TRIAL_CONFIG0],
           3); //2 trial config bytes + 1 interval byte
       packet_length += 3;
       trialConfigResponse = 0;
@@ -3228,7 +3228,7 @@ void BtUart_sendRsp(void)
     else if (configSetupBytesResponse)
     {
       *(bt_tx_data + packet_length++) = CONFIG_SETUP_BYTES_RESPONSE;
-      memcpy(bt_tx_data + packet_length, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
+      memcpy(bt_tx_data + packet_length, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
       packet_length += 4;
       configSetupBytesResponse = 0;
     }
