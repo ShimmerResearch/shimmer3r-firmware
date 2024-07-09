@@ -75,21 +75,20 @@ uint32_t firstProcessFailTicks = 0;
 
 uint8_t sendAck, inquiryBtRsp, samplingRateBtRsp, aAccelCalibrationResponse,
     gyroCalibrationResponse, magCalibrationResponse, dAccelCalibrationResponse,
-    allCalibrationResponse, deviceVersionBtRsp, fwVersionBtRsp,
-    bufferSizeResponse, uniqueSerialResponse, configSetupBytesResponse,
-    lsm303dlhcAccelRangeResponse, lsm303dlhcMagGainResponse,
-    lsm303dlhcMagSamplingRateResponse, lsm303dlhcAccelSamplingRateResponse,
-    lsm303dlhcAccelLPModeResponse, lsm303dlhcAccelHRModeResponse,
-    mpu9250GyroRangeResponse, mpu9250SamplingRateResponse,
-    mpu9250AccelRangeResponse, mpu9250MagSensAdjValsResponse,
-    bmp180OversamplingRatioResponse, blinkLedBtRsp, gsrRangeResponse,
-    internalExpPowerEnableResponse, exgRegsResponse, dcIdBtRsp, dcMemBtRsp,
-    dockStatusBtRsp, trialConfigResponse, centerResponse, shimmerNameResponse,
-    expIDResponse, nshimmerResponse, myIDResponse, configTimeResponse,
-    dirResponse, btCommsBaudRateResponse, derivedChannelResponse, infomemBtRsp,
-    rwcResponse, vbattBtRsp, calibRamResponse, btVerResponse,
-    useAckPrefixForInstreamResponses, btDataRateResponse,
-    bmpGenericCalibrationCoefficientsResponse;
+    allCalibrationResponse, deviceVersionBtRsp, fwVersionBtRsp, bufferSizeResponse,
+    uniqueSerialResponse, configSetupBytesResponse, lsm303dlhcAccelRangeResponse,
+    lsm303dlhcMagGainResponse, lsm303dlhcMagSamplingRateResponse,
+    lsm303dlhcAccelSamplingRateResponse, lsm303dlhcAccelLPModeResponse,
+    lsm303dlhcAccelHRModeResponse, mpu9250GyroRangeResponse,
+    mpu9250SamplingRateResponse, mpu9250AccelRangeResponse,
+    mpu9250MagSensAdjValsResponse, bmp180OversamplingRatioResponse,
+    blinkLedBtRsp, gsrRangeResponse, internalExpPowerEnableResponse,
+    exgRegsResponse, dcIdBtRsp, dcMemBtRsp, dockStatusBtRsp, trialConfigResponse,
+    centerResponse, shimmerNameResponse, expIDResponse, nshimmerResponse,
+    myIDResponse, configTimeResponse, dirResponse, btCommsBaudRateResponse,
+    derivedChannelResponse, infomemBtRsp, rwcResponse, vbattBtRsp,
+    calibRamResponse, btVerResponse, useAckPrefixForInstreamResponses,
+    btDataRateResponse, bmpGenericCalibrationCoefficientsResponse;
 uint8_t bmp180CalibCoeffBtRsp, bmp280CalibrationCoefficientsResponse;
 #if defined(SHIMMER4_SDK)
 uint8_t i2cvBattBtRsp;
