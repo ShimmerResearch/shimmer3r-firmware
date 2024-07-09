@@ -36,7 +36,7 @@ void ItoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len);
 uint8_t isFileStatusOk(void);
 uint8_t isSdInfoSyncDelayed(void);
 void setSdInfoSyncDelayed(uint8_t state);
-uint8_t* getConfigTimeTextPtr(void);
-uint8_t* getFileNamePtr(void);
+uint8_t *getConfigTimeTextPtr(void);
+uint8_t *getFileNamePtr(void);
 
 #endif /* S4_SD_H_ */

@@ -2426,8 +2426,8 @@ void BtUart_processCmd(void)
     // memset((uint8_t*)(storedConfig+NV_SD_SHIMMER_NAME), 0, MAX_CHARS-1);
     // memcpy((uint8_t*)(storedConfig+NV_SD_SHIMMER_NAME), &btArgs[1],
     // name_len); InfoMem_write((uint8_t*)NV_SD_SHIMMER_NAME,
-    // storedConfig+NV_SD_SHIMMER_NAME, MAX_CHARS-1); SetShimmerName(); update_sdconfig
-    // = 1; break;
+    // storedConfig+NV_SD_SHIMMER_NAME, MAX_CHARS-1); SetShimmerName();
+    // update_sdconfig = 1; break;
   case GET_EXPID_COMMAND:
     expIDResponse = 1;
     break;
@@ -2436,8 +2436,8 @@ void BtUart_processCmd(void)
     // memset((uint8_t*)(storedConfig+NV_SD_EXP_ID_NAME), 0, MAX_CHARS-1);
     // memcpy((uint8_t*)(storedConfig+NV_SD_EXP_ID_NAME), &btArgs[1], name_len);
     // InfoMem_write((uint8_t*)NV_SD_EXP_ID_NAME,
-    // storedConfig+NV_SD_EXP_ID_NAME, MAX_CHARS-1); SetExpIdName(); update_sdconfig
-    // = 1; break;
+    // storedConfig+NV_SD_EXP_ID_NAME, MAX_CHARS-1); SetExpIdName();
+    // update_sdconfig = 1; break;
   case GET_CONFIGTIME_COMMAND: configTimeResponse = 1; break;
   case GET_DIR_COMMAND:        dirResponse = 1; break;
   case SET_CONFIGTIME_COMMAND:
@@ -2481,9 +2481,9 @@ void BtUart_processCmd(void)
     // (storedConfig[NV_CONFIG_SETUP_BYTE0]&0xF3) + ((btArgs[0]&0x03)<<2); else
     // storedConfig[NV_CONFIG_SETUP_BYTE0] &= 0xF3;
     // InfoMem_write((void*)NV_CONFIG_SETUP_BYTE0,
-    // &storedConfig[NV_CONFIG_SETUP_BYTE0], 1); sdHeadText[SDH_CONFIG_SETUP_BYTE0]
-    // = storedConfig[NV_CONFIG_SETUP_BYTE0]; update_sdconfig = 1; if(isSensing)
-    // { stopSensing = 1; startSensing = 1;
+    // &storedConfig[NV_CONFIG_SETUP_BYTE0], 1);
+    // sdHeadText[SDH_CONFIG_SETUP_BYTE0] = storedConfig[NV_CONFIG_SETUP_BYTE0];
+    // update_sdconfig = 1; if(isSensing) { stopSensing = 1; startSensing = 1;
     // }
     // break;
   case GET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
@@ -2794,11 +2794,12 @@ void BtUart_processCmd(void)
   case RESET_CALIBRATION_VALUE_COMMAND:
     //memset(&storedConfig[NV_A_ACCEL_CALIBRATION], 0xFF,
     //NV_NUM_CALIBRATION_BYTES); InfoMem_write((void*)NV_A_ACCEL_CALIBRATION,
-    //&storedConfig[NV_A_ACCEL_CALIBRATION], NV_NUM_CALIBRATION_BYTES); memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION],
-    //&storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION], 21); memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION],
-    //&storedConfig[NV_MPU9250_GYRO_CALIBRATION], 21); memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION],
-    //&storedConfig[NV_LSM303DLHC_MAG_CALIBRATION], 21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION],
-    //&storedConfig[NV_A_ACCEL_CALIBRATION], 21); calib_update = 1;
+    //&storedConfig[NV_A_ACCEL_CALIBRATION], NV_NUM_CALIBRATION_BYTES);
+    //memcpy(&sdHeadText[SDH_LSM303DLHC_ACCEL_CALIBRATION], &storedConfig[NV_LSM303DLHC_ACCEL_CALIBRATION],
+    //21); memcpy(&sdHeadText[SDH_MPU9250_GYRO_CALIBRATION], &storedConfig[NV_MPU9250_GYRO_CALIBRATION],
+    //21); memcpy(&sdHeadText[SDH_LSM303DLHC_MAG_CALIBRATION], &storedConfig[NV_LSM303DLHC_MAG_CALIBRATION],
+    //21); memcpy(&sdHeadText[SDH_A_ACCEL_CALIBRATION], &storedConfig[NV_A_ACCEL_CALIBRATION],
+    //21); calib_update = 1;
     ShimmerCalib_init();
     ShimmerCalibSyncFromDumpRamAll();
     update_calib_dump_file = 1;
