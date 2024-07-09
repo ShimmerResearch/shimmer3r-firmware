@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "linked_list.h"
+
 extern DMA_QListTypeDef ADCQueue;
 
 /* USER CODE END 0 */
@@ -46,8 +48,6 @@ void MX_GPDMA1_Init(void)
     HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
     HAL_NVIC_SetPriority(GPDMA1_Channel2_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(GPDMA1_Channel2_IRQn);
-    HAL_NVIC_SetPriority(GPDMA1_Channel3_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(GPDMA1_Channel3_IRQn);
     HAL_NVIC_SetPriority(GPDMA1_Channel4_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(GPDMA1_Channel4_IRQn);
     HAL_NVIC_SetPriority(GPDMA1_Channel5_IRQn, 0, 0);

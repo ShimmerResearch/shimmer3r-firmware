@@ -315,4 +315,33 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 }
 #endif
 
+uint8_t SD_insertedCheck() {
+   if (HAL_GPIO_ReadPin(SD_DETECT_N_GPIO_Port, SD_DETECT_N_Pin) == GPIO_PIN_RESET) { //inserted
+      stat.isSdInserted = 1;
+   } else {
+      stat.isSdInserted = 0;
+   }
+   return stat.isSdInserted;
+}
+
+void SdPowerOn(void)
+{
+  HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, GPIO_PIN_SET);
+}
+
+void SdPowerOff(void)
+{
+  HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, GPIO_PIN_RESET);
+}
+
+uint8_t isSdPowerOn(void)
+{
+  return HAL_GPIO_ReadPin(SW_FLASH_GPIO_Port, SW_FLASH_Pin);
+}
+
+void setMcuHasSdcardControl(uint8_t state)
+{
+  HAL_GPIO_WritePin(SW_SD_MCU_DOCK_GPIO_Port, SW_SD_MCU_DOCK_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
+}
+
 /* USER CODE END 2 */

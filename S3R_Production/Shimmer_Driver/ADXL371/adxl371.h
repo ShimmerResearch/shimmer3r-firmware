@@ -48,6 +48,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// Shimmer added
+#include "no_os_util.h"
+
 /******************************************************************************/
 /********************** Macros and Constants Definitions **********************/
 /******************************************************************************/
@@ -484,5 +487,8 @@ int32_t adxl371_get_accel_data(struct adxl371_dev *dev,
              struct adxl371_xyz_accel_data *accel_data);
 int32_t adxl371_init(struct adxl371_dev **device,
          struct adxl371_init_param init_param);
+
+//Shimmer added
+void no_os_mdelay(uint32_t msecs);
 
 #endif /* ADXL371_ADXL371_H_ */

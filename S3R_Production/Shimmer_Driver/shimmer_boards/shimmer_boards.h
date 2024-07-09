@@ -37,9 +37,9 @@ enum SR_BOARD_CODES
 
 typedef struct
 {
-  uint8_t exp_brd_id_major;
-  uint8_t exp_brd_id_minor;
-  uint8_t exp_brd_id_internal;
+  uint8_t exp_brd_id;
+  uint8_t exp_brd_rev;
+  uint8_t exp_brd_special_rev;
 } shimmer_expansion_brd;
 
 typedef union
@@ -55,10 +55,13 @@ typedef union
 void setDaugherCardIdPage(uint8_t *pagePtr);
 uint8_t isAds1292Present(void);
 uint8_t isAds1292PresentForSrId(uint8_t srId);
+shimmer_expansion_brd* getDaughtCardId(void);
 void parseDaughterCardId(uint8_t srId);
 char* getDaughtCardIdStrPtr(void);
 
 void setEepromIsPresent(uint8_t eeprom_is_preset);
 uint8_t isEepromIsPresent(void);
+
+shimmer_expansion_brd* getDaughtCardIdPtr(void);
 
 #endif /* SHIMMER3_COMMON_SOURCE_SHIMMER_BOARDS_SHIMMER_BOARDS_H_ */

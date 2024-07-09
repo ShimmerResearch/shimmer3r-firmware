@@ -40,6 +40,7 @@ void MX_RTC_Init(void)
   RTC_PrivilegeStateTypeDef privilegeState = {0};
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
+  RTC_AlarmTypeDef sAlarm = {0};
 
   /* USER CODE BEGIN RTC_Init 1 */
 
@@ -99,6 +100,23 @@ void MX_RTC_Init(void)
   sDate.Year = 0x70;
 
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Enable the Alarm A
+  */
+  sAlarm.AlarmTime.Hours = 0x0;
+  sAlarm.AlarmTime.Minutes = 0x1;
+  sAlarm.AlarmTime.Seconds = 0x0;
+  sAlarm.AlarmTime.SubSeconds = 0x0;
+  sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY|RTC_ALARMMASK_HOURS
+                              |RTC_ALARMMASK_SECONDS;
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.AlarmDateWeekDay = 0x1;
+  sAlarm.Alarm = RTC_ALARM_A;
+  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
@@ -657,10 +675,54 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 }
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
-   //Board_ledToggle(LED_GREEN0);
+  /* Disable alarm and interrupt - this is stopping the alarm from triggering
+   * multiple times while debugging */
+  __HAL_RTC_ALARMA_DISABLE(hrtc);
+  __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
+
+  S4_Task_set(TASK_BATTREAD);
+#if defined(SHIMMER4_SDK)
 #if RTC_FAST
    //rtc64_reg += 0x8000; // this is not working well as the interrupt priority is not the highest
 #endif
+#endif
+}
+
+void setupNextRtcMinuteAlarm(void)
+{
+  RTC_AlarmTypeDef sAlarm;
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef sDate;
+  HAL_RTC_GetAlarm(&hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN); //to update the previous alarm.
+ /* Get time added since it was randomly missing interrupt when using HAL_RTC_GetAlarm().*/
+  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+  /* From GetTime() notes : You must call HAL_RTC_GetDate() after HAL_RTC_GetTime() to unlock the values....*/
+  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+  sAlarm.AlarmTime.Hours = 0x0;
+  sAlarm.AlarmTime.Minutes = 0x0;
+  sAlarm.AlarmTime.Seconds = 0x0;
+  sAlarm.AlarmTime.SubSeconds = 0x0;
+  /* If docked alarm fires every 30s and if un-docked fires every 10 minutes*/
+  battAlarmInterval_t battAlarm = getBatteryInterval();
+  if(battAlarm == BATT_INTERVAL_DOCKED) //docked
+  {
+    sAlarm.AlarmTime.Seconds = sTime.Seconds > 28 ? 0 : sTime.Seconds + 30U;
+    sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS
+        | RTC_ALARMMASK_MINUTES;
+  }
+  else //un-docked
+  {
+    sAlarm.AlarmTime.Minutes = sTime.Minutes > 48 ? 0 : sTime.Minutes + 10U;
+    sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS
+        | RTC_ALARMMASK_SECONDS;
+  }
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.AlarmDateWeekDay = 0x1;
+  sAlarm.Alarm = RTC_ALARM_A;
+
+  while (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK){}
 }
 
 /* USER CODE END 1 */

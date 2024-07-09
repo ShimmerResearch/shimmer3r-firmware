@@ -102,9 +102,21 @@ void S4_NORM_Task_manage(void){
       case TASK_STOPSENSING:     S4Sens_stopSensing();   break;
       //case TASK_NEXTSENSOR:      I2C_sensorNext();       break;
       case TASK_SDWRITE:         SD_writeToCard();       break;
-      case TASK_BATTREAD:     
+      case TASK_SDLOG_CFG_UPDATE:
+        if (!stat.isDocked && !stat.isSensing && stat.isSdInserted && GetSdCfgFlag())
+        {
+            stat.isConfiguring = 1;
+            IniReadInfoMem();
+            UpdateSdConfig();
+            SetSdCfgFlag(0);
+            stat.isConfiguring = 0;
+        }
+        break;
+      case TASK_BATTREAD:
+#if defined(SHIMMER3R)
+        manageReadBatt();
+#elif defined(SHIMMER4_SDK)
          S4_ADC_readBatt();
-#if defined(SHIMMER4_SDK)
          I2C_readBatt();
 #endif
          break;
@@ -150,3 +162,8 @@ uint8_t setTaskNewBtCmdToProcess(void)
   return S4_Task_set(TASK_BTPROCESS);
 }
 
+void SetStartSensing(void)
+{
+  S4_NORM_Task_set(TASK_SDLOG_CFG_UPDATE);
+  S4_NORM_Task_set(TASK_STARTSENSING);
+}

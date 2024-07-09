@@ -387,6 +387,17 @@
 #define SDH_LSM303DLHC_MAG_CALIBRATION    118//0x76
 #define SDH_A_ACCEL_CALIBRATION           139//0x8b
 #define SDH_TEMP_PRES_CALIBRATION         160
+#define SDH_LSM303DLHC_ACCEL_CALIB_TS     (182)//+8
+#define SDH_MPU9250_GYRO_CALIB_TS         (190) //+8
+#define SDH_LSM303DLHC_MAG_CALIB_TS       (198) //+8
+#define SDH_A_ACCEL_CALIB_TS              (206) //+8
+#define SDH_DAUGHTER_CARD_ID_BYTE0        (214) //+3
+#define SDH_DERIVED_CHANNELS_3            (217)
+#define SDH_DERIVED_CHANNELS_4            (218)
+#define SDH_DERIVED_CHANNELS_5            (219)
+#define SDH_DERIVED_CHANNELS_6            (220)
+#define SDH_DERIVED_CHANNELS_7            (221)
+#define BMP280_XTRA_CALIB_BYTES           (222)
 #define SDH_MY_LOCALTIME_0TH              248
 #define SDH_MY_LOCALTIME_5TH              251
 #define SDH_MY_LOCALTIME                  252   //252-255
@@ -452,6 +463,8 @@
 #define BATT_LOW        0x01
 #define BATT_MID        0x02
 #define BATT_HIGH       0x04
+#define BATT_INTERVAL   600  // 600 seconds = 10min interval
+#define BATT_INTERVAL_D 30 // 30 seconds
 
 //LSM303DLHC Accel Range
 //Corresponds to the FS field of the LSM303DLHC's CTRL_REG4_A register
@@ -560,6 +573,8 @@ typedef volatile struct STATTypeDef_t{//STATUS
    uint32_t     battStatLed;
    uint8_t     battVal[3];
    uint8_t     battDigital[10];
+   uint8_t     sdlogReady;
+   uint8_t     enableSdlog;
    uint8_t     badFile;
 //   uint8_t     sdlogEn;
 //   uint8_t     btstreamEn;
@@ -572,6 +587,12 @@ typedef volatile struct STATTypeDef_t{//STATUS
    uint8_t     pinPvExt;   
    uint8_t     periStat;
 } STATTypeDef;
+
+typedef enum
+{
+   BATT_INTERVAL_UNDOCKED , //10 Minutes
+   BATT_INTERVAL_DOCKED  // 30 Seconds
+} battAlarmInterval_t;
 
 //STATTypeDef * GetStatus(void);
 extern STATTypeDef stat;

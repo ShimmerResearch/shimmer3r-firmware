@@ -10,7 +10,7 @@
 #include "shimmer_boards.h"
 
 daughter_card_id_page daughterCardIdPage;
-char daughtCardIdStr[25];
+char daughtCardIdStr[26];
 uint8_t eepromIsPresent;
 
 void setDaugherCardIdPage(uint8_t *pagePtr)
@@ -20,7 +20,7 @@ void setDaugherCardIdPage(uint8_t *pagePtr)
 
 uint8_t isAds1292Present(void)
 {
-  return isAds1292PresentForSrId(daughterCardIdPage.expansion_brd.exp_brd_id_major);
+  return isAds1292PresentForSrId(daughterCardIdPage.expansion_brd.exp_brd_id);
 }
 
 uint8_t isAds1292PresentForSrId(uint8_t srId)
@@ -76,6 +76,11 @@ void parseDaughterCardId(uint8_t srId)
     }
 }
 
+shimmer_expansion_brd* getDaughtCardId(void)
+{
+    return &daughterCardIdPage.expansion_brd;
+}
+
 char* getDaughtCardIdStrPtr(void)
 {
     return &daughtCardIdStr[0];
@@ -89,5 +94,10 @@ void setEepromIsPresent(uint8_t eeprom_is_preset)
 uint8_t isEepromIsPresent(void)
 {
     return eepromIsPresent;
+}
+
+shimmer_expansion_brd* getDaughtCardIdPtr(void)
+{
+    return &daughterCardIdPage.expansion_brd;
 }
 

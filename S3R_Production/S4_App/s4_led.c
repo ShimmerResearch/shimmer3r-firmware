@@ -266,6 +266,7 @@ void S4Led_Blink(void)
       __NOP();
     }
   }
+#if defined(SHIMMER4_SDK)
   if (!(cntBlink % 10))
   {
 #if USE_VBATT_ALWAYS   
@@ -275,6 +276,7 @@ void S4Led_Blink(void)
       S4_Task_set(TASK_BATTREAD);
     }
   }
+#endif
   //DockedCheck();//every 0.1s
 
 #endif //USE_DEFAULT_LED

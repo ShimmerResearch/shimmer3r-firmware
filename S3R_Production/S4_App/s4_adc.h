@@ -25,6 +25,11 @@ typedef struct {//adc - Sensors
 #define ADC_CONFIG_SENS 1
 #define ADC_CONFIG_BATT 2
 
+#define BATT_LOW_MAX    2618
+#define BATT_MID_MIN    2568
+#define BATT_MID_MAX    2767
+#define BATT_HIGH_MIN   2717
+
 #if USE_FREERTOS
 #define S4_ADC_init              S4_RTOS_ADC_init
 #define S4_ADC_init1             S4_RTOS_ADC_init1
@@ -69,7 +74,9 @@ void S4_RTOS_ADC_rankBatt(void);
 void S4_NORM_ADC_init(void);
 void S4_NORM_ADC_init1(void);
 void S4_NORM_ADC_init2(void);
-void S4_NORM_ADC_initBatt(void);   
+#if defined(SHIMMER4_SDK)
+void S4_NORM_ADC_initBatt(void);
+#endif
 void S4_NORM_ADC_configureChannels(void);
 void S4_NORM_ADC_startSensing(void);
 void S4_NORM_ADC_bufPoll(void);
@@ -79,11 +86,17 @@ void S4_NORM_ADC_gatherDataStart(void);
 void S4_NORM_ADC_readBatt(void);
 void S4_NORM_ADC_rankBatt(void);
 void adcGpioInit(uint32_t pin, GPIO_TypeDef* port);
+void manageReadBatt(void);
+void updateBatteryStatus(uint16_t adc_battVal);
+battAlarmInterval_t  getBatteryInterval(void);
 
 #if defined(SHIMMER3R)
 bool areAdcChannelsEnabled(void);
 #endif
-   
+
+void setBatteryInterval(battAlarmInterval_t  value);
+void resetBatteryCriticalCount(void);
+
 #endif /* S4_ADC_H */
 
 
