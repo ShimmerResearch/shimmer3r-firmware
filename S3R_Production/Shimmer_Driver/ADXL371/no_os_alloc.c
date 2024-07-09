@@ -2,7 +2,7 @@
  *   @file   util/no_os_alloc.c
  *   @brief  Implementation of no-OS memory allocation functions.
  *   @author GMois (george.mois@analog.com)
-********************************************************************************
+ ********************************************************************************
  * Copyright 2023(c) Analog Devices, Inc.
  *
  * All rights reserved.
@@ -35,7 +35,7 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ *******************************************************************************/
 
 #include "no_os_alloc.h"
 
@@ -46,7 +46,7 @@
  */
 __attribute__((weak)) void *no_os_malloc(size_t size)
 {
-	return malloc(size);
+  return malloc(size);
 }
 
 /**
@@ -57,7 +57,7 @@ __attribute__((weak)) void *no_os_malloc(size_t size)
  */
 __attribute__((weak)) void *no_os_calloc(size_t nitems, size_t size)
 {
-	return calloc(nitems, size);
+  return calloc(nitems, size);
 }
 
 /**
@@ -69,5 +69,5 @@ __attribute__((weak)) void *no_os_calloc(size_t nitems, size_t size)
  */
 __attribute__((weak)) void no_os_free(void *ptr)
 {
-	free(ptr);
+  free(ptr);
 }

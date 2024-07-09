@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * File Name          : linked_list.c
-  * Description        : This file provides code for the configuration
-  *                      of the LinkedList.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * File Name          : linked_list.c
+ * Description        : This file provides code for the configuration
+ *                      of the LinkedList.
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "linked_list.h"
@@ -44,10 +44,10 @@ DMA_QListTypeDef ADCQueue;
 /* USER CODE END PM */
 
 /**
-  * @brief  DMA Linked-list ADCQueue configuration
-  * @param  None
-  * @retval None
-  */
+ * @brief  DMA Linked-list ADCQueue configuration
+ * @param  None
+ * @retval None
+ */
 HAL_StatusTypeDef MX_ADCQueue_Config(void)
 {
   HAL_StatusTypeDef ret = HAL_OK;
@@ -65,7 +65,7 @@ HAL_StatusTypeDef MX_ADCQueue_Config(void)
   pNodeConfig.Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
   pNodeConfig.Init.SrcBurstLength = 1;
   pNodeConfig.Init.DestBurstLength = 1;
-  pNodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
+  pNodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
   pNodeConfig.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
   pNodeConfig.TriggerConfig.TriggerPolarity = DMA_TRIG_POLARITY_MASKED;
   pNodeConfig.DataHandlingConfig.DataExchange = DMA_EXCHANGE_NONE;
@@ -80,6 +80,5 @@ HAL_StatusTypeDef MX_ADCQueue_Config(void)
   /* Insert ADCNode to Queue */
   ret |= HAL_DMAEx_List_InsertNode_Tail(&ADCQueue, &ADCNode);
 
-   return ret;
+  return ret;
 }
-
