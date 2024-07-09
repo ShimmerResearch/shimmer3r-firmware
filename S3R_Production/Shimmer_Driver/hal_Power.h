@@ -39,17 +39,17 @@
  * @author Weibo Pan
  * @date May, 2016
  */
- 
- 
- /*
+
+
+/*
 SLEEP mode
 
 Cortex-M4 core is stopped.
 Peripherals kept running.
 How to exit this mode?
-Any peripheral interrupt acknowledged by the nested vectored interrupt controller (NVIC).
-Systick timer will also wake up MCU!
-After exit, MCU continues where it stopped.
+Any peripheral interrupt acknowledged by the nested vectored interrupt
+controller (NVIC). Systick timer will also wake up MCU! After exit, MCU
+continues where it stopped.
 
 STOP mode
 
@@ -59,7 +59,8 @@ Internal SRAM and register contents are preserved.
 Voltage regulator in low-power mode.
 How to exit this mode?
 Any EXTI Line (Internal or External) configured in Interrupt/Event mode.
-After exit, MCU continue there where it stopped. HSI is used for system core clock, but my library set it back to PLL as source.
+After exit, MCU continue there where it stopped. HSI is used for system core
+clock, but my library set it back to PLL as source.
 
 STANDBY mode
 
@@ -67,11 +68,9 @@ Cortex-M4 deepsleep mode.
 Voltage regulator disabled.
 1.2V domain consequently powered off.
 PLL, HSI and HSE RC oscillators disabled.
-SRAM and register contents are lost except for the RTC registers, RTC backup registers, backup SRAM and Standby circuitry.
-How to exit this mode?
-Wakeup pin rising edge.
-RTC alarm (Alarm A and B) and wakeup.
-Tamper and time-stamp event.
+SRAM and register contents are lost except for the RTC registers, RTC backup
+registers, backup SRAM and Standby circuitry. How to exit this mode? Wakeup pin
+rising edge. RTC alarm (Alarm A and B) and wakeup. Tamper and time-stamp event.
 External reset in NRST pin.
 IWDG reset.
 After exit, STM32F4xx reset.
@@ -79,44 +78,43 @@ After exit, STM32F4xx reset.
 VBAT mode
 
 Main digital supply is turned off.
-The circuit is supplied through VBAT pin which should be connected to an external supply voltage (a battery or any other source).
-RTC is running in this mode.
-How to enter this mode?
-If you disable main power and put supply voltage on VBAT pin, then MCU will be in VBAT mode.
-How to exit this mode?
-Put power supply on main Vdd pins.
+The circuit is supplied through VBAT pin which should be connected to an
+external supply voltage (a battery or any other source). RTC is running in this
+mode. How to enter this mode? If you disable main power and put supply voltage
+on VBAT pin, then MCU will be in VBAT mode. How to exit this mode? Put power
+supply on main Vdd pins.
 */
 
 
-#include<stdint.h>
+#include <stdint.h>
 
 #ifndef HAL_POWER_H
 #define HAL_POWER_H
 
-// wait for reset to exit
+//wait for reset to exit
 void Power_Standby(void);
 
 
-// USAGE:
-//   /* Checks if reset was because of wakeup from standby */
-//   uint8_t i;
-//   if (StandbyReset()) {
-//      for (i = 0; i < 10; i++) {
-//         /* Toggle LED red to indicate this */
-//         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_5);//red
-//         /* Delay */
-//         HAL_Delay(100);
-//      }
-//   }
+//USAGE:
+//  /* Checks if reset was because of wakeup from standby */
+//  uint8_t i;
+//  if (StandbyReset()) {
+//     for (i = 0; i < 10; i++) {
+//        /* Toggle LED red to indicate this */
+//        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_5);//red
+//        /* Delay */
+//        HAL_Delay(100);
+//     }
+//  }
 uint8_t Power_StandbyReset(void);
 
 
-// wait for any int to exit
+//wait for any int to exit
 void Power_SleepUntilInterrupt(void);
 
 
 //wait for exti to exit
-void Power_StopUntilInterrupt(void); 
-void Power_GpioAnalogConfig (void);
+void Power_StopUntilInterrupt(void);
+void Power_GpioAnalogConfig(void);
 
 #endif

@@ -6,11 +6,10 @@
 #if defined(SHIMMER3R)
 //#define DEVICE_VER            3 // For older Consensys support
 #define DEVICE_VER 10
-#define FW_IDENTIFIER \
-  3 //12 is the firmware for shimmer4sdk, with LogAndStream in side
-#define FW_VER_MAJOR 0 //Maor version number: 0-65535
-#define FW_VER_MINOR 1 //Minor version number: 0-255
-#define FW_VER_REL   0 //internal version number: 0-255
+#define FW_IDENTIFIER 3 //12 is the firmware for shimmer4sdk, with LogAndStream in side
+#define FW_VER_MAJOR  0 //Maor version number: 0-65535
+#define FW_VER_MINOR  1 //Minor version number: 0-255
+#define FW_VER_REL    0 //internal version number: 0-255
 #elif defined(SHIMMER4_SDK)
 #define DEVICE_VER 58 //HARDWARE VERSION: SR_58 for Shimmer4SDK
 #define FW_IDENTIFIER \

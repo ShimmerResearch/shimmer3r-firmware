@@ -22,7 +22,7 @@ void SD_setFileName(void);
 void SD_infomem2Names(void);
 uint8_t SD_setBasedir(void);
 uint8_t SD_makeBasedir(void);
-void SD_makeFileName(char* name_buf);
+void SD_makeFileName(char *name_buf);
 void SD_fileInit(void);
 void SD_close(void);
 void SD_writeToBuff(uint8_t *buf, uint16_t len);

@@ -12,7 +12,6 @@
 #include "s4__cfg.h"
 #include "stm32u5xx_hal.h"
 
-
 #if USE_FATFS
 #include "fatfs.h"
 #include "ff.h"

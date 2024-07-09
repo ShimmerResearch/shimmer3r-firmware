@@ -43,12 +43,12 @@
 #ifndef RN42_H
 #define RN42_H
 
-#include <stdint.h>
-#include "stm32u5xx_hal.h"
 #include "s4.h"
+#include "stm32u5xx_hal.h"
+#include <stdint.h>
 
-#if DEVICE_VER == 58 // Shimmer4SDK
-#define BT_GPIO_FACTORY GPIOD 
+#if DEVICE_VER == 58 //Shimmer4SDK
+#define BT_GPIO_FACTORY GPIOD
 #define BT_GPIO_STATUS  GPIOD
 #define BT_GPIO_RSTN    GPIOD
 #define BT_GPIO_CTS     GPIOD
@@ -61,7 +61,7 @@
 #define BT_PIN_RTS      GPIO_PIN_12
 #define BT_PIN_POWER    GPIO_PIN_2
 #else
-#define BT_GPIO_FACTORY GPIOA 
+#define BT_GPIO_FACTORY GPIOA
 #define BT_GPIO_STATUS  GPIOB
 #define BT_GPIO_RSTN    GPIOC
 #define BT_GPIO_CTS     GPIOB
@@ -78,14 +78,15 @@
 #define TX_BUFF_MAX        256
 #define TX_BACKUP_BUFF_MAX 1024
 
-enum {
-   SLAVE_MODE,
-   MASTER_MODE,
-   TRIGGER_MASTER_MODE,
-   AUTO_MASTER_MODE
+enum
+{
+  SLAVE_MODE,
+  MASTER_MODE,
+  TRIGGER_MASTER_MODE,
+  AUTO_MASTER_MODE
 };
 
-void BT_init(UART_HandleTypeDef *huart, uint8_t (*receiveFuncPtr)(uint8_t* data));
+void BT_init(UART_HandleTypeDef *huart, uint8_t (*receiveFuncPtr)(uint8_t *data));
 void BT_configure(void);
 void BT_disable(UART_HandleTypeDef *huart);
 
@@ -93,9 +94,9 @@ void BT_disable(UART_HandleTypeDef *huart);
 //returns 0 if fails, else 1
 //will only fail if a previous BT_write is still in progress
 
-void BT_setRxLen(uint8_t len);   
+void BT_setRxLen(uint8_t len);
 
-HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len) ;
+HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len);
 
 //connect to a specific device that was previously discovered
 uint8_t BT_connect(uint8_t *addr);
@@ -110,16 +111,16 @@ void BT_setRadioMode(uint8_t mode);
 void BT_setDiscoverable(uint8_t disc);
 void BT_setEncryption(uint8_t enc);
 void BT_setAuthentication(uint8_t mode);
-void BT_setName(char *name);             // max 16 chars
-void BT_setFriendlyName(char *name);     //max 15 chars
-void BT_setPIN(char *name);              // max 16 chars
-void BT_setServiceClass(char *serviceClass); // max 4 chars (hex word)
-void BT_setServiceName(char *name);         // max 16 chars
-void BT_setDeviceClass(char *deviceClass);  // max 4 chars (hex word)
+void BT_setName(char *name);                 //max 16 chars
+void BT_setFriendlyName(char *name);         //max 15 chars
+void BT_setPIN(char *name);                  //max 16 chars
+void BT_setServiceClass(char *serviceClass); //max 4 chars (hex word)
+void BT_setServiceName(char *name);          //max 16 chars
+void BT_setDeviceClass(char *deviceClass);   //max 4 chars (hex word)
 void BT_disableRemoteConfig(uint8_t disableConfig);
 
 //rate_factor is baudrate * 0.004096, e.g. to set 115200, pass in "472"
-void BT_setRawBaudrate(char *rateFactor);   // max 4 chars, must be integer
+void BT_setRawBaudrate(char *rateFactor); //max 4 chars, must be integer
 
 //provide one of the following as a string argument:
 //1200, 2400, 4800, 9600, 19.2, 38.4, 57.6, 115K, 230K, 460K, 921K
@@ -127,8 +128,8 @@ void BT_setRawBaudrate(char *rateFactor);   // max 4 chars, must be integer
 
 //save power by minimising time Inquiry/Page scanning
 //module reset necessary for changes to take effect
-void BT_setPagingTime(char *hexvalTime);    // max 4 chars (hex word)
-void BT_setInquiryTime(char *hexvalTime);   // max 4 chars (hex word)
+void BT_setPagingTime(char *hexvalTime);  //max 4 chars (hex word)
+void BT_setInquiryTime(char *hexvalTime); //max 4 chars (hex word)
 
 //Set's the mac variable to be the RN42's mac address
 //mac must be 12 bytes in length
@@ -142,11 +143,11 @@ uint8_t BT_getRn42MacAddressPtr(uint8_t *macPtr);
 void BT_resetDefaults(void);
 
 //set new baud rate. This change is effective immediately.
-//This change is only temporary. Reverts to previously configured rate after reset.
-//The string argument must be one of the following and EXACTLY 4 characters:
-//1200, 2400, 4800, 9600, 19.2(K), 38.4(K), 57.6(K), 115K, 230K, 460K or 921K
-//If any other value is used this function does nothing
-void BT_setTempBaudRate(char * baudRate);
+//This change is only temporary. Reverts to previously configured rate after
+//reset. The string argument must be one of the following and EXACTLY 4
+//characters: 1200, 2400, 4800, 9600, 19.2(K), 38.4(K), 57.6(K), 115K, 230K,
+//460K or 921K If any other value is used this function does nothing
+void BT_setTempBaudRate(char *baudRate);
 
 //pass in a pointer to the function that will get called when
 //data arrives
@@ -166,10 +167,9 @@ void BT_connectionInterrupt(uint8_t value);
 //value needs to be 1 if interrupt was low to high else 0
 void BT_rtsInterrupt(uint8_t value);
 
-// put these two in the system ISR handler
+//put these two in the system ISR handler
 void BT_txIsr(UART_HandleTypeDef *huart);
 void BT_rxIsr(UART_HandleTypeDef *huart);
-   
 
 
 #endif //RN42_H

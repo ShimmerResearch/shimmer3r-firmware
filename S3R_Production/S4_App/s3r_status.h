@@ -9,5 +9,4 @@
 #define S3R_STATUS_H_
 
 
-
 #endif /* S3R_STATUS_H_ */
