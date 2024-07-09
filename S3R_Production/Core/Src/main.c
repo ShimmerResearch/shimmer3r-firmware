@@ -586,8 +586,7 @@ void loadSensorConfigurationAndCalibration(void)
     ShimmerCalibSyncFromDumpRamAll();
 }
 
-void SetupDock(void)
-{
+void SetupDock(void){
     stat.isConfiguring = 1;
     if (stat.isDocked)
     {
