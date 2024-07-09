@@ -951,9 +951,9 @@ __interrupt void TIMER0_A1_ISR(void)
     handleSyncTimerTrigger();
 
     break;
-  case 4:  break; //TA0CCR2 not used
-  case 6:  break; //Reserved
-  case 8:  break; //Reserved
+  case 4: break;  //TA0CCR2 not used
+  case 6: break;  //Reserved
+  case 8: break;  //Reserved
   case 10: break; //Reserved
   case 12: break; //Reserved
   case 14: break; //TAIFG overflow handler

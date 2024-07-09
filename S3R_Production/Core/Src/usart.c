@@ -711,10 +711,10 @@ void BtUart_processCmd(void)
   //uint8_t update_sdconfig = 0, calib_update = 0, calib_sensor = 0, calib_range = 0;
   switch (btAction)
   {
-  case INQUIRY_COMMAND:           inquiryBtRsp = 1; break;
-  case DUMMY_COMMAND:             break;
+  case INQUIRY_COMMAND: inquiryBtRsp = 1; break;
+  case DUMMY_COMMAND: break;
   case GET_SAMPLING_RATE_COMMAND: samplingRateBtRsp = 1; break;
-  case TOGGLE_LED_COMMAND:        toggleLedRed ^= 1; break;
+  case TOGGLE_LED_COMMAND: toggleLedRed ^= 1; break;
   case START_STREAMING_COMMAND:
     stat.btstreamCmd = BT_STREAM_CMD_STATE_START;
     S4_Task_set(TASK_STARTSENSING);
@@ -764,7 +764,7 @@ void BtUart_processCmd(void)
     I2C_readBattSetFreq(temp16);
     break;
 #endif
-  case GET_VBATT_COMMAND:        vbattBtRsp = 1; break;
+  case GET_VBATT_COMMAND: vbattBtRsp = 1; break;
   case GET_TRIAL_CONFIG_COMMAND: trialConfigResponse = 1; break;
   case SET_TRIAL_CONFIG_COMMAND:
     S4Ram_storedConfigSetByte(NV_SD_TRIAL_CONFIG0, btArgs[0]);
@@ -1102,8 +1102,8 @@ void BtUart_processCmd(void)
     break;
   */
   case DEPRECATED_GET_DEVICE_VERSION_COMMAND:
-  case GET_DEVICE_VERSION_COMMAND:            deviceVersionBtRsp = 1; break;
-  case GET_FW_VERSION_COMMAND:                fwVersionBtRsp = 1; break;
+  case GET_DEVICE_VERSION_COMMAND: deviceVersionBtRsp = 1; break;
+  case GET_FW_VERSION_COMMAND: fwVersionBtRsp = 1; break;
   case GET_CHARGE_STATUS_LED_COMMAND:
     blinkLedBtRsp = 1;
     break; /*

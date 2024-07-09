@@ -56,8 +56,8 @@
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/Bluetooth/CYW20820.h"
 #include "../Shimmer_Driver/Bluetooth/EZ-Serial/handlers.h"
-#include "../Shimmer_Driver/Bluetooth/shimmer_bt_comms.h"
 #include "../Shimmer_Driver/Bluetooth/sd_sync.h"
+#include "../Shimmer_Driver/Bluetooth/shimmer_bt_comms.h"
 #elif defined(SHIMMER4_SDK)
 #include "RN42.h"
 #endif
