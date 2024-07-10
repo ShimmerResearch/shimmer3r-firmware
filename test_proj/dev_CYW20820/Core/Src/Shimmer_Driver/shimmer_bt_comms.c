@@ -34,7 +34,7 @@ char *commandBufPtr;
 uint8_t *expectedResponsePtr;
 #endif
 #if BT_DMA_USED_FOR_RX
-uint8_t btArgs[MAX_COMMAND_ARG_SIZE], btWaitingForArgs, btWaitingForArgsLength, btArgsSize, btAction;
+uint8_t btArgs[MAX_COMMAND_ARG_SIZE], waitingForArgs, waitingForArgsLength, argsSize, action;
 volatile uint8_t btStatusStrIndex;
 
 #if IS_BT_RN
@@ -321,82 +321,82 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
         else
         {
 #endif
-            if (btWaitingForArgs)
+            if (waitingForArgs)
             {
-                if ((!btWaitingForArgsLength)
+                if ((!waitingForArgsLength)
 #if IS_BT_RN
                         && ((*(gActionPtr) == SET_EXG_REGS_COMMAND)
 #else
-                        && ((btAction == SET_EXG_REGS_COMMAND)
+                        && ((action == SET_EXG_REGS_COMMAND)
 #endif
-                                && (btWaitingForArgs == 3)))
+                                && (waitingForArgs == 3)))
                 {
 #if IS_BT_RN
                     gArgsPtr[0] = btRxBuffPtr[0];
                     gArgsPtr[1] = btRxBuffPtr[1];
                     gArgsPtr[2] = btRxBuffPtr[2];
-                    btWaitingForArgsLength = gArgsPtr[2];
+                    waitingForArgsLength = gArgsPtr[2];
 #else
                     btArgs[0] = btRxBuffPtr[0];
                     btArgs[1] = btRxBuffPtr[1];
                     btArgs[2] = btRxBuffPtr[2];
-                    btWaitingForArgsLength = btArgs[2];
+                    waitingForArgsLength = btArgs[2];
 #endif
-                    setDmaWaitingForResponse(btWaitingForArgsLength);
+                    setDmaWaitingForResponse(waitingForArgsLength);
                     return 0;
                 }
-                else if ((!btWaitingForArgsLength)
+                else if ((!waitingForArgsLength)
 #if IS_BT_RN
                         && (((*(gActionPtr) == SET_INFOMEM_COMMAND)
 #else
-                        && (((btAction == SET_INFOMEM_COMMAND)
+                        && (((action == SET_INFOMEM_COMMAND)
 #endif
-                                && (btWaitingForArgs == 3))
+                                && (waitingForArgs == 3))
 #if IS_BT_RN
                                 || ((*(gActionPtr) == SET_CALIB_DUMP_COMMAND)
 #else
-                                || ((btAction == SET_CALIB_DUMP_COMMAND)
+                                || ((action == SET_CALIB_DUMP_COMMAND)
 #endif
-                                        && (btWaitingForArgs == 3))))
+                                        && (waitingForArgs == 3))))
                 {
 #if IS_BT_RN
                     gArgsPtr[0] = btRxBuffPtr[0];
                     gArgsPtr[1] = btRxBuffPtr[1];
                     gArgsPtr[2] = btRxBuffPtr[2];
-                    btWaitingForArgsLength = gArgsPtr[2];
+                    waitingForArgsLength = gArgsPtr[2];
 #else
                     btArgs[0] = btRxBuffPtr[0];
                     btArgs[1] = btRxBuffPtr[1];
                     btArgs[2] = btRxBuffPtr[2];
-                    btWaitingForArgsLength = btArgs[0];
+                    waitingForArgsLength = btArgs[0];
 #endif
-                    setDmaWaitingForResponse(btWaitingForArgsLength);
+                    setDmaWaitingForResponse(waitingForArgsLength);
                     return 0;
                 }
-                else if ((!btWaitingForArgsLength) && (
+                else if ((!waitingForArgsLength) && (
                 //                ((*(gActionPtr) == SET_DAUGHTER_CARD_ID_COMMAND) && (btWaitingForArgs == 1)) ||
 #if IS_BT_RN
                         ((*(gActionPtr) == SET_DAUGHTER_CARD_MEM_COMMAND)
-                            && (btWaitingForArgs == 1))
+                            && (waitingForArgs == 1))
                             || ((*(gActionPtr) == SET_CENTER_COMMAND)
-                                    && (btWaitingForArgs == 1))
+                                    && (waitingForArgs == 1))
                             || ((*(gActionPtr) == SET_CONFIGTIME_COMMAND)
-                                    && (btWaitingForArgs == 1))
+                                    && (waitingForArgs == 1))
                             || ((*(gActionPtr) == SET_EXPID_COMMAND)
-                                    && (btWaitingForArgs == 1))
+                                    && (waitingForArgs == 1))
                             || ((*(gActionPtr) == SET_SHIMMERNAME_COMMAND)
-                                    && (btWaitingForArgs == 1))))
+                                    && (waitingForArgs == 1))))
 #else
-                        ((btAction == SET_DAUGHTER_CARD_MEM_COMMAND)
-                            && (btWaitingForArgs == 1))
-                            || ((btAction == SET_CENTER_COMMAND)
-                                    && (btWaitingForArgs == 1))
-                            || ((btAction == SET_CONFIGTIME_COMMAND)
-                                    && (btWaitingForArgs == 1))
-                            || ((btAction == SET_EXPID_COMMAND)
-                                    && (btWaitingForArgs == 1))
-                            || ((btAction == SET_SHIMMERNAME_COMMAND)
-                                    && (btWaitingForArgs == 1))))
+                        ((action == SET_DAUGHTER_CARD_MEM_COMMAND)
+                            && (waitingForArgs == 1))
+                            || ((action == SET_CENTER_COMMAND)
+                                    && (waitingForArgs == 1))
+                            || ((action == SET_CONFIGTIME_COMMAND)
+                                    && (waitingForArgs == 1))
+                            || ((action == SET_EXPID_COMMAND)
+                                    && (waitingForArgs == 1))
+                            || ((action == SET_SHIMMERNAME_COMMAND)
+                                    && (waitingForArgs == 1))))
 #endif
                 {
 #if IS_BT_RN
@@ -408,11 +408,11 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #endif
                     {
 #if IS_BT_RN
-                      btWaitingForArgsLength = gArgsPtr[0];
+                      waitingForArgsLength = gArgsPtr[0];
 #else
-                      btWaitingForArgsLength = btArgs[0];
+                      waitingForArgsLength = btArgs[0];
 #endif
-                        setDmaWaitingForResponse(btWaitingForArgsLength);
+                        setDmaWaitingForResponse(waitingForArgsLength);
                         return 0;
                     }
                 }
@@ -422,9 +422,9 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     uint8_t numberOfCharRemaining = 0U;
                     uint8_t bringUcOutOfSleep = 0U;
 
-                    memcpy(btStatusStr+btStatusStrIndex, btRxBuffPtr, btWaitingForArgs);
-                    memset(btRxBuffPtr, 0, btWaitingForArgs);
-                    btStatusStrIndex += btWaitingForArgs;
+                    memcpy(btStatusStr+btStatusStrIndex, btRxBuffPtr, waitingForArgs);
+                    memset(btRxBuffPtr, 0, waitingForArgs);
+                    btStatusStrIndex += waitingForArgs;
 
                     enum BT_FIRMWARE_VERSION btFwVer = getBtFwVersion();
 
@@ -832,11 +832,11 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 
                     if (numberOfCharRemaining)
                     {
-                        btWaitingForArgs = numberOfCharRemaining;
+                        waitingForArgs = numberOfCharRemaining;
                     }
                     else
                     {
-                        btWaitingForArgs = 0;
+                        waitingForArgs = 0;
                         numberOfCharRemaining = 1U;
                     }
                     setDmaWaitingForResponse(numberOfCharRemaining);
@@ -846,7 +846,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if IS_BT_RN
                 else if (*(gActionPtr) == ACK_COMMAND_PROCESSED)
 #else
-                else if (btAction == ACK_COMMAND_PROCESSED)
+                else if (action == ACK_COMMAND_PROCESSED)
 #endif
                 {
 #if USE_OLD_SD_SYNC_APPROACH
@@ -854,7 +854,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     saveLocalTime();
 #else
                     /* If waiting for command byte */
-                    if(!btWaitingForArgsLength)
+                    if(!waitingForArgsLength)
                     {
                         /* Save command byte */
 #if IS_BT_RN
@@ -866,34 +866,34 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                         if (btRxBuffPtr[0] == SD_SYNC_RESPONSE)
                         {
                             /* Wait for flag to be received */
-                            btWaitingForArgsLength = 1U;
-                            setDmaWaitingForResponse(btWaitingForArgsLength);
+                            waitingForArgsLength = 1U;
+                            setDmaWaitingForResponse(waitingForArgsLength);
                             return 0;
                         }
                     }
 #endif
                 }
 
-                if (btWaitingForArgsLength)
+                if (waitingForArgsLength)
                 {
 #if IS_BT_RN
-                    memcpy(gArgsPtr + btWaitingForArgs, btRxBuffPtr, btWaitingForArgsLength);
+                    memcpy(gArgsPtr + waitingForArgs, btRxBuffPtr, waitingForArgsLength);
 #else
-                    memcpy(&btArgs + btWaitingForArgs, btRxBuffPtr, btWaitingForArgsLength);
+                    memcpy(&btArgs + waitingForArgs, btRxBuffPtr, waitingForArgsLength);
 #endif
                 }
                 else
                 {
 #if IS_BT_RN
-                    memcpy(gArgsPtr, btRxBuffPtr, btWaitingForArgs);
+                    memcpy(gArgsPtr, btRxBuffPtr, waitingForArgs);
 #else
-                    memcpy(btArgs, btRxBuffPtr, btWaitingForArgs);
+                    memcpy(btArgs, btRxBuffPtr, waitingForArgs);
 #endif
                 }
 
-                btWaitingForArgsLength = 0;
-                btWaitingForArgs = 0;
-                btArgsSize = 0;
+                waitingForArgsLength = 0;
+                waitingForArgs = 0;
+                argsSize = 0;
                 setDmaWaitingForResponse(1U);
                 if(newBtCmdToProcess_cb)
                 {
@@ -970,7 +970,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
-                    btAction = data;
+                    action = data;
 #endif
                     if(newBtCmdToProcess_cb)
                     {
@@ -1006,9 +1006,9 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
-                    btAction = data;
+                    action = data;
 #endif
-                    btWaitingForArgs = 1U;
+                    waitingForArgs = 1U;
                     break;
                 case SET_SAMPLING_RATE_COMMAND:
                 case GET_DAUGHTER_CARD_ID_COMMAND:
@@ -1016,9 +1016,9 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
-                    btAction = data;
+                    action = data;
 #endif
-                    btWaitingForArgs = 2U;
+                    waitingForArgs = 2U;
                     break;
                 case SET_SENSORS_COMMAND:
                 case GET_EXG_REGS_COMMAND:
@@ -1033,26 +1033,26 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
-                    btAction = data;
+                    action = data;
 #endif
-                    btWaitingForArgs = 3U;
+                    waitingForArgs = 3U;
                     break;
                 case SET_CONFIG_SETUP_BYTES_COMMAND:
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
-                    btAction = data;
+                    action = data;
 #endif
-                    btWaitingForArgs = 4U;
+                    waitingForArgs = 4U;
                     break;
                 case SET_RWC_COMMAND:
                 case SET_DERIVED_CHANNEL_BYTES:
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
-                    btAction = data;
+                    action = data;
 #endif
-                    btWaitingForArgs = 8U;
+                    waitingForArgs = 8U;
                     break;
                 case SET_A_ACCEL_CALIBRATION_COMMAND:
                 case SET_MPU9150_GYRO_CALIBRATION_COMMAND:
@@ -1061,9 +1061,9 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
-                    btAction = data;
+                    action = data;
 #endif
-                    btWaitingForArgs = 21U;
+                    waitingForArgs = 21U;
                     break;
 #endif
 #if IS_BT_RN
@@ -1073,14 +1073,14 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     btStatusStrIndex = 1U;
                     *(gActionPtr) = data;
                     /* Minus 1 because we've already received 1 x RN4678_STATUS_STRING_SEPARATOR */
-                    btWaitingForArgs = BT_STAT_STR_LEN_SMALLEST - 1U;
+                    waitingForArgs = BT_STAT_STR_LEN_SMALLEST - 1U;
                     break;
 #endif
 #if USE_OLD_SD_SYNC_APPROACH
                 case ACK_COMMAND_PROCESSED:
                     /* SD Sync Node - gets here when a node receives a sync packet from a center */
                     *(gActionPtr) = data;
-                    btWaitingForArgs = SYNC_PACKET_PAYLOAD_SIZE;
+                    waitingForArgs = SYNC_PACKET_PAYLOAD_SIZE;
                     break;
 #else
                 case ACK_COMMAND_PROCESSED:
@@ -1088,9 +1088,9 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
-                    btAction = data;
+                    action = data;
 #endif
-                    btWaitingForArgs = 1U;
+                    waitingForArgs = 1U;
                     break;
                 case SET_SD_SYNC_COMMAND:
                     /* Store local time as early as possible after sync bytes have been received */
@@ -1099,9 +1099,9 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
-                    btAction = data;
+                    action = data;
 #endif
-                    btWaitingForArgs = SYNC_PACKET_PAYLOAD_SIZE + BT_SD_SYNC_CRC_MODE;
+                    waitingForArgs = SYNC_PACKET_PAYLOAD_SIZE + BT_SD_SYNC_CRC_MODE;
                     break;
 #endif
                 default:
@@ -1109,9 +1109,9 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     break;
                 }
 
-                if (btWaitingForArgs)
+                if (waitingForArgs)
                 {
-                    setDmaWaitingForResponse(btWaitingForArgs);
+                    setDmaWaitingForResponse(waitingForArgs);
                 }
 
                 return wakeupMcu;
@@ -1144,10 +1144,10 @@ void resetBtRxVariablesOnConnect(void)
     /* Reset to unsupported command */
     *(gActionPtr) = ACK_COMMAND_PROCESSED-1U;
 #else
-    btAction = ACK_COMMAND_PROCESSED-1U;
+    action = ACK_COMMAND_PROCESSED-1U;
 #endif
-    btWaitingForArgs = 0;
-    btWaitingForArgsLength = 0;
+    waitingForArgs = 0;
+    waitingForArgsLength = 0;
 }
 
 void resetBtRxBuff(void)
@@ -2309,9 +2309,9 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void))
     btRxExp = BT_getExpResp();
 #endif
 
-    btWaitingForArgs = 0;
-    btWaitingForArgsLength = 0;
-    btArgsSize = 0;
+    waitingForArgs = 0;
+    waitingForArgsLength = 0;
+    argsSize = 0;
 
 #if IS_BT_RN
     memset(btStatusStr, 0, sizeof(btStatusStr));
@@ -2385,7 +2385,7 @@ COMMS_CRC_MODE getBtCrcMode(void)
 
 uint8_t isWaitingForArgs(void)
 {
-  return btWaitingForArgs;
+  return waitingForArgs;
 }
 
 void BtUart_processCmd(void) {
@@ -2398,7 +2398,7 @@ void BtUart_processCmd(void) {
    //uint8_t my_config_time[4];
    //uint8_t name_len;
    //uint8_t update_sdconfig = 0, calib_update = 0, calib_sensor = 0, calib_range = 0;
-   switch (btAction) {
+   switch (action) {
    case INQUIRY_COMMAND:
       inquiryBtRsp = 1;
       break;
