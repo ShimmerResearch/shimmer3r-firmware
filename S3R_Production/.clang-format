@@ -110,7 +110,7 @@ AllowShortBlocksOnASingleLine: false
 
 # AllowShortCaseLabelsOnASingleLine (bool)
 # If true, short case labels will be contracted to a single line.
-AllowShortCaseLabelsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: false
 
 # AllowShortFunctionsOnASingleLine (ShortFunctionStyle)
 # Dependent on the value, int f() { return 0; } can be put on a single line.
