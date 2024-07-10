@@ -2929,8 +2929,8 @@ void BtUart_processCmd(void)
   case SET_DERIVED_CHANNEL_BYTES:
     memcpy(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_0], &btArgs[0], 3);
     memcpy(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_3], &btArgs[3], 5);
-    InfoMem_write((void *) NV_DERIVED_CHANNELS_0, &storedConfig[NV_DERIVED_CHANNELS_0], 3);
-    InfoMem_write((void *) NV_DERIVED_CHANNELS_3, &storedConfig[NV_DERIVED_CHANNELS_3], 5);
+    InfoMem_write(NV_DERIVED_CHANNELS_0, &storedConfig->rawBytes[NV_DERIVED_CHANNELS_0], 3);
+    InfoMem_write(NV_DERIVED_CHANNELS_3, &storedConfig->rawBytes[NV_DERIVED_CHANNELS_3], 5);
     S4Ram_sdHeadTextSet(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_0],
         SDH_DERIVED_CHANNELS_0, 3);
     S4Ram_sdHeadTextSet(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_3],
