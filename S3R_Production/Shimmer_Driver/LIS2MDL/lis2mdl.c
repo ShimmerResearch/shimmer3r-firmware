@@ -65,7 +65,7 @@
 /* MKI109V3: Define communication interface */
 #define SENSOR_BUS hspi2
 /* MKI109V3: Vdd and Vddio power supply values */
-#define PWM_3V3 915
+#define PWM_3V3    915
 
 #elif defined(NUCLEO_F411RE)
 /* NUCLEO_F411RE: Define communication interface */
@@ -81,48 +81,48 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include <string.h>
-#include <stdio.h>
 #include "lis2mdl-pid/lis2mdl_reg.h"
+#include <stdio.h>
+#include <string.h>
 
 #if defined(NUCLEO_F411RE)
-#include "stm32f4xx_hal.h"
-#include "usart.h"
 #include "gpio.h"
 #include "i2c.h"
+#include "stm32f4xx_hal.h"
+#include "usart.h"
 
 #elif defined(STEVAL_MKI109V3)
-#include "stm32f4xx_hal.h"
-#include "usbd_cdc_if.h"
 #include "gpio.h"
 #include "spi.h"
+#include "stm32f4xx_hal.h"
 #include "tim.h"
+#include "usbd_cdc_if.h"
 
 #elif defined(SPC584B_DIS)
 #include "components.h"
 
 #elif defined(SHIMMER3R)
-#include "stm32u5xx_hal.h"
 #include "gpio.h"
 #include "i2c.h"
+#include "stm32u5xx_hal.h"
 #include "tim.h"
 #endif
 
 /* Private macro -------------------------------------------------------------*/
 
-#define    BOOT_TIME        20 //ms
-#define    WAIT_TIME_01     20 //ms
-#define    WAIT_TIME_02     60 //ms
+#define BOOT_TIME       20 //ms
+#define WAIT_TIME_01    20 //ms
+#define WAIT_TIME_02    60 //ms
 
-#define    SAMPLES          50 //number of samples
+#define SAMPLES         50 //number of samples
 
 /* Self test limits. */
-#define    MIN_ST_LIMIT_mG         15.0f
-#define    MAX_ST_LIMIT_mG        500.0f
+#define MIN_ST_LIMIT_mG 15.0f
+#define MAX_ST_LIMIT_mG 500.0f
 
 /* Self test results. */
-#define    ST_PASS     1U
-#define    ST_FAIL     0U
+#define ST_PASS         1U
+#define ST_FAIL         0U
 
 /* Private variables ---------------------------------------------------------*/
 static stmdev_ctx_t dev_ctx;
@@ -137,11 +137,9 @@ static stmdev_ctx_t dev_ctx;
  *   and are strictly related to the hardware platform used.
  *
  */
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
-                              uint16_t len);
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
-                             uint16_t len);
-static void tx_com( uint8_t *tx_buffer, uint16_t len );
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
+static void tx_com(uint8_t *tx_buffer, uint16_t len);
 static void platform_delay(uint32_t ms);
 #if !defined(SHIMMER3R)
 static void platform_init(void);
@@ -163,8 +161,8 @@ void lis2mdl_self_test(void)
 
 #if !defined(SHIMMER3R)
   lis2mdl_driver_init()
-  /* Initialize platform specific hardware */
-  platform_init();
+      /* Initialize platform specific hardware */
+      platform_init();
 #endif
   /* Wait sensor boot time */
   platform_delay(BOOT_TIME);
@@ -197,7 +195,8 @@ void lis2mdl_self_test(void)
     platform_delay(WAIT_TIME_01);
 
     /* Check if new value available */
-    do {
+    do
+    {
       lis2mdl_mag_data_ready_get(&dev_ctx, &drdy);
     } while (!drdy);
 
@@ -206,22 +205,26 @@ void lis2mdl_self_test(void)
     /* Read samples and get the average vale for each axis */
     memset(val_st_off, 0x00, 3 * sizeof(float));
 
-    for (i = 0; i < SAMPLES; i++) {
+    for (i = 0; i < SAMPLES; i++)
+    {
       /* Check if new value available */
-      do {
+      do
+      {
         lis2mdl_mag_data_ready_get(&dev_ctx, &drdy);
       } while (!drdy);
 
       /* Read data and accumulate the mg value */
       lis2mdl_magnetic_raw_get(&dev_ctx, data_raw);
 
-      for (j = 0; j < 3; j++) {
+      for (j = 0; j < 3; j++)
+      {
         val_st_off[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
       }
     }
 
     /* Calculate the mg average values */
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 3; i++)
+    {
       val_st_off[i] /= SAMPLES;
     }
 
@@ -232,36 +235,42 @@ void lis2mdl_self_test(void)
     /* Read samples and get the average vale for each axis */
     memset(val_st_on, 0x00, 3 * sizeof(float));
 
-    for (i = 0; i < SAMPLES; i++) {
+    for (i = 0; i < SAMPLES; i++)
+    {
       /* Check if new value available */
-      do {
+      do
+      {
         lis2mdl_mag_data_ready_get(&dev_ctx, &drdy);
       } while (!drdy);
 
       /* Read data and accumulate the mg value */
       lis2mdl_magnetic_raw_get(&dev_ctx, data_raw);
 
-      for (j = 0; j < 3; j++) {
+      for (j = 0; j < 3; j++)
+      {
         val_st_on[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
       }
     }
 
     /* Calculate the mg average values */
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 3; i++)
+    {
       val_st_on[i] /= SAMPLES;
     }
 
     st_result = ST_PASS;
 
     /* Calculate the mg values for self test */
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 3; i++)
+    {
       test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
     }
 
     /* Check self test limit */
-    for (i = 0; i < 3; i++) {
-      if (( MIN_ST_LIMIT_mG > test_val[i] ) ||
-          ( test_val[i] > MAX_ST_LIMIT_mG)) {
+    for (i = 0; i < 3; i++)
+    {
+      if ((MIN_ST_LIMIT_mG > test_val[i]) || (test_val[i] > MAX_ST_LIMIT_mG))
+      {
         st_result = ST_FAIL;
       }
     }
@@ -272,15 +281,17 @@ void lis2mdl_self_test(void)
     lis2mdl_operating_mode_set(&dev_ctx, LIS2MDL_POWER_DOWN);
   }
 
-  if (st_result == ST_PASS) {
-    sprintf((char *)tx_buffer, "LIS2MDL Self Test - PASS\r\n" );
+  if (st_result == ST_PASS)
+  {
+    sprintf((char *) tx_buffer, "LIS2MDL Self Test - PASS\r\n");
   }
 
-  else {
-    sprintf((char *)tx_buffer, "LIS2MDL Self Test - FAIL\r\n" );
+  else
+  {
+    sprintf((char *) tx_buffer, "LIS2MDL Self Test - FAIL\r\n");
   }
 
-  tx_com(tx_buffer, strlen((char const *)tx_buffer));
+  tx_com(tx_buffer, strlen((char const *) tx_buffer));
 }
 
 /*
@@ -293,30 +304,29 @@ void lis2mdl_self_test(void)
  * @param  len       number of consecutive register to write
  *
  */
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
-                              uint16_t len)
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len)
 {
 #if defined(NUCLEO_F411RE)
   /* Write multiple command */
   reg |= 0x80;
-  HAL_I2C_Mem_Write(handle, LIS2MDL_I2C_ADD, reg,
-                    I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
+  HAL_I2C_Mem_Write(handle, LIS2MDL_I2C_ADD, reg, I2C_MEMADD_SIZE_8BIT,
+      (uint8_t *) bufp, len, 1000);
 #elif defined(STEVAL_MKI109V3)
   /* Write multiple command */
   reg |= 0x40;
   HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_RESET);
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Transmit(handle, (uint8_t*)bufp, len, 1000);
+  HAL_SPI_Transmit(handle, (uint8_t *) bufp, len, 1000);
   HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_SET);
 #elif defined(SPC584B_DIS)
   /* Write multiple command */
   reg |= 0x80;
-  i2c_lld_write(handle,  LIS2MDL_I2C_ADD & 0xFE, reg, (uint8_t*)bufp, len);
+  i2c_lld_write(handle, LIS2MDL_I2C_ADD & 0xFE, reg, (uint8_t *) bufp, len);
 #elif defined(SHIMMER3R)
   /* Write multiple command */
   reg |= 0x80;
-  HAL_I2C_Mem_Write(handle, LIS2MDL_I2C_ADD, reg,
-                    I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
+  HAL_I2C_Mem_Write(handle, LIS2MDL_I2C_ADD, reg, I2C_MEMADD_SIZE_8BIT,
+      (uint8_t *) bufp, len, 1000);
 #endif
   return 0;
 }
@@ -331,14 +341,12 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
  * @param  len       number of consecutive register to read
  *
  */
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
-                             uint16_t len)
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len)
 {
 #if defined(NUCLEO_F411RE)
   /* Read multiple command */
   reg |= 0x80;
-  HAL_I2C_Mem_Read(handle, LIS2MDL_I2C_ADD, reg,
-                   I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
+  HAL_I2C_Mem_Read(handle, LIS2MDL_I2C_ADD, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
 #elif defined(STEVAL_MKI109V3)
   /* Read multiple command */
   reg |= 0xC0;
@@ -353,14 +361,12 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
 #elif defined(SHIMMER3R)
   /* Read multiple command */
   reg |= 0x80;
-  HAL_I2C_Mem_Read(handle, LIS2MDL_I2C_ADD, reg,
-                   I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
+  HAL_I2C_Mem_Read(handle, LIS2MDL_I2C_ADD, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
 #endif
   return 0;
 }
 
-static int32_t platform_read_raw_data_dma(void *handle, uint8_t reg, uint8_t *bufp,
-                             uint16_t len)
+static int32_t platform_read_raw_data_dma(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len)
 {
   HAL_StatusTypeDef ret;
   ret = HAL_I2C_Mem_Read_DMA(handle, LIS2MDL_I2C_ADD, reg, I2C_MEMADD_SIZE_8BIT, bufp, len);
@@ -383,7 +389,7 @@ static void tx_com(uint8_t *tx_buffer, uint16_t len)
 #elif defined(SPC584B_DIS)
   sd_lld_write(&SD2, tx_buffer, len);
 #elif defined(SHIMMER3R)
-  SHIMMER_PRINTF((char*) tx_buffer, len);
+  SHIMMER_PRINTF((char *) tx_buffer, len);
 #endif
 }
 
@@ -435,7 +441,8 @@ void lis2mdl_set_default_config(void)
   /* Restore default configuration */
   lis2mdl_reset_set(&dev_ctx, PROPERTY_ENABLE);
 
-  do {
+  do
+  {
     lis2mdl_reset_get(&dev_ctx, &rst);
   } while (rst);
 
@@ -461,7 +468,6 @@ void lis2mdl_config_mag(uint8_t rate, uint8_t range)
   lis2mdl_operating_mode_set(&dev_ctx, LIS2MDL_CONTINUOUS_MODE);
   /* Wait stable output */
   platform_delay(WAIT_TIME_01);
-
 }
 
 HAL_StatusTypeDef lis2mdl_mag_get(uint8_t *buf)
@@ -477,4 +483,3 @@ void lis2mdl_sleep(void)
 }
 
 #endif
-

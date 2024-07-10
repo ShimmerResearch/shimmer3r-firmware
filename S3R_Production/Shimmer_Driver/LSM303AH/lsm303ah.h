@@ -8,8 +8,8 @@
 #ifndef LSM303AH_LSM303AH_H_
 #define LSM303AH_LSM303AH_H_
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 uint8_t lsm303ah_self_test(void);
 

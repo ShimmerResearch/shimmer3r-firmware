@@ -48,42 +48,44 @@
 
 //#define MPU9250_ADDR       0x68  //7 bit address I2C address of the MPU9250 accel and gyro
 //#define MPU9250_MAG_ADDR   0x0C  //7 bit address I2C address of the MPU9250 mag
-#define MPU9250_ADDR       0x68<<1  //7 bit address I2C address of the MPU9250 accel and gyro
-#define MPU9250_MAG_ADDR   0x0C<<1  //7 bit address I2C address of the MPU9250 mag
+#define MPU9250_ADDR \
+  0x68 << 1 //7 bit address I2C address of the MPU9250 accel and gyro
+#define MPU9250_MAG_ADDR \
+  0x0C << 1 //7 bit address I2C address of the MPU9250 mag
 //registers
-#define MPU9250_SMPLRT_DIV 0x19
-#define MPU9250_GYRO_CONFIG        0x1B
-#define MPU9250_ACCEL_CONFIG       0x1C
-#define MPU9250_INT_PIN_CFG        0x37
-#define MPU9250_USER_CTRL          0x6A
-#define MPU9250_ACCEL_XOUT_H       0x3B
-#define MPU9250_ACCEL_XOUT_L       0x3C
-#define MPU9250_ACCEL_YOUT_H       0x3D
-#define MPU9250_ACCEL_YOUT_L       0x3E
-#define MPU9250_ACCEL_ZOUT_H       0x3F
-#define MPU9250_ACCEL_ZOUT_L       0x40
-#define MPU9250_GYRO_XOUT_H        0x43
-#define MPU9250_GYRO_XOUT_L        0x44
-#define MPU9250_GYRO_YOUT_H        0x45
-#define MPU9250_GYRO_YOUT_L        0x46
-#define MPU9250_GYRO_ZOUT_H        0x47
-#define MPU9250_GYRO_ZOUT_L        0x48
-#define MPU9250_PWR_MGMT_1         0x6B
-#define MPU9250_WHO_AM_I           0x75
+#define MPU9250_SMPLRT_DIV   0x19
+#define MPU9250_GYRO_CONFIG  0x1B
+#define MPU9250_ACCEL_CONFIG 0x1C
+#define MPU9250_INT_PIN_CFG  0x37
+#define MPU9250_USER_CTRL    0x6A
+#define MPU9250_ACCEL_XOUT_H 0x3B
+#define MPU9250_ACCEL_XOUT_L 0x3C
+#define MPU9250_ACCEL_YOUT_H 0x3D
+#define MPU9250_ACCEL_YOUT_L 0x3E
+#define MPU9250_ACCEL_ZOUT_H 0x3F
+#define MPU9250_ACCEL_ZOUT_L 0x40
+#define MPU9250_GYRO_XOUT_H  0x43
+#define MPU9250_GYRO_XOUT_L  0x44
+#define MPU9250_GYRO_YOUT_H  0x45
+#define MPU9250_GYRO_YOUT_L  0x46
+#define MPU9250_GYRO_ZOUT_H  0x47
+#define MPU9250_GYRO_ZOUT_L  0x48
+#define MPU9250_PWR_MGMT_1   0x6B
+#define MPU9250_WHO_AM_I     0x75
 
 //mag registers
-#define MPU9250_MAG_WIA            0x00
-#define MPU9250_MAG_XOUT_L         0x03
-#define MPU9250_MAG_XOUT_H         0x04
-#define MPU9250_MAG_YOUT_L         0x05
-#define MPU9250_MAG_YOUT_H         0x06
-#define MPU9250_MAG_ZOUT_L         0x07
-#define MPU9250_MAG_ZOUT_H         0x08
-#define MPU9250_MAG_ST2            0x09
-#define MPU9250_MAG_CNTL           0x0A
-#define MPU9250_MAG_ASAX           0x10
-#define MPU9250_MAG_ASAY           0x11
-#define MPU9250_MAG_ASAZ           0x12
+#define MPU9250_MAG_WIA      0x00
+#define MPU9250_MAG_XOUT_L   0x03
+#define MPU9250_MAG_XOUT_H   0x04
+#define MPU9250_MAG_YOUT_L   0x05
+#define MPU9250_MAG_YOUT_H   0x06
+#define MPU9250_MAG_ZOUT_L   0x07
+#define MPU9250_MAG_ZOUT_H   0x08
+#define MPU9250_MAG_ST2      0x09
+#define MPU9250_MAG_CNTL     0x0A
+#define MPU9250_MAG_ASAX     0x10
+#define MPU9250_MAG_ASAY     0x11
+#define MPU9250_MAG_ASAZ     0x12
 
 extern uint8_t MPU9250_init(I2C_HandleTypeDef *hi2c);
 
@@ -138,7 +140,7 @@ uint8_t MPU9250_getMagId(void);
 //Set the mag to single measurement mode
 //can take between 7.3ms to 9ms before data is ready
 //void MPU9250_magStartSingleMeasurement(void);
-HAL_StatusTypeDef MPU9250_magStartSingleMeasurement(void) ;
+HAL_StatusTypeDef MPU9250_magStartSingleMeasurement(void);
 
 HAL_StatusTypeDef MPU9250_magStart(void);
 
@@ -152,7 +154,7 @@ HAL_StatusTypeDef MPU9250_magReadStart(void);
 HAL_StatusTypeDef MPU9250_magReadDone(uint8_t *rx_buf);
 HAL_StatusTypeDef MPU9250_magStatusStart(void);
 HAL_StatusTypeDef MPU9250_magStatusDone(void);
-   
+
 
 //read the x, y and z mag sensitivity adjustment values
 void MPU9250_getMagSensitivityAdj(uint8_t *buf);

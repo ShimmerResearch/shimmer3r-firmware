@@ -66,7 +66,7 @@
 /* MKI109V3: Define communication interface */
 #define SENSOR_BUS hspi2
 /* MKI109V3: Vdd and Vddio power supply values */
-#define PWM_3V3 915
+#define PWM_3V3    915
 
 #elif defined(NUCLEO_F411RE)
 /* NUCLEO_F411RE: Define communication interface */
@@ -79,56 +79,57 @@
 #elif defined(SHIMMER3R)
 #define SENSOR_BUS hspi2
 
-#define CS_PORT CS_LIS2DW12_GPIO_Port
-#define CS_PIN CS_LIS2DW12_Pin
+#define CS_PORT    CS_LIS2DW12_GPIO_Port
+#define CS_PIN     CS_LIS2DW12_Pin
 
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include <string.h>
-#include <stdio.h>
 #include "lis2dw12-pid/lis2dw12_reg.h"
+#include <stdio.h>
+#include <string.h>
 
 #if defined(NUCLEO_F411RE)
-#include "stm32f4xx_hal.h"
-#include "usart.h"
 #include "gpio.h"
 #include "i2c.h"
+#include "stm32f4xx_hal.h"
+#include "usart.h"
 
 #elif defined(STEVAL_MKI109V3)
-#include "stm32f4xx_hal.h"
-#include "usbd_cdc_if.h"
 #include "gpio.h"
 #include "spi.h"
+#include "stm32f4xx_hal.h"
 #include "tim.h"
+#include "usbd_cdc_if.h"
 
 #elif defined(SPC584B_DIS)
 #include "components.h"
 
 #elif defined(SHIMMER3R)
-#include "stm32u5xx_hal.h"
 #include "gpio.h"
 #include "spi.h"
+#include "stm32u5xx_hal.h"
 
 #endif
 
-typedef union {
+typedef union
+{
   int16_t i16bit[3];
 } axis3bit16_t;
 
 /* Private macro -------------------------------------------------------------*/
-#define    BOOT_TIME            20 //ms
+#define BOOT_TIME         20 //ms
 
 /* Self-test recommended samples */
-#define SELF_TEST_SAMPLES  5
+#define SELF_TEST_SAMPLES 5
 
 /* Self-test positive difference */
-#define ST_MIN_POS      70.0f
-#define ST_MAX_POS      1500.0f
+#define ST_MIN_POS        70.0f
+#define ST_MAX_POS        1500.0f
 
 /* Self test results. */
-#define    ST_PASS     1U
-#define    ST_FAIL     0U
+#define ST_PASS           1U
+#define ST_FAIL           0U
 
 /* Private variables ---------------------------------------------------------*/
 static axis3bit16_t data_raw_acceleration[SELF_TEST_SAMPLES];
@@ -147,15 +148,13 @@ static stmdev_ctx_t dev_ctx;
  *   and are strictly related to the hardware platform used.
  *
  */
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
-                              uint16_t len);
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
-                             uint16_t len);
-static void tx_com( uint8_t *tx_buffer, uint16_t len );
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
+static void tx_com(uint8_t *tx_buffer, uint16_t len);
 static void platform_delay(uint32_t ms);
 #if defined(SHIMMER3R)
-static int32_t platform_read_raw_data_dma(void *handle, uint8_t *txBufp,
-    uint8_t *rxBufp, uint8_t len);
+static int32_t
+platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len);
 #else
 static void platform_init(void);
 #endif
@@ -176,7 +175,8 @@ static int flush_samples(stmdev_ctx_t *dev_ctx)
    */
   lis2dw12_status_reg_get(dev_ctx, &reg.status);
 
-  if (reg.status.drdy) {
+  if (reg.status.drdy)
+  {
     lis2dw12_acceleration_raw_get(dev_ctx, dummy.i16bit);
     samples++;
   }
@@ -201,7 +201,8 @@ static uint8_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
   /* Restore default configuration */
   lis2dw12_reset_set(dev_ctx, PROPERTY_ENABLE);
 
-  do {
+  do
+  {
     lis2dw12_reset_get(dev_ctx, &rst);
   } while (rst);
 
@@ -213,26 +214,30 @@ static uint8_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
   /* Flush old samples */
   flush_samples(dev_ctx);
 
-  do {
+  do
+  {
     lis2dw12_status_reg_get(dev_ctx, &reg.status);
 
-    if (reg.status.drdy) {
+    if (reg.status.drdy)
+    {
       /* Read accelerometer data */
       memset(data_raw_acceleration[i].i16bit, 0x00, 3 * sizeof(int16_t));
-      lis2dw12_acceleration_raw_get(dev_ctx,
-                                    data_raw_acceleration[i].i16bit);
+      lis2dw12_acceleration_raw_get(dev_ctx, data_raw_acceleration[i].i16bit);
 
-      for (axis = 0; axis < 3; axis++) {
-        acceleration_mg[i][axis] =
-          lis2dw12_from_fs4_to_mg(data_raw_acceleration[i].i16bit[axis]);
+      for (axis = 0; axis < 3; axis++)
+      {
+        acceleration_mg[i][axis]
+            = lis2dw12_from_fs4_to_mg(data_raw_acceleration[i].i16bit[axis]);
       }
 
       i++;
     }
   } while (i < SELF_TEST_SAMPLES);
 
-  for (k = 0; k < 3; k++) {
-    for (j = 0; j < SELF_TEST_SAMPLES; j++) {
+  for (k = 0; k < 3; k++)
+  {
+    for (j = 0; j < SELF_TEST_SAMPLES; j++)
+    {
       media[k] += acceleration_mg[j][k];
     }
 
@@ -246,25 +251,28 @@ static uint8_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
   /* Flush old samples */
   flush_samples(dev_ctx);
 
-  do {
+  do
+  {
     lis2dw12_status_reg_get(dev_ctx, &reg.status);
 
-    if (reg.status.drdy) {
+    if (reg.status.drdy)
+    {
       /* Read accelerometer data */
       memset(data_raw_acceleration[i].i16bit, 0x00, 3 * sizeof(int16_t));
-      lis2dw12_acceleration_raw_get(dev_ctx,
-                                    data_raw_acceleration[i].i16bit);
+      lis2dw12_acceleration_raw_get(dev_ctx, data_raw_acceleration[i].i16bit);
 
       for (axis = 0; axis < 3; axis++)
-        acceleration_mg[i][axis] =
-          lis2dw12_from_fs4_to_mg(data_raw_acceleration[i].i16bit[axis]);
+        acceleration_mg[i][axis]
+            = lis2dw12_from_fs4_to_mg(data_raw_acceleration[i].i16bit[axis]);
 
       i++;
     }
   } while (i < SELF_TEST_SAMPLES);
 
-  for (k = 0; k < 3; k++) {
-    for (j = 0; j < SELF_TEST_SAMPLES; j++) {
+  for (k = 0; k < 3; k++)
+  {
+    for (j = 0; j < SELF_TEST_SAMPLES; j++)
+    {
       mediast[k] += acceleration_mg[j][k];
     }
 
@@ -272,16 +280,18 @@ static uint8_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
   }
 
   /* Check for all axis self test value range */
-  for (k = 0; k < 3; k++) {
-    if ((ABSF(mediast[k] - media[k]) >= ST_MIN_POS) &&
-        (ABSF(mediast[k] - media[k]) <= ST_MAX_POS)) {
+  for (k = 0; k < 3; k++)
+  {
+    if ((ABSF(mediast[k] - media[k]) >= ST_MIN_POS)
+        && (ABSF(mediast[k] - media[k]) <= ST_MAX_POS))
+    {
       match[k] = 1;
     }
 
-//    sprintf((char *)tx_buffer, "%d: |%f| <= |%f| <= |%f| %s\r\n", k,
-//            ST_MIN_POS, ABSF(mediast[k] - media[k]), ST_MAX_POS,
-//            match[k] == 1 ? "PASSED" : "FAILED");
-//    tx_com(tx_buffer, strlen((char const *)tx_buffer));
+    //sprintf((char *)tx_buffer, "%d: |%f| <= |%f| <= |%f| %s\r\n", k,
+    //        ST_MIN_POS, ABSF(mediast[k] - media[k]), ST_MAX_POS,
+    //        match[k] == 1 ? "PASSED" : "FAILED");
+    //tx_com(tx_buffer, strlen((char const *)tx_buffer));
 
     if (match[k] == 0)
     {
@@ -319,21 +329,21 @@ void lis2dw12_self_test(void)
   if (st_result == ST_PASS)
   {
     /* Start self test */
-  //  while (1) {
+    //while (1) {
     st_result = test_self_test_lis2dw12(&dev_ctx);
-  //  }
+    //}
   }
 
   if (st_result == ST_PASS)
   {
-    sprintf((char*) tx_buffer, "LIS2DW12 Self Test - PASS\r\n");
+    sprintf((char *) tx_buffer, "LIS2DW12 Self Test - PASS\r\n");
   }
   else
   {
-    sprintf((char*) tx_buffer, "LIS2DW12 Self Test - FAIL\r\n");
+    sprintf((char *) tx_buffer, "LIS2DW12 Self Test - FAIL\r\n");
   }
 
-  tx_com(tx_buffer, strlen((char const*) tx_buffer));
+  tx_com(tx_buffer, strlen((char const *) tx_buffer));
 }
 
 /*
@@ -346,23 +356,22 @@ void lis2dw12_self_test(void)
  * @param  len       number of consecutive register to write
  *
  */
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
-                              uint16_t len)
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len)
 {
 #if defined(NUCLEO_F411RE)
-  HAL_I2C_Mem_Write(handle, LIS2DW12_I2C_ADD_H, reg,
-                    I2C_MEMADD_SIZE_8BIT, (uint8_t*) bufp, len, 1000);
+  HAL_I2C_Mem_Write(handle, LIS2DW12_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT,
+      (uint8_t *) bufp, len, 1000);
 #elif defined(STEVAL_MKI109V3)
   HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_RESET);
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Transmit(handle, (uint8_t*) bufp, len, 1000);
+  HAL_SPI_Transmit(handle, (uint8_t *) bufp, len, 1000);
   HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_SET);
 #elif defined(SPC584B_DIS)
-  i2c_lld_write(handle,  LIS2DW12_I2C_ADD_H & 0xFE, reg, (uint8_t*) bufp, len);
+  i2c_lld_write(handle, LIS2DW12_I2C_ADD_H & 0xFE, reg, (uint8_t *) bufp, len);
 #elif defined(SHIMMER3R)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Transmit(handle, (uint8_t*) bufp, len, 1000);
+  HAL_SPI_Transmit(handle, (uint8_t *) bufp, len, 1000);
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 #endif
   return 0;
@@ -378,12 +387,10 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
  * @param  len       number of consecutive register to read
  *
  */
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
-                             uint16_t len)
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len)
 {
 #if defined(NUCLEO_F411RE)
-  HAL_I2C_Mem_Read(handle, LIS2DW12_I2C_ADD_H, reg,
-                   I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
+  HAL_I2C_Mem_Read(handle, LIS2DW12_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
 #elif defined(STEVAL_MKI109V3)
   reg |= 0x80;
   HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_RESET);
@@ -402,8 +409,8 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
   return 0;
 }
 
-static int32_t platform_read_raw_data_dma(void *handle, uint8_t *txBufp,
-    uint8_t *rxBufp, uint8_t len)
+static int32_t
+platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len)
 {
   HAL_StatusTypeDef ret;
   lis2dw12_SelectDevice();
@@ -427,7 +434,7 @@ static void tx_com(uint8_t *tx_buffer, uint16_t len)
 #elif defined(SPC584B_DIS)
   sd_lld_write(&SD2, tx_buffer, len);
 #elif defined(SHIMMER3R)
-  SHIMMER_PRINTF((char*) tx_buffer, len);
+  SHIMMER_PRINTF((char *) tx_buffer, len);
 #endif
 }
 

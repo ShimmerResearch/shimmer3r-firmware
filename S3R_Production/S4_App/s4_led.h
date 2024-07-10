@@ -39,8 +39,8 @@
  * @author Weibo Pan
  * @date May, 2016
  */
- 
-#include<stdint.h>
+
+#include <stdint.h>
 
 #ifndef S4_LED_H
 #define S4_LED_H
@@ -50,4 +50,4 @@
 void S4Led_Blink(void);
 void led_test(void);
 
-#endif // S4_LED_H
+#endif //S4_LED_H

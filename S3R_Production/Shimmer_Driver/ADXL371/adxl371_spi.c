@@ -7,14 +7,14 @@
 
 #define SENSOR_BUS hspi1
 
-#define CS_PORT CS_HIGH_G_GPIO_Port
-#define CS_PIN CS_HIGH_G_Pin
+#define CS_PORT    CS_HIGH_G_GPIO_Port
+#define CS_PIN     CS_HIGH_G_Pin
 
 #include "adxl371.h"
 
-#include "stm32u5xx.h"
 #include "gpio.h"
 #include "spi.h"
+#include "stm32u5xx.h"
 #include <stdio.h>
 
 static dev_ctx_t dev_ctx;
@@ -29,12 +29,11 @@ static dev_ctx_t dev_ctx;
  * @param  len       number of consecutive register to write
  *
  */
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
-                              uint16_t len)
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len)
 {
   adxl371_SelectDevice();
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Transmit(handle, (uint8_t*) bufp, len, 1000);
+  HAL_SPI_Transmit(handle, (uint8_t *) bufp, len, 1000);
   adxl371_UnselectDevice();
   return 0;
 }
@@ -49,8 +48,7 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
  * @param  len       number of consecutive register to read
  *
  */
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
-                             uint16_t len)
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len)
 {
   reg = (reg << 1) | 0x01;
   adxl371_SelectDevice();
@@ -122,5 +120,5 @@ uint8_t adxl371_self_test(void)
 void adxl371_restore_default_config(void)
 {
   //TODO
-//  adxl371_reset(dev);
+  //adxl371_reset(dev);
 }

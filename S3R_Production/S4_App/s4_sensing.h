@@ -39,8 +39,8 @@
  * @author Weibo Pan
  * @date May, 2016
  */
- 
-#include<stdint.h>
+
+#include <stdint.h>
 
 #ifndef S4_SENSING_H
 #define S4_SENSING_H
@@ -49,74 +49,78 @@
 #include "s4__cfg.h"
 
 
-//uint8_t pDataTs, pDataTemp, pDataPres, pDataLsm303dlhcAccel, pDataLsm303dlhcMag, pDataMpu9250Gyro, pDataMpu9250Accel,
-//        pDataMpu9250Mag, pDataAnalogAccel, pDataStc3100Batt, pDataExg1, pDataExg2, pDataGSR, pDataStrain,
-//        pDataExtADC_A6, pDataExtADC_A7, pDataExtADC_A15, pDataIntADC_A12, pDataIntADC_A13, pDataIntADC_A14,
+//uint8_t pDataTs, pDataTemp, pDataPres, pDataLsm303dlhcAccel,
+//pDataLsm303dlhcMag, pDataMpu9250Gyro, pDataMpu9250Accel,
+//        pDataMpu9250Mag, pDataAnalogAccel, pDataStc3100Batt, pDataExg1,
+//        pDataExg2, pDataGSR, pDataStrain, pDataExtADC_A6, pDataExtADC_A7,
+//        pDataExtADC_A15, pDataIntADC_A12, pDataIntADC_A13, pDataIntADC_A14,
 //        pDataBatteryAnalog;
-        
-        
-typedef struct {//data ptr (offset)
-   uint8_t ts;
-   uint8_t temperature;
-   uint8_t pressure;
-   uint8_t accel2;  // "WR Accel"
-   uint8_t mag1;    // "Mag"
-   uint8_t gyro;
-   uint8_t accel3;  // "Alt Accel"
-   uint8_t mag2;    // "Alt Mag"
-   uint8_t accel1;  // "LN Accel"
+
+
+typedef struct
+{ //data ptr (offset)
+  uint8_t ts;
+  uint8_t temperature;
+  uint8_t pressure;
+  uint8_t accel2; //"WR Accel"
+  uint8_t mag1;   //"Mag"
+  uint8_t gyro;
+  uint8_t accel3; //"Alt Accel"
+  uint8_t mag2;   //"Alt Mag"
+  uint8_t accel1; //"LN Accel"
 #if defined(SHIMMER4_SDK)
-   uint8_t stc3100Batt;
+  uint8_t stc3100Batt;
 #endif
-   uint8_t exg1;
-   uint8_t exg2;
-   uint8_t gsr;
-   uint8_t strainGauge;
-   uint8_t ppg;
-   uint8_t extADC0;
-   uint8_t extADC1;
-   uint8_t extADC2;
-   uint8_t intADC0;
+  uint8_t exg1;
+  uint8_t exg2;
+  uint8_t gsr;
+  uint8_t strainGauge;
+  uint8_t ppg;
+  uint8_t extADC0;
+  uint8_t extADC1;
+  uint8_t extADC2;
+  uint8_t intADC0;
 #if defined(SHIMMER4_SDK)
-   uint8_t intADC4;
+  uint8_t intADC4;
 #endif
-   uint8_t intADC1;
-   uint8_t intADC2;
-   uint8_t intADC3;
-   uint8_t batteryAnalog;
+  uint8_t intADC1;
+  uint8_t intADC2;
+  uint8_t intADC3;
+  uint8_t batteryAnalog;
 } DATAPTRTypeDef;
 
-typedef struct {//sensor data 
-   //uint8_t     en;
-   //uint8_t     configuring;
-   //uint8_t     i2cSensor;
-   uint8_t     isSampling;
-   uint8_t     isSdOperating;
-   uint8_t     isFileCreated;
-   uint8_t     inSdWr;   
-   uint16_t    inSdWrCnt;   
-   float       freq;
-   uint16_t    clkInterval4096;
-   uint16_t    clkInterval16k;
-   uint8_t     status;
-   uint8_t     cc[MAX_NUM_CHANNELS];//channelContents
-   uint8_t     ccLen;//channelContentsLength
-   uint8_t     nbrAdcChans;
-   uint8_t     nbrDigiChans;
-   uint8_t     dataLen;
-//   uint8_t     sdlogEnabled;
-//   uint8_t     btStreamEnabled;
-   uint64_t    startTs;
-   uint64_t    latestTs;
-   uint8_t     dataBuf[100];
-   //STATTypeDef stat;
-   DATAPTRTypeDef ptr;
+typedef struct
+{ //sensor data
+  //uint8_t     en;
+  //uint8_t     configuring;
+  //uint8_t     i2cSensor;
+  uint8_t isSampling;
+  uint8_t isSdOperating;
+  uint8_t isFileCreated;
+  uint8_t inSdWr;
+  uint16_t inSdWrCnt;
+  float freq;
+  uint16_t clkInterval4096;
+  uint16_t clkInterval16k;
+  uint8_t status;
+  uint8_t cc[MAX_NUM_CHANNELS]; //channelContents
+  uint8_t ccLen;                //channelContentsLength
+  uint8_t nbrAdcChans;
+  uint8_t nbrDigiChans;
+  uint8_t dataLen;
+  //uint8_t     sdlogEnabled;
+  //uint8_t     btStreamEnabled;
+  uint64_t startTs;
+  uint64_t latestTs;
+  uint8_t dataBuf[100];
+  //STATTypeDef stat;
+  DATAPTRTypeDef ptr;
 } SENSINGTypeDef;
 
 extern SENSINGTypeDef sensing;
 
 void S4Sens_init(void);
-SENSINGTypeDef* S4Sens_getSensing(void);
+SENSINGTypeDef *S4Sens_getSensing(void);
 void S4Sens_configureChannels(void);
 uint8_t S4Sens_checkStartSensorConditions(void);
 uint8_t S4Sens_checkStartLoggingConditions(void);
@@ -148,4 +152,4 @@ void S4Sens_stepDone(void);
 
 void saveData(void);
 
-#endif // S4_SENSING_H
+#endif //S4_SENSING_H

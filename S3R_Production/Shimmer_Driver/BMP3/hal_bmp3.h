@@ -8,8 +8,8 @@
 #ifndef BMP3_BMP3_SENSORAPI_HAL_BMP3_H_
 #define BMP3_BMP3_SENSORAPI_HAL_BMP3_H_
 
-#include <stdint.h>
 #include "stm32u5xx.h"
+#include <stdint.h>
 
 /*!
  *  @brief Prints the execution status of the APIs.
@@ -28,6 +28,6 @@ HAL_StatusTypeDef bmp3_pressure_temperature_get(uint8_t *buf);
 int8_t bmp390_self_test(void);
 int8_t bmp390_restore_default_config(void);
 void bmp390_config_set(uint8_t precision);
-uint8_t* get_bmp3_calib_data_bytes(void);
+uint8_t *get_bmp3_calib_data_bytes(void);
 
 #endif /* BMP3_BMP3_SENSORAPI_HAL_BMP3_H_ */
