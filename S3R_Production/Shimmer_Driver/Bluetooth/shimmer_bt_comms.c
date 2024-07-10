@@ -2614,8 +2614,7 @@ void BtUart_processCmd(void)
     }
     break;
   case SET_MPU9150_GYRO_RANGE_COMMAND:
-    storedConfig->gyroRange
-        = (args[0] <= MPU9250_GYRO_2000DPS) ? args[0] : MPU9250_GYRO_500DPS;
+    storedConfig->gyroRange = (args[0] <= MPU9250_GYRO_2000DPS) ? args[0] : MPU9250_GYRO_500DPS;
     InfoMem_write(NV_CONFIG_SETUP_BYTE2, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2], 1);
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE2, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2]);
@@ -2798,8 +2797,7 @@ void BtUart_processCmd(void)
     {
       if (args[0])
       {
-        S4Ram_storedConfigSet(
-            &args[3], NV_EXG_ADS1292R_2_CONFIG1 + args[1], args[2]);
+        S4Ram_storedConfigSet(&args[3], NV_EXG_ADS1292R_2_CONFIG1 + args[1], args[2]);
         InfoMem_write(NV_EXG_ADS1292R_2_CONFIG1 + args[1],
             &storedConfig->rawBytes[NV_EXG_ADS1292R_2_CONFIG1 + args[1]], args[2]);
         S4Ram_sdHeadTextSet(&storedConfig->rawBytes[NV_EXG_ADS1292R_2_CONFIG1],
@@ -2807,17 +2805,16 @@ void BtUart_processCmd(void)
       }
       else
       {
-        S4Ram_storedConfigSet(
-            &args[3], NV_EXG_ADS1292R_1_CONFIG1 + args[1], args[2]);
+        S4Ram_storedConfigSet(&args[3], NV_EXG_ADS1292R_1_CONFIG1 + args[1], args[2]);
 
         if ((getDaughtCardId()->exp_brd_id == EXP_BRD_EXG_UNIFIED)
             && (getDaughtCardId()->exp_brd_rev >= 4))
         {
-            /* Check if unit is SR47-4 or greater.
-             * If so, amend configuration byte 2 of ADS chip 1 to have bit 3 set to 1.
-             * This ensures clock lines on ADS chip are correct
-             */
-            storedConfig->exgADS1292rRegsCh1.config2 |= 8;
+          /* Check if unit is SR47-4 or greater.
+           * If so, amend configuration byte 2 of ADS chip 1 to have bit 3 set
+           * to 1. This ensures clock lines on ADS chip are correct
+           */
+          storedConfig->exgADS1292rRegsCh1.config2 |= 8;
         }
 
         InfoMem_write(NV_EXG_ADS1292R_1_CONFIG1 + args[1],
@@ -2880,15 +2877,13 @@ void BtUart_processCmd(void)
   case GET_DAUGHTER_CARD_ID_COMMAND:
     dcMemLength = args[0];
     dcMemOffset = args[1];
-    if ((dcMemLength <= 16) && (dcMemOffset <= 15)
-        && (dcMemLength + dcMemOffset <= 16))
+    if ((dcMemLength <= 16) && (dcMemOffset <= 15) && (dcMemLength + dcMemOffset <= 16))
       dcIdResponse = 1;
     break;
   case SET_DAUGHTER_CARD_ID_COMMAND:
     dcMemLength = args[0];
     dcMemOffset = args[1];
-    if ((dcMemLength <= 16) && (dcMemOffset <= 15)
-        && (dcMemLength + dcMemOffset <= 16))
+    if ((dcMemLength <= 16) && (dcMemOffset <= 15) && (dcMemLength + dcMemOffset <= 16))
     {
       eepromWrite(dcMemOffset, dcMemLength, &args[2]);
     }
@@ -2896,15 +2891,13 @@ void BtUart_processCmd(void)
   case GET_DAUGHTER_CARD_MEM_COMMAND:
     dcMemLength = args[0];
     dcMemOffset = args[1] + (args[2] << 8);
-    if ((dcMemLength <= 128) && (dcMemOffset <= 2031)
-        && (dcMemLength + dcMemOffset <= 2032))
+    if ((dcMemLength <= 128) && (dcMemOffset <= 2031) && (dcMemLength + dcMemOffset <= 2032))
       dcMemResponse = 1;
     break;
   case SET_DAUGHTER_CARD_MEM_COMMAND:
     dcMemLength = args[0];
     dcMemOffset = args[1] + (args[2] << 8);
-    if ((dcMemLength <= 128) && (dcMemOffset <= 2031)
-        && (dcMemLength + dcMemOffset <= 2032))
+    if ((dcMemLength <= 128) && (dcMemOffset <= 2031) && (dcMemLength + dcMemOffset <= 2032))
     {
       eepromWrite(dcMemOffset + 16U, (uint16_t) dcMemLength, &args[3]);
     }
@@ -2968,8 +2961,7 @@ void BtUart_processCmd(void)
       }
 
       //Disable TXCO
-      if (infomemOffset <= NV_SD_TRIAL_CONFIG1
-          && NV_SD_TRIAL_CONFIG1 <= infomemOffset + infomemLength)
+      if (infomemOffset <= NV_SD_TRIAL_CONFIG1 && NV_SD_TRIAL_CONFIG1 <= infomemOffset + infomemLength)
       {
         uint8_t tcxoInfomemOffset = NV_SD_TRIAL_CONFIG1 - infomemOffset;
         args[3 + tcxoInfomemOffset] &= ~SDH_TCXO;
