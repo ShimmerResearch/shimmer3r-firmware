@@ -3459,13 +3459,7 @@ void BtUart_sendRsp(void)
     {
       *(resPacket + packet_length++) = DAUGHTER_CARD_ID_RESPONSE;
       *(resPacket + packet_length++) = dcMemLength;
-#if IS_CONNECTED_EEPROM
       memcpy(resPacket + packet_length, getDaughtCardId() + dcMemOffset, dcMemLength);
-#else
-      resPacket[packet_length + 0] = EXP_BRD_ID_MAJOR;
-      resPacket[packet_length + 1] = EXP_BRD_ID_MINOR;
-      resPacket[packet_length + 2] = EXP_BRD_ID_INTERNAL;
-#endif
       packet_length += dcMemLength;
       dcIdResponse = 0;
     }
@@ -3473,7 +3467,6 @@ void BtUart_sendRsp(void)
     {
       *(resPacket + packet_length++) = DAUGHTER_CARD_MEM_RESPONSE;
       *(resPacket + packet_length++) = dcMemLength;
-#if IS_CONNECTED_EEPROM
       if (!stat.isSensing)
       {
         eepromRead(dcMemOffset + 16U, dcMemLength, resPacket + packet_length);
@@ -3482,7 +3475,6 @@ void BtUart_sendRsp(void)
       {
         memset(resPacket + packet_length, 0xff, dcMemLength);
       }
-#endif
       packet_length += dcMemLength;
       dcMemResponse = 0;
     }

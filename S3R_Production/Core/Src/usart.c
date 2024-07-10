@@ -2030,13 +2030,7 @@ void DockUart_sendRsp()
     *(uartRespBuf + uart_resp_len++) = UART_PROP_CARD_ID;
     if ((uartDcMemLength + uart_resp_len) < UART_RSP_PACKET_SIZE)
     {
-#if IS_CONNECTED_EEPROM
-      CAT24C16_read(uartDcMemOffset, uartRespBuf + uart_resp_len, uartDcMemLength);
-#else
-      uartRespBuf[uart_resp_len + 0] = EXP_BRD_ID_MAJOR;
-      uartRespBuf[uart_resp_len + 1] = EXP_BRD_ID_MINOR;
-      uartRespBuf[uart_resp_len + 2] = EXP_BRD_ID_INTERNAL;
-#endif
+      eepromRead(uartDcMemOffset, (uint16_t) uartDcMemLength, uartRespBuf + uart_resp_len);
     }
     uart_resp_len += uartDcMemLength;
   }
@@ -2050,9 +2044,7 @@ void DockUart_sendRsp()
     *(uartRespBuf + uart_resp_len++) = UART_PROP_CARD_MEM;
     if ((uartDcMemLength + uart_resp_len) < UART_RSP_PACKET_SIZE)
     {
-#if IS_CONNECTED_EEPROM
-      CAT24C16_read(uartDcMemOffset + 16, uartRespBuf + uart_resp_len, uartDcMemLength);
-#endif
+      eepromRead(uartDcMemOffset + 16, (uint16_t) uartDcMemLength, uartRespBuf + uart_resp_len);
     }
     uart_resp_len += uartDcMemLength;
   }
