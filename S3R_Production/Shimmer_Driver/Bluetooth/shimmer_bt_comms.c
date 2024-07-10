@@ -12,12 +12,12 @@
 #if defined(SHIMMER3)
 #include "msp430.h"
 
-#include "RN4X.h"
-#include "../5xx_HAL/hal_board.h"
-#include "../5xx_HAL/hal_RTC.h"
-#include "hal_CRC.h"
-#include "../5xx_HAL/hal_CRC.h"
 #include "../../shimmer_btsd.h"
+#include "../5xx_HAL/hal_CRC.h"
+#include "../5xx_HAL/hal_RTC.h"
+#include "../5xx_HAL/hal_board.h"
+#include "RN4X.h"
+#include "hal_CRC.h"
 #include "shimmer_btsd.h"
 #if BT_DMA_USED_FOR_RX
 //#include "../5xx_HAL/hal_DMA.h"
@@ -39,8 +39,7 @@ char *commandBufPtr;
 uint8_t *expectedResponsePtr;
 #endif
 #if BT_DMA_USED_FOR_RX
-uint8_t args[MAX_COMMAND_ARG_SIZE], waitingForArgs, waitingForArgsLength,
-    argsSize, action;
+uint8_t args[MAX_COMMAND_ARG_SIZE], waitingForArgs, waitingForArgsLength, argsSize, action;
 
 #if defined(SHIMMER3)
 volatile uint8_t btStatusStrIndex;
