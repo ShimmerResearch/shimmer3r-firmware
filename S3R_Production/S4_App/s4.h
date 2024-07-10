@@ -583,7 +583,9 @@ typedef volatile struct STATTypeDef_t
   uint8_t battStat;
   uint32_t battStatLed;
   uint8_t battVal[3];
+#if defined(SHIMMER4_SDK)
   uint8_t battDigital[10];
+#endif
   uint8_t enableSdlog;
   uint8_t sdlogReady;
   uint8_t enableBtstream;

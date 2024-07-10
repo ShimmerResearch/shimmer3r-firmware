@@ -18,7 +18,7 @@ uint8_t SD_test_alternative(void);
 void SD_setShimmerName(void);
 void SD_setExpIdName(void);
 void SD_setCfgTime(void);
-void SD_setFileName(void);
+void SetName(void);
 void SD_infomem2Names(void);
 uint8_t SD_setBasedir(void);
 uint8_t SD_makeBasedir(void);

@@ -230,7 +230,8 @@ void bmp390_config_set(uint8_t precision)
   }
 }
 
-uint8_t *get_bmp3_calib_data_bytes(void)
+uint8_t *get_bmp_calib_data_bytes(void)
 {
   return &calib_bytes[0];
 }
+

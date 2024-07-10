@@ -56,8 +56,6 @@ void SD_init(void)
 
   //*configTimeText = '\0';
   //*fileName = '\0';
-  SD_setCfgTime();
-  SD_setFileName();
 }
 
 #define TEST_TEXT_LEN 40
@@ -181,7 +179,16 @@ void SD_setExpIdName(void)
 
 void SD_setCfgTime(void)
 {
-  uint32_t cfg_time_temp = S4Ram_getStoredConfig()->configTime;
+  uint32_t cfg_time_temp = 0;
+  uint8_t i;
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+
+  // MSB order
+  for (i = 0; i < 4; i++)
+  {
+      cfg_time_temp <<= 8;
+      cfg_time_temp |= configBytes->rawBytes[NV_SD_CONFIG_TIME + i];
+  }
   if (cfg_time_temp)
   {
     S4Calc_itoaNo0((uint64_t) cfg_time_temp, configTimeText, UINT32_LEN);
@@ -192,10 +199,15 @@ void SD_setCfgTime(void)
   }
 }
 
-void SD_setFileName(void)
+void SetName(void)
 {
-  if (strlen((char *) fileName) == 0)
-    strcpy((char *) fileName, "no_file   ");
+    if (strlen((char*) configTimeText) == 0)
+    {
+        strcpy((char*) configTimeText, "0");
+    }
+
+    if (strlen((char*) fileName) == 0)
+        strcpy((char*) fileName, "no_file   ");
 }
 
 void SD_infomem2Names(void)
@@ -1256,8 +1268,7 @@ void ParseConfig(void)
     //memcpy((uint8_t*) (storedConfig + NV_MAC_ADDRESS + 7), (uint8_t*) (stored_config_temp + NV_MAC_ADDRESS + 7), 153); //25+128
 
     S4Ram_config2SdHead();
-    SD_setCfgTime();
-    SD_setFileName();
+    SetName();
 
     InfoMem_update();
 

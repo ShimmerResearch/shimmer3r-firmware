@@ -399,7 +399,7 @@ void S4Ram_config2SdHead(void)
   /* BMP180 had 22 bytes stored in index SDH_TEMP_PRES_CALIBRATION. BMP280 had
    * 24 bytes spread accross the 22 available bytes in SDH_TEMP_PRES_CALIBRATION
    * and a further 2 bytes in BMP280_XTRA_CALIB_BYTES. BMP390 uses 21 bytes */
-  memcpy(&sdHeadText[SDH_TEMP_PRES_CALIBRATION], get_bmp3_calib_data_bytes(), BMP3_LEN_CALIB_DATA);
+  memcpy(&sdHeadText[SDH_TEMP_PRES_CALIBRATION], get_bmp_calib_data_bytes(), BMP3_LEN_CALIB_DATA);
 
   //memcpy(&sdHeadText[SDH_MPU9150_GYRO_CALIBRATION],
   //&storedConfig.rawBytes[NV_MPU9150_GYRO_CALIBRATION], 21);
@@ -409,7 +409,7 @@ void S4Ram_config2SdHead(void)
   //21);
 
   ShimmerCalibSyncFromDumpRamAll();
-  memcpy(&sdHeadText[SDH_DAUGHTER_CARD_ID_BYTE0], &getDaughtCardIdPtr()->exp_brd_id, 3);
+  memcpy(&sdHeadText[SDH_DAUGHTER_CARD_ID_BYTE0], &getDaughtCardId()->exp_brd_id, 3);
 }
 
 void setDefaultShimmerName(void)

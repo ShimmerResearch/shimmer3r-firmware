@@ -130,6 +130,7 @@ void Init()
   stat.battStatLed = LED_YELLOW;
   stat.isConfiguring = 1;
 
+  setHwId(DEVICE_VER);
   //==== 0.86ma ====
 #if defined(SHIMMER4_SDK)
   TIM_init();
