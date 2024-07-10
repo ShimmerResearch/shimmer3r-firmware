@@ -50,7 +50,7 @@
 I2C_HandleTypeDef *eeprom_hi2c;
 HAL_StatusTypeDef cat24c16_result;
 #if !IS_CONNECTED_EEPROM
-uint8_t eepromContents[512] = {0};
+uint8_t eepromContents[512] = { 0 };
 #endif
 
 void CAT24C16_init(I2C_HandleTypeDef *hi2c)
