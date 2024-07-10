@@ -132,8 +132,7 @@ void S4Led_Blink(void)
 #endif
   }
 
-  if (!stat.isDocked
-      && (stat.badFile || !stat.isSdInserted)
+  if (!stat.isDocked && (stat.badFile || !stat.isSdInserted)
       && S4Ram_getStoredConfig()->sdErrorEnable)
   {
     if (cntBlink % 2)
