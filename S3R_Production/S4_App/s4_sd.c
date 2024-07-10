@@ -183,11 +183,11 @@ void SD_setCfgTime(void)
   uint8_t i;
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
-  // MSB order
+  //MSB order
   for (i = 0; i < 4; i++)
   {
-      cfg_time_temp <<= 8;
-      cfg_time_temp |= configBytes->rawBytes[NV_SD_CONFIG_TIME + i];
+    cfg_time_temp <<= 8;
+    cfg_time_temp |= configBytes->rawBytes[NV_SD_CONFIG_TIME + i];
   }
   if (cfg_time_temp)
   {
@@ -201,13 +201,13 @@ void SD_setCfgTime(void)
 
 void SetName(void)
 {
-    if (strlen((char*) configTimeText) == 0)
-    {
-        strcpy((char*) configTimeText, "0");
-    }
+  if (strlen((char *) configTimeText) == 0)
+  {
+    strcpy((char *) configTimeText, "0");
+  }
 
-    if (strlen((char*) fileName) == 0)
-        strcpy((char*) fileName, "no_file   ");
+  if (strlen((char *) fileName) == 0)
+    strcpy((char *) fileName, "no_file   ");
 }
 
 void SD_infomem2Names(void)

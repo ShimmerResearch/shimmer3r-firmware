@@ -3267,7 +3267,7 @@ void BtUart_sendRsp(void)
       *(resPacket + packet_length++) = BMP180_CALIBRATION_COEFFICIENTS_RESPONSE;
       if (!isBmp180InUse())
       {
-        // Dummy bytes sent if incorrect calibration bytes requested.
+        //Dummy bytes sent if incorrect calibration bytes requested.
         memset(resPacket + packet_length, 0x01, BMP180_CALIB_DATA_SIZE);
       }
       else
@@ -3283,7 +3283,7 @@ void BtUart_sendRsp(void)
       *(resPacket + packet_length++) = BMP280_CALIBRATION_COEFFICIENTS_RESPONSE;
       if (!isBmp280InUse())
       {
-        // Dummy bytes sent if incorrect calibration bytes requested.
+        //Dummy bytes sent if incorrect calibration bytes requested.
         memset(resPacket + packet_length, 0x01, BMP280_CALIB_DATA_SIZE);
       }
       else
@@ -3380,7 +3380,8 @@ void BtUart_sendRsp(void)
     else if (allCalibrationResponse)
     {
       *(resPacket + packet_length++) = ALL_CALIBRATION_RESPONSE;
-      S4Ram_storedConfigGet(&resPacket[packet_length], NV_A_ACCEL_CALIBRATION, NV_NUM_CALIBRATION_BYTES);
+      S4Ram_storedConfigGet(&resPacket[packet_length], NV_A_ACCEL_CALIBRATION,
+          NV_NUM_CALIBRATION_BYTES);
       packet_length += NV_NUM_CALIBRATION_BYTES;
       allCalibrationResponse = 0;
     }
