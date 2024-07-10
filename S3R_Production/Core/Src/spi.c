@@ -1112,7 +1112,8 @@ void SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
   case SPI3_ADS1292R_EXG2:
     //TODO
     break;
-  default: break;
+  default:
+    break;
   }
 }
 
@@ -1144,7 +1145,8 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;
-  default: break;
+  default:
+    break;
   }
 
   spi1Sens.status = SPI_STAT_IDLE;
@@ -1167,7 +1169,8 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         &spi2Sens_buf.lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis3mdlMagBuf) - SPI_DMA_TXRX_OFFSET);
     break;
-  default: break;
+  default:
+    break;
   }
 
   spi2Sens.status = SPI_STAT_IDLE;
@@ -1194,7 +1197,8 @@ void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         &spi3Sens_buf.ads1292rExg2Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi3Sens_buf.ads1292rExg2Buf) - SPI_DMA_TXRX_OFFSET);
     break;
-  default: break;
+  default:
+    break;
   }
 
   spi3Sens.status = SPI_STAT_IDLE;

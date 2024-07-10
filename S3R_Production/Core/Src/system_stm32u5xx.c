@@ -318,7 +318,9 @@ void SystemCoreClockUpdate(void)
 
     switch (pllsource)
     {
-    case 0x00: /* No clock sent to PLL*/ pllvco = (float_t) 0U; break;
+    case 0x00: /* No clock sent to PLL*/
+      pllvco = (float_t) 0U;
+      break;
 
     case 0x02: /* HSI used as PLL clock source */
       pllvco = ((float_t) HSI_VALUE / (float_t) pllm);
@@ -340,7 +342,9 @@ void SystemCoreClockUpdate(void)
     SystemCoreClock = (uint32_t) ((uint32_t) pllvco / pllr);
     break;
 
-  default: SystemCoreClock = msirange; break;
+  default:
+    SystemCoreClock = msirange;
+    break;
   }
   /* Compute HCLK clock frequency --------------------------------------------*/
   /* Get HCLK prescaler */

@@ -490,7 +490,9 @@ void DockUart_rxCallback(uint8_t data)
       switch (uartAction)
       {
       case UART_SET:
-      case UART_GET: uartSteps = UART_STEP_WAIT4_LEN; break;
+      case UART_GET:
+        uartSteps = UART_STEP_WAIT4_LEN;
+        break;
       default:
         uartSteps = 0;
         uartSendRspBadCmd = 1;
@@ -603,7 +605,9 @@ void DockUart_processCmd()
             else
               uartSendRspBadArg = 1;
             break;
-          default: uartSendRspBadCmd = 1; break;
+          default:
+            uartSendRspBadCmd = 1;
+            break;
           }
         }
         else if (dockRxBuf[UART_RXBUF_COMP] == UART_COMP_BAT)
@@ -616,7 +620,9 @@ void DockUart_processCmd()
             else
               uartSendRspBadArg = 1;
             break;
-          default: uartSendRspBadCmd = 1; break;
+          default:
+            uartSendRspBadCmd = 1;
+            break;
           }
         }
         else if (dockRxBuf[UART_RXBUF_COMP] == UART_COMP_DAUGHTER_CARD)
@@ -646,7 +652,9 @@ void DockUart_processCmd()
             else
               uartSendRspBadArg = 1;
             break;
-          default: uartSendRspBadCmd = 1; break;
+          default:
+            uartSendRspBadCmd = 1;
+            break;
           }
         }
         else if (dockRxBuf[UART_RXBUF_COMP] == UART_COMP_BT)
@@ -659,7 +667,9 @@ void DockUart_processCmd()
             else
               uartSendRspBadArg = 1;
             break;
-          default: uartSendRspBadCmd = 1; break;
+          default:
+            uartSendRspBadCmd = 1;
+            break;
           }
         }
         else
@@ -723,7 +733,9 @@ void DockUart_processCmd()
             else
               uartSendRspBadArg = 1;
             break;
-          default: uartSendRspBadCmd = 1; break;
+          default:
+            uartSendRspBadCmd = 1;
+            break;
           }
         }
         else if (dockRxBuf[UART_RXBUF_COMP] == UART_COMP_DAUGHTER_CARD)
@@ -765,7 +777,9 @@ void DockUart_processCmd()
             else
               uartSendRspBadArg = 1;
             break;
-          default: uartSendRspBadCmd = 1; break;
+          default:
+            uartSendRspBadCmd = 1;
+            break;
           }
         }
         else

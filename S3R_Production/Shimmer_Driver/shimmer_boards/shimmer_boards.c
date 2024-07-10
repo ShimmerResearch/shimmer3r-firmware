@@ -90,11 +90,17 @@ void parseDaughterCardId(uint8_t srId)
 
   switch (srId)
   {
-  case SHIMMER3_IMU: sprintf(daughtCardIdStr, "Shimmer3 IMU"); break;
+  case SHIMMER3_IMU:
+    sprintf(daughtCardIdStr, "Shimmer3 IMU");
+    break;
   case EXP_BRD_GSR:
-  case EXP_BRD_GSR_UNIFIED: sprintf(daughtCardIdStr, "Shimmer3 GSR+"); break;
+  case EXP_BRD_GSR_UNIFIED:
+    sprintf(daughtCardIdStr, "Shimmer3 GSR+");
+    break;
   case EXP_BRD_EXG:
-  case EXP_BRD_EXG_UNIFIED: sprintf(daughtCardIdStr, "Shimmer3 ExG"); break;
+  case EXP_BRD_EXG_UNIFIED:
+    sprintf(daughtCardIdStr, "Shimmer3 ExG");
+    break;
   case EXP_BRD_BR_AMP:
   case EXP_BRD_BR_AMP_UNIFIED:
     sprintf(daughtCardIdStr, "Shimmer3 Bridge Amplifier");
@@ -111,9 +117,15 @@ void parseDaughterCardId(uint8_t srId)
   case EXP_BRD_H3LIS331DL_ACCEL_HIGH_G:
     sprintf(daughtCardIdStr, "Shimmer3 100G Accel");
     break;
-  case SHIMMER4_SDK: sprintf(daughtCardIdStr, "Shimmer4 SDK"); break;
-  case SHIMMER_ECG_MD: sprintf(daughtCardIdStr, "Shimmer3 ECG MD"); break;
-  default: sprintf(daughtCardIdStr, "SR%d", srId); break;
+  case SHIMMER4_SDK:
+    sprintf(daughtCardIdStr, "Shimmer4 SDK");
+    break;
+  case SHIMMER_ECG_MD:
+    sprintf(daughtCardIdStr, "Shimmer3 ECG MD");
+    break;
+  default:
+    sprintf(daughtCardIdStr, "SR%d", srId);
+    break;
   }
 }
 

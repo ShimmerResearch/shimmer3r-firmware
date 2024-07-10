@@ -654,7 +654,8 @@ void lsm303ah_accelInit(uint8_t samplingRate, uint8_t range, uint8_t lowPower, u
       //6400 Hz => ODR[3:0] 0111 = 7
       samplingRate = 0x07;
       break;
-    default: break;
+    default:
+      break;
     }
   }
   else

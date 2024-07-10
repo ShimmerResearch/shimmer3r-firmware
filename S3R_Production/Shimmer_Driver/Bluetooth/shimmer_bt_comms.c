@@ -40,8 +40,7 @@ char *commandBufPtr;
 uint8_t *expectedResponsePtr;
 #endif
 #if BT_DMA_USED_FOR_RX
-<<<<<<< HEAD
-uint8_t args[MAX_COMMAND_ARG_SIZE], waitingForArgs, waitingForArgsLength, argsSize, gAction;
+<<<<<<< HEAD uint8_t args[MAX_COMMAND_ARG_SIZE], waitingForArgs, waitingForArgsLength, argsSize, gAction;
 =======
 uint8_t args[MAX_COMMAND_ARG_SIZE], waitingForArgs, waitingForArgsLength, argsSize, action;
 >>>>>>> branch 'SHIM3-331' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
