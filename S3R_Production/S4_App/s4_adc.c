@@ -48,7 +48,6 @@
 //#include "gpio.h"
 //#include "dma.h"
 
-
 //static STATTypeDef * pStat;
 //static SENSINGTypeDef *pSensing;
 
@@ -82,7 +81,6 @@ static uint16_t ADC_RANK_ARRAY[] = { ADC_REGULAR_RANK_1, ADC_REGULAR_RANK_2,
   ADC_REGULAR_RANK_11, ADC_REGULAR_RANK_12, ADC_REGULAR_RANK_13,
   ADC_REGULAR_RANK_14, ADC_REGULAR_RANK_15, ADC_REGULAR_RANK_16 };
 #endif
-
 
 void S4_NORM_ADC_init(void)
 {
@@ -398,7 +396,6 @@ void S4_NORM_ADC_startSensing()
     hadcSensPtr->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT;
     hadcSensPtr->Init.OversamplingMode = DISABLE;
 
-
 #elif defined(SHIMMER4_SDK)
     hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
     hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
@@ -596,6 +593,7 @@ void S4_NORM_ADC_startSensing()
 }
 
 void (*ADC_gatherDataDone_cb)(void);
+
 void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void))
 {
   ADC_gatherDataDone_cb = done_cb;
@@ -746,6 +744,7 @@ void S4_NORM_ADC_bufPoll()
       uint8_t u8[4];
       uint32_t u32;
     } gsr_buf;
+
     gsr_buf.u8[0] = sensing.dataBuf[sensing.ptr.intADC3 + 0];
     gsr_buf.u8[1] = sensing.dataBuf[sensing.ptr.intADC3 + 1];
     GSR_output(&gsr_buf.u32);
@@ -860,20 +859,36 @@ void S4_NORM_ADC_rankBatt(void)
   switch (stat.battStat)
   {
 #if defined(SHIMMER3R)
-  case BATT_LOW: stat.battStatLed = LED_RGB_RED; break;
-  case BATT_MID: stat.battStatLed = LED_RGB_YELLOW; break;
-  case BATT_HIGH: stat.battStatLed = LED_RGB_GREEN; break;
-  default: stat.battStatLed = LED_RED; break;
+  case BATT_LOW:
+    stat.battStatLed = LED_RGB_RED;
+    break;
+  case BATT_MID:
+    stat.battStatLed = LED_RGB_YELLOW;
+    break;
+  case BATT_HIGH:
+    stat.battStatLed = LED_RGB_GREEN;
+    break;
+  default:
+    stat.battStatLed = LED_RED;
+    break;
 #elif defined(SHIMMER4_SDK)
-  case BATT_LOW: stat.battStatLed = LED_RED; break;
-  case BATT_MID: stat.battStatLed = LED_YELLOW; break;
-  case BATT_HIGH: stat.battStatLed = LED_GREEN; break;
-  default: stat.battStatLed = LED_RED_LWR; break;
+  case BATT_LOW:
+    stat.battStatLed = LED_RED;
+    break;
+  case BATT_MID:
+    stat.battStatLed = LED_YELLOW;
+    break;
+  case BATT_HIGH:
+    stat.battStatLed = LED_GREEN;
+    break;
+  default:
+    stat.battStatLed = LED_RED_LWR;
+    break;
 #endif
   }
 }
 
-void S4_NORM_ADC_readBatt(void)
+void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
 {
 #if defined(SHIMMER4_SDK)
   uint8_t need_to_restore = 0;
@@ -927,28 +942,28 @@ void S4_NORM_ADC_readBatt(void)
 #if defined(SHIMMER4_SDK)
   }
 #endif
-#if defined(SHIMMER3R)
-  //TODO hadcSensPtr is configured above from Shimmer4 code but we're using hadcBattPtr below which I can't make sense of.
-  //TODO A bit of cross-over here between the two ADCs (presumably to handle whether the device is streaming or not) but I think this can probably be cleaned up a lot.
-  //TODO Shimmer4 implementation called DMA operation here and then delayed for a number of samples, I think calling HAL_ADC_Start may be better here but needs testing
-  //HAL_ADC_Start(hadcBattPtr);
-  //adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
-  HAL_ADC_Start_IT(hadcBattPtr);
-#elif defined(SHIMMER4_SDK)
-  HAL_ADC_Start_DMA(hadcBattPtr, &adc_battVal, 1);
-  for (uint16_t i = 0; i < 144; i++)
-    ;
-  stat.battVal[0] = adc_battVal & 0xff;
-  stat.battVal[1] = (adc_battVal >> 8) & 0xff;
-  stat.battVal[2] = 0;
-  stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
-  stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
+
+  if (isBlockingRead)
+  {
+    HAL_StatusTypeDef status = HAL_ADC_Start(hadcBattPtr);
+    status = HAL_ADC_PollForConversion(hadcBattPtr, 100);
+    if (status == HAL_OK)
+    {
+      adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
+      updateBatteryStatus(adc_battVal);
+    }
+    HAL_ADC_Stop(hadcBattPtr);
+  }
+  else
+  {
+    HAL_ADC_Start_IT(hadcBattPtr);
+  }
+
+#if defined(SHIMMER4_SDK)
   if (need_to_restore)
   {
     S4_ADC_startSensing();
   }
-  //*(uint16_t*)(stat.battVal) = adc_battVal & 0xffff;
-  S4_ADC_rankBatt();
 #endif
 }
 
@@ -964,7 +979,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 #if defined(SHIMMER3R)
   if (hadc->Instance == hadcSensPtr->Instance)
   {
-    S4_NORM_ADC_bufPoll();
+    S4_ADC_bufPoll();
     ADC_gatherDataDone_cb();
     HAL_ADC_Stop_DMA(hadcSensPtr);
   }
@@ -972,6 +987,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
     adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
     updateBatteryStatus(adc_battVal);
+    HAL_ADC_Stop_IT(hadcBattPtr);
   }
 #elif defined(SHIMMER4_SDK)
   if (hadc->Instance == hadcResv.Instance)
@@ -1015,7 +1031,7 @@ void adcGpioInit(uint32_t pin, GPIO_TypeDef *port)
   }
 }
 
-void manageReadBatt(void)
+void manageReadBatt(uint8_t isBlockingRead)
 {
   if (!hadcBattPtr)
   {
@@ -1029,9 +1045,8 @@ void manageReadBatt(void)
   }
   else
   {
-    S4_ADC_readBatt();
+    S4_ADC_readBatt(isBlockingRead);
   }
-  setupNextRtcMinuteAlarm();
 }
 
 void updateBatteryStatus(uint16_t adc_battVal)
@@ -1050,7 +1065,6 @@ void updateBatteryStatus(uint16_t adc_battVal)
 //      __NOP();
 //   }
 //}
-
 
 void setBatteryInterval(battAlarmInterval_t value)
 {

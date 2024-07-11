@@ -735,6 +735,11 @@ FOR PRESSURE AND TEMPERATURE DATA REGISTERS */
 #define	BMP280_PRESSURE_CALIB_DIG_P9_LSB       (22)
 #define	BMP280_PRESSURE_CALIB_DIG_P9_MSB       (23)
 /**************************************************************/
+/**\name  SHIMMER DEFINITIONS                         */
+/**************************************************************/
+#define BMP180_CALIB_DATA_SIZE      (0x16) // 22
+#define BMP280_CALIB_XTRA_BYTES     (0x02)
+/**************************************************************/
 /**\name	STRUCTURE DEFINITIONS                         */
 /**************************************************************/
 /*!

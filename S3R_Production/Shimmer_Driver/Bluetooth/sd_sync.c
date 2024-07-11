@@ -926,12 +926,14 @@ inline uint16_t GetTA0(void)
 }
 
 #pragma vector = TIMER0_A1_VECTOR
+
 __interrupt void TIMER0_A1_ISR(void)
 {
   switch (__even_in_range(TA0IV, 14))
   {
-  case 0: break; //No interrupt
-  case 2:        //TA0CCR1
+  case 0:
+    break; //No interrupt
+  case 2:  //TA0CCR1
     TA0CCR1 += SYNC_PERIOD;
 
     /* SDLog handles auto-stop in TIMER0_A1_VECTOR whereas LogAndStream handles it in TIMER0_B1_VECTOR */
@@ -951,12 +953,18 @@ __interrupt void TIMER0_A1_ISR(void)
     handleSyncTimerTrigger();
 
     break;
-  case 4: break;  //TA0CCR2 not used
-  case 6: break;  //Reserved
-  case 8: break;  //Reserved
-  case 10: break; //Reserved
-  case 12: break; //Reserved
-  case 14: break; //TAIFG overflow handler
+  case 4:
+    break; //TA0CCR2 not used
+  case 6:
+    break; //Reserved
+  case 8:
+    break; //Reserved
+  case 10:
+    break; //Reserved
+  case 12:
+    break; //Reserved
+  case 14:
+    break; //TAIFG overflow handler
   }
 }
 #endif

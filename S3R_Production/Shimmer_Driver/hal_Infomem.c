@@ -62,6 +62,7 @@ void InfoMem_init(void)
   infoMem_p_storedConfig = S4Ram_getStoredConfig();
   infoMem_p_shimmerCalib_ram = ShimmerCalib_getRam();
 }
+
 //void InfoMem_initRam(uint8_t* buf){
 //   infoMem_p_storedConfig = buf;
 //}
@@ -255,3 +256,10 @@ uint8_t InfoMem_test(void)
   return 0;
 }
 #endif //HAL_TEST_INFOMEM
+
+uint8_t InfoMem_write(uint8_t addr, uint8_t *buf, uint16_t size)
+{
+  /*TODO STM32 flash has to be erased per 8KB page size even if we only want to update a small number of bytes.
+   * Revisit if we move Infomem to being stored on EEPROM where we can erase/write 16 byte pages. */
+  InfoMem_update();
+}

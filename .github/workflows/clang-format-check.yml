@@ -1,7 +1,7 @@
 # https://github.com/marketplace/actions/clang-format-lint
 name: clang-format-lint
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   build:
@@ -9,6 +9,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    # To get working on on: [pull_request], uncomment the following
+    # https://github.com/EndBug/add-and-commit#working-with-prs
+ #     with:
+ #       repository: ${{ github.event.pull_request.head.repo.full_name }}
+ #       ref: ${{ github.event.pull_request.head.ref }}
     - uses: DoozyX/clang-format-lint-action@v0.17
       with:
         source: './S3R_Production'

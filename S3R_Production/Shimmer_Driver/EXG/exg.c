@@ -80,6 +80,7 @@ uint8_t EXG_test(void)
   EXG_powerOff();
   return ret_val;
 }
+
 void EXG_setRdatac(uint8_t chip, uint8_t en)
 {
   if (chip)
@@ -95,7 +96,6 @@ void EXG_setRdatac(uint8_t chip, uint8_t en)
     ADS1292_chip1CsEnable(0);
   }
 }
-
 
 void EXG_start(uint8_t chip)
 {
@@ -283,6 +283,7 @@ void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf)
     }
   }
 }
+
 //void EXG_dataReadyChip1() {
 //   ADS1292_dataReadyChip1();
 //}

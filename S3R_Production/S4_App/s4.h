@@ -4,10 +4,11 @@
 #define S4_H
 
 #if defined(SHIMMER3R)
-#define DEVICE_VER 3
+//#define DEVICE_VER            3 // For older Consensys support
+#define DEVICE_VER 10
 #define FW_IDENTIFIER \
   3 //12 is the firmware for shimmer4sdk, with LogAndStream in side
-#define FW_VER_MAJOR 1 //Maor version number: 0-65535
+#define FW_VER_MAJOR 1 //Major version number: 0-65535
 #define FW_VER_MINOR 0 //Minor version number: 0-255
 #define FW_VER_REL   0 //internal version number: 0-255
 #elif defined(SHIMMER4_SDK)
@@ -45,7 +46,6 @@
   138 //max case: '$' + get + length + comp_shimmer+ prop_infomem
 #define UART_RSP_PACKET_SIZE \
   138 //+ info_len + info_loc*2 + 128bytes data + crc*2 = 138
-
 
 #define UART_SET                  0x01
 #define UART_RESPONSE             0x02
@@ -93,7 +93,6 @@
 //#define UART_PROP_RANGE             0x03
 //#define UART_PROP_DIVIDER           0x05
 //== new uart ends ==
-
 
 //BT  Channel contents
 #define MAX_NUM_CHANNELS \
@@ -207,7 +206,6 @@
 //#define SENSOR_APP_GSR                 0x40
 //#define SENSOR_APP_PPG                 0x20
 
-
 //Config byte masks
 //Config Byte0
 #define LSM303DLHC_ACCEL_SAMPLING_RATE        0xF0
@@ -227,7 +225,6 @@
 #define EXP_POWER_ENABLE                      0x01
 //Unused bits 3-0
 
-
 //ADC initialisation mask
 #define MASK_A_ACCEL                          0x0001
 #define MASK_VBATT                            0x0002
@@ -240,7 +237,6 @@
 #define MASK_INT_A14                          0x0100
 #define MASK_MSP_TEMP                         0x0200
 #define MASK_STRAIN                           0x0180 //uses ADC13 and ADC14
-
 
 //LSM303DLHC Accel Range
 //Corresponds to the FS field of the LSM303DLHC's CTRL_REG4_A register
@@ -283,7 +279,6 @@
 #define LSM303DLHC_MAG_75HZ              0x06 //75 Hz
 #define LSM303DLHC_MAG_220HZ             0x07 //220 Hz
 
-
 //calibration info
 #define S_ACCEL_A                        0
 #define S_GYRO                           1
@@ -312,7 +307,6 @@
 #define LSM303_MAG_47GA                  5
 #define LSM303_MAG_56GA                  6
 #define LSM303_MAG_81GA                  7
-
 
 //SD Log file header format
 #define SDHEAD_LEN                       256 //0-255
@@ -406,7 +400,6 @@
 #define SDH_MY_LOCALTIME_5TH             251
 #define SDH_MY_LOCALTIME                 252 //252-255
 
-
 //SENSORS0
 #define SDH_SENSOR_A_ACCEL               0x80
 #define SDH_SENSOR_MPU9250_GYRO          0x40
@@ -462,7 +455,6 @@
 #define UINT64_LEN                  21 //20+1, where the last byte should be 0x00
 #define RESPONSE_PACKET_SIZE        1024 //133
 
-
 //BATTERY
 #define BATT_LOW                    0x01
 #define BATT_MID                    0x02
@@ -510,7 +502,6 @@
 #define LSM303DLHC_MAG_30HZ   0x05 //30 Hz
 #define LSM303DLHC_MAG_75HZ   0x06 //75 Hz
 #define LSM303DLHC_MAG_220HZ  0x07 //220 Hz
-
 
 //calibration info
 #define S_ACCEL_A             0
@@ -582,12 +573,12 @@ typedef volatile struct STATTypeDef_t
   uint8_t battStat;
   uint32_t battStatLed;
   uint8_t battVal[3];
+#if defined(SHIMMER4_SDK)
   uint8_t battDigital[10];
+#endif
   uint8_t sdlogReady;
-  uint8_t enableSdlog;
+  uint8_t btstreamReady;
   uint8_t badFile;
-  //uint8_t     sdlogEn;
-  //uint8_t     btstreamEn;
   uint8_t sdlogCmd;
   uint8_t btstreamCmd;
   uint8_t toggleLedRedCmd;
@@ -596,6 +587,7 @@ typedef volatile struct STATTypeDef_t
   uint8_t pinPvSd;
   uint8_t pinPvExt;
   uint8_t periStat;
+  uint8_t syncEnabled;
 } STATTypeDef;
 
 typedef enum
@@ -611,6 +603,5 @@ extern STATTypeDef stat;
 //   UART_BT_STAT_IDLE = 0,
 //   UART_BT_STAT_CONFIG = 1
 //}UART_BT_STATUS;
-
 
 #endif //S4_H

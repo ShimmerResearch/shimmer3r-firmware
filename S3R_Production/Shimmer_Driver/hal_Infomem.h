@@ -144,7 +144,6 @@ void InfoMem_init(void);
 
 //void InfoMem_initCalib(uint8_t* buf);
 
-
 void InfoMem_update(void);
 
 void InfoMem_updateFrom(uint8_t *buf);
@@ -153,8 +152,9 @@ uint8_t InfoMem_readRam(uint8_t *buf, uint16_t addr, uint16_t size);
 
 uint8_t InfoMem_readCalib(uint8_t *buf, uint16_t addr, uint16_t size);
 
-
 //returns 0 if successful, 1 if failure
 extern uint8_t InfoMem_test(void);
+
+uint8_t InfoMem_write(uint8_t addr, uint8_t *buf, uint16_t size);
 
 #endif

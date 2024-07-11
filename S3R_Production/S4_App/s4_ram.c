@@ -77,6 +77,7 @@ gConfigBytes *S4Ram_getStoredConfig(void)
 {
   return &storedConfig;
 }
+
 uint8_t *S4Ram_getSdHeadText(void)
 {
   return sdHeadText;
@@ -123,7 +124,6 @@ uint8_t S4Ram_sdHeadTextSetByte(uint16_t offset, uint8_t val)
   sdHeadText[offset] = val;
   return 0;
 }
-
 
 /*
  * storedConfig: Set(), Get() and GetByte(), S4Ram_sdHeadTextSetByte()
@@ -185,7 +185,6 @@ void S4Ram_btMacAsciiGet(uint8_t *buf)
   memcpy(buf, btMacAscii, 12);
 }
 
-
 /*
  * btMacHex: Set(), Get()
  */
@@ -234,26 +233,26 @@ void S4Ram_SetDefaultInfomem(void)
   storedConfig.gsrRange = GSR_AUTORANGE;
   //set all ExG registers to their reset values
   //square wave test
-  storedConfig.exgADS1292R_1_CONFIG1 = 0x04;
-  storedConfig.exgADS1292R_1_CONFIG2 = 0xab; //was 0xa3 for rev1
-  storedConfig.exgADS1292R_1_LOFF = 0x10;
-  storedConfig.exgADS1292R_1_CH1SET = 0x05;
-  storedConfig.exgADS1292R_1_CH2SET = 0x05;
-  storedConfig.exgADS1292R_1_RLD_SENS = 0x00;
-  storedConfig.exgADS1292R_1_LOFF_SENS = 0x00;
-  storedConfig.exgADS1292R_1_LOFF_STAT = 0x00;
-  storedConfig.exgADS1292R_1_RESP1 = 0x02;
-  storedConfig.exgADS1292R_1_RESP2 = 0x01;
-  storedConfig.exgADS1292R_2_CONFIG1 = 0x04;
-  storedConfig.exgADS1292R_2_CONFIG2 = 0xa3;
-  storedConfig.exgADS1292R_2_LOFF = 0x10;
-  storedConfig.exgADS1292R_2_CH1SET = 0x05;
-  storedConfig.exgADS1292R_2_CH2SET = 0x05;
-  storedConfig.exgADS1292R_2_RLD_SENS = 0x00;
-  storedConfig.exgADS1292R_2_LOFF_SENS = 0x00;
-  storedConfig.exgADS1292R_2_LOFF_STAT = 0x00;
-  storedConfig.exgADS1292R_2_RESP1 = 0x02;
-  storedConfig.exgADS1292R_2_RESP2 = 0x01;
+  storedConfig.exgADS1292rRegsCh1.config1 = 0x04;
+  storedConfig.exgADS1292rRegsCh1.config2 = 0xab; //was 0xa3 for rev1
+  storedConfig.exgADS1292rRegsCh1.loff = 0x10;
+  storedConfig.exgADS1292rRegsCh1.ch1set = 0x05;
+  storedConfig.exgADS1292rRegsCh1.ch2set = 0x05;
+  storedConfig.exgADS1292rRegsCh1.rldSens = 0x00;
+  storedConfig.exgADS1292rRegsCh1.loffSens = 0x00;
+  storedConfig.exgADS1292rRegsCh1.loffStat = 0x00;
+  storedConfig.exgADS1292rRegsCh1.resp1 = 0x02;
+  storedConfig.exgADS1292rRegsCh1.resp2 = 0x01;
+  storedConfig.exgADS1292rRegsCh2.config1 = 0x04;
+  storedConfig.exgADS1292rRegsCh2.config2 = 0xa3;
+  storedConfig.exgADS1292rRegsCh2.loff = 0x10;
+  storedConfig.exgADS1292rRegsCh2.ch1set = 0x05;
+  storedConfig.exgADS1292rRegsCh2.ch2set = 0x05;
+  storedConfig.exgADS1292rRegsCh2.rldSens = 0x00;
+  storedConfig.exgADS1292rRegsCh2.loffSens = 0x00;
+  storedConfig.exgADS1292rRegsCh2.loffStat = 0x00;
+  storedConfig.exgADS1292rRegsCh2.resp1 = 0x02;
+  storedConfig.exgADS1292rRegsCh2.resp2 = 0x01;
 
   //ecg
   //storedConfig.exgADS1292R_1_CONFIG1 = 0x02;
@@ -399,7 +398,7 @@ void S4Ram_config2SdHead(void)
   /* BMP180 had 22 bytes stored in index SDH_TEMP_PRES_CALIBRATION. BMP280 had
    * 24 bytes spread accross the 22 available bytes in SDH_TEMP_PRES_CALIBRATION
    * and a further 2 bytes in BMP280_XTRA_CALIB_BYTES. BMP390 uses 21 bytes */
-  memcpy(&sdHeadText[SDH_TEMP_PRES_CALIBRATION], get_bmp3_calib_data_bytes(), BMP3_LEN_CALIB_DATA);
+  memcpy(&sdHeadText[SDH_TEMP_PRES_CALIBRATION], get_bmp_calib_data_bytes(), BMP3_LEN_CALIB_DATA);
 
   //memcpy(&sdHeadText[SDH_MPU9150_GYRO_CALIBRATION],
   //&storedConfig.rawBytes[NV_MPU9150_GYRO_CALIBRATION], 21);
@@ -409,7 +408,7 @@ void S4Ram_config2SdHead(void)
   //21);
 
   ShimmerCalibSyncFromDumpRamAll();
-  memcpy(&sdHeadText[SDH_DAUGHTER_CARD_ID_BYTE0], &getDaughtCardIdPtr()->exp_brd_id, 3);
+  memcpy(&sdHeadText[SDH_DAUGHTER_CARD_ID_BYTE0], &getDaughtCardId()->exp_brd_id, 3);
 }
 
 void setDefaultShimmerName(void)

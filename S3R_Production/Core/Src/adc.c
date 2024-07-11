@@ -83,6 +83,7 @@ void MX_ADC1_Init(void)
 
   /* USER CODE END ADC1_Init 2 */
 }
+
 /* ADC2 init function */
 void MX_ADC2_Init(void)
 {

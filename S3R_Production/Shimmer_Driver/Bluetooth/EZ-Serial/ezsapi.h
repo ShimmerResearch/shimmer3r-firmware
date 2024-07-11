@@ -142,7 +142,6 @@
 #define T_PWR_LVL_ARY                          EZS_ARGTYPE_POWER_LEVEL_ARY
 //-------------- Fix 05 Start -------------------------//
 
-
 #define EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE    EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE
 #define EZS_IDX_RSP_PROTOCOL_GET_PARSE_MODE    EZS_IDX_CMD_PROTOCOL_GET_PARSE_MODE
 #define EZS_IDX_RSP_PROTOCOL_SET_ECHO_MODE     EZS_IDX_CMD_PROTOCOL_SET_ECHO_MODE
@@ -336,8 +335,8 @@
 #define EZS_CMD_COUNT                     EZS_IDX_CMD_MAX
 
 #define EZS_EVT_COUNT                     EZS_IDX_EVT_MAX
-//-------------- Fix 06 End -------------------------//
 
+//-------------- Fix 06 End -------------------------//
 
 /*******************************************************************************
  * Error enumeration list for EZ-Serial manager.
@@ -513,7 +512,6 @@ typedef enum
   EZS_ERR_UNKNOWN = 0xEEEE, /**< FW BUG: Unhandled error */
 } ezs_err_t;
 
-
 /*******************************************************************************
  * API packet type enumeration list.
  *******************************************************************************/
@@ -525,7 +523,6 @@ typedef enum
   EZS_PACKET_TYPE_ANY
 } ezs_packet_type_t;
 
-
 /*******************************************************************************
  * Possible return values from app-specific hardware serial output function.
  *******************************************************************************/
@@ -536,7 +533,6 @@ typedef enum
   EZS_OUTPUT_RESULT_NO_HANDLER,
   EZS_OUTPUT_RESULT_UNRECOGNIZED_COMMAND,
 } ezs_output_result_t;
-
 
 /*******************************************************************************
  * Possible return values from app-specific hardware serial input function.
@@ -558,7 +554,6 @@ typedef enum
   EZS_INPUT_RESULT_UNRECOGNIZED_EVENT,
   EZS_INPUT_RESULT_UNHANDLED_PACKET,
 } ezs_input_result_t;
-
 
 /*******************************************************************************
  * API command packet index list (refers to position in ezs_tbl_cmd).
@@ -714,7 +709,6 @@ typedef enum ezs_idx_cmd_t
   EZS_IDX_CMD_MAX
 } ezs_idx_cmd_t;
 
-
 /*******************************************************************************
  * API event packet index list (refers to position in ezs_tbl_evt).
  *******************************************************************************/
@@ -776,7 +770,6 @@ typedef enum ezs_idx_evt_t
   EZS_IDX_EVT_MAX
 } ezs_idx_evt_t;
 
-
 /*******************************************************************************
  * Enumerated list of possible argument types used by API protocol.
  *******************************************************************************/
@@ -798,7 +791,6 @@ typedef enum
   //-------------- Fix 05 End -------------------------//
 } ezs_argtype_t;
 
-
 /*******************************************************************************
  * Structure defining a length-specified byte array, maximum 255 bytes. This is
  * also used for strings.
@@ -808,7 +800,6 @@ __PACKDEF(uint8a_t, {
   uint8_t data[EZS_UINT8A_ACTUAL_MAX];
 });
 
-
 /*******************************************************************************
  * Structure defining a length-specified byte array, maximum 65535 bytes. This
  * is also used for long strings.
@@ -817,7 +808,6 @@ __PACKDEF(longuint8a_t, {
   uint16_t length;
   uint8_t data[EZS_LONGUINT8A_ACTUAL_MAX];
 });
-
 
 /*******************************************************************************
  * Structure containing a MAC address in a byte array.
@@ -835,7 +825,6 @@ __PACKDEF(pwrlvlary_t, {
   int8_t pwrlvlaryble[8];
 });
 //-------------- Fix 05 End -------------------------//
-
 
 /*******************************************************************************
  * Generic response structure, containing only a result value.
@@ -2344,7 +2333,6 @@ __PACKDEF(ezs_tbl_cmd_entry_t, {
   uint8_t arg_type[];
 });
 
-
 /*******************************************************************************
  * Structure representing a single entry in the event definition table.
  *******************************************************************************/
@@ -2353,7 +2341,6 @@ __PACKDEF(ezs_tbl_evt_entry_t, {
   uint8_t id;
   uint8_t length;
 });
-
 
 /*******************************************************************************
  * Four-byte packet header, present in every packet.
@@ -2364,7 +2351,6 @@ __PACKDEF(ezs_packet_header_t, {
   uint8_t group;
   uint8_t id;
 });
-
 
 /*******************************************************************************
  * Packet payload, a union of every single possible command, response, and
@@ -2709,7 +2695,6 @@ typedef union
   //-------------- Fix 06 End -------------------------//
 
 } ezs_packet_payload_t;
-
 
 /*******************************************************************************
  * Complete packet, made up of a packet header and a packet payload. The header

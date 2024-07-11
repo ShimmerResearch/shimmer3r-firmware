@@ -120,14 +120,12 @@ HAL_StatusTypeDef MPU9250_gyroReadDone(uint8_t *buf)
   return HAL_I2C_Master_Receive_DMA(hi2c_MPU9250, MPU9250_ADDR, buf, 6);
 }
 
-
 void MPU9250_getAccel(uint8_t *buf)
 {
   *buf = MPU9250_ACCEL_XOUT_H;
   HAL_I2C_Master_Transmit(hi2c_MPU9250, MPU9250_ADDR, buf, 1, 5);
   HAL_I2C_Master_Receive(hi2c_MPU9250, MPU9250_ADDR, buf, 6, 5);
 }
-
 
 HAL_StatusTypeDef MPU9250_accelReadStart()
 {
@@ -191,6 +189,7 @@ void MPU9250_setSamplingRate(uint8_t sampleRateDiv)
 
   HAL_I2C_Master_Transmit(hi2c_MPU9250, MPU9250_ADDR, buf, 2, 5);
 }
+
 //======== mag ==============
 
 uint8_t MPU9250_getMagId(void)
@@ -211,6 +210,7 @@ HAL_StatusTypeDef MPU9250_magStartSingleMeasurement(void)
   buf[1] = 0x01; //single measurement mode
   return HAL_I2C_Master_Transmit(hi2c_MPU9250, MPU9250_MAG_ADDR, buf, 2, 5);
 }
+
 HAL_StatusTypeDef MPU9250_magStart(void)
 {
   uint8_t buf[2];
@@ -230,7 +230,6 @@ HAL_StatusTypeDef MPU9250_magReadDone(uint8_t *rx_buf)
   mpu9250_mag_data_ptr = rx_buf;
   return HAL_I2C_Master_Receive_DMA(hi2c_MPU9250, MPU9250_MAG_ADDR, rx_buf, 6);
 }
-
 
 HAL_StatusTypeDef MPU9250_magStatusStart(void)
 {
@@ -256,7 +255,6 @@ HAL_StatusTypeDef MPU9250_magStatusDone(void)
   }
   return ret_val;
 }
-
 
 //put x, y and z mag values in buf (little endian)
 //-4096 to 4095

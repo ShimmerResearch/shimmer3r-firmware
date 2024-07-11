@@ -221,7 +221,6 @@ uint8_t isLedOnUprGreen(void)
 
 #endif
 
-
 /***************************************************************************/ /**
                                                                                * @brief  Turn on LEDs
                                                                                * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn on
@@ -394,6 +393,7 @@ void Board_delayMicrosInit(void)
   /* For 1 us delay, we need to divide with 2M */
   multiplier = HAL_RCC_GetSysClockFreq() / 2000000; //HAL_RCC_GetSysClockFreq? HAL_RCC_GetHCLKFreq?
 }
+
 void Board_delayMicros(uint32_t micros)
 {
   /* Multiply micros with multipler */

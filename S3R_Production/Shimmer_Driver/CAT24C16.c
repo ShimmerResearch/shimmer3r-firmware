@@ -49,10 +49,19 @@
 
 I2C_HandleTypeDef *eeprom_hi2c;
 HAL_StatusTypeDef cat24c16_result;
+#if !IS_CONNECTED_EEPROM
+uint8_t eepromContents[512] = { 0 };
+#endif
 
 void CAT24C16_init(I2C_HandleTypeDef *hi2c)
 {
   eeprom_hi2c = hi2c;
+
+#if !IS_CONNECTED_EEPROM
+  eepromContents[0] = EXP_BRD_PROTO3_DELUXE; //0xFF
+  eepromContents[1] = 9;                     //0xFF
+  eepromContents[2] = 0;                     //0xFF
+#endif
 }
 
 void CAT24C16_powerOn(void)
@@ -170,6 +179,7 @@ uint8_t CAT24C16_test(void)
 
   return ret_val;
 }
+
 //#else
 //uint8_t CAT24C16_test(void){
 //   // always return success
@@ -189,6 +199,7 @@ void eepromWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf)
 
 void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enum EEPROM_RW eepromRW)
 {
+#if IS_CONNECTED_EEPROM
   CAT24C16_powerOn();
 
   //EEPROM needs to be updated with latest bt baud rate, configure here
@@ -203,4 +214,14 @@ void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enu
 
   //Wind down EEPROM and required timing peripherals
   CAT24C16_powerOff();
+#else
+  if (eepromRW == EEPROM_READ)
+  {
+    memcpy(dataBuf, &eepromContents[dataAddr], dataSize);
+  }
+  else
+  {
+    memcpy(&eepromContents[dataAddr], dataBuf, dataSize);
+  }
+#endif
 }

@@ -18,6 +18,7 @@ uint8_t SD_test_alternative(void);
 void SD_setShimmerName(void);
 void SD_setExpIdName(void);
 void SD_setCfgTime(void);
+void SetName(void);
 void SD_infomem2Names(void);
 uint8_t SD_setBasedir(void);
 uint8_t SD_makeBasedir(void);
@@ -35,5 +36,9 @@ void ItoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len);
 uint8_t isFileStatusOk(void);
 uint8_t isSdInfoSyncDelayed(void);
 void setSdInfoSyncDelayed(uint8_t state);
+uint8_t *getConfigTimeTextPtr(void);
+uint8_t *getFileNamePtr(void);
+uint8_t *getShimmerNamePtr(void);
+uint8_t *getExpIdPtr(void);
 
 #endif /* S4_SD_H_ */

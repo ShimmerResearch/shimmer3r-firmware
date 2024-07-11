@@ -73,7 +73,6 @@
 #define HW_RES_3M3_CONSTANT_A   0.00045580
 #define HW_RES_3M3_CONSTANT_B   (-0.3014)
 
-
 //when we switch resistors with the ADG658 it takes a few samples for the
 //ADC to start to see the new sampled voltage correctly, the catch below is
 //to eliminate any glitches in the data

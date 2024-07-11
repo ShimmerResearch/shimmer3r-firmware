@@ -107,13 +107,14 @@ uint8_t S4Sens_checkStartSensorConditions(void)
   {
     return 0;
   }
-  if (!((stat.sdlogCmd == 1 && stat.isSdInserted)
+  if (!((stat.sdlogCmd == 1 && stat.isSdInserted && !stat.badFile)
           || (stat.btstreamCmd == BT_STREAM_CMD_STATE_START && stat.isBtConnected)))
   {
     return 0;
   }
   return 1;
 }
+
 uint8_t S4Sens_checkStartLoggingConditions(void)
 {
   if (stat.isSdInserted)
@@ -247,6 +248,7 @@ uint8_t S4Sens_checkStopSensorConditions(void)
 
   return 1;
 }
+
 uint8_t S4Sens_checkStopLoggingConditions(void)
 {
   if (stat.sdlogCmd != 2)
@@ -260,6 +262,7 @@ uint8_t S4Sens_checkStopLoggingConditions(void)
     return 1;
   }
 }
+
 void S4Sens_stopSensing(void)
 {
   if (!stat.isSensing)
@@ -347,7 +350,7 @@ void S4Sens_streamData(void)
 
 void S4Sens_bufPoll()
 {
-  S4_NORM_ADC_gatherDataStart();
+  S4_ADC_gatherDataStart();
 
   I2C_pollSensors();
 
@@ -448,18 +451,21 @@ void S4Sens_step2Start(void)
   //I2C_gatherDataStart();
   I2cSens_gatherDataStart();
 }
+
 void S4Sens_step3Start(void)
 {
   PeriStat_Clr(STAT_PERI_I2C_SENS);
   temp_cnt3++;
   I2cBatt_gatherDataStart();
 }
+
 void S4Sens_step4Start(void)
 {
   PeriStat_Clr(STAT_PERI_I2C_BATT);
   //SPI_gatherDataStart();
   S4Sens_step5Start();
 }
+
 void S4Sens_step5Start(void)
 {
   PeriStat_Clr(STAT_PERI_SPI_SENS);

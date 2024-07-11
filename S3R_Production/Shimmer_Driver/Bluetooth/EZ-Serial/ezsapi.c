@@ -60,7 +60,6 @@ uint8_t ezs_rx_packet_checksum;
 ezs_packet_t ezs_rx_packet;
 ezs_packet_t ezs_tx_packet;
 
-
 /*******************************************************************************
  * Command definition table with binary command/response method detail
  *******************************************************************************/
@@ -264,7 +263,6 @@ const uint8_t ezs_tbl_cmd[] = {
   //-------------- Fix 06 End -------------------------//
 };
 
-
 /*******************************************************************************
  * Event definition table with binary event methods detail
  *******************************************************************************/
@@ -319,13 +317,11 @@ const uint8_t ezs_tbl_evt[] = {
   //-------------- Fix 06 End -------------------------//
 };
 
-
 /*******************************************************************************
  * Application event handler callback for processing API responses and events.
  * This must be defined as non-NULL in the "EZSerial_Start" call.
  *******************************************************************************/
 void (*EZSerial_AppHandler)(ezs_packet_t *packet);
-
 
 /*******************************************************************************
  * Platform-specific output function for sending API commands. This must be
@@ -333,7 +329,6 @@ void (*EZSerial_AppHandler)(ezs_packet_t *packet);
  * the library-provided "ezs_cmd_..." functions to send binary command packets.
  *******************************************************************************/
 ezs_output_result_t (*EZSerial_HardwareOutput)(uint16_t length, const uint8_t *data);
-
 
 /*******************************************************************************
  * Platform-specific input function for reading API response and event data.
@@ -344,6 +339,7 @@ ezs_input_result_t (*EZSerial_HardwareInput)(uint8_t *inByte, uint16_t timeout);
 
 /**************************** Shimmer Start ***********************************/
 ezs_input_result_t lastEzsByteParseResult;
+
 /**************************** Shimmer End ***********************************/
 
 /**
@@ -363,7 +359,6 @@ void EZSerial_Init(void (*handler)(ezs_packet_t *packet),
   ezs_rx_packet_buffer = (uint8_t *) &ezs_rx_packet;
   ezs_rx_packet_length = 0;
 } /* EZSerial_Init */
-
 
 /**
  * @brief Parse incoming EZ-Serial response/event data from module
@@ -449,7 +444,6 @@ ezs_input_result_t EZSerial_Parse(uint8_t b)
   return result;
 } /* EZSerial_Parse */
 
-
 /**
  * @brief Send EZ-Serial binary API command to module
  * @param[in] packet Packet structure to send to module
@@ -485,7 +479,6 @@ ezs_output_result_t EZSerial_SendPacket(ezs_packet_t *packet)
     return EZSerial_HardwareOutput(packet_length + 1, (uint8_t *) packet);
   }
 } /* EZSerial_SendPacket */
-
 
 ezs_input_result_t EZSerial_FillPacketMetaFromBinary(ezs_packet_t *packet)
 {
@@ -546,7 +539,6 @@ ezs_input_result_t EZSerial_FillPacketMetaFromBinary(ezs_packet_t *packet)
   /* unknown packet type */
   return EZS_INPUT_RESULT_UNHANDLED_PACKET;
 } /* EZSerial_FillPacketMetaFromBinary */
-
 
 ezs_packet_t *EZSerial_WaitForPacket(ezs_packet_type_t type, uint16_t timeout)
 {
@@ -813,6 +805,7 @@ ezs_input_result_t getLastEzsByteParseResult(void)
 {
   return lastEzsByteParseResult;
 }
+
 /**************************** Shimmer End *************************************/
 
 /* [] END OF FILE */

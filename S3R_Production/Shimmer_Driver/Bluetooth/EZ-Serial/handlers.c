@@ -247,7 +247,6 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
   //}
   //HAL_StatusTypeDef status = setDmaRx(1);
 
-
   //for (uint8_t i = 0; i < expectedByteCount; i++)
   //{
   //  ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
@@ -263,7 +262,6 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
   //  count = 1;
   //}
   //HAL_StatusTypeDef status = setDmaRx(count);
-
 
   uint16_t count = 1;
 
@@ -518,7 +516,6 @@ void loadBtTxBufForDataRateTest(void)
       huartBtPtr, &dataRateTestTxPacket[0], sizeof(dataRateTestTxPacket));
   (*((uint32_t *) &dataRateTestTxPacket[1]))++;
 }
-
 
 //void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 //{

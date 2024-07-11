@@ -30,15 +30,12 @@
 #include <sys/times.h>
 #include <time.h>
 
-
 /* Variables */
 extern int __io_putchar(int ch) __attribute__((weak));
 extern int __io_getchar(void) __attribute__((weak));
 
-
 char *__env[1] = { 0 };
 char **environ = __env;
-
 
 /* Functions */
 void initialise_monitor_handles()
@@ -96,7 +93,6 @@ int _close(int file)
   (void) file;
   return -1;
 }
-
 
 int _fstat(int file, struct stat *st)
 {

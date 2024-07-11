@@ -42,6 +42,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define TIM_MEASURE_START time_start = SysTick->VAL
 #define TIM_MEASURE_END    \
   time_end = SysTick->VAL; \
@@ -129,6 +130,7 @@ void Init()
   stat.battStatLed = LED_YELLOW;
   stat.isConfiguring = 1;
 
+  setHwId(DEVICE_VER);
   //==== 0.86ma ====
 #if defined(SHIMMER4_SDK)
   TIM_init();
@@ -137,7 +139,7 @@ void Init()
   S4_Task_init();
   S4Sens_init();
   //==== 0.86ma ====
-  //SD_init();
+  SD_init();
   //GPIO_init();
   I2C_init();
   S4_ADC_init();
@@ -176,8 +178,8 @@ void Init()
   S4_RTC_WakeUpSetSlow();
 #endif
 
-  /* Take initial measurment to update LED state */
-  S4_NORM_ADC_readBatt();
+  /* Take initial measurement to update LED state */
+  S4_ADC_readBatt(1);
 
   Board_ledOff(LED_ALL);
   //while(1){
@@ -256,7 +258,7 @@ int main(void)
   linkedListConfig(&hadc1); //configure linkedlist for ADC
 
   Init();
-  //S4_NORM_Task_set(TASK_STARTSENSING);
+  //S4_Task_set(TASK_STARTSENSING);
 
   //FullTest();
 
@@ -536,6 +538,8 @@ void setBtConnectionState(bool state)
 {
   stat.isBtConnected = state;
   //HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
+
+  HandleBtRfCommStateChange(stat.isBtConnected);
 }
 
 bool isBtConnected(void)
@@ -597,7 +601,7 @@ void SetupDock(void)
   {
     setBatteryInterval(BATT_INTERVAL_DOCKED);
     resetBatteryCriticalCount();
-    stat.enableSdlog = 0;
+    stat.sdlogCmd = 0;
     stat.sdlogReady = 0;
     if (CheckSdInslot())
     {
@@ -681,9 +685,9 @@ uint8_t CheckOnDefault(void)
       && stat.sdlogReady && !stat.isSensing && !stat.badFile)
   { //state == BTSD_IDLESD
     //startSensing = 1;
-    SetStartSensing();
-    //enableSdlog = (SD_ERROR) ? 0 : 1;
-    stat.enableSdlog = 1;
+    setStartSensing();
+    //sdlogCmd = (SD_ERROR) ? 0 : 1;
+    stat.sdlogCmd = 1;
     stat.isSensing = 1;
     BtsdSelfcmd();
     stat.isSensing = 0;
@@ -694,7 +698,7 @@ uint8_t CheckOnDefault(void)
 
 void ReadSdConfiguration(void)
 {
-  S4_NORM_Task_clear(TASK_STREAMDATA); //this will skip one sample
+  S4_Task_clear(TASK_STREAMDATA); //this will skip one sample
   SdPowerOn();
   ParseConfig();
 }

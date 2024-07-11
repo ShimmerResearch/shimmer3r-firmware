@@ -84,10 +84,10 @@ void S4_NORM_ADC_bufPoll(void);
 void S4_NORM_ADC_stopSensing(void);
 void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void));
 void S4_NORM_ADC_gatherDataStart(void);
-void S4_NORM_ADC_readBatt(void);
+void S4_NORM_ADC_readBatt(uint8_t isBlockingRead);
 void S4_NORM_ADC_rankBatt(void);
 void adcGpioInit(uint32_t pin, GPIO_TypeDef *port);
-void manageReadBatt(void);
+void manageReadBatt(uint8_t isBlockingRead);
 void updateBatteryStatus(uint16_t adc_battVal);
 battAlarmInterval_t getBatteryInterval(void);
 

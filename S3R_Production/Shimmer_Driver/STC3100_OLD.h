@@ -82,7 +82,6 @@
 //Battery gas gauge RAM register
 #define REG_GAS_GAUGE            0x32
 
-
 extern void STC3100_init(I2C_HandleTypeDef *hi2c);
 
 /**
@@ -272,9 +271,7 @@ typedef union
     unsigned char : 3;
   } CONTROLSTATUSbits;
 
-
 } tSTC31000Data;
-
 
 //Struct that stores the updated values.
 
@@ -313,6 +310,5 @@ void STC3100_updateBatteryData(void);
 //If wakeup is 0 puts STC3100 to sleep
 //else wakes it up
 void STC3100_wake(int wakeup);
-
 
 #endif //STC3100_H

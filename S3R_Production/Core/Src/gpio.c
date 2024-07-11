@@ -258,7 +258,9 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
       //EXG_dataReadyChip2();
     }
     break;
-  default: gpioExtiCommon(GPIO_Pin, 0); break;
+  default:
+    gpioExtiCommon(GPIO_Pin, 0);
+    break;
   }
 }
 
@@ -272,10 +274,17 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
   case BT_CYSPP_Pin:
     //setBtCysppState(isRising);
     break;
-  case DOCK_DETECT_Pin: DockUart_interruptCheck(); break;
-  case USER_BTN_N_Pin: GPIO_userButtonCheck(); break;
-  case SD_DETECT_N_Pin: SD_insertedCheck(); break;
-  default: break;
+  case DOCK_DETECT_Pin:
+    DockUart_interruptCheck();
+    break;
+  case USER_BTN_N_Pin:
+    GPIO_userButtonCheck();
+    break;
+  case SD_DETECT_N_Pin:
+    SD_insertedCheck();
+    break;
+  default:
+    break;
   }
 }
 
@@ -310,12 +319,23 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
       //EXG_dataReadyChip2();
     }
     break; //EXG2
-  case BT_RTS_Pin: BtUart_rtsIntCheck(); break;
-  case BT_CONNECTION_Pin: BtUart_connectIntCheck(); break;
-  case DOCK_DETECT_Pin: DockUart_interruptCheck(); break;
-  case USER_BTN_N_Pin: GPIO_userButtonCheck(); break;
-  case SD_DETECT_N_Pin: SD_insertedCheck(); break;
-  default: break;
+  case BT_RTS_Pin:
+    BtUart_rtsIntCheck();
+    break;
+  case BT_CONNECTION_Pin:
+    BtUart_connectIntCheck();
+    break;
+  case DOCK_DETECT_Pin:
+    DockUart_interruptCheck();
+    break;
+  case USER_BTN_N_Pin:
+    GPIO_userButtonCheck();
+    break;
+  case SD_DETECT_N_Pin:
+    SD_insertedCheck();
+    break;
+  default:
+    break;
   }
 }
 #endif

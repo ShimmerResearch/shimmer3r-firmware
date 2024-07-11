@@ -114,6 +114,7 @@ void ADS1292_Tx1Byte(uint8_t data)
                                               //Board_delayMicros(8);
   }
 }
+
 void ADS1292_Rx1Byte(uint8_t *buf)
 {
   //one byte read needs 7.8us in total
@@ -130,7 +131,6 @@ void ADS1292_Rx1Byte(uint8_t *buf)
   }
 }
 
-
 void ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata)
 {
   uint8_t tx_buf[2];
@@ -143,6 +143,7 @@ void ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata)
     ADS1292_Rx1Byte(rdata++);
   }
 }
+
 void ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata)
 {
   uint8_t tx_buf[2];
@@ -166,7 +167,6 @@ void ADS1292_powerOff(void)
 {
   Board_EXG_RESET_N(0);
 }
-
 
 //Issues a reset pulse
 //Remains powered on afterwards
@@ -255,7 +255,6 @@ void ADS1292_start(uint8_t start)
   ADS1292_Tx1Byte(tx_buf);
 }
 
-
 void ADS1292_resetRegs(void)
 {
   uint8_t tx_buf = RESET;
@@ -268,7 +267,6 @@ void ADS1292_offsetCal(void)
   uint8_t tx_buf = OFFSETCAL;
   ADS1292_Tx1Byte(tx_buf);
 }
-
 
 void ADS1292_enableInternalReference(void)
 {
@@ -315,6 +313,7 @@ uint8_t ADS1292_readDataChip1(uint8_t *data)
     return 0;
   return 1;
 }
+
 uint8_t ADS1292_readDataChip2(uint8_t *data)
 {
   if (chip2CurrentFullBuffer == 1)
@@ -353,6 +352,7 @@ void ADS1292_gatherDataStart(void)
     ADS1292_gatherDataDone();
   }
 }
+
 void ADS1292_gatherDataDone(void)
 {
   ADS1292_dataReadDone_cb();
@@ -405,7 +405,6 @@ void ADS1292_dataReadFromChip1()
   }
   __enable_irq();
 }
-
 
 void ADS1292_dataReadFromChip2()
 {
@@ -483,6 +482,7 @@ uint8_t ADS1292_spiRxIsr(void)
   }
   return 0;
 }
+
 uint8_t ADS1292_spiTxIsr(void)
 {
   return 0;

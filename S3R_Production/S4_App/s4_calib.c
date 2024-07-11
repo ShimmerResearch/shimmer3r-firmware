@@ -5,7 +5,6 @@
  *      Author: WeiboP
  */
 
-
 //#include <stdio.h>
 //#include <stdlib.h>
 #include <stdint.h>
@@ -28,12 +27,18 @@ uint8_t ShimmerCalib_findLength(sc_t *sc1)
 {
   switch (sc1->id)
   {
-  case SC_SENSOR_ANALOG_ACCEL: return SC_DATA_LEN_ANALOG_ACCEL;
-  case SC_SENSOR_MPU9150_GYRO: return SC_DATA_LEN_MPU9250_GYRO;
-  case SC_SENSOR_LSM303DLHC_ACCEL: return SC_DATA_LEN_LSM303DLHC_ACCEL;
-  case SC_SENSOR_LSM303DLHC_MAG: return SC_DATA_LEN_LSM303DLHC_MAG;
-  case SC_SENSOR_BMP180_PRESSURE: return SC_DATA_LEN_BMP180;
-  default: return 0;
+  case SC_SENSOR_ANALOG_ACCEL:
+    return SC_DATA_LEN_ANALOG_ACCEL;
+  case SC_SENSOR_MPU9150_GYRO:
+    return SC_DATA_LEN_MPU9250_GYRO;
+  case SC_SENSOR_LSM303DLHC_ACCEL:
+    return SC_DATA_LEN_LSM303DLHC_ACCEL;
+  case SC_SENSOR_LSM303DLHC_MAG:
+    return SC_DATA_LEN_LSM303DLHC_MAG;
+  case SC_SENSOR_BMP180_PRESSURE:
+    return SC_DATA_LEN_BMP180;
+  default:
+    return 0;
   }
 }
 
@@ -87,6 +92,7 @@ void ShimmerCalib_init(void)
     ShimmerCalib_initVer();
   }
 }
+
 uint8_t *ShimmerCalib_getRam(void)
 {
   return shimmerCalib_ram;
@@ -230,7 +236,6 @@ uint8_t ShimmerCalib_singleSensorWrite(const sc_t *sc1)
   }
   return 0;
 }
-
 
 uint8_t ShimmerCalib_singleSensorRead(sc_t *sc1)
 {

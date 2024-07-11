@@ -64,6 +64,7 @@
 #endif //USE_FREERTOS
 
 #define TASK_SIZE 31
+
 typedef enum
 {
   TASK_NONE = 0,
@@ -76,24 +77,25 @@ typedef enum
   TASK_BTPROCESS = 0x1 << 5,
   TASK_BTRESPONSE = 0x1 << 6,
   //TASK_CFGCH         = 0x1<<7,
-  TASK_SDWRITE = 0x1 << 8,
-  TASK_STARTSENSING = 0x1 << 9,
-  TASK_STOPSENSING = 0x1 << 10,
-  TASK_STREAMDATA = 0x1 << 11,
-  //TASK_RADIOTX         = 0x1<<12,
-  TASK_SDLOG_CFG_UPDATE = 0x1 << 12,
-  TASK_BATTREAD = 0x1 << 13,
+  TASK_RCNODER10 = 0x01 << 8,
+  TASK_RCCENTERR1 = 0x01 << 9,
+  TASK_SDWRITE = 0x1 << 10,
+  TASK_STARTSENSING = 0x1 << 11,
+  TASK_STOPSENSING = 0x1 << 12,
+  TASK_STREAMDATA = 0x1 << 13,
+  //TASK_RADIOTX         = 0x1<<14,
+  TASK_SDLOG_CFG_UPDATE = 0x1 << 15,
+  TASK_BATT_READ_FROM_ALARM = 0x1 << 16,
 #if defined(SHIMMER3R)
-  TASK_SAVEDATA = 0x1 << 14,
+  TASK_SAVEDATA = 0x1 << 17,
 #elif defined(SHIMMER4_SDK)
-//TASK_HRCALC        = 0x1<<14,
+//TASK_HRCALC        = 0x1<<17,
 #endif
-  //TASK_TESTLEDS      = 0x1<<15,
-  //TASK_DELAYEDRADIOISR = 0x1<<16,
-  TASK_NEXTSENSOR = 0x1 << 17
+  //TASK_TESTLEDS      = 0x1<<18,
+  //TASK_DELAYEDRADIOISR = 0x1<<19,
+  TASK_NEXTSENSOR = 0x1 << 20
 } TASK_FLAGS;
 //return the task id of the current task
-
 
 void S4_NORM_Task_init(void);
 
@@ -111,6 +113,7 @@ uint8_t S4_NORM_Task_set(uint32_t task_id);
 uint32_t S4_NORM_Task_getList(void);
 
 uint8_t setTaskNewBtCmdToProcess(void);
-void SetStartSensing(void);
+void setStartSensing(void);
+void setStopSensing(void);
 
 #endif //S4_TASKLIST_H

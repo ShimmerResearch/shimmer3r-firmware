@@ -212,6 +212,7 @@ void S4_RWC_setConfigTime(uint64_t val)
 {
   rwcConfigTime64 = val;
 } //64bits = 8bytes
+
 uint64_t S4_RWC_getConfigTime(void)
 {
   return rwcConfigTime64;
@@ -227,7 +228,6 @@ uint64_t rtc64_reg;
 void S4_RTC_Init()
 { //RTC_HandleTypeDef *hrtc
 
-
   //"How to know after power start whether the product up from a stand by mode or a power down reset. "
   uint32_t lastRstState = RCC->CSR;
   //code to detect a warm reboot
@@ -239,7 +239,6 @@ void S4_RTC_Init()
   {
     //uartPrintf("\n\r Cold boot (Powered from Off)" );
   }
-
 
   //s4rtc_hrtc = hrtc;
   S4_RTC_t data;
@@ -291,7 +290,6 @@ void S4_RTC_Init()
   //HAL_RTCEx_BKUPWrite(&hrtc, RTC_STATUS_REG, S4_RTC_Status);
 }
 
-
 void S4_RTC_WakeUpOff()
 {
   HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
@@ -300,6 +298,7 @@ void S4_RTC_WakeUpOff()
   //   Error_Handler();
   //}
 }
+
 void S4_RTC_WakeUpSet(uint16_t period)
 {
   uint16_t prescalar;
@@ -406,7 +405,6 @@ uint8_t S4_RTC_SetDateTime(S4_RTC_t *data)
   //sAlarm.Alarm = RTC_ALARM_A;
   //HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BCD);
 
-
   /* Write backup registers */
   S4_RTC_Status = RTC_STATUS_TIME_OK;
   HAL_RTCEx_BKUPWrite(&hrtc, RTC_STATUS_REG, RTC_STATUS_TIME_OK);
@@ -477,7 +475,6 @@ uint32_t S4_RTC_RTC2Unix(S4_RTC_t *data)
   /* seconds = days * 86400; */
   return seconds;
 }
-
 
 void S4_RTC_Unix2RTC(S4_RTC_t *data, uint32_t unix)
 {
@@ -559,7 +556,6 @@ void S4_RTC_Unix2RTC(S4_RTC_t *data, uint32_t unix)
   /* Date starts with 1 */
   data->date = unix + 1;
 }
-
 
 void S4_RTC_Ticks2RTC(S4_RTC_t *data, uint64_t ticks)
 {
@@ -725,6 +721,7 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
             the HAL_RTC_WakeUpTimerEventCallback could be implemented in the user file
    */
 }
+
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
   /* Disable alarm and interrupt - this is stopping the alarm from triggering
@@ -732,7 +729,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   __HAL_RTC_ALARMA_DISABLE(hrtc);
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
 
-  S4_Task_set(TASK_BATTREAD);
+  S4_Task_set(TASK_BATT_READ_FROM_ALARM);
 #if defined(SHIMMER4_SDK)
 #if RTC_FAST
   //rtc64_reg += 0x8000; // this is not working well as the interrupt priority is not the highest

@@ -95,7 +95,6 @@ extern uint8_t MPU9250_init(I2C_HandleTypeDef *hi2c);
 uint8_t MPU9250_getId(void);
 uint8_t MPU9250_test(void);
 
-
 //if wakeup is 0 puts MPU9250 to sleep
 //else wakes it up
 void MPU9250_wake(uint8_t wakeup);
@@ -104,7 +103,6 @@ void MPU9250_wake(uint8_t wakeup);
 void MPU9250_getGyro(uint8_t *buf);
 HAL_StatusTypeDef MPU9250_gyroReadStart(void);
 HAL_StatusTypeDef MPU9250_gyroReadDone(uint8_t *buf);
-
 
 //put x, y and z accel values into buf (big endian)
 void MPU9250_getAccel(uint8_t *buf);
@@ -154,7 +152,6 @@ HAL_StatusTypeDef MPU9250_magReadStart(void);
 HAL_StatusTypeDef MPU9250_magReadDone(uint8_t *rx_buf);
 HAL_StatusTypeDef MPU9250_magStatusStart(void);
 HAL_StatusTypeDef MPU9250_magStatusDone(void);
-
 
 //read the x, y and z mag sensitivity adjustment values
 void MPU9250_getMagSensitivityAdj(uint8_t *buf);

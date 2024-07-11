@@ -10,11 +10,11 @@
 
 #include <stdint.h>
 
-#if !IS_CONNECTED_EEPROM & defined(SHIMMER3R)
-#define EXP_BRD_ID_MAJOR    EXP_BRD_PROTO3_DELUXE //0xFF//47
-#define EXP_BRD_ID_MINOR    9                     //0xFF//1
-#define EXP_BRD_ID_INTERNAL 0                     //0xFF//0
-#endif
+enum SR_HW_IDS
+{
+  HW_ID_SHIMMER3 = 3,
+  HW_ID_SHIMMER3R = 10
+};
 
 enum SR_BOARD_CODES
 {
@@ -35,6 +35,21 @@ enum SR_BOARD_CODES
   SHIMMER_ECG_MD = 59
 };
 
+enum WR_ACCEL_AND_MAG_IN_USE
+{
+  WR_ACCEL_AND_MAG_NONE_IN_USE,
+  WR_ACCEL_AND_MAG_LSM303DLHC_IN_USE,
+  WR_ACCEL_AND_MAG_LSM303AHTR_IN_USE,
+  WR_ACCEL_AND_MAG_ICM20948_IN_USE
+};
+
+enum GYRO_IN_USE
+{
+  GYRO_NONE_IN_USE,
+  GYRO_MPU9X50_IN_USE,
+  GYRO_ICM20948_IN_USE
+};
+
 typedef struct
 {
   uint8_t exp_brd_id;
@@ -45,6 +60,7 @@ typedef struct
 typedef union
 {
   uint8_t raw[16];
+
   struct __attribute__((packed))
   {
     shimmer_expansion_brd expansion_brd;
@@ -52,16 +68,33 @@ typedef union
   };
 } daughter_card_id_page;
 
+void setHwId(uint8_t hwIdToSet);
 void setDaugherCardIdPage(uint8_t *pagePtr);
 uint8_t isAds1292Present(void);
 uint8_t isAds1292PresentForSrId(uint8_t srId);
-shimmer_expansion_brd *getDaughtCardId(void);
+uint8_t isRn4678PresentAndCmdModeSupport(uint8_t srId, uint8_t srRev, uint8_t srRevSpecial);
+uint8_t isSubstitutionNeededForWrAccel(uint8_t srId, uint8_t srRevMajor, uint8_t srRevMinor);
+uint8_t are2ndGenImuSensorsPresent(void);
+uint8_t are2ndGenSensorsPresentAndUnknownBoard(uint8_t srId);
+uint8_t areGsrControlsPinsReversed(uint8_t srId, uint8_t srRevMajor, uint8_t srRevMinor);
 void parseDaughterCardId(uint8_t srId);
+shimmer_expansion_brd *getDaughtCardId(void);
 char *getDaughtCardIdStrPtr(void);
+void setWrAccelAndMagInUse(uint8_t wr_accel_and_mag_in_use);
+uint8_t isWrAccelInUseLsm303dlhc(void);
+uint8_t isWrAccelInUseLsm303ahtr(void);
+uint8_t isWrAccelInUseIcm20948(void);
+
+void setGyroInUse(uint8_t gyro_in_use);
+uint8_t isGyroInUseMpu9x50(void);
+uint8_t isGyroInUseIcm20948(void);
 
 void setEepromIsPresent(uint8_t eeprom_is_preset);
 uint8_t isEepromIsPresent(void);
 
-shimmer_expansion_brd *getDaughtCardIdPtr(void);
+uint8_t isLnAccelKxtc9_2050Present(void);
+
+uint8_t isBmp180InUse(void);
+uint8_t isBmp280InUse(void);
 
 #endif /* SHIMMER3_COMMON_SOURCE_SHIMMER_BOARDS_SHIMMER_BOARDS_H_ */

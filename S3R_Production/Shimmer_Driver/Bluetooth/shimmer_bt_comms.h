@@ -195,7 +195,6 @@
 //#define BT_RX_COMMS_TIMEOUT_TICKS                     3277U /* 32768*0.1s = 3276.8 */
 #define BT_RX_COMMS_TIMEOUT_TICKS 328U /* 32768*0.01s = 327.68  */
 
-
 enum
 {
   BT_STREAM_CMD_STATE_IDLE = 0,
@@ -206,6 +205,9 @@ enum
 #if BT_DMA_USED_FOR_RX
 //uint8_t Dma2ConversionDone(void);
 uint8_t Dma2ConversionDone(uint8_t *rxBuff);
+#if defined(SHIMMER3)
+uint8_t parseRn4678Status(void);
+#endif
 void resetBtRxVariablesOnConnect(void);
 //void resetBtRxBuff(void);
 #else
@@ -264,5 +266,6 @@ COMMS_CRC_MODE getBtCrcMode(void);
 uint8_t BT_getMacAddressAscii(char *macAscii);
 uint8_t BT_getMacAddressHex(uint8_t *macHex);
 void BtsdSelfcmd(void);
+void HandleBtRfCommStateChange(uint8_t isConnected);
 
 #endif /* SHIMMER3_COMMON_SOURCE_BLUETOOTH_SD_SHIMMER_BT_COMMS_H_ */

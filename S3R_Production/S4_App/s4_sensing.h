@@ -48,14 +48,12 @@
 #include "s4.h"
 #include "s4__cfg.h"
 
-
 //uint8_t pDataTs, pDataTemp, pDataPres, pDataLsm303dlhcAccel,
 //pDataLsm303dlhcMag, pDataMpu9250Gyro, pDataMpu9250Accel,
 //        pDataMpu9250Mag, pDataAnalogAccel, pDataStc3100Batt, pDataExg1,
 //        pDataExg2, pDataGSR, pDataStrain, pDataExtADC_A6, pDataExtADC_A7,
 //        pDataExtADC_A15, pDataIntADC_A12, pDataIntADC_A13, pDataIntADC_A14,
 //        pDataBatteryAnalog;
-
 
 typedef struct
 { //data ptr (offset)

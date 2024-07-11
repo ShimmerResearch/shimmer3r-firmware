@@ -210,6 +210,7 @@ void btInit(void)
     }
   */
 }
+
 //TODO set appropriate values for setDmaRx() calls
 void btInitCommands(void)
 {
@@ -333,7 +334,6 @@ void btInitCommands(void)
     setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
     return;
   }
-
 
   if (btInitCmdsStep == GET_FIRMWARE_VERSION)
   {
@@ -809,7 +809,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     setBtCysppState(packet->payload.evt_p_cyspp_status.status);
     break;
-
 
   /* -------- Shimmer added start -------- */
   case EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS:

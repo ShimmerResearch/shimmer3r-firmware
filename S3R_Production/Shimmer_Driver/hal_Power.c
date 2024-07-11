@@ -57,7 +57,6 @@ void Power_Standby(void)
   HAL_PWR_EnterSTANDBYMode();
 }
 
-
 uint8_t Power_StandbyReset(void)
 {
   /* Check Standby Flag */
@@ -71,6 +70,7 @@ uint8_t Power_StandbyReset(void)
   /* Reset was not from standby */
   return 0;
 }
+
 void Power_GpioAnalogConfig(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct;
@@ -111,7 +111,6 @@ void Power_GpioAnalogConfig(void)
 
   /* Disable GPIOs clock */
 
-
   //__GPIOA_CLK_DISABLE();
 
   __GPIOB_CLK_DISABLE();
@@ -131,6 +130,7 @@ void Power_GpioAnalogConfig(void)
   __GPIOA_CLK_DISABLE();
 #endif
 }
+
 void Power_SleepUntilInterrupt(void)
 {
   HAL_SuspendTick();

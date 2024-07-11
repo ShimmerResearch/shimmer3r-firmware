@@ -40,7 +40,6 @@
  * @date May, 2016
  */
 
-
 #include <stdint.h>
 
 #ifndef S4_RAM_H
@@ -140,6 +139,7 @@
 typedef union
 {
   uint8_t rawBytes[21];
+
   struct __attribute__((packed))
   {
     int16_t calibOffset_B0;
@@ -162,7 +162,27 @@ typedef union
 
 typedef union
 {
+  uint8_t rawBytes[10];
+
+  struct __attribute__((packed))
+  {
+    uint8_t config1;
+    uint8_t config2;
+    uint8_t loff;
+    uint8_t ch1set;
+    uint8_t ch2set;
+    uint8_t rldSens;
+    uint8_t loffSens;
+    uint8_t loffStat;
+    uint8_t resp1;
+    uint8_t resp2;
+  };
+} gExgADS1292rRegs;
+
+typedef union
+{
   uint8_t rawBytes[STOREDCONFIG_SIZE];
+
   struct __attribute__((packed))
   {
     //cfg in common
@@ -246,26 +266,9 @@ typedef union
     uint8_t pressurePrecision   : 2;
     uint8_t altAccelRange : 2; //S3/S4_SDK MPU9x50/ICM20948 Accel, S3R = LSM6DSV Accel
 
-    uint8_t exgADS1292R_1_CONFIG1;
-    uint8_t exgADS1292R_1_CONFIG2;
-    uint8_t exgADS1292R_1_LOFF;
-    uint8_t exgADS1292R_1_CH1SET;
-    uint8_t exgADS1292R_1_CH2SET;
-    uint8_t exgADS1292R_1_RLD_SENS;
-    uint8_t exgADS1292R_1_LOFF_SENS;
-    uint8_t exgADS1292R_1_LOFF_STAT;
-    uint8_t exgADS1292R_1_RESP1;
-    uint8_t exgADS1292R_1_RESP2;
-    uint8_t exgADS1292R_2_CONFIG1;
-    uint8_t exgADS1292R_2_CONFIG2;
-    uint8_t exgADS1292R_2_LOFF;
-    uint8_t exgADS1292R_2_CH1SET;
-    uint8_t exgADS1292R_2_CH2SET;
-    uint8_t exgADS1292R_2_RLD_SENS;
-    uint8_t exgADS1292R_2_LOFF_SENS;
-    uint8_t exgADS1292R_2_LOFF_STAT;
-    uint8_t exgADS1292R_2_RESP1;
-    uint8_t exgADS1292R_2_RESP2;
+    gExgADS1292rRegs exgADS1292rRegsCh1;
+    gExgADS1292rRegs exgADS1292rRegsCh2;
+
     uint8_t btCommsBaudRate;
 
     //nvDerivedChannels0(lsb);
@@ -345,28 +348,31 @@ typedef union
     uint8_t chEnMpu9x50GyroCal  : 1;
 
     //config setup byte4
-    uint8_t chEnMpu9x50MotCalCfg    : 3;
-    uint8_t chEnMpu9x50Lfp          : 3;
-    uint8_t chEnMpu9x50MplUseLsmMag : 1;
-    uint8_t chEnMpu9x50Dmp          : 1;
+    uint8_t mpu9x50MotCalCfg    : 3;
+    uint8_t mpu9x50Lfp          : 3;
+    uint8_t mpu9x50MplUseLsmMag : 1;
+    uint8_t mpu9x50Dmp          : 1;
 
     //config setup byte 5
-    uint8_t chEnMpu9x50MplMagMix       : 2;
-    uint8_t chEnMpu9x50MagSamplingRate : 3;
-    uint8_t chEnMpu9x50MplSamplingRate : 3;
+    uint8_t mpu9x50MplMagMix       : 2;
+    uint8_t altMagSamplingRate     : 3;
+    uint8_t mpu9x50MplSamplingRate : 3;
 
     //config setup byte6
-    uint8_t unusedIdx132Bit0    : 1;
-    uint8_t unusedIdx132Bit1    : 1;
-    uint8_t unusedIdx132Bit2    : 1;
-    uint8_t chEnMplEnable       : 1;
-    uint8_t chEnMplMagDistCal   : 1;
-    uint8_t chEnMplVectCompCal  : 1;
-    uint8_t chEnMplGyroCalTc    : 1;
-    uint8_t chEnMplSensorFusion : 1;
-    uint8_t mplAccelCalibration[21];
-    uint8_t mplMagCalibration[21];
-    uint8_t mplGyroCalibration[12];
+    uint8_t unusedIdx132Bit0       : 1;
+    uint8_t unusedIdx132Bit1       : 1;
+    uint8_t unusedIdx132Bit2       : 1;
+    uint8_t mpu9x50MplEnable       : 1;
+    uint8_t mpu9x50MplMagDistCal   : 1;
+    uint8_t mpu9x50MplVectCompCal  : 1;
+    uint8_t mpu9x50MplGyroCalTc    : 1;
+    uint8_t mpu9x50MplSensorFusion : 1;
+
+    gImuConfig altAccelCalib;
+    gImuConfig altMagCalib;
+
+    uint8_t mpu9x50MplGyroCalibration[12];
+
     char shimmerName[12];
     char expIdName[12];
     uint32_t configTime;
