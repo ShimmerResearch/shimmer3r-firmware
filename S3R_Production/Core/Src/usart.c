@@ -29,31 +29,6 @@
 
 UART_HandleTypeDef *huartBt;
 UART_HandleTypeDef *huartDock;
-#if defined(SHIMMER4_SDK)
-UART_HandleTypeDef *huartExp;
-#endif
-
-#if defined(SHIMMER4_SDK)
-//BT UART variables
-uint8_t btArgs[MAX_COMMAND_ARG_SIZE], btWaitingForArgs, btWaitingForArgsLength,
-    btArgsSize, btAction;
-//BT command vars
-uint8_t inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream, enableSdlog,
-    lsm303dlhcAccelRangeResponse, lsm303dlhcMagGainResponse,
-    lsm303dlhcMagSamplingRateResponse, dockStatusBtRsp, vbattBtRsp,
-    trialConfigResponse, centerResponse, shimmerNameResponse, expIDResponse,
-    configTimeResponse, dirResponse, nshimmerResponse, myIDResponse,
-    lsm303dlhcAccelSamplingRateResponse, i2cvBattBtRsp,
-    lsm303dlhcAccelHRModeResponse, mpu9250GyroRangeResponse,
-    bmp180CalibCoeffBtRsp, mpu9250SamplingRateResponse, mpu9250AccelRangeResponse,
-    bmp180OversamplingRatioResponse, internalExpPowerEnableResponse,
-    exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, blinkLedBtRsp,
-    infomemBtRsp, dcIdBtRsp, dcMemBtRsp, mpu9250MagSensAdjValsResponse,
-    lsm303dlhcAccelLPModeResponse, deviceVersionBtRsp, rwcResponse,
-    calibRamResponse; //btIsConnected,
-uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
-uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
-#endif
 
 uint8_t uartSteps, uartArgSize, uartArg2Wait, uartCrc2Wait,
     uartAction; //uartProcessCmds, uartSendResponses,

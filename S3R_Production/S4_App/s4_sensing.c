@@ -107,7 +107,7 @@ uint8_t S4Sens_checkStartSensorConditions(void)
   {
     return 0;
   }
-  if (!((stat.sdlogCmd == 1 && stat.isSdInserted)
+  if (!((stat.sdlogCmd == 1 && stat.isSdInserted && !stat.badFile)
           || (stat.btstreamCmd == BT_STREAM_CMD_STATE_START && stat.isBtConnected)))
   {
     return 0;

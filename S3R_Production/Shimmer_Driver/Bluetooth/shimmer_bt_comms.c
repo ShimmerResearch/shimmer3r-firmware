@@ -2418,8 +2418,6 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSet(&storedConfig->rawBytes[NV_SENSORS0], NV_SENSORS0, 3);
     InfoMem_write(NV_SENSORS0, &storedConfig->rawBytes[NV_SENSORS0], 3);
     update_sdconfig = 1;
-    //TODO decide if needed
-    //S4_NORM_Task_set(TASK_CFGCH);
     if (stat.isSensing)
     {
       setStopSensing();
@@ -2457,6 +2455,11 @@ void BtUart_processCmd(void)
     storedConfig->rawBytes[NV_SD_TRIAL_CONFIG0] = args[0];
     storedConfig->rawBytes[NV_SD_TRIAL_CONFIG1] = args[1];
     storedConfig->rawBytes[NV_SD_BT_INTERVAL] = args[2];
+
+    //TODO move to common setting correction function
+#if !IS_SUPPORTED_TCXO
+    storedConfig->tcxo = 0; /* Disable TCXO */
+#endif
 
     if (storedConfig->singleTouchStart)
     {
@@ -2729,7 +2732,7 @@ void BtUart_processCmd(void)
     configSetupBytesResponse = 1;
     break;
   case SET_CONFIG_SETUP_BYTES_COMMAND:
-    S4Ram_storedConfigSet(args, NV_CONFIG_SETUP_BYTE0, 4);
+    S4Ram_storedConfigSet(&args[0], NV_CONFIG_SETUP_BYTE0, 4);
     InfoMem_write(NV_CONFIG_SETUP_BYTE0, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
     S4Ram_sdHeadTextSet(&storedConfig->rawBytes[0], NV_CONFIG_SETUP_BYTE0, 4);
     S4Ram_config2SdHead();
@@ -2741,9 +2744,9 @@ void BtUart_processCmd(void)
     }
     break;
   case SET_SAMPLING_RATE_COMMAND:
-    S4Ram_storedConfigSet(args, NV_SAMPLING_RATE, 2);
+    S4Ram_storedConfigSet(&args[0], NV_SAMPLING_RATE, 2);
     InfoMem_write(NV_SAMPLING_RATE, &storedConfig->rawBytes[NV_SAMPLING_RATE], 2);
-    S4Ram_sdHeadTextSet(args, SDH_SAMPLE_RATE_0, 2);
+    S4Ram_sdHeadTextSet(&args[0], SDH_SAMPLE_RATE_0, 2);
     update_sdconfig = 1;
     if (stat.isSensing)
     {
@@ -2904,8 +2907,6 @@ void BtUart_processCmd(void)
     S4Ram_SetDefaultInfomem();
     S4Ram_config2SdHead();
     update_sdconfig = 1;
-    //TODO decide if needed
-    //S4_NORM_Task_set(TASK_CFGCH);
     if (stat.isSensing)
     {
       setStopSensing();
@@ -3042,12 +3043,14 @@ void BtUart_processCmd(void)
         }
       }
 
+#if !IS_SUPPORTED_TCXO
       //Disable TXCO
       if (infomemOffset <= NV_SD_TRIAL_CONFIG1 && NV_SD_TRIAL_CONFIG1 <= infomemOffset + infomemLength)
       {
         uint8_t tcxoInfomemOffset = NV_SD_TRIAL_CONFIG1 - infomemOffset;
         args[3 + tcxoInfomemOffset] &= ~SDH_TCXO;
       }
+#endif
 
       S4Ram_storedConfigSet(&args[3], infomemOffset, infomemLength);
       InfoMem_write(infomemOffset, &args[3], infomemLength);
@@ -3060,8 +3063,6 @@ void BtUart_processCmd(void)
 
       S4Ram_config2SdHead();
       SD_infomem2Names();
-      //TODO decide if needed
-      //S4_NORM_Task_set(TASK_CFGCH);
       update_sdconfig = 1;
       if (((infomemOffset >= NV_A_ACCEL_CALIBRATION) && (infomemOffset <= NV_CALIBRATION_END))
           || (((infomemLength + infomemOffset) >= NV_A_ACCEL_CALIBRATION)
@@ -3153,6 +3154,7 @@ void BtUart_processCmd(void)
 
 void BtUart_sendRsp(void)
 {
+  sc_t sc1;
   uint16_t packet_length = 0;
   //STATTypeDef * stat = GetStatus();
   uint8_t resPacket[RESPONSE_PACKET_SIZE];
@@ -3304,7 +3306,7 @@ void BtUart_sendRsp(void)
     else if (myIDResponse)
     {
       *(resPacket + packet_length++) = MYID_RESPONSE;
-      *(resPacket + packet_length++) = storedConfig->myTrialID; //is myId and MytrialId same ?
+      *(resPacket + packet_length++) = storedConfig->myTrialID;
       myIDResponse = 0;
     }
     else if (lsm303dlhcAccelSamplingRateResponse)
@@ -3415,29 +3417,61 @@ void BtUart_sendRsp(void)
     else if (aAccelCalibrationResponse)
     {
       *(resPacket + packet_length++) = A_ACCEL_CALIBRATION_RESPONSE;
-      memcpy((resPacket + packet_length), &storedConfig->lnAccelCalib.rawBytes[0], 21);
-      packet_length += 21;
+//      memcpy((resPacket + packet_length), &storedConfig->lnAccelCalib.rawBytes[0], 21);
+//      packet_length += 21;
+
+      sc1.id = SC_SENSOR_ANALOG_ACCEL;
+      sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
+      sc1.data_len = SC_DATA_LEN_ANALOG_ACCEL;
+      ShimmerCalib_singleSensorRead(&sc1);
+      memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
+      packet_length += sc1.data_len;
+
       aAccelCalibrationResponse = 0;
     }
     else if (gyroCalibrationResponse)
     {
       *(resPacket + packet_length++) = MPU9150_GYRO_CALIBRATION_RESPONSE;
-      memcpy((resPacket + packet_length), &storedConfig->gyroCalib.rawBytes[0], 21);
-      packet_length += 21;
+//      memcpy((resPacket + packet_length), &storedConfig->gyroCalib.rawBytes[0], 21);
+//      packet_length += 21;
+
+      sc1.id = SC_SENSOR_MPU9150_GYRO;
+      sc1.range = storedConfig->gyroRange;
+      sc1.data_len = SC_DATA_LEN_MPU9250_GYRO;
+      ShimmerCalib_singleSensorRead(&sc1);
+      memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
+      packet_length += sc1.data_len;
+
       gyroCalibrationResponse = 0;
     }
     else if (magCalibrationResponse)
     {
       *(resPacket + packet_length++) = LSM303DLHC_MAG_CALIBRATION_RESPONSE;
-      memcpy((resPacket + packet_length), &storedConfig->magCalib.rawBytes[0], 21);
-      packet_length += 21;
+//      memcpy((resPacket + packet_length), &storedConfig->magCalib.rawBytes[0], 21);
+//      packet_length += 21;
+
+      sc1.id = SC_SENSOR_LSM303DLHC_MAG;
+      sc1.range = storedConfig->magRange;
+      sc1.data_len = SC_DATA_LEN_LSM303DLHC_MAG;
+      ShimmerCalib_singleSensorRead(&sc1);
+      memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
+      packet_length += sc1.data_len;
+
       magCalibrationResponse = 0;
     }
     else if (dAccelCalibrationResponse)
     {
       *(resPacket + packet_length++) = LSM303DLHC_ACCEL_CALIBRATION_RESPONSE;
-      memcpy((resPacket + packet_length), &storedConfig->wrAccelCalib.rawBytes[0], 21);
-      packet_length += 21;
+//      memcpy((resPacket + packet_length), &storedConfig->wrAccelCalib.rawBytes[0], 21);
+//      packet_length += 21;
+
+      sc1.id = SC_SENSOR_LSM303DLHC_ACCEL;
+      sc1.range = storedConfig->wrAccelRange;
+      sc1.data_len = SC_DATA_LEN_LSM303DLHC_ACCEL;
+      ShimmerCalib_singleSensorRead(&sc1);
+      memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
+      packet_length += sc1.data_len;
+
       dAccelCalibrationResponse = 0;
     }
     else if (gsrRangeResponse)
@@ -3449,9 +3483,42 @@ void BtUart_sendRsp(void)
     else if (allCalibrationResponse)
     {
       *(resPacket + packet_length++) = ALL_CALIBRATION_RESPONSE;
-      S4Ram_storedConfigGet(&resPacket[packet_length], NV_A_ACCEL_CALIBRATION,
-          NV_NUM_CALIBRATION_BYTES);
-      packet_length += NV_NUM_CALIBRATION_BYTES;
+//      S4Ram_storedConfigGet(&resPacket[packet_length], NV_A_ACCEL_CALIBRATION,
+//          NV_NUM_CALIBRATION_BYTES);
+//      packet_length += NV_NUM_CALIBRATION_BYTES;
+
+      uint8_t i;
+      for (i = 0; i < 4; i++)
+      {
+          if (i == 0)
+          {
+              sc1.id = SC_SENSOR_ANALOG_ACCEL;
+              sc1.range = 0;
+              sc1.data_len = SC_DATA_LEN_ANALOG_ACCEL;
+          }
+          else if (i == 1)
+          {
+              sc1.id = SC_SENSOR_MPU9150_GYRO;
+              sc1.range = storedConfig->gyroRange;
+              sc1.data_len = SC_DATA_LEN_MPU9250_GYRO;
+          }
+          else if (i == 2)
+          {
+              sc1.id = SC_SENSOR_LSM303DLHC_MAG;
+              sc1.range = storedConfig->magRange;
+              sc1.data_len = SC_DATA_LEN_LSM303DLHC_MAG;
+          }
+          else if (i == 3)
+          {
+              sc1.id = SC_SENSOR_LSM303DLHC_ACCEL;
+              sc1.range = storedConfig->wrAccelRange;
+              sc1.data_len = SC_DATA_LEN_LSM303DLHC_ACCEL;
+          }
+          ShimmerCalib_singleSensorRead(&sc1);
+          memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
+          packet_length += sc1.data_len;
+      }
+
       allCalibrationResponse = 0;
     }
     else if (deviceVersionResponse)
@@ -3781,7 +3848,7 @@ void HandleBtRfCommStateChange(uint8_t isConnected)
     if (!S4Ram_getStoredConfig()->sync)
     {
       stat.btstreamReady = 0;
-      stat.enableBtstream = 0;
+      stat.btstreamCmd = BT_STREAM_CMD_STATE_STOP;
 
       setBtDataRateTestState(0);
 

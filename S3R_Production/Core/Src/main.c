@@ -601,7 +601,7 @@ void SetupDock(void)
   {
     setBatteryInterval(BATT_INTERVAL_DOCKED);
     resetBatteryCriticalCount();
-    stat.enableSdlog = 0;
+    stat.sdlogCmd = 0;
     stat.sdlogReady = 0;
     if (CheckSdInslot())
     {
@@ -686,8 +686,8 @@ uint8_t CheckOnDefault(void)
   { //state == BTSD_IDLESD
     //startSensing = 1;
     setStartSensing();
-    //enableSdlog = (SD_ERROR) ? 0 : 1;
-    stat.enableSdlog = 1;
+    //sdlogCmd = (SD_ERROR) ? 0 : 1;
+    stat.sdlogCmd = 1;
     stat.isSensing = 1;
     BtsdSelfcmd();
     stat.isSensing = 0;
