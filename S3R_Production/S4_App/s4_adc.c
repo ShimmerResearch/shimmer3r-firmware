@@ -950,7 +950,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
   {
     HAL_StatusTypeDef status = HAL_ADC_Start(hadcBattPtr);
     status = HAL_ADC_PollForConversion(hadcBattPtr, 100);
-    if(status == HAL_OK)
+    if (status == HAL_OK)
     {
       adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
       updateBatteryStatus(adc_battVal);
