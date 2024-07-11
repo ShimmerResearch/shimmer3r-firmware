@@ -359,9 +359,9 @@ typedef union
     uint8_t mpu9x50MplSamplingRate : 3;
 
     //config setup byte6
-    uint8_t unusedIdx132Bit0    : 1;
-    uint8_t unusedIdx132Bit1    : 1;
-    uint8_t unusedIdx132Bit2    : 1;
+    uint8_t unusedIdx132Bit0       : 1;
+    uint8_t unusedIdx132Bit1       : 1;
+    uint8_t unusedIdx132Bit2       : 1;
     uint8_t mpu9x50MplEnable       : 1;
     uint8_t mpu9x50MplMagDistCal   : 1;
     uint8_t mpu9x50MplVectCompCal  : 1;
