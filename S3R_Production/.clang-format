@@ -292,7 +292,7 @@ IndentFunctionDeclarationAfterType: false
 
 # MaxEmptyLinesToKeep (unsigned)
 # The maximum number of consecutive empty lines to keep.
-MaxEmptyLinesToKeep: 2
+MaxEmptyLinesToKeep: 1
 
 # NamespaceIndentation (NamespaceIndentationKind)
 # The indentation used for namespaces.
