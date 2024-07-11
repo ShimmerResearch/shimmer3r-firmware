@@ -144,7 +144,6 @@ void ADS1292_gatherDataDone(void);
   0x40 //Write n nnnn registers starting at address r rrrr
        //first byte 010r rrrr (2xh)(2) - second byte 000n nnnn(2)
 
-
 /****************************************************************/
 /* ADS1x9x register addresses                                   */
 /****************************************************************/
@@ -602,7 +601,6 @@ void ADS1292_gatherDataDone(void);
 //
 //Bit 0 Must be set to '1;
 #define ADS1x9x_REG_RESP2     (0x00Au)
-
 
 uint8_t ADS1292_spiRxIsr(void);
 uint8_t ADS1292_spiTxIsr(void);

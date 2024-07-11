@@ -104,7 +104,6 @@ uint8_t BT_connect(uint8_t *addr);
 //after this command is called there will be no link to the connected device
 uint8_t BT_disconnect(void);
 
-
 //mode: SLAVE_MODE, MASTER_MODE, TRIGGER_MASTER_MODE, AUTO_MASTER_MODE
 void BT_setRadioMode(uint8_t mode);
 
@@ -156,7 +155,6 @@ void BT_setTempBaudRate(char *baudRate);
 //otherwise return 0
 void BT_receiveFunction(uint8_t (*receiveFuncPtr)(uint8_t data));
 
-
 //this function needs to be called from within the BT_PIO ISR
 //in order to inform the RN42 driver about the state change
 //value needs to be 1 if interrupt was low to high else 0
@@ -170,6 +168,5 @@ void BT_rtsInterrupt(uint8_t value);
 //put these two in the system ISR handler
 void BT_txIsr(UART_HandleTypeDef *huart);
 void BT_rxIsr(UART_HandleTypeDef *huart);
-
 
 #endif //RN42_H

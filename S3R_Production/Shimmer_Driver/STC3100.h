@@ -271,7 +271,6 @@ typedef union
     unsigned char : 3;
   } CONTROLSTATUSbits;
 
-
 } tSTC31000Data;
 
 extern tSTC31000Data STC3100Data;
@@ -297,6 +296,5 @@ void STC3100_readData_it(uint8_t *buf);
 //If wakeup is 0 puts STC3100 to sleep
 //else wakes it up
 void STC3100_wake(int wakeup);
-
 
 #endif //STC3100_H

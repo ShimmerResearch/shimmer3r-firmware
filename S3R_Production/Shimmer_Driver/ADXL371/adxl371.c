@@ -557,7 +557,6 @@ int32_t adxl371_get_fifo_xyz_data(struct adxl371_dev *dev,
   uint16_t i;
   int32_t ret;
 
-
   if (cnt > 512)
     return -1;
   /*

@@ -448,7 +448,6 @@ void SD_writeToCard(void)
   uint8_t *writing_buf;
   uint16_t *writing_buf_len;
 
-
   writing_buf = sdWrBuf[sdBufWr];
   writing_buf_len = sdWrLen + sdBufWr;
 

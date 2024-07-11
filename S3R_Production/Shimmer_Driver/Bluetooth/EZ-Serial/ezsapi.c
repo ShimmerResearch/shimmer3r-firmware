@@ -60,7 +60,6 @@ uint8_t ezs_rx_packet_checksum;
 ezs_packet_t ezs_rx_packet;
 ezs_packet_t ezs_tx_packet;
 
-
 /*******************************************************************************
  * Command definition table with binary command/response method detail
  *******************************************************************************/
@@ -264,7 +263,6 @@ const uint8_t ezs_tbl_cmd[] = {
   //-------------- Fix 06 End -------------------------//
 };
 
-
 /*******************************************************************************
  * Event definition table with binary event methods detail
  *******************************************************************************/
@@ -319,13 +317,11 @@ const uint8_t ezs_tbl_evt[] = {
   //-------------- Fix 06 End -------------------------//
 };
 
-
 /*******************************************************************************
  * Application event handler callback for processing API responses and events.
  * This must be defined as non-NULL in the "EZSerial_Start" call.
  *******************************************************************************/
 void (*EZSerial_AppHandler)(ezs_packet_t *packet);
-
 
 /*******************************************************************************
  * Platform-specific output function for sending API commands. This must be
@@ -333,7 +329,6 @@ void (*EZSerial_AppHandler)(ezs_packet_t *packet);
  * the library-provided "ezs_cmd_..." functions to send binary command packets.
  *******************************************************************************/
 ezs_output_result_t (*EZSerial_HardwareOutput)(uint16_t length, const uint8_t *data);
-
 
 /*******************************************************************************
  * Platform-specific input function for reading API response and event data.

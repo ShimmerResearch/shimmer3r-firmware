@@ -144,7 +144,6 @@ void InfoMem_init(void);
 
 //void InfoMem_initCalib(uint8_t* buf);
 
-
 void InfoMem_update(void);
 
 void InfoMem_updateFrom(uint8_t *buf);

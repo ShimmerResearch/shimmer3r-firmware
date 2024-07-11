@@ -55,7 +55,6 @@
 //        pDataExtADC_A15, pDataIntADC_A12, pDataIntADC_A13, pDataIntADC_A14,
 //        pDataBatteryAnalog;
 
-
 typedef struct
 { //data ptr (offset)
   uint8_t ts;

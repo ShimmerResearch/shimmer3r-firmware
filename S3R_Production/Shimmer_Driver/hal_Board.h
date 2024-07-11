@@ -40,7 +40,6 @@
  * @date May, 2016
  */
 
-
 #include "s4__cfg.h"
 #include <stdint.h>
 

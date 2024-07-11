@@ -221,7 +221,6 @@ uint8_t isLedOnUprGreen(void)
 
 #endif
 
-
 /***************************************************************************/ /**
                                                                                * @brief  Turn on LEDs
                                                                                * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn on

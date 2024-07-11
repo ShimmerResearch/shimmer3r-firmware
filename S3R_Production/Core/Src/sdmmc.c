@@ -213,7 +213,6 @@ void printSdCardInfo(void)
   printf(", Manufacture Date=%d-%02d", (pCID.ManufactDate / 10) + 1990,
       pCID.ManufactDate % 10);
 
-
   printf("\r\n");
 }
 

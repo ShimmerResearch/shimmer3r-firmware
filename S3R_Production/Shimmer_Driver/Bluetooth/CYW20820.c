@@ -335,7 +335,6 @@ void btInitCommands(void)
     return;
   }
 
-
   if (btInitCmdsStep == GET_FIRMWARE_VERSION)
   {
     printf("Get FW Version\r\n");
@@ -810,7 +809,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     setBtCysppState(packet->payload.evt_p_cyspp_status.status);
     break;
-
 
   /* -------- Shimmer added start -------- */
   case EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS:

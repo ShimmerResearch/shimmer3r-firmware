@@ -1668,7 +1668,6 @@ uint8_t processRnCmdResponse(void)
     }
     memcpy(btVerStrResponse, unwrappedResponse, btVerLen);
 
-
     setBtFwVersion(btFwVerNew);
 
     responseParsed = 1;

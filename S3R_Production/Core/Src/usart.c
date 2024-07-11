@@ -329,7 +329,6 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *uartHandle)
 
 /* USER CODE BEGIN 1 */
 
-
 void Uart_init(void)
 {
   huartBt = &huart3;

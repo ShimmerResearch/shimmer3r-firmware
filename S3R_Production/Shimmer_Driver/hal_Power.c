@@ -111,7 +111,6 @@ void Power_GpioAnalogConfig(void)
 
   /* Disable GPIOs clock */
 
-
   //__GPIOA_CLK_DISABLE();
 
   __GPIOB_CLK_DISABLE();

@@ -228,7 +228,6 @@ uint64_t rtc64_reg;
 void S4_RTC_Init()
 { //RTC_HandleTypeDef *hrtc
 
-
   //"How to know after power start whether the product up from a stand by mode or a power down reset. "
   uint32_t lastRstState = RCC->CSR;
   //code to detect a warm reboot
@@ -240,7 +239,6 @@ void S4_RTC_Init()
   {
     //uartPrintf("\n\r Cold boot (Powered from Off)" );
   }
-
 
   //s4rtc_hrtc = hrtc;
   S4_RTC_t data;
@@ -406,7 +404,6 @@ uint8_t S4_RTC_SetDateTime(S4_RTC_t *data)
   //sAlarm.AlarmDateWeekDay = 0x1;
   //sAlarm.Alarm = RTC_ALARM_A;
   //HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BCD);
-
 
   /* Write backup registers */
   S4_RTC_Status = RTC_STATUS_TIME_OK;

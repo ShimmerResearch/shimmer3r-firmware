@@ -40,7 +40,6 @@
  * @date May, 2016
  */
 
-
 /*
 SLEEP mode
 
@@ -85,7 +84,6 @@ on VBAT pin, then MCU will be in VBAT mode. How to exit this mode? Put power
 supply on main Vdd pins.
 */
 
-
 #include <stdint.h>
 
 #ifndef HAL_POWER_H
@@ -93,7 +91,6 @@ supply on main Vdd pins.
 
 //wait for reset to exit
 void Power_Standby(void);
-
 
 //USAGE:
 //  /* Checks if reset was because of wakeup from standby */
@@ -108,10 +105,8 @@ void Power_Standby(void);
 //  }
 uint8_t Power_StandbyReset(void);
 
-
 //wait for any int to exit
 void Power_SleepUntilInterrupt(void);
-
 
 //wait for exti to exit
 void Power_StopUntilInterrupt(void);

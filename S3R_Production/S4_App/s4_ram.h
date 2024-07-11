@@ -40,7 +40,6 @@
  * @date May, 2016
  */
 
-
 #include <stdint.h>
 
 #ifndef S4_RAM_H

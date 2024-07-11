@@ -48,7 +48,6 @@
 //#include "gpio.h"
 //#include "dma.h"
 
-
 //static STATTypeDef * pStat;
 //static SENSINGTypeDef *pSensing;
 
@@ -82,7 +81,6 @@ static uint16_t ADC_RANK_ARRAY[] = { ADC_REGULAR_RANK_1, ADC_REGULAR_RANK_2,
   ADC_REGULAR_RANK_11, ADC_REGULAR_RANK_12, ADC_REGULAR_RANK_13,
   ADC_REGULAR_RANK_14, ADC_REGULAR_RANK_15, ADC_REGULAR_RANK_16 };
 #endif
-
 
 void S4_NORM_ADC_init(void)
 {
@@ -397,7 +395,6 @@ void S4_NORM_ADC_startSensing()
     hadcSensPtr->Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
     hadcSensPtr->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT;
     hadcSensPtr->Init.OversamplingMode = DISABLE;
-
 
 #elif defined(SHIMMER4_SDK)
     hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
@@ -1069,7 +1066,6 @@ void updateBatteryStatus(uint16_t adc_battVal)
 //      __NOP();
 //   }
 //}
-
 
 void setBatteryInterval(battAlarmInterval_t value)
 {

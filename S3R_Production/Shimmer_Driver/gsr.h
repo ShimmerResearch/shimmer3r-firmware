@@ -66,9 +66,7 @@ void GSR_output(uint32_t *buf);
 //    3: 3.3 Mohm
 void GSR_setRange(uint8_t range);
 
-
 void GSR_setResistor(uint8_t res);
-
 
 //Calculates resistance from a raw ADC value using linear fit to conductance
 //ADC_val: the ADC value to be used in the calculation

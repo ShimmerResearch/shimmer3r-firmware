@@ -63,7 +63,6 @@
 
 //Based on https://github.com/STMicroelectronics/STMems_Standard_C_drivers/tree/master/lis3mdl_STdC/examples
 
-
 #if defined(STEVAL_MKI109V3)
 /* MKI109V3: Define communication interface */
 #define SENSOR_BUS hspi2

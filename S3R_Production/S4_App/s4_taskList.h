@@ -97,7 +97,6 @@ typedef enum
 } TASK_FLAGS;
 //return the task id of the current task
 
-
 void S4_NORM_Task_init(void);
 
 void S4_NORM_Task_manage(void);

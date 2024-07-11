@@ -61,7 +61,6 @@
  *            header file of the driver (_reg.h).
  */
 
-
 #if defined(STEVAL_MKI109V3)
 /* MKI109V3: Define communication interface */
 #define SENSOR_BUS hspi2

@@ -23,10 +23,8 @@
 /* USER CODE BEGIN 0 */
 #include "s4__cfg.h"
 
-
 //static SENSINGTypeDef *pSensing;
 //static STATTypeDef * pStat;
-
 
 I2CTypeDef i2cSens;
 I2CTypeDef i2cBatt;
@@ -632,11 +630,9 @@ void I2cBatt_stopSensing(void)
 }
 #endif
 
-
 //================================================
 //sensor codes
 //================================================
-
 
 void (*I2cSens_gatherDataDone_cb)(void);
 #if defined(SHIMMER4_SDK)
@@ -670,7 +666,6 @@ void I2cBatt_gatherDataStart(void)
   I2cBattMonitor(I2C_FIRST_SENSOR);
 }
 #endif
-
 
 void I2cSensing(I2C_SENSING_TYPE start)
 {

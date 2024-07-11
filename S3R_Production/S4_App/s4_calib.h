@@ -10,7 +10,6 @@
 #define min(a, b) a > b ? b : a
 #endif
 
-
 #define SHIMMER_CALIB_DATA_MAX  22
 #define SHIMMER_CALIB_COPY_SIZE 128
 #define SHIMMER_CALIB_RAM_MAX   INFOMEM_CALIB_SIZE
@@ -127,7 +126,6 @@ typedef struct shimmer_calib_t
 #define SC_SENSOR_RANGE_BMP180               0
 #define SC_SENSOR_RANGE_MAX_BMP180           1
 #define SC_DATA_LEN_BMP180                   22
-
 
 extern void ShimmerCalib_init(void);
 
