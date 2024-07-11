@@ -259,5 +259,7 @@ uint8_t InfoMem_test(void)
 
 uint8_t InfoMem_write(uint8_t addr, uint8_t *buf, uint16_t size)
 {
+  /*TODO STM32 flash has to be erased per 8KB page size even if we only want to update a small number of bytes.
+   * Revisit if we move Infomem to being stored on EEPROM where we can erase/write 16 byte pages. */
   InfoMem_update();
 }
