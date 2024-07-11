@@ -348,28 +348,31 @@ typedef union
     uint8_t chEnMpu9x50GyroCal  : 1;
 
     //config setup byte4
-    uint8_t chEnMpu9x50MotCalCfg    : 3;
-    uint8_t chEnMpu9x50Lfp          : 3;
-    uint8_t chEnMpu9x50MplUseLsmMag : 1;
-    uint8_t chEnMpu9x50Dmp          : 1;
+    uint8_t mpu9x50MotCalCfg    : 3;
+    uint8_t mpu9x50Lfp          : 3;
+    uint8_t mpu9x50MplUseLsmMag : 1;
+    uint8_t mpu9x50Dmp          : 1;
 
     //config setup byte 5
-    uint8_t chEnMpu9x50MplMagMix       : 2;
-    uint8_t chEnMpu9x50MagSamplingRate : 3;
-    uint8_t chEnMpu9x50MplSamplingRate : 3;
+    uint8_t mpu9x50MplMagMix       : 2;
+    uint8_t altMagSamplingRate     : 3;
+    uint8_t mpu9x50MplSamplingRate : 3;
 
     //config setup byte6
     uint8_t unusedIdx132Bit0    : 1;
     uint8_t unusedIdx132Bit1    : 1;
     uint8_t unusedIdx132Bit2    : 1;
-    uint8_t chEnMplEnable       : 1;
-    uint8_t chEnMplMagDistCal   : 1;
-    uint8_t chEnMplVectCompCal  : 1;
-    uint8_t chEnMplGyroCalTc    : 1;
-    uint8_t chEnMplSensorFusion : 1;
-    uint8_t mplAccelCalibration[21];
-    uint8_t mplMagCalibration[21];
-    uint8_t mplGyroCalibration[12];
+    uint8_t mpu9x50MplEnable       : 1;
+    uint8_t mpu9x50MplMagDistCal   : 1;
+    uint8_t mpu9x50MplVectCompCal  : 1;
+    uint8_t mpu9x50MplGyroCalTc    : 1;
+    uint8_t mpu9x50MplSensorFusion : 1;
+
+    gImuConfig altAccelCalib;
+    gImuConfig altMagCalib;
+
+    uint8_t mpu9x50MplGyroCalibration[12];
+
     char shimmerName[12];
     char expIdName[12];
     uint32_t configTime;
