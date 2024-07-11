@@ -85,7 +85,7 @@ typedef enum
   TASK_STREAMDATA = 0x1 << 13,
   //TASK_RADIOTX         = 0x1<<14,
   TASK_SDLOG_CFG_UPDATE = 0x1 << 15,
-  TASK_BATTREAD = 0x1 << 16,
+  TASK_BATT_READ_FROM_ALARM = 0x1 << 16,
 #if defined(SHIMMER3R)
   TASK_SAVEDATA = 0x1 << 17,
 #elif defined(SHIMMER4_SDK)

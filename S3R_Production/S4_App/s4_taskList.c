@@ -143,9 +143,10 @@ void S4_NORM_Task_manage(void)
         stat.isConfiguring = 0;
       }
       break;
-    case TASK_BATTREAD:
+    case TASK_BATT_READ_FROM_ALARM:
 #if defined(SHIMMER3R)
       manageReadBatt(0);
+      setupNextRtcMinuteAlarm();
 #elif defined(SHIMMER4_SDK)
       S4_ADC_readBatt();
       I2C_readBatt();

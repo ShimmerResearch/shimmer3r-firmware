@@ -1047,7 +1047,6 @@ void manageReadBatt(uint8_t isBlockingRead)
   {
     S4_ADC_readBatt(isBlockingRead);
   }
-  setupNextRtcMinuteAlarm();
 }
 
 void updateBatteryStatus(uint16_t adc_battVal)

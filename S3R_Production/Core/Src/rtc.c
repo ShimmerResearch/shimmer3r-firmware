@@ -729,7 +729,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   __HAL_RTC_ALARMA_DISABLE(hrtc);
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
 
-  S4_Task_set(TASK_BATTREAD);
+  S4_Task_set(TASK_BATT_READ_FROM_ALARM);
 #if defined(SHIMMER4_SDK)
 #if RTC_FAST
   //rtc64_reg += 0x8000; // this is not working well as the interrupt priority is not the highest
