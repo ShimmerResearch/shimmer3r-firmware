@@ -140,6 +140,7 @@
 typedef union
 {
   uint8_t rawBytes[21];
+
   struct __attribute__((packed))
   {
     int16_t calibOffset_B0;
@@ -163,6 +164,7 @@ typedef union
 typedef union
 {
   uint8_t rawBytes[10];
+
   struct __attribute__((packed))
   {
     uint8_t config1;
@@ -181,6 +183,7 @@ typedef union
 typedef union
 {
   uint8_t rawBytes[STOREDCONFIG_SIZE];
+
   struct __attribute__((packed))
   {
     //cfg in common

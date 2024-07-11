@@ -171,6 +171,7 @@ const uint8_t APBPrescTable[8] = { 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U };
 const uint32_t MSIRangeTable[16] = { 48000000U, 24000000U, 16000000U, 12000000U,
   4000000U, 2000000U, 1330000U, 1000000U, 3072000U, 1536000U, 1024000U, 768000U,
   400000U, 200000U, 133000U, 100000U };
+
 /**
  * @}
  */
@@ -352,7 +353,6 @@ void SystemCoreClockUpdate(void)
   /* HCLK clock frequency */
   SystemCoreClock >>= tmp;
 }
-
 
 /**
  * @}

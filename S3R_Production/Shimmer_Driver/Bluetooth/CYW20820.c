@@ -210,6 +210,7 @@ void btInit(void)
     }
   */
 }
+
 //TODO set appropriate values for setDmaRx() calls
 void btInitCommands(void)
 {

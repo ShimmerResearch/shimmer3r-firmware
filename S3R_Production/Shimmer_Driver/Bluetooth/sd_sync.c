@@ -926,6 +926,7 @@ inline uint16_t GetTA0(void)
 }
 
 #pragma vector = TIMER0_A1_VECTOR
+
 __interrupt void TIMER0_A1_ISR(void)
 {
   switch (__even_in_range(TA0IV, 14))

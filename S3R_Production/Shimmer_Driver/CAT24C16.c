@@ -179,6 +179,7 @@ uint8_t CAT24C16_test(void)
 
   return ret_val;
 }
+
 //#else
 //uint8_t CAT24C16_test(void){
 //   // always return success

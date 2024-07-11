@@ -118,6 +118,7 @@ void MX_SPI1_Init(void)
 
   /* USER CODE END SPI1_Init 2 */
 }
+
 /* SPI2 init function */
 void MX_SPI2_Init(void)
 {
@@ -176,6 +177,7 @@ void MX_SPI2_Init(void)
 
   /* USER CODE END SPI2_Init 2 */
 }
+
 /* SPI3 init function */
 void MX_SPI3_Init(void)
 {
@@ -1040,14 +1042,17 @@ void SpiStep1Start(void)
 {
   EXG_gatherDataStart();
 }
+
 void SpiStep2Start(void)
 {
   SpiStep3Start();
 }
+
 void SpiStep3Start(void)
 {
   SpiStepDone();
 }
+
 void SpiStepDone(void)
 {
   SPI_gatherDataDone_cb();

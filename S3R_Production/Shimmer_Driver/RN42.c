@@ -120,7 +120,6 @@ void initRN()
   HAL_GPIO_WritePin(BT_GPIO_CTS, BT_PIN_CTS, GPIO_PIN_RESET); //CTS
 }
 
-
 void BT_setupUART(char *baudRate)
 {
   USART_TypeDef *temp_Instance = huart_BT->Instance;
@@ -186,7 +185,6 @@ void BT_setupUART(char *baudRate)
   huart_BT->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
   HAL_UART_Init(huart_BT);
 }
-
 
 void disableRN(UART_HandleTypeDef *huart)
 {
@@ -285,7 +283,6 @@ void BT_rxIsr(UART_HandleTypeDef *huart)
     }
   }
 }
-
 
 void BT_setRxLen(uint8_t len)
 {
@@ -533,7 +530,6 @@ void setCommandsContinue(void)
   }
 }
 
-
 //IMPORTANT: Connect and Disconnect commands are exceptional commands
 //in that they automatically return to data mode once they are issued
 //so no response and no "---" needed to return to data mode
@@ -608,7 +604,6 @@ void BT_init(UART_HandleTypeDef *huart, uint8_t (*receiveFuncPtr)(uint8_t *data)
   BT_setupUART("115K");
 }
 
-
 void BT_configure()
 {
   HAL_Delay(15);
@@ -626,7 +621,6 @@ void BT_disable(UART_HandleTypeDef *huart)
   //Turn off power (SW_BT P4.3 on Shimmer3)
   //P4OUT &= ~BIT3;
 }
-
 
 //write data to be transmitted to the Bluetooth module
 //returns 0 if fails, else 1
@@ -697,12 +691,10 @@ void BT_setDiscoverable(uint8_t disc)
   discoverable = disc;
 }
 
-
 void BT_setEncryption(uint8_t enc)
 {
   encrypt = enc;
 }
-
 
 void BT_setAuthentication(uint8_t mode)
 {
@@ -710,13 +702,11 @@ void BT_setAuthentication(uint8_t mode)
   newAuthMode = mode;
 }
 
-
 void BT_setName(char *name)
 {
   setNameRequest = 1;
   snprintf(newName, 17, "%s", name);
 }
-
 
 void BT_setFriendlyName(char *name)
 {
@@ -724,13 +714,11 @@ void BT_setFriendlyName(char *name)
   snprintf(newFriendlyName, 16, "%s", name);
 }
 
-
 void BT_setPIN(char *PIN)
 {
   setPINRequest = 1;
   snprintf(newPIN, 17, "%s", PIN);
 }
-
 
 void BT_setServiceClass(char *class)
 {
@@ -738,13 +726,11 @@ void BT_setServiceClass(char *class)
   snprintf(newSvcClass, 5, "%s", class);
 }
 
-
 void BT_setServiceName(char *name)
 {
   setSvcNameRequest = 1;
   snprintf(newSvcName, 5, "%s", name);
 }
-
 
 void BT_setDeviceClass(char *class)
 {
@@ -752,12 +738,10 @@ void BT_setDeviceClass(char *class)
   snprintf(newDevClass, 5, "%s", class);
 }
 
-
 void BT_disableRemoteConfig(uint8_t disableConfig)
 {
   disableRemoteConfig = disableConfig;
 }
-
 
 //this one makes sense only to roving networks
 //the supplied "rate_factor" is the baudrate * 0.004096
@@ -767,7 +751,6 @@ void BT_setRawBaudrate(char *rate_factor)
   setRawBaudrate = 1;
   snprintf(newRawBaudrate, 5, "%s", rate_factor);
 }
-
 
 //to set the baudrate of the BT to MSP serial interface
 //as per RovingNetworks command spec EG "SU,96" or "SU,230"
@@ -779,7 +762,6 @@ void BT_setBaudrate(char *new_baud)
   snprintf(newBaudrate, 5, "%s", new_baud);
 }
 
-
 //Sets the Paging Scan Window - amount of time device
 //spends enabling page scan (connectability).
 //Minimum = (hex word) "0012", corresponding to about 1% duty cycle.
@@ -789,7 +771,6 @@ void BT_setPagingTime(char *hexval_time)
   setCustomPagingTime = 1;
   snprintf(newPagingTime, 5, "%s", hexval_time);
 }
-
 
 //Sets the Inquiry Scan Window - amount of time device
 //spends enabling inquiry scan (discoverability).

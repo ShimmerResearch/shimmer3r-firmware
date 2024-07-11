@@ -77,6 +77,7 @@ gConfigBytes *S4Ram_getStoredConfig(void)
 {
   return &storedConfig;
 }
+
 uint8_t *S4Ram_getSdHeadText(void)
 {
   return sdHeadText;
@@ -123,7 +124,6 @@ uint8_t S4Ram_sdHeadTextSetByte(uint16_t offset, uint8_t val)
   sdHeadText[offset] = val;
   return 0;
 }
-
 
 /*
  * storedConfig: Set(), Get() and GetByte(), S4Ram_sdHeadTextSetByte()
@@ -184,7 +184,6 @@ void S4Ram_btMacAsciiGet(uint8_t *buf)
 {
   memcpy(buf, btMacAscii, 12);
 }
-
 
 /*
  * btMacHex: Set(), Get()

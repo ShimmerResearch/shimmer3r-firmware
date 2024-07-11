@@ -48,7 +48,6 @@
 #include "s4.h"
 #include "s4__cfg.h"
 
-
 //uint8_t pDataTs, pDataTemp, pDataPres, pDataLsm303dlhcAccel,
 //pDataLsm303dlhcMag, pDataMpu9250Gyro, pDataMpu9250Accel,
 //        pDataMpu9250Mag, pDataAnalogAccel, pDataStc3100Batt, pDataExg1,

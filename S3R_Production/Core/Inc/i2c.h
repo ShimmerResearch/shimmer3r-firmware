@@ -105,6 +105,7 @@ extern "C"
     uint8_t sensorLen;
     uint8_t sensorCnt;
   } I2CTypeDef;
+
   //typedef struct {//i2c_2 - BatteryMonitor
   //   I2C_STATUS status;
   //   uint8_t rxBuf[20];
@@ -126,7 +127,6 @@ extern "C"
     uint16_t tempMax;
     uint16_t tempCnt;
   } BMP180TypeDef;
-
 
   typedef struct
   { //bmp280

@@ -114,6 +114,7 @@ uint8_t S4Sens_checkStartSensorConditions(void)
   }
   return 1;
 }
+
 uint8_t S4Sens_checkStartLoggingConditions(void)
 {
   if (stat.isSdInserted)
@@ -247,6 +248,7 @@ uint8_t S4Sens_checkStopSensorConditions(void)
 
   return 1;
 }
+
 uint8_t S4Sens_checkStopLoggingConditions(void)
 {
   if (stat.sdlogCmd != 2)
@@ -260,6 +262,7 @@ uint8_t S4Sens_checkStopLoggingConditions(void)
     return 1;
   }
 }
+
 void S4Sens_stopSensing(void)
 {
   if (!stat.isSensing)
@@ -448,18 +451,21 @@ void S4Sens_step2Start(void)
   //I2C_gatherDataStart();
   I2cSens_gatherDataStart();
 }
+
 void S4Sens_step3Start(void)
 {
   PeriStat_Clr(STAT_PERI_I2C_SENS);
   temp_cnt3++;
   I2cBatt_gatherDataStart();
 }
+
 void S4Sens_step4Start(void)
 {
   PeriStat_Clr(STAT_PERI_I2C_BATT);
   //SPI_gatherDataStart();
   S4Sens_step5Start();
 }
+
 void S4Sens_step5Start(void)
 {
   PeriStat_Clr(STAT_PERI_SPI_SENS);

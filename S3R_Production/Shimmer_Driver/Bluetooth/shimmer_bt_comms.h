@@ -195,7 +195,6 @@
 //#define BT_RX_COMMS_TIMEOUT_TICKS                     3277U /* 32768*0.1s = 3276.8 */
 #define BT_RX_COMMS_TIMEOUT_TICKS 328U /* 32768*0.01s = 327.68  */
 
-
 enum
 {
   BT_STREAM_CMD_STATE_IDLE = 0,

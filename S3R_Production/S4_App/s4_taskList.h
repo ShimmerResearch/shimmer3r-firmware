@@ -64,6 +64,7 @@
 #endif //USE_FREERTOS
 
 #define TASK_SIZE 31
+
 typedef enum
 {
   TASK_NONE = 0,

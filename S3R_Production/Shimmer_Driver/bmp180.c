@@ -174,7 +174,6 @@ HAL_StatusTypeDef BMP180_tempReadRx(uint8_t *rx_buf)
   return HAL_I2C_Master_Receive_DMA(hi2c_BMP180, BMP180_ADDR, rx_buf, 2);
 }
 
-
 HAL_StatusTypeDef BMP180_presStartMeasurement(uint8_t oss)
 {
   uint8_t i2c_tx_data[2];

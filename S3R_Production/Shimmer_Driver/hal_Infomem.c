@@ -62,6 +62,7 @@ void InfoMem_init(void)
   infoMem_p_storedConfig = S4Ram_getStoredConfig();
   infoMem_p_shimmerCalib_ram = ShimmerCalib_getRam();
 }
+
 //void InfoMem_initRam(uint8_t* buf){
 //   infoMem_p_storedConfig = buf;
 //}

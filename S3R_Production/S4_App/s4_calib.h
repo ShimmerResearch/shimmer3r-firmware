@@ -15,7 +15,6 @@
 #define SHIMMER_CALIB_COPY_SIZE 128
 #define SHIMMER_CALIB_RAM_MAX   INFOMEM_CALIB_SIZE
 
-
 typedef struct shimmer_calib_default_t
 {
   uint16_t bias_x;
@@ -59,7 +58,6 @@ typedef union shimmer_calib_data_u
   } dd; //default data structure: 21byte as declared above in sc_default_t
 } sc_data_u;
 
-
 typedef struct shimmer_calib_t
 {
   uint16_t id;
@@ -68,7 +66,6 @@ typedef struct shimmer_calib_t
   uint8_t ts[8];  //timestamp
   sc_data_u data; //[SHIMMER_CALIB_DATA_MAX];
 } sc_t;
-
 
 #define SC_OFFSET_LENGTH_L                   0
 #define SC_OFFSET_LENGTH_H                   1

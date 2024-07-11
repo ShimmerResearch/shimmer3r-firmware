@@ -93,6 +93,7 @@ void MX_TIM2_Init(void)
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
 }
+
 /* TIM3 init function */
 void MX_TIM3_Init(void)
 {
@@ -154,6 +155,7 @@ void MX_TIM3_Init(void)
   /* USER CODE END TIM3_Init 2 */
   HAL_TIM_MspPostInit(&htim3);
 }
+
 /* TIM6 init function */
 void MX_TIM6_Init(void)
 {
@@ -230,6 +232,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
     /* USER CODE END TIM6_MspInit 1 */
   }
 }
+
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *timHandle)
 {
 
