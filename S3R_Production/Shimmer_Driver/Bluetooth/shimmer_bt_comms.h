@@ -205,6 +205,9 @@ enum
 #if BT_DMA_USED_FOR_RX
 //uint8_t Dma2ConversionDone(void);
 uint8_t Dma2ConversionDone(uint8_t *rxBuff);
+#if defined(SHIMMER3)
+uint8_t parseRn4678Status(void);
+#endif
 void resetBtRxVariablesOnConnect(void);
 //void resetBtRxBuff(void);
 #else
