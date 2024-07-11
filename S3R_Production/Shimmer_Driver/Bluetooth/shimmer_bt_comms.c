@@ -3112,7 +3112,7 @@ void BtUart_processCmd(void)
     fullSyncResp[0] = gAction;
     memcpy(&fullSyncResp[1], &args[0], SYNC_PACKET_MAX_SIZE - SYNC_PACKET_SIZE_CMD);
     setSyncResp(&fullSyncResp[0], SYNC_PACKET_MAX_SIZE);
-    S4_NORM_Task_set(TASK_RCNODER10);
+    S4_Task_set(TASK_RCNODER10);
 #if !USE_OLD_SD_SYNC_APPROACH
   case ACK_COMMAND_PROCESSED:
     /* Slave response received by Master */
@@ -3120,7 +3120,7 @@ void BtUart_processCmd(void)
     {
       /* SD Sync Center - get's into this case when the center is waiting for a 0x01 or 0xFF from a node */
       setSyncResp(&args[1], 1U);
-      S4_NORM_Task_set(TASK_RCCENTERR1);
+      S4_Task_set(TASK_RCCENTERR1);
     }
     break;
 #endif
@@ -3234,7 +3234,7 @@ void BtUart_sendRsp(void)
     }
     else if (btVbattResponse)
     {
-      //ReadBatt();
+      manageReadBatt(1);
       *(resPacket + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(resPacket + packet_length++) = VBATT_RESPONSE;
       memcpy((uint8_t *) (resPacket + packet_length), (uint8_t *) stat.battVal, 3);
@@ -3860,6 +3860,6 @@ void HandleBtRfCommStateChange(uint8_t isConnected)
   }
   if (!S4Ram_getStoredConfig()->sync)
   {
-    S4_NORM_Task_set(TASK_SDLOG_CFG_UPDATE);
+    S4_Task_set(TASK_SDLOG_CFG_UPDATE);
   }
 }

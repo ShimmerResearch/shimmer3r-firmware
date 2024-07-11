@@ -178,8 +178,8 @@ void Init()
   S4_RTC_WakeUpSetSlow();
 #endif
 
-  /* Take initial measurment to update LED state */
-  S4_NORM_ADC_readBatt();
+  /* Take initial measurement to update LED state */
+  S4_ADC_readBatt(1);
 
   Board_ledOff(LED_ALL);
   //while(1){
@@ -258,7 +258,7 @@ int main(void)
   linkedListConfig(&hadc1); //configure linkedlist for ADC
 
   Init();
-  //S4_NORM_Task_set(TASK_STARTSENSING);
+  //S4_Task_set(TASK_STARTSENSING);
 
   //FullTest();
 
@@ -698,7 +698,7 @@ uint8_t CheckOnDefault(void)
 
 void ReadSdConfiguration(void)
 {
-  S4_NORM_Task_clear(TASK_STREAMDATA); //this will skip one sample
+  S4_Task_clear(TASK_STREAMDATA); //this will skip one sample
   SdPowerOn();
   ParseConfig();
 }

@@ -74,6 +74,8 @@ void HAL_MspInit(void)
 
   /* USER CODE BEGIN MspInit 1 */
 
+  HAL_PWREx_EnableVddA();
+
   /* USER CODE END MspInit 1 */
 }
 

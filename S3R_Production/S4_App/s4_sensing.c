@@ -347,7 +347,7 @@ void S4Sens_streamData(void)
 
 void S4Sens_bufPoll()
 {
-  S4_NORM_ADC_gatherDataStart();
+  S4_ADC_gatherDataStart();
 
   I2C_pollSensors();
 

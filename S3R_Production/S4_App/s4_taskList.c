@@ -145,7 +145,7 @@ void S4_NORM_Task_manage(void)
       break;
     case TASK_BATTREAD:
 #if defined(SHIMMER3R)
-      manageReadBatt();
+      manageReadBatt(0);
 #elif defined(SHIMMER4_SDK)
       S4_ADC_readBatt();
       I2C_readBatt();

@@ -889,7 +889,7 @@ void S4_NORM_ADC_rankBatt(void)
   }
 }
 
-void S4_NORM_ADC_readBatt(void)
+void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
 {
 #if defined(SHIMMER4_SDK)
   uint8_t need_to_restore = 0;
@@ -943,28 +943,28 @@ void S4_NORM_ADC_readBatt(void)
 #if defined(SHIMMER4_SDK)
   }
 #endif
-#if defined(SHIMMER3R)
-  //TODO hadcSensPtr is configured above from Shimmer4 code but we're using hadcBattPtr below which I can't make sense of.
-  //TODO A bit of cross-over here between the two ADCs (presumably to handle whether the device is streaming or not) but I think this can probably be cleaned up a lot.
-  //TODO Shimmer4 implementation called DMA operation here and then delayed for a number of samples, I think calling HAL_ADC_Start may be better here but needs testing
-  //HAL_ADC_Start(hadcBattPtr);
-  //adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
-  HAL_ADC_Start_IT(hadcBattPtr);
-#elif defined(SHIMMER4_SDK)
-  HAL_ADC_Start_DMA(hadcBattPtr, &adc_battVal, 1);
-  for (uint16_t i = 0; i < 144; i++)
-    ;
-  stat.battVal[0] = adc_battVal & 0xff;
-  stat.battVal[1] = (adc_battVal >> 8) & 0xff;
-  stat.battVal[2] = 0;
-  stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
-  stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
+
+  if (isBlockingRead)
+  {
+    HAL_StatusTypeDef status = HAL_ADC_Start(hadcBattPtr);
+    status = HAL_ADC_PollForConversion(hadcBattPtr, 100);
+    if(status == HAL_OK)
+    {
+      adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
+      updateBatteryStatus(adc_battVal);
+    }
+    HAL_ADC_Stop(hadcBattPtr);
+  }
+  else
+  {
+    HAL_ADC_Start_IT(hadcBattPtr);
+  }
+
+#if defined(SHIMMER4_SDK)
   if (need_to_restore)
   {
     S4_ADC_startSensing();
   }
-  //*(uint16_t*)(stat.battVal) = adc_battVal & 0xffff;
-  S4_ADC_rankBatt();
 #endif
 }
 
@@ -980,7 +980,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 #if defined(SHIMMER3R)
   if (hadc->Instance == hadcSensPtr->Instance)
   {
-    S4_NORM_ADC_bufPoll();
+    S4_ADC_bufPoll();
     ADC_gatherDataDone_cb();
     HAL_ADC_Stop_DMA(hadcSensPtr);
   }
@@ -988,6 +988,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
     adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
     updateBatteryStatus(adc_battVal);
+    HAL_ADC_Stop_IT(hadcBattPtr);
   }
 #elif defined(SHIMMER4_SDK)
   if (hadc->Instance == hadcResv.Instance)
@@ -1031,7 +1032,7 @@ void adcGpioInit(uint32_t pin, GPIO_TypeDef *port)
   }
 }
 
-void manageReadBatt(void)
+void manageReadBatt(uint8_t isBlockingRead)
 {
   if (!hadcBattPtr)
   {
@@ -1045,7 +1046,7 @@ void manageReadBatt(void)
   }
   else
   {
-    S4_ADC_readBatt();
+    S4_ADC_readBatt(isBlockingRead);
   }
   setupNextRtcMinuteAlarm();
 }
