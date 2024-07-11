@@ -274,7 +274,6 @@ typedef union
 
 } tSTC31000Data;
 
-
 extern tSTC31000Data STC3100Data;
 
 //Initialise the STC3100 handler

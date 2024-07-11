@@ -60,6 +60,7 @@ typedef struct
 typedef union
 {
   uint8_t raw[16];
+
   struct __attribute__((packed))
   {
     shimmer_expansion_brd expansion_brd;

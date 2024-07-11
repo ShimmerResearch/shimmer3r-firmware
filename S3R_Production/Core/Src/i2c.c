@@ -871,6 +871,7 @@ void BMP180TxDoneHandler(void)
     i2cSens.status = I2C_STAT_IDLE;
   }
 }
+
 void BMP180RxDoneHandler(void)
 {
   if (i2cSens.status == I2C_STAT_BMP180_TEMP_GET_R)
@@ -1136,6 +1137,7 @@ void Lsm303dlhcMagTxDoneHandler(void)
   //LSM303DLHC_magReadDone(sensing.dataBuf + sensing.ptr.lsm303dlhcMag);
   LSM303DLHC_magReadDone(i2cSens_buf.lsm303MagBuf);
 }
+
 void Lsm303dlhcMagRxDoneHandler(void)
 {
   memcpy(sensing.dataBuf + sensing.ptr.mag1, i2cSens_buf.lsm303MagBuf, 6);

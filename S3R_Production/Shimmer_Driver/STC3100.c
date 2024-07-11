@@ -48,7 +48,6 @@ I2C_HandleTypeDef *hi2c_STC3100;
 /**Variable that contains the register values of the entire chip.*/
 tSTC31000Data STC3100Data;
 
-
 void STC3100_init(I2C_HandleTypeDef *hi2c)
 {
 
@@ -109,6 +108,7 @@ void STC3100_readData(uint8_t *buf)
   HAL_I2C_Mem_Read(hi2c_STC3100, STC3100_ADDR, STC3100_REG_CHARGE_LOW, 1, buf,
       STC3100_DATA_LEN, STC3100_TIMEOUT);
 }
+
 void STC3100_readData_it(uint8_t *buf)
 {
   HAL_I2C_Mem_Read_IT(hi2c_STC3100, STC3100_ADDR, STC3100_REG_CHARGE_LOW, 1,

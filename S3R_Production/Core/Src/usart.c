@@ -91,6 +91,7 @@ void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 2 */
 }
+
 /* USART3 init function */
 
 void MX_USART3_UART_Init(void)
@@ -439,6 +440,7 @@ void DockUart_disable(void)
 {
   __HAL_UART_DISABLE(huartDock);
 }
+
 void DockUart_enable(void)
 {
   __HAL_UART_ENABLE(huartDock);
@@ -521,6 +523,7 @@ void DockUart_rxCallback(uint8_t data)
     }
   }
 }
+
 void DockUart_processCmd()
 {
   HAL_GPIO_TogglePin(GPIOG, GPIO_PIN_6); //green
@@ -995,7 +998,6 @@ uint8_t BtUart_connectIntCheck(void)
   return stat.isBtConnected;
 }
 
-
 //void BtUart_rtsIntCheck(void) {
 //   BT_rtsInterrupt(HAL_GPIO_ReadPin(BTH_RTS_GPIO_Port, BTH_RTS_Pin));
 //}
@@ -1023,7 +1025,6 @@ uint8_t DockUart_interruptCheck(void)
   S4_Task_set(TASK_DOCKSETUP);
   return stat.isDocked;
 }
-
 
 void DockUart_setup(void)
 {

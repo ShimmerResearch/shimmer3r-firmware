@@ -275,7 +275,6 @@ typedef union
 
 } tSTC31000Data;
 
-
 //Struct that stores the updated values.
 
 typedef struct

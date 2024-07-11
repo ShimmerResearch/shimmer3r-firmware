@@ -596,6 +596,7 @@ void S4_NORM_ADC_startSensing()
 }
 
 void (*ADC_gatherDataDone_cb)(void);
+
 void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void))
 {
   ADC_gatherDataDone_cb = done_cb;
@@ -746,6 +747,7 @@ void S4_NORM_ADC_bufPoll()
       uint8_t u8[4];
       uint32_t u32;
     } gsr_buf;
+
     gsr_buf.u8[0] = sensing.dataBuf[sensing.ptr.intADC3 + 0];
     gsr_buf.u8[1] = sensing.dataBuf[sensing.ptr.intADC3 + 1];
     GSR_output(&gsr_buf.u32);

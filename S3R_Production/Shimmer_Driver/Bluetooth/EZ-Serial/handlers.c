@@ -519,7 +519,6 @@ void loadBtTxBufForDataRateTest(void)
   (*((uint32_t *) &dataRateTestTxPacket[1]))++;
 }
 
-
 //void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 //{
 ////  HAL_UART_Transmit_DMA(&huart1,(uint8_t *) "Message Received!\r\n", sizeof("Message Received!\r\n"));

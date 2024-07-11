@@ -93,6 +93,7 @@ void ShimmerCalib_init(void)
     ShimmerCalib_initVer();
   }
 }
+
 uint8_t *ShimmerCalib_getRam(void)
 {
   return shimmerCalib_ram;
@@ -236,7 +237,6 @@ uint8_t ShimmerCalib_singleSensorWrite(const sc_t *sc1)
   }
   return 0;
 }
-
 
 uint8_t ShimmerCalib_singleSensorRead(sc_t *sc1)
 {

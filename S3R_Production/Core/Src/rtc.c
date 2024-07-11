@@ -212,6 +212,7 @@ void S4_RWC_setConfigTime(uint64_t val)
 {
   rwcConfigTime64 = val;
 } //64bits = 8bytes
+
 uint64_t S4_RWC_getConfigTime(void)
 {
   return rwcConfigTime64;
@@ -291,7 +292,6 @@ void S4_RTC_Init()
   //HAL_RTCEx_BKUPWrite(&hrtc, RTC_STATUS_REG, S4_RTC_Status);
 }
 
-
 void S4_RTC_WakeUpOff()
 {
   HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
@@ -300,6 +300,7 @@ void S4_RTC_WakeUpOff()
   //   Error_Handler();
   //}
 }
+
 void S4_RTC_WakeUpSet(uint16_t period)
 {
   uint16_t prescalar;
@@ -478,7 +479,6 @@ uint32_t S4_RTC_RTC2Unix(S4_RTC_t *data)
   return seconds;
 }
 
-
 void S4_RTC_Unix2RTC(S4_RTC_t *data, uint32_t unix)
 {
   uint16_t year;
@@ -559,7 +559,6 @@ void S4_RTC_Unix2RTC(S4_RTC_t *data, uint32_t unix)
   /* Date starts with 1 */
   data->date = unix + 1;
 }
-
 
 void S4_RTC_Ticks2RTC(S4_RTC_t *data, uint64_t ticks)
 {
@@ -725,6 +724,7 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
             the HAL_RTC_WakeUpTimerEventCallback could be implemented in the user file
    */
 }
+
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
   /* Disable alarm and interrupt - this is stopping the alarm from triggering

@@ -81,7 +81,6 @@ uint8_t S4Calc_crcCheck(uint8_t *msg, uint8_t len)
     return 0; //FALSE
 }
 
-
 void S4Calc_itoaWith0(uint64_t num, uint8_t *buf, uint8_t len)
 { //len = actual len + 1 extra '\0' at the end
   memset(buf, 0, len--);
