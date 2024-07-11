@@ -164,6 +164,7 @@ void Init()
   BtUart_init();
 #endif
 
+  DockUart_setup();
   loadSensorConfigurationAndCalibration();
 
   //==== 13.8ma ====
