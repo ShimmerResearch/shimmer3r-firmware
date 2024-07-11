@@ -661,8 +661,7 @@ uint8_t parseRn4678Status(void)
     /* "%AUTHEN" - Read outstanding bytes */
     else if (btStatusStr[6U] == 'N')
     {
-      numberOfCharRemaining = BT_STAT_STR_LEN_AUTHENTICATED
-          - BT_STAT_STR_LEN_SMALLEST;
+      numberOfCharRemaining = BT_STAT_STR_LEN_AUTHENTICATED - BT_STAT_STR_LEN_SMALLEST;
     }
     /* "%AUTH_FAIL%" */
     else if (btStatusStr[10U] == '%')
@@ -672,8 +671,7 @@ uint8_t parseRn4678Status(void)
     /* "%AUTH_FA" - Read outstanding bytes */
     else if (btStatusStr[6U] == 'F')
     {
-      numberOfCharRemaining = BT_STAT_STR_LEN_AUTH_FAIL
-          - BT_STAT_STR_LEN_SMALLEST;
+      numberOfCharRemaining = BT_STAT_STR_LEN_AUTH_FAIL - BT_STAT_STR_LEN_SMALLEST;
     }
     break;
   case 'B':
@@ -730,8 +728,7 @@ uint8_t parseRn4678Status(void)
       }
       else
       {
-        numberOfCharRemaining = BT_STAT_STR_LEN_CONN_PARAM
-            - BT_STAT_STR_LEN_SMALLEST;
+        numberOfCharRemaining = BT_STAT_STR_LEN_CONN_PARAM - BT_STAT_STR_LEN_SMALLEST;
       }
     }
     break;
@@ -784,8 +781,7 @@ uint8_t parseRn4678Status(void)
         /* "%END_IN" - Read outstanding bytes */
         else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
         {
-          numberOfCharRemaining = BT_STAT_STR_LEN_END_INQ
-              - BT_STAT_STR_LEN_SMALLEST;
+          numberOfCharRemaining = BT_STAT_STR_LEN_END_INQ - BT_STAT_STR_LEN_SMALLEST;
         }
       }
       else if (btStatusStr[5U] == 'S')
@@ -798,8 +794,7 @@ uint8_t parseRn4678Status(void)
         /* "%END_SC" - Read outstanding bytes */
         else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
         {
-          numberOfCharRemaining = BT_STAT_STR_LEN_END_SCN
-              - BT_STAT_STR_LEN_SMALLEST;
+          numberOfCharRemaining = BT_STAT_STR_LEN_END_SCN - BT_STAT_STR_LEN_SMALLEST;
         }
       }
     }
@@ -821,14 +816,12 @@ uint8_t parseRn4678Status(void)
         /* "%ERR_CONN_" - Read outstanding bytes */
         else if (btStatusStr[9U] == '_')
         {
-          numberOfCharRemaining = BT_STAT_STR_LEN_ERR_CONN_PARAM
-              - BT_STAT_STR_LEN_ERR_CONN;
+          numberOfCharRemaining = BT_STAT_STR_LEN_ERR_CONN_PARAM - BT_STAT_STR_LEN_ERR_CONN;
         }
         /* "%ERR_CON" - Read outstanding bytes */
         else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
         {
-          numberOfCharRemaining = BT_STAT_STR_LEN_ERR_CONN
-              - BT_STAT_STR_LEN_SMALLEST;
+          numberOfCharRemaining = BT_STAT_STR_LEN_ERR_CONN - BT_STAT_STR_LEN_SMALLEST;
         }
       }
       else if (btStatusStr[5U] == 'L')
@@ -841,8 +834,7 @@ uint8_t parseRn4678Status(void)
         /* "%ERR_LSE" - Read outstanding bytes */
         else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
         {
-          numberOfCharRemaining = BT_STAT_STR_LEN_ERR_LSEC
-              - BT_STAT_STR_LEN_SMALLEST;
+          numberOfCharRemaining = BT_STAT_STR_LEN_ERR_LSEC - BT_STAT_STR_LEN_SMALLEST;
         }
       }
       else if (btStatusStr[5U] == 'S')
@@ -855,8 +847,7 @@ uint8_t parseRn4678Status(void)
         /* "%ERR_SE" - Read outstanding bytes */
         else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
         {
-          numberOfCharRemaining = BT_STAT_STR_LEN_ERR_SEC
-              - BT_STAT_STR_LEN_SMALLEST;
+          numberOfCharRemaining = BT_STAT_STR_LEN_ERR_SEC - BT_STAT_STR_LEN_SMALLEST;
         }
       }
     }
@@ -870,8 +861,7 @@ uint8_t parseRn4678Status(void)
     /* "%FACTOR" - Read outstanding bytes */
     else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
     {
-      numberOfCharRemaining = BT_STAT_STR_LEN_FACTORY_RESET
-          - BT_STAT_STR_LEN_SMALLEST;
+      numberOfCharRemaining = BT_STAT_STR_LEN_FACTORY_RESET - BT_STAT_STR_LEN_SMALLEST;
     }
     break;
   case 'L':
@@ -889,8 +879,7 @@ uint8_t parseRn4678Status(void)
       }
       else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
       {
-        numberOfCharRemaining = BT_STAT_STR_LEN_RN4678_LCONNECT
-            - BT_STAT_STR_LEN_SMALLEST;
+        numberOfCharRemaining = BT_STAT_STR_LEN_RN4678_LCONNECT - BT_STAT_STR_LEN_SMALLEST;
       }
       break;
     }
@@ -904,8 +893,7 @@ uint8_t parseRn4678Status(void)
       /* "%LBONDE" - Read outstanding bytes */
       else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
       {
-        numberOfCharRemaining = BT_STAT_STR_LEN_LBONDED
-            - BT_STAT_STR_LEN_SMALLEST;
+        numberOfCharRemaining = BT_STAT_STR_LEN_LBONDED - BT_STAT_STR_LEN_SMALLEST;
       }
     }
     else if (btStatusStr[2U] == 'S')
@@ -925,14 +913,12 @@ uint8_t parseRn4678Status(void)
         /* "%LSECURE_F" */
         else if (btStatusStr[9U] == 'F')
         {
-          numberOfCharRemaining = BT_STAT_STR_LEN_LSECURE_FAIL
-              - BT_STAT_STR_LEN_LSECURED;
+          numberOfCharRemaining = BT_STAT_STR_LEN_LSECURE_FAIL - BT_STAT_STR_LEN_LSECURED;
         }
         /* "%LSECUR" - Read outstanding bytes */
         else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
         {
-          numberOfCharRemaining = BT_STAT_STR_LEN_LSECURED
-              - BT_STAT_STR_LEN_SMALLEST;
+          numberOfCharRemaining = BT_STAT_STR_LEN_LSECURED - BT_STAT_STR_LEN_SMALLEST;
         }
       }
       else if (btStatusStr[6U] == 'A')
@@ -945,8 +931,7 @@ uint8_t parseRn4678Status(void)
         /* "%LSTREA" - Read outstanding bytes */
         else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
         {
-          numberOfCharRemaining = BT_STAT_STR_LEN_LSTREAM_OPEN
-              - BT_STAT_STR_LEN_SMALLEST;
+          numberOfCharRemaining = BT_STAT_STR_LEN_LSTREAM_OPEN - BT_STAT_STR_LEN_SMALLEST;
         }
       }
     }
@@ -960,8 +945,7 @@ uint8_t parseRn4678Status(void)
     /* "%MLDP_M" - Read outstanding bytes */
     else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
     {
-      numberOfCharRemaining = BT_STAT_STR_LEN_MLDP_MODE
-          - BT_STAT_STR_LEN_SMALLEST;
+      numberOfCharRemaining = BT_STAT_STR_LEN_MLDP_MODE - BT_STAT_STR_LEN_SMALLEST;
     }
     break;
   case 'R':
@@ -999,8 +983,7 @@ uint8_t parseRn4678Status(void)
         /* "%RFCOMM_CLOSE" - Read outstanding bytes */
         else if (btStatusStr[13U] == '\0')
         {
-          numberOfCharRemaining = BT_STAT_STR_LEN_RFCOMM_CLOSE
-              - BT_STAT_STR_LEN_RFCOMM_OPEN;
+          numberOfCharRemaining = BT_STAT_STR_LEN_RFCOMM_CLOSE - BT_STAT_STR_LEN_RFCOMM_OPEN;
         }
       }
       /* "%RFCOMM_OPEN%" */
@@ -1012,8 +995,7 @@ uint8_t parseRn4678Status(void)
       /* "%RFCOMM" - Read outstanding bytes */
       else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
       {
-        numberOfCharRemaining = BT_STAT_STR_LEN_RFCOMM_OPEN
-            - BT_STAT_STR_LEN_SMALLEST;
+        numberOfCharRemaining = BT_STAT_STR_LEN_RFCOMM_OPEN - BT_STAT_STR_LEN_SMALLEST;
       }
     }
     break;
@@ -1033,14 +1015,12 @@ uint8_t parseRn4678Status(void)
       /* "%SECURE_F" - Read outstanding bytes */
       else if (btStatusStr[7U] == '_')
       {
-        numberOfCharRemaining = BT_STAT_STR_LEN_SECURE_FAIL
-            - BT_STAT_STR_LEN_SECURED;
+        numberOfCharRemaining = BT_STAT_STR_LEN_SECURE_FAIL - BT_STAT_STR_LEN_SECURED;
       }
       /* "%SECURE" - Read outstanding bytes */
       else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
       {
-        numberOfCharRemaining = BT_STAT_STR_LEN_SECURED
-            - BT_STAT_STR_LEN_SMALLEST;
+        numberOfCharRemaining = BT_STAT_STR_LEN_SECURED - BT_STAT_STR_LEN_SMALLEST;
       }
     }
     else if (btStatusStr[3U] == 'S')
@@ -1058,14 +1038,12 @@ uint8_t parseRn4678Status(void)
       /* "%SESSION_CLOSE" - Read outstanding bytes */
       else if (btStatusStr[13U] == 'E')
       {
-        numberOfCharRemaining = BT_STAT_STR_LEN_SESSION_CLOSE
-            - BT_STAT_STR_LEN_SESSION_OPEN;
+        numberOfCharRemaining = BT_STAT_STR_LEN_SESSION_CLOSE - BT_STAT_STR_LEN_SESSION_OPEN;
       }
       /* "%SESSIO" - Read outstanding bytes */
       else if (btStatusStr[BT_STAT_STR_LEN_SMALLEST] == '\0')
       {
-        numberOfCharRemaining = BT_STAT_STR_LEN_SESSION_OPEN
-            - BT_STAT_STR_LEN_SMALLEST;
+        numberOfCharRemaining = BT_STAT_STR_LEN_SESSION_OPEN - BT_STAT_STR_LEN_SMALLEST;
       }
     }
     break;
