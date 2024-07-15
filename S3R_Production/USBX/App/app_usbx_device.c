@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    app_usbx_device.c
-  * @author  MCD Application Team
-  * @brief   USBX Device applicative file
-  ******************************************************************************
-    * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    app_usbx_device.c
+ * @author  MCD Application Team
+ * @brief   USBX Device applicative file
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -52,8 +52,8 @@
 /* USER CODE BEGIN UX_Device_Memory_Buffer */
 
 /* USER CODE END UX_Device_Memory_Buffer */
-#if defined ( __ICCARM__ )
-#pragma data_alignment=4
+#if defined(__ICCARM__)
+#pragma data_alignment = 4
 #endif
 __ALIGN_BEGIN static UCHAR ux_device_byte_pool_buffer[UX_DEVICE_APP_MEM_POOL_SIZE] __ALIGN_END;
 static ULONG storage_interface_number;
@@ -75,10 +75,10 @@ VOID USBX_Device_Process(VOID);
 /* USER CODE END PFP */
 
 /**
-  * @brief  Application USBX Device Initialization.
-  * @param  none
-  * @retval status
-  */
+ * @brief  Application USBX Device Initialization.
+ * @param  none
+ * @retval status
+ */
 UINT MX_USBX_Device_Init(VOID)
 {
   UINT ret = UX_SUCCESS;
@@ -106,12 +106,12 @@ UINT MX_USBX_Device_Init(VOID)
   }
 
   /* Get Device Framework High Speed and get the length */
-  device_framework_high_speed = USBD_Get_Device_Framework_Speed(USBD_HIGH_SPEED,
-                                                                &device_framework_hs_length);
+  device_framework_high_speed
+      = USBD_Get_Device_Framework_Speed(USBD_HIGH_SPEED, &device_framework_hs_length);
 
   /* Get Device Framework Full Speed and get the length */
-  device_framework_full_speed = USBD_Get_Device_Framework_Speed(USBD_FULL_SPEED,
-                                                                &device_framework_fs_length);
+  device_framework_full_speed
+      = USBD_Get_Device_Framework_Speed(USBD_FULL_SPEED, &device_framework_fs_length);
 
   /* Get String Framework and get the length */
   string_framework = USBD_Get_String_Framework(&string_framework_length);
@@ -121,14 +121,10 @@ UINT MX_USBX_Device_Init(VOID)
 
   /* Install the device portion of USBX */
   if (ux_device_stack_initialize(device_framework_high_speed,
-                                 device_framework_hs_length,
-                                 device_framework_full_speed,
-                                 device_framework_fs_length,
-                                 string_framework,
-                                 string_framework_length,
-                                 language_id_framework,
-                                 language_id_framework_length,
-                                 USBD_ChangeFunction) != UX_SUCCESS)
+          device_framework_hs_length, device_framework_full_speed,
+          device_framework_fs_length, string_framework, string_framework_length,
+          language_id_framework, language_id_framework_length, USBD_ChangeFunction)
+      != UX_SUCCESS)
   {
     /* USER CODE BEGIN USBX_DEVICE_INITIALIZE_ERROR */
     return UX_ERROR;
@@ -136,42 +132,42 @@ UINT MX_USBX_Device_Init(VOID)
   }
 
   /* Initialize the storage class parameters for the device */
-  storage_parameter.ux_slave_class_storage_instance_activate   = USBD_STORAGE_Activate;
+  storage_parameter.ux_slave_class_storage_instance_activate = USBD_STORAGE_Activate;
   storage_parameter.ux_slave_class_storage_instance_deactivate = USBD_STORAGE_Deactivate;
 
   /* Store the number of LUN in this device storage instance */
   storage_parameter.ux_slave_class_storage_parameter_number_lun = STORAGE_NUMBER_LUN;
 
   /* Initialize the storage class parameters for reading/writing to the Flash Disk */
-  storage_parameter.ux_slave_class_storage_parameter_lun[0].
-    ux_slave_class_storage_media_last_lba = USBD_STORAGE_GetMediaLastLba();
+  storage_parameter.ux_slave_class_storage_parameter_lun[0].ux_slave_class_storage_media_last_lba
+      = USBD_STORAGE_GetMediaLastLba();
 
-  storage_parameter.ux_slave_class_storage_parameter_lun[0].
-    ux_slave_class_storage_media_block_length = USBD_STORAGE_GetMediaBlocklength();
+  storage_parameter.ux_slave_class_storage_parameter_lun[0].ux_slave_class_storage_media_block_length
+      = USBD_STORAGE_GetMediaBlocklength();
 
-  storage_parameter.ux_slave_class_storage_parameter_lun[0].
-    ux_slave_class_storage_media_type = 0;
+  storage_parameter.ux_slave_class_storage_parameter_lun[0].ux_slave_class_storage_media_type
+      = 0;
 
-  storage_parameter.ux_slave_class_storage_parameter_lun[0].
-    ux_slave_class_storage_media_removable_flag = STORAGE_REMOVABLE_FLAG;
+  storage_parameter.ux_slave_class_storage_parameter_lun[0].ux_slave_class_storage_media_removable_flag
+      = STORAGE_REMOVABLE_FLAG;
 
-  storage_parameter.ux_slave_class_storage_parameter_lun[0].
-    ux_slave_class_storage_media_read_only_flag = STORAGE_READ_ONLY;
+  storage_parameter.ux_slave_class_storage_parameter_lun[0].ux_slave_class_storage_media_read_only_flag
+      = STORAGE_READ_ONLY;
 
-  storage_parameter.ux_slave_class_storage_parameter_lun[0].
-    ux_slave_class_storage_media_read = USBD_STORAGE_Read;
+  storage_parameter.ux_slave_class_storage_parameter_lun[0].ux_slave_class_storage_media_read
+      = USBD_STORAGE_Read;
 
-  storage_parameter.ux_slave_class_storage_parameter_lun[0].
-    ux_slave_class_storage_media_write = USBD_STORAGE_Write;
+  storage_parameter.ux_slave_class_storage_parameter_lun[0].ux_slave_class_storage_media_write
+      = USBD_STORAGE_Write;
 
-  storage_parameter.ux_slave_class_storage_parameter_lun[0].
-    ux_slave_class_storage_media_flush = USBD_STORAGE_Flush;
+  storage_parameter.ux_slave_class_storage_parameter_lun[0].ux_slave_class_storage_media_flush
+      = USBD_STORAGE_Flush;
 
-  storage_parameter.ux_slave_class_storage_parameter_lun[0].
-    ux_slave_class_storage_media_status = USBD_STORAGE_Status;
+  storage_parameter.ux_slave_class_storage_parameter_lun[0].ux_slave_class_storage_media_status
+      = USBD_STORAGE_Status;
 
-  storage_parameter.ux_slave_class_storage_parameter_lun[0].
-    ux_slave_class_storage_media_notification = USBD_STORAGE_Notification;
+  storage_parameter.ux_slave_class_storage_parameter_lun[0].ux_slave_class_storage_media_notification
+      = USBD_STORAGE_Notification;
 
   /* USER CODE BEGIN STORAGE_PARAMETER */
 
@@ -184,11 +180,9 @@ UINT MX_USBX_Device_Init(VOID)
   storage_interface_number = USBD_Get_Interface_Number(CLASS_TYPE_MSC, 0);
 
   /* Initialize the device storage class */
-  if (ux_device_stack_class_register(_ux_system_slave_class_storage_name,
-                                     ux_device_class_storage_entry,
-                                     storage_configuration_number,
-                                     storage_interface_number,
-                                     &storage_parameter) != UX_SUCCESS)
+  if (ux_device_stack_class_register(_ux_system_slave_class_storage_name, ux_device_class_storage_entry,
+          storage_configuration_number, storage_interface_number, &storage_parameter)
+      != UX_SUCCESS)
   {
     /* USER CODE BEGIN USBX_DEVICE_STORAGE_REGISTER_ERROR */
     return UX_ERROR;
@@ -205,11 +199,11 @@ UINT MX_USBX_Device_Init(VOID)
 }
 
 /**
-  * @brief  _ux_utility_interrupt_disable
-  *         USB utility interrupt disable.
-  * @param  none
-  * @retval none
-  */
+ * @brief  _ux_utility_interrupt_disable
+ *         USB utility interrupt disable.
+ * @param  none
+ * @retval none
+ */
 ALIGN_TYPE _ux_utility_interrupt_disable(VOID)
 {
   UINT interrupt_save;
@@ -223,11 +217,11 @@ ALIGN_TYPE _ux_utility_interrupt_disable(VOID)
 }
 
 /**
-  * @brief  _ux_utility_interrupt_restore
-  *         USB utility interrupt restore.
-  * @param  flags
-  * @retval none
-  */
+ * @brief  _ux_utility_interrupt_restore
+ *         USB utility interrupt restore.
+ * @param  flags
+ * @retval none
+ */
 VOID _ux_utility_interrupt_restore(ALIGN_TYPE flags)
 {
   /* USER CODE BEGIN _ux_utility_interrupt_restore */
@@ -236,11 +230,11 @@ VOID _ux_utility_interrupt_restore(ALIGN_TYPE flags)
 }
 
 /**
-  * @brief  _ux_utility_time_get
-  *         Get Time Tick for host timing.
-  * @param  none
-  * @retval time tick
-  */
+ * @brief  _ux_utility_time_get
+ *         Get Time Tick for host timing.
+ * @param  none
+ * @retval time tick
+ */
 ULONG _ux_utility_time_get(VOID)
 {
   ULONG time_tick = 0U;
@@ -255,14 +249,14 @@ ULONG _ux_utility_time_get(VOID)
 }
 
 /**
-  * @brief  USBD_ChangeFunction
-  *         This function is called when the device state changes.
-  * @param  Device_State: USB Device State
-  * @retval status
-  */
+ * @brief  USBD_ChangeFunction
+ *         This function is called when the device state changes.
+ * @param  Device_State: USB Device State
+ * @retval status
+ */
 static UINT USBD_ChangeFunction(ULONG Device_State)
 {
-   UINT status = UX_SUCCESS;
+  UINT status = UX_SUCCESS;
 
   /* USER CODE BEGIN USBD_ChangeFunction0 */
 
@@ -270,70 +264,69 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
   switch (Device_State)
   {
-    case UX_DEVICE_ATTACHED:
+  case UX_DEVICE_ATTACHED:
 
-      /* USER CODE BEGIN UX_DEVICE_ATTACHED */
+    /* USER CODE BEGIN UX_DEVICE_ATTACHED */
 
-      /* USER CODE END UX_DEVICE_ATTACHED */
+    /* USER CODE END UX_DEVICE_ATTACHED */
 
-      break;
+    break;
 
-    case UX_DEVICE_REMOVED:
+  case UX_DEVICE_REMOVED:
 
-      /* USER CODE BEGIN UX_DEVICE_REMOVED */
+    /* USER CODE BEGIN UX_DEVICE_REMOVED */
 
-      /* USER CODE END UX_DEVICE_REMOVED */
+    /* USER CODE END UX_DEVICE_REMOVED */
 
-      break;
+    break;
 
-    case UX_DCD_STM32_DEVICE_CONNECTED:
+  case UX_DCD_STM32_DEVICE_CONNECTED:
 
-      /* USER CODE BEGIN UX_DCD_STM32_DEVICE_CONNECTED */
+    /* USER CODE BEGIN UX_DCD_STM32_DEVICE_CONNECTED */
 
-      /* USER CODE END UX_DCD_STM32_DEVICE_CONNECTED */
+    /* USER CODE END UX_DCD_STM32_DEVICE_CONNECTED */
 
-      break;
+    break;
 
-    case UX_DCD_STM32_DEVICE_DISCONNECTED:
+  case UX_DCD_STM32_DEVICE_DISCONNECTED:
 
-      /* USER CODE BEGIN UX_DCD_STM32_DEVICE_DISCONNECTED */
+    /* USER CODE BEGIN UX_DCD_STM32_DEVICE_DISCONNECTED */
 
-      /* USER CODE END UX_DCD_STM32_DEVICE_DISCONNECTED */
+    /* USER CODE END UX_DCD_STM32_DEVICE_DISCONNECTED */
 
-      break;
+    break;
 
-    case UX_DCD_STM32_DEVICE_SUSPENDED:
+  case UX_DCD_STM32_DEVICE_SUSPENDED:
 
-      /* USER CODE BEGIN UX_DCD_STM32_DEVICE_SUSPENDED */
+    /* USER CODE BEGIN UX_DCD_STM32_DEVICE_SUSPENDED */
 
-      /* USER CODE END UX_DCD_STM32_DEVICE_SUSPENDED */
+    /* USER CODE END UX_DCD_STM32_DEVICE_SUSPENDED */
 
-      break;
+    break;
 
-    case UX_DCD_STM32_DEVICE_RESUMED:
+  case UX_DCD_STM32_DEVICE_RESUMED:
 
-      /* USER CODE BEGIN UX_DCD_STM32_DEVICE_RESUMED */
+    /* USER CODE BEGIN UX_DCD_STM32_DEVICE_RESUMED */
 
-      /* USER CODE END UX_DCD_STM32_DEVICE_RESUMED */
+    /* USER CODE END UX_DCD_STM32_DEVICE_RESUMED */
 
-      break;
+    break;
 
-    case UX_DCD_STM32_SOF_RECEIVED:
+  case UX_DCD_STM32_SOF_RECEIVED:
 
-      /* USER CODE BEGIN UX_DCD_STM32_SOF_RECEIVED */
+    /* USER CODE BEGIN UX_DCD_STM32_SOF_RECEIVED */
 
-      /* USER CODE END UX_DCD_STM32_SOF_RECEIVED */
+    /* USER CODE END UX_DCD_STM32_SOF_RECEIVED */
 
-      break;
+    break;
 
-    default:
+  default:
 
-      /* USER CODE BEGIN DEFAULT */
+    /* USER CODE BEGIN DEFAULT */
 
-      /* USER CODE END DEFAULT */
+    /* USER CODE END DEFAULT */
 
-      break;
-
+    break;
   }
 
   /* USER CODE BEGIN USBD_ChangeFunction1 */
@@ -342,37 +335,38 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
   return status;
 }
+
 /* USER CODE BEGIN 1 */
 
 /**
-  * @brief  USBX_APP_Device_Init
-  *         Initialization of USB device.
-  * @param  none
-  * @retval none
-  */
+ * @brief  USBX_APP_Device_Init
+ *         Initialization of USB device.
+ * @param  none
+ * @retval none
+ */
 VOID USBX_APP_Device_Init(VOID)
 {
   /* USER CODE BEGIN USB_Device_Init_PreTreatment_0 */
   /* USER CODE END USB_Device_Init_PreTreatment_0 */
 
   /* Enable the USB voltage level detector */
-//  HAL_PWREx_EnableUSBVoltageDetector();
+  //HAL_PWREx_EnableUSBVoltageDetector();
 
   /* USB_OTG_HS init function */
   MX_USB_OTG_HS_PCD_Init();
 
   /* USER CODE BEGIN USB_Device_Init_PreTreatment_1 */
   HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x200);
-//  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, USBD_MAX_EP0_SIZE/4);
-//  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, (USBD_CDCACM_EPIN_HS_MPS)/4);
-//  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, (USBD_CDCACM_EPINCMD_HS_MPS)/4);
-//  https://github.com/STMicroelectronics/x-cube-azrtos-h7/blob/main/Projects/STM32H735G-DK/Applications/USBX/Ux_Device_MSC/USBX/App/app_usbx_device.c
+  //HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, USBD_MAX_EP0_SIZE/4);
+  //HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, (USBD_CDCACM_EPIN_HS_MPS)/4);
+  //HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, (USBD_CDCACM_EPINCMD_HS_MPS)/4);
+  //https://github.com/STMicroelectronics/x-cube-azrtos-h7/blob/main/Projects/STM32H735G-DK/Applications/USBX/Ux_Device_MSC/USBX/App/app_usbx_device.c
   HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x40);
   HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x100);
   /* USER CODE END USB_Device_Init_PreTreatment_1 */
 
   /* initialize the device controller driver*/
-  _ux_dcd_stm32_initialize((ULONG)USB_OTG_HS, (ULONG)&hpcd_USB_OTG_HS);
+  _ux_dcd_stm32_initialize((ULONG) USB_OTG_HS, (ULONG) &hpcd_USB_OTG_HS);
 
   /* Start the USB device */
   HAL_PCD_Start(&hpcd_USB_OTG_HS);
@@ -382,23 +376,23 @@ VOID USBX_APP_Device_Init(VOID)
 }
 
 /**
-  * @brief  USBX_APP_UART_Init
-  *         Initialization of UART.
-  * @param  huart: Pointer to UART handler
-  * @retval none
-  */
+ * @brief  USBX_APP_UART_Init
+ *         Initialization of UART.
+ * @param  huart: Pointer to UART handler
+ * @retval none
+ */
 VOID USBX_APP_UART_Init(UART_HandleTypeDef **huart)
 {
   /* USER CODE BEGIN USBX_APP_UART_Init */
-//  MX_USART1_UART_Init();
-//  *huart = &huart1;
+  //MX_USART1_UART_Init();
+  //*huart = &huart1;
   /* USER CODE END USBX_APP_UART_Init */
 }
 
 VOID USBX_Device_Process(VOID)
 {
   ux_device_stack_tasks_run();
-//  _ux_system_tasks_run();
+  //_ux_system_tasks_run();
 }
 
 /* USER CODE END 1 */

@@ -22,26 +22,27 @@
 #define __GPIO_H__
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* USER CODE BEGIN Includes */
+  /* USER CODE BEGIN Includes */
 
 #include "s4.h"
 #include "s4__cfg.h"
 
-/* USER CODE END Includes */
+  /* USER CODE END Includes */
 
-/* USER CODE BEGIN Private defines */
+  /* USER CODE BEGIN Private defines */
 
-/* USER CODE END Private defines */
+  /* USER CODE END Private defines */
 
-void MX_GPIO_Init(void);
+  void MX_GPIO_Init(void);
 
-/* USER CODE BEGIN Prototypes */
+  /* USER CODE BEGIN Prototypes */
 
   void GPIO_init(void);
   void GPIO_userButtonCheck(void);
@@ -56,10 +57,9 @@ void MX_GPIO_Init(void);
   uint8_t isSdPowerOn(void);
   void setMcuHasSdcardControl(uint8_t state);
 
-/* USER CODE END Prototypes */
+  /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 #endif /*__ GPIO_H__ */
-
