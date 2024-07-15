@@ -24,7 +24,7 @@
 #define USE_BMPX80            2 //x=1 for 180, x=2 for 280
 #define NUM_SDWRBUF           64
 #define USE_FATFS             1
-#define USE_USBX              0
+#define USE_USBX              1
 #define SHIMMER_ENABLE_PRINTF 1
 
 #ifdef SHIMMER_ENABLE_PRINTF
