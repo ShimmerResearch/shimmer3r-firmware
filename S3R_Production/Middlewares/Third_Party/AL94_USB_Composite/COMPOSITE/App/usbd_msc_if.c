@@ -23,7 +23,7 @@
 #include "usbd_msc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-#define USE_RAM_EXAMPLE 1
+#define USE_RAM_EXAMPLE 0
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
