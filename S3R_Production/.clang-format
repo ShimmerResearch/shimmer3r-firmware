@@ -161,7 +161,8 @@ BinPackParameters: false
 #   bool BeforeCatch Wrap before catch.
 #   bool BeforeElse Wrap before else.
 #   bool IndentBraces Indent the wrapped braces themselves.
-#BraceWrapping:
+BraceWrapping:
+	AfterExternBlock: false
 
 # BreakAfterJavaFieldAnnotations (bool)
 # Break after each annotation on a field in Java files.

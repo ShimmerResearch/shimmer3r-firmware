@@ -1,29 +1,35 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : usbd_storage_if.c
-  * @version        : v1.0_Cube
-  * @brief          : Memory management layer.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : usbd_storage_if.c
+ * @version        : v1.0_Cube
+ * @brief          : Memory management layer.
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under Ultimate Liberty license
+ * SLA0044, the "License"; You may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at:
+ *                             www.st.com/SLA0044
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_msc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-#define USE_RAM_EXAMPLE 1
+#define USE_RAM_EXAMPLE 0
+#define USE_DMA 1
+
+#if USE_DMA
+#include "ff_gen_drv.h"
+#include "sd_diskio.h"
+#endif
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,32 +46,32 @@ extern SD_HandleTypeDef hsd1;
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
-  * @brief Usb device.
-  * @{
-  */
+ * @brief Usb device.
+ * @{
+ */
 
 /** @defgroup USBD_STORAGE
-  * @brief Usb mass storage device module
-  * @{
-  */
+ * @brief Usb mass storage device module
+ * @{
+ */
 
 /** @defgroup USBD_STORAGE_Private_TypesDefinitions
-  * @brief Private types.
-  * @{
-  */
+ * @brief Private types.
+ * @{
+ */
 
 /* USER CODE BEGIN PRIVATE_TYPES */
 
 /* USER CODE END PRIVATE_TYPES */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup USBD_STORAGE_Private_Defines
-  * @brief Private defines.
-  * @{
-  */
+ * @brief Private defines.
+ * @{
+ */
 #if USE_RAM_EXAMPLE
 #define STORAGE_LUN_NBR                  1
 #define STORAGE_BLK_NBR                  32*1024/512
@@ -77,32 +83,32 @@ extern SD_HandleTypeDef hsd1;
 /* USER CODE END PRIVATE_DEFINES */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup USBD_STORAGE_Private_Macros
-  * @brief Private macros.
-  * @{
-  */
+ * @brief Private macros.
+ * @{
+ */
 
 /* USER CODE BEGIN PRIVATE_MACRO */
 
 /* USER CODE END PRIVATE_MACRO */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup USBD_STORAGE_Private_Variables
-  * @brief Private variables.
-  * @{
-  */
+ * @brief Private variables.
+ * @{
+ */
 
 /* USER CODE BEGIN INQUIRY_DATA */
 /** USB Mass storage Standard Inquiry Data. */
 const int8_t STORAGE_Inquirydata[] = {/* 36 */
-  
-  /* LUN 0 */
+
+/* LUN 0 */
   0x00,
   0x80,
   0x02,
@@ -112,10 +118,10 @@ const int8_t STORAGE_Inquirydata[] = {/* 36 */
   0x00,
   0x00,
   'S', 'h', 'i', 'm', 'm', 'e', 'r', ' ', /* Manufacturer : 8 bytes */
-  'S', 'R', '3', '8', '-', '9', '-', '0', /* Product      : 16 Bytes */
+    'S', 'R', '3', '8', '-', '9', '-', '0', /* Product      : 16 Bytes */
   '_', '1', '4', '6', 'C', ' ', ' ', ' ',
   '0', '.', '0' ,'1'                      /* Version      : 4 Bytes */
-}; 
+};
 /* USER CODE END INQUIRY_DATA */
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
@@ -123,13 +129,13 @@ const int8_t STORAGE_Inquirydata[] = {/* 36 */
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup USBD_STORAGE_Exported_Variables
-  * @brief Public variables.
-  * @{
-  */
+ * @brief Public variables.
+ * @{
+ */
 
 extern USBD_HandleTypeDef hUsbDevice;
 
@@ -138,13 +144,13 @@ extern USBD_HandleTypeDef hUsbDevice;
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /** @defgroup USBD_STORAGE_Private_FunctionPrototypes
-  * @brief Private functions declaration.
-  * @{
-  */
+ * @brief Private functions declaration.
+ * @{
+ */
 
 static int8_t STORAGE_Init(uint8_t lun);
 static int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint16_t *block_size);
@@ -155,12 +161,12 @@ static int8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16
 static int8_t STORAGE_GetMaxLun(void);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
-
+static int32_t check_sd_status(void);
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 USBD_StorageTypeDef USBD_Storage_Interface_fops =
 {
@@ -176,10 +182,10 @@ USBD_StorageTypeDef USBD_Storage_Interface_fops =
 
 /* Private functions ---------------------------------------------------------*/
 /**
-  * @brief  Initializes over USB FS IP
-  * @param  lun:
-  * @retval USBD_OK if all operations are OK else USBD_FAIL
-  */
+ * @brief  Initializes over USB FS IP
+ * @param  lun:
+ * @retval USBD_OK if all operations are OK else USBD_FAIL
+ */
 int8_t STORAGE_Init(uint8_t lun)
 {
   /* USER CODE BEGIN 2 */
@@ -188,12 +194,12 @@ int8_t STORAGE_Init(uint8_t lun)
 }
 
 /**
-  * @brief  .
-  * @param  lun: .
-  * @param  block_num: .
-  * @param  block_size: .
-  * @retval USBD_OK if all operations are OK else USBD_FAIL
-  */
+ * @brief  .
+ * @param  lun: .
+ * @param  block_num: .
+ * @param  block_size: .
+ * @retval USBD_OK if all operations are OK else USBD_FAIL
+ */
 int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint16_t *block_size)
 {
   /* USER CODE BEGIN 3 */
@@ -207,7 +213,7 @@ int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint16_t *block_siz
 
   HAL_SD_GetCardInfo(&hsd1, &info);
 
-  *block_num =  info.LogBlockNbr  - 1;
+  *block_num = info.LogBlockNbr - 1;
   *block_size = info.LogBlockSize;
   ret = 0;
   return ret;
@@ -216,10 +222,10 @@ int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint16_t *block_siz
 }
 
 /**
-  * @brief  .
-  * @param  lun: .
-  * @retval USBD_OK if all operations are OK else USBD_FAIL
-  */
+ * @brief  .
+ * @param  lun: .
+ * @retval USBD_OK if all operations are OK else USBD_FAIL
+ */
 int8_t STORAGE_IsReady(uint8_t lun)
 {
   /* USER CODE BEGIN 4 */
@@ -228,10 +234,10 @@ int8_t STORAGE_IsReady(uint8_t lun)
 }
 
 /**
-  * @brief  .
-  * @param  lun: .
-  * @retval USBD_OK if all operations are OK else USBD_FAIL
-  */
+ * @brief  .
+ * @param  lun: .
+ * @retval USBD_OK if all operations are OK else USBD_FAIL
+ */
 int8_t STORAGE_IsWriteProtected(uint8_t lun)
 {
   /* USER CODE BEGIN 5 */
@@ -240,10 +246,10 @@ int8_t STORAGE_IsWriteProtected(uint8_t lun)
 }
 
 /**
-  * @brief  .
-  * @param  lun: .
-  * @retval USBD_OK if all operations are OK else USBD_FAIL
-  */
+ * @brief  .
+ * @param  lun: .
+ * @retval USBD_OK if all operations are OK else USBD_FAIL
+ */
 int8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
   /* USER CODE BEGIN 6 */
@@ -258,23 +264,40 @@ int8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_l
 
   return (USBD_OK);
 #else
+
+#if USE_DMA
+    DRESULT res = SD_read(0, buf, blk_addr, blk_len);
+    return (USBD_OK);
+#else
+  HAL_StatusTypeDef status = HAL_OK;
   int8_t ret = -1;
 
- HAL_SD_ReadBlocks(&hsd1, buf, blk_addr, blk_len, HAL_MAX_DELAY);
+  /* Check id SD card is ready */
+  if (check_sd_status() != HAL_OK)
+  {
+    Error_Handler();
+  }
 
- /* Wait until SD card is ready to use for new operation */
+  status = HAL_SD_ReadBlocks(&hsd1, buf, blk_addr, blk_len, HAL_MAX_DELAY);
+  if (status != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /* Wait until SD card is ready to use for new operation */
  while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){}
- ret = 0;
- return ret;
+  ret = 0;
+  return ret;
+#endif
 #endif
   /* USER CODE END 6 */
 }
 
 /**
-  * @brief  .
-  * @param  lun: .
-  * @retval USBD_OK if all operations are OK else USBD_FAIL
-  */
+ * @brief  .
+ * @param  lun: .
+ * @retval USBD_OK if all operations are OK else USBD_FAIL
+ */
 int8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
   /* USER CODE BEGIN 7 */
@@ -289,24 +312,40 @@ int8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_
 
   return (USBD_OK);
 #else
+
+#if USE_DMA
+    DRESULT res = SD_write(0, buf, blk_addr, blk_len);
+    return (USBD_OK);
+#else
+  HAL_StatusTypeDef status = HAL_OK;
   int8_t ret = -1;
 
-   HAL_SD_WriteBlocks(&hsd1, buf, blk_addr, blk_len, HAL_MAX_DELAY);
+  /* Check id SD card is ready */
+  if (check_sd_status() != HAL_OK)
+  {
+    Error_Handler();
+  }
 
+  status = HAL_SD_WriteBlocks(&hsd1, buf, blk_addr, blk_len, HAL_MAX_DELAY);
+  if (status != HAL_OK)
+  {
+    Error_Handler();
+  }
 
   /* Wait until SD card is ready to use for new operation */
   while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){}
   ret = 0;
   return ret;
 #endif
+#endif
   /* USER CODE END 7 */
 }
 
 /**
-  * @brief  .
-  * @param  None
-  * @retval .
-  */
+ * @brief  .
+ * @param  None
+ * @retval .
+ */
 int8_t STORAGE_GetMaxLun(void)
 {
   /* USER CODE BEGIN 8 */
@@ -320,14 +359,29 @@ int8_t STORAGE_GetMaxLun(void)
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
+static int32_t check_sd_status(void)
+{
+  uint32_t start = HAL_GetTick();
+
+  while (HAL_GetTick() - start < 100)
+  {
+    if (HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER)
+    {
+      return HAL_OK;
+    }
+  }
+
+  return HAL_ERROR;
+}
+
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
