@@ -130,6 +130,23 @@ void Board_ledLwrSetColourRgb(int16_t red, int16_t green, int16_t blue)
   rgb_led_lwr_color(ledStateLwrRed, ledStateLwrGreen, ledStateLwrBlue);
 }
 
+void Board_ledLwrToggleColourRgb(uint32_t ledMask)
+{
+  if ((ledMask >> 16 & 0xFF) != 0)
+  {
+    ledStateLwrRed = ledStateLwrRed? LED_PWM_OFF : LED_PWM_ON;
+  }
+  if ((ledMask >> 8 & 0xFF) != 0)
+  {
+    ledStateLwrGreen = ledStateLwrGreen? LED_PWM_OFF : LED_PWM_ON;
+  }
+  if ((ledMask >> 0 & 0xFF) != 0)
+  {
+    ledStateLwrBlue = ledStateLwrBlue? LED_PWM_OFF : LED_PWM_ON;
+  }
+  rgb_led_lwr_color(ledStateLwrRed, ledStateLwrGreen, ledStateLwrBlue);
+}
+
 void Board_ledUprSetColour(uint32_t ledMask)
 {
   ledStateUprRed = ledMask >> 16;
@@ -151,6 +168,23 @@ void Board_ledUprSetColourRgb(int16_t red, int16_t green, int16_t blue)
   if (blue != -1)
   {
     ledStateUprBlue = blue;
+  }
+  rgb_led_upr_color(ledStateUprRed, ledStateUprGreen, ledStateUprBlue);
+}
+
+void Board_ledUprToggleColourRgb(uint32_t ledMask)
+{
+  if ((ledMask >> 16 & 0xFF) != 0)
+  {
+    ledStateUprRed = ledStateUprRed? LED_PWM_OFF : LED_PWM_ON;
+  }
+  if ((ledMask >> 8 & 0xFF) != 0)
+  {
+    ledStateUprGreen = ledStateUprGreen? LED_PWM_OFF : LED_PWM_ON;
+  }
+  if ((ledMask >> 0 & 0xFF) != 0)
+  {
+    ledStateUprBlue = ledStateUprBlue? LED_PWM_OFF : LED_PWM_ON;
   }
   rgb_led_upr_color(ledStateUprRed, ledStateUprGreen, ledStateUprBlue);
 }

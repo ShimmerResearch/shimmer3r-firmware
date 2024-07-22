@@ -525,7 +525,11 @@ void DockUart_rxCallback(uint8_t data)
 
 void DockUart_processCmd()
 {
+#if defined(SHIMMER4_SDK)
   HAL_GPIO_TogglePin(GPIOG, GPIO_PIN_6); //green
+#else
+  Board_ledLwrToggleColourRgb(LED_RGB_GREEN);
+#endif
   if (uartAction)
   {
     if (S4Calc_crcCheck(dockRxBuf, dockRxBuf[UART_RXBUF_LEN] + 5))

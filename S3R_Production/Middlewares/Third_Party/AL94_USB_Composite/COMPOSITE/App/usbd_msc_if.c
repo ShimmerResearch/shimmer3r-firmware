@@ -161,7 +161,9 @@ static int8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16
 static int8_t STORAGE_GetMaxLun(void);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
+#if !USE_RAM_EXAMPLE && !USE_DMA
 static int32_t check_sd_status(void);
+#endif
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
 /**
@@ -359,6 +361,7 @@ int8_t STORAGE_GetMaxLun(void)
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
+#if !USE_RAM_EXAMPLE && !USE_DMA
 static int32_t check_sd_status(void)
 {
   uint32_t start = HAL_GetTick();
@@ -373,6 +376,7 @@ static int32_t check_sd_status(void)
 
   return HAL_ERROR;
 }
+#endif
 
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
