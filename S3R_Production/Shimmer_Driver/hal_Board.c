@@ -193,7 +193,7 @@ static void updateLedState(led_mode updateMode, uint8_t ledMask)
 {
   if (updateMode == LED_MODE_OFF || updateMode == LED_MODE_ON)
   {
-    uint8_t valueToSet = updateMode == LED_MODE_ON? LED_PWM_ON : LED_PWM_OFF;
+    uint8_t valueToSet = updateMode == LED_MODE_ON ? LED_PWM_ON : LED_PWM_OFF;
 
     if (ledMask & LED_RED)
     {
