@@ -66,6 +66,13 @@ typedef enum
   LED_RGB_ALL_ON = 0xFFFFFF,
 } led_rgb_t;
 
+typedef enum
+{
+  LED_MODE_OFF,
+  LED_MODE_ON,
+  LED_MODE_TOGGLE
+} led_mode;
+
 #define LED_PWM_ON  255
 #define LED_PWM_OFF 0
 
