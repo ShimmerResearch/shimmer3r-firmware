@@ -22,34 +22,33 @@
 #define __USART_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-  /* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */
 
 #include "s4.h"
 #include "s4__cfg.h"
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart1;
 
-  extern UART_HandleTypeDef huart3;
+extern UART_HandleTypeDef huart3;
 
-  /* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
 
-  /* USER CODE END Private defines */
+/* USER CODE END Private defines */
 
-  void MX_USART1_UART_Init(void);
-  void MX_USART3_UART_Init(void);
+void MX_USART1_UART_Init(void);
+void MX_USART3_UART_Init(void);
 
-  /* USER CODE BEGIN Prototypes */
+/* USER CODE BEGIN Prototypes */
 
-  void Uart_init(void);
+  void setUartPeripheralPointers(void);
 
   void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
 
@@ -62,7 +61,8 @@ extern "C"
 //*pData, uint16_t Size); uint8_t BtUart_isConnected(void);
 #endif
 
-  void DockUart_init(void);
+  void DockUart_init(UART_HandleTypeDef *huart);
+  void DockUart_deint(void);
   void DockUart_disable(void);
   void DockUart_enable(void);
   void DockUart_rxCallback(uint8_t data);
@@ -77,8 +77,9 @@ extern "C"
   uint8_t ExpUart_TxIT(uint8_t *pData, uint16_t Size);
 #endif
 
-#if defined(SHIMMER4_SDK)
+  uint8_t isDockUartInitialised(void);
   uint8_t BtUart_connectIntCheck(void);
+#if defined(SHIMMER4_SDK)
 #define BtUart_rtsIntCheck() \
   BT_rtsInterrupt(HAL_GPIO_ReadPin(BT_RTS_GPIO_Port, BT_RTS_Pin))
 #endif
@@ -87,10 +88,11 @@ extern "C"
 
   void dockUartRxCallback(UART_HandleTypeDef *huart);
 
-  /* USER CODE END Prototypes */
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __USART_H__ */
+

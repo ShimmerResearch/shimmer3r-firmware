@@ -55,6 +55,12 @@ void MX_USART1_UART_Init(void)
 
   /* USER CODE BEGIN USART1_Init 0 */
 
+  // Control Return if peripheral is already initialised
+  if (!stat.isDocked || isDockUartInitialised())
+  {
+    return;
+  }
+
   /* USER CODE END USART1_Init 0 */
 
   /* USER CODE BEGIN USART1_Init 1 */
@@ -83,15 +89,16 @@ void MX_USART1_UART_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK)
+  if (HAL_UARTEx_EnableFifoMode(&huart1) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
 
+  DockUart_init(&huart1);
   /* USER CODE END USART1_Init 2 */
-}
 
+}
 /* USART3 init function */
 
 void MX_USART3_UART_Init(void)
@@ -134,21 +141,22 @@ void MX_USART3_UART_Init(void)
   /* USER CODE BEGIN USART3_Init 2 */
 
   /* USER CODE END USART3_Init 2 */
+
 }
 
-void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle)
+void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
-  if (uartHandle->Instance == USART1)
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  if(uartHandle->Instance==USART1)
   {
-    /* USER CODE BEGIN USART1_MspInit 0 */
+  /* USER CODE BEGIN USART1_MspInit 0 */
 
-    /* USER CODE END USART1_MspInit 0 */
+  /* USER CODE END USART1_MspInit 0 */
 
-    /** Initializes the peripherals clock
-     */
+  /** Initializes the peripherals clock
+  */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
     PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -164,7 +172,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle)
     PB6     ------> USART1_TX
     PB7     ------> USART1_RX
     */
-    GPIO_InitStruct.Pin = DOCK_TXD_Pin | DOCK_RXD_Pin;
+    GPIO_InitStruct.Pin = DOCK_TXD_Pin|DOCK_RXD_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -174,18 +182,18 @@ void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle)
     /* USART1 interrupt Init */
     HAL_NVIC_SetPriority(USART1_IRQn, 8, 0);
     HAL_NVIC_EnableIRQ(USART1_IRQn);
-    /* USER CODE BEGIN USART1_MspInit 1 */
+  /* USER CODE BEGIN USART1_MspInit 1 */
 
-    /* USER CODE END USART1_MspInit 1 */
+  /* USER CODE END USART1_MspInit 1 */
   }
-  else if (uartHandle->Instance == USART3)
+  else if(uartHandle->Instance==USART3)
   {
-    /* USER CODE BEGIN USART3_MspInit 0 */
+  /* USER CODE BEGIN USART3_MspInit 0 */
 
-    /* USER CODE END USART3_MspInit 0 */
+  /* USER CODE END USART3_MspInit 0 */
 
-    /** Initializes the peripherals clock
-     */
+  /** Initializes the peripherals clock
+  */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART3;
     PeriphClkInit.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -203,7 +211,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle)
     PD11     ------> USART3_CTS
     PD12     ------> USART3_RTS
     */
-    GPIO_InitStruct.Pin = BT_TXD_Pin | BT_RXD_Pin | BT_CTS_Pin | BT_RTS_Pin;
+    GPIO_InitStruct.Pin = BT_TXD_Pin|BT_RXD_Pin|BT_CTS_Pin|BT_RTS_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -223,8 +231,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle)
     handle_GPDMA1_Channel1.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
     handle_GPDMA1_Channel1.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel1.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel1.Init.TransferAllocatedPort
-        = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel1.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
     handle_GPDMA1_Channel1.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel1.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel1) != HAL_OK)
@@ -251,8 +258,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle)
     handle_GPDMA1_Channel0.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
     handle_GPDMA1_Channel0.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel0.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel0.Init.TransferAllocatedPort
-        = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel0.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
     handle_GPDMA1_Channel0.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel0.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel0) != HAL_OK)
@@ -270,20 +276,20 @@ void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle)
     /* USART3 interrupt Init */
     HAL_NVIC_SetPriority(USART3_IRQn, 8, 0);
     HAL_NVIC_EnableIRQ(USART3_IRQn);
-    /* USER CODE BEGIN USART3_MspInit 1 */
+  /* USER CODE BEGIN USART3_MspInit 1 */
 
-    /* USER CODE END USART3_MspInit 1 */
+  /* USER CODE END USART3_MspInit 1 */
   }
 }
 
-void HAL_UART_MspDeInit(UART_HandleTypeDef *uartHandle)
+void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 {
 
-  if (uartHandle->Instance == USART1)
+  if(uartHandle->Instance==USART1)
   {
-    /* USER CODE BEGIN USART1_MspDeInit 0 */
+  /* USER CODE BEGIN USART1_MspDeInit 0 */
 
-    /* USER CODE END USART1_MspDeInit 0 */
+  /* USER CODE END USART1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_USART1_CLK_DISABLE();
 
@@ -291,19 +297,19 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *uartHandle)
     PB6     ------> USART1_TX
     PB7     ------> USART1_RX
     */
-    HAL_GPIO_DeInit(GPIOB, DOCK_TXD_Pin | DOCK_RXD_Pin);
+    HAL_GPIO_DeInit(GPIOB, DOCK_TXD_Pin|DOCK_RXD_Pin);
 
     /* USART1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(USART1_IRQn);
-    /* USER CODE BEGIN USART1_MspDeInit 1 */
+  /* USER CODE BEGIN USART1_MspDeInit 1 */
 
-    /* USER CODE END USART1_MspDeInit 1 */
+  /* USER CODE END USART1_MspDeInit 1 */
   }
-  else if (uartHandle->Instance == USART3)
+  else if(uartHandle->Instance==USART3)
   {
-    /* USER CODE BEGIN USART3_MspDeInit 0 */
+  /* USER CODE BEGIN USART3_MspDeInit 0 */
 
-    /* USER CODE END USART3_MspDeInit 0 */
+  /* USER CODE END USART3_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_USART3_CLK_DISABLE();
 
@@ -313,7 +319,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *uartHandle)
     PD11     ------> USART3_CTS
     PD12     ------> USART3_RTS
     */
-    HAL_GPIO_DeInit(GPIOD, BT_TXD_Pin | BT_RXD_Pin | BT_CTS_Pin | BT_RTS_Pin);
+    HAL_GPIO_DeInit(GPIOD, BT_TXD_Pin|BT_RXD_Pin|BT_CTS_Pin|BT_RTS_Pin);
 
     /* USART3 DMA DeInit */
     HAL_DMA_DeInit(uartHandle->hdmatx);
@@ -321,15 +327,15 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *uartHandle)
 
     /* USART3 interrupt Deinit */
     HAL_NVIC_DisableIRQ(USART3_IRQn);
-    /* USER CODE BEGIN USART3_MspDeInit 1 */
+  /* USER CODE BEGIN USART3_MspDeInit 1 */
 
-    /* USER CODE END USART3_MspDeInit 1 */
+  /* USER CODE END USART3_MspDeInit 1 */
   }
 }
 
 /* USER CODE BEGIN 1 */
 
-void Uart_init(void)
+void setUartPeripheralPointers(void)
 {
   huartBt = &huart3;
 #if defined(SHIMMER3R)
@@ -390,8 +396,10 @@ void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
  *
  *****************************************************/
 
-void DockUart_init(void)
+void DockUart_init(UART_HandleTypeDef *huart)
 {
+  huartDock = huart;
+
   uartSteps = 0;
   uartArgSize = 0;
   uartArg2Wait = 0;
@@ -416,33 +424,36 @@ void DockUart_init(void)
 
   uartTimeStart = uartTimeEnd = 0;
 
-  Uart_init();
-
-  HAL_UART_DeInit(huartDock);
-  huartDock->Init.WordLength = UART_WORDLENGTH_8B;
-  huartDock->Init.StopBits = UART_STOPBITS_1;
-  huartDock->Init.Parity = UART_PARITY_NONE;
-  huartDock->Init.Mode = UART_MODE_TX_RX;
-  huartDock->Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huartDock->Init.OverSampling = UART_OVERSAMPLING_16;
-  HAL_UART_Init(huartDock);
-
-  HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
-
 #if defined(SHIMMER3R)
   HAL_UART_RegisterCallback(huartDock, HAL_UART_RX_COMPLETE_CB_ID, dockUartRxCallback);
 //HAL_UART_RegisterCallback(huartDock, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
 #endif
+
+  HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
+}
+
+void DockUart_deint(void)
+{
+  if (isDockUartInitialised())
+  {
+    HAL_UART_DeInit(huartDock);
+  }
 }
 
 void DockUart_disable(void)
 {
-  __HAL_UART_DISABLE(huartDock);
+  if (isDockUartInitialised())
+  {
+    __HAL_UART_DISABLE(huartDock);
+  }
 }
 
 void DockUart_enable(void)
 {
-  __HAL_UART_ENABLE(huartDock);
+  if (isDockUartInitialised())
+  {
+    __HAL_UART_ENABLE(huartDock);
+  }
 }
 
 void DockUart_rxCallback(uint8_t data)
@@ -952,6 +963,11 @@ void DockUart_sendRsp()
   HAL_UART_Transmit(huartDock, uartRespBuf, uart_resp_len, 100);
 }
 
+uint8_t isDockUartInitialised(void)
+{
+  return (huartDock != 0 && ((HAL_UART_GetState(huartDock) & 0x20) == 0x20));
+}
+
 #if defined(SHIMMER4_SDK)
 /*****************************************************
  *
@@ -960,7 +976,7 @@ void DockUart_sendRsp()
  *****************************************************/
 void ExpUart_init(void)
 {
-  Uart_init();
+  setUartPeripheralPointers();
 }
 
 void ExpUart_rxCallback(uint8_t data)
@@ -1025,7 +1041,6 @@ uint8_t DockUart_interruptCheck(void)
     //SD_mount(1);
     //Board_ledOff(LED_GREEN0);
   }
-  S4_Task_set(TASK_DOCKSETUP);
   return stat.isDocked;
 }
 
