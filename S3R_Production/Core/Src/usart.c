@@ -431,6 +431,17 @@ void DockUart_init(UART_HandleTypeDef *huart)
 #endif
 
   HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
+
+  if (stat.isSensing)
+  {
+    DockUart_disable();
+  }
+  else
+  {
+    /* Not sure if this is needed but enabling here in case a previous disable
+     * action is not automatically reset when the periheral is reinitialised. */
+    DockUart_enable();
+  }
 }
 
 void DockUart_deint(void)

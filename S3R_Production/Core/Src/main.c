@@ -163,6 +163,7 @@ void Init()
 #endif
 
   DockUart_setup();
+  DockUart_disable();
   loadSensorConfigurationAndCalibration();
 
   //==== 13.8ma ====
@@ -170,8 +171,6 @@ void Init()
   FullTest();
 #endif
   //BT_disable(huartBt);
-  //DockUart_enable();
-  stat.isConfiguring = 0;
   S4Sens_stopPeripherals();
 #if defined(SHIMMER4_SDK)
   S4_RTC_WakeUpSetSlow();
@@ -180,6 +179,8 @@ void Init()
   /* Take initial measurement to update LED state */
   S4_ADC_readBatt(1);
 
+  stat.isConfiguring = 0;
+  DockUart_enable();
   Board_ledOff(LED_ALL);
   //while(1){
   //   //__NOP();
@@ -608,10 +609,7 @@ void SetupDock(void)
     {
       Board_sdPowerCycle();
     }
-    if (!stat.isSensing)
-    {
-      MX_USART1_UART_Init();
-    }
+    MX_USART1_UART_Init();
     BtsdSelfcmd();
   }
   else
