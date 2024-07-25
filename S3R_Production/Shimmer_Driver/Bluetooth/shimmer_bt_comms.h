@@ -202,6 +202,13 @@ enum
   BT_STREAM_CMD_STATE_STOP = 2
 };
 
+enum
+{
+  PRESSURE_SENSOR_BMP180 = 0,
+  PRESSURE_SENSOR_BMP280 = 1,
+  PRESSURE_SENSOR_BMP390 = 2
+};
+
 #if BT_DMA_USED_FOR_RX
 //uint8_t Dma2ConversionDone(void);
 uint8_t Dma2ConversionDone(uint8_t *rxBuff);
