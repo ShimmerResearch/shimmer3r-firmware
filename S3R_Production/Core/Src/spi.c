@@ -113,7 +113,7 @@ void MX_SPI1_Init(void)
 #if defined(SHIMMER3R)
   lsm6dsv_driver_init();
   adxl371_driver_init();
-  bmp390_driver_init();
+  bmp3_driver_init();
 #endif
 
   /* USER CODE END SPI1_Init 2 */
@@ -635,7 +635,7 @@ uint8_t SPI_test(void)
   set_power_spi1_bus(1, SPI1_CHIP_ALL);
   HAL_Delay(50);
   lsm6dsv_self_test();
-  bmp390_self_test();
+  bmp3_self_test();
   adxl371_self_test();
   set_power_spi1_bus(0, SPI1_CHIP_ALL);
 
@@ -827,6 +827,7 @@ void SPI_startSensing()
   memset((uint8_t *) &spi3Sens_buf, 0, sizeof(spi3ReadBuf));
 
 #if defined(SHIMMER3R)
+  /* SPI1 */
   if ((configBytes->chEnLnAccel) || (configBytes->chEnGyro))
   {
     lsm6dsv_power_on();
@@ -845,16 +846,26 @@ void SPI_startSensing()
 
   if (configBytes->chEnPressureAndTemperature)
   {
-    bmp390_config_set(configBytes->pressurePrecision);
+    bmp3_power_on();
+    bmp3_config_set(configBytes->pressurePrecision);
   }
 
+  if (configBytes->chEnAltAccel)
+  {
+    adxl371_power_on();
+    adxl371_config_accel(configBytes->wrAccelRate, configBytes->altAccelRange);
+  }
+
+  /* SPI2 */
   if (configBytes->chEnWrAccel)
   {
+    lis2dw12_power_on();
     lis2dw12_config_accel(configBytes->wrAccelRate, configBytes->wrAccelRange);
   }
 
   if (configBytes->chEnAltMag)
   {
+    lis3mdl_power_on();
     //lis3mdl_config_mag(configBytes->altMagRate, configBytes->altMagRange);
     lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);
   }
@@ -973,9 +984,9 @@ void SPI_stopSensing()
 
   //TODO un-select all chips
   //SPI1
-  lsm6dsv_UnselectDevice();
+  lsm6dsv_unselectDevice();
   adxl371_UnselectDevice();
-  bmp3_UnselectDevice();
+  bmp3_unselectDevice();
 
   //SPI2
   lis3mdl_UnselectDevice();
@@ -1127,13 +1138,13 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
   {
   case SPI1_LSM6DSV_ACCEL:
-    lsm6dsv_UnselectDevice();
+    lsm6dsv_unselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.accel1,
         &spi1Sens_buf.lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvAccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_LSM6DSV_GYRO:
-    lsm6dsv_UnselectDevice();
+    lsm6dsv_unselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.gyro,
         &spi1Sens_buf.lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvGyroBuf) - SPI_DMA_TXRX_OFFSET);
@@ -1145,7 +1156,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
-    bmp3_UnselectDevice();
+    bmp3_unselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.pressure,
         &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);

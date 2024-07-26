@@ -157,7 +157,36 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
 static void platform_init(void);
 #endif
 
-/* Main Example --------------------------------------------------------------*/
+#if defined(SHIMMER3R)
+void lsm6dsv_driver_init(void)
+{
+  /* Initialize mems driver interface */
+  dev_ctx.write_reg = platform_write;
+  dev_ctx.read_reg = platform_read;
+  dev_ctx.mdelay = platform_delay;
+  dev_ctx.handle = &SENSOR_BUS;
+}
+
+void lsm6dsv_power_on(void)
+{
+  set_power_spi1_bus(true, SPI1_CHIP_INDEX_LSM6DSV);
+}
+
+void lsm6dsv_power_off(void)
+{
+  set_power_spi1_bus(false, SPI1_CHIP_INDEX_LSM6DSV);
+}
+
+void lsm6dsv_selectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
+}
+
+void lsm6dsv_unselectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+}
+
 uint8_t lsm6dsv_self_test(void)
 {
   lsm6dsv_all_sources_t all_sources;
@@ -403,6 +432,73 @@ uint8_t lsm6dsv_self_test(void)
   return (st_result == ST_PASS ? 0 : 1);
 }
 
+void lsm6dsv_restore_default_config(void)
+{
+  lsm6dsv_reset_t rst;
+
+  /* Restore default configuration */
+  lsm6dsv_reset_set(&dev_ctx, LSM6DSV_RESTORE_CTRL_REGS);
+  do
+  {
+    lsm6dsv_reset_get(&dev_ctx, &rst);
+  } while (rst != LSM6DSV_READY);
+
+  /* Enable Block Data Update */
+  lsm6dsv_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
+}
+
+void lsm6dsv_config_accel(uint8_t rate, uint8_t range)
+{
+  //TODO if chip sampling rate is lower than Shimmer sampling, enable pin
+  //interrupt to only read data from chip when it's ready pin_int.drdy_xl =
+  //PROPERTY_ENABLE; lsm6dsv_pin_int1_route_set(&dev_ctx, &pin_int);
+
+  /* Set Output Data Rate.
+   * Selected data rate have to be equal or greater with respect
+   * with MLC data rate.
+   */
+  lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_1920Hz);
+  /* Set full scale */
+  lsm6dsv_xl_full_scale_set(&dev_ctx, (lsm6dsv_xl_full_scale_t) range);
+
+  ///* Configure filtering chain */
+  //filt_settling_mask.drdy = PROPERTY_ENABLE;
+  //filt_settling_mask.irq_xl = PROPERTY_ENABLE;
+  //filt_settling_mask.irq_g = PROPERTY_ENABLE;
+  //lsm6dsv_filt_settling_mask_set(&dev_ctx, filt_settling_mask);
+  //lsm6dsv_filt_xl_lp2_set(&dev_ctx, PROPERTY_ENABLE);
+  //lsm6dsv_filt_xl_lp2_bandwidth_set(&dev_ctx, LSM6DSV_XL_STRONG);
+}
+
+void lsm6dsv_config_gyro(uint8_t rate, uint8_t range)
+{
+  lsm6dsv_gy_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_1920Hz);
+  lsm6dsv_gy_full_scale_set(&dev_ctx, range);
+}
+
+HAL_StatusTypeDef lsm6dsv_accel_get(uint8_t *buf)
+{
+  HAL_StatusTypeDef ret;
+  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_A | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
+  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
+  return ret;
+}
+
+HAL_StatusTypeDef lsm6dsv_gyro_get(uint8_t *buf)
+{
+  HAL_StatusTypeDef ret;
+  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_G | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
+  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
+  return ret;
+}
+
+void lsm6dsv_status_get(void)
+{
+  lsm6dsv_data_ready_t drdy;
+  lsm6dsv_flag_data_ready_get(&dev_ctx, &drdy);
+}
+#endif
+
 /*
  * @brief  Write generic device register (platform dependent)
  *
@@ -426,10 +522,10 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, ui
 #elif defined(SPC584B_DIS)
   i2c_lld_write(handle, LSM6DSV_I2C_ADD_H & 0xFE, reg, (uint8_t *) bufp, len);
 #elif defined(SHIMMER3R)
-  lsm6dsv_SelectDevice();
+  lsm6dsv_selectDevice();
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
   HAL_SPI_Transmit(handle, (uint8_t *) bufp, len, 1000);
-  lsm6dsv_UnselectDevice();
+  lsm6dsv_unselectDevice();
 #endif
   return 0;
 }
@@ -458,10 +554,10 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t 
   i2c_lld_read(handle, LSM6DSV_I2C_ADD_H & 0xFE, reg, bufp, len);
 #elif defined(SHIMMER3R)
   reg |= SPI_READ_REGISTER;
-  lsm6dsv_SelectDevice();
+  lsm6dsv_selectDevice();
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
   HAL_SPI_Receive(handle, bufp, len, 1000);
-  lsm6dsv_UnselectDevice();
+  lsm6dsv_unselectDevice();
 #endif
   return 0;
 }
@@ -470,7 +566,7 @@ static int32_t
 platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len)
 {
   HAL_StatusTypeDef ret;
-  lsm6dsv_SelectDevice();
+  lsm6dsv_selectDevice();
   ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
   return ret;
 }
@@ -524,101 +620,4 @@ static void platform_init(void)
   HAL_Delay(1000);
 #endif
 }
-
-#elif defined(SHIMMER3R)
-void lsm6dsv_driver_init(void)
-{
-  /* Initialize mems driver interface */
-  dev_ctx.write_reg = platform_write;
-  dev_ctx.read_reg = platform_read;
-  dev_ctx.mdelay = platform_delay;
-  dev_ctx.handle = &SENSOR_BUS;
-}
-
-void lsm6dsv_power_on(void)
-{
-  set_power_spi1_bus(true, SPI1_CHIP_INDEX_LSM6DSV);
-}
-
-void lsm6dsv_power_off(void)
-{
-  set_power_spi1_bus(false, SPI1_CHIP_INDEX_LSM6DSV);
-}
-
-void lsm6dsv_SelectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
-}
-
-void lsm6dsv_UnselectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
-}
-
-void lsm6dsv_config_accel(uint8_t rate, uint8_t range)
-{
-  //TODO if chip sampling rate is lower than Shimmer sampling, enable pin
-  //interrupt to only read data from chip when it's ready pin_int.drdy_xl =
-  //PROPERTY_ENABLE; lsm6dsv_pin_int1_route_set(&dev_ctx, &pin_int);
-
-  /* Set Output Data Rate.
-   * Selected data rate have to be equal or greater with respect
-   * with MLC data rate.
-   */
-  lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_1920Hz);
-  /* Set full scale */
-  lsm6dsv_xl_full_scale_set(&dev_ctx, (lsm6dsv_xl_full_scale_t) range);
-
-  ///* Configure filtering chain */
-  //filt_settling_mask.drdy = PROPERTY_ENABLE;
-  //filt_settling_mask.irq_xl = PROPERTY_ENABLE;
-  //filt_settling_mask.irq_g = PROPERTY_ENABLE;
-  //lsm6dsv_filt_settling_mask_set(&dev_ctx, filt_settling_mask);
-  //lsm6dsv_filt_xl_lp2_set(&dev_ctx, PROPERTY_ENABLE);
-  //lsm6dsv_filt_xl_lp2_bandwidth_set(&dev_ctx, LSM6DSV_XL_STRONG);
-}
-
-void lsm6dsv_config_gyro(uint8_t rate, uint8_t range)
-{
-  lsm6dsv_gy_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_1920Hz);
-  lsm6dsv_gy_full_scale_set(&dev_ctx, range);
-}
-
-void lsm6dsv_status_get(void)
-{
-  lsm6dsv_data_ready_t drdy;
-  lsm6dsv_flag_data_ready_get(&dev_ctx, &drdy);
-}
-
-HAL_StatusTypeDef lsm6dsv_accel_get(uint8_t *buf)
-{
-  HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_A | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
-  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
-  return ret;
-}
-
-HAL_StatusTypeDef lsm6dsv_gyro_get(uint8_t *buf)
-{
-  HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_G | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
-  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
-  return ret;
-}
-
-void lsm6dsv_restore_default_config(void)
-{
-  lsm6dsv_reset_t rst;
-
-  /* Restore default configuration */
-  lsm6dsv_reset_set(&dev_ctx, LSM6DSV_RESTORE_CTRL_REGS);
-  do
-  {
-    lsm6dsv_reset_get(&dev_ctx, &rst);
-  } while (rst != LSM6DSV_READY);
-
-  /* Enable Block Data Update */
-  lsm6dsv_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
-}
-
 #endif

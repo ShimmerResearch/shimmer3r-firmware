@@ -306,6 +306,36 @@ static uint8_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
 }
 
 /* Main Example --------------------------------------------------------------*/
+
+void lis2dw12_driver_init(void)
+{
+  /* Initialize mems driver interface */
+  dev_ctx.write_reg = platform_write;
+  dev_ctx.read_reg = platform_read;
+  dev_ctx.mdelay = platform_delay;
+  dev_ctx.handle = &SENSOR_BUS;
+}
+
+void lis2dw12_power_on(void)
+{
+  set_power_spi2_bus(true, SPI2_CHIP_INDEX_LIS2DW12);
+}
+
+void lis2dw12_power_off(void)
+{
+  set_power_spi2_bus(false, SPI2_CHIP_INDEX_LIS2DW12);
+}
+
+void lis2dw12_SelectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
+}
+
+void lis2dw12_UnselectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+}
+
 void lis2dw12_self_test(void)
 {
   uint8_t st_result;
@@ -343,6 +373,20 @@ void lis2dw12_self_test(void)
   }
 
   tx_com(tx_buffer, strlen((char const *) tx_buffer));
+}
+
+void lis2dw12_config_accel(uint8_t rate, uint8_t range)
+{
+  //TODO fill in config
+  lis2dw12_data_rate_set(&dev_ctx, LIS2DW12_XL_ODR_100Hz);
+}
+
+HAL_StatusTypeDef lis2dw12_accel_get(uint8_t *buf)
+{
+  HAL_StatusTypeDef ret;
+  static uint8_t txBuff[] = { LIS2DW12_OUT_X_L | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
+  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
+  return ret;
 }
 
 /*
@@ -464,37 +508,4 @@ static void platform_init(void)
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   HAL_Delay(1000);
 #endif
-}
-
-void lis2dw12_driver_init(void)
-{
-  /* Initialize mems driver interface */
-  dev_ctx.write_reg = platform_write;
-  dev_ctx.read_reg = platform_read;
-  dev_ctx.mdelay = platform_delay;
-  dev_ctx.handle = &SENSOR_BUS;
-}
-
-void lis2dw12_SelectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
-}
-
-void lis2dw12_UnselectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
-}
-
-void lis2dw12_config_accel(uint8_t rate, uint8_t range)
-{
-  //TODO fill in config
-  lis2dw12_data_rate_set(&dev_ctx, LIS2DW12_XL_ODR_100Hz);
-}
-
-HAL_StatusTypeDef lis2dw12_accel_get(uint8_t *buf)
-{
-  HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { LIS2DW12_OUT_X_L | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
-  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
-  return ret;
 }

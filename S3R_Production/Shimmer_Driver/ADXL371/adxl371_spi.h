@@ -30,5 +30,7 @@ void adxl371_driver_init(void);
 void adxl371_SelectDevice(void);
 void adxl371_UnselectDevice(void);
 uint8_t adxl371_self_test(void);
+void adxl371_restore_default_config(void);
+void adxl371_config_accel(uint8_t rate, uint8_t range);
 
 #endif /* ADXL371_ADXL371_SPI_H_ */
