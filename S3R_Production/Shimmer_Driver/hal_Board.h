@@ -218,6 +218,10 @@ extern void Board_delayMicros(uint32_t micros);
 #if defined(SHIMMER3R)
 #define Board_SW_I2C(x) \
   HAL_GPIO_WritePin(SW_I2C1_GPIO_Port, SW_I2C1_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_SW_SPI1(x) \
+  HAL_GPIO_WritePin(SW_SPI1_GPIO_Port, SW_SPI1_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_SW_SPI2(x) \
+  HAL_GPIO_WritePin(SW_SPI2_GPIO_Port, SW_SPI2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_EXG_RESET_N(x) \
   HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #elif defined(SHIMMER4_SDK)

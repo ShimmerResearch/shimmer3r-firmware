@@ -97,6 +97,14 @@ extern "C"
 #endif
   } I2C_SENSOR;
 
+  typedef enum
+  {
+    I2C1_CHIP_INDEX_LIS2MDL,
+    I2C1_CHIP_INDEX_EEPROM,
+    I2C1_CHIP_QTY,
+    I2C1_CHIP_ALL
+  } I2C1_CHIP_INDEX;
+
   typedef struct
   { //i2c_1 - Sensors
     I2C_STATUS status;
@@ -228,6 +236,7 @@ extern "C"
   void I2cSens_sensorNext(void);
 
 #if defined(SHIMMER3R)
+  void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex);
   bool areI2cChannelsEnabled(void);
   void I2C2_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
 #elif defined(SHIMMER4_SDK)

@@ -51,12 +51,12 @@ void adxl371_power_off(void)
   set_power_spi1_bus(false, SPI1_CHIP_INDEX_ADXL371);
 }
 
-void adxl371_SelectDevice(void)
+void adxl371_selectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
 }
 
-void adxl371_UnselectDevice(void)
+void adxl371_unselectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
@@ -101,10 +101,10 @@ void adxl371_config_accel(uint8_t rate, uint8_t range)
  */
 static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len)
 {
-  adxl371_SelectDevice();
+  adxl371_selectDevice();
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
   HAL_SPI_Transmit(handle, (uint8_t *) bufp, len, 1000);
-  adxl371_UnselectDevice();
+  adxl371_unselectDevice();
   return 0;
 }
 
@@ -121,10 +121,10 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, ui
 static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len)
 {
   reg = (reg << 1) | 0x01;
-  adxl371_SelectDevice();
+  adxl371_selectDevice();
   HAL_SPI_Transmit(handle, &reg, 1, 1000);
   HAL_SPI_Receive(handle, bufp, len, 1000);
-  adxl371_UnselectDevice();
+  adxl371_unselectDevice();
   return 0;
 }
 

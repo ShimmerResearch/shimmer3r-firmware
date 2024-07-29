@@ -66,16 +66,14 @@ void CAT24C16_init(I2C_HandleTypeDef *hi2c)
 
 void CAT24C16_powerOn(void)
 {
-  //TODO initialise I2C if not on?
-  HAL_GPIO_WritePin(SW_I2C1_GPIO_Port, SW_I2C1_Pin, GPIO_PIN_SET);
+  set_power_i2c1_bus(true, I2C1_CHIP_INDEX_EEPROM);
   HAL_Delay(2); //2ms
 }
 
 void CAT24C16_powerOff(void)
 {
   HAL_Delay(5); //5ms to ensure no writes pending
-  HAL_GPIO_WritePin(SW_I2C1_GPIO_Port, SW_I2C1_Pin, GPIO_PIN_RESET);
-  //TODO deinitialise I2C?
+  set_power_i2c1_bus(false, I2C1_CHIP_INDEX_EEPROM);
 }
 
 void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length)

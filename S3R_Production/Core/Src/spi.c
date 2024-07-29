@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#define BOOT_TIME 20 // LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
+
 #if defined(SHIMMER3R)
 SPI_HandleTypeDef *hspiSensing1;
 SPI_HandleTypeDef *hspiSensing2;
@@ -64,6 +66,12 @@ void MX_SPI1_Init(void)
 {
 
   /* USER CODE BEGIN SPI1_Init 0 */
+
+  Board_SW_SPI1(1);
+
+  lsm6dsv_unselectDevice();
+  adxl371_unselectDevice();
+  bmp3_unselectDevice();
 
   /* USER CODE END SPI1_Init 0 */
 
@@ -110,11 +118,10 @@ void MX_SPI1_Init(void)
   HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI1_TxRxCpltCallback);
   HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
 
-#if defined(SHIMMER3R)
-  lsm6dsv_driver_init();
   adxl371_driver_init();
   bmp3_driver_init();
-#endif
+
+  HAL_Delay(BOOT_TIME);
 
   /* USER CODE END SPI1_Init 2 */
 }
@@ -124,6 +131,11 @@ void MX_SPI2_Init(void)
 {
 
   /* USER CODE BEGIN SPI2_Init 0 */
+
+  Board_SW_SPI2(1);
+
+  lis3mdl_unselectDevice();
+  lis2dw12_unselectDevice();
 
   /* USER CODE END SPI2_Init 0 */
 
@@ -170,10 +182,7 @@ void MX_SPI2_Init(void)
   HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI2_TxRxCpltCallback);
   HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
 
-#if defined(SHIMMER3R)
-  lis3mdl_driver_init();
-  lis2dw12_driver_init();
-#endif
+  HAL_Delay(BOOT_TIME);
 
   /* USER CODE END SPI2_Init 2 */
 }
@@ -627,13 +636,33 @@ void SPI_init(void)
 #endif
 }
 
+void SPI1_DeInit(void)
+{
+  HAL_SPI_DeInit(hspiSensing1);
+
+  lsm6dsv_selectDevice();
+  adxl371_selectDevice();
+  bmp3_selectDevice();
+
+  Board_SW_SPI1(0);
+}
+
+void SPI2_DeInit(void)
+{
+  HAL_SPI_DeInit(hspiSensing2);
+
+  lis3mdl_selectDevice();
+  lis2dw12_selectDevice();
+
+  Board_SW_SPI2(0);
+}
+
 uint8_t SPI_test(void)
 {
   uint8_t ret_val = 0;
 #if defined(SHIMMER3R)
   SHIMMER_PRINTF("SPI1:\r\n");
   set_power_spi1_bus(1, SPI1_CHIP_ALL);
-  HAL_Delay(50);
   lsm6dsv_self_test();
   bmp3_self_test();
   adxl371_self_test();
@@ -641,7 +670,6 @@ uint8_t SPI_test(void)
 
   SHIMMER_PRINTF("SPI2:\r\n");
   set_power_spi2_bus(1, SPI2_CHIP_ALL);
-  HAL_Delay(50);
   lis3mdl_self_test();
   lis2dw12_self_test();
   set_power_spi2_bus(0, SPI2_CHIP_ALL);
@@ -831,11 +859,12 @@ void SPI_startSensing()
   if ((configBytes->chEnLnAccel) || (configBytes->chEnGyro))
   {
     lsm6dsv_power_on();
-    lsm6dsv_restore_default_config();
+    lsm6dsv_driver_init();
+    lsm6dsv_base_settings_init();
 
     if (configBytes->chEnLnAccel)
     {
-      lsm6dsv_config_accel(configBytes->gyroRate, configBytes->altAccelRange);
+      lsm6dsv_config_accel(configBytes->gyroRate, configBytes->wrAccelRange);
     }
 
     if (configBytes->chEnGyro)
@@ -860,19 +889,25 @@ void SPI_startSensing()
   if (configBytes->chEnWrAccel)
   {
     lis2dw12_power_on();
+    lis2dw12_driver_init();
+    lis2dw12_base_settings_init();
+    //TODO decide how to handle configBytes->wrAccelHRM and configBytes->wrAccelLPM
     lis2dw12_config_accel(configBytes->wrAccelRate, configBytes->wrAccelRange);
   }
 
   if (configBytes->chEnAltMag)
   {
     lis3mdl_power_on();
-    //lis3mdl_config_mag(configBytes->altMagRate, configBytes->altMagRange);
-    lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);
+    lis3mdl_driver_init();
+    lis3mdl_base_settings_init();
+    lis3mdl_config_mag(LIS3MDL_UHP_80Hz, LIS3MDL_12_GAUSS);
+    //TODO decide if we need an specific rate setting for the alternative mag
+//    lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);
   }
 
 #endif
 
-  //ExG (SPI)
+  //ExG (SPI3)
   if (isAds1292Present())
   {
     if (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
@@ -973,31 +1008,13 @@ void SPI_stopSensing()
   //gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
 #if defined(SHIMMER3R)
-  //TODO reset chips to default config (especially to stop them sampling and put
-  //them in standby)? lsm6dsv_restore_default_config();
-  //bmp390_restore_default_config();
-  //adxl371_restore_default_config();
-  //lis3mdl_restore_default_config();
-  ////TODO pick approach below:
-  ////  lis2dw12_sleep();
-  //lis2dw12_restore_default_config();
-
-  //TODO un-select all chips
-  //SPI1
-  lsm6dsv_unselectDevice();
-  adxl371_UnselectDevice();
-  bmp3_unselectDevice();
-
-  //SPI2
-  lis3mdl_UnselectDevice();
-  lis2dw12_UnselectDevice();
-
   set_power_spi1_bus(0, SPI1_CHIP_ALL);
   set_power_spi2_bus(0, SPI2_CHIP_ALL);
   //TODO
-  //set_power_spi3_bus(0, chipIndex);
-
-  //TODO do we need to deinit the SPI buses to save power?
+  if (isAds1292Present())
+  {
+    //set_power_spi3_bus(0, chipIndex);
+  }
 
 #elif
   if (isAds1292Present())
@@ -1150,7 +1167,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         sizeof(spi1Sens_buf.lsm6dsvGyroBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_ADXL371_ACCEL:
-    adxl371_UnselectDevice();
+    adxl371_unselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.accel3,
         &spi1Sens_buf.adxl371Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
@@ -1174,13 +1191,13 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   switch (spi2Sens.sensorList[spi2Sens.sensorCnt])
   {
   case SPI2_LIS2DW12_ACCEL:
-    lis2dw12_UnselectDevice();
+    lis2dw12_unselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.accel2,
         &spi2Sens_buf.lis2dw12AccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis2dw12AccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI2_LIS3MDL_MAG:
-    lis3mdl_UnselectDevice();
+    lis3mdl_unselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.mag2,
         &spi2Sens_buf.lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis3mdlMagBuf) - SPI_DMA_TXRX_OFFSET);
@@ -1290,9 +1307,21 @@ void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex)
     }
   }
 
-  if (stateToSet != HAL_GPIO_ReadPin(SW_SPI1_GPIO_Port, SW_SPI1_Pin))
+  if (stateToSet)
   {
-    HAL_GPIO_WritePin(SW_SPI1_GPIO_Port, SW_SPI1_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    if (HAL_SPI_GetState(hspiSensing1) == HAL_SPI_STATE_RESET)
+    {
+      /* Init the SPI */
+      MX_SPI1_Init();
+    }
+  }
+  else
+  {
+    if (HAL_SPI_GetState(hspiSensing1) != HAL_SPI_STATE_RESET)
+    {
+      /* DeInit the SPI */
+      SPI1_DeInit();
+    }
   }
 }
 
@@ -1323,9 +1352,21 @@ void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex)
     }
   }
 
-  if (stateToSet != HAL_GPIO_ReadPin(SW_SPI2_GPIO_Port, SW_SPI2_Pin))
+  if (stateToSet)
   {
-    HAL_GPIO_WritePin(SW_SPI2_GPIO_Port, SW_SPI2_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    if (HAL_SPI_GetState(hspiSensing2) == HAL_SPI_STATE_RESET)
+    {
+      /* Init the SPI */
+      MX_SPI2_Init();
+    }
+  }
+  else
+  {
+    if (HAL_SPI_GetState(hspiSensing2) != HAL_SPI_STATE_RESET)
+    {
+      /* DeInit the SPI */
+      SPI2_DeInit();
+    }
   }
 }
 

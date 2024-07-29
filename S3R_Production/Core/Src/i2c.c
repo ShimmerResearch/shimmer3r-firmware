@@ -23,6 +23,8 @@
 /* USER CODE BEGIN 0 */
 #include "s4__cfg.h"
 
+#define BOOT_TIME 20 // LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
+
 //static SENSINGTypeDef *pSensing;
 //static STATTypeDef * pStat;
 
@@ -45,6 +47,8 @@ i2cReadBufTypeDef i2cSens_buf;
 uint8_t stc3100_buf[STC3100_DATA_LEN];
 #endif
 
+bool i2c1BusChipPwrFlags[I2C1_CHIP_QTY];
+
 uint8_t i2c_addr_list[128], i2c_addr_list_len;
 #if defined(SHIMMER4_SDK)
 uint16_t i2c_batt_report_interval = I2C_BATT_REPORT_INTERVAL_DEFAULT;
@@ -61,6 +65,8 @@ void MX_I2C1_Init(void)
 {
 
   /* USER CODE BEGIN I2C1_Init 0 */
+
+  set_power_i2c_main_bus(1);
 
   /* USER CODE END I2C1_Init 0 */
 
@@ -96,11 +102,11 @@ void MX_I2C1_Init(void)
   }
   /* USER CODE BEGIN I2C1_Init 2 */
 
-#if defined(SHIMMER3R)
   HAL_I2C_RegisterCallback(&hi2c1, HAL_I2C_MEM_RX_COMPLETE_CB_ID, I2C2_MemRxCpltCallback);
 
-  lis2mdl_driver_init();
-#endif
+  I2C_init();
+
+  HAL_Delay(BOOT_TIME);
 
   /* USER CODE END I2C1_Init 2 */
 }
@@ -232,7 +238,6 @@ void I2C_init(void)
 
   //init eeprom
   CAT24C16_init(I2C_getHandlerSensor());
-  set_power_i2c_main_bus(1);
 
 #if defined(SHIMMER4_SDK)
   STC3100_init(hi2cBattery);
@@ -242,12 +247,18 @@ void I2C_init(void)
 #endif
 }
 
+void I2C1_DeInit(void)
+{
+  HAL_I2C_DeInit(hi2cMainBus);
+
+  set_power_i2c_main_bus(0);
+}
+
 uint8_t I2C_test(void)
 {
   uint8_t ret_val = 0;
 
-  set_power_i2c_main_bus(1);
-  HAL_Delay(50);
+  set_power_i2c1_bus(true, I2C1_CHIP_ALL);
 
   I2C_scan(hi2cMainBus);
 #if defined(SHIMMER4_SDK)
@@ -279,7 +290,9 @@ uint8_t I2C_test(void)
   }
 #elif defined(SHIMMER3R)
   SHIMMER_PRINTF("I2C:\r\n");
+
   lis2mdl_self_test();
+
   uint8_t eeprom_result = CAT24C16_test();
   if (eeprom_result == 0)
   {
@@ -291,14 +304,14 @@ uint8_t I2C_test(void)
   }
 #endif
 
-  set_power_i2c_main_bus(0);
-
 #if defined(SHIMMER4_SDK)
   if (bmp280_test(hi2cMainBus))
   {
     ret_val |= 0x10;
   }
 #endif
+
+  set_power_i2c1_bus(false, I2C1_CHIP_ALL);
 
   return ret_val;
 }
@@ -507,18 +520,21 @@ void I2C_startSensing(void)
 
   memset((uint8_t *) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
 
-  if ((0 != i2cSens.sensorLen)
-      && (HAL_GPIO_ReadPin(SW_I2C1_GPIO_Port, SW_I2C1_Pin) == GPIO_PIN_RESET))
-  {
-    //HAL_GPIO_WritePin(SW_I2C_GPIO_Port, SW_I2C_Pin, GPIO_PIN_SET);//I2C
-    Board_SW_I2C(1);
-    HAL_Delay(1000);
-  }
+//  if ((0 != i2cSens.sensorLen)
+//      && (HAL_GPIO_ReadPin(SW_I2C1_GPIO_Port, SW_I2C1_Pin) == GPIO_PIN_RESET))
+//  {
+//    //HAL_GPIO_WritePin(SW_I2C_GPIO_Port, SW_I2C_Pin, GPIO_PIN_SET);//I2C
+//    Board_SW_I2C(1);
+//    HAL_Delay(1000);
+//  }
 
 #if defined(SHIMMER3R)
   if (configBytes->chEnMag)
   {
-    lis2mdl_config_mag(configBytes->magRate, configBytes->magRange);
+    lis2mdl_power_on();
+    lis2mdl_driver_init();
+    lis2mdl_base_settings_init();
+    lis2mdl_config_mag(configBytes->magRate);
   }
 
 #elif defined(SHIMMER4_SDK)
@@ -602,10 +618,10 @@ void I2cSens_stopSensing(void)
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
 #if defined(SHIMMER3R)
-  if (configBytes->chEnMag)
-  {
-    lis2mdl_sleep();
-  }
+//  if (configBytes->chEnMag)
+//  {
+//    lis2mdl_sleep();
+//  }
 #elif defined(SHIMMER4_SDK)
   if (configBytes->chEnGyro || configBytes->chEnAltAccel || configBytes->chEnAltMag)
   {
@@ -617,7 +633,7 @@ void I2cSens_stopSensing(void)
   }
 #endif
   HAL_Delay(10);
-  Board_SW_I2C(0);
+  set_power_i2c1_bus(0, SPI1_CHIP_ALL);
 }
 
 #if defined(SHIMMER4_SDK)
@@ -749,6 +765,51 @@ void I2cSens_sensorNext(void)
 #endif
   default:
     break;
+  }
+}
+
+void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex)
+{
+  bool stateToSet = false;
+
+  if (chipIndex == I2C1_CHIP_ALL)
+  {
+    stateToSet = state;
+    for (uint8_t i = 0; i < sizeof(i2c1BusChipPwrFlags); i++)
+    {
+      i2c1BusChipPwrFlags[i] = state;
+    }
+  }
+  else
+  {
+    i2c1BusChipPwrFlags[chipIndex] = state;
+
+    for (uint8_t i = 0; i < sizeof(i2c1BusChipPwrFlags); i++)
+    {
+      //If any chips should be on, set power on.
+      if (i2c1BusChipPwrFlags[i])
+      {
+        stateToSet = true;
+        break;
+      }
+    }
+  }
+
+  if (stateToSet)
+  {
+    if (HAL_I2C_GetState(hi2cMainBus) == HAL_I2C_STATE_RESET)
+    {
+      /* Init the I2C */
+      MX_I2C1_Init();
+    }
+  }
+  else
+  {
+    if (HAL_I2C_GetState(hi2cMainBus) != HAL_I2C_STATE_RESET)
+    {
+      /* DeInit the I2C */
+      I2C1_DeInit();
+    }
   }
 }
 

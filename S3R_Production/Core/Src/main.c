@@ -140,7 +140,6 @@ void Init()
 
   SD_init();
   //GPIO_init();
-  I2C_init();
   S4_ADC_init();
   SPI_init();
 
@@ -262,7 +261,7 @@ int main(void)
   Init();
   //S4_Task_set(TASK_STARTSENSING);
 
-  //FullTest();
+//  FullTest();
 
   /* USER CODE END 2 */
 
