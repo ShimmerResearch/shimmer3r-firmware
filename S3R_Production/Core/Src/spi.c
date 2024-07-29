@@ -22,7 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 
-#define BOOT_TIME 20 // LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
+#define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
 #if defined(SHIMMER3R)
 SPI_HandleTypeDef *hspiSensing1;
@@ -902,7 +902,7 @@ void SPI_startSensing()
     lis3mdl_base_settings_init();
     lis3mdl_config_mag(LIS3MDL_UHP_80Hz, LIS3MDL_12_GAUSS);
     //TODO decide if we need an specific rate setting for the alternative mag
-//    lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);
+    //lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);
   }
 
 #endif
