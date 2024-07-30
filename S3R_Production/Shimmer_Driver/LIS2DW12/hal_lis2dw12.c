@@ -319,11 +319,6 @@ void lis2dw12_driver_init(void)
 //  LIS2DW12_RegisterBusIO(lis2dw12_obj, pIO);
 }
 
-void lis2dw12_base_settings_init(void)
-{
-  LIS2DW12_Init(&lis2dw12_obj);
-}
-
 void lis2dw12_power_on(void)
 {
   set_power_spi2_bus(true, SPI2_CHIP_INDEX_LIS2DW12);
@@ -385,6 +380,8 @@ void lis2dw12_self_test(void)
 
 int32_t lis2dw12_config_accel(lis2dw12_odr_t rate, lis2dw12_fs_t range)
 {
+  LIS2DW12_Init(&lis2dw12_obj);
+
 //  if (LIS2DW12_ACC_Enable(&lis2dw12_obj) != LIS2DW12_OK)
 //  {
 //    return LIS2DW12_ERROR;

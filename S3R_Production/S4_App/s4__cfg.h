@@ -62,7 +62,7 @@
 #endif
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/ADXL371/adxl371.h"
-#include "../Shimmer_Driver/ADXL371/adxl371_spi.h"
+#include <ADXL371/hal_adxl371.h>
 #include "../Shimmer_Driver/BMP3/hal_bmp3.h"
 #include <LIS2DW12/hal_lis2dw12.h>
 #include <LIS2DW12/lis2dw12.h>

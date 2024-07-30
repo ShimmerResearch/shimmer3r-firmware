@@ -81,8 +81,9 @@ extern "C"
 
   typedef enum
   { //i2c
-    SPI1_LSM6DSV_ACCEL = 0,
-    SPI1_LSM6DSV_GYRO,
+    SPI1_LSM6DSV_GYRO_AND_ACCEL = 0,
+    SPI1_LSM6DSV_ACCEL_ONLY,
+    SPI1_LSM6DSV_GYRO_ONLY,
     SPI1_ADXL371_ACCEL,
     SPI1_BMP390_PRESSURE_TEMP,
     SPI2_LIS2DW12_ACCEL,
@@ -95,6 +96,7 @@ extern "C"
   {
     SPI_STAT_IDLE = 0,
     SPI_STAT_LSM6DSV_STATUS_GET,
+    SPI_STAT_LSM6DSV_GYRO_AND_ACCEL_GET,
     SPI_STAT_LSM6DSV_ACCEL_GET,
     SPI_STAT_LSM6DSV_GYRO_GET,
     SPI_STAT_ADXL371_ACCEL_GET,
@@ -113,8 +115,9 @@ extern "C"
 
   typedef struct
   {
-    uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET + 6];
+    uint8_t lsm6dsvGyroAndAccelBuf[SPI_DMA_TXRX_OFFSET + 12];
     uint8_t lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET + 6];
+    uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t adxl371Buf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET + 6 + 1]; //+1 for BMP390 dummy byte
   } spi1ReadBuf;
@@ -172,7 +175,7 @@ void SpiStepDone(void);
 
 #if defined(SHIMMER3R)
   void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start);
-  void SpiSens_sensorNext(SPITypeDef *spiSensingInfo);
+  uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo);
 
   void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
   void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi);

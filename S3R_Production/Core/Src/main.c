@@ -567,7 +567,7 @@ void loadSensorConfigurationAndCalibration(void)
       S4Ram_init();
       UpdateSdConfig();
       SetSdCfgFlag(0);
-      if (isFileStatusOk())
+      if (!isFileStatusOk())
       {
         stat.sdlogReady = 0;
         stat.badFile = 1;

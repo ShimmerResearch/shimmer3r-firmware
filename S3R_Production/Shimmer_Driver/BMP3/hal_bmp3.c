@@ -117,6 +117,7 @@ void bmp3_config_set(uint8_t precision)
   /* Assign the settings which needs to be set in the sensor */
   settings_sel = BMP3_SEL_PRESS_EN | BMP3_SEL_TEMP_EN | BMP3_SEL_PRESS_OS
       | BMP3_SEL_TEMP_OS | BMP3_SEL_ODR;
+  settings_sel |= BMP3_SEL_DRDY_EN | BMP3_SEL_LATCH;
   rslt = bmp3_set_sensor_settings(settings_sel, &settings, &bmp3);
   if (rslt == BMP3_SENSOR_OK)
   {

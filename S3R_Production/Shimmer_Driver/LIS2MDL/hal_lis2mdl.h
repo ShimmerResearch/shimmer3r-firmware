@@ -12,7 +12,6 @@
 
 void lis2mdl_self_test(void);
 void lis2mdl_driver_init(void);
-void lis2mdl_base_settings_init(void);
 void lis2mdl_power_on(void);
 void lis2mdl_power_off(void);
 void lis2mdl_set_default_config(void);

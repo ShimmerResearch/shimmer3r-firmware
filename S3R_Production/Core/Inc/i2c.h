@@ -191,7 +191,7 @@ extern "C"
   void I2C_readBattSetFreq(uint16_t val);
 #endif
 
-  void I2cSensing(I2C_SENSING_TYPE start);
+  void I2cSensing(I2CTypeDef *i2cSensingInfo, I2C_SENSING_TYPE start);
 #if defined(SHIMMER4_SDK)
   void I2cBattMonitor(I2C_SENSING_TYPE start);
 #endif
@@ -233,7 +233,7 @@ extern "C"
   void I2cBatt_stopSensing(void);
 #endif
 
-  void I2cSens_sensorNext(void);
+  uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo);
 
 #if defined(SHIMMER3R)
   void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex);

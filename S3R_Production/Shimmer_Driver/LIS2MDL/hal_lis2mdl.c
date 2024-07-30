@@ -437,11 +437,6 @@ void lis2mdl_driver_init(void)
 //  lis2mdl_obj.IO.BusType = LIS2MDL_I2C_BUS;
 }
 
-void lis2mdl_base_settings_init(void)
-{
-  LIS2MDL_Init(&lis2mdl_obj);
-}
-
 void lis2mdl_power_on(void)
 {
   set_power_i2c1_bus(true, I2C1_CHIP_INDEX_LIS2MDL);
@@ -472,17 +467,21 @@ void lis2mdl_set_default_config(void)
 
 void lis2mdl_config_mag(lis2mdl_odr_t rate)
 {
-
-  //TODO utilsie rate
+  LIS2MDL_Init(&lis2mdl_obj);
 
   /* Set restore magnetic condition policy */
   lis2mdl_set_rst_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_SET_SENS_ODR_DIV_63);
   /* Set power mode */
   lis2mdl_power_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_HIGH_RESOLUTION);
   /* Set Output Data Rate */
-  lis2mdl_data_rate_set(&lis2mdl_obj.Ctx, LIS2MDL_ODR_100Hz);
+  lis2mdl_data_rate_set(&lis2mdl_obj.Ctx, rate);
   /* Set Operating mode */
   lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_CONTINUOUS_MODE);
+
+  /* Set DRDY pin */
+  lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
+
+
   /* Wait stable output */
   platform_delay(WAIT_TIME_01);
 }
@@ -498,5 +497,4 @@ void lis2mdl_sleep(void)
 {
   lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_POWER_DOWN);
 }
-
 #endif

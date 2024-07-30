@@ -533,7 +533,6 @@ void I2C_startSensing(void)
   {
     lis2mdl_power_on();
     lis2mdl_driver_init();
-    lis2mdl_base_settings_init();
     lis2mdl_config_mag(configBytes->magRate);
   }
 
@@ -598,7 +597,7 @@ void I2C_pollSensors(void)
 {
   if (i2cSens.sensorLen > 0)
   {
-    I2cSensing(I2C_FIRST_SENSOR);
+    I2cSensing(&i2cSens, I2C_FIRST_SENSOR);
   }
 }
 
@@ -667,7 +666,7 @@ void I2C_gatherDataStart(void)
 
 void I2cSens_gatherDataStart(void)
 {
-  I2cSensing(I2C_FIRST_SENSOR);
+  I2cSensing(&i2cSens, I2C_FIRST_SENSOR);
 }
 
 #if defined(SHIMMER4_SDK)
@@ -683,19 +682,31 @@ void I2cBatt_gatherDataStart(void)
 }
 #endif
 
-void I2cSensing(I2C_SENSING_TYPE start)
+void I2cSensing(I2CTypeDef *i2cSensingInfo, I2C_SENSING_TYPE start)
 {
-  i2cSens.sensorCnt = (start == I2C_FIRST_SENSOR) ? 0 : i2cSens.sensorCnt + 1;
-  if (i2cSens.sensorCnt == i2cSens.sensorLen)
+  i2cSensingInfo->sensorCnt = (start == I2C_FIRST_SENSOR) ? 0 : i2cSensingInfo->sensorCnt + 1;
+  if (i2cSensingInfo->sensorCnt == i2cSensingInfo->sensorLen)
   {
-    i2cSens.status = I2C_STAT_IDLE;
-    i2cSens.sensorCnt = 0;
+    i2cSensingInfo->status = I2C_STAT_IDLE;
+    i2cSensingInfo->sensorCnt = 0;
     I2cSens_gatherDataDone_cb();
   }
-  else if (i2cSens.sensorCnt < i2cSens.sensorLen)
+  else if (i2cSensingInfo->sensorCnt < i2cSensingInfo->sensorLen)
   {
-    I2cSens_sensorNext();
-    //Task_set(TASK_NEXTSENSOR);
+    uint8_t res = 0;
+    while((res = I2cSens_sensorNext(i2cSensingInfo)) == 0)
+    {
+      i2cSensingInfo->sensorCnt++;
+
+      if (i2cSensingInfo->sensorCnt == i2cSensingInfo->sensorLen)
+      {
+        i2cSensingInfo->status = I2C_STAT_IDLE;
+        i2cSensingInfo->sensorCnt = 0;
+        I2cSens_gatherDataDone_cb();
+        break;
+      }
+    }
+
   }
   else
   {
@@ -731,14 +742,20 @@ void I2cBattMonitor(I2C_SENSING_TYPE start)
 }
 #endif
 
-void I2cSens_sensorNext(void)
+uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
 {
-  switch (i2cSens.sensorList[i2cSens.sensorCnt])
+  uint8_t retVal = 0;
+
+  switch (i2cSensingInfo->sensorList[i2cSensingInfo->sensorCnt])
   {
 #if defined(SHIMMER3R)
   case I2C_LIS2MDL_MAG:
-    i2cSens.status = I2C_STAT_LIS2MDL_MAG_GET;
-    lis2mdl_mag_get(i2cSens_buf.lis2mdlMagBuf);
+    if (LIS2MDL_DRDY)
+    {
+      i2cSensingInfo->status = I2C_STAT_LIS2MDL_MAG_GET;
+      lis2mdl_mag_get(i2cSens_buf.lis2mdlMagBuf);
+      retVal = 1;
+    }
     break;
 #elif defined(SHIMMER4_SDK)
   case I2C_LSM303DLHC_ACCEL:
@@ -766,6 +783,7 @@ void I2cSens_sensorNext(void)
   default:
     break;
   }
+  return retVal;
 }
 
 void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex)
@@ -832,7 +850,7 @@ void I2C2_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
   }
 
   i2cSens.status = I2C_STAT_IDLE;
-  I2cSensing(I2C_NEXT_SENSOR);
+  I2cSensing(&i2cSens, I2C_NEXT_SENSOR);
 }
 
 #elif defined(SHIMMER4_SDK)

@@ -168,11 +168,6 @@ void lsm6dsv_driver_init(void)
   lsm6dsv_obj.Ctx.handle = &SENSOR_BUS;
 }
 
-void lsm6dsv_base_settings_init(void)
-{
-  LSM6DSV_Init(&lsm6dsv_obj);
-}
-
 void lsm6dsv_power_on(void)
 {
   set_power_spi1_bus(true, SPI1_CHIP_INDEX_LSM6DSV);
@@ -455,19 +450,59 @@ void lsm6dsv_restore_default_config(void)
   lsm6dsv_block_data_update_set(&lsm6dsv_obj.Ctx, PROPERTY_ENABLE);
 }
 
-void lsm6dsv_config_accel(uint8_t rate, uint8_t range)
+void lsm6dsv_config_imu(uint8_t isGyroEn, uint8_t isAccelEn, uint8_t rate, uint8_t rangeGyro, uint8_t rangeAccel)
 {
-  //TODO if chip sampling rate is lower than Shimmer sampling, enable pin
-  //interrupt to only read data from chip when it's ready pin_int.drdy_xl =
-  //PROPERTY_ENABLE; lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
+  LSM6DSV_Init(&lsm6dsv_obj);
 
-  /* Set Output Data Rate.
-   * Selected data rate have to be equal or greater with respect
-   * with MLC data rate.
-   */
-  lsm6dsv_xl_data_rate_set(&lsm6dsv_obj.Ctx, LSM6DSV_ODR_AT_1920Hz);
-  /* Set full scale */
-  lsm6dsv_xl_full_scale_set(&lsm6dsv_obj.Ctx, (lsm6dsv_xl_full_scale_t) range);
+  //TODO remove when rate is set correctly in config bytes
+  rate = LSM6DSV_ODR_AT_1920Hz;
+
+  if (isGyroEn)
+  {
+    lsm6dsv_gy_data_rate_set(&lsm6dsv_obj.Ctx, (lsm6dsv_data_rate_t) rate);
+    lsm6dsv_gy_full_scale_set(&lsm6dsv_obj.Ctx, (lsm6dsv_gy_full_scale_t) rangeGyro);
+  }
+
+  if (isAccelEn)
+  {
+    /* Set Output Data Rate.
+     * Selected data rate have to be equal or greater with respect
+     * with MLC data rate.
+     */
+    lsm6dsv_xl_data_rate_set(&lsm6dsv_obj.Ctx, (lsm6dsv_data_rate_t) rate);
+    /* Set full scale */
+    lsm6dsv_xl_full_scale_set(&lsm6dsv_obj.Ctx, (lsm6dsv_xl_full_scale_t) rangeAccel);
+  }
+
+  //TODO if chip sampling rate is lower than Shimmer sampling, enable pin
+  //interrupt to only read data from chip when it's ready
+  lsm6dsv_pin_int_route_t pin_int;
+  pin_int.drdy_g_eis = 0;
+  pin_int.drdy_temp = 0;
+  pin_int.fifo_th = 0;
+  pin_int.fifo_ovr = 0;
+  pin_int.fifo_full = 0;
+  pin_int.cnt_bdr = 0;
+  pin_int.emb_func_endop = 0;
+  pin_int.timestamp = 0;
+  pin_int.shub = 0;
+  pin_int.emb_func = 0;
+  pin_int.sixd = 0;
+  pin_int.single_tap = 0;
+  pin_int.double_tap = 0;
+  pin_int.wakeup = 0;
+  pin_int.freefall = 0;
+  pin_int.sleep_change = 0;
+
+  if ((isGyroEn && isAccelEn) || isGyroEn)
+  {
+    pin_int.drdy_g = PROPERTY_ENABLE;
+  }
+  else
+  {
+    pin_int.drdy_xl = PROPERTY_ENABLE;
+  }
+  lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
 
   ///* Configure filtering chain */
   //filt_settling_mask.drdy = PROPERTY_ENABLE;
@@ -476,12 +511,6 @@ void lsm6dsv_config_accel(uint8_t rate, uint8_t range)
   //lsm6dsv_filt_settling_mask_set(&lsm6dsv_obj.Ctx, filt_settling_mask);
   //lsm6dsv_filt_xl_lp2_set(&lsm6dsv_obj.Ctx, PROPERTY_ENABLE);
   //lsm6dsv_filt_xl_lp2_bandwidth_set(&lsm6dsv_obj.Ctx, LSM6DSV_XL_STRONG);
-}
-
-void lsm6dsv_config_gyro(uint8_t rate, uint8_t range)
-{
-  lsm6dsv_gy_data_rate_set(&lsm6dsv_obj.Ctx, LSM6DSV_ODR_AT_1920Hz);
-  lsm6dsv_gy_full_scale_set(&lsm6dsv_obj.Ctx, range);
 }
 
 HAL_StatusTypeDef lsm6dsv_accel_get(uint8_t *buf)
@@ -496,6 +525,14 @@ HAL_StatusTypeDef lsm6dsv_gyro_get(uint8_t *buf)
 {
   HAL_StatusTypeDef ret;
   static uint8_t txBuff[] = { LSM6DSV_OUTX_L_G | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
+  ret = platform_read_raw_data_dma(lsm6dsv_obj.Ctx.handle, &txBuff[0], buf, sizeof(txBuff));
+  return ret;
+}
+
+HAL_StatusTypeDef lsm6dsv_gyro_accel_get(uint8_t *buf)
+{
+  HAL_StatusTypeDef ret;
+  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_G | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
   ret = platform_read_raw_data_dma(lsm6dsv_obj.Ctx.handle, &txBuff[0], buf, sizeof(txBuff));
   return ret;
 }

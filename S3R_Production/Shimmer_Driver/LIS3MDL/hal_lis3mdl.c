@@ -461,11 +461,6 @@ void lis3mdl_driver_init(void)
   lis3mdl_obj.Ctx.handle = &SENSOR_BUS;
 }
 
-void lis3mdl_base_settings_init(void)
-{
-  LIS3MDL_Init(&lis3mdl_obj);
-}
-
 void lis3mdl_power_on(void)
 {
   set_power_spi2_bus(true, SPI2_CHIP_INDEX_LIS3MDL);
@@ -518,9 +513,7 @@ void lis3mdl_spi_three_wire_set(void)
 
 void lis3mdl_config_mag(lis3mdl_om_t rate, lis3mdl_fs_t range)
 {
-  //TODO fill in config
-
-  lis3mdl_restore_default_config();
+  LIS3MDL_Init(&lis3mdl_obj);
 
   /* Set Full Scale */
   lis3mdl_full_scale_set(&lis3mdl_obj.Ctx, range);

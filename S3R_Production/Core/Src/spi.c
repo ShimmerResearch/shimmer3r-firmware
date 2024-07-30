@@ -118,7 +118,6 @@ void MX_SPI1_Init(void)
   HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI1_TxRxCpltCallback);
   HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
 
-  adxl371_driver_init();
   bmp3_driver_init();
 
   HAL_Delay(BOOT_TIME);
@@ -242,9 +241,6 @@ void MX_SPI3_Init(void)
     HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_COMPLETE_CB_ID, SPI3_TxCpltCallback);
     HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_RX_COMPLETE_CB_ID, SPI3_RxCpltCallback);
     HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
-
-    //TODO
-    //ads1292r_driver_init();
   }
 
   /* USER CODE END SPI3_Init 2 */
@@ -699,17 +695,6 @@ void SPI_configureChannels()
   spi2Sens.busId = SPI2_BUS_FLAG;
   spi3Sens.busId = SPI3_BUS_FLAG;
 
-  if (configBytes->chEnLnAccel)
-  {
-    *channel_contents_ptr++ = X_ACCEL_1;
-    *channel_contents_ptr++ = Y_ACCEL_1;
-    *channel_contents_ptr++ = Z_ACCEL_1;
-    nbr_spi_chans += 3;
-    sensing.ptr.accel1 = sensing.dataLen;
-    sensing.dataLen += 6;
-    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_LSM6DSV_ACCEL;
-  }
-
   if (configBytes->chEnGyro)
   {
     *channel_contents_ptr++ = X_GYRO;
@@ -718,7 +703,29 @@ void SPI_configureChannels()
     nbr_spi_chans += 3;
     sensing.ptr.gyro = sensing.dataLen;
     sensing.dataLen += 6;
-    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_LSM6DSV_GYRO;
+  }
+
+  if (configBytes->chEnLnAccel)
+  {
+    *channel_contents_ptr++ = X_ACCEL_1;
+    *channel_contents_ptr++ = Y_ACCEL_1;
+    *channel_contents_ptr++ = Z_ACCEL_1;
+    nbr_spi_chans += 3;
+    sensing.ptr.accel1 = sensing.dataLen;
+    sensing.dataLen += 6;
+  }
+
+  if (configBytes->chEnGyro && configBytes->chEnLnAccel)
+  {
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_LSM6DSV_GYRO_AND_ACCEL;
+  }
+  else if (configBytes->chEnGyro)
+  {
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_LSM6DSV_GYRO_ONLY;
+  }
+  else if (configBytes->chEnLnAccel)
+  {
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_LSM6DSV_ACCEL_ONLY;
   }
 
   if (configBytes->chEnPressureAndTemperature)
@@ -860,17 +867,9 @@ void SPI_startSensing()
   {
     lsm6dsv_power_on();
     lsm6dsv_driver_init();
-    lsm6dsv_base_settings_init();
-
-    if (configBytes->chEnLnAccel)
-    {
-      lsm6dsv_config_accel(configBytes->gyroRate, configBytes->wrAccelRange);
-    }
-
-    if (configBytes->chEnGyro)
-    {
-      lsm6dsv_config_gyro(configBytes->gyroRate, configBytes->gyroRange);
-    }
+    lsm6dsv_config_imu(configBytes->chEnGyro, configBytes->chEnLnAccel,
+        configBytes->gyroRate,
+        configBytes->gyroRange, configBytes->altAccelRange);
   }
 
   if (configBytes->chEnPressureAndTemperature)
@@ -882,7 +881,8 @@ void SPI_startSensing()
   if (configBytes->chEnAltAccel)
   {
     adxl371_power_on();
-    adxl371_config_accel(configBytes->wrAccelRate, configBytes->altAccelRange);
+    adxl371_driver_init();
+    adxl371_config_accel(configBytes->wrAccelRate);
   }
 
   /* SPI2 */
@@ -890,7 +890,6 @@ void SPI_startSensing()
   {
     lis2dw12_power_on();
     lis2dw12_driver_init();
-    lis2dw12_base_settings_init();
     //TODO decide how to handle configBytes->wrAccelHRM and configBytes->wrAccelLPM
     lis2dw12_config_accel(configBytes->wrAccelRate, configBytes->wrAccelRange);
   }
@@ -899,8 +898,7 @@ void SPI_startSensing()
   {
     lis3mdl_power_on();
     lis3mdl_driver_init();
-    lis3mdl_base_settings_init();
-    lis3mdl_config_mag(LIS3MDL_UHP_80Hz, LIS3MDL_12_GAUSS);
+    lis3mdl_config_mag(LIS3MDL_UHP_155Hz, LIS3MDL_12_GAUSS);
     //TODO decide if we need an specific rate setting for the alternative mag
 //    lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);
   }
@@ -1090,8 +1088,7 @@ void SpiStepDone(void)
 #if defined(SHIMMER3R)
 void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
 {
-  spiSensingInfo->sensorCnt
-      = (start == SPI_FIRST_SENSOR) ? 0 : spiSensingInfo->sensorCnt + 1;
+  spiSensingInfo->sensorCnt = (start == SPI_FIRST_SENSOR) ? 0 : spiSensingInfo->sensorCnt + 1;
   if (spiSensingInfo->sensorCnt == spiSensingInfo->sensorLen)
   {
     spiSensingInfo->status = SPI_STAT_IDLE;
@@ -1100,7 +1097,19 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
   }
   else if (spiSensingInfo->sensorCnt < spiSensingInfo->sensorLen)
   {
-    SpiSens_sensorNext(spiSensingInfo);
+    uint8_t res = 0;
+    while((res = SpiSens_sensorNext(spiSensingInfo)) == 0)
+    {
+      spiSensingInfo->sensorCnt++;
+
+      if (spiSensingInfo->sensorCnt == spiSensingInfo->sensorLen)
+      {
+        spiSensingInfo->status = SPI_STAT_IDLE;
+        spiSensingInfo->sensorCnt = 0;
+        SPI_busGatherDataDone_cb(spiSensingInfo->busId);
+        break;
+      }
+    }
   }
   else
   {
@@ -1112,32 +1121,66 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
   }
 }
 
-void SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
+uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 {
+  uint8_t retVal = 0;
+
   switch (spiSensingInfo->sensorList[spiSensingInfo->sensorCnt])
   {
-  case SPI1_LSM6DSV_ACCEL:
-    spiSensingInfo->status = SPI_STAT_LSM6DSV_ACCEL_GET;
-    lsm6dsv_accel_get(spi1Sens_buf.lsm6dsvAccelBuf);
+  case SPI1_LSM6DSV_GYRO_AND_ACCEL:
+    if (LSM6DSV_DRDY)
+    {
+      spiSensingInfo->status = SPI_STAT_LSM6DSV_GYRO_AND_ACCEL_GET;
+      lsm6dsv_gyro_accel_get(spi1Sens_buf.lsm6dsvGyroAndAccelBuf);
+      retVal = 1;
+    }
     break;
-  case SPI1_LSM6DSV_GYRO:
-    spiSensingInfo->status = SPI_STAT_LSM6DSV_GYRO_GET;
-    lsm6dsv_gyro_get(spi1Sens_buf.lsm6dsvGyroBuf);
+  case SPI1_LSM6DSV_ACCEL_ONLY:
+    if (LSM6DSV_DRDY)
+    {
+      spiSensingInfo->status = SPI_STAT_LSM6DSV_ACCEL_GET;
+      lsm6dsv_accel_get(spi1Sens_buf.lsm6dsvAccelBuf);
+      retVal = 1;
+    }
+    break;
+  case SPI1_LSM6DSV_GYRO_ONLY:
+    if (LSM6DSV_DRDY)
+    {
+      spiSensingInfo->status = SPI_STAT_LSM6DSV_GYRO_GET;
+      lsm6dsv_gyro_get(spi1Sens_buf.lsm6dsvGyroBuf);
+      retVal = 1;
+    }
     break;
   case SPI1_ADXL371_ACCEL:
     //TODO
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
-    spiSensingInfo->status = SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET;
-    bmp3_pressure_temperature_get(spi1Sens_buf.bmp390Buf);
+    if (BMP390_INT)
+    {
+      spiSensingInfo->status = SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET;
+      bmp3_pressure_temperature_get(spi1Sens_buf.bmp390Buf);
+      retVal = 1;
+    }
     break;
   case SPI2_LIS2DW12_ACCEL:
-    spiSensingInfo->status = SPI_STAT_LIS2DW12_ACCEL_GET;
-    lis2dw12_accel_get(spi2Sens_buf.lis2dw12AccelBuf);
+#if defined(LIS2DW12_INT1_Pin)
+    if (LIS2DW12_INT1)
+    {
+#endif
+      spiSensingInfo->status = SPI_STAT_LIS2DW12_ACCEL_GET;
+      lis2dw12_accel_get(spi2Sens_buf.lis2dw12AccelBuf);
+      retVal = 1;
+#if defined(LIS2DW12_INT1_Pin)
+    }
+#endif
     break;
   case SPI2_LIS3MDL_MAG:
-    spiSensingInfo->status = SPI_STAT_LIS3MDL_MAG_GET;
-    lis3mdl_mag_get(spi2Sens_buf.lis3mdlMagBuf);
+    if (LIS3MDL_DRDY)
+    {
+      spiSensingInfo->status = SPI_STAT_LIS3MDL_MAG_GET;
+      lis3mdl_mag_get(spi2Sens_buf.lis3mdlMagBuf);
+      retVal = 1;
+    }
     break;
   case SPI3_ADS1292R_EXG1:
     //TODO
@@ -1148,19 +1191,27 @@ void SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
   default:
     break;
   }
+
+  return retVal;
 }
 
 void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
   switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
   {
-  case SPI1_LSM6DSV_ACCEL:
+  case SPI1_LSM6DSV_GYRO_AND_ACCEL:
+    lsm6dsv_unselectDevice();
+    memcpy(sensing.dataBuf + sensing.ptr.gyro,
+        &spi1Sens_buf.lsm6dsvGyroAndAccelBuf[SPI_DMA_TXRX_OFFSET],
+        sizeof(spi1Sens_buf.lsm6dsvGyroAndAccelBuf) - SPI_DMA_TXRX_OFFSET);
+    break;
+  case SPI1_LSM6DSV_ACCEL_ONLY:
     lsm6dsv_unselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.accel1,
         &spi1Sens_buf.lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvAccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
-  case SPI1_LSM6DSV_GYRO:
+  case SPI1_LSM6DSV_GYRO_ONLY:
     lsm6dsv_unselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.gyro,
         &spi1Sens_buf.lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET],
