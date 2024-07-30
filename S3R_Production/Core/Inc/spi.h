@@ -22,27 +22,26 @@
 #define __SPI_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-  /* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */
 
 #include "s4.h"
 #include "s4__cfg.h"
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi1;
 
-  extern SPI_HandleTypeDef hspi2;
+extern SPI_HandleTypeDef hspi2;
 
-  extern SPI_HandleTypeDef hspi3;
+extern SPI_HandleTypeDef hspi3;
 
-  /* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
 
 #define SPI_DMA_TXRX_OFFSET 1
 #define SPI_READ_REGISTER   0x80
@@ -145,13 +144,13 @@ extern "C"
 
 #endif
 
-  /* USER CODE END Private defines */
+/* USER CODE END Private defines */
 
-  void MX_SPI1_Init(void);
-  void MX_SPI2_Init(void);
-  void MX_SPI3_Init(void);
+void MX_SPI1_Init(void);
+void MX_SPI2_Init(void);
+void MX_SPI3_Init(void);
 
-  /* USER CODE BEGIN Prototypes */
+/* USER CODE BEGIN Prototypes */
 
   void SPI_init(void);
   void SPI1_DeInit(void);
@@ -189,10 +188,11 @@ void SpiStepDone(void);
   bool areSpiChannelsEnabled(void);
 #endif
 
-  /* USER CODE END Prototypes */
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __SPI_H__ */
+
