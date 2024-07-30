@@ -35,7 +35,7 @@ void adxl371_driver_init(void)
 {
   struct adxl371_init_param init_param;
 
-//  adxl371_init((struct adxl371_dev **)&adxl371, init_param);
+  //adxl371_init((struct adxl371_dev **)&adxl371, init_param);
 
   adxl371.comm_type = SPI;
   adxl371.reg_read = adxl371_spi_reg_read;
@@ -68,10 +68,8 @@ uint8_t adxl371_self_test(void)
   uint8_t buf[4];
   adxl371_spi_reg_read_multiple(&adxl371, ADXL371_DEVID, &buf[0], 4);
 
-  if (buf[0] == ADXL371_DEVID_VAL
-      && buf[1] == ADXL371_MST_DEVID_VAL
-      && buf[2] == ADXL371_PARTID_VAL
-      && buf[3] == 0xFB)
+  if (buf[0] == ADXL371_DEVID_VAL && buf[1] == ADXL371_MST_DEVID_VAL
+      && buf[2] == ADXL371_PARTID_VAL && buf[3] == 0xFB)
   {
     SHIMMER_PRINTF("ADXL371 Self Test - PASS\r\n");
     return 0;
@@ -93,38 +91,38 @@ void adxl371_config_accel(uint8_t rate)
 {
   adxl371_set_op_mode(&adxl371, ADXL371_STANDBY);
 
-//  adxl371_set_autosleep(adxl371, false);
-//
-//  adxl371_set_bandwidth(adxl371, ADXL371_BW_3200HZ);
-//
-//  adxl371_set_odr(adxl371, ADXL371_ODR_6400HZ);
-//
-//  adxl371_set_wakeup_rate(adxl371, ADXL371_WUR_52ms);
-//
-//  adxl371_set_act_proc_mode(adxl371, ADXL371_LOOPED);
-//
-//  /* Set Instant On threshold */
-//  adxl371_set_instant_on_th(adxl371, ADXL371_INSTANT_ON_LOW_TH);
-//
-//  /*Put fifo in Peak Detect and Stream Mode */
-//  adxl371_configure_fifo(adxl371, ADXL371_FIFO_STREAMED, ADXL371_XYZ_PEAK_FIFO, 512);
-//
-//  /* Set activity/inactivity threshold */
-//  adxl371_set_activity_threshold(adxl371, ADXL371_ACTIVITY, ADXL371_ACT_VALUE, true, true);
-//  adxl371_set_activity_threshold(adxl371, ADXL371_INACTIVITY, ADXL371_INACT_VALUE, true, true);
-//
-//  /* Set activity/inactivity time settings */
-//  adxl371_set_activity_time(adxl371, ADXL371_ACT_TIMER);
-//  adxl371_set_inactivity_time(adxl371, ADXL371_INACT_TIMER);
-//
-//  /* Set instant-on interrupts and activity interrupts */
-//  adxl371_interrupt_config(adxl371);
-//
-//  /* Set filter settle time */
-//  adxl371_set_filter_settle(adxl371, ADXL371_FILTER_SETTLE_16);
-//
-//  /* Set operation mode to Instant-On */
-//  adxl371_set_op_mode(adxl371, ADXL371_INSTANT_ON);
+  //adxl371_set_autosleep(adxl371, false);
+  //
+  //adxl371_set_bandwidth(adxl371, ADXL371_BW_3200HZ);
+  //
+  //adxl371_set_odr(adxl371, ADXL371_ODR_6400HZ);
+  //
+  //adxl371_set_wakeup_rate(adxl371, ADXL371_WUR_52ms);
+  //
+  //adxl371_set_act_proc_mode(adxl371, ADXL371_LOOPED);
+  //
+  ///* Set Instant On threshold */
+  //adxl371_set_instant_on_th(adxl371, ADXL371_INSTANT_ON_LOW_TH);
+  //
+  ///*Put fifo in Peak Detect and Stream Mode */
+  //adxl371_configure_fifo(adxl371, ADXL371_FIFO_STREAMED, ADXL371_XYZ_PEAK_FIFO, 512);
+  //
+  ///* Set activity/inactivity threshold */
+  //adxl371_set_activity_threshold(adxl371, ADXL371_ACTIVITY, ADXL371_ACT_VALUE, true, true);
+  //adxl371_set_activity_threshold(adxl371, ADXL371_INACTIVITY, ADXL371_INACT_VALUE, true, true);
+  //
+  ///* Set activity/inactivity time settings */
+  //adxl371_set_activity_time(adxl371, ADXL371_ACT_TIMER);
+  //adxl371_set_inactivity_time(adxl371, ADXL371_INACT_TIMER);
+  //
+  ///* Set instant-on interrupts and activity interrupts */
+  //adxl371_interrupt_config(adxl371);
+  //
+  ///* Set filter settle time */
+  //adxl371_set_filter_settle(adxl371, ADXL371_FILTER_SETTLE_16);
+  //
+  ///* Set operation mode to Instant-On */
+  //adxl371_set_op_mode(adxl371, ADXL371_INSTANT_ON);
 
   adxl371_set_bandwidth(&adxl371, ADXL371_BW_3200HZ);
   adxl371_set_odr(&adxl371, ADXL371_ODR_6400HZ);

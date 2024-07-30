@@ -868,8 +868,7 @@ void SPI_startSensing()
     lsm6dsv_power_on();
     lsm6dsv_driver_init();
     lsm6dsv_config_imu(configBytes->chEnGyro, configBytes->chEnLnAccel,
-        configBytes->gyroRate,
-        configBytes->gyroRange, configBytes->altAccelRange);
+        configBytes->gyroRate, configBytes->gyroRange, configBytes->altAccelRange);
   }
 
   if (configBytes->chEnPressureAndTemperature)
@@ -1088,7 +1087,8 @@ void SpiStepDone(void)
 #if defined(SHIMMER3R)
 void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
 {
-  spiSensingInfo->sensorCnt = (start == SPI_FIRST_SENSOR) ? 0 : spiSensingInfo->sensorCnt + 1;
+  spiSensingInfo->sensorCnt
+      = (start == SPI_FIRST_SENSOR) ? 0 : spiSensingInfo->sensorCnt + 1;
   if (spiSensingInfo->sensorCnt == spiSensingInfo->sensorLen)
   {
     spiSensingInfo->status = SPI_STAT_IDLE;
@@ -1098,7 +1098,7 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
   else if (spiSensingInfo->sensorCnt < spiSensingInfo->sensorLen)
   {
     uint8_t res = 0;
-    while((res = SpiSens_sensorNext(spiSensingInfo)) == 0)
+    while ((res = SpiSens_sensorNext(spiSensingInfo)) == 0)
     {
       spiSensingInfo->sensorCnt++;
 

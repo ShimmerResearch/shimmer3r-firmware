@@ -481,7 +481,6 @@ void lis2mdl_config_mag(lis2mdl_odr_t rate)
   /* Set DRDY pin */
   lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
 
-
   /* Wait stable output */
   platform_delay(WAIT_TIME_01);
 }

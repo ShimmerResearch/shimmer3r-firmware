@@ -684,7 +684,8 @@ void I2cBatt_gatherDataStart(void)
 
 void I2cSensing(I2CTypeDef *i2cSensingInfo, I2C_SENSING_TYPE start)
 {
-  i2cSensingInfo->sensorCnt = (start == I2C_FIRST_SENSOR) ? 0 : i2cSensingInfo->sensorCnt + 1;
+  i2cSensingInfo->sensorCnt
+      = (start == I2C_FIRST_SENSOR) ? 0 : i2cSensingInfo->sensorCnt + 1;
   if (i2cSensingInfo->sensorCnt == i2cSensingInfo->sensorLen)
   {
     i2cSensingInfo->status = I2C_STAT_IDLE;
@@ -694,7 +695,7 @@ void I2cSensing(I2CTypeDef *i2cSensingInfo, I2C_SENSING_TYPE start)
   else if (i2cSensingInfo->sensorCnt < i2cSensingInfo->sensorLen)
   {
     uint8_t res = 0;
-    while((res = I2cSens_sensorNext(i2cSensingInfo)) == 0)
+    while ((res = I2cSens_sensorNext(i2cSensingInfo)) == 0)
     {
       i2cSensingInfo->sensorCnt++;
 
@@ -706,7 +707,6 @@ void I2cSensing(I2CTypeDef *i2cSensingInfo, I2C_SENSING_TYPE start)
         break;
       }
     }
-
   }
   else
   {

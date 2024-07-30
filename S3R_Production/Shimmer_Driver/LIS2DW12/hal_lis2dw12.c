@@ -382,10 +382,10 @@ int32_t lis2dw12_config_accel(lis2dw12_odr_t rate, lis2dw12_fs_t range)
 {
   LIS2DW12_Init(&lis2dw12_obj);
 
-//  if (LIS2DW12_ACC_Enable(&lis2dw12_obj) != LIS2DW12_OK)
-//  {
-//    return LIS2DW12_ERROR;
-//  }
+  //if (LIS2DW12_ACC_Enable(&lis2dw12_obj) != LIS2DW12_OK)
+  //{
+  //  return LIS2DW12_ERROR;
+  //}
 
   /* Output data rate selection. */
   if (lis2dw12_data_rate_set(&(lis2dw12_obj.Ctx), rate) != LIS2DW12_OK)

@@ -532,7 +532,8 @@ HAL_StatusTypeDef lsm6dsv_gyro_get(uint8_t *buf)
 HAL_StatusTypeDef lsm6dsv_gyro_accel_get(uint8_t *buf)
 {
   HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_G | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+  static uint8_t txBuff[]
+      = { LSM6DSV_OUTX_L_G | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
   ret = platform_read_raw_data_dma(lsm6dsv_obj.Ctx.handle, &txBuff[0], buf, sizeof(txBuff));
   return ret;
 }

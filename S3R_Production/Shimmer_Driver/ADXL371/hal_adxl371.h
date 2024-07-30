@@ -13,13 +13,13 @@
 
 /* From https://github.com/analogdevicesinc/arduino/blob/master/Arduino%20Uno%20R3/examples/ADXL372_example/adxl372.h */
 /*Acceleremoter configuration*/
-#define ADXL371_ACT_VALUE          30     /* Activity threshold value */
+#define ADXL371_ACT_VALUE   30 /* Activity threshold value */
 
-#define ADXL371_INACT_VALUE        30     /* Inactivity threshold value */
+#define ADXL371_INACT_VALUE 30 /* Inactivity threshold value */
 
-#define ADXL371_ACT_TIMER          1    /* Activity timer value in multiples of 3.3ms */
+#define ADXL371_ACT_TIMER   1 /* Activity timer value in multiples of 3.3ms */
 
-#define ADXL371_INACT_TIMER        1     /* Inactivity timer value in multiples of 26ms */
+#define ADXL371_INACT_TIMER 1 /* Inactivity timer value in multiples of 26ms */
 
 typedef int32_t (*dev_write_ptr)(void *, uint8_t, const uint8_t *, uint16_t);
 typedef int32_t (*dev_read_ptr)(void *, uint8_t, uint8_t *, uint16_t);
