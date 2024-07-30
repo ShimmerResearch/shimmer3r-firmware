@@ -23,7 +23,7 @@
 /* USER CODE BEGIN 0 */
 #include "s4__cfg.h"
 
-#define BOOT_TIME 20 // LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
+#define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
 //static SENSINGTypeDef *pSensing;
 //static STATTypeDef * pStat;
@@ -520,13 +520,13 @@ void I2C_startSensing(void)
 
   memset((uint8_t *) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
 
-//  if ((0 != i2cSens.sensorLen)
-//      && (HAL_GPIO_ReadPin(SW_I2C1_GPIO_Port, SW_I2C1_Pin) == GPIO_PIN_RESET))
-//  {
-//    //HAL_GPIO_WritePin(SW_I2C_GPIO_Port, SW_I2C_Pin, GPIO_PIN_SET);//I2C
-//    Board_SW_I2C(1);
-//    HAL_Delay(1000);
-//  }
+  //if ((0 != i2cSens.sensorLen)
+  //    && (HAL_GPIO_ReadPin(SW_I2C1_GPIO_Port, SW_I2C1_Pin) == GPIO_PIN_RESET))
+  //{
+  //  //HAL_GPIO_WritePin(SW_I2C_GPIO_Port, SW_I2C_Pin, GPIO_PIN_SET);//I2C
+  //  Board_SW_I2C(1);
+  //  HAL_Delay(1000);
+  //}
 
 #if defined(SHIMMER3R)
   if (configBytes->chEnMag)
@@ -617,10 +617,10 @@ void I2cSens_stopSensing(void)
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
 #if defined(SHIMMER3R)
-//  if (configBytes->chEnMag)
-//  {
-//    lis2mdl_sleep();
-//  }
+//if (configBytes->chEnMag)
+//{
+//  lis2mdl_sleep();
+//}
 #elif defined(SHIMMER4_SDK)
   if (configBytes->chEnGyro || configBytes->chEnAltAccel || configBytes->chEnAltMag)
   {

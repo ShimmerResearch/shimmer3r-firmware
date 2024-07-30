@@ -84,8 +84,8 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "lis2dw12_reg.h"
 #include "lis2dw12.h"
+#include "lis2dw12_reg.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -316,7 +316,7 @@ void lis2dw12_driver_init(void)
   lis2dw12_obj.Ctx.mdelay = platform_delay;
   lis2dw12_obj.Ctx.handle = &SENSOR_BUS;
 
-//  LIS2DW12_RegisterBusIO(lis2dw12_obj, pIO);
+  //LIS2DW12_RegisterBusIO(lis2dw12_obj, pIO);
 }
 
 void lis2dw12_power_on(void)
@@ -399,11 +399,11 @@ int32_t lis2dw12_config_accel(lis2dw12_odr_t rate, lis2dw12_fs_t range)
     return LIS2DW12_ERROR;
   }
 
-//  /* Power mode selection. */
-//  if (lis2dw12_power_mode_set(&(pObj->Ctx), LIS2DW12_HIGH_PERFORMANCE) != LIS2DW12_OK)
-//  {
-//    return LIS2DW12_ERROR;
-//  }
+  ///* Power mode selection. */
+  //if (lis2dw12_power_mode_set(&(pObj->Ctx), LIS2DW12_HIGH_PERFORMANCE) != LIS2DW12_OK)
+  //{
+  //  return LIS2DW12_ERROR;
+  //}
 
   lis2dw12_obj.acc_is_enabled = 1U;
 

@@ -81,8 +81,8 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "lis2mdl_reg.h"
 #include "lis2mdl.h"
+#include "lis2mdl_reg.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -434,7 +434,7 @@ void lis2mdl_driver_init(void)
   lis2mdl_obj.Ctx.mdelay = platform_delay;
   lis2mdl_obj.Ctx.handle = &SENSOR_BUS;
 
-//  lis2mdl_obj.IO.BusType = LIS2MDL_I2C_BUS;
+  //lis2mdl_obj.IO.BusType = LIS2MDL_I2C_BUS;
 }
 
 void lis2mdl_power_on(void)

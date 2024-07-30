@@ -65,17 +65,17 @@
 #include <ADXL371/hal_adxl371.h>
 #include "../Shimmer_Driver/BMP3/hal_bmp3.h"
 #include <LIS2DW12/hal_lis2dw12.h>
-#include <LIS2DW12/lis2dw12.h>
 #include <LIS2DW12/lis2dw12-pid/lis2dw12_reg.h>
+#include <LIS2DW12/lis2dw12.h>
 #include <LIS2MDL/hal_lis2mdl.h>
-#include <LIS2MDL/lis2mdl.h>
 #include <LIS2MDL/lis2mdl-pid/lis2mdl_reg.h>
+#include <LIS2MDL/lis2mdl.h>
 #include <LIS3MDL/hal_lis3mdl.h>
-#include <LIS3MDL/lis3mdl.h>
 #include <LIS3MDL/lis3mdl-pid/lis3mdl_reg.h>
+#include <LIS3MDL/lis3mdl.h>
 #include <LSM6DSV/hal_lsm6dsv.h>
-#include <LSM6DSV/lsm6dsv.h>
 #include <LSM6DSV/lsm6dsv-pid/lsm6dsv_reg.h>
+#include <LSM6DSV/lsm6dsv.h>
 #endif
 #include "BMP280_driver\bmp280.h"
 #include "CAT24C16.h"

@@ -113,8 +113,8 @@
 #include "components.h"
 
 #elif defined(SHIMMER3R)
-#include "lis3mdl_reg.h"
 #include "lis3mdl.h"
+#include "lis3mdl_reg.h"
 
 #include "gpio.h"
 #include "spi.h"

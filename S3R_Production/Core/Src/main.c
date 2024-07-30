@@ -261,7 +261,7 @@ int main(void)
   Init();
   //S4_Task_set(TASK_STARTSENSING);
 
-//  FullTest();
+  //FullTest();
 
   /* USER CODE END 2 */
 
