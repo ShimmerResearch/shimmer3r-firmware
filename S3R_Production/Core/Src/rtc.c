@@ -227,7 +227,7 @@ uint8_t S4_RTC_Months[2][12] = {
 };
 uint64_t rtc64_reg;
 
-void S4_RTC_Init()
+void S4_RTC_Init(void)
 { //RTC_HandleTypeDef *hrtc
 
   //"How to know after power start whether the product up from a stand by mode or a power down reset. "

@@ -140,7 +140,6 @@ void Init()
   SD_init();
   //GPIO_init();
   S4_ADC_init();
-  SPI_init();
 
   setUartPeripheralPointers();
 
@@ -169,7 +168,7 @@ void Init()
   FullTest();
 #endif
   //BT_disable(huartBt);
-  S4Sens_stopPeripherals();
+//  S4Sens_stopPeripherals();
 #if defined(SHIMMER4_SDK)
   S4_RTC_WakeUpSetSlow();
 #endif
@@ -243,7 +242,6 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM6_Init();
   MX_TIM2_Init();
-  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 #if USE_FATFS
   MX_FATFS_Init();
@@ -257,7 +255,7 @@ int main(void)
   Init();
   //S4_Task_set(TASK_STARTSENSING);
 
-//  FullTest();
+  FullTest();
 
   /* USER CODE END 2 */
 

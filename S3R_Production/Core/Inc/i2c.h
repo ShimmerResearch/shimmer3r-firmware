@@ -39,6 +39,14 @@ extern I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN Private defines */
 
+typedef enum
+{
+  I2C_BUSES_ENABLED_NONE,
+  I2C1_BUS_FLAG = 0x01, // EEPROM and LIS2MDL
+  I2C3_BUS_FLAG = 0x02, // I2C via dock connector
+  I2C4_BUS_FLAG = 0x04 // I2C via internal expansion pins
+} I2C_BUS_INDEX;
+
   typedef enum
   { //i2c
     I2C_STAT_IDLE = 0,
@@ -111,6 +119,7 @@ extern I2C_HandleTypeDef hi2c1;
     uint8_t sensorList[20];
     uint8_t sensorLen;
     uint8_t sensorCnt;
+    I2C_BUS_INDEX busId;
   } I2CTypeDef;
 
   //typedef struct {//i2c_2 - BatteryMonitor
@@ -177,7 +186,6 @@ void MX_I2C1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-  void I2C_init(void);
   uint8_t I2C_test(void);
   void set_power_i2c_main_bus(uint8_t state);
   void I2C_scan(I2C_HandleTypeDef *hi2c);
@@ -202,9 +210,12 @@ void MX_I2C1_Init(void);
 #if defined(SHIMMER4_SDK)
   void I2cBatt_gatherDataCb(void (*done_cb)(void));
 #endif
+#if defined(SHIMMER3R)
+  void I2C_busGatherDataDone_cb(uint8_t flag);
+#endif
+#if defined(SHIMMER4_SDK)
   void I2C_gatherDataStart(void);
   void I2cSens_gatherDataStart(void);
-#if defined(SHIMMER4_SDK)
   void I2cBatt_gatherDataStart(void);
 #endif
 
@@ -237,7 +248,7 @@ void MX_I2C1_Init(void);
 #if defined(SHIMMER3R)
   void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex);
   bool areI2cChannelsEnabled(void);
-  void I2C2_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
+  void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
 #elif defined(SHIMMER4_SDK)
 void I2cBatt_sensorNext(void);
 #endif

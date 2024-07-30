@@ -118,6 +118,8 @@ void MX_SPI1_Init(void)
   HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI1_TxRxCpltCallback);
   HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
 
+  hspiSensing1 = &hspi1;
+
   bmp3_driver_init();
 
   HAL_Delay(BOOT_TIME);
@@ -181,6 +183,8 @@ void MX_SPI2_Init(void)
   HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI2_TxRxCpltCallback);
   HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
 
+  hspiSensing2 = &hspi2;
+
   HAL_Delay(BOOT_TIME);
 
   /* USER CODE END SPI2_Init 2 */
@@ -241,6 +245,8 @@ void MX_SPI3_Init(void)
     HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_COMPLETE_CB_ID, SPI3_TxCpltCallback);
     HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_RX_COMPLETE_CB_ID, SPI3_RxCpltCallback);
     HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
+
+    hspiExg = &hspi3;
   }
 
   /* USER CODE END SPI3_Init 2 */
@@ -615,18 +621,6 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 
 /* USER CODE BEGIN 1 */
 
-void SPI_init(void)
-{
-#if defined(SHIMMER3R)
-  hspiSensing1 = &hspi1;
-  hspiSensing2 = &hspi2;
-  hspiExg = &hspi3;
-#elif defined(SHIMMER4_SDK)
-  hspiExg = &hspi1;
-  //pSensing = S4Sens_getSensing();
-#endif
-}
-
 void SPI1_DeInit(void)
 {
   HAL_SPI_DeInit(hspiSensing1);
@@ -646,6 +640,17 @@ void SPI2_DeInit(void)
   lis2dw12_selectDevice();
 
   Board_SW_SPI2(0);
+}
+
+void SPI3_DeInit(void)
+{
+  HAL_SPI_DeInit(hspiExg);
+
+  //TODO
+//  ads1292_chip1_selectDevice();
+//  ads1292_chip2_selectDevice();
+
+//  Board_SW_SPI2(0);
 }
 
 uint8_t SPI_test(void)
@@ -1110,6 +1115,7 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
   {
     while (1)
     {
+      //TODO handle this differently
       Board_ledToggle(LED_ALL);
       HAL_Delay(100);
     }
@@ -1355,7 +1361,8 @@ void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex)
 
   if (stateToSet)
   {
-    if (HAL_SPI_GetState(hspiSensing1) == HAL_SPI_STATE_RESET)
+    if (hspiSensing1 == NULL
+        || HAL_SPI_GetState(hspiSensing1) == HAL_SPI_STATE_RESET)
     {
       /* Init the SPI */
       MX_SPI1_Init();
@@ -1363,7 +1370,8 @@ void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex)
   }
   else
   {
-    if (HAL_SPI_GetState(hspiSensing1) != HAL_SPI_STATE_RESET)
+    if (hspiSensing1 != NULL
+        && HAL_SPI_GetState(hspiSensing1) != HAL_SPI_STATE_RESET)
     {
       /* DeInit the SPI */
       SPI1_DeInit();
@@ -1400,7 +1408,8 @@ void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex)
 
   if (stateToSet)
   {
-    if (HAL_SPI_GetState(hspiSensing2) == HAL_SPI_STATE_RESET)
+    if (hspiSensing2 == NULL
+        || HAL_SPI_GetState(hspiSensing2) == HAL_SPI_STATE_RESET)
     {
       /* Init the SPI */
       MX_SPI2_Init();
@@ -1408,7 +1417,8 @@ void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex)
   }
   else
   {
-    if (HAL_SPI_GetState(hspiSensing2) != HAL_SPI_STATE_RESET)
+    if (hspiSensing2 != NULL
+        && HAL_SPI_GetState(hspiSensing2) != HAL_SPI_STATE_RESET)
     {
       /* DeInit the SPI */
       SPI2_DeInit();

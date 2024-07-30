@@ -28,8 +28,12 @@
 //static SENSINGTypeDef *pSensing;
 //static STATTypeDef * pStat;
 
-I2CTypeDef i2cSens;
+I2CTypeDef i2c1Sens;
+I2CTypeDef i2c3Sens;
+I2CTypeDef i2c4Sens;
 I2CTypeDef i2cBatt;
+
+uint8_t expectedI2cBusCbFlags = 0, currentI2cBusCbFlags = 0;
 
 I2C_HandleTypeDef *hi2cMainBus;
 #if defined(SHIMMER4_SDK)
@@ -102,11 +106,13 @@ void MX_I2C1_Init(void)
   }
   /* USER CODE BEGIN I2C1_Init 2 */
 
-  HAL_I2C_RegisterCallback(&hi2c1, HAL_I2C_MEM_RX_COMPLETE_CB_ID, I2C2_MemRxCpltCallback);
+  HAL_I2C_RegisterCallback(&hi2c1, HAL_I2C_MEM_RX_COMPLETE_CB_ID, I2C1_MemRxCpltCallback);
 
-  I2C_init();
+  hi2cMainBus = &hi2c1;
 
   HAL_Delay(BOOT_TIME);
+
+  CAT24C16_init(I2C_getHandlerSensor());
 
   /* USER CODE END I2C1_Init 2 */
 
@@ -218,34 +224,6 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 }
 
 /* USER CODE BEGIN 1 */
-
-void I2C_init(void)
-{
-#if defined(SHIMMER4_SDK)
-  sensorBmp180.en = 0;
-#endif
-
-#if defined(SHIMMER3R)
-  hi2cMainBus = &hi2c1;
-#elif defined(SHIMMER4_SDK)
-  hi2cMainBus = &hi2c1;
-  hi2cBattery = &hi2c2;
-#endif
-
-  //pSensing = S4Sens_getSensing();
-  //pStat = GetStatus();
-  memset((uint8_t *) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
-
-  //init eeprom
-  CAT24C16_init(I2C_getHandlerSensor());
-
-#if defined(SHIMMER4_SDK)
-  STC3100_init(hi2cBattery);
-#if USE_I2C_VBATT_REPORT
-  STC3100_wake(1);
-#endif
-#endif
-}
 
 void I2C1_DeInit(void)
 {
@@ -395,11 +373,18 @@ void I2C_configureChannels(void)
 void I2cSens_configureChannels(void)
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
-  i2cSens.sensorLen = i2cSens.sensorCnt = 0;
   uint8_t nbr_i2c1_chans = 0;
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
 #if defined(SHIMMER3R)
+  memset((uint8_t *) &i2c1Sens, 0, sizeof(i2c1Sens));
+  memset((uint8_t *) &i2c3Sens, 0, sizeof(i2c3Sens));
+  memset((uint8_t *) &i2c4Sens, 0, sizeof(i2c4Sens));
+
+  i2c1Sens.busId = I2C1_BUS_FLAG;
+  i2c3Sens.busId = I2C3_BUS_FLAG;
+  i2c4Sens.busId = I2C4_BUS_FLAG;
+
   //Mag (LIS2MDL)
   if (configBytes->chEnMag)
   {
@@ -409,7 +394,7 @@ void I2cSens_configureChannels(void)
     nbr_i2c1_chans += 3;
     sensing.ptr.mag1 = sensing.dataLen;
     sensing.dataLen += 6;
-    i2cSens.sensorList[i2cSens.sensorLen++] = I2C_LIS2MDL_MAG;
+    i2c1Sens.sensorList[i2c1Sens.sensorLen++] = I2C_LIS2MDL_MAG;
   }
 #elif defined(SHIMMER4_SDK)
   //Digi Gyro (MPU9250)
@@ -421,7 +406,7 @@ void I2cSens_configureChannels(void)
     nbr_i2c1_chans += 3;
     sensing.ptr.gyro = sensing.dataLen;
     sensing.dataLen += 6;
-    i2cSens.sensorList[i2cSens.sensorLen++] = I2C_MPU9250_GYRO;
+    i2c1Sens.sensorList[i2c1Sens.sensorLen++] = I2C_MPU9250_GYRO;
   }
   //Digi Accel (LSM303DLHC)
   if (configBytes->chEnWrAccel)
@@ -432,7 +417,7 @@ void I2cSens_configureChannels(void)
     nbr_i2c1_chans += 3;
     sensing.ptr.accel2 = sensing.dataLen;
     sensing.dataLen += 6;
-    i2cSens.sensorList[i2cSens.sensorLen++] = I2C_LSM303DLHC_ACCEL;
+    i2c1Sens.sensorList[i2c1Sens.sensorLen++] = I2C_LSM303DLHC_ACCEL;
   }
   //Mag (LSM303DLHC)
   if (configBytes->chEnMag)
@@ -443,7 +428,7 @@ void I2cSens_configureChannels(void)
     nbr_i2c1_chans += 3;
     sensing.ptr.mag1 = sensing.dataLen;
     sensing.dataLen += 6;
-    i2cSens.sensorList[i2cSens.sensorLen++] = I2C_LSM303DLHC_MAG;
+    i2c1Sens.sensorList[i2c1Sens.sensorLen++] = I2C_LSM303DLHC_MAG;
   }
   //Digi Accel (MPU9250)
   if (configBytes->chEnAltAccel)
@@ -454,7 +439,7 @@ void I2cSens_configureChannels(void)
     nbr_i2c1_chans += 3;
     sensing.ptr.accel3 = sensing.dataLen;
     sensing.dataLen += 6;
-    i2cSens.sensorList[i2cSens.sensorLen++] = I2C_MPU9250_ACCEL;
+    i2c1Sens.sensorList[i2c1Sens.sensorLen++] = I2C_MPU9250_ACCEL;
   }
   //Digi Mag (MPU9250)
   if (configBytes->chEnAltMag)
@@ -465,7 +450,7 @@ void I2cSens_configureChannels(void)
     nbr_i2c1_chans += 3;
     sensing.ptr.mag2 = sensing.dataLen;
     sensing.dataLen += 6;
-    i2cSens.sensorList[i2cSens.sensorLen++] = I2C_MPU9250_MAG;
+    i2c1Sens.sensorList[i2c1Sens.sensorLen++] = I2C_MPU9250_MAG;
   }
 
   //Temp & Pressure sensor (BMP280)
@@ -479,14 +464,30 @@ void I2cSens_configureChannels(void)
     sensing.ptr.pressure = sensing.dataLen;
     sensing.dataLen += 3;
 #if USE_BMPX80 == 1
-    i2cSens.sensorList[i2cSens.sensorLen++] = I2C_BMP180;
+    i2c1Sens.sensorList[i2c1Sens.sensorLen++] = I2C_BMP180;
 #else
-    i2cSens.sensorList[i2cSens.sensorLen++] = I2C_BMP280;
+    i2c1Sens.sensorList[i2c1Sens.sensorLen++] = I2C_BMP280;
 #endif
   }
 #endif
   sensing.ccLen += nbr_i2c1_chans;
   sensing.nbrDigiChans += nbr_i2c1_chans;
+
+#if defined(SHIMMER3R)
+  expectedI2cBusCbFlags = 0;
+  if (i2c1Sens.sensorLen > 0)
+  {
+    expectedI2cBusCbFlags |= I2C1_BUS_FLAG;
+  }
+  if (i2c3Sens.sensorLen > 0)
+  {
+    expectedI2cBusCbFlags |= I2C3_BUS_FLAG;
+  }
+  if (i2c4Sens.sensorLen > 0)
+  {
+    expectedI2cBusCbFlags |= I2C4_BUS_FLAG;
+  }
+#endif
 }
 
 #if defined(SHIMMER4_SDK)
@@ -595,9 +596,17 @@ void I2C_startSensing(void)
 
 void I2C_pollSensors(void)
 {
-  if (i2cSens.sensorLen > 0)
+  if (i2c1Sens.sensorLen > 0)
   {
-    I2cSensing(&i2cSens, I2C_FIRST_SENSOR);
+    I2cSensing(&i2c1Sens, I2C_FIRST_SENSOR);
+  }
+  if (i2c3Sens.sensorLen > 0)
+  {
+    I2cSensing(&i2c3Sens, I2C_FIRST_SENSOR);
+  }
+  if (i2c4Sens.sensorLen > 0)
+  {
+    I2cSensing(&i2c4Sens, I2C_FIRST_SENSOR);
   }
 }
 
@@ -659,6 +668,19 @@ void I2cSens_gatherDataCb(void (*done_cb)(void))
   I2cSens_gatherDataDone_cb = done_cb;
 }
 
+#if defined(SHIMMER3R)
+void I2C_busGatherDataDone_cb(uint8_t flag)
+{
+  //if all I2C buses complete, call main callback to sensing.c
+  currentI2cBusCbFlags |= flag;
+  if (currentI2cBusCbFlags == expectedI2cBusCbFlags)
+  {
+    I2cSens_gatherDataDone_cb();
+  }
+}
+#endif
+
+#if defined(SHIMMER4_SDK)
 void I2C_gatherDataStart(void)
 {
   I2cSens_gatherDataStart();
@@ -666,10 +688,9 @@ void I2C_gatherDataStart(void)
 
 void I2cSens_gatherDataStart(void)
 {
-  I2cSensing(&i2cSens, I2C_FIRST_SENSOR);
+  I2cSensing(&i2c1Sens, I2C_FIRST_SENSOR);
 }
 
-#if defined(SHIMMER4_SDK)
 void I2cBatt_gatherDataCb(void (*done_cb)(void))
 {
   I2cBatt_gatherDataDone_cb = done_cb;
@@ -690,7 +711,7 @@ void I2cSensing(I2CTypeDef *i2cSensingInfo, I2C_SENSING_TYPE start)
   {
     i2cSensingInfo->status = I2C_STAT_IDLE;
     i2cSensingInfo->sensorCnt = 0;
-    I2cSens_gatherDataDone_cb();
+    I2C_busGatherDataDone_cb(i2cSensingInfo->busId);
   }
   else if (i2cSensingInfo->sensorCnt < i2cSensingInfo->sensorLen)
   {
@@ -703,13 +724,14 @@ void I2cSensing(I2CTypeDef *i2cSensingInfo, I2C_SENSING_TYPE start)
       {
         i2cSensingInfo->status = I2C_STAT_IDLE;
         i2cSensingInfo->sensorCnt = 0;
-        I2cSens_gatherDataDone_cb();
+        I2C_busGatherDataDone_cb(i2cSensingInfo->busId);
         break;
       }
     }
   }
   else
   {
+    //TODO handle this differently
     while (1)
     {
       Board_ledToggle(LED_ALL);
@@ -815,7 +837,8 @@ void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex)
 
   if (stateToSet)
   {
-    if (HAL_I2C_GetState(hi2cMainBus) == HAL_I2C_STATE_RESET)
+    if (hi2cMainBus == NULL
+        || HAL_I2C_GetState(hi2cMainBus) == HAL_I2C_STATE_RESET)
     {
       /* Init the I2C */
       MX_I2C1_Init();
@@ -823,7 +846,8 @@ void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex)
   }
   else
   {
-    if (HAL_I2C_GetState(hi2cMainBus) != HAL_I2C_STATE_RESET)
+    if (hi2cMainBus != NULL
+        && HAL_I2C_GetState(hi2cMainBus) != HAL_I2C_STATE_RESET)
     {
       /* DeInit the I2C */
       I2C1_DeInit();
@@ -834,12 +858,12 @@ void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex)
 #if defined(SHIMMER3R)
 bool areI2cChannelsEnabled(void)
 {
-  return i2cSens.sensorLen > 0 ? true : false;
+  return (i2c1Sens.sensorLen + i2c3Sens.sensorLen + i2c4Sens.sensorLen) > 0 ? true : false;
 }
 
-void I2C2_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-  switch (i2cSens.sensorList[i2cSens.sensorCnt])
+  switch (i2c1Sens.sensorList[i2c1Sens.sensorCnt])
   {
   case I2C_LIS2MDL_MAG:
     memcpy(sensing.dataBuf + sensing.ptr.mag1, &i2cSens_buf.lis2mdlMagBuf[0],
@@ -849,8 +873,8 @@ void I2C2_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
     break;
   }
 
-  i2cSens.status = I2C_STAT_IDLE;
-  I2cSensing(&i2cSens, I2C_NEXT_SENSOR);
+  i2c1Sens.status = I2C_STAT_IDLE;
+  I2cSensing(&i2c1Sens, I2C_NEXT_SENSOR);
 }
 
 #elif defined(SHIMMER4_SDK)
@@ -908,12 +932,12 @@ void BMP180Sample(void)
     if (!sensorBmp180.tempCnt--)
     {
       sensorBmp180.tempCnt = sensorBmp180.tempMax;
-      i2cSens.status = I2C_STAT_BMP180_TEMP_GET_T;
+      i2c1Sens.status = I2C_STAT_BMP180_TEMP_GET_T;
       BMP180_tempReadTx();
     }
     else
     {
-      i2cSens.status = I2C_STAT_BMP180_PRES_GET_T;
+      i2c1Sens.status = I2C_STAT_BMP180_PRES_GET_T;
       BMP180_presReadTx();
     }
     sensorBmp180.presCnt = sensorBmp180.presMax;
@@ -922,63 +946,63 @@ void BMP180Sample(void)
 
 void BMP180TxDoneHandler(void)
 {
-  if (i2cSens.status == I2C_STAT_BMP180_TEMP_START)
+  if (i2c1Sens.status == I2C_STAT_BMP180_TEMP_START)
   {
     I2cSensing(I2C_NEXT_SENSOR); //goto next sensor
   }
-  else if (i2cSens.status == I2C_STAT_BMP180_TEMP_GET_T)
+  else if (i2c1Sens.status == I2C_STAT_BMP180_TEMP_GET_T)
   {
-    i2cSens.status = I2C_STAT_BMP180_TEMP_GET_R;
+    i2c1Sens.status = I2C_STAT_BMP180_TEMP_GET_R;
     BMP180_tempReadRx(sensing.dataBuf + sensing.ptr.temperature);
   }
-  else if (i2cSens.status == I2C_STAT_BMP180_PRES_START)
+  else if (i2c1Sens.status == I2C_STAT_BMP180_PRES_START)
   {
     I2cSensing(I2C_NEXT_SENSOR); //goto next sensor
   }
-  else if (i2cSens.status == I2C_STAT_BMP180_PRES_GET_T)
+  else if (i2c1Sens.status == I2C_STAT_BMP180_PRES_GET_T)
   {
-    i2cSens.status = I2C_STAT_BMP180_PRES_GET_R;
+    i2c1Sens.status = I2C_STAT_BMP180_PRES_GET_R;
     BMP180_presReadRx(sensing.dataBuf + sensing.ptr.pressure);
   }
   else
   {
-    i2cSens.status = I2C_STAT_IDLE;
+    i2c1Sens.status = I2C_STAT_IDLE;
   }
 }
 
 void BMP180RxDoneHandler(void)
 {
-  if (i2cSens.status == I2C_STAT_BMP180_TEMP_GET_R)
+  if (i2c1Sens.status == I2C_STAT_BMP180_TEMP_GET_R)
   {
     if (stat.isSensing)
     {
-      i2cSens.status = I2C_STAT_BMP180_PRES_START;
+      i2c1Sens.status = I2C_STAT_BMP180_PRES_START;
       BMP180_presStartMeasurement(sensorBmp180.oss);
     }
     else
-      i2cSens.status = I2C_STAT_IDLE;
+      i2c1Sens.status = I2C_STAT_IDLE;
   }
-  else if (i2cSens.status == I2C_STAT_BMP180_PRES_GET_R)
+  else if (i2c1Sens.status == I2C_STAT_BMP180_PRES_GET_R)
   {
     if (stat.isSensing)
     {
       if (!sensorBmp180.tempCnt)
       {
-        i2cSens.status = I2C_STAT_BMP180_TEMP_START;
+        i2c1Sens.status = I2C_STAT_BMP180_TEMP_START;
         BMP180_tempStartMeasurement();
       }
       else
       {
-        i2cSens.status = I2C_STAT_BMP180_PRES_START;
+        i2c1Sens.status = I2C_STAT_BMP180_PRES_START;
         BMP180_presStartMeasurement(sensorBmp180.oss);
       }
     }
     else
-      i2cSens.status = I2C_STAT_IDLE;
+      i2c1Sens.status = I2C_STAT_IDLE;
   }
   else
   {
-    i2cSens.status = I2C_STAT_IDLE;
+    i2c1Sens.status = I2C_STAT_IDLE;
   }
 }
 
@@ -1032,12 +1056,12 @@ void BMP280Sample(void)
     if (!sensorBmp280.tempCnt--)
     {
       sensorBmp280.tempCnt = sensorBmp280.tempMax;
-      i2cSens.status = I2C_STAT_BMP280_TEMP_GET_T;
+      i2c1Sens.status = I2C_STAT_BMP280_TEMP_GET_T;
       BMP280_tempReadTx();
     }
     else
     {
-      i2cSens.status = I2C_STAT_BMP280_PRES_GET_T;
+      i2c1Sens.status = I2C_STAT_BMP280_PRES_GET_T;
       BMP280_presReadTx();
     }
     sensorBmp280.presCnt = sensorBmp280.presMax;
@@ -1046,55 +1070,55 @@ void BMP280Sample(void)
 
 void BMP280TxDoneHandler(void)
 {
-  if (i2cSens.status == I2C_STAT_BMP280_START)
+  if (i2c1Sens.status == I2C_STAT_BMP280_START)
   {
     I2cSensing(I2C_NEXT_SENSOR); //goto next sensor
   }
-  else if (i2cSens.status == I2C_STAT_BMP280_TEMP_GET_T)
+  else if (i2c1Sens.status == I2C_STAT_BMP280_TEMP_GET_T)
   {
-    i2cSens.status = I2C_STAT_BMP280_TEMP_GET_R;
+    i2c1Sens.status = I2C_STAT_BMP280_TEMP_GET_R;
     BMP280_tempReadRx();
   }
-  else if (i2cSens.status == I2C_STAT_BMP280_PRES_GET_T)
+  else if (i2c1Sens.status == I2C_STAT_BMP280_PRES_GET_T)
   {
-    i2cSens.status = I2C_STAT_BMP280_PRES_GET_R;
+    i2c1Sens.status = I2C_STAT_BMP280_PRES_GET_R;
     BMP280_presReadRx();
   }
   else
   {
-    i2cSens.status = I2C_STAT_IDLE;
+    i2c1Sens.status = I2C_STAT_IDLE;
   }
 }
 
 void BMP280RxDoneHandler(void)
 {
-  if (i2cSens.status == I2C_STAT_BMP280_TEMP_GET_R)
+  if (i2c1Sens.status == I2C_STAT_BMP280_TEMP_GET_R)
   {
     BMP280_tempReadDone(sensing.dataBuf + sensing.ptr.temperature);
     I2cSensing(I2C_NEXT_SENSOR);
   }
-  else if (i2cSens.status == I2C_STAT_BMP280_PRES_GET_R)
+  else if (i2c1Sens.status == I2C_STAT_BMP280_PRES_GET_R)
   {
     BMP280_presReadDone(sensing.dataBuf + sensing.ptr.pressure);
-    i2cSens.status = I2C_STAT_BMP280_START;
+    i2c1Sens.status = I2C_STAT_BMP280_START;
     BMP280_startTx();
     I2cSensing(I2C_NEXT_SENSOR);
   }
   else
   {
-    i2cSens.status = I2C_STAT_IDLE;
+    i2c1Sens.status = I2C_STAT_IDLE;
   }
 }
 
 void MPU9250GyroSample(void)
 {
-  i2cSens.status = I2C_STAT_MPU9250_GYRO_GET_T;
+  i2c1Sens.status = I2C_STAT_MPU9250_GYRO_GET_T;
   MPU9250_gyroReadStart();
 }
 
 void MPU9250GyroTxDoneHandler(void)
 {
-  i2cSens.status = I2C_STAT_MPU9250_GYRO_GET_R;
+  i2c1Sens.status = I2C_STAT_MPU9250_GYRO_GET_R;
   //MPU9250_gyroReadDone(sensing.dataBuf + sensing.ptr.mpu9250Gyro);
   MPU9250_gyroReadDone(i2cSens_buf.mpu9250GyroBuf);
 }
@@ -1102,19 +1126,19 @@ void MPU9250GyroTxDoneHandler(void)
 void MPU9250GyroRxDoneHandler(void)
 {
   memcpy(sensing.dataBuf + sensing.ptr.gyro, i2cSens_buf.mpu9250GyroBuf, 6);
-  i2cSens.status = I2C_STAT_IDLE;
+  i2c1Sens.status = I2C_STAT_IDLE;
   I2cSensing(I2C_NEXT_SENSOR); //goto next sensor
 }
 
 void MPU9250AccelSample(void)
 {
-  i2cSens.status = I2C_STAT_MPU9250_ACCEL_GET_T;
+  i2c1Sens.status = I2C_STAT_MPU9250_ACCEL_GET_T;
   MPU9250_accelReadStart();
 }
 
 void MPU9250AccelTxDoneHandler(void)
 {
-  i2cSens.status = I2C_STAT_MPU9250_ACCEL_GET_R;
+  i2c1Sens.status = I2C_STAT_MPU9250_ACCEL_GET_R;
   //MPU9250_accelReadDone(sensing.dataBuf + sensing.ptr.mpu9250Accel);
   MPU9250_accelReadDone(i2cSens_buf.mpu9250AccelBuf);
 }
@@ -1122,7 +1146,7 @@ void MPU9250AccelTxDoneHandler(void)
 void MPU9250AccelRxDoneHandler(void)
 {
   memcpy(sensing.dataBuf + sensing.ptr.accel3, i2cSens_buf.mpu9250AccelBuf, 6);
-  i2cSens.status = I2C_STAT_IDLE;
+  i2c1Sens.status = I2C_STAT_IDLE;
   I2cSensing(I2C_NEXT_SENSOR); //goto next sensor
 }
 
@@ -1140,7 +1164,7 @@ void MPU9250MagSetup(void)
 
 void MPU9250MagSample(void)
 {
-  i2cSens.status = I2C_STAT_MPU9250_MAG_GET_T;
+  i2c1Sens.status = I2C_STAT_MPU9250_MAG_GET_T;
   MPU9250_magReadStart();
   //if (0 == --mpu9250Mag.cnt) {
   //  i2cSens.status = I2C_STAT_MPU9250_MAG_GET_T;
@@ -1151,7 +1175,7 @@ void MPU9250MagSample(void)
 
 void MPU9250MagTxDoneHandler(void)
 {
-  i2cSens.status = I2C_STAT_MPU9250_MAG_GET_R;
+  i2c1Sens.status = I2C_STAT_MPU9250_MAG_GET_R;
   MPU9250_magReadDone(i2cSens_buf.mpu9250MagBuf);
   //if (I2C_STAT_MPU9250_MAG_START == i2cSens.status) {
   //  I2cSensing(I2C_NEXT_SENSOR); // goto next sensor
@@ -1167,7 +1191,7 @@ void MPU9250MagTxDoneHandler(void)
 void MPU9250MagRxDoneHandler(void)
 {
   memcpy(sensing.dataBuf + sensing.ptr.mag2, i2cSens_buf.mpu9250MagBuf, 6);
-  i2cSens.status = I2C_STAT_IDLE;
+  i2c1Sens.status = I2C_STAT_IDLE;
   I2cSensing(I2C_NEXT_SENSOR); //goto next sensor
 
   //if (I2C_STAT_MPU9250_MAG_GET_R == i2cSens.status) {
@@ -1181,13 +1205,13 @@ void MPU9250MagRxDoneHandler(void)
 
 void Lsm303dlhcAccelSample(void)
 {
-  i2cSens.status = I2C_STAT_LSM303DLHC_ACCEL_GET_T;
+  i2c1Sens.status = I2C_STAT_LSM303DLHC_ACCEL_GET_T;
   LSM303DLHC_accelReadStart();
 }
 
 void Lsm303dlhcAccelTxDoneHandler(void)
 {
-  i2cSens.status = I2C_STAT_LSM303DLHC_ACCEL_GET_R;
+  i2c1Sens.status = I2C_STAT_LSM303DLHC_ACCEL_GET_R;
   //LSM303DLHC_accelReadDone(sensing.dataBuf + sensing.ptr.lsm303dlhcAccel);
   LSM303DLHC_accelReadDone(i2cSens_buf.lsm303AccelBuf);
 }
@@ -1195,19 +1219,19 @@ void Lsm303dlhcAccelTxDoneHandler(void)
 void Lsm303dlhcAccelRxDoneHandler(void)
 {
   memcpy(sensing.dataBuf + sensing.ptr.accel2, i2cSens_buf.lsm303AccelBuf, 6);
-  i2cSens.status = I2C_STAT_IDLE;
+  i2c1Sens.status = I2C_STAT_IDLE;
   I2cSensing(I2C_NEXT_SENSOR); //goto next sensor
 }
 
 void Lsm303dlhcMagSample(void)
 {
-  i2cSens.status = I2C_STAT_LSM303DLHC_MAG_GET_T;
+  i2c1Sens.status = I2C_STAT_LSM303DLHC_MAG_GET_T;
   LSM303DLHC_magReadStart();
 }
 
 void Lsm303dlhcMagTxDoneHandler(void)
 {
-  i2cSens.status = I2C_STAT_LSM303DLHC_MAG_GET_R;
+  i2c1Sens.status = I2C_STAT_LSM303DLHC_MAG_GET_R;
   //LSM303DLHC_magReadDone(sensing.dataBuf + sensing.ptr.lsm303dlhcMag);
   LSM303DLHC_magReadDone(i2cSens_buf.lsm303MagBuf);
 }
@@ -1215,7 +1239,7 @@ void Lsm303dlhcMagTxDoneHandler(void)
 void Lsm303dlhcMagRxDoneHandler(void)
 {
   memcpy(sensing.dataBuf + sensing.ptr.mag1, i2cSens_buf.lsm303MagBuf, 6);
-  i2cSens.status = I2C_STAT_IDLE;
+  i2c1Sens.status = I2C_STAT_IDLE;
   I2cSensing(I2C_NEXT_SENSOR); //goto next sensor
 }
 
@@ -1237,7 +1261,7 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
   if (hi2c->Instance == hi2cMainBus->Instance)
   {
-    switch (i2cSens.sensorList[i2cSens.sensorCnt])
+    switch (i2c1Sens.sensorList[i2c1Sens.sensorCnt])
     {
     case I2C_BMP180:
       BMP180TxDoneHandler();
@@ -1270,7 +1294,7 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
   if (hi2c->Instance == hi2cMainBus->Instance)
   {
-    switch (i2cSens.sensorList[i2cSens.sensorCnt])
+    switch (i2c1Sens.sensorList[i2c1Sens.sensorCnt])
     {
     case I2C_BMP180:
       BMP180RxDoneHandler();
