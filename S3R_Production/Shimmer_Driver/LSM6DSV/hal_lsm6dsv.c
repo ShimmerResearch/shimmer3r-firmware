@@ -437,7 +437,12 @@ uint8_t lsm6dsv_self_test(void)
   return (st_result == ST_PASS ? 0 : 1);
 }
 
-void lsm6dsv_configure(float shimmerSamplingFreq, uint8_t isGyroEn, uint8_t isAccelEn, uint8_t rate, uint8_t rangeGyro, uint8_t rangeAccel)
+void lsm6dsv_configure(float shimmerSamplingFreq,
+    uint8_t isGyroEn,
+    uint8_t isAccelEn,
+    uint8_t rate,
+    uint8_t rangeGyro,
+    uint8_t rangeAccel)
 {
   LSM6DSV_Init(&lsm6dsv_obj);
 

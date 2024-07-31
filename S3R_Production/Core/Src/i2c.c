@@ -522,7 +522,6 @@ void I2C_startSensing(void)
 
   memset((uint8_t *) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
 
-
   //if ((0 != i2cSens.sensorLen)
   //    && (HAL_GPIO_ReadPin(SW_I2C1_GPIO_Port, SW_I2C1_Pin) == GPIO_PIN_RESET))
   //{
