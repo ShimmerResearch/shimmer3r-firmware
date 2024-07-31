@@ -190,7 +190,10 @@ void S4Sens_startSensing(void)
         / sensing.freq; //216000000 = 8192*26367 or 108000000 = 4096*26367
     sensing.clkInterval16k = samplingRateTicks / 2;
 
-    S4_ADC_startSensing();
+    if (areAdcChannelsEnabled())
+    {
+      S4_ADC_startSensing();
+    }
     I2C_startSensing();
     SPI_startSensing();
 
@@ -312,7 +315,10 @@ void S4Sens_stopPeripherals(void)
 
 #endif
 
-  S4_ADC_stopSensing();
+  if (areAdcChannelsEnabled())
+  {
+    S4_ADC_stopSensing();
+  }
   HAL_Delay(10); //Send ACK command needs delay here...
   BtUart_sendRsp();
   I2C_stopSensing();
@@ -350,7 +356,10 @@ void S4Sens_streamData(void)
 
 void S4Sens_bufPoll()
 {
-  S4_ADC_gatherDataStart();
+  if (areAdcChannelsEnabled())
+  {
+    S4_ADC_gatherDataStart();
+  }
 
   I2C_pollSensors();
 
