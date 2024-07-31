@@ -22,19 +22,20 @@
 #define __RTC_H__
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* USER CODE BEGIN Includes */
+  /* USER CODE BEGIN Includes */
 
 #include "s4__cfg.h"
 
-/* USER CODE END Includes */
+  /* USER CODE END Includes */
 
-extern RTC_HandleTypeDef hrtc;
+  extern RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN Private defines */
 
@@ -72,11 +73,11 @@ extern RTC_HandleTypeDef hrtc;
     uint64_t ticks; /*!< ticks from 01.01.1970 00:00:00 */
   } S4_RTC_t;
 
-/* USER CODE END Private defines */
+  /* USER CODE END Private defines */
 
-void MX_RTC_Init(void);
+  void MX_RTC_Init(void);
 
-/* USER CODE BEGIN Prototypes */
+  /* USER CODE BEGIN Prototypes */
   void S4_RTC_Init(void); //RTC_HandleTypeDef *hrtc
   uint8_t S4_RTC_SetDateTime(S4_RTC_t *data);
   void S4_RTC_GetDateTime(S4_RTC_t *data);
@@ -96,11 +97,10 @@ void MX_RTC_Init(void);
   void S4_RTC_WakeUpSetSlow(void);
   void setupNextRtcMinuteAlarm(void);
 
-/* USER CODE END Prototypes */
+  /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __RTC_H__ */
-
