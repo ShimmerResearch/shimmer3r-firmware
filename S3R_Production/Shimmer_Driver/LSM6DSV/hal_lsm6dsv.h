@@ -16,7 +16,12 @@ void lsm6dsv_power_off(void);
 void lsm6dsv_selectDevice(void);
 void lsm6dsv_unselectDevice(void);
 uint8_t lsm6dsv_self_test(void);
-void lsm6dsv_configure(float shimmerSamplingFreq, uint8_t isGyroEn, uint8_t isAccelEn, uint8_t rate, uint8_t rangeGyro, uint8_t rangeAccel);
+void lsm6dsv_configure(float shimmerSamplingFreq,
+    uint8_t isGyroEn,
+    uint8_t isAccelEn,
+    uint8_t rate,
+    uint8_t rangeGyro,
+    uint8_t rangeAccel);
 HAL_StatusTypeDef lsm6dsv_accel_get(uint8_t *buf);
 HAL_StatusTypeDef lsm6dsv_gyro_get(uint8_t *buf);
 HAL_StatusTypeDef lsm6dsv_gyro_accel_get(uint8_t *buf);

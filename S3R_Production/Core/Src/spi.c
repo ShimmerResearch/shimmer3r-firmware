@@ -870,7 +870,6 @@ void SPI_startSensing()
   memset((uint8_t *) &spi2Sens_buf, 0, sizeof(spi2ReadBuf));
   memset((uint8_t *) &spi3Sens_buf, 0, sizeof(spi3ReadBuf));
 
-
 #if defined(SHIMMER3R)
   /* SPI1 */
   if ((configBytes->chEnLnAccel) || (configBytes->chEnGyro))
@@ -901,7 +900,8 @@ void SPI_startSensing()
     lis2dw12_power_on();
     lis2dw12_driver_init();
     //TODO decide how to handle configBytes->wrAccelHRM and configBytes->wrAccelLPM
-    lis2dw12_configure(shimmerSamplingFreq, configBytes->wrAccelRate, configBytes->wrAccelRange);
+    lis2dw12_configure(shimmerSamplingFreq, configBytes->wrAccelRate,
+        configBytes->wrAccelRange);
   }
 
   if (configBytes->chEnAltMag)

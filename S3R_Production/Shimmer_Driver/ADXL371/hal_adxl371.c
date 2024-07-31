@@ -28,7 +28,8 @@ struct adxl371_dev adxl371;
  *   and are strictly related to the hardware platform used.
  *
  */
-static int32_t platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len);
+static int32_t
+platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len);
 static void tx_com(uint8_t *tx_buffer, uint16_t len);
 static void platform_delay(uint32_t ms);
 
@@ -180,14 +181,14 @@ int32_t adxl371_spi_reg_read_multiple(struct adxl371_dev *dev,
   return 0;
 }
 
-static int32_t platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len)
+static int32_t
+platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len)
 {
   HAL_StatusTypeDef ret;
   adxl371_selectDevice();
   ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
   return ret;
 }
-
 
 /*
  * @brief  Send buffer to console (platform dependent)

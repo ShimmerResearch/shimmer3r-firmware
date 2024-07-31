@@ -9,8 +9,8 @@
 #define BMP3_BMP3_SENSORAPI_HAL_BMP3_H_
 
 #include "stm32u5xx.h"
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define BMP_LEN_CALIB_DATA BMP3_LEN_CALIB_DATA
 
