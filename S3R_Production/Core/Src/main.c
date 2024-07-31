@@ -236,7 +236,6 @@ int main(void)
   MX_RTC_Init();
   MX_SDMMC1_SD_Init();
   MX_USART3_UART_Init();
-  MX_ADC2_Init();
   MX_USB_OTG_HS_PCD_Init();
   MX_ICACHE_Init();
   MX_CRC_Init();
