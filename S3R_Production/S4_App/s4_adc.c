@@ -1029,7 +1029,12 @@ void manageReadBatt(uint8_t isBlockingRead)
   }
   else
   {
-    S4_ADC_readBatt(isBlockingRead);
+    // Don't start a new measurement if one is already underway
+    if (hadcBattPtr->Instance == NULL
+        || hadcBattPtr->State == HAL_ADC_STATE_RESET)
+    {
+      S4_ADC_readBatt(isBlockingRead);
+    }
   }
 }
 
