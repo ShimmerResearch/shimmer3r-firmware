@@ -139,6 +139,8 @@ static uint8_t tx_buffer[1000];
 
 static LIS2DW12_Object_t lis2dw12_obj;
 
+static bool isDrdyIntEnabled = false;
+
 /* Extern variables ----------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
@@ -378,7 +380,7 @@ void lis2dw12_self_test(void)
   tx_com(tx_buffer, strlen((char const *) tx_buffer));
 }
 
-int32_t lis2dw12_config_accel(lis2dw12_odr_t rate, lis2dw12_fs_t range)
+int32_t lis2dw12_configure(float shimmerSamplingFreq, lis2dw12_odr_t rate, lis2dw12_fs_t range)
 {
   LIS2DW12_Init(&lis2dw12_obj);
 
@@ -405,14 +407,19 @@ int32_t lis2dw12_config_accel(lis2dw12_odr_t rate, lis2dw12_fs_t range)
   //  return LIS2DW12_ERROR;
   //}
 
+  isDrdyIntEnabled = false;
+#if defined(LIS2DW12_INT1_Pin)
+  if (lis2dw12_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
+  {
+    lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
+    lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), int1_drdy);
+    isDrdyIntEnabled = true;
+  }
+#endif
+
   lis2dw12_obj.acc_is_enabled = 1U;
 
   return LIS2DW12_OK;
-}
-
-int32_t lis2dw12_standby(void)
-{
-  return LIS2DW12_ACC_Disable(&lis2dw12_obj);
 }
 
 HAL_StatusTypeDef lis2dw12_accel_get(uint8_t *buf)
@@ -421,6 +428,60 @@ HAL_StatusTypeDef lis2dw12_accel_get(uint8_t *buf)
   static uint8_t txBuff[] = { LIS2DW12_OUT_X_L | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
   ret = platform_read_raw_data_dma(lis2dw12_obj.Ctx.handle, &txBuff[0], buf, sizeof(txBuff));
   return ret;
+}
+
+bool lis2dw12_is_drdy_int_enabled(void)
+{
+  return isDrdyIntEnabled;
+}
+
+bool lis2dw12_is_shimmer_freq_higher(float shimmerSamplingFreq, lis2dw12_odr_t rate)
+{
+  return shimmerSamplingFreq > lis2dw12_get_sensor_freq_from_rate(rate);
+}
+
+float lis2dw12_get_sensor_freq_from_rate(lis2dw12_odr_t rate)
+{
+  float sensorFreq = 0.0;
+  switch (rate)
+  {
+  case LIS2DW12_XL_ODR_1Hz6_LP_ONLY:
+    sensorFreq = 1.6;
+    break;
+  case LIS2DW12_XL_ODR_12Hz5:
+    sensorFreq = 12.5;
+    break;
+  case LIS2DW12_XL_ODR_25Hz:
+    sensorFreq = 25.0;
+    break;
+  case LIS2DW12_XL_ODR_50Hz:
+    sensorFreq = 50.0;
+    break;
+  case LIS2DW12_XL_ODR_100Hz:
+    sensorFreq = 100.0;
+    break;
+  case LIS2DW12_XL_ODR_200Hz:
+    sensorFreq = 200.0;
+    break;
+  case LIS2DW12_XL_ODR_400Hz:
+    sensorFreq = 400.0;
+    break;
+  case LIS2DW12_XL_ODR_800Hz:
+    sensorFreq = 800.0;
+    break;
+  case LIS2DW12_XL_ODR_1k6Hz:
+    sensorFreq = 1600.0;
+    break;
+  default:
+    sensorFreq = 0.0;
+    break;
+  }
+  return sensorFreq;
+}
+
+int32_t lis2dw12_standby(void)
+{
+  return LIS2DW12_ACC_Disable(&lis2dw12_obj);
 }
 
 /*

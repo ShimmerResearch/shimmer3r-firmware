@@ -518,8 +518,10 @@ void I2cBatt_configureChannels(void)
 void I2C_startSensing(void)
 {
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  float shimmerSamplingFreq = get_shimmer_sampling_freq();
 
   memset((uint8_t *) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
+
 
   //if ((0 != i2cSens.sensorLen)
   //    && (HAL_GPIO_ReadPin(SW_I2C1_GPIO_Port, SW_I2C1_Pin) == GPIO_PIN_RESET))
@@ -534,7 +536,7 @@ void I2C_startSensing(void)
   {
     lis2mdl_power_on();
     lis2mdl_driver_init();
-    lis2mdl_config_mag(configBytes->magRate);
+    lis2mdl_configure(shimmerSamplingFreq, configBytes->magRate);
   }
 
 #elif defined(SHIMMER4_SDK)
@@ -772,7 +774,7 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
   {
 #if defined(SHIMMER3R)
   case I2C_LIS2MDL_MAG:
-    if (LIS2MDL_DRDY)
+    if (!lis2mdl_is_drdy_int_enabled() || LIS2MDL_DRDY)
     {
       i2cSensingInfo->status = I2C_STAT_LIS2MDL_MAG_GET;
       lis2mdl_mag_get(i2cSens_buf.lis2mdlMagBuf);

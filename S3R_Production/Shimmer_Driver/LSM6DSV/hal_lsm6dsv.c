@@ -137,6 +137,8 @@ uint8_t tx_buffer[1000];
 /* Private variables ---------------------------------------------------------*/
 static LSM6DSV_Object_t lsm6dsv_obj;
 
+static bool isDrdyIntEnabled = false;
+
 /* Extern variables ----------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
@@ -435,22 +437,7 @@ uint8_t lsm6dsv_self_test(void)
   return (st_result == ST_PASS ? 0 : 1);
 }
 
-void lsm6dsv_restore_default_config(void)
-{
-  lsm6dsv_reset_t rst;
-
-  /* Restore default configuration */
-  lsm6dsv_reset_set(&lsm6dsv_obj.Ctx, LSM6DSV_RESTORE_CTRL_REGS);
-  do
-  {
-    lsm6dsv_reset_get(&lsm6dsv_obj.Ctx, &rst);
-  } while (rst != LSM6DSV_READY);
-
-  /* Enable Block Data Update */
-  lsm6dsv_block_data_update_set(&lsm6dsv_obj.Ctx, PROPERTY_ENABLE);
-}
-
-void lsm6dsv_config_imu(uint8_t isGyroEn, uint8_t isAccelEn, uint8_t rate, uint8_t rangeGyro, uint8_t rangeAccel)
+void lsm6dsv_configure(float shimmerSamplingFreq, uint8_t isGyroEn, uint8_t isAccelEn, uint8_t rate, uint8_t rangeGyro, uint8_t rangeAccel)
 {
   LSM6DSV_Init(&lsm6dsv_obj);
 
@@ -494,15 +481,21 @@ void lsm6dsv_config_imu(uint8_t isGyroEn, uint8_t isAccelEn, uint8_t rate, uint8
   pin_int.freefall = 0;
   pin_int.sleep_change = 0;
 
-  if ((isGyroEn && isAccelEn) || isGyroEn)
+  isDrdyIntEnabled = false;
+  if (lsm6dsv_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
   {
-    pin_int.drdy_g = PROPERTY_ENABLE;
+    if ((isGyroEn && isAccelEn) || isGyroEn)
+    {
+      pin_int.drdy_g = PROPERTY_ENABLE;
+      isDrdyIntEnabled = true;
+    }
+    else
+    {
+      pin_int.drdy_xl = PROPERTY_ENABLE;
+      isDrdyIntEnabled = true;
+    }
+    lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
   }
-  else
-  {
-    pin_int.drdy_xl = PROPERTY_ENABLE;
-  }
-  lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
 
   ///* Configure filtering chain */
   //filt_settling_mask.drdy = PROPERTY_ENABLE;
@@ -538,11 +531,145 @@ HAL_StatusTypeDef lsm6dsv_gyro_accel_get(uint8_t *buf)
   return ret;
 }
 
+bool lsm6dsv_is_drdy_int_enabled(void)
+{
+  return isDrdyIntEnabled;
+}
+
+bool lsm6dsv_is_shimmer_freq_higher(float shimmerSamplingFreq, lsm6dsv_data_rate_t rate)
+{
+  return shimmerSamplingFreq > lsm6dsv_get_sensor_freq_from_rate(rate);
+}
+
+float lsm6dsv_get_sensor_freq_from_rate(lsm6dsv_data_rate_t rate)
+{
+  float sensorFreq = 0.0;
+  switch (rate)
+  {
+  case LSM6DSV_ODR_AT_1Hz875:
+    sensorFreq = 1.875;
+    break;
+  case LSM6DSV_ODR_AT_7Hz5:
+    sensorFreq = 7.5;
+    break;
+  case LSM6DSV_ODR_AT_15Hz:
+    sensorFreq = 15.0;
+    break;
+  case LSM6DSV_ODR_AT_30Hz:
+    sensorFreq = 30.0;
+    break;
+  case LSM6DSV_ODR_AT_60Hz:
+    sensorFreq = 60.0;
+    break;
+  case LSM6DSV_ODR_AT_120Hz:
+    sensorFreq = 120.0;
+    break;
+  case LSM6DSV_ODR_AT_240Hz:
+    sensorFreq = 240.0;
+    break;
+  case LSM6DSV_ODR_AT_480Hz:
+    sensorFreq = 480.0;
+    break;
+  case LSM6DSV_ODR_AT_960Hz:
+    sensorFreq = 960.0;
+    break;
+  case LSM6DSV_ODR_AT_1920Hz:
+    sensorFreq = 1920.0;
+    break;
+  case LSM6DSV_ODR_AT_3840Hz:
+    sensorFreq = 3840.0;
+    break;
+  case LSM6DSV_ODR_AT_7680Hz:
+    sensorFreq = 7680.0;
+    break;
+  case LSM6DSV_ODR_HA01_AT_15Hz625:
+    sensorFreq = 15.625;
+    break;
+  case LSM6DSV_ODR_HA01_AT_31Hz25:
+    sensorFreq = 31.25;
+    break;
+  case LSM6DSV_ODR_HA01_AT_62Hz5:
+    sensorFreq = 62.5;
+    break;
+  case LSM6DSV_ODR_HA01_AT_125Hz:
+    sensorFreq = 125.0;
+    break;
+  case LSM6DSV_ODR_HA01_AT_250Hz:
+    sensorFreq = 250.0;
+    break;
+  case LSM6DSV_ODR_HA01_AT_500Hz:
+    sensorFreq = 500.0;
+    break;
+  case LSM6DSV_ODR_HA01_AT_1000Hz:
+    sensorFreq = 1000.0;
+    break;
+  case LSM6DSV_ODR_HA01_AT_2000Hz:
+    sensorFreq = 2000.0;
+    break;
+  case LSM6DSV_ODR_HA01_AT_4000Hz:
+    sensorFreq = 4000.0;
+    break;
+  case LSM6DSV_ODR_HA01_AT_8000Hz:
+    sensorFreq = 8000.0;
+    break;
+  case LSM6DSV_ODR_HA02_AT_12Hz5:
+    sensorFreq = 12.5;
+    break;
+  case LSM6DSV_ODR_HA02_AT_25Hz:
+    sensorFreq = 25.0;
+    break;
+  case LSM6DSV_ODR_HA02_AT_50Hz:
+    sensorFreq = 50.0;
+    break;
+  case LSM6DSV_ODR_HA02_AT_100Hz:
+    sensorFreq = 100.0;
+    break;
+  case LSM6DSV_ODR_HA02_AT_200Hz:
+    sensorFreq = 200.0;
+    break;
+  case LSM6DSV_ODR_HA02_AT_400Hz:
+    sensorFreq = 400.0;
+    break;
+  case LSM6DSV_ODR_HA02_AT_800Hz:
+    sensorFreq = 800.0;
+    break;
+  case LSM6DSV_ODR_HA02_AT_1600Hz:
+    sensorFreq = 1600.0;
+    break;
+  case LSM6DSV_ODR_HA02_AT_3200Hz:
+    sensorFreq = 3200.0;
+    break;
+  case LSM6DSV_ODR_HA02_AT_6400Hz:
+    sensorFreq = 6400.0;
+    break;
+  default:
+    sensorFreq = 0.0;
+    break;
+  }
+  return sensorFreq;
+}
+
+void lsm6dsv_restore_default_config(void)
+{
+  lsm6dsv_reset_t rst;
+
+  /* Restore default configuration */
+  lsm6dsv_reset_set(&lsm6dsv_obj.Ctx, LSM6DSV_RESTORE_CTRL_REGS);
+  do
+  {
+    lsm6dsv_reset_get(&lsm6dsv_obj.Ctx, &rst);
+  } while (rst != LSM6DSV_READY);
+
+  /* Enable Block Data Update */
+  lsm6dsv_block_data_update_set(&lsm6dsv_obj.Ctx, PROPERTY_ENABLE);
+}
+
 void lsm6dsv_status_get(void)
 {
   lsm6dsv_data_ready_t drdy;
   lsm6dsv_flag_data_ready_get(&lsm6dsv_obj.Ctx, &drdy);
 }
+
 #endif
 
 /*

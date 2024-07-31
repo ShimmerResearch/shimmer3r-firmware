@@ -8,6 +8,7 @@
 #ifndef ADXL371_HAL_ADXL371_H_
 #define ADXL371_HAL_ADXL371_H_
 
+#include "stm32u5xx.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -42,7 +43,10 @@ void adxl371_power_off(void);
 void adxl371_selectDevice(void);
 void adxl371_unselectDevice(void);
 uint8_t adxl371_self_test(void);
-void adxl371_restore_default_config(void);
-void adxl371_config_accel(uint8_t rate);
+void adxl371_configure(uint8_t rate);
+HAL_StatusTypeDef adxl371_accel_get(uint8_t *buf);
+int32_t adxl371_is_data_rdy(void);
+
+void adxl371_reset_chip(void);
 
 #endif /* ADXL371_HAL_ADXL371_H_ */

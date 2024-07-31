@@ -140,6 +140,8 @@ static const float max_st_limit[] = { 3.0f, 3.0f, 1.0f };
 /* Private variables ---------------------------------------------------------*/
 static LIS3MDL_Object_t lis3mdl_obj;
 
+static bool isDrdyIntEnabled = false;
+
 /* Extern variables ----------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
@@ -162,6 +164,37 @@ static void platform_init(void);
 #endif
 
 /* Main Example --------------------------------------------------------------*/
+
+#if defined(SHIMMER3R)
+void lis3mdl_driver_init(void)
+{
+  /* Initialize mems driver interface */
+  lis3mdl_obj.Ctx.write_reg = platform_write;
+  lis3mdl_obj.Ctx.read_reg = platform_read;
+  lis3mdl_obj.Ctx.mdelay = platform_delay;
+  lis3mdl_obj.Ctx.handle = &SENSOR_BUS;
+}
+
+void lis3mdl_power_on(void)
+{
+  set_power_spi2_bus(true, SPI2_CHIP_INDEX_LIS3MDL);
+}
+
+void lis3mdl_power_off(void)
+{
+  set_power_spi2_bus(false, SPI2_CHIP_INDEX_LIS3MDL);
+}
+
+void lis3mdl_selectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
+}
+
+void lis3mdl_unselectDevice(void)
+{
+  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
+}
+
 uint8_t lis3mdl_self_test(void)
 {
   uint8_t tx_buffer[1000];
@@ -310,6 +343,149 @@ uint8_t lis3mdl_self_test(void)
   return st_result == ST_PASS ? 0 : 1;
 }
 
+void lis3mdl_configure(float shimmerSamplingFreq, lis3mdl_om_t rate, lis3mdl_fs_t range)
+{
+  LIS3MDL_Init(&lis3mdl_obj);
+
+  isDrdyIntEnabled = false;
+  if (lis3mdl_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
+  {
+    /* Note: DRDY pin is always enabled for LIS3MDL but we only need to utilise
+    it if the Shimmer's sampling rate is faster then the chip can support. */
+    isDrdyIntEnabled = true;
+  }
+
+  /* Set Full Scale */
+  lis3mdl_full_scale_set(&lis3mdl_obj.Ctx, range);
+  /* Set Output Data Rate */
+  lis3mdl_data_rate_set(&lis3mdl_obj.Ctx, rate);
+  /* Wait */
+  platform_delay(WAIT_TIME_00);
+  /* Set Operating mode */
+  lis3mdl_operating_mode_set(&lis3mdl_obj.Ctx, LIS3MDL_CONTINUOUS_MODE);
+  /* Wait stable output */
+  platform_delay(WAIT_TIME_01);
+}
+
+HAL_StatusTypeDef lis3mdl_mag_get(uint8_t *buf)
+{
+  HAL_StatusTypeDef ret;
+  static uint8_t txBuff[] = { LIS3MDL_OUT_X_L | 0xC0, 0, 0, 0, 0, 0, 0 };
+  ret = platform_read_raw_data_dma(lis3mdl_obj.Ctx.handle, &txBuff[0], buf, sizeof(txBuff));
+  return ret;
+}
+
+bool lis3mdl_is_drdy_int_enabled(void)
+{
+  return isDrdyIntEnabled;
+}
+
+bool lis3mdl_is_shimmer_freq_higher(float shimmerSamplingFreq, lis3mdl_om_t rate)
+{
+  return shimmerSamplingFreq > lis3mdl_get_sensor_freq_from_rate(rate);
+}
+
+float lis3mdl_get_sensor_freq_from_rate(lis3mdl_om_t rate)
+{
+  float sensorFreq = 0.0;
+  switch (rate)
+  {
+  case LIS3MDL_LP_1kHz:
+    sensorFreq = 1000.0;
+    break;
+  case LIS3MDL_MP_560Hz:
+    sensorFreq = 560.0;
+    break;
+  case LIS3MDL_HP_300Hz:
+    sensorFreq = 300.0;
+    break;
+  case LIS3MDL_UHP_155Hz:
+    sensorFreq = 155.0;
+    break;
+  case LIS3MDL_LP_80Hz:
+  case LIS3MDL_MP_80Hz:
+  case LIS3MDL_HP_80Hz:
+  case LIS3MDL_UHP_80Hz:
+    sensorFreq = 80.0;
+    break;
+  case LIS3MDL_LP_40Hz:
+  case LIS3MDL_MP_40Hz:
+  case LIS3MDL_HP_40Hz:
+  case LIS3MDL_UHP_40Hz:
+    sensorFreq = 40.0;
+    break;
+  case LIS3MDL_LP_20Hz:
+  case LIS3MDL_MP_20Hz:
+  case LIS3MDL_HP_20Hz:
+  case LIS3MDL_UHP_20Hz:
+    sensorFreq = 20.0;
+    break;
+  case LIS3MDL_LP_10Hz:
+  case LIS3MDL_MP_10Hz:
+  case LIS3MDL_HP_10Hz:
+  case LIS3MDL_UHP_10Hz:
+    sensorFreq = 10.0;
+    break;
+  case LIS3MDL_LP_5Hz:
+  case LIS3MDL_MP_5Hz:
+  case LIS3MDL_HP_5Hz:
+  case LIS3MDL_UHP_5Hz:
+    sensorFreq = 5.0;
+    break;
+  case LIS3MDL_LP_2Hz5:
+  case LIS3MDL_MP_2Hz5:
+  case LIS3MDL_HP_2Hz5:
+  case LIS3MDL_UHP_2Hz5:
+    sensorFreq = 2.5;
+    break;
+  case LIS3MDL_LP_1Hz25:
+  case LIS3MDL_MP_1Hz25:
+  case LIS3MDL_HP_1Hz25:
+  case LIS3MDL_UHP_1Hz25:
+    sensorFreq = 1.25;
+    break;
+  case LIS3MDL_LP_Hz625:
+    sensorFreq = 0.625;
+    break;
+  default:
+    sensorFreq = 0.0;
+    break;
+  }
+  return sensorFreq;
+}
+
+#endif
+
+void lis3mdl_restore_default_config(void)
+{
+  uint8_t rst;
+
+  /* Restore default configuration */
+  lis3mdl_reset_set(&lis3mdl_obj.Ctx, PROPERTY_ENABLE);
+
+  do
+  {
+    lis3mdl_reset_get(&lis3mdl_obj.Ctx, &rst);
+  } while (rst);
+
+  /* Enable Block Data Update */
+  lis3mdl_block_data_update_set(&lis3mdl_obj.Ctx, PROPERTY_ENABLE);
+}
+
+void lis3mdl_spi_three_wire_set(void)
+{
+  int32_t ret;
+
+  lis3mdl_ctrl_reg3_t ctrl_reg3;
+  ctrl_reg3.not_used_02 = 0; //Default = 0
+  ctrl_reg3.lp = 0;          //Default = 0
+  ctrl_reg3.not_used_01 = 0; //Default = 0
+  ctrl_reg3.sim = LIS3MDL_SPI_3_WIRE;
+  ctrl_reg3.md = 3; //Default = 3
+
+  ret = lis3mdl_write_reg(&lis3mdl_obj.Ctx, LIS3MDL_CTRL_REG3, (uint8_t *) &ctrl_reg3, 1);
+}
+
 /*
  * @brief  Write generic device register (platform dependent)
  *
@@ -450,89 +626,4 @@ static void platform_init(void)
   HAL_Delay(1000);
 #endif
 }
-
-#elif defined(SHIMMER3R)
-void lis3mdl_driver_init(void)
-{
-  /* Initialize mems driver interface */
-  lis3mdl_obj.Ctx.write_reg = platform_write;
-  lis3mdl_obj.Ctx.read_reg = platform_read;
-  lis3mdl_obj.Ctx.mdelay = platform_delay;
-  lis3mdl_obj.Ctx.handle = &SENSOR_BUS;
-}
-
-void lis3mdl_power_on(void)
-{
-  set_power_spi2_bus(true, SPI2_CHIP_INDEX_LIS3MDL);
-}
-
-void lis3mdl_power_off(void)
-{
-  set_power_spi2_bus(false, SPI2_CHIP_INDEX_LIS3MDL);
-}
-
-void lis3mdl_selectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
-}
-
-void lis3mdl_unselectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
-}
-
-void lis3mdl_restore_default_config(void)
-{
-  uint8_t rst;
-
-  /* Restore default configuration */
-  lis3mdl_reset_set(&lis3mdl_obj.Ctx, PROPERTY_ENABLE);
-
-  do
-  {
-    lis3mdl_reset_get(&lis3mdl_obj.Ctx, &rst);
-  } while (rst);
-
-  /* Enable Block Data Update */
-  lis3mdl_block_data_update_set(&lis3mdl_obj.Ctx, PROPERTY_ENABLE);
-}
-
-void lis3mdl_spi_three_wire_set(void)
-{
-  int32_t ret;
-
-  lis3mdl_ctrl_reg3_t ctrl_reg3;
-  ctrl_reg3.not_used_02 = 0; //Default = 0
-  ctrl_reg3.lp = 0;          //Default = 0
-  ctrl_reg3.not_used_01 = 0; //Default = 0
-  ctrl_reg3.sim = LIS3MDL_SPI_3_WIRE;
-  ctrl_reg3.md = 3; //Default = 3
-
-  ret = lis3mdl_write_reg(&lis3mdl_obj.Ctx, LIS3MDL_CTRL_REG3, (uint8_t *) &ctrl_reg3, 1);
-}
-
-void lis3mdl_config_mag(lis3mdl_om_t rate, lis3mdl_fs_t range)
-{
-  LIS3MDL_Init(&lis3mdl_obj);
-
-  /* Set Full Scale */
-  lis3mdl_full_scale_set(&lis3mdl_obj.Ctx, range);
-  /* Set Output Data Rate */
-  lis3mdl_data_rate_set(&lis3mdl_obj.Ctx, rate);
-  /* Wait */
-  platform_delay(WAIT_TIME_00);
-  /* Set Operating mode */
-  lis3mdl_operating_mode_set(&lis3mdl_obj.Ctx, LIS3MDL_CONTINUOUS_MODE);
-  /* Wait stable output */
-  platform_delay(WAIT_TIME_01);
-}
-
-HAL_StatusTypeDef lis3mdl_mag_get(uint8_t *buf)
-{
-  HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { LIS3MDL_OUT_X_L | 0xC0, 0, 0, 0, 0, 0, 0 };
-  ret = platform_read_raw_data_dma(lis3mdl_obj.Ctx.handle, &txBuff[0], buf, sizeof(txBuff));
-  return ret;
-}
-
 #endif

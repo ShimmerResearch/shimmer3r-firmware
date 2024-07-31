@@ -42,6 +42,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if !USE_USBX
+#include "usb_device.h"
+#endif
+
 #define TIM_MEASURE_START time_start = SysTick->VAL
 #define TIM_MEASURE_END    \
   time_end = SysTick->VAL; \
@@ -231,7 +235,6 @@ int main(void)
   MX_RNG_Init();
   MX_RTC_Init();
   MX_SDMMC1_SD_Init();
-  MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   MX_ADC2_Init();
   MX_USB_OTG_HS_PCD_Init();

@@ -22,6 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
+//TODO remove, needed until SW supports setting pressure sensor rate in config
+#include "bmp3_defs.h"
+
 #define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
 #if defined(SHIMMER3R)
@@ -652,8 +655,8 @@ void SPI3_DeInit(void)
   HAL_SPI_DeInit(hspiExg);
 
   //TODO
-  //ads1292_chip1_selectDevice();
-  //ads1292_chip2_selectDevice();
+  //ads1292r_exg1_unselectDevice();
+  //ads1292r_exg2_unselectDevice();
 
   //Board_SW_SPI2(0);
 }
@@ -861,10 +864,12 @@ void SPI_startSensing()
 {
   static uint8_t temp_exg_buf[11];
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  float shimmerSamplingFreq = get_shimmer_sampling_freq();
 
   memset((uint8_t *) &spi1Sens_buf, 0, sizeof(spi1ReadBuf));
   memset((uint8_t *) &spi2Sens_buf, 0, sizeof(spi2ReadBuf));
   memset((uint8_t *) &spi3Sens_buf, 0, sizeof(spi3ReadBuf));
+
 
 #if defined(SHIMMER3R)
   /* SPI1 */
@@ -872,21 +877,22 @@ void SPI_startSensing()
   {
     lsm6dsv_power_on();
     lsm6dsv_driver_init();
-    lsm6dsv_config_imu(configBytes->chEnGyro, configBytes->chEnLnAccel,
+    lsm6dsv_configure(shimmerSamplingFreq, configBytes->chEnGyro, configBytes->chEnLnAccel,
         configBytes->gyroRate, configBytes->gyroRange, configBytes->altAccelRange);
   }
 
   if (configBytes->chEnPressureAndTemperature)
   {
     bmp3_power_on();
-    bmp3_config_set(configBytes->pressurePrecision);
+    //TODO BMP390 rate
+    bmp3_configure(shimmerSamplingFreq, BMP3_ODR_200_HZ, configBytes->pressurePrecision);
   }
 
   if (configBytes->chEnAltAccel)
   {
     adxl371_power_on();
     adxl371_driver_init();
-    adxl371_config_accel(configBytes->wrAccelRate);
+    adxl371_configure(configBytes->wrAccelRate);
   }
 
   /* SPI2 */
@@ -895,76 +901,73 @@ void SPI_startSensing()
     lis2dw12_power_on();
     lis2dw12_driver_init();
     //TODO decide how to handle configBytes->wrAccelHRM and configBytes->wrAccelLPM
-    lis2dw12_config_accel(configBytes->wrAccelRate, configBytes->wrAccelRange);
+    lis2dw12_configure(shimmerSamplingFreq, configBytes->wrAccelRate, configBytes->wrAccelRange);
   }
 
   if (configBytes->chEnAltMag)
   {
     lis3mdl_power_on();
     lis3mdl_driver_init();
-    lis3mdl_config_mag(LIS3MDL_UHP_155Hz, LIS3MDL_12_GAUSS);
+    lis3mdl_configure(shimmerSamplingFreq, LIS3MDL_UHP_155Hz, LIS3MDL_12_GAUSS);
     //TODO decide if we need an specific rate setting for the alternative mag
     //lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);
   }
 
 #endif
 
+  //TODO clean up ExG code
   //ExG (SPI3)
-  if (isAds1292Present())
+  if (isAds1292Present()
+      && (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
+          || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit))
   {
-    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
-        || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit)
+    EXG_init(hspiExg);
+    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
     {
-      EXG_init(hspiExg);
-      if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
-      {
-        S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_1_CONFIG1, 10);
-        EXG_writeRegs(0, ADS1292R_CONFIG1, 10, temp_exg_buf);
-        EXG_readRegs(0, 0, 11, temp_exg_buf); //can read back to check if write is done successfully
-        __NOP();
-        __NOP();
-        __NOP();
-      }
-      if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
-      {
-        HAL_Delay(100); //100ms
-        EXG_setRdatac(1, 0);
-        S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_2_CONFIG1, 10);
-        EXG_writeRegs(1, ADS1292R_CONFIG1, 10, temp_exg_buf);
-        EXG_readRegs(1, 0, 11, temp_exg_buf);
-        EXG_enableChip2(1);
-        __NOP();
-        __NOP();
-        __NOP();
-      }
-      //probably turning on internal reference, so wait for it to settle
+      S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_1_CONFIG1, 10);
+      EXG_writeRegs(0, ADS1292R_CONFIG1, 10, temp_exg_buf);
+      EXG_readRegs(0, 0, 11, temp_exg_buf); //can read back to check if write is done successfully
+    }
+    if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+    {
       HAL_Delay(100); //100ms
+      EXG_setRdatac(1, 0);
+      S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_2_CONFIG1, 10);
+      EXG_writeRegs(1, ADS1292R_CONFIG1, 10, temp_exg_buf);
+      EXG_readRegs(1, 0, 11, temp_exg_buf);
+      EXG_enableChip2(1);
+    }
+    __NOP();
+    __NOP();
+    __NOP();
 
-      //probably setting the PGA gain so cancel the channel offset
-      if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
-          && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_1_RESP2) & 0x80))
-      {
-        EXG_offsetCal(0);
-      }
-      if ((configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
-          && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_2_RESP2) & 0x80))
-      {
-        EXG_offsetCal(1);
-      }
+    //probably turning on internal reference, so wait for it to settle
+    HAL_Delay(100); //100ms
 
-      if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
-          && (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit))
-      {
-        EXG_start(2);
-      }
-      else if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
-      {
-        EXG_start(0);
-      }
-      else
-      {
-        EXG_start(1);
-      }
+    //probably setting the PGA gain so cancel the channel offset
+    if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+        && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_1_RESP2) & 0x80))
+    {
+      EXG_offsetCal(0);
+    }
+    if ((configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+        && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_2_RESP2) & 0x80))
+    {
+      EXG_offsetCal(1);
+    }
+
+    if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+        && (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit))
+    {
+      EXG_start(2);
+    }
+    else if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+    {
+      EXG_start(0);
+    }
+    else
+    {
+      EXG_start(1);
     }
   }
 }
@@ -1134,7 +1137,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
   switch (spiSensingInfo->sensorList[spiSensingInfo->sensorCnt])
   {
   case SPI1_LSM6DSV_GYRO_AND_ACCEL:
-    if (LSM6DSV_DRDY)
+    if (!lsm6dsv_is_drdy_int_enabled() || LSM6DSV_DRDY)
     {
       spiSensingInfo->status = SPI_STAT_LSM6DSV_GYRO_AND_ACCEL_GET;
       lsm6dsv_gyro_accel_get(spi1Sens_buf.lsm6dsvGyroAndAccelBuf);
@@ -1142,7 +1145,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     }
     break;
   case SPI1_LSM6DSV_ACCEL_ONLY:
-    if (LSM6DSV_DRDY)
+    if (!lsm6dsv_is_drdy_int_enabled() || LSM6DSV_DRDY)
     {
       spiSensingInfo->status = SPI_STAT_LSM6DSV_ACCEL_GET;
       lsm6dsv_accel_get(spi1Sens_buf.lsm6dsvAccelBuf);
@@ -1150,7 +1153,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     }
     break;
   case SPI1_LSM6DSV_GYRO_ONLY:
-    if (LSM6DSV_DRDY)
+    if (!lsm6dsv_is_drdy_int_enabled() || LSM6DSV_DRDY)
     {
       spiSensingInfo->status = SPI_STAT_LSM6DSV_GYRO_GET;
       lsm6dsv_gyro_get(spi1Sens_buf.lsm6dsvGyroBuf);
@@ -1158,10 +1161,15 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     }
     break;
   case SPI1_ADXL371_ACCEL:
-    //TODO
+    if (adxl371_is_data_rdy() == 1)
+    {
+      spiSensingInfo->status = SPI_STAT_ADXL371_ACCEL_GET;
+      adxl371_accel_get(spi1Sens_buf.adxl371Buf);
+      retVal = 1;
+    }
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
-    if (BMP390_INT)
+    if (!bmp3_is_drdy_int_enabled() || BMP390_INT)
     {
       spiSensingInfo->status = SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET;
       bmp3_pressure_temperature_get(spi1Sens_buf.bmp390Buf);
@@ -1170,7 +1178,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     break;
   case SPI2_LIS2DW12_ACCEL:
 #if defined(LIS2DW12_INT1_Pin)
-    if (LIS2DW12_INT1)
+    if (!lis2dw12_is_drdy_int_enabled() || LIS2DW12_INT1)
     {
 #endif
       spiSensingInfo->status = SPI_STAT_LIS2DW12_ACCEL_GET;
@@ -1181,7 +1189,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 #endif
     break;
   case SPI2_LIS3MDL_MAG:
-    if (LIS3MDL_DRDY)
+    if (!lis3mdl_is_drdy_int_enabled() || LIS3MDL_DRDY)
     {
       spiSensingInfo->status = SPI_STAT_LIS3MDL_MAG_GET;
       lis3mdl_mag_get(spi2Sens_buf.lis3mdlMagBuf);

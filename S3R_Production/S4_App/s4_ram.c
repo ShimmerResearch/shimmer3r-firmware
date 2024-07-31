@@ -467,3 +467,8 @@ void SetRamCalibFlag(uint8_t flag)
   //        0: File>Ram, ShimmerCalib_file2Ram()
   calibRamFlag = flag;
 }
+
+float get_shimmer_sampling_freq(void)
+{
+  return 32768.0 / (float) storedConfig.samplingRateTicks;
+}

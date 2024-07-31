@@ -10,6 +10,7 @@
 
 #include "stm32u5xx.h"
 #include <stdint.h>
+#include <stdbool.h>
 
 #define BMP_LEN_CALIB_DATA BMP3_LEN_CALIB_DATA
 
@@ -19,10 +20,13 @@ void bmp3_power_off(void);
 void bmp3_selectDevice(void);
 void bmp3_unselectDevice(void);
 int8_t bmp3_self_test(void);
-int8_t bmp3_restore_default_config(void);
-void bmp3_config_set(uint8_t precision);
+void bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t precision);
 HAL_StatusTypeDef bmp3_pressure_temperature_get(uint8_t *buf);
+bool bmp3_is_drdy_int_enabled(void);
+bool bmp3_is_shimmer_freq_higher(float shimmerSamplingFreq, uint8_t rate);
+float bmp3_get_sensor_freq_from_rate(uint8_t rate);
 
+int8_t bmp3_restore_default_config(void);
 uint8_t *get_bmp_calib_data_bytes(void);
 uint8_t get_bmp_calib_data_bytes_len(void);
 int8_t save_calib_data_bytes(void);

@@ -28,6 +28,7 @@ struct adxl371_dev adxl371;
  *   and are strictly related to the hardware platform used.
  *
  */
+static int32_t platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len);
 static void tx_com(uint8_t *tx_buffer, uint16_t len);
 static void platform_delay(uint32_t ms);
 
@@ -81,13 +82,7 @@ uint8_t adxl371_self_test(void)
   }
 }
 
-void adxl371_restore_default_config(void)
-{
-  int32_t ret = 0;
-  ret |= adxl371_reset(&adxl371);
-}
-
-void adxl371_config_accel(uint8_t rate)
+void adxl371_configure(uint8_t rate)
 {
   adxl371_set_op_mode(&adxl371, ADXL371_STANDBY);
 
@@ -131,6 +126,32 @@ void adxl371_config_accel(uint8_t rate)
   adxl371_set_op_mode(&adxl371, ADXL371_INSTANT_ON);
 }
 
+HAL_StatusTypeDef adxl371_accel_get(uint8_t *buf)
+{
+  HAL_StatusTypeDef ret;
+  static uint8_t txBuff[] = { ADXL371_X_DATA_H, 0, 0, 0, 0, 0, 0 };
+  ret = platform_read_raw_data_dma(&SENSOR_BUS, &txBuff[0], buf, sizeof(txBuff));
+  return ret;
+}
+
+int32_t adxl371_is_data_rdy(void)
+{
+  uint8_t status1;
+  int32_t ret;
+
+  ret = adxl371_spi_reg_read(&adxl371, ADXL371_STATUS_1, &status1);
+  if (ret < 0)
+    return ret;
+
+  return ADXL371_STATUS_1_DATA_RDY(status1);
+}
+
+void adxl371_reset_chip(void)
+{
+  int32_t ret = 0;
+  ret |= adxl371_reset(&adxl371);
+}
+
 int32_t adxl371_spi_reg_write(struct adxl371_dev *dev, uint8_t reg_addr, uint8_t reg_data)
 {
   adxl371_selectDevice();
@@ -158,6 +179,15 @@ int32_t adxl371_spi_reg_read_multiple(struct adxl371_dev *dev,
   adxl371_unselectDevice();
   return 0;
 }
+
+static int32_t platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len)
+{
+  HAL_StatusTypeDef ret;
+  adxl371_selectDevice();
+  ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
+  return ret;
+}
+
 
 /*
  * @brief  Send buffer to console (platform dependent)

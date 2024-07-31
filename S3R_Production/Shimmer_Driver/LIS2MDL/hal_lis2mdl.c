@@ -128,6 +128,8 @@
 /* Private variables ---------------------------------------------------------*/
 static LIS2MDL_Object_t lis2mdl_obj;
 
+static bool isDrdyIntEnabled = false;
+
 /* Extern variables ----------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
@@ -140,6 +142,7 @@ static LIS2MDL_Object_t lis2mdl_obj;
  */
 static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
 static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
+static int32_t platform_read_raw_data_dma(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
 static void tx_com(uint8_t *tx_buffer, uint16_t len);
 static void platform_delay(uint32_t ms);
 #if !defined(SHIMMER3R)
@@ -147,6 +150,29 @@ static void platform_init(void);
 #endif
 
 /* Main Example --------------------------------------------------------------*/
+
+#if defined(SHIMMER3R)
+void lis2mdl_driver_init(void)
+{
+  /* Initialize mems driver interface */
+  lis2mdl_obj.Ctx.write_reg = platform_write;
+  lis2mdl_obj.Ctx.read_reg = platform_read;
+  lis2mdl_obj.Ctx.mdelay = platform_delay;
+  lis2mdl_obj.Ctx.handle = &SENSOR_BUS;
+
+  //lis2mdl_obj.IO.BusType = LIS2MDL_I2C_BUS;
+}
+
+void lis2mdl_power_on(void)
+{
+  set_power_i2c1_bus(true, I2C1_CHIP_INDEX_LIS2MDL);
+}
+
+void lis2mdl_power_off(void)
+{
+  set_power_i2c1_bus(false, I2C1_CHIP_INDEX_LIS2MDL);
+}
+
 void lis2mdl_self_test(void)
 {
   uint8_t tx_buffer[1000];
@@ -295,6 +321,96 @@ void lis2mdl_self_test(void)
   tx_com(tx_buffer, strlen((char const *) tx_buffer));
 }
 
+void lis2mdl_configure(float shimmerSamplingFreq, lis2mdl_odr_t rate)
+{
+  LIS2MDL_Init(&lis2mdl_obj);
+
+  /* Set restore magnetic condition policy */
+  lis2mdl_set_rst_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_SET_SENS_ODR_DIV_63);
+  /* Set power mode */
+  lis2mdl_power_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_HIGH_RESOLUTION);
+  /* Set Output Data Rate */
+  lis2mdl_data_rate_set(&lis2mdl_obj.Ctx, rate);
+  /* Set Operating mode */
+  lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_CONTINUOUS_MODE);
+
+  isDrdyIntEnabled = false;
+  if (lis2mdl_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
+  {
+    /* Set DRDY pin */
+    lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
+    isDrdyIntEnabled = true;
+  }
+
+  /* Wait stable output */
+  platform_delay(WAIT_TIME_01);
+}
+
+HAL_StatusTypeDef lis2mdl_mag_get(uint8_t *buf)
+{
+  HAL_StatusTypeDef ret;
+  ret = platform_read_raw_data_dma(lis2mdl_obj.Ctx.handle, LIS2MDL_OUTX_L_REG, buf, 6);
+  return ret;
+}
+
+bool lis2mdl_is_drdy_int_enabled(void)
+{
+  return isDrdyIntEnabled;
+}
+
+bool lis2mdl_is_shimmer_freq_higher(float shimmerSamplingFreq, lis2mdl_odr_t rate)
+{
+  return shimmerSamplingFreq > lis2mdl_get_sensor_freq_from_rate(rate);
+}
+
+float lis2mdl_get_sensor_freq_from_rate(lis2mdl_odr_t rate)
+{
+  float sensorFreq = 0.0;
+  switch (rate)
+  {
+  case LIS2MDL_ODR_10Hz:
+    sensorFreq = 10.0;
+    break;
+  case LIS2MDL_ODR_20Hz:
+    sensorFreq = 20.0;
+    break;
+  case LIS2MDL_ODR_50Hz:
+    sensorFreq = 50.0;
+    break;
+  case LIS2MDL_ODR_100Hz:
+    sensorFreq = 100.0;
+    break;
+  default:
+    sensorFreq = 0.0;
+    break;
+  }
+  return sensorFreq;
+}
+
+void lis2mdl_set_default_config(void)
+{
+  uint8_t rst;
+
+  /* Restore default configuration */
+  lis2mdl_reset_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE);
+
+  do
+  {
+    lis2mdl_reset_get(&lis2mdl_obj.Ctx, &rst);
+  } while (rst);
+
+  /* Enable Block Data Update */
+  lis2mdl_block_data_update_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE);
+  /* Temperature compensation enable */
+  lis2mdl_offset_temp_comp_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE);
+}
+
+void lis2mdl_sleep(void)
+{
+  lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_POWER_DOWN);
+}
+#endif
+
 /*
  * @brief  Write generic device register (platform dependent)
  *
@@ -423,77 +539,5 @@ static void platform_init(void)
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   HAL_Delay(1000);
 #endif
-}
-
-#elif defined(SHIMMER3R)
-void lis2mdl_driver_init(void)
-{
-  /* Initialize mems driver interface */
-  lis2mdl_obj.Ctx.write_reg = platform_write;
-  lis2mdl_obj.Ctx.read_reg = platform_read;
-  lis2mdl_obj.Ctx.mdelay = platform_delay;
-  lis2mdl_obj.Ctx.handle = &SENSOR_BUS;
-
-  //lis2mdl_obj.IO.BusType = LIS2MDL_I2C_BUS;
-}
-
-void lis2mdl_power_on(void)
-{
-  set_power_i2c1_bus(true, I2C1_CHIP_INDEX_LIS2MDL);
-}
-
-void lis2mdl_power_off(void)
-{
-  set_power_i2c1_bus(false, I2C1_CHIP_INDEX_LIS2MDL);
-}
-
-void lis2mdl_set_default_config(void)
-{
-  uint8_t rst;
-
-  /* Restore default configuration */
-  lis2mdl_reset_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE);
-
-  do
-  {
-    lis2mdl_reset_get(&lis2mdl_obj.Ctx, &rst);
-  } while (rst);
-
-  /* Enable Block Data Update */
-  lis2mdl_block_data_update_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE);
-  /* Temperature compensation enable */
-  lis2mdl_offset_temp_comp_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE);
-}
-
-void lis2mdl_config_mag(lis2mdl_odr_t rate)
-{
-  LIS2MDL_Init(&lis2mdl_obj);
-
-  /* Set restore magnetic condition policy */
-  lis2mdl_set_rst_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_SET_SENS_ODR_DIV_63);
-  /* Set power mode */
-  lis2mdl_power_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_HIGH_RESOLUTION);
-  /* Set Output Data Rate */
-  lis2mdl_data_rate_set(&lis2mdl_obj.Ctx, rate);
-  /* Set Operating mode */
-  lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_CONTINUOUS_MODE);
-
-  /* Set DRDY pin */
-  lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
-
-  /* Wait stable output */
-  platform_delay(WAIT_TIME_01);
-}
-
-HAL_StatusTypeDef lis2mdl_mag_get(uint8_t *buf)
-{
-  HAL_StatusTypeDef ret;
-  ret = platform_read_raw_data_dma(lis2mdl_obj.Ctx.handle, LIS2MDL_OUTX_L_REG, buf, 6);
-  return ret;
-}
-
-void lis2mdl_sleep(void)
-{
-  lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_POWER_DOWN);
 }
 #endif
