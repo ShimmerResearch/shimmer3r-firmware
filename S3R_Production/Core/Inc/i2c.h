@@ -40,13 +40,13 @@ extern "C"
 
   /* USER CODE BEGIN Private defines */
 
-typedef enum
-{
-  I2C_BUSES_ENABLED_NONE,
-  I2C1_BUS_FLAG = 0x01, // EEPROM and LIS2MDL
-  I2C3_BUS_FLAG = 0x02, // I2C via dock connector
-  I2C4_BUS_FLAG = 0x04 // I2C via internal expansion pins
-} I2C_BUS_INDEX;
+  typedef enum
+  {
+    I2C_BUSES_ENABLED_NONE,
+    I2C1_BUS_FLAG = 0x01, //EEPROM and LIS2MDL
+    I2C3_BUS_FLAG = 0x02, //I2C via dock connector
+    I2C4_BUS_FLAG = 0x04  //I2C via internal expansion pins
+  } I2C_BUS_INDEX;
 
   typedef enum
   { //i2c

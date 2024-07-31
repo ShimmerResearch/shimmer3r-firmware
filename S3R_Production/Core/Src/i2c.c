@@ -837,8 +837,7 @@ void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex)
 
   if (stateToSet)
   {
-    if (hi2cMainBus == NULL
-        || HAL_I2C_GetState(hi2cMainBus) == HAL_I2C_STATE_RESET)
+    if (hi2cMainBus == NULL || HAL_I2C_GetState(hi2cMainBus) == HAL_I2C_STATE_RESET)
     {
       /* Init the I2C */
       MX_I2C1_Init();
@@ -846,8 +845,7 @@ void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex)
   }
   else
   {
-    if (hi2cMainBus != NULL
-        && HAL_I2C_GetState(hi2cMainBus) != HAL_I2C_STATE_RESET)
+    if (hi2cMainBus != NULL && HAL_I2C_GetState(hi2cMainBus) != HAL_I2C_STATE_RESET)
     {
       /* DeInit the I2C */
       I2C1_DeInit();

@@ -168,7 +168,7 @@ void Init()
   FullTest();
 #endif
   //BT_disable(huartBt);
-//  S4Sens_stopPeripherals();
+//S4Sens_stopPeripherals();
 #if defined(SHIMMER4_SDK)
   S4_RTC_WakeUpSetSlow();
 #endif
