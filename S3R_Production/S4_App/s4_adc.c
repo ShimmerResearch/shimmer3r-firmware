@@ -377,6 +377,7 @@ void S4_NORM_ADC_startSensing()
     //memcpy((uint8_t*)hadcSensPtr.Init, (uint8_t*)&hadcBattPtr->Init,
     //sizeof(ADC_InitTypeDef)); hadcSens.Instance = ADC2;
 #if defined(SHIMMER3R)
+    hadcSensPtr->Instance = ADC1;
     hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
     hadcSensPtr->Init.Resolution = ADC_RESOLUTION_14B;
     hadcSensPtr->Init.GainCompensation = 0;
@@ -795,7 +796,7 @@ void S4_NORM_ADC_stopSensing()
   //Analog Accel (KXRB5-2042)
   HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
 #endif
-  //Analog Strain Gauge,  esets the PV_SG voltage to gauge op-amp
+  //Analog Strain Gauge, resets the PV_SG voltage to gauge op-amp
   HAL_GPIO_WritePin(GPIOB, SW_STRAIN_GAUGE_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOF, SW_PPG_EN_Pin, GPIO_PIN_RESET);
 

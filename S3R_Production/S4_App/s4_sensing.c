@@ -178,9 +178,9 @@ void S4Sens_startSensing(void)
     S4Sens_stepInit();
     S4Sens_configureChannels();
 
-    uint16_t sampling_rate = S4Ram_getStoredConfig()->samplingRateTicks;
-    sensing.freq = 32768.0 / sampling_rate;
-    if (sensing.freq > 4096)
+    uint16_t samplingRateTicks = S4Ram_getStoredConfig()->samplingRateTicks;
+    sensing.freq = get_shimmer_sampling_freq();
+    if (sensing.freq > 4096.0)
     { //Please don't go too fast, Thx, Best Regards.
       stat.isConfiguring = 0;
       stat.isSensing = 0;
@@ -188,7 +188,7 @@ void S4Sens_startSensing(void)
     }
     sensing.clkInterval4096 = (uint16_t) 4096
         / sensing.freq; //216000000 = 8192*26367 or 108000000 = 4096*26367
-    sensing.clkInterval16k = sampling_rate / 2;
+    sensing.clkInterval16k = samplingRateTicks / 2;
 
     S4_ADC_startSensing();
     I2C_startSensing();
@@ -206,7 +206,7 @@ void S4Sens_startSensing(void)
 #if SENS_CLK_RTC0TIM1
     TIM_startSensing();
 #else
-    S4_RTC_WakeUpSet(sampling_rate);
+    S4_RTC_WakeUpSet(samplingRateTicks);
 #endif
 
     sensing.startTs = RTC_get64();
