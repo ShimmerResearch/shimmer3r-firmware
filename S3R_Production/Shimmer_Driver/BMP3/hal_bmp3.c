@@ -234,3 +234,8 @@ uint8_t *get_bmp_calib_data_bytes(void)
 {
   return &calib_bytes[0];
 }
+
+uint8_t get_bmp_calib_data_bytes_len(void)
+{
+  return BMP_LEN_CALIB_DATA;
+}

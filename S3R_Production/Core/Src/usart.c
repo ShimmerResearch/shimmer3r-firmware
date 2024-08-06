@@ -55,6 +55,12 @@ void MX_USART1_UART_Init(void)
 
   /* USER CODE BEGIN USART1_Init 0 */
 
+  //Control Return if peripheral is already initialised
+  if (!stat.isDocked || isDockUartInitialised())
+  {
+    return;
+  }
+
   /* USER CODE END USART1_Init 0 */
 
   /* USER CODE BEGIN USART1_Init 1 */
@@ -83,12 +89,13 @@ void MX_USART1_UART_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK)
+  if (HAL_UARTEx_EnableFifoMode(&huart1) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
 
+  DockUart_init(&huart1);
   /* USER CODE END USART1_Init 2 */
 }
 
@@ -329,7 +336,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *uartHandle)
 
 /* USER CODE BEGIN 1 */
 
-void Uart_init(void)
+void setUartPeripheralPointers(void)
 {
   huartBt = &huart3;
 #if defined(SHIMMER3R)
@@ -390,8 +397,10 @@ void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
  *
  *****************************************************/
 
-void DockUart_init(void)
+void DockUart_init(UART_HandleTypeDef *huart)
 {
+  huartDock = huart;
+
   uartSteps = 0;
   uartArgSize = 0;
   uartArg2Wait = 0;
@@ -416,33 +425,47 @@ void DockUart_init(void)
 
   uartTimeStart = uartTimeEnd = 0;
 
-  Uart_init();
-
-  HAL_UART_DeInit(huartDock);
-  huartDock->Init.WordLength = UART_WORDLENGTH_8B;
-  huartDock->Init.StopBits = UART_STOPBITS_1;
-  huartDock->Init.Parity = UART_PARITY_NONE;
-  huartDock->Init.Mode = UART_MODE_TX_RX;
-  huartDock->Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huartDock->Init.OverSampling = UART_OVERSAMPLING_16;
-  HAL_UART_Init(huartDock);
-
-  HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
-
 #if defined(SHIMMER3R)
   HAL_UART_RegisterCallback(huartDock, HAL_UART_RX_COMPLETE_CB_ID, dockUartRxCallback);
 //HAL_UART_RegisterCallback(huartDock, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
 #endif
+
+  HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
+
+  if (stat.isSensing)
+  {
+    DockUart_disable();
+  }
+  else
+  {
+    /* Not sure if this is needed but enabling here in case a previous disable
+     * action is not automatically reset when the periheral is reinitialised. */
+    DockUart_enable();
+  }
+}
+
+void DockUart_deint(void)
+{
+  if (isDockUartInitialised())
+  {
+    HAL_UART_DeInit(huartDock);
+  }
 }
 
 void DockUart_disable(void)
 {
-  __HAL_UART_DISABLE(huartDock);
+  if (isDockUartInitialised())
+  {
+    __HAL_UART_DISABLE(huartDock);
+  }
 }
 
 void DockUart_enable(void)
 {
-  __HAL_UART_ENABLE(huartDock);
+  if (isDockUartInitialised())
+  {
+    __HAL_UART_ENABLE(huartDock);
+  }
 }
 
 void DockUart_rxCallback(uint8_t data)
@@ -952,6 +975,11 @@ void DockUart_sendRsp()
   HAL_UART_Transmit(huartDock, uartRespBuf, uart_resp_len, 100);
 }
 
+uint8_t isDockUartInitialised(void)
+{
+  return (huartDock != 0 && ((HAL_UART_GetState(huartDock) & 0x20) == 0x20));
+}
+
 #if defined(SHIMMER4_SDK)
 /*****************************************************
  *
@@ -960,7 +988,7 @@ void DockUart_sendRsp()
  *****************************************************/
 void ExpUart_init(void)
 {
-  Uart_init();
+  setUartPeripheralPointers();
 }
 
 void ExpUart_rxCallback(uint8_t data)
@@ -1025,7 +1053,6 @@ uint8_t DockUart_interruptCheck(void)
     //SD_mount(1);
     //Board_ledOff(LED_GREEN0);
   }
-  S4_Task_set(TASK_DOCKSETUP);
   return stat.isDocked;
 }
 

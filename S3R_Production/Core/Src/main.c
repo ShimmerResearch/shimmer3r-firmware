@@ -126,30 +126,28 @@ void Init()
 #endif
 
   Board_ledOn(LED_ALL);
-  memset((uint8_t *) &stat, 0, sizeof(STATTypeDef));
   stat.battStatLed = LED_YELLOW;
   stat.isConfiguring = 1;
 
   setHwId(DEVICE_VER);
-  //==== 0.86ma ====
+
 #if defined(SHIMMER4_SDK)
   TIM_init();
 #endif
   InfoMem_init();
   S4_Task_init();
   S4Sens_init();
-  //==== 0.86ma ====
+
   SD_init();
   //GPIO_init();
   I2C_init();
   S4_ADC_init();
   SPI_init();
-  //==== 0.86ma ====
-  DockUart_init();
-  DockUart_disable();
-  //==== 0.89ma ====
+
+  setUartPeripheralPointers();
+
   S4_RTC_Init();
-  //==== 24.60ma ====
+
   Board_delayMicrosInit();
   DockUart_interruptCheck();
   SD_insertedCheck();
@@ -165,6 +163,7 @@ void Init()
 #endif
 
   DockUart_setup();
+  DockUart_disable();
   loadSensorConfigurationAndCalibration();
 
   //==== 13.8ma ====
@@ -172,8 +171,6 @@ void Init()
   FullTest();
 #endif
   //BT_disable(huartBt);
-  DockUart_enable();
-  stat.isConfiguring = 0;
   S4Sens_stopPeripherals();
 #if defined(SHIMMER4_SDK)
   S4_RTC_WakeUpSetSlow();
@@ -182,6 +179,8 @@ void Init()
   /* Take initial measurement to update LED state */
   S4_ADC_readBatt(1);
 
+  stat.isConfiguring = 0;
+  DockUart_enable();
   Board_ledOff(LED_ALL);
   //while(1){
   //   //__NOP();
@@ -205,6 +204,8 @@ int main(void)
   uint32_t i = 0;
   while (i++ < 1000000)
     ;
+
+  memset((uint8_t *) &stat, 0, sizeof(STATTypeDef));
 
   /* USER CODE END 1 */
 
@@ -608,19 +609,13 @@ void SetupDock(void)
     {
       Board_sdPowerCycle();
     }
-    if (!stat.isSensing)
-    {
-      DockUart_enable();
-    }
+    MX_USART1_UART_Init();
     BtsdSelfcmd();
   }
   else
   {
     setBatteryInterval(BATT_INTERVAL_UNDOCKED);
-    if (!stat.isSensing)
-    {
-      DockUart_disable();
-    }
+    DockUart_deint();
     setMcuHasSdcardControl(1);
 
     //SendStatusByte();
