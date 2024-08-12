@@ -45,7 +45,7 @@ uint64_t GPIO_tsPress = 0, GPIO_tsLastRelease = 0, GPIO_tsRelease = 0;
 void MX_GPIO_Init(void)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOE_CLK_ENABLE();
@@ -59,20 +59,19 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(CS_LIS3MDL_GPIO_Port, CS_LIS3MDL_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, CS_LSM6DSV_Pin | BT_CP_ROLE_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOC, CS_LSM6DSV_Pin|BT_CP_ROLE_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, SW_SPI1_Pin | SW_I2C1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, SW_SPI1_Pin|SW_I2C1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD,
-      BT_LP_MODE_Pin | BT_RST_Pin | CS_BMP390_Pin | CS_LIS2DW12_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, BT_LP_MODE_Pin|BT_RST_Pin|CS_BMP390_Pin|CS_LIS2DW12_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SW_BT_GPIO_Port, SW_BT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SW_SPI2_Pin | SW_SD_MCU_DOCK_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, SW_SPI2_Pin|SW_SD_MCU_DOCK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CS_HIGH_G_GPIO_Port, CS_HIGH_G_Pin, GPIO_PIN_SET);
@@ -82,14 +81,14 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PEPin PEPin PEPin PEPin
                            PEPin PEPin */
-  GPIO_InitStruct.Pin = LIS3MDL_DRDY_Pin | LSM6DSV_INT1_Pin | BT_HOST_WAKE_Pin
-      | GPIO_EXTERNAL_Pin | LIS2MDL_DRDY_Pin | BMP390_INT_Pin;
+  GPIO_InitStruct.Pin = LIS3MDL_DRDY_Pin|LSM6DSV_INT1_Pin|BT_HOST_WAKE_Pin|GPIO_EXTERNAL_Pin
+                          |LIS2MDL_DRDY_Pin|BMP390_INT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PEPin PEPin PEPin */
-  GPIO_InitStruct.Pin = CS_LIS3MDL_Pin | SW_SPI1_Pin | SW_I2C1_Pin;
+  GPIO_InitStruct.Pin = CS_LIS3MDL_Pin|SW_SPI1_Pin|SW_I2C1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -102,7 +101,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(USER_BTN_N_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PCPin PCPin PCPin */
-  GPIO_InitStruct.Pin = CS_LSM6DSV_Pin | BT_CP_ROLE_Pin | SW_BT_Pin;
+  GPIO_InitStruct.Pin = CS_LSM6DSV_Pin|BT_CP_ROLE_Pin|SW_BT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -121,28 +120,28 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIO_ADC_INT_EXP1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PBPin PBPin */
-  GPIO_InitStruct.Pin = CHG_STAT1_Pin | CHG_STAT2_Pin;
+  GPIO_InitStruct.Pin = CHG_STAT1_Pin|CHG_STAT2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PDPin PDPin PDPin PDPin
                            PDPin */
-  GPIO_InitStruct.Pin = BT_LP_MODE_Pin | BT_RST_Pin | SW_FLASH_Pin
-      | CS_BMP390_Pin | CS_LIS2DW12_Pin;
+  GPIO_InitStruct.Pin = BT_LP_MODE_Pin|BT_RST_Pin|SW_FLASH_Pin|CS_BMP390_Pin
+                          |CS_LIS2DW12_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PDPin PDPin */
-  GPIO_InitStruct.Pin = BT_CONNECTION_Pin | BT_CYSPP_Pin;
+  GPIO_InitStruct.Pin = BT_CONNECTION_Pin|BT_CYSPP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin PAPin */
-  GPIO_InitStruct.Pin = SW_SPI2_Pin | CS_HIGH_G_Pin | SW_SD_MCU_DOCK_Pin;
+  GPIO_InitStruct.Pin = SW_SPI2_Pin|CS_HIGH_G_Pin|SW_SD_MCU_DOCK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -155,7 +154,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(SD_DETECT_N_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PDPin PDPin PDPin */
-  GPIO_InitStruct.Pin = GPIO_INTERNAL0_Pin | GPIO_INTERNAL1_Pin | GPIO_INTERNAL2_Pin;
+  GPIO_InitStruct.Pin = GPIO_INTERNAL0_Pin|GPIO_INTERNAL1_Pin|GPIO_INTERNAL2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
@@ -164,17 +163,34 @@ void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
+  HAL_NVIC_SetPriority(EXTI9_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_IRQn);
+
   HAL_NVIC_SetPriority(EXTI14_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI14_IRQn);
+
 }
 
 /* USER CODE BEGIN 2 */
 
-void GPIO_init(void)
+void GPIO_VBUS_init(uint8_t state)
 {
   //pSensing = S4Sens_getSensing();
   //pStat = GetStatus();
   //GPIO_tsPress = GPIO_tsRelease = GPIO_tsLastRelease = 0;
+  if (state)
+    {GPIO_InitTypeDef GPIO_InitStruct = {0};
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  GPIO_InitStruct.Pin = USB_VBUS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(USB_VBUS_GPIO_Port, &GPIO_InitStruct);
+    }
+  else
+  {
+    HAL_GPIO_DeInit(USB_VBUS_GPIO_Port,USB_VBUS_Pin);
+  }
+
 }
 
 void GPIO_userButtonCheck()
@@ -258,6 +274,9 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
       //EXG_dataReadyChip2();
     }
     break;
+/*  case USB_VBUS_Pin:
+    vbusPinStateCheck();
+    break;*/
   default:
     gpioExtiCommon(GPIO_Pin, 0);
     break;
@@ -282,6 +301,9 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
   case SD_DETECT_N_Pin:
     SD_insertedCheck();
+    break;
+  case USB_VBUS_Pin:
+    vbusPinStateCheck();
     break;
   default:
     break;
@@ -373,5 +395,22 @@ void setMcuHasSdcardControl(uint8_t state)
   HAL_GPIO_WritePin(SW_SD_MCU_DOCK_GPIO_Port, SW_SD_MCU_DOCK_Pin,
       state ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
-
+void vbusPinStateCheck(void)
+{
+  if (HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_SET)
+  {
+    GPIO_VBUS_init(0);
+    MX_USB_OTG_HS_PCD_Init();
+    MX_USB_DEVICE_Init();//usb pluggedin
+  }
+  else if(HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_RESET)
+  {
+/*    USB_STATE state = usbPlugInState();
+    if(state == USB_CABLE_UNPLUGGED)
+    {*/
+/*      HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS); //deinit if unplugged
+      GPIO_VBUS_init();*/
+    //}
+  }
+}
 /* USER CODE END 2 */

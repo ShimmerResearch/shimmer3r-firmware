@@ -21,7 +21,6 @@
 #include "adc.h"
 #include "crc.h"
 #include "gpdma.h"
-#include "gpio.h"
 #include "i2c.h"
 #include "icache.h"
 #include "mdf.h"
@@ -32,7 +31,7 @@
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_otg.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -42,6 +41,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include "usb_otg.h"
 
 #define TIM_MEASURE_START time_start = SysTick->VAL
 #define TIM_MEASURE_END    \
@@ -92,6 +92,8 @@ void SetupDock(void);
 void SdInfoSync(void);
 uint8_t CheckOnDefault(void);
 void ReadSdConfiguration(void);
+void HAL_Delay(uint32_t Delay);
+//void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd);
 #endif
 
 /* USER CODE END PFP */
@@ -194,9 +196,9 @@ void Init()
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
 
@@ -237,7 +239,6 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   MX_ADC2_Init();
-  MX_USB_OTG_HS_PCD_Init();
   MX_ICACHE_Init();
   MX_CRC_Init();
   MX_SPI1_Init();
@@ -249,11 +250,12 @@ int main(void)
   MX_TIM2_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+  GPIO_VBUS_init(1); //for VBUS interrupt
 #if USE_FATFS
   MX_FATFS_Init();
 #endif
 #if !USE_USBX
-  MX_USB_DEVICE_Init();
+ // MX_USB_DEVICE_Init();
 #endif
 
   linkedListConfig(&hadc1); //configure linkedlist for ADC
@@ -278,30 +280,31 @@ int main(void)
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-   */
+  */
   if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Configure LSE Drive Capability
-   */
+  */
   HAL_PWR_EnableBkUpAccess();
   __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_HSI
-      | RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI;
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI
+                              |RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE
+                              |RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -317,9 +320,10 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
-      | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3;
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
+                              |RCC_CLOCKTYPE_PCLK3;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -333,9 +337,9 @@ void SystemClock_Config(void)
 }
 
 /**
- * @brief Power Configuration
- * @retval None
- */
+  * @brief Power Configuration
+  * @retval None
+  */
 static void SystemPower_Config(void)
 {
 
@@ -351,8 +355,8 @@ static void SystemPower_Config(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN PWR */
-  /* USER CODE END PWR */
+/* USER CODE BEGIN PWR */
+/* USER CODE END PWR */
 }
 
 /* USER CODE BEGIN 4 */
@@ -704,12 +708,42 @@ void ReadSdConfiguration(void)
   ParseConfig();
 }
 
+void HAL_Delay(uint32_t Delay)
+{
+  /* Delay for amount of milliseconds */
+  if (__get_IPSR() == 0)
+  {
+    uint32_t tickstart = HAL_GetTick();
+    while ((HAL_GetTick() - tickstart) < Delay)
+    {
+      __WFI();
+    }
+  }
+  else
+  {
+    while (Delay)
+    {
+      if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+      {
+        Delay--;
+      }
+    }
+  }
+}
+
+/*void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
+{
+  USB_STATE lastState = usbPlugInState();
+  HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS); //deinit if unplugged
+  GPIO_VBUS_init();
+}*/
+
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -721,14 +755,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
