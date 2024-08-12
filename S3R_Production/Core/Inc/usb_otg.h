@@ -22,7 +22,8 @@
 #define __USB_OTG_H__
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -30,33 +31,33 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 #include "usbd_def.h"
-/* USER CODE END Includes */
+  /* USER CODE END Includes */
 
-extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
+  extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 
-/* USER CODE BEGIN Private defines */
-extern USBD_HandleTypeDef hUsbDevice;
+  /* USER CODE BEGIN Private defines */
+  extern USBD_HandleTypeDef hUsbDevice;
 
-typedef enum
-{
-  USB_CABLE_RESET = 0U,
-  USB_CABLE_UNPLUGGED = 1U,
-  USB_CABLE_PLUGGED = 2U
-} USB_STATE;
-/* USER CODE END Private defines */
+  typedef enum
+  {
+    USB_CABLE_RESET = 0U,
+    USB_CABLE_UNPLUGGED = 1U,
+    USB_CABLE_PLUGGED = 2U
+  } USB_STATE;
 
-void MX_USB_OTG_HS_PCD_Init(void);
+  /* USER CODE END Private defines */
 
-/* USER CODE BEGIN Prototypes */
-void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd);
-voidHAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd);
-void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd);
-USB_STATE usbPlugInState(void);
-/* USER CODE END Prototypes */
+  void MX_USB_OTG_HS_PCD_Init(void);
+
+  /* USER CODE BEGIN Prototypes */
+  void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd);
+  voidHAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd);
+  void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd);
+  USB_STATE usbPlugInState(void);
+  /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __USB_OTG_H__ */
-
