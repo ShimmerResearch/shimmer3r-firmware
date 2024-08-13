@@ -92,7 +92,7 @@
 //#define UART_PROP_SAMPLE_RATE       0x01
 //#define UART_PROP_RANGE             0x03
 //#define UART_PROP_DIVIDER           0x05
-#define UART_PROP_TEST_ALL 			  0x00
+#define UART_PROP_TEST_ALL        0x00
 //== new uart ends ==
 
 //BT  Channel contents
