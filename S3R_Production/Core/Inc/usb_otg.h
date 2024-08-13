@@ -48,9 +48,6 @@ typedef enum
 void MX_USB_OTG_HS_PCD_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd);
-voidHAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd);
-void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd);
 USB_STATE usbPlugInState(void);
 /* USER CODE END Prototypes */
 

@@ -55,7 +55,7 @@ void MX_GPIO_Init(void);
   void SdPowerOff(void);
   uint8_t isSdPowerOn(void);
   void setMcuHasSdcardControl(uint8_t state);
-  void vbusPinStateCheck(void);
+  void vbusPinStateCheck(uint8_t plugin);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

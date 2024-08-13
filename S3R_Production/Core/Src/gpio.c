@@ -179,10 +179,11 @@ void GPIO_VBUS_init(uint8_t state)
   //pStat = GetStatus();
   //GPIO_tsPress = GPIO_tsRelease = GPIO_tsLastRelease = 0;
   if (state)
-    {GPIO_InitTypeDef GPIO_InitStruct = {0};
+    {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
   __HAL_RCC_GPIOA_CLK_ENABLE();
   GPIO_InitStruct.Pin = USB_VBUS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(USB_VBUS_GPIO_Port, &GPIO_InitStruct);
     }
@@ -303,7 +304,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     SD_insertedCheck();
     break;
   case USB_VBUS_Pin:
-    vbusPinStateCheck();
+    vbusPinStateCheck(1);
     break;
   default:
     break;
@@ -395,22 +396,27 @@ void setMcuHasSdcardControl(uint8_t state)
   HAL_GPIO_WritePin(SW_SD_MCU_DOCK_GPIO_Port, SW_SD_MCU_DOCK_Pin,
       state ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
-void vbusPinStateCheck(void)
+void vbusPinStateCheck(uint8_t plugin)
 {
-  if (HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_SET)
+  if(plugin)
+  {
+ if (HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_SET)
   {
     GPIO_VBUS_init(0);
     MX_USB_OTG_HS_PCD_Init();
     MX_USB_DEVICE_Init();//usb pluggedin
   }
-  else if(HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_RESET)
+  }
+  else
   {
-/*    USB_STATE state = usbPlugInState();
+    USB_STATE state = usbPlugInState();
     if(state == USB_CABLE_UNPLUGGED)
-    {*/
-/*      HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS); //deinit if unplugged
-      GPIO_VBUS_init();*/
-    //}
+    {
+      USBD_DeInit(&hUsbDevice);
+      HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS); //deinit if unplugged
+      GPIO_VBUS_init(0);
+      GPIO_VBUS_init(1);
+    }
   }
 }
 /* USER CODE END 2 */

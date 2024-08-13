@@ -163,25 +163,6 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef* pcdHandle)
 
 /* USER CODE BEGIN 1 */
 
-void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
-{
-  USB_STATE state = usbPlugInState();
-  if(state == USB_CABLE_UNPLUGGED)
-  {
-  HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS); //deinit if unplugged
-  GPIO_VBUS_init(1);
-  }
-}
-
-void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
-{
-  USB_STATE state = usbPlugInState();
-}
-
-void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
-{
-  USB_STATE state = usbPlugInState();
-}
 
 USB_STATE usbPlugInState(void)
 {
