@@ -60,6 +60,7 @@
 #define UART_COMP_D_ACCEL         0x04
 #define UART_COMP_GSR             0x05
 #define UART_COMP_BT              0x0A
+#define UART_COMP_TEST            0x0B
 //================= WP uart 3.0: property names ==============
 // component == UART_COMP_SHIMMER:
 #define UART_PROP_ENABLE          0x00 //this is for all sensors
@@ -91,6 +92,7 @@
 //#define UART_PROP_SAMPLE_RATE       0x01
 //#define UART_PROP_RANGE             0x03
 //#define UART_PROP_DIVIDER           0x05
+#define UART_PROP_TEST_ALL 			  0x00
 //== new uart ends ==
 
 //BT  Channel contents

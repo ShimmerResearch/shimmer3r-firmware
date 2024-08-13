@@ -786,6 +786,18 @@ void DockUart_processCmd()
             break;
           }
         }
+        else if (dockRxBuf[UART_RXBUF_COMP] == UART_COMP_TEST)
+        { //set test
+          switch (dockRxBuf[UART_RXBUF_PROP])
+          {
+          case UART_PROP_TEST_ALL:
+            uartSendRspAck = 1;
+            break;
+          default:
+            uartSendRspBadCmd = 1;
+            break;
+          }
+        }
         else
         {
           uartSendRspBadCmd = 1;
