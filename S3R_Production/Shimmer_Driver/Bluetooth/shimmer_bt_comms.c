@@ -27,8 +27,8 @@
 #include "../S4_App/s4.h"
 #include "../S4_App/s4_sensing.h"
 #include "../S4_App/s4_taskList.h"
-#include "hal_FactoryTest.h"
 #include "bmp3_defs.h"
+#include "hal_FactoryTest.h"
 #endif
 
 #include "sd_sync.h"
@@ -2917,11 +2917,11 @@ void BtUart_processCmd(void)
   case SET_FACTORY_TEST:
     if (args[0] < FACTORY_TEST_COUNT)
     {
-        setup_factory_test(PRINT_TO_BT_UART, (factory_test_t) args[0]);
+      setup_factory_test(PRINT_TO_BT_UART, (factory_test_t) args[0]);
 #if defined(SHIMMER3)
-        TaskSet(TASK_FACTORY_TEST);
+      TaskSet(TASK_FACTORY_TEST);
 #else
-        S4_Task_set(TASK_FACTORY_TEST);
+      S4_Task_set(TASK_FACTORY_TEST);
 #endif
     }
     break;

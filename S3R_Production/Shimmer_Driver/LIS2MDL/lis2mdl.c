@@ -281,17 +281,17 @@ uint8_t lis2mdl_self_test(void)
     lis2mdl_operating_mode_set(&dev_ctx, LIS2MDL_POWER_DOWN);
   }
 
-//  if (st_result == ST_PASS)
-//  {
-//    sprintf((char *) tx_buffer, "LIS2MDL Self Test - PASS\r\n");
-//  }
-//
-//  else
-//  {
-//    sprintf((char *) tx_buffer, "LIS2MDL Self Test - FAIL\r\n");
-//  }
-//
-//  tx_com(tx_buffer, strlen((char const *) tx_buffer));
+  //if (st_result == ST_PASS)
+  //{
+  //  sprintf((char *) tx_buffer, "LIS2MDL Self Test - PASS\r\n");
+  //}
+  //
+  //else
+  //{
+  //  sprintf((char *) tx_buffer, "LIS2MDL Self Test - FAIL\r\n");
+  //}
+  //
+  //tx_com(tx_buffer, strlen((char const *) tx_buffer));
   return st_result;
 }
 

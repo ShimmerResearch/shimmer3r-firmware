@@ -389,17 +389,17 @@ uint8_t lsm6dsv_self_test(void)
     lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_OFF);
   }
 
-//  if (st_result == ST_PASS)
-//  {
-//    sprintf((char *) tx_buffer, "LSM6DSV Self Test - PASS\r\n");
-//  }
-//
-//  else
-//  {
-//    sprintf((char *) tx_buffer, "LSM6DSV Self Test - FAIL\r\n");
-//  }
-//
-//  tx_com(tx_buffer, strlen((char const *) tx_buffer));
+  //if (st_result == ST_PASS)
+  //{
+  //  sprintf((char *) tx_buffer, "LSM6DSV Self Test - PASS\r\n");
+  //}
+  //
+  //else
+  //{
+  //  sprintf((char *) tx_buffer, "LSM6DSV Self Test - FAIL\r\n");
+  //}
+  //
+  //tx_com(tx_buffer, strlen((char const *) tx_buffer));
   return (st_result == ST_PASS ? 0 : 1);
 }
 

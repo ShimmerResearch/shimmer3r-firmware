@@ -7,8 +7,8 @@
 
 #include "hal_FactoryTest.h"
 
-#include "spi.h"
 #include "i2c.h"
+#include "spi.h"
 
 factory_test_target_t factoryTestTarget = PRINT_TO_DEBUGGER;
 factory_test_t factoryTestToRun;
@@ -289,7 +289,7 @@ uint8_t SPI_test(void)
   if (isAdxl371Detected())
   {
     uint8_t adxl371_result = adxl371_self_test();
-    sprintf(buffer, " - %s: ADXL371\r\n", adxl371_result? "FAIL":"PASS");
+    sprintf(buffer, " - %s: ADXL371\r\n", adxl371_result ? "FAIL" : "PASS");
   }
   else
   {
@@ -315,8 +315,8 @@ uint8_t SPI_test(void)
 
   if (isAds1292Present())
   {
-//    EXG_init(hspiExg);
-//    ret_val |= EXG_test();
+    //EXG_init(hspiExg);
+    //ret_val |= EXG_test();
   }
 
   return ret_val;
@@ -330,20 +330,19 @@ void setup_factory_test(factory_test_target_t target, factory_test_t testToRun)
 
 void send_test_report(char *str)
 {
-  switch(factoryTestTarget)
+  switch (factoryTestTarget)
   {
   case PRINT_TO_DEBUGGER:
     SHIMMER_PRINTF(str);
     break;
   case PRINT_TO_DOCK_UART:
-    DockUart_writeBlocking((uint8_t *)str, strlen(str));
+    DockUart_writeBlocking((uint8_t *) str, strlen(str));
     break;
   case PRINT_TO_BT_UART:
-    BT_write((uint8_t *)str, strlen(str));
+    BT_write((uint8_t *) str, strlen(str));
     //TODO wait for msg to finish transmitting
     break;
   default:
     break;
   }
 }
-

@@ -120,7 +120,8 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
     sprintf(outputStr, "API [%s] Error [%d] : Communication failure\r\n", api_name, rslt);
     break;
   case BMP3_E_INVALID_LEN:
-    sprintf(outputStr, "API [%s] Error [%d] : Incorrect length parameter\r\n", api_name, rslt);
+    sprintf(outputStr, "API [%s] Error [%d] : Incorrect length parameter\r\n",
+        api_name, rslt);
     break;
   case BMP3_E_DEV_NOT_FOUND:
     sprintf(outputStr, "API [%s] Error [%d] : Device not found\r\n", api_name, rslt);
@@ -133,8 +134,9 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
         api_name, rslt);
     break;
   case BMP3_W_INVALID_FIFO_REQ_FRAME_CNT:
-    sprintf(outputStr, "API [%s] Error [%d] : Warning when Fifo watermark level is "
-                   "not in limit\r\n",
+    sprintf(outputStr,
+        "API [%s] Error [%d] : Warning when Fifo watermark level is "
+        "not in limit\r\n",
         api_name, rslt);
     break;
   default:
@@ -178,15 +180,15 @@ int8_t bmp390_self_test(void)
   int8_t result;
   result = bmp3_selftest_check(&bmp3);
 
-//  if (result == BMP3_SENSOR_OK)
-//  {
-//    SHIMMER_PRINTF("BMP390 Self Test - PASS\r\n");
-//  }
-//  else
-//  {
-//    SHIMMER_PRINTF("BMP390 Self Test - FAIL\r\n");
-//    bmp3_check_rslt("BMP390", result);
-//  }
+  //if (result == BMP3_SENSOR_OK)
+  //{
+  //  SHIMMER_PRINTF("BMP390 Self Test - PASS\r\n");
+  //}
+  //else
+  //{
+  //  SHIMMER_PRINTF("BMP390 Self Test - FAIL\r\n");
+  //  bmp3_check_rslt("BMP390", result);
+  //}
 
   return result;
 }
