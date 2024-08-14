@@ -333,16 +333,16 @@ uint8_t lis2dw12_self_test(void)
     //}
   }
 
-//  if (st_result == ST_PASS)
-//  {
-//    sprintf((char *) tx_buffer, "LIS2DW12 Self Test - PASS\r\n");
-//  }
-//  else
-//  {
-//    sprintf((char *) tx_buffer, "LIS2DW12 Self Test - FAIL\r\n");
-//  }
-//
-//  tx_com(tx_buffer, strlen((char const *) tx_buffer));
+  //if (st_result == ST_PASS)
+  //{
+  //  sprintf((char *) tx_buffer, "LIS2DW12 Self Test - PASS\r\n");
+  //}
+  //else
+  //{
+  //  sprintf((char *) tx_buffer, "LIS2DW12 Self Test - FAIL\r\n");
+  //}
+  //
+  //tx_com(tx_buffer, strlen((char const *) tx_buffer));
   return st_result;
 }
 

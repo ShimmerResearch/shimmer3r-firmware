@@ -588,7 +588,7 @@ void DockUart_writeBlocking(uint8_t *buf, uint8_t len)
 
 void DockUart_writeText(char *str)
 {
-    DockUart_writeBlocking((uint8_t *)str, strlen(str));
+  DockUart_writeBlocking((uint8_t *) str, strlen(str));
 }
 
 /* USER CODE END 1 */
