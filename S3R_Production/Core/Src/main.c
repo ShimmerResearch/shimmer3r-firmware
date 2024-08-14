@@ -184,6 +184,9 @@ void Init()
   /* Take initial measurement to update LED state */
   S4_ADC_readBatt(1);
 
+  /*Check USB plugin state during boot*/
+  vbusPinStateCheck();
+
   Board_ledOff(LED_ALL);
   //while(1){
   //   //__NOP();

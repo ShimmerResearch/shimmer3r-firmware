@@ -56,7 +56,7 @@ extern "C"
   void SdPowerOff(void);
   uint8_t isSdPowerOn(void);
   void setMcuHasSdcardControl(uint8_t state);
-  void vbusPinStateCheck(uint8_t plugin);
+  void vbusPinStateCheck(void);
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

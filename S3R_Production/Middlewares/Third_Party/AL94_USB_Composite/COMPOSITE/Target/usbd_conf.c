@@ -221,14 +221,7 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
   /* USER CODE BEGIN 3 */
 
   USBD_LL_Resume((USBD_HandleTypeDef *)hpcd->pData);
-/*  USB_STATE state = usbPlugInState();
-  if(state == USB_CABLE_UNPLUGGED)
-  {
-    USBD_DeInit(&hUsbDevice);
-    HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS); //deinit if unplugged
-    GPIO_VBUS_init(1);
-  }*/
-  vbusPinStateCheck(0);
+  vbusPinStateCheck();
   return;
   /* USER CODE END 3 */
   USBD_LL_Resume((USBD_HandleTypeDef *)hpcd->pData);
