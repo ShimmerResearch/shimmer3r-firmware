@@ -232,7 +232,8 @@ void I2C_init(void)
 
   //init eeprom
   CAT24C16_init(I2C_getHandlerSensor());
-  set_power_i2c_main_bus(1);
+
+//  set_power_i2c_main_bus(1);
 
 #if defined(SHIMMER4_SDK)
   STC3100_init(hi2cBattery);
@@ -1192,5 +1193,17 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
   }
 }
 #endif
+
+void loadDaughterCardIdFromEeprom(void)
+{
+  Board_SW_I2C(1);
+  HAL_Delay(100);
+  uint8_t daughterCardIdBuf[CAT24C16_PAGE_SIZE];
+  eepromRead(0, CAT24C16_PAGE_SIZE, &daughterCardIdBuf[0]);
+  setDaugherCardIdPage(daughterCardIdBuf);
+  parseDaughterCardId(getDaughtCardId()->exp_brd_id);
+  HAL_Delay(10);
+  Board_SW_I2C(0);
+}
 
 /* USER CODE END 1 */

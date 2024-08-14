@@ -143,6 +143,8 @@ void Init()
   S4_ADC_init();
   SPI_init();
 
+  loadDaughterCardIdFromEeprom();
+
   setUartPeripheralPointers();
 
   S4_RTC_Init();

@@ -266,6 +266,8 @@ void I2cBatt_sensorNext(void);
   void STC3100BatteryRxDoneHandler(void);
 #endif
 
+  void loadDaughterCardIdFromEeprom(void);
+
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

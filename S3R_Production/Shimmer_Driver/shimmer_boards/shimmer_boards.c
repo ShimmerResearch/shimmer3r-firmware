@@ -139,6 +139,12 @@ char *getDaughtCardIdStrPtr(void)
   return &daughtCardIdStr[0];
 }
 
+uint8_t isDaughterCardIdSet(void)
+{
+  return (daughterCardIdPage.expansion_brd.exp_brd_id != 0x00
+      && daughterCardIdPage.expansion_brd.exp_brd_id != 0xFF);
+}
+
 void setWrAccelAndMagInUse(uint8_t wr_accel_and_mag_in_use)
 {
   wrAccelAndMagInUse = wr_accel_and_mag_in_use;
