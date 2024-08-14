@@ -31,4 +31,7 @@ void adxl371_SelectDevice(void);
 void adxl371_UnselectDevice(void);
 uint8_t adxl371_self_test(void);
 
+void adxl371_restore_default_config(void);
+uint8_t isAdxl371Detected(void);
+
 #endif /* ADXL371_ADXL371_SPI_H_ */

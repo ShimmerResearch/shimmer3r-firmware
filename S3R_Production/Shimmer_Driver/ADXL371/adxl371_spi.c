@@ -102,23 +102,37 @@ void adxl371_UnselectDevice(void)
 
 uint8_t adxl371_self_test(void)
 {
-  uint8_t buf[4];
-  platform_read(dev_ctx.handle, 0x00, &buf[0], 4);
+  uint8_t result = 0;
 
-  if (buf[0] == 0xAD && buf[1] == 0x1D && buf[2] == 0xFA && buf[3] == 0xFB)
+  if (isAdxl371Detected())
   {
-    SHIMMER_PRINTF("ADXL371 Self Test - PASS\r\n");
-    return 0;
+    //TODO implement an ADXL371 signal test feature
   }
   else
   {
-    SHIMMER_PRINTF("ADXL371 Self Test - FAIL\r\n");
-    return 1;
+    result = 1;
   }
+
+  return result;
 }
 
 void adxl371_restore_default_config(void)
 {
   //TODO
   //adxl371_reset(dev);
+}
+
+uint8_t isAdxl371Detected(void)
+{
+  uint8_t buf[4];
+  platform_read(dev_ctx.handle, ADXL371_DEVID, &buf[0], 4);
+
+  if (buf[0] == 0xAD && buf[1] == 0x1D && buf[2] == 0xFA && buf[3] == 0xFB)
+  {
+    return 1;
+  }
+  else
+  {
+    return 0;
+  }
 }

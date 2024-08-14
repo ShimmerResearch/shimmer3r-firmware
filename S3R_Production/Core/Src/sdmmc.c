@@ -159,61 +159,61 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef *sdHandle)
 
 /* USER CODE BEGIN 1 */
 
-void printSdCardInfo(void)
+void printSdCardInfo(char *outputStr)
 {
   HAL_SD_CardCIDTypeDef pCID;
   HAL_SD_GetCardCID(&hsd1, &pCID);
 
-  printf("Manufacturer: ");
+  sprintf(outputStr, "Manufacturer: ");
   switch (pCID.ManufacturerID)
   {
   case 0x000001:
-    printf("Panasonic");
+    sprintf(outputStr + strlen(outputStr), "Panasonic");
     break;
   case 0x000002:
-    printf("Toshiba");
+    sprintf(outputStr + strlen(outputStr), "Toshiba");
     break;
   case 0x000003:
-    printf("SanDisk");
+    sprintf(outputStr + strlen(outputStr), "SanDisk");
     break;
   case 0x00001b:
-    printf("Samsung");
+    sprintf(outputStr + strlen(outputStr), "Samsung");
     break;
   case 0x00001d:
-    printf("AData");
+    sprintf(outputStr + strlen(outputStr), "AData");
     break;
   case 0x000027:
-    printf("Phison");
+    sprintf(outputStr + strlen(outputStr), "Phison");
     break;
   case 0x000028:
-    printf("Lexar");
+    sprintf(outputStr + strlen(outputStr), "Lexar");
     break;
   case 0x000031:
-    printf("Silicon Power");
+    sprintf(outputStr + strlen(outputStr), "Silicon Power");
     break;
   case 0x000041:
-    printf("Kingston");
+    sprintf(outputStr + strlen(outputStr), "Kingston");
     break;
   case 0x000074:
-    printf("Transcend");
+    sprintf(outputStr + strlen(outputStr), "Transcend");
     break;
   case 0x000076:
-    printf("Patriot");
+    sprintf(outputStr + strlen(outputStr), "Patriot");
     break;
   case 0x000082:
   case 0x00009c:
-    printf("Sony");
+    sprintf(outputStr + strlen(outputStr), "Sony");
     break;
   default:
     break;
   }
 
-  printf(", Size=%.2lfGB",
+  sprintf(outputStr + strlen(outputStr), ", Size=%.2lfGB",
       (hsd1.SdCard.BlockSize * ((float) hsd1.SdCard.BlockNbr / 1024 / 1024 / 1024)));
-  printf(", Manufacture Date=%d-%02d", (pCID.ManufactDate / 10) + 1990,
+  sprintf(outputStr + strlen(outputStr), ", Manufacture Date=%d-%02d", (pCID.ManufactDate / 10) + 1990,
       pCID.ManufactDate % 10);
 
-  printf("\r\n");
+  sprintf(outputStr + strlen(outputStr), "\r\n");
 }
 
 /* USER CODE END 1 */

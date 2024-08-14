@@ -48,6 +48,5 @@
 #include "s4__cfg.h"
 
 void S4Led_Blink(void);
-void led_test(void);
 
 #endif //S4_LED_H

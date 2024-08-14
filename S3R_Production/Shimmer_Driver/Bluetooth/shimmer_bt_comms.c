@@ -27,6 +27,7 @@
 #include "../S4_App/s4.h"
 #include "../S4_App/s4_sensing.h"
 #include "../S4_App/s4_taskList.h"
+#include "hal_FactoryTest.h"
 #include "bmp3_defs.h"
 #endif
 
@@ -534,6 +535,7 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
         case SET_CRC_COMMAND:
         case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
         case SET_DATA_RATE_TEST:
+        case SET_FACTORY_TEST:
           *(gActionPtr) = data;
           waitingForArgs = 1U;
           break;
@@ -1860,7 +1862,9 @@ uint8_t processShimmerBtCmd(void)
   case SET_MYID_COMMAND:
   case SET_NSHIMMER_COMMAND:
   case SET_CRC_COMMAND:
-  case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE case SET_DATA_RATE_TEST:
+  case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
+  case SET_DATA_RATE_TEST:
+  case SET_FACTORY_TEST:
     if (numBytesInBtRxBufWhenLastProcessed >= (1U + 1U))
     {
       readActionAndArgBytes(1U);
@@ -2133,6 +2137,7 @@ uint8_t isShimmerBtCmd(uint8_t data)
   case SET_CRC_COMMAND:
   case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
   case SET_DATA_RATE_TEST:
+  case SET_FACTORY_TEST:
   case SET_SAMPLING_RATE_COMMAND:
   case GET_DAUGHTER_CARD_ID_COMMAND:
   case SET_DAUGHTER_CARD_ID_COMMAND:
@@ -2908,6 +2913,17 @@ void BtUart_processCmd(void)
       clearBtTxBuf(1);
     }
     btDataRateTestResponse = 1;
+    break;
+  case SET_FACTORY_TEST:
+    if (args[0] < FACTORY_TEST_COUNT)
+    {
+        setup_factory_test(PRINT_TO_BT_UART, (factory_test_t) args[0]);
+#if defined(SHIMMER3)
+        TaskSet(TASK_FACTORY_TEST);
+#else
+        S4_Task_set(TASK_FACTORY_TEST);
+#endif
+    }
     break;
 
   case RESET_TO_DEFAULT_CONFIGURATION_COMMAND:
