@@ -295,6 +295,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
   case DOCK_DETECT_Pin:
     DockUart_interruptCheck();
+    S4_Task_set(TASK_DOCKSETUP);
     break;
   case USER_BTN_N_Pin:
     GPIO_userButtonCheck();

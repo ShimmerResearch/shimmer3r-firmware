@@ -3374,10 +3374,23 @@ void BtUart_sendRsp(void)
     }
     else if (bmpGenericCalibrationCoefficientsResponse)
     {
+      uint8_t bmpCalibByteLen = get_bmp_calib_data_bytes_len();
       *(resPacket + packet_length++) = PRESSURE_CALIBRATION_COEFFICIENTS_RESPONSE;
-      *(resPacket + packet_length++) = BMP_LEN_CALIB_DATA;
-      memcpy(resPacket + packet_length, get_bmp_calib_data_bytes(), BMP_LEN_CALIB_DATA);
-      packet_length += BMP_LEN_CALIB_DATA;
+      *(resPacket + packet_length++) = 1U + bmpCalibByteLen;
+      if (isBmp180InUse())
+      {
+        *(resPacket + packet_length++) = PRESSURE_SENSOR_BMP180;
+      }
+      else if (isBmp280InUse())
+      {
+        *(resPacket + packet_length++) = PRESSURE_SENSOR_BMP280;
+      }
+      else
+      {
+        *(resPacket + packet_length++) = PRESSURE_SENSOR_BMP390;
+      }
+      memcpy(resPacket + packet_length, get_bmp_calib_data_bytes(), bmpCalibByteLen);
+      packet_length += bmpCalibByteLen;
       bmpGenericCalibrationCoefficientsResponse = 0;
     }
     else if (mpu9250SamplingRateResponse)
