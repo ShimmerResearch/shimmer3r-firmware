@@ -233,7 +233,7 @@ void I2C_init(void)
   //init eeprom
   CAT24C16_init(I2C_getHandlerSensor());
 
-//  set_power_i2c_main_bus(1);
+  //set_power_i2c_main_bus(1);
 
 #if defined(SHIMMER4_SDK)
   STC3100_init(hi2cBattery);

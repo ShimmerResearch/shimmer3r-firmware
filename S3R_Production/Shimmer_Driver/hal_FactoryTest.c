@@ -17,7 +17,8 @@ char buffer[100];
 
 uint32_t run_factory_test(void)
 {
-  send_test_report("//**************************** TEST START ************************************//\r\n");
+  send_test_report("//**************************** TEST START "
+                   "************************************//\r\n");
 
   print_date_and_time();
   send_test_report("\r\n");
@@ -40,7 +41,8 @@ uint32_t run_factory_test(void)
 
   stat.testResult += SPI_test() << 16;
 
-  send_test_report("//***************************** TEST END *************************************//\r\n");
+  send_test_report("//***************************** TEST END "
+                   "*************************************//\r\n");
 
   return stat.testResult;
 }
@@ -70,7 +72,8 @@ void print_shimmer_model(void)
     sprintf(buffer, " - PASS: %s", getDaughtCardIdStrPtr());
     send_test_report(buffer);
     shimmer_expansion_brd *daughterCardId = getDaughtCardId();
-    sprintf(buffer, " (SR%d-%d-%d)\r\n", daughterCardId->exp_brd_id, daughterCardId->exp_brd_rev, daughterCardId->exp_brd_special_rev);
+    sprintf(buffer, " (SR%d-%d-%d)\r\n", daughterCardId->exp_brd_id,
+        daughterCardId->exp_brd_rev, daughterCardId->exp_brd_special_rev);
     send_test_report(buffer);
   }
   else
