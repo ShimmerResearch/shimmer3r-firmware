@@ -43,9 +43,9 @@
 #ifndef EXG_H
 #define EXG_H
 
-#include <stdint.h>
-#include "stm32f7xx_hal.h"
 #include "ads1292.h"
+#include "stm32u5xx_hal.h"
+#include <stdint.h>
 
 //ADS1292R registers
 //There are two of these chips on the ExG board
@@ -68,7 +68,7 @@ void EXG_init(SPI_HandleTypeDef *hspi);
 
 uint8_t EXG_test(void);
 
-void EXG_setRdatac(uint8_t chip, uint8_t en); 
+void EXG_setRdatac(uint8_t chip, uint8_t en);
 
 //put ADS1292R chip in RDATAC mode and start sampling
 //also enable data ready interrupts for selected chip
@@ -128,24 +128,23 @@ void EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wd
 //size = 24-bit or 16-bit data
 // 0 for 24bit
 // 1 for 16bit (drops 7 least significant bits and most significant bit)
-//Format: x00 + 5 LOFF_STAT bits + 24-bits/16-bits × 2 channels per chip
+//Format: x00 + 5 LOFF_STAT bits + 24-bits/16-bits ï¿½ 2 channels per chip
 //so returns 5 or 7 bytes in total, depending on size setting
 //The data format for each channel data is twos complement, MSB first.
 //If data is valid MSB of status byte for each chip is 1, else 0
 void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf);
 
-
 //Tell the driver that the data is ready to be read from chipX
-#define EXG_dataReadyChip1 ADS1292_dataReadyChip1
+#define EXG_dataReadyChip1  ADS1292_dataReadyChip1
 //#define EXG_dataReadyChip2 ADS1292_dataReadyChip2
 //#define EXG_dataReadFromChip1 ADS1292_dataReadFromChip1
 //#define EXG_dataReadFromChip2 ADS1292_dataReadFromChip2
-#define EXG_gatherDataInit      ADS1292_gatherDataInit
-#define EXG_gatherDataStart     ADS1292_gatherDataStart
+#define EXG_gatherDataInit  ADS1292_gatherDataInit
+#define EXG_gatherDataStart ADS1292_gatherDataStart
 
-#define EXG_spiRxIsr ADS1292_spiRxIsr
-#define EXG_spiTxIsr ADS1292_spiTxIsr
+#define EXG_spiRxIsr        ADS1292_spiRxIsr
+#define EXG_spiTxIsr        ADS1292_spiTxIsr
 
-#define EXG_enableChip2 ADS1292_enableChip2
+#define EXG_enableChip2     ADS1292_enableChip2
 
 #endif //EXG_H

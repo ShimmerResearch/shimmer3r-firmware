@@ -39,29 +39,41 @@
  * @author Weibo Pan
  * @date May, 2016
  */
- 
+
 #ifndef CAT24C16_H
 #define CAT24C16_H
 
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include "string.h"
 #include <stdint.h>
 
 #ifndef min
-#define min(a,b) ((a<b)?a:b)
+#define min(a, b) ((a < b) ? a : b)
 #endif
 
-#define CAT24C16_ADDR 0x50
+#define CAT24C16_ADDR        0x50
 
-#define CAT24C16_PAGE_SIZE		   16
-#define CAT24C16_BLOCK_SIZE		256
-#define CAT24C16_READ_SIZE		   128
-#define CAT24C16_TOTAL_SIZE      2048
-#define CAT24C16_TEST_OFFSET     16
-#define CAT24C16_TEST_SIZE       128
+#define CAT24C16_PAGE_SIZE   16
+#define CAT24C16_BLOCK_SIZE  256
+#define CAT24C16_READ_SIZE   128
+#define CAT24C16_TOTAL_SIZE  2048
+#define CAT24C16_TEST_OFFSET 16
+#define CAT24C16_TEST_SIZE   128
+
+enum EEPROM_RW
+{
+  EEPROM_READ = 0,
+  EEPROM_WRITE = 1,
+};
 
 //pass over the i2c handler pointer
 extern void CAT24C16_init(I2C_HandleTypeDef *hi2c);
+
+//power on the CAT24C16 chip
+void CAT24C16_powerOn(void);
+
+//power off the CAT24C16 chip
+void CAT24C16_powerOff(void);
 
 //Read from the CAT24C16 EEPROM
 //address = starting address to read from
@@ -85,6 +97,8 @@ extern void CAT24C16_write(uint16_t address, uint8_t *data, uint16_t length);
 
 extern uint8_t CAT24C16_test(void);
 
+void eepromRead(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
+void eepromWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
+void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enum EEPROM_RW eepromRW);
+
 #endif
-
-

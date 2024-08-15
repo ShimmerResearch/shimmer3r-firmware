@@ -6,8 +6,7 @@
  */
 #include "hal_CRC.h"
 //#include "msp430.h"
-//#include "stm32u5xx.h"
-#include "stm32u5xx_hal_crc.h"
+#include "stm32u5xx.h"
 
 CRC_HandleTypeDef *hcrcToUse;
 
@@ -29,7 +28,7 @@ uint16_t CRC_data(uint8_t *buf, uint8_t len){
 //   crc_val = CRCINIRES;
 //   return crc_val;
 
-  return (uint16_t)HAL_CRC_Calculate(hcrcToUse, *buf, (uint32_t)len);
+  return (uint16_t)HAL_CRC_Calculate(hcrcToUse, buf, (uint32_t)len);
 }
 
 void calculateCrcAndInsert(uint8_t crcMode, uint8_t *aryPtr, uint8_t len)

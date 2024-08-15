@@ -41,9 +41,9 @@
  */
 /*
 Infomem: using flash memory as the InfoMem (EEPROM) of Shimmer4
-must do mass erase before each write, thus need to update the whole flash 
+must do mass erase before each write, thus need to update the whole flash
 sector whenever any byte needs to be changed.
-Normally leave FLASH_SECTOR_0 (start from 0x8000000) for boot straps and 
+Normally leave FLASH_SECTOR_0 (start from 0x8000000) for boot straps and
 use FLASH_SECTOR_1 as InfoMem, main() starts from FLASH_SECTOR_2.
 
 1MByte flash for stm32f746IGK6 : 8 sectors:
@@ -56,12 +56,12 @@ FLASH_SECTOR_4    0x010000    128kB
 FLASH_SECTOR_5    0x020000    256kB
 FLASH_SECTOR_6    0x020000    256kB
 FLASH_SECTOR_7    0x020000    256kB
-To use FLASH_SECTOR_1 as InfoMem (EEPROM) for example, 
+To use FLASH_SECTOR_1 as InfoMem (EEPROM) for example,
 need to setup Flash as InfoMem in Keil:
-Options for Target-> Target tab -> ROM area: 
+Options for Target-> Target tab -> ROM area:
 default  on-chip start       size     startup
 yes      IROM1    0x8000000   0x08000   yes
-yes      IROM1    0x8010000   0xf0000   
+yes      IROM1    0x8010000   0xf0000
 
 or
 
@@ -79,61 +79,82 @@ FLASH_SECTOR_8    0x020000    128kB
 FLASH_SECTOR_9    0x020000    128kB
 FLASH_SECTOR_10   0x020000    128kB
 FLASH_SECTOR_11   0x020000    128kB
-To use FLASH_SECTOR_1 as InfoMem (EEPROM) for example, 
+To use FLASH_SECTOR_1 as InfoMem (EEPROM) for example,
 need to setup Flash as InfoMem in Keil:
-Options for Target-> Target tab -> ROM area: 
+Options for Target-> Target tab -> ROM area:
 default  on-chip start       size     startup
 yes      IROM1    0x8000000   0x04000   yes
-yes      IROM1    0x8008000   0xf8000   
+yes      IROM1    0x8008000   0xf8000
 
 */
 
-#include<stdint.h>
-#include <string.h>
-#include "stm32f7xx_hal.h"
 #include "s4__cfg.h"
+#include "stm32u5xx_hal.h"
+#include <stdint.h>
+#include <string.h>
 
 #ifndef HAL_INFOMEM_H
 #define HAL_INFOMEM_H
 
-#define INFOMEM_SECTOR           FLASH_SECTOR_1
-#define INFOMEM_OFFSET           0x08008000
-#define INFOMEM_SIZE_MAX         0x8000
+#if defined(SHIMMER3R)
+#define INFOMEM_OFFSET      0x083F8000
 
-#define INFOMEM_MASK_RAM         0x0001
-#define INFOMEM_MASK_CALIB       0x0002
-#define INFOMEM_MASK_ALL         0xFFFF
+#define INFOMEM_FLASH_BANK  FLASH_BANK_2
+#define FLASH_BANK_2_OFFSET 0x8200000
+#define INFOMEM_PAGE_OFFSET \
+  ((INFOMEM_OFFSET - FLASH_BANK_2_OFFSET) / FLASH_PAGE_SIZE) /* 252 */
+#define INFOMEM_NUM_OF_PAGES \
+  (INFOMEM_SIZE_MAX / FLASH_PAGE_SIZE) /* 32 KB / 8 KB = 4 */
 
+#elif defined(SHIMMER4_SDK)
+#define INFOMEM_SECTOR FLASH_SECTOR_1
+#define INFOMEM_OFFSET 0x08008000
+#endif
+#define INFOMEM_SIZE_MAX      0x8000 /* 32 KB */
 
-#define INFOMEM_RAM_OFFSET       INFOMEM_OFFSET
-#define INFOMEM_RAM_SIZE         0x200
-#define INFOMEM_CALIB_OFFSET     INFOMEM_RAM_OFFSET + INFOMEM_RAM_SIZE
-#define INFOMEM_CALIB_SIZE       0x400
-#define INFOMEM_TEST_OFFSET      INFOMEM_CALIB_OFFSET + INFOMEM_CALIB_SIZE
-#define INFOMEM_TEST_SIZE        0x200
+#define INFOMEM_MASK_RAM      0x0001
+#define INFOMEM_MASK_CALIB    0x0002
+#define INFOMEM_MASK_ALL      0xFFFF
 
-#define INFOMEM_SIZE_TOTAL       INFOMEM_RAM_SIZE + INFOMEM_CALIB_SIZE + INFOMEM_TEST_SIZE
+#define INFOMEM_CONFIG_OFFSET INFOMEM_OFFSET
+#define INFOMEM_CONFIG_SIZE   0x200 /* 512 B */
+#define INFOMEM_CALIB_OFFSET  INFOMEM_CONFIG_OFFSET + INFOMEM_CONFIG_SIZE
+#define INFOMEM_CALIB_SIZE    0x400 /* 1024 B */
+#define INFOMEM_TEST_OFFSET   INFOMEM_CALIB_OFFSET + INFOMEM_CALIB_SIZE
+#define INFOMEM_TEST_SIZE     0x200 /* 512 B */
 
+#define INFOMEM_SIZE_TOTAL \
+  INFOMEM_CONFIG_SIZE + INFOMEM_CALIB_SIZE + INFOMEM_TEST_SIZE
+
+#define WORD_BYTE_SIZE            4
+#define QUAD_WORD_BYTE_SIZE       16
+
+/* Definitions used within the Shimmer3 comms protocol */
+#define INFOMEM_OFFSET_MSP430     0x1800
+#define INFOMEM_SEG_A_ADDR_MSP430 0x1980
+#define INFOMEM_SEG_B_ADDR_MSP430 0x1900
+#define INFOMEM_SEG_C_ADDR_MSP430 0x1880
+#define INFOMEM_SEG_D_ADDR_MSP430 0x1800
 
 //returns 0 if successful, 1 if failure
 
 void InfoMem_init(void);
-   
+
 //void InfoMem_initRam(uint8_t* buf);
 
 //void InfoMem_initCalib(uint8_t* buf);
-   
 
 void InfoMem_update(void);
 
-void InfoMem_updateFrom(uint8_t * buf) ;
+void InfoMem_updateFrom(uint8_t *buf);
 
 uint8_t InfoMem_readRam(uint8_t *buf, uint16_t addr, uint16_t size);
 
 uint8_t InfoMem_readCalib(uint8_t *buf, uint16_t addr, uint16_t size);
 
-
 //returns 0 if successful, 1 if failure
 extern uint8_t InfoMem_test(void);
+
+uint8_t InfoMem_write(uint8_t addr, uint8_t *buf, uint16_t size);
 
 #endif

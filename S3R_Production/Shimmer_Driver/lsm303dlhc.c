@@ -39,124 +39,147 @@
  * @author Weibo Pan
  * @date May, 2016
  */
- 
-#include "stm32f7xx_hal.h"
+
 #include "lsm303dlhc.h"
+#include "stm32u5xx_hal.h"
 
 static I2C_HandleTypeDef *hi2c_LSM303DLHC;
 
-void LSM303DLHC_init(I2C_HandleTypeDef *hi2c) {
-   hi2c_LSM303DLHC = hi2c;
+void LSM303DLHC_init(I2C_HandleTypeDef *hi2c)
+{
+  hi2c_LSM303DLHC = hi2c;
 }
 
-uint8_t LSM303DLHC_accelInit(uint8_t samplingrate, uint8_t range, uint8_t lowpower, uint8_t highresolution) {
-   uint8_t i2c_buffer[2], temp;
-   HAL_StatusTypeDef i2c_status;
-   
-   if(samplingrate > 9) samplingrate = 5;
-   if(range > 3) range = 0;
-   if(lowpower > 1) lowpower = 0;
-   if(highresolution > 1) highresolution = 0;
-   
-   //Configure Accel
-   i2c_buffer[0] = CTRL_REG1_A;
-   i2c_buffer[1] = (samplingrate << 4) + (lowpower << 3) + 0x07;
-   HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, i2c_buffer, 2, 5);
-   //write CTRL_REG4_A register
-   i2c_buffer[0] = CTRL_REG4_A;
-   i2c_buffer[1] = (range << 4) + (highresolution << 3);
-   i2c_status = HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, i2c_buffer, 2, 5);
-   
-   temp = i2c_buffer[0];
-   i2c_status = HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, &temp, 1, 5);
-   i2c_status = HAL_I2C_Master_Receive(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, &temp, 1, 5);
-   if((i2c_status == HAL_OK) &&
-      (temp == i2c_buffer[1])){
-      return 0;
-   }else{
-      return 1;
-   }   
-   //return (i2c_status == HAL_OK);
+uint8_t LSM303DLHC_accelInit(uint8_t samplingrate, uint8_t range, uint8_t lowpower, uint8_t highresolution)
+{
+  uint8_t i2c_buffer[2], temp;
+  HAL_StatusTypeDef i2c_status;
+
+  if (samplingrate > 9)
+    samplingrate = 5;
+  if (range > 3)
+    range = 0;
+  if (lowpower > 1)
+    lowpower = 0;
+  if (highresolution > 1)
+    highresolution = 0;
+
+  //Configure Accel
+  i2c_buffer[0] = CTRL_REG1_A;
+  i2c_buffer[1] = (samplingrate << 4) + (lowpower << 3) + 0x07;
+  HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, i2c_buffer, 2, 5);
+  //write CTRL_REG4_A register
+  i2c_buffer[0] = CTRL_REG4_A;
+  i2c_buffer[1] = (range << 4) + (highresolution << 3);
+  i2c_status = HAL_I2C_Master_Transmit(
+      hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, i2c_buffer, 2, 5);
+
+  temp = i2c_buffer[0];
+  i2c_status
+      = HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, &temp, 1, 5);
+  i2c_status
+      = HAL_I2C_Master_Receive(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, &temp, 1, 5);
+  if ((i2c_status == HAL_OK) && (temp == i2c_buffer[1]))
+  {
+    return 0;
+  }
+  else
+  {
+    return 1;
+  }
+  //return (i2c_status == HAL_OK);
 }
 
-uint8_t LSM303DLHC_magInit(uint8_t samplingrate, uint8_t gain) {
-   uint8_t i2c_buffer[2], temp;
-   HAL_StatusTypeDef i2c_status;
+uint8_t LSM303DLHC_magInit(uint8_t samplingrate, uint8_t gain)
+{
+  uint8_t i2c_buffer[2], temp;
+  HAL_StatusTypeDef i2c_status;
 
-   if(samplingrate > 7) samplingrate = 6;
-   if(gain<1 || gain>7) gain = 1;
+  if (samplingrate > 7)
+    samplingrate = 6;
+  if (gain < 1 || gain > 7)
+    gain = 1;
 
-   //write CRA_REG_M register
-   i2c_buffer[0] = CRA_REG_M;
-   i2c_buffer[1] = samplingrate << 2;
-   HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, i2c_buffer, 2, 5);
-   //write CRB_REG_M register
-   i2c_buffer[0] = CRB_REG_M;
-   i2c_buffer[1] = gain << 5;
-   HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, i2c_buffer, 2, 5);
-   //write MR_REG_M register
-   i2c_buffer[0] = MR_REG_M;
-   i2c_buffer[1] = 0x00; //continuous-conversion mode
-   i2c_status = HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, i2c_buffer, 2, 5);
-   
-   temp = i2c_buffer[0];
-   i2c_status = HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, &temp, 1, 5);
-   i2c_status = HAL_I2C_Master_Receive(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, &temp, 1, 5);
-   if((i2c_status == HAL_OK) &&
-      (temp == i2c_buffer[1])){
-      return 0;
-   }else{
-      return 1;
-   }   
-   //return (i2c_status == HAL_OK);
+  //write CRA_REG_M register
+  i2c_buffer[0] = CRA_REG_M;
+  i2c_buffer[1] = samplingrate << 2;
+  HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, i2c_buffer, 2, 5);
+  //write CRB_REG_M register
+  i2c_buffer[0] = CRB_REG_M;
+  i2c_buffer[1] = gain << 5;
+  HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, i2c_buffer, 2, 5);
+  //write MR_REG_M register
+  i2c_buffer[0] = MR_REG_M;
+  i2c_buffer[1] = 0x00; //continuous-conversion mode
+  i2c_status = HAL_I2C_Master_Transmit(
+      hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, i2c_buffer, 2, 5);
+
+  temp = i2c_buffer[0];
+  i2c_status = HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, &temp, 1, 5);
+  i2c_status = HAL_I2C_Master_Receive(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, &temp, 1, 5);
+  if ((i2c_status == HAL_OK) && (temp == i2c_buffer[1]))
+  {
+    return 0;
+  }
+  else
+  {
+    return 1;
+  }
+  //return (i2c_status == HAL_OK);
 }
 
-void LSM303DLHC_getAccel(uint8_t *buf) {
-   // need to assert MSB of sub-address in order to read multiple bytes.
-   // See section 5.1.2 of LSM303DLHC datasheet (April 2011, Doc ID 018771 Rev1) for details
-   *buf = OUT_X_L_A | 0x80;
-   HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, buf, 1, 5);
-   HAL_I2C_Master_Receive(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, buf, 6, 5);
+void LSM303DLHC_getAccel(uint8_t *buf)
+{
+  //need to assert MSB of sub-address in order to read multiple bytes.
+  //See section 5.1.2 of LSM303DLHC datasheet (April 2011, Doc ID 018771 Rev1) for details
+  *buf = OUT_X_L_A | 0x80;
+  HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, buf, 1, 5);
+  HAL_I2C_Master_Receive(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, buf, 6, 5);
 }
 
-HAL_StatusTypeDef LSM303DLHC_accelReadStart() {
-   uint8_t buf = OUT_X_L_A | 0x80;
-   return HAL_I2C_Master_Transmit_DMA(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, &buf, 1);
+HAL_StatusTypeDef LSM303DLHC_accelReadStart()
+{
+  uint8_t buf = OUT_X_L_A | 0x80;
+  return HAL_I2C_Master_Transmit_DMA(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, &buf, 1);
 }
 
-HAL_StatusTypeDef LSM303DLHC_accelReadDone(uint8_t *buf) {
-   return HAL_I2C_Master_Receive_DMA(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, buf, 6);
+HAL_StatusTypeDef LSM303DLHC_accelReadDone(uint8_t *buf)
+{
+  return HAL_I2C_Master_Receive_DMA(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, buf, 6);
 }
 
-void LSM303DLHC_getMag(uint8_t *buf) {
-   *buf = OUT_X_H_M;
-   HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, buf, 1, 5);
-   HAL_I2C_Master_Receive(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, buf, 6, 5);
+void LSM303DLHC_getMag(uint8_t *buf)
+{
+  *buf = OUT_X_H_M;
+  HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, buf, 1, 5);
+  HAL_I2C_Master_Receive(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, buf, 6, 5);
 }
 
-HAL_StatusTypeDef LSM303DLHC_magReadStart() {
-   uint8_t buf = OUT_X_H_M;
-   return HAL_I2C_Master_Transmit_DMA(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, &buf, 1);
+HAL_StatusTypeDef LSM303DLHC_magReadStart()
+{
+  uint8_t buf = OUT_X_H_M;
+  return HAL_I2C_Master_Transmit_DMA(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, &buf, 1);
 }
 
-HAL_StatusTypeDef LSM303DLHC_magReadDone(uint8_t *buf) {
-   return HAL_I2C_Master_Receive_DMA(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, buf, 6);
+HAL_StatusTypeDef LSM303DLHC_magReadDone(uint8_t *buf)
+{
+  return HAL_I2C_Master_Receive_DMA(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, buf, 6);
 }
 
-uint8_t LSM303DLHC_sleep(void) {
-   uint8_t i2c_buffer[2];
-   HAL_StatusTypeDef i2c_status;
+uint8_t LSM303DLHC_sleep(void)
+{
+  uint8_t i2c_buffer[2];
+  HAL_StatusTypeDef i2c_status;
 
-   //write CTRL_REG1_A register
-   i2c_buffer[0] = CTRL_REG1_A;
-   i2c_buffer[1] = 0;      //power down mode, 3 axes disabled
-   HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, i2c_buffer, 2, 5);
+  //write CTRL_REG1_A register
+  i2c_buffer[0] = CTRL_REG1_A;
+  i2c_buffer[1] = 0; //power down mode, 3 axes disabled
+  HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_ACCEL_ADDR, i2c_buffer, 2, 5);
 
-   //write MR_REG_M register
-   i2c_buffer[0] = MR_REG_M;
-   i2c_buffer[1] = 0x02;   //sleep mode
-   i2c_status = HAL_I2C_Master_Transmit(hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, i2c_buffer, 2, 5);
-   return (HAL_OK == i2c_status);
+  //write MR_REG_M register
+  i2c_buffer[0] = MR_REG_M;
+  i2c_buffer[1] = 0x02; //sleep mode
+  i2c_status = HAL_I2C_Master_Transmit(
+      hi2c_LSM303DLHC, LSM303DHLC_MAG_ADDR, i2c_buffer, 2, 5);
+  return (HAL_OK == i2c_status);
 }
-
-

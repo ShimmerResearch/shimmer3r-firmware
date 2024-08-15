@@ -39,99 +39,176 @@
  * @author Weibo Pan
  * @date May, 2016
  */
- 
+
 #include "s4_taskList.h"
 
 uint32_t taskList = 0;
 uint32_t taskCurrent;
 
-void S4_NORM_Task_init(void){
-   taskList = 0;
-   //taskList = TASK_STARTSENSING;
+void S4_NORM_Task_init(void)
+{
+  taskList = 0;
+  //taskList = TASK_STARTSENSING;
 }
 
-void S4_NORM_Task_manage(void){   
-   taskCurrent = S4_Task_getCurrent();
-   if (!taskCurrent) {
-      Power_SleepUntilInterrupt();
-//      if(stat.isBtConnected && !stat.isSensing){
-//         Power_SleepUntilInterrupt();
-//         
-//         __NOP();
-//         __NOP();
-//         __NOP();
-//      }else{
-//         if(stat.periStat == 0)
-//         {
-////            static uint8_t green1_cnt = 0;
-////            if(!green1_cnt++){
-////               Board_ledToggle(LED_GREEN1);
-////            }
-//            Power_StopUntilInterrupt();         
-//         }
-//         else
-//         {       
-//            static uint8_t blue_cnt = 0;
-//            if(!blue_cnt++){
-//               Board_ledToggle(LED_BLUE);
-//            }
-//            __NOP();
-//            __NOP();
-//            __NOP();
-//            Power_SleepUntilInterrupt();
-//         }  
-//      }
-   }
-   else {
-      switch (taskCurrent) {
-      case TASK_DOCKSETUP:       DockUart_setup();       break;
-      case TASK_UARTPROCESS:     DockUart_processCmd();  break;
-      case TASK_UARTRESPONSE:    DockUart_sendRsp();     break;
-      case TASK_BTPROCESS:       BtUart_processCmd();    break;
-      case TASK_BTRESPONSE:      BtUart_sendRsp();       break;
-      case TASK_STREAMDATA:      S4Sens_streamData();    break;
-      case TASK_STARTSENSING:    S4Sens_startSensing();  break;
-      case TASK_STOPSENSING:     S4Sens_stopSensing();   break;
-      //case TASK_NEXTSENSOR:      I2C_sensorNext();       break;
-      case TASK_SDWRITE:         SD_writeToCard();       break;
-      case TASK_BATTREAD:     
-         S4_ADC_readBatt();        
-         I2C_readBatt();          
-         break;
-      default: break;
+void S4_NORM_Task_manage(void)
+{
+  taskCurrent = S4_Task_getCurrent();
+
+#if USE_USBX
+  USBX_Device_Process();
+#endif
+
+  if (!taskCurrent)
+  {
+    Power_SleepUntilInterrupt();
+    //if(stat.isBtConnected && !stat.isSensing){
+    //   Power_SleepUntilInterrupt();
+    //
+    //   __NOP();
+    //   __NOP();
+    //   __NOP();
+    //}else{
+    //   if(stat.periStat == 0)
+    //   {
+    ////            static uint8_t green1_cnt = 0;
+    ////            if(!green1_cnt++){
+    ////               Board_ledToggle(LED_GREEN1);
+    ////            }
+    //Power_StopUntilInterrupt();
+    //}
+    //else
+    //{
+    //static uint8_t blue_cnt = 0;
+    //if(!blue_cnt++){
+    //   Board_ledToggle(LED_BLUE);
+    //}
+    //__NOP();
+    //__NOP();
+    //__NOP();
+    //Power_SleepUntilInterrupt();
+    //}
+    //}
+  }
+  else
+  {
+    switch (taskCurrent)
+    {
+    case TASK_DOCKSETUP:
+      DockUart_setup();
+      break;
+    case TASK_UARTPROCESS:
+      DockUart_processCmd();
+      break;
+    case TASK_UARTRESPONSE:
+      DockUart_sendRsp();
+      break;
+    case TASK_BTPROCESS:
+      BtUart_processCmd();
+      break;
+    case TASK_BTRESPONSE:
+      BtUart_sendRsp();
+      break;
+    case TASK_RCCENTERR1:
+      SyncCenterR1();
+      break;
+    case TASK_RCNODER10:
+      SyncNodeR10();
+      break;
+    case TASK_STREAMDATA:
+      S4Sens_streamData();
+      break;
+#if defined(SHIMMER3R)
+    case TASK_SAVEDATA:
+      saveData();
+      break;
+#endif
+    case TASK_STARTSENSING:
+      S4Sens_startSensing();
+      break;
+    case TASK_STOPSENSING:
+      S4Sens_stopSensing();
+      break;
+    //case TASK_NEXTSENSOR:      I2C_sensorNext();       break;
+    case TASK_SDWRITE:
+      SD_writeToCard();
+      break;
+    case TASK_SDLOG_CFG_UPDATE:
+      if (!stat.isDocked && !stat.isSensing && stat.isSdInserted && GetSdCfgFlag())
+      {
+        stat.isConfiguring = 1;
+        IniReadInfoMem();
+        UpdateSdConfig();
+        SetSdCfgFlag(0);
+        stat.isConfiguring = 0;
       }
-   }   
-}   
-      
-uint32_t S4_NORM_Task_getCurrent(){
-   uint8_t i;
-   uint32_t task;
-   if(taskList){
-      for(i=0; i<TASK_SIZE; i++){
-         task = 0x1 << i;
-         if(taskList & task){
-            S4_Task_clear(task);
-            return task;
-         }
+      break;
+    case TASK_BATT_READ_FROM_ALARM:
+#if defined(SHIMMER3R)
+      manageReadBatt(0);
+      setupNextRtcMinuteAlarm();
+#elif defined(SHIMMER4_SDK)
+      S4_ADC_readBatt();
+      I2C_readBatt();
+#endif
+      break;
+    default:
+      break;
+    }
+  }
+}
+
+uint32_t S4_NORM_Task_getCurrent()
+{
+  uint8_t i;
+  uint32_t task;
+  if (taskList)
+  {
+    for (i = 0; i < TASK_SIZE; i++)
+    {
+      task = 0x1 << i;
+      if (taskList & task)
+      {
+        S4_Task_clear(task);
+        return task;
       }
-   }
-   return 0;
+    }
+  }
+  return 0;
 }
 
-void S4_NORM_Task_clear(uint32_t task_id){
-   taskList &= ~task_id;
+void S4_NORM_Task_clear(uint32_t task_id)
+{
+  taskList &= ~task_id;
 }
 
-uint8_t S4_NORM_Task_set(uint32_t task_id){
-   uint8_t is_sleeping = 0;
-   //if(!taskList && !TaskCurrentGet())
-   if(!taskList && !taskCurrent)
-      is_sleeping = 1;
-   taskList |= task_id;
-   return is_sleeping;
+uint8_t S4_NORM_Task_set(uint32_t task_id)
+{
+  uint8_t is_sleeping = 0;
+  //if(!taskList && !TaskCurrentGet())
+  if (!taskList && !taskCurrent)
+    is_sleeping = 1;
+  taskList |= task_id;
+  return is_sleeping;
 }
 
-uint32_t S4_NORM_Task_getList(){
-   return taskList;
+uint32_t S4_NORM_Task_getList()
+{
+  return taskList;
 }
 
+uint8_t setTaskNewBtCmdToProcess(void)
+{
+  return S4_Task_set(TASK_BTPROCESS);
+}
+
+void setStartSensing(void)
+{
+  S4_NORM_Task_set(TASK_SDLOG_CFG_UPDATE);
+  S4_NORM_Task_set(TASK_STARTSENSING);
+}
+
+void setStopSensing(void)
+{
+  S4_NORM_Task_set(TASK_STOPSENSING);
+}

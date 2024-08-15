@@ -393,6 +393,7 @@ u32 bmp280_compensate_pressure_int32(s32 v_uncomp_pressure_s32)
    (v_x2_u32r >> BMP280_SHIFT_BIT_POSITION_BY_12_BITS))) * 3125;
    /* check overflow*/
    if (v_pressure_u32 < 0x80000000)
+   {
       /* Avoid exception caused by division by zero */
       if (v_x1_u32r != BMP280_INIT_VALUE)
          v_pressure_u32 =
@@ -400,13 +401,16 @@ u32 bmp280_compensate_pressure_int32(s32 v_uncomp_pressure_s32)
          / ((u32)v_x1_u32r);
       else
          return BMP280_INVALID_DATA;
+   }
    else
+   {
       /* Avoid exception caused by division by zero */
       if (v_x1_u32r != BMP280_INIT_VALUE)
          v_pressure_u32 = (v_pressure_u32 /
          (u32)v_x1_u32r) * 2;
       else
          return BMP280_INVALID_DATA;
+   }
       /* calculate x1*/
       v_x1_u32r = (((s32)
       p_bmp280->calib_param.dig_P9) *

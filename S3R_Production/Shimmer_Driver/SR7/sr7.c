@@ -41,7 +41,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f7xx_hal.h"
+#include "stm32u5xx_hal.h"
 #include "cc2420.h"
 #include "sr7.h"
 #include "string.h"
