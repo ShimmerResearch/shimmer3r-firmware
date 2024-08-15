@@ -93,7 +93,6 @@ void SdInfoSync(void);
 uint8_t CheckOnDefault(void);
 void ReadSdConfiguration(void);
 void HAL_Delay(uint32_t Delay);
-//void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd);
 #endif
 
 /* USER CODE END PFP */
@@ -258,9 +257,6 @@ int main(void)
   GPIO_VBUS_init(1); //for VBUS interrupt
 #if USE_FATFS
   MX_FATFS_Init();
-#endif
-#if !USE_USBX
-  //MX_USB_DEVICE_Init();
 #endif
 
   linkedListConfig(&hadc1); //configure linkedlist for ADC
@@ -727,13 +723,6 @@ void HAL_Delay(uint32_t Delay)
     }
   }
 }
-
-/*void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
-{
-  USB_STATE lastState = usbPlugInState();
-  HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS); //deinit if unplugged
-  GPIO_VBUS_init();
-}*/
 
 /* USER CODE END 4 */
 
