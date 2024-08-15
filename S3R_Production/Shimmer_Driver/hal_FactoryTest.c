@@ -20,26 +20,37 @@ uint32_t run_factory_test(void)
   send_test_report("//**************************** TEST START "
                    "************************************//\r\n");
 
-  print_date_and_time();
-  send_test_report("\r\n");
+  if (factoryTestToRun == FACTORY_TEST_MAIN)
+  {
+    print_date_and_time();
+    send_test_report("\r\n");
 
-  print_shimmer_model();
-  send_test_report("\r\n");
+    print_shimmer_model();
+    send_test_report("\r\n");
+  }
 
-  led_test();
-  send_test_report("\r\n");
+  if (factoryTestToRun == FACTORY_TEST_MAIN
+      || factoryTestToRun == FACTORY_TEST_LEDS)
+  {
+    led_test();
+  }
 
-  sd_card_test();
-  send_test_report("\r\n");
+  if (factoryTestToRun == FACTORY_TEST_MAIN)
+  {
+    send_test_report("\r\n");
 
-  stat.testResult += (!bt_module_test()) << 7;
-  send_test_report("\r\n");
+    sd_card_test();
+    send_test_report("\r\n");
 
-  stat.testResult += InfoMem_test() << 8;
+    stat.testResult += (!bt_module_test()) << 7;
+    send_test_report("\r\n");
 
-  stat.testResult += I2C_test();
+    stat.testResult += InfoMem_test() << 8;
 
-  stat.testResult += SPI_test() << 16;
+    stat.testResult += I2C_test();
+
+    stat.testResult += SPI_test() << 16;
+  }
 
   send_test_report("//***************************** TEST END "
                    "*************************************//\r\n");
@@ -91,6 +102,8 @@ void led_test(void)
 
   Board_ledLwrSetColour(LED_RGB_ALL_OFF);
   Board_ledUprSetColour(LED_RGB_ALL_OFF);
+  send_test_report(" - All LEDs off\r\n");
+  HAL_Delay(DELAY_BETWEEN_LED_CHANGES_MS);
 
   send_test_report(" - Lower Red LED on\r\n");
   Board_ledLwrSetColour(LED_RGB_RED);
