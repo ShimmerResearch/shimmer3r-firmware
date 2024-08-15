@@ -29,8 +29,7 @@ uint32_t run_factory_test(void)
     send_test_report("\r\n");
   }
 
-  if (factoryTestToRun == FACTORY_TEST_MAIN
-      || factoryTestToRun == FACTORY_TEST_LEDS)
+  if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
   {
     led_test();
   }
