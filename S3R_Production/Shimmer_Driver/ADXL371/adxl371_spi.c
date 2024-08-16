@@ -42,7 +42,8 @@ static int32_t platform_write(struct adxl371_dev *dev, uint8_t reg, const uint8_
   return 0;
 }
 
-static int32_t platform_read_multiple(struct adxl371_dev *dev, uint8_t reg, uint8_t *bufp, uint16_t len)
+static int32_t
+platform_read_multiple(struct adxl371_dev *dev, uint8_t reg, uint8_t *bufp, uint16_t len)
 {
   reg = (reg << 1) | 0x01;
   adxl371_SelectDevice();
@@ -92,11 +93,11 @@ static void platform_delay(uint32_t ms)
 
 void adxl371_driver_init(void)
 {
-//  /* Initialize mems driver interface */
-//  dev_ctx.write_reg = platform_write;
-//  dev_ctx.read_reg = platform_read;
-//  dev_ctx.mdelay = platform_delay;
-//  dev_ctx.handle = &SENSOR_BUS;
+  ///* Initialize mems driver interface */
+  //dev_ctx.write_reg = platform_write;
+  //dev_ctx.read_reg = platform_read;
+  //dev_ctx.mdelay = platform_delay;
+  //dev_ctx.handle = &SENSOR_BUS;
 
   adxl371_dev.reg_read = platform_read;
   adxl371_dev.reg_read_multiple = platform_read_multiple;
@@ -118,7 +119,7 @@ uint8_t adxl371_self_test(void)
   uint8_t result = 0;
   /*Needs to contain >=200ms worth of data. @320Hz, 100 samples = 312ms */
   struct adxl371_xyz_accel_data accel_data;
-  uint16_t self_test_data[100] = {0};
+  uint16_t self_test_data[100] = { 0 };
   uint8_t self_test_index = 0;
   uint8_t self_test_reg = 0;
   uint16_t first_set_avg = 0;
@@ -147,14 +148,14 @@ uint8_t adxl371_self_test(void)
 
   /*4. Start the self test by setting the ST bit in the SELF_TEST register
    * (Register 0x40). */
-//  platform_write(&adxl371_dev, ADXL371_SELF_TEST, ADXL371_ST);
+  //platform_write(&adxl371_dev, ADXL371_SELF_TEST, ADXL371_ST);
   ret = adxl371_write_mask(&adxl371_dev, ADXL371_SELF_TEST,
       ADXL371_SELF_TEST_START_MSK, ADXL371_SELF_TEST_START(1));
 
   /*5. Read the acceleration data from the z-axis (Register 0x0C and Register
    * 0x0D) and store the data until the self test completes (ST_DONE goes high). */
 
-  while(1)
+  while (1)
   {
     ret = adxl371_get_accel_data(&adxl371_dev, &accel_data);
     self_test_data[self_test_index++] = accel_data.z;
@@ -186,7 +187,7 @@ uint8_t adxl371_self_test(void)
    * is greater than 5 LSB, the self test passes. */
   result = second_set_avg - first_set_avg > 5;
 
-//  adxl371_reset(&adxl371_dev);
+  //adxl371_reset(&adxl371_dev);
   ret = adxl371_set_op_mode(&adxl371_dev, ADXL371_STANDBY);
 
   return result;
