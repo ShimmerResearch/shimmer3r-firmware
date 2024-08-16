@@ -78,7 +78,7 @@ void CAT24C16_powerOff(void)
   //TODO deinitialise I2C?
 }
 
-void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length)
+void CAT24C16_read(uint16_t address, uint16_t length, uint8_t *outBuffer)
 {
   if ((!length) || (length > 2048) || (address + length > 2048))
     return;
@@ -91,7 +91,7 @@ void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length)
       = HAL_I2C_Master_Receive(eeprom_hi2c, addr_hi << 1, outBuffer, length, 1000);
 }
 
-void CAT24C16_write(uint16_t address, uint8_t *data, uint16_t length)
+void CAT24C16_write(uint16_t address, uint16_t length, uint8_t *data)
 {
   if ((!length) || (length > 2048) || (address + length > 2048))
     return;
@@ -152,10 +152,13 @@ uint8_t CAT24C16_test(void)
 {
   uint16_t i, j = 0;
   uint8_t ret_val = 0;
+  uint8_t test_eeprom_backup[CAT24C16_TEST_SIZE];
   uint8_t test_eeprom_wr[CAT24C16_TEST_SIZE];
   uint8_t test_eeprom_rd[CAT24C16_TEST_SIZE];
 
   CAT24C16_powerOn();
+
+  CAT24C16_read(CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup);
 
   while (j++ < 3)
   {
@@ -165,8 +168,8 @@ uint8_t CAT24C16_test(void)
       test_eeprom_wr[i] = rand();
     }
     memset(test_eeprom_rd, 0, CAT24C16_TEST_SIZE);
-    CAT24C16_write(CAT24C16_TEST_OFFSET, test_eeprom_wr, CAT24C16_TEST_SIZE);
-    CAT24C16_read(CAT24C16_TEST_OFFSET, test_eeprom_rd, CAT24C16_TEST_SIZE);
+    CAT24C16_write(CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_wr);
+    CAT24C16_read(CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_rd);
 
     ret_val = memcmp(test_eeprom_wr, test_eeprom_rd, CAT24C16_TEST_SIZE);
     if (ret_val)
@@ -174,6 +177,8 @@ uint8_t CAT24C16_test(void)
       break;
     }
   }
+
+  CAT24C16_write(CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup);
 
   CAT24C16_powerOff();
 
@@ -205,11 +210,11 @@ void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enu
   //EEPROM needs to be updated with latest bt baud rate, configure here
   if (eepromRW == EEPROM_READ)
   {
-    CAT24C16_read(dataAddr, dataBuf, dataSize);
+    CAT24C16_read(dataAddr, dataSize, dataBuf);
   }
   else
   {
-    CAT24C16_write(dataAddr, dataBuf, dataSize);
+    CAT24C16_write(dataAddr, dataSize, dataBuf);
   }
 
   //Wind down EEPROM and required timing peripherals

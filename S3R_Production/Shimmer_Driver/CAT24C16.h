@@ -51,6 +51,8 @@
 #define min(a, b) ((a < b) ? a : b)
 #endif
 
+//7 bit address I2C address
+//lower 3 bits are highest order bits of memory address
 #define CAT24C16_ADDR        0x50
 
 #define CAT24C16_PAGE_SIZE   16
@@ -58,7 +60,7 @@
 #define CAT24C16_READ_SIZE   128
 #define CAT24C16_TOTAL_SIZE  2048
 #define CAT24C16_TEST_OFFSET 16
-#define CAT24C16_TEST_SIZE   128
+#define CAT24C16_TEST_SIZE   (8*CAT24C16_PAGE_SIZE)
 
 enum EEPROM_RW
 {
@@ -81,7 +83,7 @@ void CAT24C16_powerOff(void);
 //outBuffer = location to put read bytes
 //Note the CAT24C16 had 2048 bytes of storage
 //So address + length must be <= 2048
-void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length);
+void CAT24C16_read(uint16_t address, uint16_t length, uint8_t *outBuffer);
 
 //Write to the CAT24C16 EEPROM
 //address = starting address to write to
@@ -93,7 +95,7 @@ void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length);
 //Each write cycle can write up to 16bytes of data
 //but only within a 16-byte page (of which there are
 //128 in the CAT24C16)
-void CAT24C16_write(uint16_t address, uint8_t *data, uint16_t length);
+void CAT24C16_write(uint16_t address, uint16_t length, uint8_t *data);
 
 uint8_t CAT24C16_test(void);
 
