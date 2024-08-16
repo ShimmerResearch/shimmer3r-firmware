@@ -274,9 +274,6 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
       //EXG_dataReadyChip2();
     }
     break;
-  case USB_VBUS_Pin:
-    //vbusPinStateCheck();
-    break;
   default:
     gpioExtiCommon(GPIO_Pin, 0);
     break;
