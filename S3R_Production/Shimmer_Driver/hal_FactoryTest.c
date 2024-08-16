@@ -256,7 +256,7 @@ uint8_t I2C_test(void)
     ret_val |= 0x08;
   }
 #elif defined(SHIMMER3R)
-  send_test_report("I2C:\r\n");
+  send_test_report("I2C1:\r\n");
 
   uint8_t st_result = lis2mdl_self_test();
   sprintf(buffer, " - %s: LIS2MDL\r\n", st_result ? "PASS" : "FAIL");
@@ -303,8 +303,11 @@ uint8_t SPI_test(void)
 
   if (isAdxl371Detected())
   {
-    uint8_t adxl371_result = adxl371_self_test();
-    sprintf(buffer, " - %s: ADXL371\r\n", adxl371_result ? "FAIL" : "PASS");
+    //TODO switch lines below once ADXL371 self-test feature is implemented
+    sprintf(buffer, " - ADXL371 detected (self-test not implemented yet)\r\n");
+
+//    uint8_t adxl371_result = adxl371_self_test();
+//    sprintf(buffer, " - %s: ADXL371\r\n", adxl371_result ? "FAIL" : "PASS");
   }
   else
   {

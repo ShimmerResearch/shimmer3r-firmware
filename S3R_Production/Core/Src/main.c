@@ -264,7 +264,8 @@ int main(void)
   Init();
   //S4_Task_set(TASK_STARTSENSING);
 
-  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ALL);
+  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
+//  SPI_test();
   //run_factory_test();
 
   stat.isInitialising = 0;

@@ -67,14 +67,14 @@ void CAT24C16_init(I2C_HandleTypeDef *hi2c)
 void CAT24C16_powerOn(void)
 {
   //TODO initialise I2C if not on?
-  HAL_GPIO_WritePin(SW_I2C1_GPIO_Port, SW_I2C1_Pin, GPIO_PIN_SET);
+  set_power_i2c_main_bus(1);
   HAL_Delay(2); //2ms
 }
 
 void CAT24C16_powerOff(void)
 {
   HAL_Delay(5); //5ms to ensure no writes pending
-  HAL_GPIO_WritePin(SW_I2C1_GPIO_Port, SW_I2C1_Pin, GPIO_PIN_RESET);
+  set_power_i2c_main_bus(0);
   //TODO deinitialise I2C?
 }
 
@@ -156,8 +156,6 @@ uint8_t CAT24C16_test(void)
   uint8_t test_eeprom_wr[CAT24C16_TEST_SIZE];
   uint8_t test_eeprom_rd[CAT24C16_TEST_SIZE];
 
-  CAT24C16_powerOn();
-
   CAT24C16_read(CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup);
 
   while (j++ < 3)
@@ -179,8 +177,6 @@ uint8_t CAT24C16_test(void)
   }
 
   CAT24C16_write(CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup);
-
-  CAT24C16_powerOff();
 
   return ret_val;
 }

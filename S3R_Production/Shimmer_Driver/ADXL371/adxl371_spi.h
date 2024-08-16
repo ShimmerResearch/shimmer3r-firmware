@@ -11,20 +11,23 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define ADXL371_ST 0x01
+#define ADXL371_ST_DONE 0x02
+
 typedef int32_t (*dev_write_ptr)(void *, uint8_t, const uint8_t *, uint16_t);
 typedef int32_t (*dev_read_ptr)(void *, uint8_t, uint8_t *, uint16_t);
 typedef void (*dev_mdelay_ptr)(uint32_t millisec);
 
-typedef struct
-{
-  /** Component mandatory fields **/
-  dev_write_ptr write_reg;
-  dev_read_ptr read_reg;
-  /** Component optional fields **/
-  dev_mdelay_ptr mdelay;
-  /** Customizable optional pointer **/
-  void *handle;
-} dev_ctx_t;
+//typedef struct
+//{
+//  /** Component mandatory fields **/
+//  dev_write_ptr write_reg;
+//  dev_read_ptr read_reg;
+//  /** Component optional fields **/
+//  dev_mdelay_ptr mdelay;
+//  /** Customizable optional pointer **/
+//  void *handle;
+//} dev_ctx_t;
 
 void adxl371_driver_init(void);
 void adxl371_SelectDevice(void);
