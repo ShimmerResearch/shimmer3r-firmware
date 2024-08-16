@@ -67,7 +67,7 @@ enum EEPROM_RW
 };
 
 //pass over the i2c handler pointer
-extern void CAT24C16_init(I2C_HandleTypeDef *hi2c);
+void CAT24C16_init(I2C_HandleTypeDef *hi2c);
 
 //power on the CAT24C16 chip
 void CAT24C16_powerOn(void);
@@ -81,7 +81,7 @@ void CAT24C16_powerOff(void);
 //outBuffer = location to put read bytes
 //Note the CAT24C16 had 2048 bytes of storage
 //So address + length must be <= 2048
-extern void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length);
+void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length);
 
 //Write to the CAT24C16 EEPROM
 //address = starting address to write to
@@ -93,9 +93,9 @@ extern void CAT24C16_read(uint16_t address, uint8_t *outBuffer, uint16_t length)
 //Each write cycle can write up to 16bytes of data
 //but only within a 16-byte page (of which there are
 //128 in the CAT24C16)
-extern void CAT24C16_write(uint16_t address, uint8_t *data, uint16_t length);
+void CAT24C16_write(uint16_t address, uint8_t *data, uint16_t length);
 
-extern uint8_t CAT24C16_test(void);
+uint8_t CAT24C16_test(void);
 
 void eepromRead(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
 void eepromWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
