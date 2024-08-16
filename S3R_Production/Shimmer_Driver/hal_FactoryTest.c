@@ -303,11 +303,8 @@ uint8_t SPI_test(void)
 
   if (isAdxl371Detected())
   {
-    //TODO switch lines below once ADXL371 self-test feature is implemented
-    sprintf(buffer, " - ADXL371 detected (self-test not implemented yet)\r\n");
-
-//    uint8_t adxl371_result = adxl371_self_test();
-//    sprintf(buffer, " - %s: ADXL371\r\n", adxl371_result ? "FAIL" : "PASS");
+    uint8_t adxl371_result = adxl371_self_test();
+    sprintf(buffer, " - %s: ADXL371\r\n", adxl371_result ? "PASS" : "FAIL");
   }
   else
   {

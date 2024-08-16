@@ -188,11 +188,11 @@ int32_t adxl371_set_autosleep(struct adxl371_dev *dev, bool enable)
  * Select the desired output signal bandwidth.
  * @param dev - The device structure.
  * @param bw - bandwidth.
- *    Accepted values: ADXL371_BW_200HZ
- *         ADXL371_BW_400HZ
- *         ADXL371_BW_800HZ
- *         ADXL371_BW_1600HZ
- *         ADXL371_BW_3200HZ
+ *    Accepted values: ADXL371_BW_160HZ
+ *         ADXL371_BW_320HZ
+ *         ADXL371_BW_640HZ
+ *         ADXL371_BW_1280HZ
+ *         ADXL371_BW_2560HZ
  * @return 0 in case of success, negative error code otherwise.
  */
 int32_t adxl371_set_bandwidth(struct adxl371_dev *dev, enum adxl371_bandwidth bw)
