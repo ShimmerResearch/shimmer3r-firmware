@@ -404,14 +404,16 @@ void vbusPinStateCheck(void)
 #if !USE_USBX
     MX_USB_DEVICE_Init(); //usb pluggedin
 #endif
+    __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin); //clear interrupt flag else it triggers multiple times.
   }
-
   else if (pin == GPIO_PIN_RESET)
   {
     USB_STATE state = usbPlugInState();
     if (state == USB_CABLE_UNPLUGGED)
     {
+#if !USE_USBX
       USBD_DeInit(&hUsbDevice);
+#endif
       HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS); //deinit if unplugged
       GPIO_VBUS_init(1);
     }
