@@ -38,6 +38,6 @@ int8_t save_calib_data_bytes(void);
  *
  *  @return void.
  */
-void bmp3_check_rslt(const char api_name[], int8_t rslt);
+void bmp3_check_rslt(const char api_name[], int8_t rslt, char *outputStr);
 
 #endif /* BMP3_BMP3_SENSORAPI_HAL_BMP3_H_ */

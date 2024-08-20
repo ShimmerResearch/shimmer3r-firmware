@@ -13,7 +13,7 @@
 void lis2mdl_driver_init(void);
 void lis2mdl_power_on(void);
 void lis2mdl_power_off(void);
-void lis2mdl_self_test(void);
+uint8_t lis2mdl_self_test(void);
 void lis2mdl_configure(float shimmerSamplingFreq, lis2mdl_odr_t rate);
 HAL_StatusTypeDef lis2mdl_mag_get(uint8_t *buf);
 bool lis2mdl_is_drdy_int_enabled(void);

@@ -22,20 +22,26 @@
 
 #define ADXL371_INACT_TIMER 1 /* Inactivity timer value in multiples of 26ms */
 
+#define ADXL371_ST                  0x01
+#define ADXL371_ST_DONE             0x02
+
+#define ADXL371_SELF_TEST_START_MSK NO_OS_BIT(0)
+#define ADXL371_SELF_TEST_START(x)  (((x) & 0x1) << 0)
+
 typedef int32_t (*dev_write_ptr)(void *, uint8_t, const uint8_t *, uint16_t);
 typedef int32_t (*dev_read_ptr)(void *, uint8_t, uint8_t *, uint16_t);
 typedef void (*dev_mdelay_ptr)(uint32_t millisec);
 
-typedef struct
-{
-  /** Component mandatory fields **/
-  dev_write_ptr write_reg;
-  dev_read_ptr read_reg;
-  /** Component optional fields **/
-  dev_mdelay_ptr mdelay;
-  /** Customizable optional pointer **/
-  void *handle;
-} dev_ctx_t;
+//typedef struct
+//{
+//  /** Component mandatory fields **/
+//  dev_write_ptr write_reg;
+//  dev_read_ptr read_reg;
+//  /** Component optional fields **/
+//  dev_mdelay_ptr mdelay;
+//  /** Customizable optional pointer **/
+//  void *handle;
+//} dev_ctx_t;
 
 void adxl371_driver_init(void);
 void adxl371_power_on(void);
@@ -48,5 +54,6 @@ HAL_StatusTypeDef adxl371_accel_get(uint8_t *buf);
 int32_t adxl371_is_data_rdy(void);
 
 void adxl371_reset_chip(void);
+uint8_t isAdxl371Detected(void);
 
 #endif /* ADXL371_HAL_ADXL371_H_ */

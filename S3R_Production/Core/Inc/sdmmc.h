@@ -43,7 +43,7 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
-  void printSdCardInfo(void);
+  void printSdCardInfo(char *outputStr);
 
   /* USER CODE END Prototypes */
 

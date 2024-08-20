@@ -341,7 +341,7 @@ void lis2dw12_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-void lis2dw12_self_test(void)
+uint8_t lis2dw12_self_test(void)
 {
   uint8_t st_result;
 
@@ -368,16 +368,17 @@ void lis2dw12_self_test(void)
     //}
   }
 
-  if (st_result == ST_PASS)
-  {
-    sprintf((char *) tx_buffer, "LIS2DW12 Self Test - PASS\r\n");
-  }
-  else
-  {
-    sprintf((char *) tx_buffer, "LIS2DW12 Self Test - FAIL\r\n");
-  }
-
-  tx_com(tx_buffer, strlen((char const *) tx_buffer));
+//  if (st_result == ST_PASS)
+//  {
+//    sprintf((char *) tx_buffer, "LIS2DW12 Self Test - PASS\r\n");
+//  }
+//  else
+//  {
+//    sprintf((char *) tx_buffer, "LIS2DW12 Self Test - FAIL\r\n");
+//  }
+//
+//  tx_com(tx_buffer, strlen((char const *) tx_buffer));
+  return st_result;
 }
 
 int32_t lis2dw12_configure(float shimmerSamplingFreq, lis2dw12_odr_t rate, lis2dw12_fs_t range)

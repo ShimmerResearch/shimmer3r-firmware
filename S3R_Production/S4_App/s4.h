@@ -27,72 +27,6 @@
 //#define SUCCESS 1
 //#define FAIL 0
 
-//UART COMMANDS
-//================= WP uart 3.0: command names ==============
-#define UART_STEP_WAIT4_CMD  4
-#define UART_STEP_WAIT4_LEN  3
-#define UART_STEP_WAIT4_DATA 2
-#define UART_STEP_WAIT4_CRC  1
-#define UART_STEP_WAIT4_NONE 0
-
-#define UART_RXBUF_START     0
-#define UART_RXBUF_CMD       1
-#define UART_RXBUF_LEN       2
-#define UART_RXBUF_COMP      3
-#define UART_RXBUF_PROP      4 //data in rxbuf starts from byte 3
-#define UART_RXBUF_DATA      5 //data in rxbuf starts from byte 3
-#define UART_DATA_LEN_MAX \
-  138 //max case: '$' + get + length + comp_shimmer+ prop_infomem
-#define UART_RSP_PACKET_SIZE \
-  138 //+ info_len + info_loc*2 + 128bytes data + crc*2 = 138
-
-#define UART_SET                  0x01
-#define UART_RESPONSE             0x02
-#define UART_GET                  0x03
-#define UART_BAD_CMD_RESPONSE     0xfc //252
-#define UART_BAD_ARG_RESPONSE     0xfd //253
-#define UART_BAD_CRC_RESPONSE     0xfe //254
-#define UART_ACK_RESPONSE         0xff //255
-//================= WP uart 3.0: components names ==============
-#define UART_COMP_SHIMMER         0x01
-#define UART_COMP_BAT             0x02 //this is seen as a sensor
-#define UART_COMP_DAUGHTER_CARD   0x03
-#define UART_COMP_D_ACCEL         0x04
-#define UART_COMP_GSR             0x05
-#define UART_COMP_BT              0x0A
-//================= WP uart 3.0: property names ==============
-// component == UART_COMP_SHIMMER:
-#define UART_PROP_ENABLE          0x00 //this is for all sensors
-#define UART_PROP_SAMPLE_RATE     0x01
-#define UART_PROP_MAC             0x02
-#define UART_PROP_VER             0x03
-#define UART_PROP_RTC_CFG_TIME    0x04
-#define UART_PROP_CURR_LOCAL_TIME 0x05
-#define UART_PROP_INFOMEM         0x06
-#define UART_PROP_CALIB_DUMP      0x07
-//component == UART_COMP_BAT:
-//#define UART_PROP_SAMPLE_RATE       0x01
-#define UART_PROP_VALUE           0x02
-//#define UART_PROP_DIVIDER           0x05
-// component == UART_COMP_DAUGHTER_CARD:
-#define UART_PROP_CARD_ID         0x02
-#define UART_PROP_CARD_MEM        0x03
-//component == UART_COMP_D_ACCEL:
-//#define UART_PROP_ENABLE            0x00
-//#define UART_PROP_SAMPLE_RATE       0x01
-#define UART_PROP_DATA_RATE       0x02
-#define UART_PROP_RANGE           0x03
-#define UART_PROP_LP_MODE         0x04
-#define UART_PROP_HR_MODE         0x05
-#define UART_PROP_FREQ_DIVIDER    0x06
-#define UART_PROP_CALIBRATION     0x07
-//component == UART_COMP_GSR:
-//#define UART_PROP_ENABLE            0x00
-//#define UART_PROP_SAMPLE_RATE       0x01
-//#define UART_PROP_RANGE             0x03
-//#define UART_PROP_DIVIDER           0x05
-//== new uart ends ==
-
 //BT  Channel contents
 #define MAX_NUM_CHANNELS \
   34 //3xanalogAccel + 3xdigiGyro + 3xdigiMag +
@@ -558,6 +492,7 @@
 
 typedef volatile struct STATTypeDef_t
 { //STATUS
+  uint8_t isInitialising;
   uint8_t isSensing;
   uint8_t isDocked;
   uint8_t isLogging;

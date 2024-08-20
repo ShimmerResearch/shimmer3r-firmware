@@ -67,20 +67,81 @@ void adxl371_unselectDevice(void)
 
 uint8_t adxl371_self_test(void)
 {
-  uint8_t buf[4];
-  adxl371_spi_reg_read_multiple(&adxl371, ADXL371_DEVID, &buf[0], 4);
+  uint8_t result = 0;
+  /*Needs to contain >=200ms worth of data. @320Hz, 100 samples = 312ms */
+  struct adxl371_xyz_accel_data accel_data;
+  uint16_t self_test_data[100] = { 0 };
+  uint8_t self_test_index = 0;
+  uint8_t self_test_reg = 0;
+  uint16_t first_set_avg = 0;
+  uint16_t second_set_avg = 0;
+  int32_t ret;
+  uint8_t i;
 
-  if (buf[0] == ADXL371_DEVID_VAL && buf[1] == ADXL371_MST_DEVID_VAL
-      && buf[2] == ADXL371_PARTID_VAL && buf[3] == 0xFB)
+  if (!isAdxl371Detected())
   {
-    SHIMMER_PRINTF("ADXL371 Self Test - PASS\r\n");
-    return 0;
+    return result;
   }
-  else
+
+  /*1. Ensure that the low-pass activity filter is enabled. */
+  /* Low-pass filter enabled by default. High-pass gets automatically disabled
+   * for self-test operation */
+  ret = adxl371_reset(&adxl371);
+
+  /*2. Place the device in measurement mode. */
+  ret = adxl371_set_bandwidth(&adxl371, ADXL371_BW_320HZ);
+  ret = adxl371_set_odr(&adxl371, ADXL371_ODR_320HZ);
+  ret = adxl371_set_op_mode(&adxl371, ADXL371_FULL_BW_MEASUREMENT);
+
+  /*3. Wait until the filter settling time passes. */
+  /*462.5ms according to datasheet if FILTER_SETTLE = 0 */
+  platform_delay(500);
+
+  /*4. Start the self test by setting the ST bit in the SELF_TEST register
+   * (Register 0x40). */
+  //platform_write(&adxl371, ADXL371_SELF_TEST, ADXL371_ST);
+  ret = adxl371_write_mask(&adxl371, ADXL371_SELF_TEST,
+      ADXL371_SELF_TEST_START_MSK, ADXL371_SELF_TEST_START(1));
+
+  /*5. Read the acceleration data from the z-axis (Register 0x0C and Register
+   * 0x0D) and store the data until the self test completes (ST_DONE goes high). */
+
+  while (1)
   {
-    SHIMMER_PRINTF("ADXL371 Self Test - FAIL\r\n");
-    return 1;
+    ret = adxl371_get_accel_data(&adxl371, &accel_data);
+    self_test_data[self_test_index++] = accel_data.z;
+
+    ret = adxl371_spi_reg_read(&adxl371, ADXL371_SELF_TEST, &self_test_reg);
+    if (self_test_reg & ADXL371_ST_DONE)
+    {
+      break;
+    }
   }
+
+  /*6. Average the first 50 ms of data right after ST is set. */
+  //50ms = 16 samples at 320 Hz
+  for (i = 0; i < 16; i++)
+  {
+    first_set_avg += self_test_data[i];
+  }
+  first_set_avg = first_set_avg / 16;
+
+  /*7. Average the last 50 ms of data right before ST_DONE goes high. */
+  //50ms = 16 samples at 320 Hz
+  for (i = self_test_index - 1; i > self_test_index - 1 - 16; i--)
+  {
+    second_set_avg += self_test_data[i];
+  }
+  second_set_avg = second_set_avg / 16;
+
+  /*8. If the absolute value of the difference between the two averaged values
+   * is greater than 5 LSB, the self test passes. */
+  result = second_set_avg - first_set_avg > 5;
+
+  //adxl371_reset(&adxl371);
+  ret = adxl371_set_op_mode(&adxl371, ADXL371_STANDBY);
+
+  return result;
 }
 
 void adxl371_configure(uint8_t rate)
@@ -120,8 +181,8 @@ void adxl371_configure(uint8_t rate)
   ///* Set operation mode to Instant-On */
   //adxl371_set_op_mode(adxl371, ADXL371_INSTANT_ON);
 
-  adxl371_set_bandwidth(&adxl371, ADXL371_BW_3200HZ);
-  adxl371_set_odr(&adxl371, ADXL371_ODR_6400HZ);
+  adxl371_set_bandwidth(&adxl371, ADXL371_BW_2560HZ);
+  adxl371_set_odr(&adxl371, ADXL371_ODR_5120HZ);
 
   /* Set operation mode to Instant-On */
   adxl371_set_op_mode(&adxl371, ADXL371_INSTANT_ON);
@@ -153,8 +214,27 @@ void adxl371_reset_chip(void)
   ret |= adxl371_reset(&adxl371);
 }
 
+uint8_t isAdxl371Detected(void)
+{
+  uint8_t buf[4];
+  adxl371_spi_reg_read_multiple(&adxl371, ADXL371_DEVID, &buf[0], 4);
+
+  if (buf[0] == ADXL371_DEVID_VAL
+      && buf[1] == ADXL371_MST_DEVID_VAL
+      && buf[2] == ADXL371_PARTID_VAL
+      && buf[3] == 0xFB)
+  {
+    return 1;
+  }
+  else
+  {
+    return 0;
+  }
+}
+
 int32_t adxl371_spi_reg_write(struct adxl371_dev *dev, uint8_t reg_addr, uint8_t reg_data)
 {
+  reg_addr = reg_addr << 1;
   adxl371_selectDevice();
   HAL_SPI_Transmit(&SENSOR_BUS, &reg_addr, 1, 1000);
   HAL_SPI_Transmit(&SENSOR_BUS, &reg_data, 1, 1000);

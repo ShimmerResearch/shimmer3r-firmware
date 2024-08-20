@@ -3,7 +3,7 @@
 #ifndef SHIMMER4_SDK_CONFIG_H
 #define SHIMMER4_SDK_CONFIG_H
 
-#define IS_CONNECTED_EEPROM 1
+#define IS_CONNECTED_EEPROM 0
 
 #define USE_DEFAULT_SENSOR  0
 #define RTC_FAST \
@@ -60,6 +60,7 @@
 #elif defined(SHIMMER4_SDK)
 #include "RN42.h"
 #endif
+#include "../Shimmer_Driver/dock_comms/shimmer_dock_comms.h"
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/ADXL371/adxl371.h"
 #include "../Shimmer_Driver/BMP3/hal_bmp3.h"
@@ -83,6 +84,7 @@
 #include "bmp180.h"
 #include "hal_Board.h"
 #include "hal_CRC.h"
+#include "hal_FactoryTest.h"
 #include "hal_Infomem.h"
 #include "lsm303dlhc.h"
 #include "mpu9250.h"

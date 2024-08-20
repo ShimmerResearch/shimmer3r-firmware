@@ -15,7 +15,7 @@ void lis2dw12_power_on(void);
 void lis2dw12_power_off(void);
 void lis2dw12_selectDevice(void);
 void lis2dw12_unselectDevice(void);
-void lis2dw12_self_test(void);
+uint8_t lis2dw12_self_test(void);
 int32_t lis2dw12_configure(float shimmerSamplingFreq, lis2dw12_odr_t rate, lis2dw12_fs_t range);
 HAL_StatusTypeDef lis2dw12_accel_get(uint8_t *buf);
 bool lis2dw12_is_drdy_int_enabled(void);

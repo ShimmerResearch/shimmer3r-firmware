@@ -97,10 +97,10 @@ void S4_NORM_Task_manage(void)
     case TASK_DOCKSETUP:
       DockUart_setup();
       break;
-    case TASK_UARTPROCESS:
+    case TASK_DOCK_PROCESS_CMD:
       DockUart_processCmd();
       break;
-    case TASK_UARTRESPONSE:
+    case TASK_DOCK_RESPOND:
       DockUart_sendRsp();
       break;
     case TASK_BTPROCESS:
@@ -151,6 +151,9 @@ void S4_NORM_Task_manage(void)
       S4_ADC_readBatt();
       I2C_readBatt();
 #endif
+      break;
+    case TASK_FACTORY_TEST:
+      run_factory_test();
       break;
     default:
       break;

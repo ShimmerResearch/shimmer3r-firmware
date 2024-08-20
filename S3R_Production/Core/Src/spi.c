@@ -123,7 +123,9 @@ void MX_SPI1_Init(void)
 
   hspiSensing1 = &hspi1;
 
+  lsm6dsv_driver_init();
   bmp3_driver_init();
+  adxl371_driver_init();
 
   HAL_Delay(BOOT_TIME);
 
@@ -187,6 +189,9 @@ void MX_SPI2_Init(void)
   HAL_SPI_RegisterCallback(&hspi2, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
 
   hspiSensing2 = &hspi2;
+
+  lis2dw12_driver_init();
+  lis3mdl_driver_init();
 
   HAL_Delay(BOOT_TIME);
 
@@ -661,33 +666,6 @@ void SPI3_DeInit(void)
   //Board_SW_SPI2(0);
 }
 
-uint8_t SPI_test(void)
-{
-  uint8_t ret_val = 0;
-#if defined(SHIMMER3R)
-  SHIMMER_PRINTF("SPI1:\r\n");
-  set_power_spi1_bus(1, SPI1_CHIP_ALL);
-  lsm6dsv_self_test();
-  bmp3_self_test();
-  adxl371_self_test();
-  set_power_spi1_bus(0, SPI1_CHIP_ALL);
-
-  SHIMMER_PRINTF("SPI2:\r\n");
-  set_power_spi2_bus(1, SPI2_CHIP_ALL);
-  lis3mdl_self_test();
-  lis2dw12_self_test();
-  set_power_spi2_bus(0, SPI2_CHIP_ALL);
-#endif
-
-  if (isAds1292Present())
-  {
-    EXG_init(hspiExg);
-    ret_val |= EXG_test();
-  }
-
-  return ret_val;
-}
-
 void SPI_configureChannels()
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
@@ -875,7 +853,6 @@ void SPI_startSensing()
   if ((configBytes->chEnLnAccel) || (configBytes->chEnGyro))
   {
     lsm6dsv_power_on();
-    lsm6dsv_driver_init();
     lsm6dsv_configure(shimmerSamplingFreq, configBytes->chEnGyro, configBytes->chEnLnAccel,
         configBytes->gyroRate, configBytes->gyroRange, configBytes->altAccelRange);
   }
@@ -890,7 +867,6 @@ void SPI_startSensing()
   if (configBytes->chEnAltAccel)
   {
     adxl371_power_on();
-    adxl371_driver_init();
     adxl371_configure(configBytes->wrAccelRate);
   }
 
@@ -898,7 +874,6 @@ void SPI_startSensing()
   if (configBytes->chEnWrAccel)
   {
     lis2dw12_power_on();
-    lis2dw12_driver_init();
     //TODO decide how to handle configBytes->wrAccelHRM and configBytes->wrAccelLPM
     lis2dw12_configure(shimmerSamplingFreq, configBytes->wrAccelRate,
         configBytes->wrAccelRange);
@@ -907,7 +882,6 @@ void SPI_startSensing()
   if (configBytes->chEnAltMag)
   {
     lis3mdl_power_on();
-    lis3mdl_driver_init();
     lis3mdl_configure(shimmerSamplingFreq, LIS3MDL_UHP_155Hz, LIS3MDL_12_GAUSS);
     //TODO decide if we need an specific rate setting for the alternative mag
     //lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);

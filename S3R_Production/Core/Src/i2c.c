@@ -110,9 +110,10 @@ void MX_I2C1_Init(void)
 
   hi2cMainBus = &hi2c1;
 
-  HAL_Delay(BOOT_TIME);
-
   CAT24C16_init(I2C_getHandlerSensor());
+  lis2mdl_driver_init();
+
+  HAL_Delay(BOOT_TIME);
 
   /* USER CODE END I2C1_Init 2 */
 }
@@ -232,74 +233,20 @@ void I2C1_DeInit(void)
   set_power_i2c_main_bus(0);
 }
 
-uint8_t I2C_test(void)
-{
-  uint8_t ret_val = 0;
-
-  set_power_i2c1_bus(true, I2C1_CHIP_ALL);
-
-  I2C_scan(hi2cMainBus);
-#if defined(SHIMMER4_SDK)
-  I2C_scan(hi2cBattery);
-#endif
-
-#if defined(SHIMMER4_SDK)
-  MPU9250_init(hi2cMainBus);
-  if (MPU9250_test())
-    ret_val |= 0x01;
-
-  LSM303DLHC_init(hi2cMainBus);
-  if (LSM303DLHC_accelTest())
-  {
-    ret_val |= 0x02;
-  }
-  if (LSM303DLHC_magTest())
-  {
-    ret_val |= 0x04;
-  }
-
-  Board_SW_EXP(1);
-
-  CAT24C16_init(I2C_getHandlerSensor());
-  //HAL_Delay(1000);
-  if (CAT24C16_test()) //eeprom
-  {
-    ret_val |= 0x08;
-  }
-#elif defined(SHIMMER3R)
-  SHIMMER_PRINTF("I2C:\r\n");
-
-  lis2mdl_self_test();
-
-  uint8_t eeprom_result = CAT24C16_test();
-  if (eeprom_result == 0)
-  {
-    SHIMMER_PRINTF("EEPROM Self Test - PASS\r\n");
-  }
-  else
-  {
-    SHIMMER_PRINTF("EEPROM Self Test - FAIL\r\n");
-  }
-#endif
-
-#if defined(SHIMMER4_SDK)
-  if (bmp280_test(hi2cMainBus))
-  {
-    ret_val |= 0x10;
-  }
-#endif
-
-  set_power_i2c1_bus(false, I2C1_CHIP_ALL);
-
-  return ret_val;
-}
-
 void set_power_i2c_main_bus(uint8_t state)
 {
 #if defined(SHIMMER4_SDK)
   Board_SW_EXP(state); //eeprom
 #endif
   Board_SW_I2C(state);
+}
+
+void I2C_scan_busses(void)
+{
+  I2C_scan(hi2cMainBus);
+#if defined(SHIMMER4_SDK)
+  I2C_scan(hi2cBattery);
+#endif
 }
 
 void I2C_scan(I2C_HandleTypeDef *hi2c)
@@ -534,7 +481,6 @@ void I2C_startSensing(void)
   if (configBytes->chEnMag)
   {
     lis2mdl_power_on();
-    lis2mdl_driver_init();
     lis2mdl_configure(shimmerSamplingFreq, configBytes->magRate);
   }
 
@@ -642,7 +588,7 @@ void I2cSens_stopSensing(void)
   }
 #endif
   HAL_Delay(10);
-  set_power_i2c1_bus(0, SPI1_CHIP_ALL);
+  set_power_i2c1_bus(0, I2C1_CHIP_ALL);
 }
 
 #if defined(SHIMMER4_SDK)
@@ -1347,5 +1293,17 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
   }
 }
 #endif
+
+void loadDaughterCardIdFromEeprom(void)
+{
+  set_power_i2c1_bus(1, I2C1_CHIP_INDEX_EEPROM);
+  HAL_Delay(100);
+  uint8_t daughterCardIdBuf[CAT24C16_PAGE_SIZE];
+  eepromRead(0, CAT24C16_PAGE_SIZE, &daughterCardIdBuf[0]);
+  setDaugherCardIdPage(daughterCardIdBuf);
+  parseDaughterCardId(getDaughtCardId()->exp_brd_id);
+  HAL_Delay(10);
+  set_power_i2c1_bus(0, I2C1_CHIP_INDEX_EEPROM);
+}
 
 /* USER CODE END 1 */
