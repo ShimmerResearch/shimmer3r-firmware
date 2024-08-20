@@ -219,10 +219,8 @@ uint8_t isAdxl371Detected(void)
   uint8_t buf[4];
   adxl371_spi_reg_read_multiple(&adxl371, ADXL371_DEVID, &buf[0], 4);
 
-  if (buf[0] == ADXL371_DEVID_VAL
-      && buf[1] == ADXL371_MST_DEVID_VAL
-      && buf[2] == ADXL371_PARTID_VAL
-      && buf[3] == 0xFB)
+  if (buf[0] == ADXL371_DEVID_VAL && buf[1] == ADXL371_MST_DEVID_VAL
+      && buf[2] == ADXL371_PARTID_VAL && buf[3] == 0xFB)
   {
     return 1;
   }
