@@ -8,7 +8,7 @@
 #ifndef LIS2MDL_LIS2MDL_H_
 #define LIS2MDL_LIS2MDL_H_
 
-void lis2mdl_self_test(void);
+uint8_t lis2mdl_self_test(void);
 void lis2mdl_driver_init(void);
 void lis2mdl_set_default_config(void);
 void lis2mdl_config_mag(uint8_t rate, uint8_t range);

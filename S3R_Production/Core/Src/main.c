@@ -79,7 +79,6 @@ static void SystemPower_Config(void);
 /* USER CODE BEGIN PFP */
 
 void Init(void);
-uint32_t FullTest(void);
 //TODO move out of here
 #if defined(SHIMMER3R)
 void btInitialise(void);
@@ -144,6 +143,8 @@ void Init()
   S4_ADC_init();
   SPI_init();
 
+  loadDaughterCardIdFromEeprom();
+
   setUartPeripheralPointers();
 
   S4_RTC_Init();
@@ -206,6 +207,7 @@ int main(void)
     ;
 
   memset((uint8_t *) &stat, 0, sizeof(STATTypeDef));
+  stat.isInitialising = 1;
 
   /* USER CODE END 1 */
 
@@ -262,7 +264,10 @@ int main(void)
   Init();
   //S4_Task_set(TASK_STARTSENSING);
 
-  //FullTest();
+  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
+  //run_factory_test();
+
+  stat.isInitialising = 0;
 
   /* USER CODE END 2 */
 
@@ -361,54 +366,6 @@ static void SystemPower_Config(void)
 STATTypeDef *GetStatus()
 {
   return &stat;
-}
-
-//TODO trigger from UART command?
-uint32_t FullTest(void)
-{
-  //uint32_t test_result = 0;
-
-  SHIMMER_PRINTF("Self-test - Start\r\n");
-
-  uint32_t format = RTC_FORMAT_BIN;
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
-  /* Get time */
-  HAL_RTC_GetTime(&hrtc, &sTime, format);
-  /* Get date */
-  HAL_RTC_GetDate(&hrtc, &sDate, format);
-  SHIMMER_PRINTF("Date (yyyy-mm-dd): %.4u-%.2u-%.2u\r\n", (2000 + sDate.Year),
-      sDate.Month, sDate.Date);
-  SHIMMER_PRINTF("Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n", sTime.Hours,
-      sTime.Minutes, sTime.Seconds);
-
-  //led_test();
-
-  SHIMMER_PRINTF("SD Card Detection: %s\r\n", stat.isSdInserted ? "PASS" : "FAIL");
-  if (stat.isSdInserted)
-  {
-    printSdCardInfo();
-
-    stat.testResult += SD_test() << 6;
-    //SD_test_alternative();
-    SHIMMER_PRINTF("SD Card test: %s\r\n", stat.badFile ? "FAIL" : "PASS");
-  }
-
-  if (stat.isBtPoweredOn)
-  {
-    SHIMMER_PRINTF("BT Module: %.*s\r\n", getBtVerStrLen(), getBtVerStrPtr());
-  }
-  stat.testResult += (!stat.isBtPoweredOn) << 7;
-
-  stat.testResult += InfoMem_test() << 8;
-
-  stat.testResult += I2C_test();
-
-  stat.testResult += SPI_test() << 16;
-
-  SHIMMER_PRINTF("Self-test - End\r\n");
-
-  return stat.testResult;
 }
 
 //TODO move out of here

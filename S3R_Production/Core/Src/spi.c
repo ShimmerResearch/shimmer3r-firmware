@@ -627,35 +627,6 @@ void SPI_init(void)
 #endif
 }
 
-uint8_t SPI_test(void)
-{
-  uint8_t ret_val = 0;
-#if defined(SHIMMER3R)
-  SHIMMER_PRINTF("SPI1:\r\n");
-  set_power_spi1_bus(1, SPI1_CHIP_ALL);
-  HAL_Delay(50);
-  lsm6dsv_self_test();
-  bmp390_self_test();
-  adxl371_self_test();
-  set_power_spi1_bus(0, SPI1_CHIP_ALL);
-
-  SHIMMER_PRINTF("SPI2:\r\n");
-  set_power_spi2_bus(1, SPI2_CHIP_ALL);
-  HAL_Delay(50);
-  lis3mdl_self_test();
-  lis2dw12_self_test();
-  set_power_spi2_bus(0, SPI2_CHIP_ALL);
-#endif
-
-  if (isAds1292Present())
-  {
-    EXG_init(hspiExg);
-    ret_val |= EXG_test();
-  }
-
-  return ret_val;
-}
-
 void SPI_configureChannels()
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;

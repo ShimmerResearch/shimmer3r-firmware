@@ -72,8 +72,8 @@ typedef enum
   //TASK_TESTSDSTART   = 0x1<<1,
   TASK_DOCKSETUP = 0x1 << 2,
   //TASK_SETCONFIG       = 0x1<<2,
-  TASK_UARTPROCESS = 0x1 << 3,
-  TASK_UARTRESPONSE = 0x1 << 4,
+  TASK_DOCK_PROCESS_CMD = 0x1 << 3,
+  TASK_DOCK_RESPOND = 0x1 << 4,
   TASK_BTPROCESS = 0x1 << 5,
   TASK_BTRESPONSE = 0x1 << 6,
   //TASK_CFGCH         = 0x1<<7,
@@ -93,7 +93,8 @@ typedef enum
 #endif
   //TASK_TESTLEDS      = 0x1<<18,
   //TASK_DELAYEDRADIOISR = 0x1<<19,
-  TASK_NEXTSENSOR = 0x1 << 20
+  TASK_NEXTSENSOR = 0x1 << 20,
+  TASK_FACTORY_TEST = 0x1 << 21
 } TASK_FLAGS;
 //return the task id of the current task
 

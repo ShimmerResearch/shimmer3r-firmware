@@ -151,7 +151,6 @@ extern "C"
   /* USER CODE BEGIN Prototypes */
 
   void SPI_init(void);
-  uint8_t SPI_test(void);
   void SPI_configureChannels(void);
   void SPI_startSensing(void);
   void SPI_pollSensors(void);

@@ -171,8 +171,8 @@ extern "C"
   /* USER CODE BEGIN Prototypes */
 
   void I2C_init(void);
-  uint8_t I2C_test(void);
   void set_power_i2c_main_bus(uint8_t state);
+  void I2C_scan_busses(void);
   void I2C_scan(I2C_HandleTypeDef *hi2c);
   I2C_HandleTypeDef *I2C_getHandlerSensor(void);
 #if defined(SHIMMER4_SDK)
@@ -265,6 +265,8 @@ void I2cBatt_sensorNext(void);
   //void STC3100BatteryTxDoneHandler(void);
   void STC3100BatteryRxDoneHandler(void);
 #endif
+
+  void loadDaughterCardIdFromEeprom(void);
 
   /* USER CODE END Prototypes */
 

@@ -232,7 +232,8 @@ void I2C_init(void)
 
   //init eeprom
   CAT24C16_init(I2C_getHandlerSensor());
-  set_power_i2c_main_bus(1);
+
+  //set_power_i2c_main_bus(1);
 
 #if defined(SHIMMER4_SDK)
   STC3100_init(hi2cBattery);
@@ -242,73 +243,20 @@ void I2C_init(void)
 #endif
 }
 
-uint8_t I2C_test(void)
-{
-  uint8_t ret_val = 0;
-
-  set_power_i2c_main_bus(1);
-  HAL_Delay(50);
-
-  I2C_scan(hi2cMainBus);
-#if defined(SHIMMER4_SDK)
-  I2C_scan(hi2cBattery);
-#endif
-
-#if defined(SHIMMER4_SDK)
-  MPU9250_init(hi2cMainBus);
-  if (MPU9250_test())
-    ret_val |= 0x01;
-
-  LSM303DLHC_init(hi2cMainBus);
-  if (LSM303DLHC_accelTest())
-  {
-    ret_val |= 0x02;
-  }
-  if (LSM303DLHC_magTest())
-  {
-    ret_val |= 0x04;
-  }
-
-  Board_SW_EXP(1);
-
-  CAT24C16_init(I2C_getHandlerSensor());
-  //HAL_Delay(1000);
-  if (CAT24C16_test()) //eeprom
-  {
-    ret_val |= 0x08;
-  }
-#elif defined(SHIMMER3R)
-  SHIMMER_PRINTF("I2C:\r\n");
-  lis2mdl_self_test();
-  uint8_t eeprom_result = CAT24C16_test();
-  if (eeprom_result == 0)
-  {
-    SHIMMER_PRINTF("EEPROM Self Test - PASS\r\n");
-  }
-  else
-  {
-    SHIMMER_PRINTF("EEPROM Self Test - FAIL\r\n");
-  }
-#endif
-
-  set_power_i2c_main_bus(0);
-
-#if defined(SHIMMER4_SDK)
-  if (bmp280_test(hi2cMainBus))
-  {
-    ret_val |= 0x10;
-  }
-#endif
-
-  return ret_val;
-}
-
 void set_power_i2c_main_bus(uint8_t state)
 {
 #if defined(SHIMMER4_SDK)
   Board_SW_EXP(state); //eeprom
 #endif
   Board_SW_I2C(state);
+}
+
+void I2C_scan_busses(void)
+{
+  I2C_scan(hi2cMainBus);
+#if defined(SHIMMER4_SDK)
+  I2C_scan(hi2cBattery);
+#endif
 }
 
 void I2C_scan(I2C_HandleTypeDef *hi2c)
@@ -1245,5 +1193,17 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
   }
 }
 #endif
+
+void loadDaughterCardIdFromEeprom(void)
+{
+  Board_SW_I2C(1);
+  HAL_Delay(100);
+  uint8_t daughterCardIdBuf[CAT24C16_PAGE_SIZE];
+  eepromRead(0, CAT24C16_PAGE_SIZE, &daughterCardIdBuf[0]);
+  setDaugherCardIdPage(daughterCardIdBuf);
+  parseDaughterCardId(getDaughtCardId()->exp_brd_id);
+  HAL_Delay(10);
+  Board_SW_I2C(0);
+}
 
 /* USER CODE END 1 */
