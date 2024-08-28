@@ -217,7 +217,7 @@ extern void Board_delayMicros(uint32_t micros);
 //exp_reset_n is used by RESETN of exg*2 and VCC of eeprom
 #if defined(SHIMMER3R)
 #define Board_SW_I2C(x) \
-  HAL_GPIO_WritePin(SW_I2C1_GPIO_Port, SW_I2C1_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+  HAL_GPIO_WritePin(SW_GSR_GPIO_Port, SW_GSR_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_EXG_RESET_N(x) \
   HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #elif defined(SHIMMER4_SDK)

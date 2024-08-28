@@ -1250,9 +1250,9 @@ void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex)
     }
   }
 
-  if (stateToSet != HAL_GPIO_ReadPin(SW_SPI1_GPIO_Port, SW_SPI1_Pin))
+  if (stateToSet != HAL_GPIO_ReadPin(SW_SENSE_IO_GPIO_Port, SW_SENSE_IO_Pin))
   {
-    HAL_GPIO_WritePin(SW_SPI1_GPIO_Port, SW_SPI1_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(SW_SENSE_IO_GPIO_Port, SW_SENSE_IO_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
   }
 }
 
@@ -1283,9 +1283,9 @@ void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex)
     }
   }
 
-  if (stateToSet != HAL_GPIO_ReadPin(SW_SPI2_GPIO_Port, SW_SPI2_Pin))
+  if (stateToSet != HAL_GPIO_ReadPin(SW_MIC_GPIO_Port, SW_MIC_Pin))
   {
-    HAL_GPIO_WritePin(SW_SPI2_GPIO_Port, SW_SPI2_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(SW_MIC_GPIO_Port, SW_MIC_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
   }
 }
 
