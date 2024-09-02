@@ -196,7 +196,7 @@ void S4Sens_startSensing(void)
     }
     I2C_startSensing();
     SPI_startSensing();
-    if(isMicEnabled())
+    if (isMicEnabled())
     {
       MX_MDF1_Init();
     }
@@ -533,6 +533,7 @@ void saveData(void)
     S4_Task_set(TASK_STOPSENSING);
   }
 }
+
 uint8_t isMicEnabled(void)
 {
   return gConfigBytes.chEnMicrophone;
