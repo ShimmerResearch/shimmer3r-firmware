@@ -447,7 +447,7 @@ void Board_enableSensingPower(uint8_t state)
   //delay to allow voltage to settle after turning on ADC & IMUs etc.
   if (state)
   {
-    HAL_Delay(50); // Arbitrary delay to allow chips to power up
+    HAL_Delay(50); //Arbitrary delay to allow chips to power up
   }
 }
 #endif
