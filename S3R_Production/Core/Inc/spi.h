@@ -22,27 +22,26 @@
 #define __SPI_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-  /* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */
 
 #include "s4.h"
 #include "s4__cfg.h"
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi1;
 
-  extern SPI_HandleTypeDef hspi2;
+extern SPI_HandleTypeDef hspi2;
 
-  extern SPI_HandleTypeDef hspi3;
+extern SPI_HandleTypeDef hspi3;
 
-  /* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
 
 #define SPI_DMA_TXRX_OFFSET 1
 #define SPI_READ_REGISTER   0x80
@@ -56,28 +55,28 @@ extern "C"
     SPI3_BUS_FLAG = 0x04
   } SPI_BUS_INDEX;
 
-  typedef enum
-  {
-    SPI1_CHIP_INDEX_LSM6DSV,
-    SPI1_CHIP_INDEX_ADXL371,
-    SPI1_CHIP_INDEX_BMP390,
-    SPI1_CHIP_QTY,
-    SPI1_CHIP_ALL
-  } SPI1_CHIP_INDEX;
-
-  typedef enum
-  {
-    SPI2_CHIP_INDEX_LIS2DW12,
-    SPI2_CHIP_INDEX_LIS3MDL,
-    SPI2_CHIP_QTY,
-    SPI2_CHIP_ALL
-  } SPI2_CHIP_INDEX;
-
-  typedef enum
-  {
-    SPI3_CHIP_INDEX_ADS1292R,
-    SPI3_CHIP_QTY
-  } SPI3_CHIP_INDEX;
+//  typedef enum
+//  {
+//    SPI1_CHIP_INDEX_LSM6DSV,
+//    SPI1_CHIP_INDEX_ADXL371,
+//    SPI1_CHIP_INDEX_BMP390,
+//    SPI1_CHIP_QTY,
+//    SPI1_CHIP_ALL
+//  } SPI1_CHIP_INDEX;
+//
+//  typedef enum
+//  {
+//    SPI2_CHIP_INDEX_LIS2DW12,
+//    SPI2_CHIP_INDEX_LIS3MDL,
+//    SPI2_CHIP_QTY,
+//    SPI2_CHIP_ALL
+//  } SPI2_CHIP_INDEX;
+//
+//  typedef enum
+//  {
+//    SPI3_CHIP_INDEX_ADS1292R,
+//    SPI3_CHIP_QTY
+//  } SPI3_CHIP_INDEX;
 
   typedef enum
   { //i2c
@@ -145,13 +144,13 @@ extern "C"
 
 #endif
 
-  /* USER CODE END Private defines */
+/* USER CODE END Private defines */
 
-  void MX_SPI1_Init(void);
-  void MX_SPI2_Init(void);
-  void MX_SPI3_Init(void);
+void MX_SPI1_Init(void);
+void MX_SPI2_Init(void);
+void MX_SPI3_Init(void);
 
-  /* USER CODE BEGIN Prototypes */
+/* USER CODE BEGIN Prototypes */
 
   void SPI1_DeInit(void);
   void SPI2_DeInit(void);
@@ -183,15 +182,14 @@ void SpiStepDone(void);
   void SPI3_RxCpltCallback(SPI_HandleTypeDef *hspi);
   void SPI_ErrorCallback(SPI_HandleTypeDef *hspi);
 
-  void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex);
-  void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex);
   bool areSpiChannelsEnabled(void);
 #endif
 
-  /* USER CODE END Prototypes */
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __SPI_H__ */
+

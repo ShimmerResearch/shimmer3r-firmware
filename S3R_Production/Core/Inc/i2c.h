@@ -22,23 +22,22 @@
 #define __I2C_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-  /* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */
 
 #include "s4.h"
 #include "s4__cfg.h"
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  extern I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c1;
 
-  /* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
 
   typedef enum
   {
@@ -181,13 +180,12 @@ extern "C"
 #endif
   } i2cReadBufTypeDef;
 
-  /* USER CODE END Private defines */
+/* USER CODE END Private defines */
 
-  void MX_I2C1_Init(void);
+void MX_I2C1_Init(void);
 
-  /* USER CODE BEGIN Prototypes */
+/* USER CODE BEGIN Prototypes */
 
-  void set_power_i2c_main_bus(uint8_t state);
   void I2C_scan_busses(void);
   void I2C_scan(I2C_HandleTypeDef *hi2c);
   I2C_HandleTypeDef *I2C_getHandlerSensor(void);
@@ -247,7 +245,6 @@ extern "C"
   uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo);
 
 #if defined(SHIMMER3R)
-  void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex);
   bool areI2cChannelsEnabled(void);
   void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
 #elif defined(SHIMMER4_SDK)
@@ -288,10 +285,11 @@ void I2cBatt_sensorNext(void);
 
   void loadDaughterCardIdFromEeprom(void);
 
-  /* USER CODE END Prototypes */
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __I2C_H__ */
+

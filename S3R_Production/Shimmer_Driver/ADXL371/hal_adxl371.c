@@ -45,16 +45,6 @@ void adxl371_driver_init(void)
   adxl371.reg_read_multiple = adxl371_spi_reg_read_multiple;
 }
 
-void adxl371_power_on(void)
-{
-  set_power_spi1_bus(true, SPI1_CHIP_INDEX_ADXL371);
-}
-
-void adxl371_power_off(void)
-{
-  set_power_spi1_bus(false, SPI1_CHIP_INDEX_ADXL371);
-}
-
 void adxl371_selectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);

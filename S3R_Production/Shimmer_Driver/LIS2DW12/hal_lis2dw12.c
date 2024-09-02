@@ -321,16 +321,6 @@ void lis2dw12_driver_init(void)
   //LIS2DW12_RegisterBusIO(lis2dw12_obj, pIO);
 }
 
-void lis2dw12_power_on(void)
-{
-  set_power_spi2_bus(true, SPI2_CHIP_INDEX_LIS2DW12);
-}
-
-void lis2dw12_power_off(void)
-{
-  set_power_spi2_bus(false, SPI2_CHIP_INDEX_LIS2DW12);
-}
-
 void lis2dw12_selectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);

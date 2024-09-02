@@ -50,16 +50,6 @@ void bmp3_driver_init(void)
   save_calib_data_bytes();
 }
 
-void bmp3_power_on(void)
-{
-  set_power_spi1_bus(true, SPI1_CHIP_INDEX_BMP390);
-}
-
-void bmp3_power_off(void)
-{
-  set_power_spi1_bus(false, SPI1_CHIP_INDEX_BMP390);
-}
-
 void bmp3_selectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);

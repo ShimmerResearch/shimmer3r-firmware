@@ -11,8 +11,6 @@
 #include <lis2dw12_reg.h>
 
 void lis2dw12_driver_init(void);
-void lis2dw12_power_on(void);
-void lis2dw12_power_off(void);
 void lis2dw12_selectDevice(void);
 void lis2dw12_unselectDevice(void);
 uint8_t lis2dw12_self_test(void);

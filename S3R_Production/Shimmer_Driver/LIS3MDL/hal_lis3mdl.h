@@ -11,8 +11,6 @@
 #include <lis3mdl_reg.h>
 
 void lis3mdl_driver_init(void);
-void lis3mdl_power_on(void);
-void lis3mdl_power_off(void);
 void lis3mdl_selectDevice(void);
 void lis3mdl_unselectDevice(void);
 uint8_t lis3mdl_self_test(void);

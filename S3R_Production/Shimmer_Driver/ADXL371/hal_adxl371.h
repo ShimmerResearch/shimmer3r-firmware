@@ -44,8 +44,6 @@ typedef void (*dev_mdelay_ptr)(uint32_t millisec);
 //} dev_ctx_t;
 
 void adxl371_driver_init(void);
-void adxl371_power_on(void);
-void adxl371_power_off(void);
 void adxl371_selectDevice(void);
 void adxl371_unselectDevice(void);
 uint8_t adxl371_self_test(void);

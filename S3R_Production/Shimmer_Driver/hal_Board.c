@@ -255,12 +255,12 @@ uint8_t isLedOnUprGreen(void)
 
 #endif
 
-/***************************************************************************/ /**
-                                                                               * @brief  Turn on LEDs
-                                                                               * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn on
-                                                                               * @return none
-                                                                               ******************************************************************************/
 #if defined(SHIMMER3R)
+/**
+ * @brief  Turn on LEDs.
+ * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn on
+ * @return none
+ */
 void Board_ledOn(uint8_t ledMask)
 {
   updateLedState(LED_MODE_ON, ledMask);
@@ -283,11 +283,11 @@ void Board_ledOn(uint8_t ledMask)
 }
 #endif
 
-/***************************************************************************/ /**
-                                                                               * @brief  Turn off LEDs
-                                                                               * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn off
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/**
+ * @brief  Turn off LEDs
+ * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn off
+ * @return none
+ */
 #if defined(SHIMMER3R)
 void Board_ledOff(uint8_t ledMask)
 {
@@ -311,11 +311,11 @@ void Board_ledOff(uint8_t ledMask)
 }
 #endif
 
-/***************************************************************************/ /**
-                                                                               * @brief  Toggle LEDs
-                                                                               * @param  ledMask   Use values defined in HAL_board.h for the LEDs to toggle
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/**
+ * @brief  Toggle LEDs
+ * @param  ledMask   Use values defined in HAL_board.h for the LEDs to toggle
+ * @return none
+ */
 #if defined(SHIMMER3R)
 void Board_ledToggle(uint8_t ledMask)
 {
@@ -339,11 +339,11 @@ void Board_ledToggle(uint8_t ledMask)
 }
 #endif
 
-/***************************************************************************/ /**
-                                                                               * @brief  SD power cycle
-                                                                               * @param  none
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/**
+ * @brief  SD power cycle
+ * @param  none
+ * @return none
+ */
 void Board_sdPowerCycle(void)
 {
   Board_detectN(1);
@@ -356,11 +356,11 @@ void Board_sdPowerCycle(void)
   SD_mount(1);
 }
 
-/***************************************************************************/ /**
-                                                                               * @brief  SD control to PC side
-                                                                               * @param  none
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/**
+ * @brief  SD control to PC side
+ * @param  none
+ * @return none
+ */
 void Board_sd2Pc(void)
 {
 
@@ -378,11 +378,11 @@ void Board_sd2Pc(void)
   SD_mount(0);
 }
 
-/***************************************************************************/ /**
-                                                                               * @brief  SD control to ARM side
-                                                                               * @param  none
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/**
+ * @brief  SD control to ARM side
+ * @param  none
+ * @return none
+ */
 void Board_sd2Arm(void)
 {
   Board_detectN(1);
@@ -416,9 +416,9 @@ void Board_sd2Arm(void)
 //  }
 //}
 
-/***************************************************************************/ /**
-                                                                               * use while loop to do delay microseconds
-                                                                               ******************************************************************************/
+/**
+ * use while loop to do delay microseconds
+ */
 uint32_t multiplier;
 
 void Board_delayMicrosInit(void)
@@ -437,3 +437,17 @@ void Board_delayMicros(uint32_t micros)
   while (micros--)
     ;
 }
+
+#if defined(SHIMMER3R)
+void Board_enableSensingPower(uint8_t state)
+{
+  Board_SW_PV_SENSE(state);
+  Board_SW_PV_SENSE_IO(state);
+
+  //delay to allow voltage to settle after turning on ADC & IMUs etc.
+  if (state)
+  {
+    HAL_Delay(100);
+  }
+}
+#endif

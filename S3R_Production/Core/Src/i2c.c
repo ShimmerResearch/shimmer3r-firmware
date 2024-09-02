@@ -70,8 +70,6 @@ void MX_I2C1_Init(void)
 
   /* USER CODE BEGIN I2C1_Init 0 */
 
-  set_power_i2c_main_bus(1);
-
   /* USER CODE END I2C1_Init 0 */
 
   /* USER CODE BEGIN I2C1_Init 1 */
@@ -92,14 +90,14 @@ void MX_I2C1_Init(void)
   }
 
   /** Configure Analogue filter
-   */
+  */
   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Configure Digital filter
-   */
+  */
   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
   {
     Error_Handler();
@@ -116,21 +114,22 @@ void MX_I2C1_Init(void)
   HAL_Delay(BOOT_TIME);
 
   /* USER CODE END I2C1_Init 2 */
+
 }
 
-void HAL_I2C_MspInit(I2C_HandleTypeDef *i2cHandle)
+void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
-  if (i2cHandle->Instance == I2C1)
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  if(i2cHandle->Instance==I2C1)
   {
-    /* USER CODE BEGIN I2C1_MspInit 0 */
+  /* USER CODE BEGIN I2C1_MspInit 0 */
 
-    /* USER CODE END I2C1_MspInit 0 */
+  /* USER CODE END I2C1_MspInit 0 */
 
-    /** Initializes the peripherals clock
-     */
+  /** Initializes the peripherals clock
+  */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1;
     PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -143,7 +142,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *i2cHandle)
     PB8     ------> I2C1_SCL
     PB9     ------> I2C1_SDA
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+    GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -166,8 +165,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *i2cHandle)
     handle_GPDMA1_Channel10.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
     handle_GPDMA1_Channel10.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel10.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel10.Init.TransferAllocatedPort
-        = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel10.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
     handle_GPDMA1_Channel10.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel10.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel10) != HAL_OK)
@@ -187,20 +185,20 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *i2cHandle)
     HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
     HAL_NVIC_SetPriority(I2C1_ER_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
-    /* USER CODE BEGIN I2C1_MspInit 1 */
+  /* USER CODE BEGIN I2C1_MspInit 1 */
 
-    /* USER CODE END I2C1_MspInit 1 */
+  /* USER CODE END I2C1_MspInit 1 */
   }
 }
 
-void HAL_I2C_MspDeInit(I2C_HandleTypeDef *i2cHandle)
+void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 {
 
-  if (i2cHandle->Instance == I2C1)
+  if(i2cHandle->Instance==I2C1)
   {
-    /* USER CODE BEGIN I2C1_MspDeInit 0 */
+  /* USER CODE BEGIN I2C1_MspDeInit 0 */
 
-    /* USER CODE END I2C1_MspDeInit 0 */
+  /* USER CODE END I2C1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_I2C1_CLK_DISABLE();
 
@@ -218,9 +216,9 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef *i2cHandle)
     /* I2C1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
     HAL_NVIC_DisableIRQ(I2C1_ER_IRQn);
-    /* USER CODE BEGIN I2C1_MspDeInit 1 */
+  /* USER CODE BEGIN I2C1_MspDeInit 1 */
 
-    /* USER CODE END I2C1_MspDeInit 1 */
+  /* USER CODE END I2C1_MspDeInit 1 */
   }
 }
 
@@ -229,16 +227,6 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef *i2cHandle)
 void I2C1_DeInit(void)
 {
   HAL_I2C_DeInit(hi2cMainBus);
-
-  set_power_i2c_main_bus(0);
-}
-
-void set_power_i2c_main_bus(uint8_t state)
-{
-#if defined(SHIMMER4_SDK)
-  Board_SW_EXP(state); //eeprom
-#endif
-  Board_SW_I2C(state);
 }
 
 void I2C_scan_busses(void)
@@ -477,10 +465,14 @@ void I2C_startSensing(void)
   //  HAL_Delay(1000);
   //}
 
+  if (i2c1Sens.sensorLen > 0)
+  {
+    MX_I2C1_Init();
+  }
+
 #if defined(SHIMMER3R)
   if (configBytes->chEnMag)
   {
-    lis2mdl_power_on();
     lis2mdl_configure(shimmerSamplingFreq, configBytes->magRate);
   }
 
@@ -586,9 +578,11 @@ void I2cSens_stopSensing(void)
   {
     LSM303DLHC_sleep();
   }
-#endif
   HAL_Delay(10);
-  set_power_i2c1_bus(0, I2C1_CHIP_ALL);
+  Board_SW_I2C(0);
+#endif
+
+  I2C1_DeInit();
 }
 
 #if defined(SHIMMER4_SDK)
@@ -753,51 +747,6 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
     break;
   }
   return retVal;
-}
-
-void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex)
-{
-  bool stateToSet = false;
-
-  if (chipIndex == I2C1_CHIP_ALL)
-  {
-    stateToSet = state;
-    for (uint8_t i = 0; i < sizeof(i2c1BusChipPwrFlags); i++)
-    {
-      i2c1BusChipPwrFlags[i] = state;
-    }
-  }
-  else
-  {
-    i2c1BusChipPwrFlags[chipIndex] = state;
-
-    for (uint8_t i = 0; i < sizeof(i2c1BusChipPwrFlags); i++)
-    {
-      //If any chips should be on, set power on.
-      if (i2c1BusChipPwrFlags[i])
-      {
-        stateToSet = true;
-        break;
-      }
-    }
-  }
-
-  if (stateToSet)
-  {
-    if (hi2cMainBus == NULL || HAL_I2C_GetState(hi2cMainBus) == HAL_I2C_STATE_RESET)
-    {
-      /* Init the I2C */
-      MX_I2C1_Init();
-    }
-  }
-  else
-  {
-    if (hi2cMainBus != NULL && HAL_I2C_GetState(hi2cMainBus) != HAL_I2C_STATE_RESET)
-    {
-      /* DeInit the I2C */
-      I2C1_DeInit();
-    }
-  }
 }
 
 #if defined(SHIMMER3R)
@@ -1296,14 +1245,11 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void loadDaughterCardIdFromEeprom(void)
 {
-  set_power_i2c1_bus(1, I2C1_CHIP_INDEX_EEPROM);
-  HAL_Delay(100);
   uint8_t daughterCardIdBuf[CAT24C16_PAGE_SIZE];
   eepromRead(0, CAT24C16_PAGE_SIZE, &daughterCardIdBuf[0]);
   setDaugherCardIdPage(daughterCardIdBuf);
   parseDaughterCardId(getDaughtCardId()->exp_brd_id);
-  HAL_Delay(10);
-  set_power_i2c1_bus(0, I2C1_CHIP_INDEX_EEPROM);
+  HAL_Delay(5); //5ms to ensure no writes pending
 }
 
 /* USER CODE END 1 */

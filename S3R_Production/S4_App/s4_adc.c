@@ -234,45 +234,6 @@ void S4_NORM_ADC_configureChannels(void)
   }
 #endif
 
-  //TODO check what's needed below for Shimmer3r
-#if defined(SHIMMER4_SDK)
-  if (configBytes->chEnPpg)
-  {
-    //in shimmer3 this corresponds to adc12
-    configBytes->chEnIntADC0 = 1;
-    configBytes->chEnIntADC4 = 1;
-    HAL_GPIO_WritePin(SW_PPG_EN_GPIO_Port, SW_PPG_EN_Pin, GPIO_PIN_SET);
-  }
-  if (configBytes->chEnBridgeAmp)
-  {
-    //in shimmer3 this corresponds to adc13 and adc14
-    configBytes->chEnIntADC1 = 1;
-    configBytes->chEnIntADC2 = 1;
-    HAL_GPIO_WritePin(SW_STRAIN_GAUGE_GPIO_Port, SW_STRAIN_GAUGE_Pin, GPIO_PIN_SET);
-  }
-#endif
-
-  if (configBytes->chEnGsr)
-  {
-    //TODO check what's needed below for Shimmer3r
-#if defined(SHIMMER4_SDK)
-    //in shimmer3 this corresponds to adc1
-    configBytes->chEnIntADC3 = 1;
-#endif
-
-    GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks, GSR_AUTORANGE);
-    if (configBytes->gsrRange <= HW_RES_3M3)
-    {
-      GSR_setRange(configBytes->gsrRange);
-      gsrActiveResistor = configBytes->gsrRange;
-    }
-    else
-    {
-      GSR_setRange(HW_RES_40K);
-      gsrActiveResistor = HW_RES_40K;
-    }
-  }
-
   //External ADC 0
   if (configBytes->chEnExtADC0)
   {
@@ -472,6 +433,52 @@ void S4_NORM_ADC_startSensing()
     HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_SET);
   }
 #endif
+
+
+  //TODO check what's needed below for Shimmer3r
+  if (configBytes->chEnPpg)
+  {
+#if defined(SHIMMER4_SDK)
+    //in shimmer3 this corresponds to adc12
+    configBytes->chEnIntADC0 = 1;
+    configBytes->chEnIntADC4 = 1;
+    HAL_GPIO_WritePin(SW_PPG_EN_GPIO_Port, SW_PPG_EN_Pin, GPIO_PIN_SET);
+#elif defined(SHIMMER3R)
+    Board_SW_PPG(1);
+#endif
+  }
+  if (configBytes->chEnBridgeAmp)
+  {
+#if defined(SHIMMER4_SDK)
+    //in shimmer3 this corresponds to adc13 and adc14
+    configBytes->chEnIntADC1 = 1;
+    configBytes->chEnIntADC2 = 1;
+    HAL_GPIO_WritePin(SW_STRAIN_GAUGE_GPIO_Port, SW_STRAIN_GAUGE_Pin, GPIO_PIN_SET);
+#elif defined(SHIMMER3R)
+    Board_SW_STRAIN_GUAGE(1);
+#endif
+  }
+  if (configBytes->chEnGsr)
+  {
+    //TODO check what's needed below for Shimmer3r
+#if defined(SHIMMER4_SDK)
+    //in shimmer3 this corresponds to adc1
+    configBytes->chEnIntADC3 = 1;
+#endif
+
+    Board_SW_GSR(1);
+    GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks, GSR_AUTORANGE);
+    if (configBytes->gsrRange <= HW_RES_3M3)
+    {
+      GSR_setRange(configBytes->gsrRange);
+      gsrActiveResistor = configBytes->gsrRange;
+    }
+    else
+    {
+      GSR_setRange(HW_RES_40K);
+      gsrActiveResistor = HW_RES_40K;
+    }
+  }
 
 #if USE_VBATT_ALWAYS
   if (1)
@@ -785,6 +792,8 @@ void S4_NORM_ADC_bufPoll()
 
 void S4_NORM_ADC_stopSensing()
 {
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+
   HAL_ADC_Stop_DMA(hadcSensPtr);
   HAL_ADC_DeInit(hadcSensPtr);
 #if defined(SHIMMER4_SDK)
@@ -792,8 +801,28 @@ void S4_NORM_ADC_stopSensing()
   HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
 #endif
   //Analog Strain Gauge, resets the PV_SG voltage to gauge op-amp
-  HAL_GPIO_WritePin(GPIOB, SW_STRAIN_GAUGE_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOF, SW_PPG_EN_Pin, GPIO_PIN_RESET);
+  if (configBytes->chEnPpg)
+  {
+#if defined(SHIMMER4_SDK)
+    HAL_GPIO_WritePin(SW_PPG_EN_GPIO_Port, SW_PPG_EN_Pin, GPIO_PIN_RESET);
+#elif defined(SHIMMER3R)
+    Board_SW_PPG(0);
+#endif
+  }
+  if (configBytes->chEnBridgeAmp)
+  {
+#if defined(SHIMMER4_SDK)
+    HAL_GPIO_WritePin(SW_STRAIN_GAUGE_GPIO_Port, SW_STRAIN_GAUGE_Pin, GPIO_PIN_RESET);
+#elif defined(SHIMMER3R)
+    Board_SW_STRAIN_GUAGE(0);
+#endif
+  }
+  if (configBytes->chEnGsr)
+  {
+    Board_SW_GSR(0);
+    GSR_setRange(HW_RES_40K);
+    gsrActiveResistor = HW_RES_40K;
+  }
 
 #if defined(SHIMMER4_SDK)
   if (adc.chanCntResv > 0)
@@ -936,6 +965,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
     }
     HAL_ADC_Stop(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
+    Board_enableSensingPower(0);
   }
   else
   {
@@ -972,6 +1002,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
     updateBatteryStatus(adc_battVal);
     HAL_ADC_Stop_IT(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
+    Board_enableSensingPower(0);
   }
 #elif defined(SHIMMER4_SDK)
   if (hadc->Instance == hadcResv.Instance)
@@ -1032,6 +1063,7 @@ void manageReadBatt(uint8_t isBlockingRead)
     //Don't start a new measurement if one is already underway
     if (hadcBattPtr->Instance == NULL || hadcBattPtr->State == HAL_ADC_STATE_RESET)
     {
+      Board_enableSensingPower(1);
       S4_ADC_readBatt(isBlockingRead);
     }
   }

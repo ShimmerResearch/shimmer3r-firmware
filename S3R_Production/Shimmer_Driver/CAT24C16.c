@@ -56,24 +56,22 @@ uint8_t eepromContents[512] = { 0 };
 void CAT24C16_init(I2C_HandleTypeDef *hi2c)
 {
   eeprom_hi2c = hi2c;
-
-#if !IS_CONNECTED_EEPROM
-  eepromContents[0] = EXP_BRD_PROTO3_DELUXE; //0xFF
-  eepromContents[1] = 9;                     //0xFF
-  eepromContents[2] = 0;                     //0xFF
-#endif
 }
 
 void CAT24C16_powerOn(void)
 {
-  set_power_i2c1_bus(true, I2C1_CHIP_INDEX_EEPROM);
-  HAL_Delay(2); //2ms
+  Board_enableSensingPower(1);
+  MX_I2C1_Init();
+//  set_power_i2c1_bus(true, I2C1_CHIP_INDEX_EEPROM);
+//  HAL_Delay(2); //2ms
 }
 
 void CAT24C16_powerOff(void)
 {
   HAL_Delay(5); //5ms to ensure no writes pending
-  set_power_i2c1_bus(false, I2C1_CHIP_INDEX_EEPROM);
+  I2C1_DeInit();
+  Board_enableSensingPower(0);
+//  set_power_i2c1_bus(false, I2C1_CHIP_INDEX_EEPROM);
 }
 
 void CAT24C16_read(uint16_t address, uint16_t length, uint8_t *outBuffer)
@@ -224,3 +222,12 @@ void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enu
   }
 #endif
 }
+
+#if !IS_CONNECTED_EEPROM
+void setMockExpansionBrdDetails(void)
+{
+  eepromContents[0] = EXP_BRD_PROTO3_DELUXE; //0xFF
+  eepromContents[1] = 9;                     //0xFF
+  eepromContents[2] = 0;                     //0xFF
+}
+#endif
