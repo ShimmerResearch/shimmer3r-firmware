@@ -446,8 +446,8 @@ void Board_enableSensingPower(uint8_t state)
 #endif
   Board_SW_PV_SENSE_IO(state);
 
-  // delay to allow voltage to settle after turning on ADC & IMUs etc.
-  if(state)
+  //delay to allow voltage to settle after turning on ADC & IMUs etc.
+  if (state)
   {
     HAL_Delay(100);
   }

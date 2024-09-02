@@ -56,28 +56,28 @@ extern "C"
     SPI3_BUS_FLAG = 0x04
   } SPI_BUS_INDEX;
 
-//  typedef enum
-//  {
-//    SPI1_CHIP_INDEX_LSM6DSV,
-//    SPI1_CHIP_INDEX_ADXL371,
-//    SPI1_CHIP_INDEX_BMP390,
-//    SPI1_CHIP_QTY,
-//    SPI1_CHIP_ALL
-//  } SPI1_CHIP_INDEX;
-//
-//  typedef enum
-//  {
-//    SPI2_CHIP_INDEX_LIS2DW12,
-//    SPI2_CHIP_INDEX_LIS3MDL,
-//    SPI2_CHIP_QTY,
-//    SPI2_CHIP_ALL
-//  } SPI2_CHIP_INDEX;
-//
-//  typedef enum
-//  {
-//    SPI3_CHIP_INDEX_ADS1292R,
-//    SPI3_CHIP_QTY
-//  } SPI3_CHIP_INDEX;
+  //typedef enum
+  //{
+  //  SPI1_CHIP_INDEX_LSM6DSV,
+  //  SPI1_CHIP_INDEX_ADXL371,
+  //  SPI1_CHIP_INDEX_BMP390,
+  //  SPI1_CHIP_QTY,
+  //  SPI1_CHIP_ALL
+  //} SPI1_CHIP_INDEX;
+  //
+  //typedef enum
+  //{
+  //  SPI2_CHIP_INDEX_LIS2DW12,
+  //  SPI2_CHIP_INDEX_LIS3MDL,
+  //  SPI2_CHIP_QTY,
+  //  SPI2_CHIP_ALL
+  //} SPI2_CHIP_INDEX;
+  //
+  //typedef enum
+  //{
+  //  SPI3_CHIP_INDEX_ADS1292R,
+  //  SPI3_CHIP_QTY
+  //} SPI3_CHIP_INDEX;
 
   typedef enum
   { //i2c
