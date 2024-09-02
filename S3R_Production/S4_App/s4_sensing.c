@@ -332,8 +332,8 @@ void S4Sens_stopPeripherals(void)
   {
     S4_ADC_stopSensing();
   }
-//  HAL_Delay(10); //Send ACK command needs delay here...
-//  BtUart_sendRsp();
+  //HAL_Delay(10); //Send ACK command needs delay here...
+  //BtUart_sendRsp();
   I2C_stopSensing();
   SPI_stopSensing();
 

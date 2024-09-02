@@ -434,7 +434,6 @@ void S4_NORM_ADC_startSensing()
   }
 #endif
 
-
   //TODO check what's needed below for Shimmer3r
   if (configBytes->chEnPpg)
   {

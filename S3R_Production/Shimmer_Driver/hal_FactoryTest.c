@@ -340,7 +340,6 @@ uint8_t SPI_test(void)
     SPI3_DeInit();
   }
 
-
   return ret_val;
 }
 
