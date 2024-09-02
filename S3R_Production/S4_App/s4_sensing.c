@@ -196,7 +196,10 @@ void S4Sens_startSensing(void)
     }
     I2C_startSensing();
     SPI_startSensing();
-
+    if(isMicEnabled())
+    {
+      MX_MDF1_Init();
+    }
     //I2cSensing(1);// gather the first set of sample?
     //I2cBattMonitor(1);
 
@@ -529,4 +532,8 @@ void saveData(void)
   {
     S4_Task_set(TASK_STOPSENSING);
   }
+}
+uint8_t isMicEnabled(void)
+{
+  return gConfigBytes.chEnMicrophone;
 }

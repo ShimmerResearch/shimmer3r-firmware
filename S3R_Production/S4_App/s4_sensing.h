@@ -149,5 +149,5 @@ void S4Sens_step5Start(void);
 void S4Sens_stepDone(void);
 
 void saveData(void);
-
+uint8_t isMicEnabled(void);
 #endif //S4_SENSING_H
