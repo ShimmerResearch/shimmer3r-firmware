@@ -108,6 +108,9 @@ extern void Board_sdPowerCycle(void);
 
 extern void Board_delayMicrosInit(void);
 extern void Board_delayMicros(uint32_t micros);
+#if defined(SHIMMER3R)
+void Board_enableSensingPower(uint8_t state);
+#endif
 
 #if defined(SHIMMER3R)
 #define ECG_CS_GPIO               GPIO_ADC_INT_EXP1_GPIO_Port
@@ -216,7 +219,13 @@ extern void Board_delayMicros(uint32_t micros);
 
 //exp_reset_n is used by RESETN of exg*2 and VCC of eeprom
 #if defined(SHIMMER3R)
-#define Board_SW_I2C(x) \
+#if defined(SW_SENSE_Pin)
+#define Board_SW_PV_SENSE(x) \
+  HAL_GPIO_WritePin(SW_SENSE_GPIO_Port, SW_SENSE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#endif
+#define Board_SW_PV_SENSE_IO(x) \
+  HAL_GPIO_WritePin(SW_SENSE_IO_GPIO_Port, SW_SENSE_IO_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_SW_GSR(x) \
   HAL_GPIO_WritePin(SW_GSR_GPIO_Port, SW_GSR_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_EXG_RESET_N(x) \
   HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)

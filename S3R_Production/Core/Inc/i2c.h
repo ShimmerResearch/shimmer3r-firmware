@@ -171,7 +171,9 @@ extern "C"
   /* USER CODE BEGIN Prototypes */
 
   void I2C_init(void);
+#if defined(SHIMMER4_SDK)
   void set_power_i2c_main_bus(uint8_t state);
+#endif
   void I2C_scan_busses(void);
   void I2C_scan(I2C_HandleTypeDef *hi2c);
   I2C_HandleTypeDef *I2C_getHandlerSensor(void);

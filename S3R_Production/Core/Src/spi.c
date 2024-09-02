@@ -30,10 +30,6 @@ SPI_HandleTypeDef *hspiExg;
 //static SENSINGTypeDef *pSensing;
 
 #if defined(SHIMMER3R)
-bool spi1BusChipPwrFlags[SPI1_CHIP_QTY];
-bool spi2BusChipPwrFlags[SPI2_CHIP_QTY];
-bool spi3BusChipPwrFlags[SPI3_CHIP_QTY];
-
 spi1ReadBuf spi1Sens_buf;
 spi2ReadBuf spi2Sens_buf;
 spi3ReadBuf spi3Sens_buf;
@@ -797,10 +793,22 @@ void SPI_startSensing()
   memset((uint8_t *) &spi2Sens_buf, 0, sizeof(spi2ReadBuf));
   memset((uint8_t *) &spi3Sens_buf, 0, sizeof(spi3ReadBuf));
 
+  if (spi1Sens.sensorLen > 0)
+  {
+    MX_SPI1_Init();
+  }
+  if (spi2Sens.sensorLen > 0)
+  {
+    MX_SPI2_Init();
+  }
+  if (spi3Sens.sensorLen > 0)
+  {
+    MX_SPI3_Init();
+  }
+
 #if defined(SHIMMER3R)
   if ((configBytes->chEnLnAccel) || (configBytes->chEnGyro))
   {
-    lsm6dsv_power_on();
     lsm6dsv_restore_default_config();
 
     if (configBytes->chEnLnAccel)
@@ -932,7 +940,6 @@ void SPI_stopSensing()
 {
   //gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
-#if defined(SHIMMER3R)
   //TODO reset chips to default config (especially to stop them sampling and put
   //them in standby)? lsm6dsv_restore_default_config();
   //bmp390_restore_default_config();
@@ -952,14 +959,7 @@ void SPI_stopSensing()
   lis3mdl_UnselectDevice();
   lis2dw12_UnselectDevice();
 
-  set_power_spi1_bus(0, SPI1_CHIP_ALL);
-  set_power_spi2_bus(0, SPI2_CHIP_ALL);
-  //TODO
-  //set_power_spi3_bus(0, chipIndex);
-
-  //TODO do we need to deinit the SPI buses to save power?
-
-#elif
+  //SPI3
   if (isAds1292Present())
   {
     //HAL_NVIC_EnableIRQ(EXTI3_IRQn);
@@ -980,7 +980,10 @@ void SPI_stopSensing()
     //}
     //HAL_SPI_MspDeInit(hspiExg);//this may save .2-.3 mA?
   }
-#endif
+
+  HAL_SPI_MspDeInit(&hspi1);
+  HAL_SPI_MspDeInit(&hspi2);
+  HAL_SPI_MspDeInit(&hspi3);
 }
 
 void SPI_gatherDataCb(void (*done_cb)(void))
@@ -1223,73 +1226,6 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 }
 
 #if defined(SHIMMER3R)
-void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex)
-{
-  bool stateToSet = false;
-
-  if (chipIndex == SPI1_CHIP_ALL)
-  {
-    stateToSet = state;
-    for (uint8_t i = 0; i < sizeof(spi1BusChipPwrFlags); i++)
-    {
-      spi1BusChipPwrFlags[i] = state;
-    }
-  }
-  else
-  {
-    spi1BusChipPwrFlags[chipIndex] = state;
-
-    for (uint8_t i = 0; i < sizeof(spi1BusChipPwrFlags); i++)
-    {
-      //If any chips should be on, set power on.
-      if (spi1BusChipPwrFlags[i])
-      {
-        stateToSet = true;
-        break;
-      }
-    }
-  }
-
-  if (stateToSet != HAL_GPIO_ReadPin(SW_SENSE_IO_GPIO_Port, SW_SENSE_IO_Pin))
-  {
-    HAL_GPIO_WritePin(SW_SENSE_IO_GPIO_Port, SW_SENSE_IO_Pin,
-        stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
-  }
-}
-
-void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex)
-{
-  bool stateToSet = false;
-
-  if (chipIndex == SPI2_CHIP_ALL)
-  {
-    stateToSet = state;
-    for (uint8_t i = 0; i < sizeof(spi2BusChipPwrFlags); i++)
-    {
-      spi2BusChipPwrFlags[i] = state;
-    }
-  }
-  else
-  {
-    spi2BusChipPwrFlags[chipIndex] = state;
-
-    for (uint8_t i = 0; i < sizeof(spi2BusChipPwrFlags); i++)
-    {
-      //If any chips should be on, set power on.
-      if (spi2BusChipPwrFlags[i])
-      {
-        stateToSet = true;
-        break;
-      }
-    }
-  }
-
-  if (stateToSet != HAL_GPIO_ReadPin(SW_MIC_GPIO_Port, SW_MIC_Pin))
-  {
-    HAL_GPIO_WritePin(SW_MIC_GPIO_Port, SW_MIC_Pin, stateToSet ? GPIO_PIN_SET : GPIO_PIN_RESET);
-  }
-}
-
 bool areSpiChannelsEnabled(void)
 {
   return (spi1Sens.sensorLen + spi2Sens.sensorLen + spi3Sens.sensorLen) > 0 ? true : false;

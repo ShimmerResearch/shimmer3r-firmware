@@ -67,15 +67,23 @@ void CAT24C16_init(I2C_HandleTypeDef *hi2c)
 void CAT24C16_powerOn(void)
 {
   //TODO initialise I2C if not on?
+#if defined(SHIMMER4_SDK)
   set_power_i2c_main_bus(1);
   HAL_Delay(2); //2ms
+#elif defined(SHIMMER3R)
+  Board_enableSensingPower(1);
+#endif
 }
 
 void CAT24C16_powerOff(void)
 {
   HAL_Delay(5); //5ms to ensure no writes pending
+#if defined(SHIMMER4_SDK)
   set_power_i2c_main_bus(0);
   //TODO deinitialise I2C?
+#elif defined(SHIMMER3R)
+  Board_enableSensingPower(0);
+#endif
 }
 
 void CAT24C16_read(uint16_t address, uint16_t length, uint8_t *outBuffer)

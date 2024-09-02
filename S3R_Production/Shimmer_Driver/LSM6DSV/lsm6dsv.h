@@ -11,8 +11,6 @@
 uint8_t lsm6dsv_self_test(void);
 
 void lsm6dsv_driver_init(void);
-void lsm6dsv_power_on(void);
-void lsm6dsv_power_off(void);
 void lsm6dsv_SelectDevice(void);
 void lsm6dsv_UnselectDevice(void);
 void lsm6dsv_config_accel(uint8_t rate, uint8_t range);

@@ -953,6 +953,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
       updateBatteryStatus(adc_battVal);
     }
     HAL_ADC_Stop(hadcBattPtr);
+    Board_enableSensingPower(0);
   }
   else
   {
@@ -988,6 +989,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
     adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
     updateBatteryStatus(adc_battVal);
     HAL_ADC_Stop_IT(hadcBattPtr);
+    Board_enableSensingPower(0);
   }
 #elif defined(SHIMMER4_SDK)
   if (hadc->Instance == hadcResv.Instance)
@@ -1045,6 +1047,7 @@ void manageReadBatt(uint8_t isBlockingRead)
   }
   else
   {
+    Board_enableSensingPower(1);
     S4_ADC_readBatt(isBlockingRead);
   }
 }

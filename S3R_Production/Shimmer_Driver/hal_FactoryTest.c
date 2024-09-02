@@ -46,9 +46,13 @@ uint32_t run_factory_test(void)
 
     stat.testResult += InfoMem_test() << 8;
 
+    Board_enableSensingPower(1);
+
     stat.testResult += I2C_test();
 
     stat.testResult += SPI_test() << 16;
+
+    Board_enableSensingPower(0);
   }
 
   send_test_report("//***************************** TEST END "
@@ -227,9 +231,6 @@ uint8_t I2C_test(void)
 {
   uint8_t ret_val = 0;
 
-  set_power_i2c_main_bus(1);
-  HAL_Delay(50);
-
   I2C_scan_busses();
 
 #if defined(SHIMMER4_SDK)
@@ -267,8 +268,6 @@ uint8_t I2C_test(void)
   send_test_report(buffer);
 #endif
 
-  set_power_i2c_main_bus(0);
-
 #if defined(SHIMMER4_SDK)
   if (bmp280_test(hi2cMainBus))
   {
@@ -282,10 +281,13 @@ uint8_t I2C_test(void)
 uint8_t SPI_test(void)
 {
   uint8_t ret_val = 0;
+
 #if defined(SHIMMER3R)
+  MX_SPI1_Init();
+  MX_SPI2_Init();
+  MX_SPI3_Init();
+
   send_test_report("SPI1:\r\n");
-  set_power_spi1_bus(1, SPI1_CHIP_ALL);
-  HAL_Delay(50);
 
   uint8_t lsm6dsv_result = lsm6dsv_self_test();
   sprintf(buffer, " - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
@@ -312,11 +314,7 @@ uint8_t SPI_test(void)
   }
   send_test_report(buffer);
 
-  set_power_spi1_bus(0, SPI1_CHIP_ALL);
-
   send_test_report("SPI2:\r\n");
-  set_power_spi2_bus(1, SPI2_CHIP_ALL);
-  HAL_Delay(50);
   uint8_t lis3mdl_result = lis3mdl_self_test();
   sprintf(buffer, " - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
   send_test_report(buffer);
@@ -325,7 +323,6 @@ uint8_t SPI_test(void)
   sprintf(buffer, " - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
   send_test_report(buffer);
 
-  set_power_spi2_bus(0, SPI2_CHIP_ALL);
 #endif
 
   if (isAds1292Present())
@@ -333,6 +330,10 @@ uint8_t SPI_test(void)
     //EXG_init(hspiExg);
     //ret_val |= EXG_test();
   }
+
+  HAL_SPI_MspDeInit(&hspi1);
+  HAL_SPI_MspDeInit(&hspi2);
+  HAL_SPI_MspDeInit(&hspi3);
 
   return ret_val;
 }

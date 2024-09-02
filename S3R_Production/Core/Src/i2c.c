@@ -243,13 +243,13 @@ void I2C_init(void)
 #endif
 }
 
+#if defined(SHIMMER4_SDK)
 void set_power_i2c_main_bus(uint8_t state)
 {
-#if defined(SHIMMER4_SDK)
   Board_SW_EXP(state); //eeprom
-#endif
   Board_SW_I2C(state);
 }
+#endif
 
 void I2C_scan_busses(void)
 {
@@ -455,13 +455,14 @@ void I2C_startSensing(void)
 
   memset((uint8_t *) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
 
+#if defined(SHIMMER4_SDK)
   if ((0 != i2cSens.sensorLen)
-      && (HAL_GPIO_ReadPin(SW_GSR_GPIO_Port, SW_GSR_Pin) == GPIO_PIN_RESET))
+      && (HAL_GPIO_ReadPin(SW_I2C_GPIO_Port, SW_I2C_Pin) == GPIO_PIN_RESET))
   {
-    //HAL_GPIO_WritePin(SW_I2C_GPIO_Port, SW_I2C_Pin, GPIO_PIN_SET);//I2C
     Board_SW_I2C(1);
     HAL_Delay(1000);
   }
+#endif
 
 #if defined(SHIMMER3R)
   if (configBytes->chEnMag)
@@ -563,9 +564,9 @@ void I2cSens_stopSensing(void)
   {
     LSM303DLHC_sleep();
   }
-#endif
   HAL_Delay(10);
   Board_SW_I2C(0);
+#endif
 }
 
 #if defined(SHIMMER4_SDK)
@@ -1196,14 +1197,22 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void loadDaughterCardIdFromEeprom(void)
 {
+#if defined(SHIMMER3R)
+  Board_enableSensingPower(1);
+#elif defined(SHIMMER4_SDK)
   Board_SW_I2C(1);
   HAL_Delay(100);
+#endif
   uint8_t daughterCardIdBuf[CAT24C16_PAGE_SIZE];
   eepromRead(0, CAT24C16_PAGE_SIZE, &daughterCardIdBuf[0]);
   setDaugherCardIdPage(daughterCardIdBuf);
   parseDaughterCardId(getDaughtCardId()->exp_brd_id);
+#if defined(SHIMMER3R)
+  Board_enableSensingPower(0);
+#elif defined(SHIMMER4_SDK)
   HAL_Delay(10);
   Board_SW_I2C(0);
+#endif
 }
 
 /* USER CODE END 1 */

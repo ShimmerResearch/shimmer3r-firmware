@@ -165,18 +165,23 @@ uint8_t S4Sens_checkStartStreamingConditions(void)
 
 void S4Sens_startSensing(void)
 {
-  //if(stat.isDocked){
-  //   return;
-  //}
-
   stat.isConfiguring = 1;
   if (S4Sens_checkStartSensorConditions())
   {
     stat.isSensing = 1;
     sensing.isFileCreated = 0;
-    DockUart_disable();
-    S4Sens_stepInit();
     S4Sens_configureChannels();
+
+    if (areAnyChannelsEnabled())
+    {
+      Board_enableSensingPower(1);
+    }
+    else
+    {
+      stat.isConfiguring = 0;
+      stat.isSensing = 0;
+      return;
+    }
 
     uint16_t sampling_rate = S4Ram_getStoredConfig()->samplingRateTicks;
     sensing.freq = 32768.0 / sampling_rate;
@@ -189,6 +194,9 @@ void S4Sens_startSensing(void)
     sensing.clkInterval4096 = (uint16_t) 4096
         / sensing.freq; //216000000 = 8192*26367 or 108000000 = 4096*26367
     sensing.clkInterval16k = sampling_rate / 2;
+
+    DockUart_disable();
+    S4Sens_stepInit();
 
     S4_ADC_startSensing();
     I2C_startSensing();
@@ -210,12 +218,13 @@ void S4Sens_startSensing(void)
 #endif
 
     sensing.startTs = RTC_get64();
+
+    if (S4Sens_checkStartLoggingConditions())
+    {
+      SD_fileInit();
+    }
   }
 
-  if (S4Sens_checkStartLoggingConditions())
-  {
-    SD_fileInit();
-  }
   stat.isConfiguring = 0;
 }
 
@@ -317,6 +326,8 @@ void S4Sens_stopPeripherals(void)
   BtUart_sendRsp();
   I2C_stopSensing();
   SPI_stopSensing();
+
+  Board_enableSensingPower(0);
 }
 
 void S4Sens_streamData(void)
@@ -520,4 +531,13 @@ void saveData(void)
   {
     S4_Task_set(TASK_STOPSENSING);
   }
+}
+
+uint8_t areAnyChannelsEnabled(void)
+{
+  if (sensing.nbrAdcChans > 0 || sensing.nbrDigiChans > 0)
+  {
+    return 1;
+  }
+  return 0;
 }

@@ -608,16 +608,6 @@ void lsm303ah_driver_init(void)
   dev_ctx_mg.handle = (void *) &mag_bus;
 }
 
-void lsm303ah_power_on(void)
-{
-  set_power_spi2_bus(true, SPI2_CHIP_INDEX_LSM303AH);
-}
-
-void lsm303ah_power_off(void)
-{
-  set_power_spi2_bus(false, SPI2_CHIP_INDEX_LSM303AH);
-}
-
 void lsm303ah_SelectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
