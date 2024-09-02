@@ -164,16 +164,6 @@ void lis2mdl_driver_init(void)
   //lis2mdl_obj.IO.BusType = LIS2MDL_I2C_BUS;
 }
 
-void lis2mdl_power_on(void)
-{
-  set_power_i2c1_bus(true, I2C1_CHIP_INDEX_LIS2MDL);
-}
-
-void lis2mdl_power_off(void)
-{
-  set_power_i2c1_bus(false, I2C1_CHIP_INDEX_LIS2MDL);
-}
-
 uint8_t lis2mdl_self_test(void)
 {
   uint8_t tx_buffer[1000];

@@ -15,8 +15,6 @@
 #define BMP_LEN_CALIB_DATA BMP3_LEN_CALIB_DATA
 
 void bmp3_driver_init(void);
-void bmp3_power_on(void);
-void bmp3_power_off(void);
 void bmp3_selectDevice(void);
 void bmp3_unselectDevice(void);
 int8_t bmp3_self_test(void);

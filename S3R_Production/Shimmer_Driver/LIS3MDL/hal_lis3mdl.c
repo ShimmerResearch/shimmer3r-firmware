@@ -175,16 +175,6 @@ void lis3mdl_driver_init(void)
   lis3mdl_obj.Ctx.handle = &SENSOR_BUS;
 }
 
-void lis3mdl_power_on(void)
-{
-  set_power_spi2_bus(true, SPI2_CHIP_INDEX_LIS3MDL);
-}
-
-void lis3mdl_power_off(void)
-{
-  set_power_spi2_bus(false, SPI2_CHIP_INDEX_LIS3MDL);
-}
-
 void lis3mdl_selectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);

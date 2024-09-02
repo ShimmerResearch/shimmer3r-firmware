@@ -170,16 +170,6 @@ void lsm6dsv_driver_init(void)
   lsm6dsv_obj.Ctx.handle = &SENSOR_BUS;
 }
 
-void lsm6dsv_power_on(void)
-{
-  set_power_spi1_bus(true, SPI1_CHIP_INDEX_LSM6DSV);
-}
-
-void lsm6dsv_power_off(void)
-{
-  set_power_spi1_bus(false, SPI1_CHIP_INDEX_LSM6DSV);
-}
-
 void lsm6dsv_selectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);

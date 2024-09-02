@@ -690,11 +690,6 @@ void DockUart_sendRsp(void)
     *(uartRespBuf + uart_resp_len++) = UART_PROP_CARD_ID;
     if ((uartDcMemLength + uart_resp_len) < UART_RSP_PACKET_SIZE)
     {
-      //CAT24C16_init();
-      //CAT24C16_read(uartDcMemOffset, (uint16_t) uartDcMemLength,
-      //  (uartRespBuf + uart_resp_len));
-      //CAT24C16_powerOff();
-
 #if defined(SHIMMER3)
       memcpy(uartRespBuf + uart_resp_len, daughtCardId + uartDcMemOffset, uartDcMemLength);
 #else

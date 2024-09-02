@@ -18,11 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "adc.h"
 #include "crc.h"
 #include "gpdma.h"
 #include "gpio.h"
-#include "i2c.h"
 #include "icache.h"
 #include "mdf.h"
 #include "memorymap.h"
@@ -255,6 +253,10 @@ int main(void)
 #endif
 
   linkedListConfig(&hadc1); //configure linkedlist for ADC
+
+#if !IS_CONNECTED_EEPROM
+  setMockExpansionBrdDetails();
+#endif
 
   Init();
   //S4_Task_set(TASK_STARTSENSING);
