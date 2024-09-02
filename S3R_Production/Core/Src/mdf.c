@@ -80,22 +80,21 @@ void MX_MDF1_Init(void)
   /* USER CODE BEGIN MDF1_Init 2 */
 
   /* USER CODE END MDF1_Init 2 */
-
 }
 
-void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
+void HAL_MDF_MspInit(MDF_HandleTypeDef *mdfHandle)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  if(IS_MDF_INSTANCE(mdfHandle->Instance))
+  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
+  if (IS_MDF_INSTANCE(mdfHandle->Instance))
   {
-  /* USER CODE BEGIN MDF1_MspInit 0 */
+    /* USER CODE BEGIN MDF1_MspInit 0 */
 
-  /* USER CODE END MDF1_MspInit 0 */
+    /* USER CODE END MDF1_MspInit 0 */
 
-  /** Initializes the peripherals clock
-  */
+    /** Initializes the peripherals clock
+     */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_MDF1;
     PeriphClkInit.Mdf1ClockSelection = RCC_MDF1CLKSOURCE_HCLK;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -111,27 +110,27 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
     PC0     ------> MDF1_SDI4
     PC1     ------> MDF1_CKI4
     */
-    GPIO_InitStruct.Pin = MIC_SD_Pin|MIC_CK_Pin;
+    GPIO_InitStruct.Pin = MIC_SD_Pin | MIC_CK_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF6_MDF1;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN MDF1_MspInit 1 */
+    /* USER CODE BEGIN MDF1_MspInit 1 */
 
-  /* USER CODE END MDF1_MspInit 1 */
+    /* USER CODE END MDF1_MspInit 1 */
   }
 }
 
-void HAL_MDF_MspDeInit(MDF_HandleTypeDef* mdfHandle)
+void HAL_MDF_MspDeInit(MDF_HandleTypeDef *mdfHandle)
 {
 
-  if(IS_MDF_INSTANCE(mdfHandle->Instance))
+  if (IS_MDF_INSTANCE(mdfHandle->Instance))
   {
-  /* USER CODE BEGIN MDF1_MspDeInit 0 */
+    /* USER CODE BEGIN MDF1_MspDeInit 0 */
 
-  /* USER CODE END MDF1_MspDeInit 0 */
+    /* USER CODE END MDF1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_MDF1_CLK_DISABLE();
 
@@ -139,11 +138,11 @@ void HAL_MDF_MspDeInit(MDF_HandleTypeDef* mdfHandle)
     PC0     ------> MDF1_SDI4
     PC1     ------> MDF1_CKI4
     */
-    HAL_GPIO_DeInit(GPIOC, MIC_SD_Pin|MIC_CK_Pin);
+    HAL_GPIO_DeInit(GPIOC, MIC_SD_Pin | MIC_CK_Pin);
 
-  /* USER CODE BEGIN MDF1_MspDeInit 1 */
+    /* USER CODE BEGIN MDF1_MspDeInit 1 */
 
-  /* USER CODE END MDF1_MspDeInit 1 */
+    /* USER CODE END MDF1_MspDeInit 1 */
   }
 }
 
