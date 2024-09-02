@@ -62,8 +62,6 @@ void CAT24C16_powerOn(void)
 {
   Board_enableSensingPower(1);
   MX_I2C1_Init();
-  //set_power_i2c1_bus(true, I2C1_CHIP_INDEX_EEPROM);
-  //HAL_Delay(2); //2ms
 }
 
 void CAT24C16_powerOff(void)
@@ -71,7 +69,6 @@ void CAT24C16_powerOff(void)
   HAL_Delay(5); //5ms to ensure no writes pending
   I2C1_DeInit();
   Board_enableSensingPower(0);
-  //set_power_i2c1_bus(false, I2C1_CHIP_INDEX_EEPROM);
 }
 
 void CAT24C16_read(uint16_t address, uint16_t length, uint8_t *outBuffer)
