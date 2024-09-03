@@ -18,18 +18,14 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "adc.h"
 #include "crc.h"
 #include "gpdma.h"
 #include "gpio.h"
-#include "i2c.h"
 #include "icache.h"
-#include "mdf.h"
 #include "memorymap.h"
 #include "rng.h"
 #include "rtc.h"
 #include "sdmmc.h"
-#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
@@ -42,6 +38,10 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if !USE_USBX
+#include "usb_device.h"
+#endif
 
 #define TIM_MEASURE_START time_start = SysTick->VAL
 #define TIM_MEASURE_END    \
@@ -142,10 +142,9 @@ void Init()
   SD_init();
   //GPIO_init();
   S4_ADC_init();
-  SPI_init();
 
   setBootStage(BOOT_STAGE_I2C);
-  I2C_init();
+  //TODO Shimmer3 performs bus scan on boot - not needed for Shimmer3r?
   loadDaughterCardIdFromEeprom();
 
   setUartPeripheralPointers();
@@ -182,7 +181,8 @@ void Init()
   FullTest();
 #endif
   //BT_disable(huartBt);
-  S4Sens_stopPeripherals();
+  //S4Sens_stopPeripherals();
+  S4_RTC_WakeUpOff();
 #if defined(SHIMMER4_SDK)
   S4_RTC_WakeUpSetSlow();
 #endif
@@ -245,21 +245,13 @@ int main(void)
   MX_RNG_Init();
   MX_RTC_Init();
   MX_SDMMC1_SD_Init();
-  MX_SPI2_Init();
-  MX_USART1_UART_Init();
   MX_USART3_UART_Init();
-  MX_ADC2_Init();
   MX_USB_OTG_HS_PCD_Init();
   MX_ICACHE_Init();
   MX_CRC_Init();
-  MX_SPI1_Init();
   MX_TIM3_Init();
-  MX_MDF1_Init();
-  MX_ADC1_Init();
-  MX_SPI3_Init();
   MX_TIM6_Init();
   MX_TIM2_Init();
-  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 #if USE_FATFS
   MX_FATFS_Init();
@@ -270,14 +262,18 @@ int main(void)
 
   linkedListConfig(&hadc1); //configure linkedlist for ADC
 
+#if !IS_CONNECTED_EEPROM
+  setMockExpansionBrdDetails();
+#endif
+
   Init();
+  stat.isInitialising = 0;
+  setBootStage(BOOT_STAGE_END);
+
   //S4_Task_set(TASK_STARTSENSING);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //run_factory_test();
-
-  stat.isInitialising = 0;
-  setBootStage(BOOT_STAGE_END);
 
   /* USER CODE END 2 */
 
@@ -571,7 +567,7 @@ void loadSensorConfigurationAndCalibration(void)
       S4Ram_init();
       UpdateSdConfig();
       SetSdCfgFlag(0);
-      if (isFileStatusOk())
+      if (!isFileStatusOk())
       {
         stat.sdlogReady = 0;
         stat.badFile = 1;

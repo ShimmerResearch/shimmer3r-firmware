@@ -174,13 +174,22 @@ void S4Sens_startSensing(void)
   {
     stat.isSensing = 1;
     sensing.isFileCreated = 0;
-    DockUart_disable();
-    S4Sens_stepInit();
     S4Sens_configureChannels();
 
-    uint16_t sampling_rate = S4Ram_getStoredConfig()->samplingRateTicks;
-    sensing.freq = 32768.0 / sampling_rate;
-    if (sensing.freq > 4096)
+    if (areAnyChannelsEnabled())
+    {
+      Board_enableSensingPower(1);
+    }
+    else
+    {
+      stat.isConfiguring = 0;
+      stat.isSensing = 0;
+      return;
+    }
+
+    uint16_t samplingRateTicks = S4Ram_getStoredConfig()->samplingRateTicks;
+    sensing.freq = get_shimmer_sampling_freq();
+    if (sensing.freq > 4096.0)
     { //Please don't go too fast, Thx, Best Regards.
       stat.isConfiguring = 0;
       stat.isSensing = 0;
@@ -188,11 +197,22 @@ void S4Sens_startSensing(void)
     }
     sensing.clkInterval4096 = (uint16_t) 4096
         / sensing.freq; //216000000 = 8192*26367 or 108000000 = 4096*26367
-    sensing.clkInterval16k = sampling_rate / 2;
+    sensing.clkInterval16k = samplingRateTicks / 2;
 
-    S4_ADC_startSensing();
+    DockUart_disable();
+    S4Sens_stepInit();
+
+    if (areAdcChannelsEnabled())
+    {
+      S4_ADC_startSensing();
+    }
     I2C_startSensing();
     SPI_startSensing();
+
+    if (S4Ram_getStoredConfig()->chEnMicrophone)
+    {
+      MX_MDF1_Init();
+    }
 
     //I2cSensing(1);// gather the first set of sample?
     //I2cBattMonitor(1);
@@ -206,16 +226,17 @@ void S4Sens_startSensing(void)
 #if SENS_CLK_RTC0TIM1
     TIM_startSensing();
 #else
-    S4_RTC_WakeUpSet(sampling_rate);
+    S4_RTC_WakeUpSet(samplingRateTicks);
 #endif
 
     sensing.startTs = RTC_get64();
+
+    if (S4Sens_checkStartLoggingConditions())
+    {
+      SD_fileInit();
+    }
   }
 
-  if (S4Sens_checkStartLoggingConditions())
-  {
-    SD_fileInit();
-  }
   stat.isConfiguring = 0;
 }
 
@@ -312,11 +333,21 @@ void S4Sens_stopPeripherals(void)
 
 #endif
 
-  S4_ADC_stopSensing();
-  HAL_Delay(10); //Send ACK command needs delay here...
-  BtUart_sendRsp();
+  if (areAdcChannelsEnabled())
+  {
+    S4_ADC_stopSensing();
+  }
+  //HAL_Delay(10); //Send ACK command needs delay here...
+  //BtUart_sendRsp();
   I2C_stopSensing();
   SPI_stopSensing();
+
+  Board_enableSensingPower(0);
+
+  if (S4Ram_getStoredConfig()->chEnMicrophone)
+  {
+    MDF1_DeInit();
+  }
 }
 
 void S4Sens_streamData(void)
@@ -350,7 +381,10 @@ void S4Sens_streamData(void)
 
 void S4Sens_bufPoll()
 {
-  S4_ADC_gatherDataStart();
+  if (areAdcChannelsEnabled())
+  {
+    S4_ADC_gatherDataStart();
+  }
 
   I2C_pollSensors();
 
@@ -520,4 +554,13 @@ void saveData(void)
   {
     S4_Task_set(TASK_STOPSENSING);
   }
+}
+
+uint8_t areAnyChannelsEnabled(void)
+{
+  if (sensing.nbrAdcChans > 0 || sensing.nbrDigiChans > 0)
+  {
+    return 1;
+  }
+  return 0;
 }

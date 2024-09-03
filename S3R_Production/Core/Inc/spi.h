@@ -56,33 +56,34 @@ extern "C"
     SPI3_BUS_FLAG = 0x04
   } SPI_BUS_INDEX;
 
-  typedef enum
-  {
-    SPI1_CHIP_INDEX_LSM6DSV,
-    SPI1_CHIP_INDEX_ADXL371,
-    SPI1_CHIP_INDEX_BMP390,
-    SPI1_CHIP_QTY,
-    SPI1_CHIP_ALL
-  } SPI1_CHIP_INDEX;
-
-  typedef enum
-  {
-    SPI2_CHIP_INDEX_LIS2DW12,
-    SPI2_CHIP_INDEX_LIS3MDL,
-    SPI2_CHIP_QTY,
-    SPI2_CHIP_ALL
-  } SPI2_CHIP_INDEX;
-
-  typedef enum
-  {
-    SPI3_CHIP_INDEX_ADS1292R,
-    SPI3_CHIP_QTY
-  } SPI3_CHIP_INDEX;
+  //typedef enum
+  //{
+  //  SPI1_CHIP_INDEX_LSM6DSV,
+  //  SPI1_CHIP_INDEX_ADXL371,
+  //  SPI1_CHIP_INDEX_BMP390,
+  //  SPI1_CHIP_QTY,
+  //  SPI1_CHIP_ALL
+  //} SPI1_CHIP_INDEX;
+  //
+  //typedef enum
+  //{
+  //  SPI2_CHIP_INDEX_LIS2DW12,
+  //  SPI2_CHIP_INDEX_LIS3MDL,
+  //  SPI2_CHIP_QTY,
+  //  SPI2_CHIP_ALL
+  //} SPI2_CHIP_INDEX;
+  //
+  //typedef enum
+  //{
+  //  SPI3_CHIP_INDEX_ADS1292R,
+  //  SPI3_CHIP_QTY
+  //} SPI3_CHIP_INDEX;
 
   typedef enum
   { //i2c
-    SPI1_LSM6DSV_ACCEL = 0,
-    SPI1_LSM6DSV_GYRO,
+    SPI1_LSM6DSV_GYRO_AND_ACCEL = 0,
+    SPI1_LSM6DSV_ACCEL_ONLY,
+    SPI1_LSM6DSV_GYRO_ONLY,
     SPI1_ADXL371_ACCEL,
     SPI1_BMP390_PRESSURE_TEMP,
     SPI2_LIS2DW12_ACCEL,
@@ -95,6 +96,7 @@ extern "C"
   {
     SPI_STAT_IDLE = 0,
     SPI_STAT_LSM6DSV_STATUS_GET,
+    SPI_STAT_LSM6DSV_GYRO_AND_ACCEL_GET,
     SPI_STAT_LSM6DSV_ACCEL_GET,
     SPI_STAT_LSM6DSV_GYRO_GET,
     SPI_STAT_ADXL371_ACCEL_GET,
@@ -113,8 +115,9 @@ extern "C"
 
   typedef struct
   {
-    uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET + 6];
+    uint8_t lsm6dsvGyroAndAccelBuf[SPI_DMA_TXRX_OFFSET + 12];
     uint8_t lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET + 6];
+    uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t adxl371Buf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET + 6 + 1]; //+1 for BMP390 dummy byte
   } spi1ReadBuf;
@@ -150,7 +153,9 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
-  void SPI_init(void);
+  void SPI1_DeInit(void);
+  void SPI2_DeInit(void);
+  void SPI3_DeInit(void);
   void SPI_configureChannels(void);
   void SPI_startSensing(void);
   void SPI_pollSensors(void);
@@ -169,7 +174,7 @@ void SpiStepDone(void);
 
 #if defined(SHIMMER3R)
   void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start);
-  void SpiSens_sensorNext(SPITypeDef *spiSensingInfo);
+  uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo);
 
   void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
   void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
@@ -178,8 +183,6 @@ void SpiStepDone(void);
   void SPI3_RxCpltCallback(SPI_HandleTypeDef *hspi);
   void SPI_ErrorCallback(SPI_HandleTypeDef *hspi);
 
-  void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex);
-  void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex);
   bool areSpiChannelsEnabled(void);
 #endif
 

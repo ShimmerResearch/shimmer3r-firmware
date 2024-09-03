@@ -103,4 +103,8 @@ void eepromRead(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
 void eepromWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
 void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enum EEPROM_RW eepromRW);
 
+#if !IS_CONNECTED_EEPROM
+void setMockExpansionBrdDetails(void);
+#endif
+
 #endif

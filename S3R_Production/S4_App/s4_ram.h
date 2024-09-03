@@ -498,5 +498,6 @@ uint8_t GetSdCfgFlag(void);
 void SetSdCfgFlag(uint8_t flag);
 uint8_t GetRamCalibFlag(void);
 void SetRamCalibFlag(uint8_t flag);
+float get_shimmer_sampling_freq(void);
 
 #endif //S4Ram_H

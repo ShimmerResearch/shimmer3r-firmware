@@ -108,6 +108,9 @@ extern void Board_sdPowerCycle(void);
 
 extern void Board_delayMicrosInit(void);
 extern void Board_delayMicros(uint32_t micros);
+#if defined(SHIMMER3R)
+void Board_enableSensingPower(uint8_t state);
+#endif
 
 #if defined(SHIMMER3R)
 #define ECG_CS_GPIO               GPIO_ADC_INT_EXP1_GPIO_Port
@@ -216,10 +219,31 @@ extern void Board_delayMicros(uint32_t micros);
 
 //exp_reset_n is used by RESETN of exg*2 and VCC of eeprom
 #if defined(SHIMMER3R)
-#define Board_SW_I2C(x) \
-  HAL_GPIO_WritePin(SW_I2C1_GPIO_Port, SW_I2C1_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_SW_PV_SENSE(x) \
+  HAL_GPIO_WritePin(SW_SENSE_GPIO_Port, SW_SENSE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_SW_PV_SENSE_IO(x) \
+  HAL_GPIO_WritePin(SW_SENSE_IO_GPIO_Port, SW_SENSE_IO_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_SW_GSR(x) \
+  HAL_GPIO_WritePin(SW_GSR_GPIO_Port, SW_GSR_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_SW_PPG(x) \
+  HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//TODO confirm which pin is going to be used
+#define Board_SW_STRAIN_GUAGE(x) \
+  HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_EXG_RESET_N(x) \
   HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_SW_MIC(x) \
+  HAL_GPIO_WritePin(SW_MIC_GPIO_Port, SW_MIC_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+
+#define LIS2MDL_DRDY HAL_GPIO_ReadPin(LIS2MDL_DRDY_GPIO_Port, LIS2MDL_DRDY_Pin)
+#define LIS3MDL_DRDY HAL_GPIO_ReadPin(LIS3MDL_DRDY_GPIO_Port, LIS3MDL_DRDY_Pin)
+#define LSM6DSV_DRDY HAL_GPIO_ReadPin(LSM6DSV_INT1_GPIO_Port, LSM6DSV_INT1_Pin)
+#define BMP390_INT   HAL_GPIO_ReadPin(BMP390_INT_GPIO_Port, BMP390_INT_Pin)
+#if defined(LIS2DW12_INT1_Pin)
+#define LIS2DW12_INT1 \
+  HAL_GPIO_ReadPin(LIS2DW12_INT1_GPIO_Port, LIS2DW12_INT1_Pin)
+#endif
+
 #elif defined(SHIMMER4_SDK)
 #define Board_SW_EXP(x) \
   HAL_GPIO_WritePin(EXP_RESET_N_GPIO_Port, EXP_RESET_N_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
