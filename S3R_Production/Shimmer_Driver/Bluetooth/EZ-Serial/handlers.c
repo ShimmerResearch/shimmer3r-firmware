@@ -531,6 +531,11 @@ HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len)
 
   //SHIMMER_PRINTF("BT_write=%d\n", len);
 
+  if (getSpaceInBtTxBuf() <= len)
+  {
+      return HAL_ERROR; //fail
+  }
+
   pushBytesToBtTxBuf(buf, len);
 
   sendNextCharIfNotInProgress();
