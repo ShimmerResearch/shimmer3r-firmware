@@ -34,11 +34,11 @@ uint32_t run_factory_test(void)
       || factoryTestToRun == FACTORY_TEST_LEDS)
   {
     led_test();
-  }
 
-  if (factoryTestToRun == FACTORY_TEST_MAIN)
-  {
-    send_test_report("\r\n");
+    if (factoryTestToRun == FACTORY_TEST_MAIN)
+    {
+      send_test_report("\r\n");
+    }
   }
 
   if (factoryTestToRun == FACTORY_TEST_MAIN
