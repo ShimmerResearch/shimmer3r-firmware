@@ -22,7 +22,6 @@
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
-#include "mdf.h"
 #include "memorymap.h"
 #include "rng.h"
 #include "rtc.h"
@@ -251,7 +250,6 @@ int main(void)
   MX_ICACHE_Init();
   MX_CRC_Init();
   MX_TIM3_Init();
-  MX_MDF1_Init();
   MX_TIM6_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */

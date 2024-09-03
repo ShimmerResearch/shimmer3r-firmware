@@ -209,6 +209,11 @@ void S4Sens_startSensing(void)
     I2C_startSensing();
     SPI_startSensing();
 
+    if (S4Ram_getStoredConfig()->chEnMicrophone)
+    {
+      MX_MDF1_Init();
+    }
+
     //I2cSensing(1);// gather the first set of sample?
     //I2cBattMonitor(1);
 
@@ -338,6 +343,11 @@ void S4Sens_stopPeripherals(void)
   SPI_stopSensing();
 
   Board_enableSensingPower(0);
+
+  if (S4Ram_getStoredConfig()->chEnMicrophone)
+  {
+    MDF1_DeInit();
+  }
 }
 
 void S4Sens_streamData(void)

@@ -110,6 +110,7 @@
 //#include "wwdg.h"
 #include "crc.h"
 #include "gpio.h"
+#include "mdf.h"
 
 #include "swo.h"
 
