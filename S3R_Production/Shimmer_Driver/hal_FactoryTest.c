@@ -20,8 +20,7 @@ uint32_t run_factory_test(void)
   send_test_report("//**************************** TEST START "
                    "************************************//\r\n");
 
-  if (factoryTestToRun == FACTORY_TEST_MAIN
-      || factoryTestToRun == FACTORY_TEST_ICS)
+  if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
   {
     print_date_and_time();
     send_test_report("\r\n");
@@ -30,8 +29,7 @@ uint32_t run_factory_test(void)
     send_test_report("\r\n");
   }
 
-  if (factoryTestToRun == FACTORY_TEST_MAIN
-      || factoryTestToRun == FACTORY_TEST_LEDS)
+  if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
   {
     led_test();
 
@@ -41,8 +39,7 @@ uint32_t run_factory_test(void)
     }
   }
 
-  if (factoryTestToRun == FACTORY_TEST_MAIN
-      || factoryTestToRun == FACTORY_TEST_ICS)
+  if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
   {
     send_test_report("\r\n");
 
