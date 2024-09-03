@@ -81,6 +81,8 @@ static void SystemPower_Config(void);
 void Init(void);
 //TODO move out of here
 #if defined(SHIMMER3R)
+void setBootStage(boot_stage_t bootStageNew);
+boot_stage_t getBootStage(void);
 void btInitialise(void);
 void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
@@ -103,7 +105,7 @@ STATTypeDef stat;
 
 volatile uint32_t time_start, time_end, time_diff;
 
-uint8_t accelBuf[7];
+boot_stage_t bootStage;
 
 extern UART_HandleTypeDef *huartBt;
 
@@ -124,7 +126,7 @@ void Init()
   Board_ledTimersStart(&htim3, &htim2, &htim6);
 #endif
 
-  Board_ledOn(LED_ALL);
+  setBootStage(BOOT_STAGE_START);
   stat.battStatLed = LED_YELLOW;
   stat.isConfiguring = 1;
 
@@ -139,10 +141,11 @@ void Init()
 
   SD_init();
   //GPIO_init();
-  I2C_init();
   S4_ADC_init();
   SPI_init();
 
+  setBootStage(BOOT_STAGE_I2C);
+  I2C_init();
   loadDaughterCardIdFromEeprom();
 
   setUartPeripheralPointers();
@@ -154,6 +157,7 @@ void Init()
   SD_insertedCheck();
   //GPIO_userButtonCheck();
 #if defined(SHIMMER3R)
+  setBootStage(BOOT_STAGE_BLUETOOTH);
   setCrcHandleToUse(getCrcHandle());
   btCommsProtocolInit(setTaskNewBtCmdToProcess);
   //btFactoryResetViaFw();
@@ -165,6 +169,12 @@ void Init()
 
   DockUart_setup();
   DockUart_disable();
+
+  setBootStage(BOOT_STAGE_CONFIGURATION);
+  /* Calibration needs to be loaded after the chips have been detected in
+   * order to know which default calib to set for attached chips.
+   * It also needs to be loaded after the BT is initialised so that the
+   * MAC ID can be used for default Shimmer name and calibration file names.*/
   loadSensorConfigurationAndCalibration();
 
   //==== 13.8ma ====
@@ -182,7 +192,6 @@ void Init()
 
   stat.isConfiguring = 0;
   DockUart_enable();
-  Board_ledOff(LED_ALL);
   //while(1){
   //   //__NOP();
   //   Power_StopUntilInterrupt();
@@ -268,6 +277,7 @@ int main(void)
   //run_factory_test();
 
   stat.isInitialising = 0;
+  setBootStage(BOOT_STAGE_END);
 
   /* USER CODE END 2 */
 
@@ -362,6 +372,41 @@ static void SystemPower_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void setBootStage(boot_stage_t bootStageNew)
+{
+    bootStage = bootStageNew;
+
+    switch (bootStage)
+    {
+    case BOOT_STAGE_START:
+        Board_ledOn(LED_ALL);
+        break;
+    case BOOT_STAGE_I2C:
+        Board_ledOff(LED_ALL);
+        break;
+    case BOOT_STAGE_BLUETOOTH:
+        Board_ledOn(LED_ALL);
+        break;
+    case BOOT_STAGE_BLUETOOTH_FAILURE:
+        Board_ledOff(LED_ALL);
+        break;
+    case BOOT_STAGE_CONFIGURATION:
+        Board_ledOn(LED_ALL);
+        break;
+    case BOOT_STAGE_END:
+        Board_ledOff(LED_ALL);
+        break;
+    default:
+        break;
+    }
+    return;
+}
+
+boot_stage_t getBootStage(void)
+{
+  return bootStage;
+}
 
 STATTypeDef *GetStatus()
 {
@@ -473,9 +518,10 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
       }
       else
       {
-        SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
-        //software POR reset
-        NVIC_SystemReset();
+//        SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
+//        //software POR reset
+//        NVIC_SystemReset();
+        setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
       }
 
       if (isInit)

@@ -45,8 +45,27 @@
 uint8_t cntBlink = 0;
 uint8_t cnt1 = 0;
 
+extern boot_stage_t getBootStage(void);
+
 void S4Led_Blink(void)
 {
+  boot_stage_t bootStage = getBootStage();
+  if (bootStage != BOOT_STAGE_END)
+  {
+      switch (bootStage)
+      {
+      case BOOT_STAGE_I2C:
+          Board_ledToggle(LED_RED);
+          break;
+      case BOOT_STAGE_BLUETOOTH_FAILURE:
+          Board_ledToggle(LED_YELLOW);
+          break;
+      default:
+          break;
+      }
+      return;
+  }
+
 #if USE_DEFAULT_LED
   //batt leds:
   uint32_t batt_led = 0;

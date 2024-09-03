@@ -195,50 +195,74 @@ static void updateLedState(led_mode updateMode, uint8_t ledMask)
   {
     uint8_t valueToSet = updateMode == LED_MODE_ON ? LED_PWM_ON : LED_PWM_OFF;
 
-    if (ledMask & LED_RED)
-    {
-      ledStateLwrRed = valueToSet;
-    }
-    if (ledMask & LED_GREEN0)
-    {
-      ledStateLwrGreen = valueToSet;
-    }
-    if (ledMask & LED_YELLOW)
+    if (ledMask == LED_ALL)
     {
       ledStateLwrRed = valueToSet;
       ledStateLwrGreen = valueToSet;
-    }
-    if (ledMask & LED_GREEN1)
-    {
+      ledStateLwrBlue = valueToSet;
+      ledStateUprRed = valueToSet;
       ledStateUprGreen = valueToSet;
-    }
-    if (ledMask & LED_BLUE)
-    {
       ledStateUprBlue = valueToSet;
+    }
+    else
+    {
+      if (ledMask & LED_RED)
+      {
+        ledStateLwrRed = valueToSet;
+      }
+      if (ledMask & LED_GREEN0)
+      {
+        ledStateLwrGreen = valueToSet;
+      }
+      if (ledMask & LED_YELLOW)
+      {
+        ledStateLwrRed = valueToSet;
+        ledStateLwrGreen = valueToSet;
+      }
+      if (ledMask & LED_GREEN1)
+      {
+        ledStateUprGreen = valueToSet;
+      }
+      if (ledMask & LED_BLUE)
+      {
+        ledStateUprBlue = valueToSet;
+      }
     }
   }
   else if (updateMode == LED_MODE_TOGGLE)
   {
-    if (ledMask & LED_RED)
-    {
-      ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
-    }
-    if (ledMask & LED_GREEN0)
-    {
-      ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
-    }
-    if (ledMask & LED_YELLOW)
+    if (ledMask == LED_ALL)
     {
       ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
       ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
-    }
-    if (ledMask & LED_GREEN1)
-    {
+      ledStateLwrBlue = ledStateLwrBlue == LED_PWM_ON ? 0 : LED_PWM_ON;
+      ledStateUprRed = ledStateUprRed == LED_PWM_ON ? 0 : LED_PWM_ON;
       ledStateUprGreen = ledStateUprGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
-    }
-    if (ledMask & LED_BLUE)
-    {
       ledStateUprBlue = ledStateUprBlue == LED_PWM_ON ? 0 : LED_PWM_ON;
+    }
+    else
+    {
+      if (ledMask & LED_RED)
+      {
+        ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
+      }
+      if (ledMask & LED_GREEN0)
+      {
+        ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
+      }
+      if (ledMask & LED_YELLOW)
+      {
+        ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
+        ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
+      }
+      if (ledMask & LED_GREEN1)
+      {
+        ledStateUprGreen = ledStateUprGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
+      }
+      if (ledMask & LED_BLUE)
+      {
+        ledStateUprBlue = ledStateUprBlue == LED_PWM_ON ? 0 : LED_PWM_ON;
+      }
     }
   }
 }
@@ -264,8 +288,8 @@ uint8_t isLedOnUprGreen(void)
 void Board_ledOn(uint8_t ledMask)
 {
   updateLedState(LED_MODE_ON, ledMask);
-  rgb_led_lwr_color(ledMask >> 16, ledMask >> 8, ledMask);
-  rgb_led_upr_color(ledMask >> 16, ledMask >> 8, ledMask);
+  rgb_led_lwr_color(ledStateLwrRed, ledStateLwrGreen, ledStateLwrBlue);
+  rgb_led_upr_color(ledStateUprRed, ledStateUprGreen, ledStateUprBlue);
 }
 #elif if defined(SHIMMER4_SDK)
 void Board_ledOn(uint8_t ledMask)
@@ -292,8 +316,8 @@ void Board_ledOn(uint8_t ledMask)
 void Board_ledOff(uint8_t ledMask)
 {
   updateLedState(LED_MODE_OFF, ledMask);
-  rgb_led_lwr_color(ledMask >> 16, ledMask >> 8, ledMask);
-  rgb_led_upr_color(ledMask >> 16, ledMask >> 8, ledMask);
+  rgb_led_lwr_color(ledStateLwrRed, ledStateLwrGreen, ledStateLwrBlue);
+  rgb_led_upr_color(ledStateUprRed, ledStateUprGreen, ledStateUprBlue);
 }
 #elif if defined(SHIMMER4_SDK)
 void Board_ledOff(uint8_t ledMask)

@@ -530,6 +530,16 @@ typedef enum
   BATT_INTERVAL_DOCKED    //30 Seconds
 } battAlarmInterval_t;
 
+typedef enum
+{
+    BOOT_STAGE_START,
+    BOOT_STAGE_I2C,
+    BOOT_STAGE_BLUETOOTH,
+    BOOT_STAGE_BLUETOOTH_FAILURE,
+    BOOT_STAGE_CONFIGURATION,
+    BOOT_STAGE_END
+} boot_stage_t;
+
 //STATTypeDef * GetStatus(void);
 extern STATTypeDef stat;
 
