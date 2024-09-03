@@ -375,32 +375,32 @@ static void SystemPower_Config(void)
 
 void setBootStage(boot_stage_t bootStageNew)
 {
-    bootStage = bootStageNew;
+  bootStage = bootStageNew;
 
-    switch (bootStage)
-    {
-    case BOOT_STAGE_START:
-        Board_ledOn(LED_ALL);
-        break;
-    case BOOT_STAGE_I2C:
-        Board_ledOff(LED_ALL);
-        break;
-    case BOOT_STAGE_BLUETOOTH:
-        Board_ledOn(LED_ALL);
-        break;
-    case BOOT_STAGE_BLUETOOTH_FAILURE:
-        Board_ledOff(LED_ALL);
-        break;
-    case BOOT_STAGE_CONFIGURATION:
-        Board_ledOn(LED_ALL);
-        break;
-    case BOOT_STAGE_END:
-        Board_ledOff(LED_ALL);
-        break;
-    default:
-        break;
-    }
-    return;
+  switch (bootStage)
+  {
+  case BOOT_STAGE_START:
+    Board_ledOn(LED_ALL);
+    break;
+  case BOOT_STAGE_I2C:
+    Board_ledOff(LED_ALL);
+    break;
+  case BOOT_STAGE_BLUETOOTH:
+    Board_ledOn(LED_ALL);
+    break;
+  case BOOT_STAGE_BLUETOOTH_FAILURE:
+    Board_ledOff(LED_ALL);
+    break;
+  case BOOT_STAGE_CONFIGURATION:
+    Board_ledOn(LED_ALL);
+    break;
+  case BOOT_STAGE_END:
+    Board_ledOff(LED_ALL);
+    break;
+  default:
+    break;
+  }
+  return;
 }
 
 boot_stage_t getBootStage(void)
@@ -518,9 +518,9 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
       }
       else
       {
-//        SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
-//        //software POR reset
-//        NVIC_SystemReset();
+        //SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
+        ////software POR reset
+        //NVIC_SystemReset();
         setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
       }
 

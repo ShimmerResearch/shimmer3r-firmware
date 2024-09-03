@@ -52,18 +52,18 @@ void S4Led_Blink(void)
   boot_stage_t bootStage = getBootStage();
   if (bootStage != BOOT_STAGE_END)
   {
-      switch (bootStage)
-      {
-      case BOOT_STAGE_I2C:
-          Board_ledToggle(LED_RED);
-          break;
-      case BOOT_STAGE_BLUETOOTH_FAILURE:
-          Board_ledToggle(LED_YELLOW);
-          break;
-      default:
-          break;
-      }
-      return;
+    switch (bootStage)
+    {
+    case BOOT_STAGE_I2C:
+      Board_ledToggle(LED_RED);
+      break;
+    case BOOT_STAGE_BLUETOOTH_FAILURE:
+      Board_ledToggle(LED_YELLOW);
+      break;
+    default:
+      break;
+    }
+    return;
   }
 
 #if USE_DEFAULT_LED
