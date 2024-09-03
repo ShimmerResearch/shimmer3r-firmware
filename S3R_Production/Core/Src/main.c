@@ -144,7 +144,7 @@ void Init()
   S4_ADC_init();
 
   setBootStage(BOOT_STAGE_I2C);
-  I2C_init();
+  //TODO Shimmer3 performs bus scan on boot - not needed for Shimmer3r?
   loadDaughterCardIdFromEeprom();
 
   setUartPeripheralPointers();
@@ -267,13 +267,13 @@ int main(void)
 #endif
 
   Init();
+  stat.isInitialising = 0;
+  setBootStage(BOOT_STAGE_END);
+
   //S4_Task_set(TASK_STARTSENSING);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //run_factory_test();
-
-  stat.isInitialising = 0;
-  setBootStage(BOOT_STAGE_END);
 
   /* USER CODE END 2 */
 
