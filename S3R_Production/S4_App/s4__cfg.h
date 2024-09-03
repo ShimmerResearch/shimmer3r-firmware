@@ -60,6 +60,7 @@
 #elif defined(SHIMMER4_SDK)
 #include "RN42.h"
 #endif
+#include "../Shimmer_Driver/dock_comms/shimmer_dock_comms.h"
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/ADXL371/adxl371.h"
 #include "../Shimmer_Driver/ADXL371/adxl371_spi.h"
@@ -75,6 +76,7 @@
 #include "bmp180.h"
 #include "hal_Board.h"
 #include "hal_CRC.h"
+#include "hal_FactoryTest.h"
 #include "hal_Infomem.h"
 #include "lsm303dlhc.h"
 #include "mpu9250.h"

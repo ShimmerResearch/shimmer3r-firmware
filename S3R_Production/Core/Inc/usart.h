@@ -66,9 +66,6 @@ extern "C"
   void DockUart_deint(void);
   void DockUart_disable(void);
   void DockUart_enable(void);
-  void DockUart_rxCallback(uint8_t data);
-  void DockUart_processCmd(void);
-  void DockUart_sendRsp(void);
   uint8_t DockUart_getStep(void);
   void DockUart_setStep(uint8_t val);
 
@@ -88,6 +85,8 @@ extern "C"
   void DockUart_setup(void);
 
   void dockUartRxCallback(UART_HandleTypeDef *huart);
+  void DockUart_writeBlocking(uint8_t *buf, uint8_t len);
+  void DockUart_writeText(char *str);
 
   /* USER CODE END Prototypes */
 

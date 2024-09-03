@@ -106,7 +106,7 @@ static int8_t save_calib_data_bytes(void)
   return rslt;
 }
 
-void bmp3_check_rslt(const char api_name[], int8_t rslt)
+void bmp3_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
 {
   switch (rslt)
   {
@@ -114,31 +114,33 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt)
     /* Do nothing */
     break;
   case BMP3_E_NULL_PTR:
-    SHIMMER_PRINTF("API [%s] Error [%d] : Null pointer\r\n", api_name, rslt);
+    sprintf(outputStr, "API [%s] Error [%d] : Null pointer\r\n", api_name, rslt);
     break;
   case BMP3_E_COMM_FAIL:
-    SHIMMER_PRINTF("API [%s] Error [%d] : Communication failure\r\n", api_name, rslt);
+    sprintf(outputStr, "API [%s] Error [%d] : Communication failure\r\n", api_name, rslt);
     break;
   case BMP3_E_INVALID_LEN:
-    SHIMMER_PRINTF("API [%s] Error [%d] : Incorrect length parameter\r\n", api_name, rslt);
+    sprintf(outputStr, "API [%s] Error [%d] : Incorrect length parameter\r\n",
+        api_name, rslt);
     break;
   case BMP3_E_DEV_NOT_FOUND:
-    SHIMMER_PRINTF("API [%s] Error [%d] : Device not found\r\n", api_name, rslt);
+    sprintf(outputStr, "API [%s] Error [%d] : Device not found\r\n", api_name, rslt);
     break;
   case BMP3_E_CONFIGURATION_ERR:
-    SHIMMER_PRINTF("API [%s] Error [%d] : Configuration Error\r\n", api_name, rslt);
+    sprintf(outputStr, "API [%s] Error [%d] : Configuration Error\r\n", api_name, rslt);
     break;
   case BMP3_W_SENSOR_NOT_ENABLED:
-    SHIMMER_PRINTF("API [%s] Error [%d] : Warning when Sensor not enabled\r\n",
+    sprintf(outputStr, "API [%s] Error [%d] : Warning when Sensor not enabled\r\n",
         api_name, rslt);
     break;
   case BMP3_W_INVALID_FIFO_REQ_FRAME_CNT:
-    SHIMMER_PRINTF("API [%s] Error [%d] : Warning when Fifo watermark level is "
-                   "not in limit\r\n",
+    sprintf(outputStr,
+        "API [%s] Error [%d] : Warning when Fifo watermark level is "
+        "not in limit\r\n",
         api_name, rslt);
     break;
   default:
-    SHIMMER_PRINTF("API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
+    sprintf(outputStr, "API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
     break;
   }
 }
@@ -178,15 +180,15 @@ int8_t bmp390_self_test(void)
   int8_t result;
   result = bmp3_selftest_check(&bmp3);
 
-  if (result == BMP3_SENSOR_OK)
-  {
-    SHIMMER_PRINTF("BMP390 Self Test - PASS\r\n");
-  }
-  else
-  {
-    SHIMMER_PRINTF("BMP390 Self Test - FAIL\r\n");
-    bmp3_check_rslt("BMP390", result);
-  }
+  //if (result == BMP3_SENSOR_OK)
+  //{
+  //  SHIMMER_PRINTF("BMP390 Self Test - PASS\r\n");
+  //}
+  //else
+  //{
+  //  SHIMMER_PRINTF("BMP390 Self Test - FAIL\r\n");
+  //  bmp3_check_rslt("BMP390", result);
+  //}
 
   return result;
 }

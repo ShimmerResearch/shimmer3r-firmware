@@ -8,7 +8,7 @@
 #ifndef LIS2DW12_LIS2DW12_H_
 #define LIS2DW12_LIS2DW12_H_
 
-void lis2dw12_self_test(void);
+uint8_t lis2dw12_self_test(void);
 void lis2dw12_driver_init(void);
 void lis2dw12_SelectDevice(void);
 void lis2dw12_UnselectDevice(void);

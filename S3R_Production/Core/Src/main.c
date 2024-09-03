@@ -79,9 +79,10 @@ static void SystemPower_Config(void);
 /* USER CODE BEGIN PFP */
 
 void Init(void);
-uint32_t FullTest(void);
 //TODO move out of here
 #if defined(SHIMMER3R)
+void setBootStage(boot_stage_t bootStageNew);
+boot_stage_t getBootStage(void);
 void btInitialise(void);
 void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
@@ -105,7 +106,7 @@ STATTypeDef stat;
 
 volatile uint32_t time_start, time_end, time_diff;
 
-uint8_t accelBuf[7];
+boot_stage_t bootStage;
 
 extern UART_HandleTypeDef *huartBt;
 
@@ -126,7 +127,7 @@ void Init()
   Board_ledTimersStart(&htim3, &htim2, &htim6);
 #endif
 
-  Board_ledOn(LED_ALL);
+  setBootStage(BOOT_STAGE_START);
   stat.battStatLed = LED_YELLOW;
   stat.isConfiguring = 1;
 
@@ -141,9 +142,12 @@ void Init()
 
   SD_init();
   //GPIO_init();
-  I2C_init();
   S4_ADC_init();
   SPI_init();
+
+  setBootStage(BOOT_STAGE_I2C);
+  I2C_init();
+  loadDaughterCardIdFromEeprom();
 
   setUartPeripheralPointers();
 
@@ -154,6 +158,7 @@ void Init()
   SD_insertedCheck();
   //GPIO_userButtonCheck();
 #if defined(SHIMMER3R)
+  setBootStage(BOOT_STAGE_BLUETOOTH);
   setCrcHandleToUse(getCrcHandle());
   btCommsProtocolInit(setTaskNewBtCmdToProcess);
   //btFactoryResetViaFw();
@@ -165,6 +170,12 @@ void Init()
 
   DockUart_setup();
   DockUart_disable();
+
+  setBootStage(BOOT_STAGE_CONFIGURATION);
+  /* Calibration needs to be loaded after the chips have been detected in
+   * order to know which default calib to set for attached chips.
+   * It also needs to be loaded after the BT is initialised so that the
+   * MAC ID can be used for default Shimmer name and calibration file names.*/
   loadSensorConfigurationAndCalibration();
 
   //==== 13.8ma ====
@@ -186,7 +197,6 @@ void Init()
   stat.isConfiguring = 0;
   DockUart_enable();
 
-  Board_ledOff(LED_ALL);
   //while(1){
   //   //__NOP();
   //   Power_StopUntilInterrupt();
@@ -211,6 +221,7 @@ int main(void)
     ;
 
   memset((uint8_t *) &stat, 0, sizeof(STATTypeDef));
+  stat.isInitialising = 1;
 
   /* USER CODE END 1 */
 
@@ -264,7 +275,11 @@ int main(void)
   Init();
   //S4_Task_set(TASK_STARTSENSING);
 
-  //FullTest();
+  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
+  //run_factory_test();
+
+  stat.isInitialising = 0;
+  setBootStage(BOOT_STAGE_END);
 
   /* USER CODE END 2 */
 
@@ -360,57 +375,44 @@ static void SystemPower_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+void setBootStage(boot_stage_t bootStageNew)
+{
+  bootStage = bootStageNew;
+
+  switch (bootStage)
+  {
+  case BOOT_STAGE_START:
+    Board_ledOn(LED_ALL);
+    break;
+  case BOOT_STAGE_I2C:
+    Board_ledOff(LED_ALL);
+    break;
+  case BOOT_STAGE_BLUETOOTH:
+    Board_ledOn(LED_ALL);
+    break;
+  case BOOT_STAGE_BLUETOOTH_FAILURE:
+    Board_ledOff(LED_ALL);
+    break;
+  case BOOT_STAGE_CONFIGURATION:
+    Board_ledOn(LED_ALL);
+    break;
+  case BOOT_STAGE_END:
+    Board_ledOff(LED_ALL);
+    break;
+  default:
+    break;
+  }
+  return;
+}
+
+boot_stage_t getBootStage(void)
+{
+  return bootStage;
+}
+
 STATTypeDef *GetStatus()
 {
   return &stat;
-}
-
-//TODO trigger from UART command?
-uint32_t FullTest(void)
-{
-  //uint32_t test_result = 0;
-
-  SHIMMER_PRINTF("Self-test - Start\r\n");
-
-  uint32_t format = RTC_FORMAT_BIN;
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
-  /* Get time */
-  HAL_RTC_GetTime(&hrtc, &sTime, format);
-  /* Get date */
-  HAL_RTC_GetDate(&hrtc, &sDate, format);
-  SHIMMER_PRINTF("Date (yyyy-mm-dd): %.4u-%.2u-%.2u\r\n", (2000 + sDate.Year),
-      sDate.Month, sDate.Date);
-  SHIMMER_PRINTF("Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n", sTime.Hours,
-      sTime.Minutes, sTime.Seconds);
-
-  //led_test();
-
-  SHIMMER_PRINTF("SD Card Detection: %s\r\n", stat.isSdInserted ? "PASS" : "FAIL");
-  if (stat.isSdInserted)
-  {
-    printSdCardInfo();
-
-    stat.testResult += SD_test() << 6;
-    //SD_test_alternative();
-    SHIMMER_PRINTF("SD Card test: %s\r\n", stat.badFile ? "FAIL" : "PASS");
-  }
-
-  if (stat.isBtPoweredOn)
-  {
-    SHIMMER_PRINTF("BT Module: %.*s\r\n", getBtVerStrLen(), getBtVerStrPtr());
-  }
-  stat.testResult += (!stat.isBtPoweredOn) << 7;
-
-  stat.testResult += InfoMem_test() << 8;
-
-  stat.testResult += I2C_test();
-
-  stat.testResult += SPI_test() << 16;
-
-  SHIMMER_PRINTF("Self-test - End\r\n");
-
-  return stat.testResult;
 }
 
 //TODO move out of here
@@ -518,9 +520,10 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
       }
       else
       {
-        SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
-        //software POR reset
-        NVIC_SystemReset();
+        //SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
+        ////software POR reset
+        //NVIC_SystemReset();
+        setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
       }
 
       if (isInit)

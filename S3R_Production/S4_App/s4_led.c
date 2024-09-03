@@ -45,8 +45,27 @@
 uint8_t cntBlink = 0;
 uint8_t cnt1 = 0;
 
+extern boot_stage_t getBootStage(void);
+
 void S4Led_Blink(void)
 {
+  boot_stage_t bootStage = getBootStage();
+  if (bootStage != BOOT_STAGE_END)
+  {
+    switch (bootStage)
+    {
+    case BOOT_STAGE_I2C:
+      Board_ledToggle(LED_RED);
+      break;
+    case BOOT_STAGE_BLUETOOTH_FAILURE:
+      Board_ledToggle(LED_YELLOW);
+      break;
+    default:
+      break;
+    }
+    return;
+  }
+
 #if USE_DEFAULT_LED
   //batt leds:
   uint32_t batt_led = 0;
@@ -280,85 +299,4 @@ void S4Led_Blink(void)
   //DockedCheck();//every 0.1s
 
 #endif //USE_DEFAULT_LED
-}
-
-void led_test(void)
-{
-  SHIMMER_PRINTF("Starting LED test...\r\n");
-
-#if defined(SHIMMER3R)
-  stopLedBlinkTimer();
-
-  Board_ledLwrSetColour(LED_RGB_ALL_OFF);
-  Board_ledUprSetColour(LED_RGB_ALL_OFF);
-
-  SHIMMER_PRINTF("Lower Red LED on\r\n");
-  Board_ledLwrSetColour(LED_RGB_RED);
-  HAL_Delay(2000);
-  SHIMMER_PRINTF("Lower Green LED on\r\n");
-  Board_ledLwrSetColour(LED_RGB_GREEN);
-  HAL_Delay(2000);
-  SHIMMER_PRINTF("Lower Blue LED on\r\n");
-  Board_ledLwrSetColour(LED_RGB_BLUE);
-  HAL_Delay(2000);
-  Board_ledLwrSetColour(LED_RGB_ALL_OFF);
-
-  SHIMMER_PRINTF("Upper Red LED on\r\n");
-  Board_ledUprSetColour(LED_RGB_RED);
-  HAL_Delay(2000);
-  SHIMMER_PRINTF("Upper Green LED on\r\n");
-  Board_ledUprSetColour(LED_RGB_GREEN);
-  HAL_Delay(2000);
-  SHIMMER_PRINTF("Upper Blue LED on\r\n");
-  Board_ledUprSetColour(LED_RGB_BLUE);
-  HAL_Delay(2000);
-  SHIMMER_PRINTF("All LEDs off\r\n");
-  Board_ledUprSetColour(LED_RGB_ALL_OFF);
-
-  HAL_Delay(2000);
-  SHIMMER_PRINTF("All LEDs on\r\n");
-  Board_ledLwrSetColour(LED_RGB_ALL_ON);
-  Board_ledUprSetColour(LED_RGB_ALL_ON);
-  HAL_Delay(2000);
-  Board_ledLwrSetColour(LED_RGB_ALL_OFF);
-  Board_ledUprSetColour(LED_RGB_ALL_OFF);
-
-  SHIMMER_PRINTF("Finished LED test.\r\n");
-
-  startLedBlinkTimer();
-
-#elif defined(SHIMMER4_SDK)
-  S4_RTC_WakeUpOff();
-
-  Board_ledOff(LED_ALL);
-  Board_ledOn(LED_BLUE_LWR);
-  HAL_Delay(2000);
-
-  Board_ledOff(LED_ALL);
-  Board_ledOn(LED_GREEN_LWR);
-  HAL_Delay(2000);
-
-  Board_ledOff(LED_ALL);
-  Board_ledOn(LED_RED_LWR);
-  HAL_Delay(2000);
-
-  Board_ledOff(LED_ALL);
-  Board_ledOn(LED_BLUE_UPR);
-  HAL_Delay(2000);
-
-  Board_ledOff(LED_ALL);
-  Board_ledOn(LED_GREEN_UPR);
-  HAL_Delay(2000);
-
-  Board_ledOff(LED_ALL);
-  Board_ledOn(LED_RED_UPR);
-  HAL_Delay(2000);
-
-  Board_ledOff(LED_ALL);
-  HAL_Delay(2000);
-  Board_ledOn(LED_ALL);
-  HAL_Delay(2000);
-
-  S4_RTC_WakeUpSetSlow();
-#endif
 }

@@ -80,6 +80,8 @@ uint8_t areGsrControlsPinsReversed(uint8_t srId, uint8_t srRevMajor, uint8_t srR
 void parseDaughterCardId(uint8_t srId);
 shimmer_expansion_brd *getDaughtCardId(void);
 char *getDaughtCardIdStrPtr(void);
+uint8_t isDaughterCardIdSet(void);
+
 void setWrAccelAndMagInUse(uint8_t wr_accel_and_mag_in_use);
 uint8_t isWrAccelInUseLsm303dlhc(void);
 uint8_t isWrAccelInUseLsm303ahtr(void);

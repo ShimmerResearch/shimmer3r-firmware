@@ -647,7 +647,7 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "exg2_16bit=%d\r\n", storedConfig->chEnExg2_16Bit);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "pres_bmp390=%d\r\n", storedConfig->pressurePrecision);
+      sprintf(buffer, "pres=%d\r\n", storedConfig->chEnPressureAndTemperature);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       //sample_rate
       val_num = 32768.0 / storedConfig->samplingRateTicks;
@@ -949,7 +949,7 @@ void ParseConfig(void)
         stored_config_temp.chEnExg1_16Bit = atoi(equals);
       else if (strstr(buffer, "exg2_16bit="))
         stored_config_temp.chEnExg2_16Bit = atoi(equals);
-      else if (strstr(buffer, "pres_bmp390="))
+      else if (strstr(buffer, "pres="))
         stored_config_temp.chEnPressureAndTemperature = atoi(equals);
       else if (strstr(buffer, "sample_rate="))
       {
