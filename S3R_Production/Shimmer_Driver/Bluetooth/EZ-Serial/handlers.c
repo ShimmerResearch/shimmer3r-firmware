@@ -533,7 +533,7 @@ HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len)
 
   if (getSpaceInBtTxBuf() <= len)
   {
-      return HAL_ERROR; //fail
+    return HAL_ERROR; //fail
   }
 
   pushBytesToBtTxBuf(buf, len);
