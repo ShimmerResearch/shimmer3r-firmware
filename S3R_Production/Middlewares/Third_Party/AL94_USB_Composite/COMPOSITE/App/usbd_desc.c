@@ -76,8 +76,7 @@
 #define USBD_INTERFACE_STRING         "COMPOSITE INTERFACE"
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
-#undef USBD_PID
-#define USBD_PID                      21156
+
 /* USER CODE END PRIVATE_DEFINES */
 
 /**
