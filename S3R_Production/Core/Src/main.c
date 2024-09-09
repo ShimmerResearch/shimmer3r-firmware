@@ -20,6 +20,7 @@
 #include "main.h"
 #include "crc.h"
 #include "gpdma.h"
+#include "gpio.h"
 #include "icache.h"
 #include "mdf.h"
 #include "memorymap.h"
@@ -29,7 +30,6 @@
 #include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -195,9 +195,9 @@ void Init()
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
 
@@ -278,31 +278,30 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
 
   /** Configure the main internal regulator output voltage
-  */
+   */
   if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Configure LSE Drive Capability
-  */
+   */
   HAL_PWR_EnableBkUpAccess();
   __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI
-                              |RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE
-                              |RCC_OSCILLATORTYPE_MSI;
+   */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_HSI
+      | RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -318,10 +317,9 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
-                              |RCC_CLOCKTYPE_PCLK3;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+      | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -335,9 +333,9 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief Power Configuration
-  * @retval None
-  */
+ * @brief Power Configuration
+ * @retval None
+ */
 static void SystemPower_Config(void)
 {
 
@@ -353,8 +351,8 @@ static void SystemPower_Config(void)
   {
     Error_Handler();
   }
-/* USER CODE BEGIN PWR */
-/* USER CODE END PWR */
+  /* USER CODE BEGIN PWR */
+  /* USER CODE END PWR */
 }
 
 /* USER CODE BEGIN 4 */
@@ -653,88 +651,88 @@ void ReadSdConfiguration(void)
 }
 
 /*temporarity here*/
-void JumpToBootloader(void) 
+void JumpToBootloader(void)
 {
-  uint32_t i=0;
+  uint32_t i = 0;
   void (*SysMemBootJump)(void);
   /* Set the address of the entry point to bootloader */
-     volatile uint32_t BootAddr = 0x0BF90000;
+  volatile uint32_t BootAddr = 0x0BF90000;
 
   /* Disable all interrupts */
-     __disable_irq();
-     HAL_DeInit();
-     hpcd_USB_OTG_HS.Instance->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
-     //HAL_DeInit();
-     //USB->CNTR = 0x0003;
-     //USB_CoreReset(&hpcd_USB_OTG_HS);
-/*     hpcd_USB_OTG_HS.Instance->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
+  __disable_irq();
+  HAL_DeInit();
+  hpcd_USB_OTG_HS.Instance->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
+  //HAL_DeInit();
+  //USB->CNTR = 0x0003;
+  //USB_CoreReset(&hpcd_USB_OTG_HS);
+  /*     hpcd_USB_OTG_HS.Instance->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
 
-     HAL_ADC_DeInit(&hadc1);
-     HAL_ADC_DeInit(&hadc2);
-     //HAL_PCD_DeInit(&hpcd_USB_OTG_HS);
-     HAL_DMA_DeInit(&handle_GPDMA1_Channel0);
-     HAL_DMA_DeInit(&handle_GPDMA1_Channel1);
-     HAL_DMA_DeInit(&handle_GPDMA1_Channel2);
-     HAL_DMA_DeInit(&handle_GPDMA1_Channel4);
-     HAL_DMA_DeInit(&handle_GPDMA1_Channel5);
-     HAL_DMA_DeInit(&handle_GPDMA1_Channel6);
-     HAL_DMA_DeInit(&handle_GPDMA1_Channel7);
-     HAL_DMA_DeInit(&handle_GPDMA1_Channel8);
-     HAL_DMA_DeInit(&handle_GPDMA1_Channel9);
-     HAL_DMA_DeInit(&handle_GPDMA1_Channel10);
-     HAL_I2C_DeInit(&hi2c1);
-     HAL_SPI_DeInit(&hspi1);
-     HAL_SPI_DeInit(&hspi2);
-     HAL_SPI_DeInit(&hspi3);
-     HAL_UART_DeInit(&huart1);
-     HAL_UART_DeInit(&huart3);
-     HAL_TIM_Base_DeInit(&htim2);
-     HAL_TIM_Base_DeInit(&htim3);
-     HAL_TIM_Base_DeInit(&htim6);
-     HAL_SD_DeInit(&hsd1);*/
-      //MX_FATFS_Init();
+       HAL_ADC_DeInit(&hadc1);
+       HAL_ADC_DeInit(&hadc2);
+       //HAL_PCD_DeInit(&hpcd_USB_OTG_HS);
+       HAL_DMA_DeInit(&handle_GPDMA1_Channel0);
+       HAL_DMA_DeInit(&handle_GPDMA1_Channel1);
+       HAL_DMA_DeInit(&handle_GPDMA1_Channel2);
+       HAL_DMA_DeInit(&handle_GPDMA1_Channel4);
+       HAL_DMA_DeInit(&handle_GPDMA1_Channel5);
+       HAL_DMA_DeInit(&handle_GPDMA1_Channel6);
+       HAL_DMA_DeInit(&handle_GPDMA1_Channel7);
+       HAL_DMA_DeInit(&handle_GPDMA1_Channel8);
+       HAL_DMA_DeInit(&handle_GPDMA1_Channel9);
+       HAL_DMA_DeInit(&handle_GPDMA1_Channel10);
+       HAL_I2C_DeInit(&hi2c1);
+       HAL_SPI_DeInit(&hspi1);
+       HAL_SPI_DeInit(&hspi2);
+       HAL_SPI_DeInit(&hspi3);
+       HAL_UART_DeInit(&huart1);
+       HAL_UART_DeInit(&huart3);
+       HAL_TIM_Base_DeInit(&htim2);
+       HAL_TIM_Base_DeInit(&htim3);
+       HAL_TIM_Base_DeInit(&htim6);
+       HAL_SD_DeInit(&hsd1);*/
+  //MX_FATFS_Init();
 
   /* Disable Systick timer */
-     SysTick->CTRL = 0;
-     SysTick->LOAD = 0;
-     SysTick->VAL = 0;
+  SysTick->CTRL = 0;
+  SysTick->LOAD = 0;
+  SysTick->VAL = 0;
 
   /* Set the clock to the default state */
-     HAL_RCC_DeInit();
+  HAL_RCC_DeInit();
 
   /* Clear Interrupt Enable Register & Interrupt Pending Register */
-     for (uint8_t i = 0;i < sizeof(NVIC->ICER) / sizeof(NVIC->ICER[0]); i++)
-     {
-       NVIC->ICER[i]=0xFFFFFFFF;
-       NVIC->ICPR[i]=0xFFFFFFFF;
-     }
+  for (uint8_t i = 0; i < sizeof(NVIC->ICER) / sizeof(NVIC->ICER[0]); i++)
+  {
+    NVIC->ICER[i] = 0xFFFFFFFF;
+    NVIC->ICPR[i] = 0xFFFFFFFF;
+  }
 
   /* Re-enable all interrupts */
-     __enable_irq();
+  __enable_irq();
 
   /* Set up the jump to booloader address + 4 */
-     SysMemBootJump = (void (*)(void)) (*((uint32_t *) ((BootAddr + 4))));
+  SysMemBootJump = (void (*)(void))(*((uint32_t *) ((BootAddr + 4))));
 
   /* Set the main stack pointer to the bootloader stack */
-     __set_MSP(*(uint32_t *)BootAddr);
+  __set_MSP(*(uint32_t *) BootAddr);
 
   /* Call the function to jump to bootloader location */
-     //BOOTVTAB->Reset_Handler();
-     SysMemBootJump();
+  //BOOTVTAB->Reset_Handler();
+  SysMemBootJump();
 
   /* Jump is done successfully */
-     while (1)
-     {
-      /* Code should never reach this loop */
-     }
+  while (1)
+  {
+    /* Code should never reach this loop */
+  }
 }
 
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -746,14 +744,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
