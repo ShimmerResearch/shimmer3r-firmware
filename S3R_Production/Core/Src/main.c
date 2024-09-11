@@ -261,7 +261,6 @@ int main(void)
   //run_factory_test();
 
   stat.isInitialising = 0;
-//stat.sdlogCmd = 1;
   /* USER CODE END 2 */
 
   /* Infinite loop */
