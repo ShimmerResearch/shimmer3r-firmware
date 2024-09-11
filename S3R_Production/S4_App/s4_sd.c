@@ -464,7 +464,7 @@ void SD_writeToCard(void)
   sensing.isSdOperating = 1;
 
 #if USE_FATFS
-  file_status = f_lseek(&dataFile, f_size(&dataFile)/*dataFileInfo.fsize*/);
+  file_status = f_lseek(&dataFile, f_size(&dataFile) /*dataFileInfo.fsize*/);
   assert_param(file_status == FR_OK);
   file_status = f_write(&dataFile, writing_buf, *writing_buf_len, &bw);
   assert_param(file_status == FR_OK);
