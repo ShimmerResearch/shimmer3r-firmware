@@ -11,8 +11,6 @@
 #include <lsm6dsv_reg.h>
 
 void lsm6dsv_driver_init(void);
-void lsm6dsv_power_on(void);
-void lsm6dsv_power_off(void);
 void lsm6dsv_selectDevice(void);
 void lsm6dsv_unselectDevice(void);
 uint8_t lsm6dsv_self_test(void);

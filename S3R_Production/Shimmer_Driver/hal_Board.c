@@ -195,50 +195,74 @@ static void updateLedState(led_mode updateMode, uint8_t ledMask)
   {
     uint8_t valueToSet = updateMode == LED_MODE_ON ? LED_PWM_ON : LED_PWM_OFF;
 
-    if (ledMask & LED_RED)
-    {
-      ledStateLwrRed = valueToSet;
-    }
-    if (ledMask & LED_GREEN0)
-    {
-      ledStateLwrGreen = valueToSet;
-    }
-    if (ledMask & LED_YELLOW)
+    if (ledMask == LED_ALL)
     {
       ledStateLwrRed = valueToSet;
       ledStateLwrGreen = valueToSet;
-    }
-    if (ledMask & LED_GREEN1)
-    {
+      ledStateLwrBlue = valueToSet;
+      ledStateUprRed = valueToSet;
       ledStateUprGreen = valueToSet;
-    }
-    if (ledMask & LED_BLUE)
-    {
       ledStateUprBlue = valueToSet;
+    }
+    else
+    {
+      if (ledMask & LED_RED)
+      {
+        ledStateLwrRed = valueToSet;
+      }
+      if (ledMask & LED_GREEN0)
+      {
+        ledStateLwrGreen = valueToSet;
+      }
+      if (ledMask & LED_YELLOW)
+      {
+        ledStateLwrRed = valueToSet;
+        ledStateLwrGreen = valueToSet;
+      }
+      if (ledMask & LED_GREEN1)
+      {
+        ledStateUprGreen = valueToSet;
+      }
+      if (ledMask & LED_BLUE)
+      {
+        ledStateUprBlue = valueToSet;
+      }
     }
   }
   else if (updateMode == LED_MODE_TOGGLE)
   {
-    if (ledMask & LED_RED)
-    {
-      ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
-    }
-    if (ledMask & LED_GREEN0)
-    {
-      ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
-    }
-    if (ledMask & LED_YELLOW)
+    if (ledMask == LED_ALL)
     {
       ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
       ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
-    }
-    if (ledMask & LED_GREEN1)
-    {
+      ledStateLwrBlue = ledStateLwrBlue == LED_PWM_ON ? 0 : LED_PWM_ON;
+      ledStateUprRed = ledStateUprRed == LED_PWM_ON ? 0 : LED_PWM_ON;
       ledStateUprGreen = ledStateUprGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
-    }
-    if (ledMask & LED_BLUE)
-    {
       ledStateUprBlue = ledStateUprBlue == LED_PWM_ON ? 0 : LED_PWM_ON;
+    }
+    else
+    {
+      if (ledMask & LED_RED)
+      {
+        ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
+      }
+      if (ledMask & LED_GREEN0)
+      {
+        ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
+      }
+      if (ledMask & LED_YELLOW)
+      {
+        ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
+        ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
+      }
+      if (ledMask & LED_GREEN1)
+      {
+        ledStateUprGreen = ledStateUprGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
+      }
+      if (ledMask & LED_BLUE)
+      {
+        ledStateUprBlue = ledStateUprBlue == LED_PWM_ON ? 0 : LED_PWM_ON;
+      }
     }
   }
 }
@@ -255,17 +279,17 @@ uint8_t isLedOnUprGreen(void)
 
 #endif
 
-/***************************************************************************/ /**
-                                                                               * @brief  Turn on LEDs
-                                                                               * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn on
-                                                                               * @return none
-                                                                               ******************************************************************************/
 #if defined(SHIMMER3R)
+/**
+ * @brief  Turn on LEDs.
+ * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn on
+ * @return none
+ */
 void Board_ledOn(uint8_t ledMask)
 {
   updateLedState(LED_MODE_ON, ledMask);
-  rgb_led_lwr_color(ledMask >> 16, ledMask >> 8, ledMask);
-  rgb_led_upr_color(ledMask >> 16, ledMask >> 8, ledMask);
+  rgb_led_lwr_color(ledStateLwrRed, ledStateLwrGreen, ledStateLwrBlue);
+  rgb_led_upr_color(ledStateUprRed, ledStateUprGreen, ledStateUprBlue);
 }
 #elif if defined(SHIMMER4_SDK)
 void Board_ledOn(uint8_t ledMask)
@@ -283,17 +307,17 @@ void Board_ledOn(uint8_t ledMask)
 }
 #endif
 
-/***************************************************************************/ /**
-                                                                               * @brief  Turn off LEDs
-                                                                               * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn off
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/**
+ * @brief  Turn off LEDs
+ * @param  ledMask   Use values defined in HAL_board.h for the LEDs to turn off
+ * @return none
+ */
 #if defined(SHIMMER3R)
 void Board_ledOff(uint8_t ledMask)
 {
   updateLedState(LED_MODE_OFF, ledMask);
-  rgb_led_lwr_color(ledMask >> 16, ledMask >> 8, ledMask);
-  rgb_led_upr_color(ledMask >> 16, ledMask >> 8, ledMask);
+  rgb_led_lwr_color(ledStateLwrRed, ledStateLwrGreen, ledStateLwrBlue);
+  rgb_led_upr_color(ledStateUprRed, ledStateUprGreen, ledStateUprBlue);
 }
 #elif if defined(SHIMMER4_SDK)
 void Board_ledOff(uint8_t ledMask)
@@ -311,11 +335,11 @@ void Board_ledOff(uint8_t ledMask)
 }
 #endif
 
-/***************************************************************************/ /**
-                                                                               * @brief  Toggle LEDs
-                                                                               * @param  ledMask   Use values defined in HAL_board.h for the LEDs to toggle
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/**
+ * @brief  Toggle LEDs
+ * @param  ledMask   Use values defined in HAL_board.h for the LEDs to toggle
+ * @return none
+ */
 #if defined(SHIMMER3R)
 void Board_ledToggle(uint8_t ledMask)
 {
@@ -339,11 +363,11 @@ void Board_ledToggle(uint8_t ledMask)
 }
 #endif
 
-/***************************************************************************/ /**
-                                                                               * @brief  SD power cycle
-                                                                               * @param  none
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/**
+ * @brief  SD power cycle
+ * @param  none
+ * @return none
+ */
 void Board_sdPowerCycle(void)
 {
   Board_detectN(1);
@@ -356,11 +380,11 @@ void Board_sdPowerCycle(void)
   SD_mount(1);
 }
 
-/***************************************************************************/ /**
-                                                                               * @brief  SD control to PC side
-                                                                               * @param  none
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/**
+ * @brief  SD control to PC side
+ * @param  none
+ * @return none
+ */
 void Board_sd2Pc(void)
 {
 
@@ -378,11 +402,11 @@ void Board_sd2Pc(void)
   SD_mount(0);
 }
 
-/***************************************************************************/ /**
-                                                                               * @brief  SD control to ARM side
-                                                                               * @param  none
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/**
+ * @brief  SD control to ARM side
+ * @param  none
+ * @return none
+ */
 void Board_sd2Arm(void)
 {
   Board_detectN(1);
@@ -416,9 +440,9 @@ void Board_sd2Arm(void)
 //  }
 //}
 
-/***************************************************************************/ /**
-                                                                               * use while loop to do delay microseconds
-                                                                               ******************************************************************************/
+/**
+ * use while loop to do delay microseconds
+ */
 uint32_t multiplier;
 
 void Board_delayMicrosInit(void)
@@ -437,3 +461,17 @@ void Board_delayMicros(uint32_t micros)
   while (micros--)
     ;
 }
+
+#if defined(SHIMMER3R)
+void Board_enableSensingPower(uint8_t state)
+{
+  Board_SW_PV_SENSE(state);
+  Board_SW_PV_SENSE_IO(state);
+
+  //delay to allow voltage to settle after turning on ADC & IMUs etc.
+  if (state)
+  {
+    HAL_Delay(50); //Arbitrary delay to allow chips to power up
+  }
+}
+#endif

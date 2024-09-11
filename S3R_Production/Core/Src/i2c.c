@@ -70,8 +70,6 @@ void MX_I2C1_Init(void)
 
   /* USER CODE BEGIN I2C1_Init 0 */
 
-  set_power_i2c_main_bus(1);
-
   /* USER CODE END I2C1_Init 0 */
 
   /* USER CODE BEGIN I2C1_Init 1 */
@@ -229,16 +227,6 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef *i2cHandle)
 void I2C1_DeInit(void)
 {
   HAL_I2C_DeInit(hi2cMainBus);
-
-  set_power_i2c_main_bus(0);
-}
-
-void set_power_i2c_main_bus(uint8_t state)
-{
-#if defined(SHIMMER4_SDK)
-  Board_SW_EXP(state); //eeprom
-#endif
-  Board_SW_I2C(state);
 }
 
 void I2C_scan_busses(void)
@@ -477,10 +465,14 @@ void I2C_startSensing(void)
   //  HAL_Delay(1000);
   //}
 
+  if (i2c1Sens.sensorLen > 0)
+  {
+    MX_I2C1_Init();
+  }
+
 #if defined(SHIMMER3R)
   if (configBytes->chEnMag)
   {
-    lis2mdl_power_on();
     lis2mdl_configure(shimmerSamplingFreq, configBytes->magRate);
   }
 
@@ -586,9 +578,11 @@ void I2cSens_stopSensing(void)
   {
     LSM303DLHC_sleep();
   }
-#endif
   HAL_Delay(10);
-  set_power_i2c1_bus(0, I2C1_CHIP_ALL);
+  Board_SW_I2C(0);
+#endif
+
+  I2C1_DeInit();
 }
 
 #if defined(SHIMMER4_SDK)
@@ -753,51 +747,6 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
     break;
   }
   return retVal;
-}
-
-void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex)
-{
-  bool stateToSet = false;
-
-  if (chipIndex == I2C1_CHIP_ALL)
-  {
-    stateToSet = state;
-    for (uint8_t i = 0; i < sizeof(i2c1BusChipPwrFlags); i++)
-    {
-      i2c1BusChipPwrFlags[i] = state;
-    }
-  }
-  else
-  {
-    i2c1BusChipPwrFlags[chipIndex] = state;
-
-    for (uint8_t i = 0; i < sizeof(i2c1BusChipPwrFlags); i++)
-    {
-      //If any chips should be on, set power on.
-      if (i2c1BusChipPwrFlags[i])
-      {
-        stateToSet = true;
-        break;
-      }
-    }
-  }
-
-  if (stateToSet)
-  {
-    if (hi2cMainBus == NULL || HAL_I2C_GetState(hi2cMainBus) == HAL_I2C_STATE_RESET)
-    {
-      /* Init the I2C */
-      MX_I2C1_Init();
-    }
-  }
-  else
-  {
-    if (hi2cMainBus != NULL && HAL_I2C_GetState(hi2cMainBus) != HAL_I2C_STATE_RESET)
-    {
-      /* DeInit the I2C */
-      I2C1_DeInit();
-    }
-  }
 }
 
 #if defined(SHIMMER3R)
@@ -1296,14 +1245,11 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void loadDaughterCardIdFromEeprom(void)
 {
-  set_power_i2c1_bus(1, I2C1_CHIP_INDEX_EEPROM);
-  HAL_Delay(100);
   uint8_t daughterCardIdBuf[CAT24C16_PAGE_SIZE];
   eepromRead(0, CAT24C16_PAGE_SIZE, &daughterCardIdBuf[0]);
   setDaugherCardIdPage(daughterCardIdBuf);
   parseDaughterCardId(getDaughtCardId()->exp_brd_id);
-  HAL_Delay(10);
-  set_power_i2c1_bus(0, I2C1_CHIP_INDEX_EEPROM);
+  HAL_Delay(5); //5ms to ensure no writes pending
 }
 
 /* USER CODE END 1 */

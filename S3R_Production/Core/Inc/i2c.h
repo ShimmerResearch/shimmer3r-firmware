@@ -187,7 +187,6 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
-  void set_power_i2c_main_bus(uint8_t state);
   void I2C_scan_busses(void);
   void I2C_scan(I2C_HandleTypeDef *hi2c);
   I2C_HandleTypeDef *I2C_getHandlerSensor(void);
@@ -247,7 +246,6 @@ extern "C"
   uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo);
 
 #if defined(SHIMMER3R)
-  void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex);
   bool areI2cChannelsEnabled(void);
   void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
 #elif defined(SHIMMER4_SDK)
