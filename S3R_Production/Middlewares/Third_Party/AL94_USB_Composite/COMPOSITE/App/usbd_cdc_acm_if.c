@@ -104,6 +104,7 @@ USBD_CDC_ACM_LineCodingTypeDef Line_Coding[NUMBER_OF_CDC];
 uint32_t Write_Index[NUMBER_OF_CDC]; /* keep track of received data over UART */
 uint32_t Read_Index[NUMBER_OF_CDC];  /* keep track of sent data to USB */
 
+uint8_t tempbuf[7];
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -275,6 +276,7 @@ USBD_CDC_ACM_ItfTypeDef USBD_CDC_ACM_fops = {CDC_Init,
                                              CDC_DeInit,
                                              CDC_Control,
                                              CDC_Receive,
+                                             CDC_Transmit,
                                              CDC_TransmitCplt};
 
 /* Private functions ---------------------------------------------------------*/
@@ -374,6 +376,13 @@ static int8_t CDC_Control(uint8_t cdc_ch, uint8_t cmd, uint8_t *pbuf, uint16_t l
     Line_Coding[cdc_ch].paritytype = pbuf[5];
     Line_Coding[cdc_ch].datatype = pbuf[6];
 
+    tempbuf[0] = pbuf[0];
+    tempbuf[1] = pbuf[1];
+    tempbuf[2] = pbuf[2];
+    tempbuf[3] = pbuf[3];
+    tempbuf[4] = pbuf[4];
+    tempbuf[5] = pbuf[5];
+    tempbuf[6] = pbuf[6];
     //Change_UART_Setting(cdc_ch);
     break;
 
@@ -385,6 +394,14 @@ static int8_t CDC_Control(uint8_t cdc_ch, uint8_t cmd, uint8_t *pbuf, uint16_t l
     pbuf[4] = Line_Coding[cdc_ch].format;
     pbuf[5] = Line_Coding[cdc_ch].paritytype;
     pbuf[6] = Line_Coding[cdc_ch].datatype;
+
+    pbuf[0] =  tempbuf[0];
+    pbuf[1] = tempbuf[1];
+    pbuf[2] = tempbuf[2];
+    pbuf[3] = tempbuf[3];
+    pbuf[4] = tempbuf[4];
+    pbuf[5] = tempbuf[5];
+    pbuf[6] = tempbuf[6];
     break;
 
   case CDC_SET_CONTROL_LINE_STATE:

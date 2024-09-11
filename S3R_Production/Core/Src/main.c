@@ -42,7 +42,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include "usbd_cdc_acm_if.h"
 #define TIM_MEASURE_START time_start = SysTick->VAL
 #define TIM_MEASURE_END    \
   time_end = SysTick->VAL; \
@@ -280,7 +280,8 @@ int main(void)
 
   stat.isInitialising = 0;
   setBootStage(BOOT_STAGE_END);
-
+uint8_t val[6]={'h','e','l','l','o'} ;
+USBD_CDC_ACM_HandleTypeDef *hcdc;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -290,6 +291,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /*Testing USB transmit*/
+    if(hUsbDevice.dev_state == USBD_STATE_CONFIGURED &&(hcdc = hUsbDevice.pUserData_CDC_ACM)!=0)
+    {
+    CDC_Transmit(0,val,6);
+    //HAL_Delay(500);
+    }
     S4_Task_manage();
   }
   /* USER CODE END 3 */
