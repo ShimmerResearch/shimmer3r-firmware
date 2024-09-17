@@ -476,7 +476,7 @@ void SD_writeToCard(void)
 
   /*split file every hour upwards from 000*/
   if ((sensing.latestTs - sdFileCrTs) >= BIN_FILE_SPLIT_TIME_TICKS)
-  {                                                    //(&& (test_cnt < 15))
+  { //(&& (test_cnt < 15))
     //sdFileCrTs = sensing.latestTs;
     sdFileSyncTs = sdFileCrTs = RTC_get64();
     char file_name[256];
