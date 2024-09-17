@@ -475,7 +475,7 @@ void SD_writeToCard(void)
   __NOP();
 
   /*split file every hour upwards from 000*/
-  if ((sensing.latestTs - sdFileCrTs) >= 32768 * 3600) //60*60 = 3600s
+  if ((sensing.latestTs - sdFileCrTs) >= BIN_FILE_SPLIT_TIME_TICKS)
   {                                                    //(&& (test_cnt < 15))
     //sdFileCrTs = sensing.latestTs;
     sdFileSyncTs = sdFileCrTs = RTC_get64();
@@ -510,7 +510,7 @@ void SD_writeToCard(void)
 #endif
   }
   /*Sync file every minute*/
-  else if (sensing.latestTs - sdFileSyncTs > 32768 * 60)
+  else if (sensing.latestTs - sdFileSyncTs >= BIN_FILE_SYNC_TIME_TICKS)
   {
 #if USE_FATFS
     file_status = f_sync(&dataFile);

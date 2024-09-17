@@ -381,12 +381,21 @@ void GPDMA1_Channel7_IRQHandler(void)
 void ADC1_2_IRQHandler(void)
 {
   /* USER CODE BEGIN ADC1_2_IRQn 0 */
-
+  if (hadc1.Instance != NULL && hadc2.Instance != NULL)
+  {
   /* USER CODE END ADC1_2_IRQn 0 */
   HAL_ADC_IRQHandler(&hadc1);
   HAL_ADC_IRQHandler(&hadc2);
   /* USER CODE BEGIN ADC1_2_IRQn 1 */
-
+  }
+  else if (hadc1.Instance != NULL)
+  {
+    HAL_ADC_IRQHandler(&hadc1);
+  }
+  else if (hadc2.Instance != NULL)
+  {
+    HAL_ADC_IRQHandler(&hadc2);
+  }
   /* USER CODE END ADC1_2_IRQn 1 */
 }
 
