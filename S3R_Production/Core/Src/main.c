@@ -192,7 +192,7 @@ void Init()
 
   stat.isConfiguring = 0;
   DockUart_enable();
-  if(!stat.isLogging && isSdPowerOn())
+  if (!stat.isLogging && isSdPowerOn())
   {
     SdPowerOff();
   }

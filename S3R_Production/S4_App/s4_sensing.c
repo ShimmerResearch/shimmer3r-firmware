@@ -233,7 +233,7 @@ void S4Sens_startSensing(void)
 
     if (S4Sens_checkStartLoggingConditions())
     {
-      if(!isSdPowerOn())
+      if (!isSdPowerOn())
       {
         SdPowerOn();
       }
@@ -318,10 +318,10 @@ void S4Sens_stopSensing(void)
   {
     SdInfoSync();
   }
- if (isSdPowerOn())
- {
-   SdPowerOff();
- }
+  if (isSdPowerOn())
+  {
+    SdPowerOff();
+  }
   stat.isConfiguring = 0;
 }
 
