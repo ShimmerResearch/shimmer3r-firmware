@@ -175,6 +175,7 @@ extern "C"
 #define DOCK_RXD_GPIO_Port           GPIOB
 #define BOOT0_USER_BTN_Pin           GPIO_PIN_3
 #define BOOT0_USER_BTN_GPIO_Port     GPIOH
+#define BOOT0_USER_BTN_EXTI_IRQn     EXTI3_IRQn
 #define SW_GSR_Pin                   GPIO_PIN_0
 #define SW_GSR_GPIO_Port             GPIOE
 

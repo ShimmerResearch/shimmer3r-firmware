@@ -34,7 +34,6 @@ void MX_MDF1_Init(void)
 {
 
   /* USER CODE BEGIN MDF1_Init 0 */
-  Board_SW_MIC(1);
 
   /* USER CODE END MDF1_Init 0 */
 
