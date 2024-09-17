@@ -192,6 +192,10 @@ void Init()
 
   stat.isConfiguring = 0;
   DockUart_enable();
+  if(!stat.isLogging && isSdPowerOn())
+  {
+    SdPowerOff();
+  }
   //while(1){
   //   //__NOP();
   //   Power_StopUntilInterrupt();
