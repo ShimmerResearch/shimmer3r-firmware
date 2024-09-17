@@ -464,7 +464,8 @@ void SD_writeToCard(void)
   sensing.isSdOperating = 1;
 
 #if USE_FATFS
-  file_status = f_lseek(&dataFile, f_size(&dataFile)); //dataFileInfo.fsize was not incrementing the file size.
+  file_status = f_lseek(&dataFile,
+      f_size(&dataFile)); //dataFileInfo.fsize was not incrementing the file size.
   assert_param(file_status == FR_OK);
   file_status = f_write(&dataFile, writing_buf, *writing_buf_len, &bw);
   assert_param(file_status == FR_OK);
@@ -475,7 +476,7 @@ void SD_writeToCard(void)
 
   /*split file every hour upwards from 000*/
   if ((sensing.latestTs - sdFileCrTs) >= 32768 * 3600) //60*60 = 3600s
-  { //(&& (test_cnt < 15))
+  {                                                    //(&& (test_cnt < 15))
     //sdFileCrTs = sensing.latestTs;
     sdFileSyncTs = sdFileCrTs = RTC_get64();
     char file_name[256];
