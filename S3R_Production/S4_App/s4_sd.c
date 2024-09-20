@@ -669,7 +669,7 @@ void UpdateSdConfig(void)
       sprintf(buffer, "sample_rate=%s\r\n", val_char);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       //setup config
-      sprintf(buffer, "mg_internal_rate=%d\r\n", storedConfig->magRate);
+      sprintf(buffer, "mg_internal_rate=%d\r\n", storedConfig->magRateLsb);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "mg_range=%d\r\n", storedConfig->magRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
@@ -677,21 +677,21 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "accel_mpu_range=%d\r\n", storedConfig->altAccelRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "pres_bmp390_prec=%d\r\n", storedConfig->pressurePrecision);
+      sprintf(buffer, "pres_bmp390_prec=%d\r\n", get_configured_pressure_oversampling_ratio());
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "gsr_range=%d\r\n", storedConfig->gsrRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "exp_power=%d\r\n", storedConfig->expansionBoardPower);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "gyro_range=%d\r\n", storedConfig->gyroRange);
+      sprintf(buffer, "gyro_range=%d\r\n", get_configured_gyro_range());
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "gyro_samplingrate=%d\r\n", storedConfig->gyroRate);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "acc_range=%d\r\n", storedConfig->wrAccelRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "acc_lpm=%d\r\n", storedConfig->wrAccelLPM);
+      sprintf(buffer, "acc_lpm=%d\r\n", get_configured_wr_accel_lp_mode());
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "acc_hrm=%d\r\n", storedConfig->wrAccelHRM);
+      sprintf(buffer, "acc_hrm=%d\r\n", storedConfig->wrAccelHrMode);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       //trial config
       sprintf(buffer, "user_button_enable=%d\r\n", storedConfig->userButtonEnable);
@@ -957,7 +957,7 @@ void ParseConfig(void)
       }
       else if (strstr(buffer, "mg_internal_rate="))
       {
-        stored_config_temp.magRate = atoi(equals);
+        stored_config_temp.magRateLsb = atoi(equals);
       }
       else if (strstr(buffer, "mg_range="))
       {
@@ -977,11 +977,11 @@ void ParseConfig(void)
       }
       else if (strstr(buffer, "acc_lpm="))
       {
-        stored_config_temp.wrAccelLPM = atoi(equals);
+        set_configured_wr_accel_lp_mode(&stored_config_temp, atoi(equals));
       }
       else if (strstr(buffer, "acc_hrm="))
       {
-        stored_config_temp.wrAccelHRM = atoi(equals);
+        stored_config_temp.wrAccelHrMode = atoi(equals);
       }
       else if (strstr(buffer, "gsr_range="))
       { //or "gsr_range="?
@@ -992,14 +992,16 @@ void ParseConfig(void)
         stored_config_temp.gsrRange = gsr_range;
       }
       else if (strstr(buffer, "gyro_samplingrate="))
-        stored_config_temp.gyroRate = atoi(equals);
+      {
+        set_configured_gyro_rate(&stored_config_temp, atoi(equals));
+      }
       else if (strstr(buffer, "gyro_range="))
       {
-        stored_config_temp.gyroRange = atoi(equals);
+        set_configured_gyro_range(&stored_config_temp, atoi(equals));
       }
       else if (strstr(buffer, "pres_bmp390_prec="))
       {
-        stored_config_temp.pressurePrecision = atoi(equals);
+        set_configured_pressure_oversampling_ratio(&stored_config_temp, atoi(equals));
       }
 #if !RTC_OFF
       else if (strstr(buffer, "rtc_error_enable="))

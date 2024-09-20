@@ -18,87 +18,80 @@
 #define MAX_COMMAND_ARG_SIZE      131
 
 //Packet Types// Packet Types
-#define DATA_PACKET               0x00
-#define INQUIRY_COMMAND           0x01
-#define INQUIRY_RESPONSE          0x02
-#define GET_SAMPLING_RATE_COMMAND 0x03
-#define SAMPLING_RATE_RESPONSE    0x04
-#define SET_SAMPLING_RATE_COMMAND 0x05
-#define TOGGLE_LED_COMMAND        0x06
-#define START_STREAMING_COMMAND \
-  0x07 //maintain compatibility with Shimmer2/2r BtStream
+#define DATA_PACKET                              0x00
+#define INQUIRY_COMMAND                          0x01
+#define INQUIRY_RESPONSE                         0x02
+#define GET_SAMPLING_RATE_COMMAND                0x03
+#define SAMPLING_RATE_RESPONSE                   0x04
+#define SET_SAMPLING_RATE_COMMAND                0x05
+#define TOGGLE_LED_COMMAND                       0x06
+#define START_STREAMING_COMMAND                  0x07
 #define SET_SENSORS_COMMAND                      0x08
-#define SET_LSM303DLHC_ACCEL_RANGE_COMMAND       0x09
-#define LSM303DLHC_ACCEL_RANGE_RESPONSE          0x0A
-#define GET_LSM303DLHC_ACCEL_RANGE_COMMAND       0x0B
+#define SET_WR_ACCEL_RANGE_COMMAND       0x09
+#define WR_ACCEL_RANGE_RESPONSE          0x0A
+#define GET_WR_ACCEL_RANGE_COMMAND       0x0B
 #define SET_CONFIG_SETUP_BYTES_COMMAND           0x0E
 #define CONFIG_SETUP_BYTES_RESPONSE              0x0F
 #define GET_CONFIG_SETUP_BYTES_COMMAND           0x10
-#define SET_A_ACCEL_CALIBRATION_COMMAND          0x11
-#define A_ACCEL_CALIBRATION_RESPONSE             0x12
-#define GET_A_ACCEL_CALIBRATION_COMMAND          0x13
-#define SET_MPU9150_GYRO_CALIBRATION_COMMAND     0x14
-#define MPU9150_GYRO_CALIBRATION_RESPONSE        0x15
-#define GET_MPU9150_GYRO_CALIBRATION_COMMAND     0x16
-#define SET_LSM303DLHC_MAG_CALIBRATION_COMMAND   0x17
-#define LSM303DLHC_MAG_CALIBRATION_RESPONSE      0x18
-#define GET_LSM303DLHC_MAG_CALIBRATION_COMMAND   0x19
-#define SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND 0x1A
-#define LSM303DLHC_ACCEL_CALIBRATION_RESPONSE    0x1B
-#define GET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND 0x1C
-#define STOP_STREAMING_COMMAND \
-  0x20 //maintain compatibility with Shimmer2/2r BtStream
-#define SET_GSR_RANGE_COMMAND 0x21
-#define GSR_RANGE_RESPONSE    0x22
-#define GET_GSR_RANGE_COMMAND 0x23
-#define DEPRECATED_GET_DEVICE_VERSION_COMMAND \
-  0x24 //maintain compatibility with Shimmer2/2r BtStream
-       //deprecated because 0x24 ('$' ASCII) as a command
-       //is problematic if remote config is enabled in
-       //RN42 Bluetooth module. Replaced with 0x3F command
-#define DEVICE_VERSION_RESPONSE \
-  0x25 //maintain compatibility with Shimmer2/2r BtStream
-#define GET_ALL_CALIBRATION_COMMAND 0x2C
-#define ALL_CALIBRATION_RESPONSE    0x2D
-#define GET_FW_VERSION_COMMAND \
-  0x2E //maintain compatibility with Shimmer2/2r BtStream
-#define FW_VERSION_RESPONSE \
-  0x2F //maintain compatibility with Shimmer2/2r BtStream
+#define SET_LN_ACCEL_CALIBRATION_COMMAND          0x11
+#define LN_ACCEL_CALIBRATION_RESPONSE             0x12
+#define GET_LN_ACCEL_CALIBRATION_COMMAND          0x13
+#define SET_GYRO_CALIBRATION_COMMAND     0x14
+#define GYRO_CALIBRATION_RESPONSE        0x15
+#define GET_GYRO_CALIBRATION_COMMAND     0x16
+#define SET_MAG_CALIBRATION_COMMAND   0x17
+#define MAG_CALIBRATION_RESPONSE      0x18
+#define GET_MAG_CALIBRATION_COMMAND   0x19
+#define SET_WR_ACCEL_CALIBRATION_COMMAND 0x1A
+#define WR_ACCEL_CALIBRATION_RESPONSE    0x1B
+#define GET_WR_ACCEL_CALIBRATION_COMMAND 0x1C
+#define STOP_STREAMING_COMMAND                   0x20
+#define SET_GSR_RANGE_COMMAND                    0x21
+#define GSR_RANGE_RESPONSE                       0x22
+#define GET_GSR_RANGE_COMMAND                    0x23
+/* deprecated because 0x24 ('$' ASCII) as a command is problematic if remote
+ * config is enabled in RN42 Bluetooth module. Replaced with 0x3F command */
+#define DEPRECATED_GET_DEVICE_VERSION_COMMAND    0x24
+#define DEVICE_VERSION_RESPONSE                  0x25
+#define GET_ALL_CALIBRATION_COMMAND              0x2C
+#define ALL_CALIBRATION_RESPONSE                 0x2D
+#define GET_FW_VERSION_COMMAND                   0x2E
+#define FW_VERSION_RESPONSE                      0x2F
 #define SET_CHARGE_STATUS_LED_COMMAND               0x30
 #define CHARGE_STATUS_LED_RESPONSE                  0x31
 #define GET_CHARGE_STATUS_LED_COMMAND               0x32
 #define BUFFER_SIZE_RESPONSE                        0x35
 #define GET_BUFFER_SIZE_COMMAND                     0x36
-#define SET_LSM303DLHC_MAG_GAIN_COMMAND             0x37
-#define LSM303DLHC_MAG_GAIN_RESPONSE                0x38
-#define GET_LSM303DLHC_MAG_GAIN_COMMAND             0x39
-#define SET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND    0x3A
-#define LSM303DLHC_MAG_SAMPLING_RATE_RESPONSE       0x3B
-#define GET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND    0x3C
+#define SET_MAG_GAIN_COMMAND             0x37
+#define MAG_GAIN_RESPONSE                0x38
+#define GET_MAG_GAIN_COMMAND             0x39
+#define SET_MAG_SAMPLING_RATE_COMMAND    0x3A
+#define MAG_SAMPLING_RATE_RESPONSE       0x3B
+#define GET_MAG_SAMPLING_RATE_COMMAND    0x3C
 #define UNIQUE_SERIAL_RESPONSE                      0x3D
 #define GET_UNIQUE_SERIAL_COMMAND                   0x3E
 #define GET_DEVICE_VERSION_COMMAND                  0x3F
-#define SET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND  0x40
-#define LSM303DLHC_ACCEL_SAMPLING_RATE_RESPONSE     0x41
-#define GET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND  0x42
-#define SET_LSM303DLHC_ACCEL_LPMODE_COMMAND         0x43
-#define LSM303DLHC_ACCEL_LPMODE_RESPONSE            0x44
-#define GET_LSM303DLHC_ACCEL_LPMODE_COMMAND         0x45
-#define SET_LSM303DLHC_ACCEL_HRMODE_COMMAND         0x46
-#define LSM303DLHC_ACCEL_HRMODE_RESPONSE            0x47
-#define GET_LSM303DLHC_ACCEL_HRMODE_COMMAND         0x48
-#define SET_MPU9150_GYRO_RANGE_COMMAND              0x49
-#define MPU9150_GYRO_RANGE_RESPONSE                 0x4A
-#define GET_MPU9150_GYRO_RANGE_COMMAND              0x4B
-#define SET_MPU9150_SAMPLING_RATE_COMMAND           0x4C
-#define MPU9150_SAMPLING_RATE_RESPONSE              0x4D
-#define GET_MPU9150_SAMPLING_RATE_COMMAND           0x4E
-#define SET_MPU9150_ACCEL_RANGE_COMMAND             0x4F
-#define MPU9150_ACCEL_RANGE_RESPONSE                0x50
-#define GET_MPU9150_ACCEL_RANGE_COMMAND             0x51
-#define SET_BMPX80_PRES_OVERSAMPLING_RATIO_COMMAND  0x52
-#define BMPX80_PRES_OVERSAMPLING_RATIO_RESPONSE     0x53
-#define GET_BMPX80_PRES_OVERSAMPLING_RATIO_COMMAND  0x54
+#define SET_WR_ACCEL_SAMPLING_RATE_COMMAND  0x40
+#define WR_ACCEL_SAMPLING_RATE_RESPONSE     0x41
+#define GET_WR_ACCEL_SAMPLING_RATE_COMMAND  0x42
+#define SET_WR_ACCEL_LPMODE_COMMAND         0x43
+#define WR_ACCEL_LPMODE_RESPONSE            0x44
+#define GET_WR_ACCEL_LPMODE_COMMAND         0x45
+#define SET_WR_ACCEL_HRMODE_COMMAND         0x46
+#define WR_ACCEL_HRMODE_RESPONSE            0x47
+#define GET_WR_ACCEL_HRMODE_COMMAND         0x48
+#define SET_GYRO_RANGE_COMMAND                      0x49
+#define GYRO_RANGE_RESPONSE                         0x4A
+#define GET_GYRO_RANGE_COMMAND                      0x4B
+#define SET_GYRO_SAMPLING_RATE_COMMAND              0x4C
+#define GYRO_SAMPLING_RATE_RESPONSE                 0x4D
+#define GET_GYRO_SAMPLING_RATE_COMMAND              0x4E
+#define SET_ALT_ACCEL_RANGE_COMMAND             0x4F
+#define ALT_ACCEL_RANGE_RESPONSE                0x50
+#define GET_ALT_ACCEL_RANGE_COMMAND             0x51
+#define SET_PRESSURE_OVERSAMPLING_RATIO_COMMAND  0x52
+#define PRESSURE_OVERSAMPLING_RATIO_RESPONSE     0x53
+#define GET_PRESSURE_OVERSAMPLING_RATIO_COMMAND  0x54
 #define BMP180_CALIBRATION_COEFFICIENTS_RESPONSE    0x58
 #define GET_BMP180_CALIBRATION_COEFFICIENTS_COMMAND 0x59
 #define RESET_TO_DEFAULT_CONFIGURATION_COMMAND      0x5A
@@ -117,10 +110,10 @@
 #define SET_DAUGHTER_CARD_MEM_COMMAND               0x67
 #define DAUGHTER_CARD_MEM_RESPONSE                  0x68
 #define GET_DAUGHTER_CARD_MEM_COMMAND               0x69
-#define SET_BT_COMMS_BAUD_RATE \
-  0x6A //11 allowable options: 0=115.2K(default), 1=1200, 2=2400, 3=4800,
-       //4=9600, 5=19.2K, 6=38.4K, 7=57.6K, 8=230.4K, 9=460.8K, 10=921.6K
-       //Need to disconnect BT connection before change is active
+/* 11 allowable options: 0=115.2K(default), 1=1200, 2=2400, 3=4800, 4=9600,
+ * 5=19.2K, 6=38.4K, 7=57.6K, 8=230.4K, 9=460.8K, 10=921.6K Need to disconnect
+ * BT connection before change is active */
+#define SET_BT_COMMS_BAUD_RATE  0x6A
 #define BT_COMMS_BAUD_RATE_RESPONSE    0x6B
 #define GET_BT_COMMS_BAUD_RATE         0x6C
 #define SET_DERIVED_CHANNEL_BYTES      0x6D
@@ -191,6 +184,7 @@
 #define SET_SD_SYNC_COMMAND 0xE0
 #define SD_SYNC_RESPONSE    0xE1
 #endif
+#define NACK_COMMAND_PROCESSED     0xFE
 #define ACK_COMMAND_PROCESSED     0xFF
 
 //#define BT_RX_COMMS_TIMEOUT_TICKS                     3277U /* 32768*0.1s = 3276.8 */

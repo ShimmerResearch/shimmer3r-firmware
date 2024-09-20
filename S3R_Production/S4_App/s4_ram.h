@@ -246,24 +246,24 @@ typedef union
     uint8_t chEnIntADC2 : 1; //S3 = ADC14, S3R = ADC16, S4_SDK = ADC0
 #endif
 
-    //Config setup Byte0
-    uint8_t wrAccelHRM   : 1;
-    uint8_t wrAccelLPM   : 1;
-    uint8_t wrAccelRange : 2;
-    uint8_t wrAccelRate  : 4;
+    //Idx 6: Config setup byte 0
+    uint8_t wrAccelHrMode      : 1;
+    uint8_t wrAccelLpModeLsb   : 1;
+    uint8_t wrAccelRange       : 2;
+    uint8_t wrAccelRate        : 4;
 
-    //Config setup Byte 1
+    //Idx 7: Config setup byte 1
     uint8_t gyroRate;
 
-    //Config setup Byte 2
-    uint8_t gyroRange : 2;
-    uint8_t magRate   : 3;
+    //Idx 8: Config setup byte 2
+    uint8_t gyroRangeLsb : 2;
+    uint8_t magRateLsb   : 3;
     uint8_t magRange  : 3;
 
     //Config setup Byte3
     uint8_t expansionBoardPower : 1;
     uint8_t gsrRange            : 3;
-    uint8_t pressurePrecision   : 2;
+    uint8_t pressureOversamplingRatioLsb   : 2;
     uint8_t altAccelRange : 2; //S3/S4_SDK MPU9x50/ICM20948 Accel, S3R = LSM6DSV Accel
 
     gExgADS1292rRegs exgADS1292rRegsCh1;
@@ -316,18 +316,25 @@ typedef union
     uint8_t chEnGyroOnTheFlyCalib   : 1;
     uint8_t unusedByte118Bit6       : 1;
     uint8_t unusedByte118Bit7       : 1;
-    uint8_t nvDerivedChannels4;
-    uint8_t nvDerivedChannels5MSB;
-    uint8_t nvDerivedChannels6;
-    uint8_t nvDerivedChannels7;
+    uint8_t derivedChannels4;
+    uint8_t derivedChannels5;
+    uint8_t derivedChannels6;
+    uint8_t derivedChannels7;
     uint8_t unusedIdx123;
     uint8_t unusedIdx124;
     uint8_t unusedIdx125;
     uint8_t unusedIdx126;
-    uint8_t unusedIdx127;
+
+    //Idx 127: Config setup byte 7
+    uint8_t pressureOversamplingRatioMsb :1;
+    uint8_t wrAccelLpModeMsb :1;
+    uint8_t magRateMsb :1;
+    uint8_t gyroRangeMsb :1;
+    uint8_t altMagRate :2;
+    uint8_t altAccelRate :2;
 
     //cfg for sd
-    //nVSensors3
+    //Idx 128: Sensors3
     uint8_t chEnMplMotionOrient : 1;
     uint8_t chEnMplTap          : 1;
     uint8_t chEnMplPedometer    : 1;
@@ -337,7 +344,7 @@ typedef union
     uint8_t chEnMplQuat9Dof     : 1;
     uint8_t chEnMplQuat6Dof     : 1;
 
-    //nVSensors4
+    //Idx 129: Sensors4
     uint8_t unusedIdx129Bit0    : 1;
     uint8_t unusedIdx129Bit1    : 1;
     uint8_t unusedIdx129Bit2    : 1;
@@ -347,18 +354,18 @@ typedef union
     uint8_t chEnMpu9x50AccelCal : 1;
     uint8_t chEnMpu9x50GyroCal  : 1;
 
-    //config setup byte4
+    //Idx 130: Config setup byte 4
     uint8_t mpu9x50MotCalCfg    : 3;
     uint8_t mpu9x50Lfp          : 3;
     uint8_t mpu9x50MplUseLsmMag : 1;
     uint8_t mpu9x50Dmp          : 1;
 
-    //config setup byte 5
+    //Idx 131: Config setup byte 5
     uint8_t mpu9x50MplMagMix       : 2;
     uint8_t altMagSamplingRate     : 3;
     uint8_t mpu9x50MplSamplingRate : 3;
 
-    //config setup byte6
+    //Idx 132: Config setup byte 6
     uint8_t unusedIdx132Bit0       : 1;
     uint8_t unusedIdx132Bit1       : 1;
     uint8_t unusedIdx132Bit2       : 1;
@@ -499,5 +506,12 @@ void SetSdCfgFlag(uint8_t flag);
 uint8_t GetRamCalibFlag(void);
 void SetRamCalibFlag(uint8_t flag);
 float get_shimmer_sampling_freq(void);
+void set_configured_gyro_range(gConfigBytes *storedConfigPtr, uint8_t range);
+uint8_t get_configured_gyro_range(void);
+void set_configured_gyro_rate(gConfigBytes *storedConfigPtr, uint8_t rate);
+void set_configured_wr_accel_lp_mode(gConfigBytes *storedConfigPtr, uint8_t mode);
+uint8_t get_configured_wr_accel_lp_mode(void);
+void set_configured_pressure_oversampling_ratio(gConfigBytes *storedConfigPtr, uint8_t ratio);
+uint8_t get_configured_pressure_oversampling_ratio(void);
 
 #endif //S4Ram_H

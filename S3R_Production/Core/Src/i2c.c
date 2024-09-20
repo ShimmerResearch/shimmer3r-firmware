@@ -323,9 +323,9 @@ void I2cSens_configureChannels(void)
   //Mag (LIS2MDL)
   if (configBytes->chEnMag)
   {
-    *channel_contents_ptr++ = X_MAG_1;
-    *channel_contents_ptr++ = Z_MAG_1;
-    *channel_contents_ptr++ = Y_MAG_1;
+    *channel_contents_ptr++ = X_MAG;
+    *channel_contents_ptr++ = Z_MAG;
+    *channel_contents_ptr++ = Y_MAG;
     nbr_i2c1_chans += 3;
     sensing.ptr.mag1 = sensing.dataLen;
     sensing.dataLen += 6;
@@ -357,9 +357,9 @@ void I2cSens_configureChannels(void)
   //Mag (LSM303DLHC)
   if (configBytes->chEnMag)
   {
-    *channel_contents_ptr++ = X_MAG_1;
-    *channel_contents_ptr++ = Z_MAG_1;
-    *channel_contents_ptr++ = Y_MAG_1;
+    *channel_contents_ptr++ = X_MAG;
+    *channel_contents_ptr++ = Z_MAG;
+    *channel_contents_ptr++ = Y_MAG;
     nbr_i2c1_chans += 3;
     sensing.ptr.mag1 = sensing.dataLen;
     sensing.dataLen += 6;
@@ -473,7 +473,7 @@ void I2C_startSensing(void)
 #if defined(SHIMMER3R)
   if (configBytes->chEnMag)
   {
-    lis2mdl_configure(shimmerSamplingFreq, configBytes->magRate);
+    lis2mdl_configure(shimmerSamplingFreq, configBytes->magRateLsb);
   }
 
 #elif defined(SHIMMER4_SDK)
@@ -517,7 +517,7 @@ void I2C_startSensing(void)
     }
     if (configBytes->chEnMag)
     {
-      LSM303DLHC_magInit(configBytes->magRate, //sampling rate
+      LSM303DLHC_magInit(configBytes->magRateLsb, //sampling rate
           configBytes->magRange);              //gain
     }
   }

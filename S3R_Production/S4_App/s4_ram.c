@@ -217,6 +217,7 @@ void S4Ram_SetDefaultInfomem(void)
   storedConfig.chEnGyro = 1;
   storedConfig.chEnVBattery = 1;
 
+#if defined(SHIMMER3)
   //LSM303DLHC Accel 100Hz, +/-2G, Low Power and High Resolution modes off
   storedConfig.wrAccelRate = LSM303DLHC_ACCEL_100HZ;
   storedConfig.wrAccelRange = ACCEL_2G;
@@ -224,12 +225,26 @@ void S4Ram_SetDefaultInfomem(void)
   storedConfig.gyroRate = 0x9B;
   //LSM303DLHC Mag 75Hz, +/-1.3 Gauss, MPU9150 Gyro +/-500 degrees per second
   storedConfig.magRange = LSM303DLHC_MAG_1_3G;
-  storedConfig.magRate = LSM303DLHC_MAG_75HZ;
-  storedConfig.gyroRange = MPU9150_GYRO_500DPS;
+  storedConfig.magRateLsb = LSM303DLHC_MAG_75HZ;
+  set_configured_gyro_range(&storedConfig, MPU9150_GYRO_500DPS);
   //MPU9150 Accel +/-2G, BMP pressure oversampling ratio 1, GSR auto range, EXP_RESET_N pin set low
   // todo: *** *** *** warning! *** *** ***  btStream for this here is not correct, this is mpu9150_accrange, not lsm303 acc range
   storedConfig.altAccelRange = ACCEL_2G;
-  storedConfig.pressurePrecision = BMP180_OSS_8;
+  set_configured_pressure_oversampling_ratio(&storedConfig, BMP180_OSS_8);
+#elif defined(SHIMMER3R)
+  //LIS2DW12 Accel 100Hz, +/-2G, Low Power and High Resolution modes off
+  storedConfig.wrAccelRate = LIS2DW12_XL_ODR_100Hz;
+  storedConfig.wrAccelRange = LIS2DW12_2g;
+  //LSM6DSV Gyro sampling rate, next highest to 51.2Hz
+  storedConfig.gyroRate = LSM6DSV_ODR_AT_60Hz;
+  //LIS3MDL Mag 75Hz, +/-4 Gauss, MPU9150 Gyro +/-500 degrees per second
+  storedConfig.magRange = LIS3MDL_4_GAUSS;
+  storedConfig.magRateLsb = LSM303DLHC_MAG_75HZ;
+  //LSM6DSV Gyro +/-500 degrees per second
+  set_configured_gyro_range(&storedConfig, LSM6DSV_500dps);
+  storedConfig.altAccelRange = LSM6DSV_2g;
+  set_configured_pressure_oversampling_ratio(&storedConfig, BMP3_NO_OVERSAMPLING);
+#endif
   storedConfig.gsrRange = GSR_AUTORANGE;
   //set all ExG registers to their reset values
   //square wave test
@@ -471,4 +486,64 @@ void SetRamCalibFlag(uint8_t flag)
 float get_shimmer_sampling_freq(void)
 {
   return 32768.0 / (float) storedConfig.samplingRateTicks;
+}
+
+void set_configured_gyro_range(gConfigBytes *storedConfigPtr, uint8_t range)
+{
+#if defined(SHIMMER3)
+    range = (range <= MPU9250_GYRO_2000DPS) ? range : MPU9250_GYRO_500DPS;
+#elif defined(SHIMMER3R)
+  range = (range <= (LSM6DSV_2000dps + 1)) ? range : LSM6DSV_500dps;
+#endif
+  storedConfigPtr->gyroRangeLsb = range & 0x03;
+  storedConfigPtr->gyroRangeMsb = (range >> 2) & 0x01;
+}
+
+uint8_t get_configured_gyro_range(void)
+{
+  return (storedConfig.gyroRangeMsb << 2) | storedConfig.gyroRangeLsb;
+}
+
+void set_configured_gyro_rate(gConfigBytes *storedConfigPtr, uint8_t value)
+{
+#if defined(SHIMMER3)
+#elif defined(SHIMMER3R)
+  value = (value < LSM6DSV_ODR_AT_7680Hz) ? value : LSM6DSV_ODR_AT_60Hz;
+#endif
+  storedConfigPtr->gyroRate = value;
+}
+
+void set_configured_wr_accel_lp_mode(gConfigBytes *storedConfigPtr,
+    uint8_t mode)
+{
+#if defined(SHIMMER3)
+    mode = (mode == 1) ? 1 : 0;
+#elif defined(SHIMMER3R)
+  mode = (mode <= 3) ? mode : 0;
+#endif
+  storedConfigPtr->wrAccelLpModeLsb = mode & 0x01;
+  storedConfigPtr->wrAccelLpModeMsb = (mode >> 1) & 0x01;
+}
+
+uint8_t get_configured_wr_accel_lp_mode(void)
+{
+  return (storedConfig.wrAccelLpModeMsb << 1) | storedConfig.wrAccelLpModeLsb;
+}
+
+void set_configured_pressure_oversampling_ratio(gConfigBytes *storedConfigPtr,
+    uint8_t ratio)
+{
+#if defined(SHIMMER3)
+  ratio = (ratio < 4) ? (ratio & 0x03) : BMP180_OSS_1;
+#elif defined(SHIMMER3R)
+  ratio = (ratio <= BMP3_OVERSAMPLING_32X) ? ratio : BMP3_NO_OVERSAMPLING;
+#endif
+  storedConfigPtr->pressureOversamplingRatioLsb = ratio & 0x03;
+  storedConfigPtr->pressureOversamplingRatioMsb = (ratio >> 2) & 0x01;
+}
+
+uint8_t get_configured_pressure_oversampling_ratio(void)
+{
+  return (storedConfig.pressureOversamplingRatioMsb << 2)
+      | storedConfig.pressureOversamplingRatioLsb;
 }

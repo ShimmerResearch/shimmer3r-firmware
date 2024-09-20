@@ -544,7 +544,7 @@ void CalibSaveFromInfoMemToCalibDump(uint8_t id)
   if (id == 0xFF || id == SC_SENSOR_MPU9150_GYRO)
   {
     ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_MPU9150_GYRO,
-        configBytes->gyroRange, SC_DATA_LEN_MPU9250_GYRO,
+        get_configured_gyro_range(), SC_DATA_LEN_MPU9250_GYRO,
         &configBytes->gyroCalib.rawBytes[0]);
   }
   if (id == 0xFF || id == SC_SENSOR_LSM303DLHC_MAG)
@@ -670,7 +670,7 @@ void ShimmerCalibSyncFromDumpRamSingleSensor(uint8_t sensor)
     scs_infomem_offset = NV_MPU9250_GYRO_CALIBRATION;
     scs_sdhead_offset = SDH_MPU9250_GYRO_CALIBRATION;
     scs_sdhead_ts = SDH_MPU9250_GYRO_CALIB_TS;
-    sc1.range = S4Ram_getStoredConfig()->gyroRange;
+    sc1.range = get_configured_gyro_range();
     break;
   case SC_SENSOR_LSM303DLHC_MAG:
     scs_infomem_offset = NV_LSM303DLHC_MAG_CALIBRATION;

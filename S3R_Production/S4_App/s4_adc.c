@@ -237,41 +237,41 @@ void S4_NORM_ADC_configureChannels(void)
   //External ADC 0
   if (configBytes->chEnExtADC0)
   {
-    *channel_contents_ptr++ = EXT_ADC_0;
+    *channel_contents_ptr++ = EXTERNAL_ADC_0;
     nbr_adc_chans += 1;
     sensing.ptr.extADC0 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXT_ADC_0;
+    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_0;
   }
 
   //External ADC 1
   if (configBytes->chEnExtADC1)
   {
-    *channel_contents_ptr++ = EXT_ADC_1;
+    *channel_contents_ptr++ = EXTERNAL_ADC_1;
     nbr_adc_chans += 1;
     sensing.ptr.extADC1 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXT_ADC_1;
+    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_1;
   }
 
   //External ADC 2
   if (configBytes->chEnExtADC2)
   {
-    *channel_contents_ptr++ = EXT_ADC_2;
+    *channel_contents_ptr++ = EXTERNAL_ADC_2;
     nbr_adc_chans += 1;
     sensing.ptr.extADC2 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXT_ADC_2;
+    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_2;
   }
 
   //Internal ADC 0
   if (configBytes->chEnIntADC0)
   {
-    *channel_contents_ptr++ = INT_ADC_0;
+    *channel_contents_ptr++ = INTERNAL_ADC_0;
     nbr_adc_chans += 1;
     sensing.ptr.intADC0 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INT_ADC_0;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_0;
   }
 
 #if defined(SHIMMER4_SDK)
@@ -289,31 +289,31 @@ void S4_NORM_ADC_configureChannels(void)
   //Internal ADC 1
   if (configBytes->chEnIntADC1)
   {
-    *channel_contents_ptr++ = INT_ADC_1;
+    *channel_contents_ptr++ = INTERNAL_ADC_1;
     nbr_adc_chans += 1;
     sensing.ptr.intADC1 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INT_ADC_1;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_1;
   }
 
   //Internal ADC 2
   if (configBytes->chEnIntADC2)
   {
-    *channel_contents_ptr++ = INT_ADC_2;
+    *channel_contents_ptr++ = INTERNAL_ADC_2;
     nbr_adc_chans += 1;
     sensing.ptr.intADC2 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INT_ADC_2;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_2;
   }
 
   //Internal ADC 3
   if (configBytes->chEnIntADC3)
   {
-    *channel_contents_ptr++ = INT_ADC_3;
+    *channel_contents_ptr++ = INTERNAL_ADC_3;
     nbr_adc_chans += 1;
     sensing.ptr.intADC3 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INT_ADC_3;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
   }
 
   sensing.nbrAdcChans += nbr_adc_chans;
