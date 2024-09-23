@@ -250,6 +250,20 @@ void EXTI1_IRQHandler(void)
 }
 
 /**
+ * @brief This function handles EXTI Line3 interrupt.
+ */
+void EXTI3_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI3_IRQn 0 */
+
+  /* USER CODE END EXTI3_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(BOOT0_USER_BTN_Pin);
+  /* USER CODE BEGIN EXTI3_IRQn 1 */
+
+  /* USER CODE END EXTI3_IRQn 1 */
+}
+
+/**
  * @brief This function handles EXTI Line14 interrupt.
  */
 void EXTI14_IRQHandler(void)
@@ -367,7 +381,6 @@ void GPDMA1_Channel7_IRQHandler(void)
 void ADC1_2_IRQHandler(void)
 {
   /* USER CODE BEGIN ADC1_2_IRQn 0 */
-
   if (hadc1.Instance != NULL && hadc2.Instance != NULL)
   {
     /* USER CODE END ADC1_2_IRQn 0 */

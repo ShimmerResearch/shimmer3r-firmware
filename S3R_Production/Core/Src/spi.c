@@ -1206,7 +1206,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
     bmp3_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.pressure,
+    memcpy(sensing.dataBuf + sensing.ptr.temperature,
         &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;
