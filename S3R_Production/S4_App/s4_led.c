@@ -41,8 +41,8 @@
  */
 
 #include "s4_led.h"
-#include "shimmer_externs.h"
 #include "shimmer_definitions.h"
+#include "shimmer_externs.h"
 
 uint8_t cntBlink = 0;
 uint8_t cnt1 = 0;
@@ -88,7 +88,8 @@ void S4Led_Blink(void)
       batt_led = LED_GREEN_LWR;
 #endif
     }
-    else if (((shimmerStatus.battVal[2] & 0x80) != 0) && ((shimmerStatus.battVal[2] & 0x40) == 0))
+    else if (((shimmerStatus.battVal[2] & 0x80) != 0)
+        && ((shimmerStatus.battVal[2] & 0x40) == 0))
     { //charge in progress
 #if defined(SHIMMER3R)
       batt_led = LED_RGB_YELLOW;
@@ -96,7 +97,8 @@ void S4Led_Blink(void)
       batt_led = LED_YELLOW_LWR;
 #endif
     }
-    else if (((shimmerStatus.battVal[2] & 0x80) != 0) && ((shimmerStatus.battVal[2] & 0x40) != 0))
+    else if (((shimmerStatus.battVal[2] & 0x80) != 0)
+        && ((shimmerStatus.battVal[2] & 0x40) != 0))
     { //stand by
 #if defined(SHIMMER3R)
       batt_led = LED_RGB_ALL_OFF;

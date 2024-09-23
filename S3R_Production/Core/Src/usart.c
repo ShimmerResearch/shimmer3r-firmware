@@ -22,8 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
-#include "shimmer_externs.h"
 #include "shimmer_definitions.h"
+#include "shimmer_externs.h"
 
 //static STATTypeDef *pStat;
 //static SENSINGTypeDef *pSensing;

@@ -514,13 +514,12 @@ void set_config_byte_gyro_rate(gConfigBytes *storedConfigPtr, uint8_t value)
   storedConfigPtr->gyroRate = value;
 }
 
-void set_config_byte_wr_accel_lp_mode(gConfigBytes *storedConfigPtr,
-    uint8_t value)
+void set_config_byte_wr_accel_lp_mode(gConfigBytes *storedConfigPtr, uint8_t value)
 {
 #if defined(SHIMMER3)
   value = (value == 1) ? 1 : 0;
 #elif defined(SHIMMER3R)
-    value = (value <= 3) ? value : 0;
+  value = (value <= 3) ? value : 0;
 #endif
   storedConfigPtr->wrAccelLpModeLsb = value & 0x01;
   storedConfigPtr->wrAccelLpModeMsb = (value >> 1) & 0x01;
@@ -539,12 +538,12 @@ void set_config_byte_wr_accel_mode(gConfigBytes *storedConfigPtr, lis2dw12_mode_
 
 lis2dw12_mode_t get_config_byte_wr_accel_mode(void)
 {
-  lis2dw12_mode_t wrAccelMode = (lis2dw12_mode_t) ((storedConfig.wrAccelHrMode << 2) | get_config_byte_wr_accel_lp_mode());
+  lis2dw12_mode_t wrAccelMode = (lis2dw12_mode_t) ((storedConfig.wrAccelHrMode << 2)
+      | get_config_byte_wr_accel_lp_mode());
   return wrAccelMode;
 }
 
-void set_config_byte_pressure_oversampling_ratio(gConfigBytes *storedConfigPtr,
-    uint8_t value)
+void set_config_byte_pressure_oversampling_ratio(gConfigBytes *storedConfigPtr, uint8_t value)
 {
 #if defined(SHIMMER3)
   value = (value < 4) ? (value & 0x03) : BMP180_OSS_1;

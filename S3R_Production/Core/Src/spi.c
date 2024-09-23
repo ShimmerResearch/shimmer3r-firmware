@@ -854,7 +854,7 @@ void SPI_startSensing()
   if ((configBytes->chEnLnAccel) || (configBytes->chEnGyro))
   {
     uint8_t gyroRange = get_config_byte_gyro_range();
-    // Shimmer config maps 0x05 to the chip's 0x0C for 4000dps
+    //Shimmer config maps 0x05 to the chip's 0x0C for 4000dps
     gyroRange = (gyroRange == 5) ? LSM6DSV_4000dps : gyroRange;
     lsm6dsv_configure(shimmerSamplingFreq, configBytes->chEnGyro, configBytes->chEnLnAccel,
         configBytes->gyroRate, gyroRange, configBytes->altAccelRange);
@@ -862,7 +862,8 @@ void SPI_startSensing()
 
   if (configBytes->chEnPressureAndTemperature)
   {
-    bmp3_configure(shimmerSamplingFreq, configBytes->pressureRate, get_config_byte_pressure_oversampling_ratio());
+    bmp3_configure(shimmerSamplingFreq, configBytes->pressureRate,
+        get_config_byte_pressure_oversampling_ratio());
   }
 
   if (configBytes->chEnAltAccel)
@@ -879,7 +880,8 @@ void SPI_startSensing()
 
   if (configBytes->chEnAltMag)
   {
-    lis3mdl_configure(shimmerSamplingFreq, get_config_byte_mag_rate(), configBytes->magRange);
+    lis3mdl_configure(
+        shimmerSamplingFreq, get_config_byte_mag_rate(), configBytes->magRange);
   }
 
 #endif

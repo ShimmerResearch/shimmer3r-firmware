@@ -24,12 +24,12 @@
 //#include "../5xx_HAL/hal_DMA.h"
 #endif
 #elif defined(SHIMMER3R) || defined(SHIMMER4_SDK)
-#include "shimmer_definitions.h"
-#include "shimmer_externs.h"
-#include "s4_sensing.h"
-#include "s4_taskList.h"
 #include "bmp3_defs.h"
 #include "hal_FactoryTest.h"
+#include "s4_sensing.h"
+#include "s4_taskList.h"
+#include "shimmer_definitions.h"
+#include "shimmer_externs.h"
 #endif
 
 #include "sd_sync.h"
@@ -81,9 +81,8 @@ uint8_t sendAck, inquiryResponse, samplingRateResponse, lnAccelCalibrationRespon
     gyroCalibrationResponse, magCalibrationResponse, wrAccelCalibrationResponse,
     allCalibrationResponse, deviceVersionResponse, fwVersionResponse,
     bufferSizeResponse, uniqueSerialResponse, configSetupBytesResponse,
-    wrAccelRangeResponse, magGainResponse,
-    magSamplingRateResponse, wrAccelSamplingRateResponse,
-    wrAccelLpModeResponse, wrAccelHrModeResponse,
+    wrAccelRangeResponse, magGainResponse, magSamplingRateResponse,
+    wrAccelSamplingRateResponse, wrAccelLpModeResponse, wrAccelHrModeResponse,
     gyroRangeResponse, gyroSamplingRateResponse, altAccelRangeResponse,
     mpu9150MagSensAdjValsResponse, bmpOversamplingRatioResponse, blinkLedResponse,
     gsrRangeResponse, internalExpPowerEnableResponse, exgRegsResponse,
@@ -3257,10 +3256,11 @@ void BtUart_sendRsp(void)
       *(resPacket + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(resPacket + packet_length++) = STATUS_RESPONSE;
       *(resPacket + packet_length++) = (shimmerStatus.toggleLedRedCmd << 7)
-          + ((shimmerStatus.badFile & 0x01) << 6) + ((shimmerStatus.isSdInserted & 0x01) << 5)
-          + ((shimmerStatus.isStreaming & 0x01) << 4) + ((shimmerStatus.isLogging & 0x01) << 3)
-          + (isRwcTimeSet() << 2) + ((shimmerStatus.isSensing & 0x01) << 1)
-          + (shimmerStatus.isDocked & 0x01);
+          + ((shimmerStatus.badFile & 0x01) << 6)
+          + ((shimmerStatus.isSdInserted & 0x01) << 5)
+          + ((shimmerStatus.isStreaming & 0x01) << 4)
+          + ((shimmerStatus.isLogging & 0x01) << 3) + (isRwcTimeSet() << 2)
+          + ((shimmerStatus.isSensing & 0x01) << 1) + (shimmerStatus.isDocked & 0x01);
       dockedResponse = 0;
 #if defined(SHIMMER4_SDK)
     }
@@ -3835,8 +3835,9 @@ void BtsdSelfcmd(void)
     selfcmd[i++] = INSTREAM_CMD_RESPONSE;
     selfcmd[i++] = STATUS_RESPONSE;
     selfcmd[i++] = (shimmerStatus.toggleLedRedCmd << 7) | (shimmerStatus.badFile << 6)
-        | (shimmerStatus.isSdInserted << 5) | (shimmerStatus.isStreaming << 4) | (shimmerStatus.isLogging << 3)
-        | (isRwcTimeSet() << 2) | (shimmerStatus.isSensing << 1) | shimmerStatus.isDocked;
+        | (shimmerStatus.isSdInserted << 5) | (shimmerStatus.isStreaming << 4)
+        | (shimmerStatus.isLogging << 3) | (isRwcTimeSet() << 2)
+        | (shimmerStatus.isSensing << 1) | shimmerStatus.isDocked;
 
     uint8_t crcMode = getBtCrcMode();
     if (crcMode != CRC_OFF)

@@ -8,8 +8,8 @@
 #include "s4_sd.h"
 
 #include "main.h"
-#include "shimmer_include.h"
 #include "shimmer_definitions.h"
+#include "shimmer_include.h"
 #include "stm32u5xx_hal.h"
 
 #if USE_FATFS
@@ -677,7 +677,8 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "accel_alt_range=%d\r\n", storedConfig->altAccelRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "pres_bmp390_prec=%d\r\n", get_config_byte_pressure_oversampling_ratio());
+      sprintf(buffer, "pres_bmp390_prec=%d\r\n",
+          get_config_byte_pressure_oversampling_ratio());
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "gsr_range=%d\r\n", storedConfig->gsrRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
@@ -756,8 +757,8 @@ void UpdateSdConfig(void)
       sprintf(buffer, "configtime=%s\r\n", configTimeText);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
-//      sprintf(buffer, "baud_rate=%d\r\n", storedConfig->btCommsBaudRate);
-//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+      //sprintf(buffer, "baud_rate=%d\r\n", storedConfig->btCommsBaudRate);
+      //f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
       //temp32 = storedConfig[NV_DERIVED_CHANNELS_0]
       //       + (((uint32_t)storedConfig[NV_DERIVED_CHANNELS_1])<<8)
@@ -1178,24 +1179,24 @@ void ParseConfig(void)
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP1] = atoi(equals);
       else if (strstr(buffer, "EXG_ADS1292R_2_RESP2="))
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP2] = atoi(equals);
-//#if defined(SHIMMER3)
-//      else if (strstr(buffer, "baud_rate="))
-//      {
-//        config_baudrate = atoi(equals);
-//        if (config_baudrate != getCurrentBtBaudRate())
-//        {
-//#if BT_ENABLE_BAUD_RATE_CHANGE
-//          if (config_baudrate <= BAUD_1000000)
-//          {
-//            changeBtBaudRate = config_baudrate;
-//          }
-//#else
-//          triggerSdCardUpdate = 1;
-//#endif
-//        }
-//        stored_config_temp[NV_BT_COMMS_BAUD_RATE] = getCurrentBtBaudRate();
-//      }
-//#endif
+      //#if defined(SHIMMER3)
+      //      else if (strstr(buffer, "baud_rate="))
+      //      {
+      //        config_baudrate = atoi(equals);
+      //        if (config_baudrate != getCurrentBtBaudRate())
+      //        {
+      //#if BT_ENABLE_BAUD_RATE_CHANGE
+      //          if (config_baudrate <= BAUD_1000000)
+      //          {
+      //            changeBtBaudRate = config_baudrate;
+      //          }
+      //#else
+      //          triggerSdCardUpdate = 1;
+      //#endif
+      //        }
+      //        stored_config_temp[NV_BT_COMMS_BAUD_RATE] = getCurrentBtBaudRate();
+      //      }
+      //#endif
       else if (strstr(buffer, "derived_channels="))
       {
         //derived_channels_val = atol(equals);

@@ -44,9 +44,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "s4_adc.h"
-#include "shimmer_externs.h"
-#include "shimmer_definitions.h"
 #include "gpdma.h"
+#include "shimmer_definitions.h"
+#include "shimmer_externs.h"
 //#include "gpio.h"
 //#include "dma.h"
 

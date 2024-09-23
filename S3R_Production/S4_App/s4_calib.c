@@ -11,8 +11,8 @@
 #include <string.h>
 //#include "msp430.h"
 
-#include "shimmer_definitions.h"
 #include "s4_calib.h"
+#include "shimmer_definitions.h"
 #if USE_FATFS
 #include "ff.h"
 #endif

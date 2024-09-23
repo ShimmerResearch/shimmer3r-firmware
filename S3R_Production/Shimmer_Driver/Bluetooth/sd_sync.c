@@ -19,8 +19,8 @@
 #include "shimmer_bt_comms.h"
 //#include "RN4X.h"
 //#include "../../shimmer_btsd.h"
-#include "shimmer_definitions.h"
 #include "s4_taskList.h"
+#include "shimmer_definitions.h"
 
 uint8_t nodeName[MAX_NODES][MAX_CHARS], shortExpFlag;
 uint8_t syncNodeCnt, syncNodeNum, syncThis, syncNodeSucc, nReboot, currNodeSucc, cReboot;

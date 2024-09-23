@@ -45,9 +45,9 @@
 #ifndef S4_RAM_H
 #define S4_RAM_H
 
+#include "lis2dw12_reg.h"
 #include "shimmer_definitions.h"
 #include <shimmer_include.h>
-#include "lis2dw12_reg.h"
 
 //LogAndStream Shimmer3 function names
 #define IniReadInfoMem           S4Ram_init
@@ -231,8 +231,8 @@ typedef union
     uint8_t unusedIdx5Bit0  : 1;
     uint8_t chEnMPU9x50temp : 1; //Shimmer3 MPU9x50/ICM20948 temperature
 #elif defined(SHIMMER3R)
-    uint8_t unusedIdx5Bit0  : 1;
-    uint8_t unusedIdx5Bit1  : 1;
+    uint8_t unusedIdx5Bit0 : 1;
+    uint8_t unusedIdx5Bit1 : 1;
 #elif defined(SHIMMER4_SDK)
     uint8_t chEnStc3100 : 1;
     uint8_t chEnIntADC4 : 1; //S4_SDK = ADC12
@@ -249,10 +249,10 @@ typedef union
 #endif
 
     //Idx 6: Config setup byte 0
-    uint8_t wrAccelHrMode      : 1;
-    uint8_t wrAccelLpModeLsb   : 1;
-    uint8_t wrAccelRange       : 2;
-    uint8_t wrAccelRate        : 4;
+    uint8_t wrAccelHrMode    : 1;
+    uint8_t wrAccelLpModeLsb : 1;
+    uint8_t wrAccelRange     : 2;
+    uint8_t wrAccelRate      : 4;
 
     //Idx 7: Config setup byte 1
     uint8_t gyroRate;
@@ -260,12 +260,12 @@ typedef union
     //Idx 8: Config setup byte 2
     uint8_t gyroRangeLsb : 2;
     uint8_t magRateLsb   : 3;
-    uint8_t magRange  : 3;
+    uint8_t magRange     : 3;
 
     //Idx 9: Config setup byte 3
-    uint8_t expansionBoardPower : 1;
-    uint8_t gsrRange            : 3;
-    uint8_t pressureOversamplingRatioLsb   : 2;
+    uint8_t expansionBoardPower          : 1;
+    uint8_t gsrRange                     : 3;
+    uint8_t pressureOversamplingRatioLsb : 2;
     uint8_t altAccelRange : 2; //S3/S4_SDK MPU9x50/ICM20948 Accel, S3R = LSM6DSV Accel
 
     gExgADS1292rRegs exgADS1292rRegsCh1;
@@ -337,18 +337,18 @@ typedef union
     uint8_t unusedIdx129;
 
     //Idx 130: Config setup byte 4
-    uint8_t pressureOversamplingRatioMsb :1;
-    uint8_t wrAccelLpModeMsb :1;
-    uint8_t gyroRangeMsb :1;
-    uint8_t unusedByte130Bit4 :1;
-    uint8_t altMagRate :2;
-    uint8_t altAccelRate :2;
+    uint8_t pressureOversamplingRatioMsb : 1;
+    uint8_t wrAccelLpModeMsb             : 1;
+    uint8_t gyroRangeMsb                 : 1;
+    uint8_t unusedByte130Bit4            : 1;
+    uint8_t altMagRate                   : 2;
+    uint8_t altAccelRate                 : 2;
 
     //Idx 131: Config setup byte 5
-    uint8_t pressureRate :3;
-    uint8_t magRateMsb :3;
-    uint8_t unusedByte131Bit6 :1;
-    uint8_t unusedByte131Bit7 :1;
+    uint8_t pressureRate      : 3;
+    uint8_t magRateMsb        : 3;
+    uint8_t unusedByte131Bit6 : 1;
+    uint8_t unusedByte131Bit7 : 1;
 
     //Idx 132: Config setup byte 6
     uint8_t unusedIdx132;

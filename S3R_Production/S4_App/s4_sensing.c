@@ -111,28 +111,28 @@ void overWriteDefaultConfig(void)
 
   storedConfigPtr->bluetoothEnable = 1;
 
-  if(storedConfigPtr->chEnLnAccel)
+  if (storedConfigPtr->chEnLnAccel)
   {
     storedConfigPtr->altAccelRange = LSM6DSV_2g;
   }
-  if(storedConfigPtr->chEnWrAccel)
+  if (storedConfigPtr->chEnWrAccel)
   {
     set_config_byte_wr_accel_mode(storedConfigPtr, LIS2DW12_HIGH_PERFORMANCE);
   }
-  if(storedConfigPtr->chEnMag)
+  if (storedConfigPtr->chEnMag)
   {
     set_config_byte_mag_rate(storedConfigPtr, LIS3MDL_UHP_155Hz);
   }
-  if(storedConfigPtr->chEnAltMag)
+  if (storedConfigPtr->chEnAltMag)
   {
     storedConfigPtr->altMagRate = LIS2MDL_ODR_100Hz;
   }
-  if(storedConfigPtr->chEnGyro)
+  if (storedConfigPtr->chEnGyro)
   {
     set_config_byte_gyro_range(storedConfigPtr, LSM6DSV_500dps);
     set_config_byte_gyro_rate(storedConfigPtr, LSM6DSV_ODR_AT_1920Hz);
   }
-  if(storedConfigPtr->chEnPressureAndTemperature)
+  if (storedConfigPtr->chEnPressureAndTemperature)
   {
     set_config_byte_pressure_oversampling_ratio(storedConfigPtr, BMP3_OVERSAMPLING_32X);
     storedConfigPtr->pressureRate = BMP3_ODR_200_HZ;
@@ -145,8 +145,10 @@ uint8_t S4Sens_checkStartSensorConditions(void)
   {
     return 0;
   }
-  if (!((shimmerStatus.sdlogCmd == 1 && shimmerStatus.isSdInserted && !shimmerStatus.badFile)
-          || (shimmerStatus.btstreamCmd == BT_STREAM_CMD_STATE_START && shimmerStatus.isBtConnected)))
+  if (!((shimmerStatus.sdlogCmd == 1 && shimmerStatus.isSdInserted
+            && !shimmerStatus.badFile)
+          || (shimmerStatus.btstreamCmd == BT_STREAM_CMD_STATE_START
+              && shimmerStatus.isBtConnected)))
   {
     return 0;
   }
@@ -296,7 +298,8 @@ uint8_t S4Sens_checkStopSensorConditions(void)
   }
   else if (shimmerStatus.isLogging && shimmerStatus.isStreaming)
   {
-    if ((shimmerStatus.btstreamCmd != BT_STREAM_CMD_STATE_STOP) || (shimmerStatus.sdlogCmd != 2))
+    if ((shimmerStatus.btstreamCmd != BT_STREAM_CMD_STATE_STOP)
+        || (shimmerStatus.sdlogCmd != 2))
     {
       return 0;
     }

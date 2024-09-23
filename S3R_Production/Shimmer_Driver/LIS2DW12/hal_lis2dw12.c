@@ -371,7 +371,10 @@ uint8_t lis2dw12_self_test(void)
   return st_result;
 }
 
-int32_t lis2dw12_configure(float shimmerSamplingFreq, lis2dw12_odr_t rate, lis2dw12_fs_t range, lis2dw12_mode_t mode)
+int32_t lis2dw12_configure(float shimmerSamplingFreq,
+    lis2dw12_odr_t rate,
+    lis2dw12_fs_t range,
+    lis2dw12_mode_t mode)
 {
   LIS2DW12_Init(&lis2dw12_obj);
 

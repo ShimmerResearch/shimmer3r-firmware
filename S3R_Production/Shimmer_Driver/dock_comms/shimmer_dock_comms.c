@@ -22,8 +22,8 @@
 #include "../CAT24C16/cat24c16.h"
 #include "../shimmer_boards/shimmer_boards.h"
 #else
-#include "shimmer_definitions.h"
 #include "s4_taskList.h"
+#include "shimmer_definitions.h"
 
 #include "stm32u5xx_hal_uart.h"
 #endif

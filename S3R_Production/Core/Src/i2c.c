@@ -21,8 +21,8 @@
 #include "i2c.h"
 
 /* USER CODE BEGIN 0 */
-#include "shimmer_include.h"
 #include "shimmer_definitions.h"
+#include "shimmer_include.h"
 
 #define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
@@ -284,7 +284,8 @@ void I2C_readBatt(void)
       uint8_t bt_tx_data[131], packet_length = 0;
       *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(bt_tx_data + packet_length++) = RSP_I2C_BATT_STATUS_COMMAND;
-      memcpy((bt_tx_data + packet_length), (uint8_t *) shimmerStatus.battDigital, STC3100_DATA_LEN);
+      memcpy((bt_tx_data + packet_length),
+          (uint8_t *) shimmerStatus.battDigital, STC3100_DATA_LEN);
       packet_length += STC3100_DATA_LEN;
       BT_write(bt_tx_data, packet_length);
     }
@@ -519,7 +520,7 @@ void I2C_startSensing(void)
     if (configBytes->chEnMag)
     {
       LSM303DLHC_magInit(configBytes->magRateLsb, //sampling rate
-          configBytes->magRange);              //gain
+          configBytes->magRange);                 //gain
     }
   }
 

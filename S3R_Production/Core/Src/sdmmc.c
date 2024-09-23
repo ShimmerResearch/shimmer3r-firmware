@@ -18,8 +18,8 @@
  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "shimmer_definitions.h"
 #include "sdmmc.h"
+#include "shimmer_definitions.h"
 
 /* USER CODE BEGIN 0 */
 #include "gpio.h"

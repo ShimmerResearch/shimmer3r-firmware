@@ -21,7 +21,7 @@
 #define FW_VER_REL   23 //internal version number: 0-255
 #endif
 
-#define FW_IS_LOGANDSTREAM        1
+#define FW_IS_LOGANDSTREAM  1
 
 #define IS_CONNECTED_EEPROM 0
 
@@ -70,16 +70,16 @@
 #define X_LN_ACCEL 0x00
 #define Y_LN_ACCEL 0x01
 #define Z_LN_ACCEL 0x02
-#define VBATT     0x03
+#define VBATT      0x03
 #define X_WR_ACCEL 0x04
 #define Y_WR_ACCEL 0x05
 #define Z_WR_ACCEL 0x06
-#define X_MAG   0x07
-#define Y_MAG   0x08
-#define Z_MAG   0x09
-#define X_GYRO    0x0A
-#define Y_GYRO    0x0B
-#define Z_GYRO    0x0C
+#define X_MAG      0x07
+#define Y_MAG      0x08
+#define Z_MAG      0x09
+#define X_GYRO     0x0A
+#define Y_GYRO     0x0B
+#define Z_GYRO     0x0C
 #if defined(SHIMMER3R)
 #define EXTERNAL_ADC_0 0x0D
 #define EXTERNAL_ADC_1 0x0E
@@ -97,12 +97,12 @@
 #define INTERNAL_ADC_13 0x12
 #define INTERNAL_ADC_14 0x13
 #endif
-#define X_ALT_ACCEL                0x14
-#define Y_ALT_ACCEL                0x15
-#define Z_ALT_ACCEL                0x16
-#define X_ALT_MAG                  0x17
-#define Y_ALT_MAG                  0x18
-#define Z_ALT_MAG                  0x19
+#define X_ALT_ACCEL              0x14
+#define Y_ALT_ACCEL              0x15
+#define Z_ALT_ACCEL              0x16
+#define X_ALT_MAG                0x17
+#define Y_ALT_MAG                0x18
+#define Z_ALT_MAG                0x19
 #define BMP_TEMPERATURE          0x1A
 #define BMP_PRESSURE             0x1B
 #define GSR_RAW                  0x1C
@@ -132,8 +132,8 @@
 #define INTERNAL_ADC_13 0x33
 #define INTERNAL_ADC_14 0x34
 #define INT_ADC_3       0x35
-#define PPG_1                 0x36
-#define PPG_2                 0x37
+#define PPG_1           0x36
+#define PPG_2           0x37
 #endif
 
 #if defined(SHIMMER3)
@@ -170,9 +170,9 @@
 #define SENSOR_STC3100   0x01
 #endif
 NV_SENSORS5
-#define SENSOR_APP_STRAIN              0x80
-#define SENSOR_APP_GSR                 0x40
-#define SENSOR_APP_PPG                 0x20
+#define SENSOR_APP_STRAIN                     0x80
+#define SENSOR_APP_GSR                        0x40
+#define SENSOR_APP_PPG                        0x20
 
 //Config byte masks
 //Config Byte0
@@ -229,64 +229,64 @@ NV_SENSORS5
   0x09 //1.344kHz in normal mode, 5.376kHz in low-power mode
 
 //LSM303DLHC Mag gain
-#define LSM303DLHC_MAG_1_3G              0x01 //+/-1.3 Gauss
-#define LSM303DLHC_MAG_1_9G              0x02 //+/-1.9 Gauss
-#define LSM303DLHC_MAG_2_5G              0x03 //+/-2.5 Gauss
-#define LSM303DLHC_MAG_4_0G              0x04 //+/-4.0 Gauss
-#define LSM303DLHC_MAG_4_7G              0x05 //+/-4.7 Gauss
-#define LSM303DLHC_MAG_5_6G              0x06 //+/-5.6 Gauss
-#define LSM303DLHC_MAG_8_1G              0x07 //+/-8.1 Gauss
+#define LSM303DLHC_MAG_1_3G   0x01 //+/-1.3 Gauss
+#define LSM303DLHC_MAG_1_9G   0x02 //+/-1.9 Gauss
+#define LSM303DLHC_MAG_2_5G   0x03 //+/-2.5 Gauss
+#define LSM303DLHC_MAG_4_0G   0x04 //+/-4.0 Gauss
+#define LSM303DLHC_MAG_4_7G   0x05 //+/-4.7 Gauss
+#define LSM303DLHC_MAG_5_6G   0x06 //+/-5.6 Gauss
+#define LSM303DLHC_MAG_8_1G   0x07 //+/-8.1 Gauss
 
 //LSM303DLHC Mag sampling rate
-#define LSM303DLHC_MAG_0_75HZ            0x00 //0.75 Hz
-#define LSM303DLHC_MAG_1_5HZ             0x01 //1.5 Hz
-#define LSM303DLHC_MAG_3HZ               0x02 //3.0 Hz
-#define LSM303DLHC_MAG_7_5HZ             0x03 //7.5 Hz
-#define LSM303DLHC_MAG_15HZ              0x04 //15 Hz
-#define LSM303DLHC_MAG_30HZ              0x05 //30 Hz
-#define LSM303DLHC_MAG_75HZ              0x06 //75 Hz
-#define LSM303DLHC_MAG_220HZ             0x07 //220 Hz
+#define LSM303DLHC_MAG_0_75HZ 0x00 //0.75 Hz
+#define LSM303DLHC_MAG_1_5HZ  0x01 //1.5 Hz
+#define LSM303DLHC_MAG_3HZ    0x02 //3.0 Hz
+#define LSM303DLHC_MAG_7_5HZ  0x03 //7.5 Hz
+#define LSM303DLHC_MAG_15HZ   0x04 //15 Hz
+#define LSM303DLHC_MAG_30HZ   0x05 //30 Hz
+#define LSM303DLHC_MAG_75HZ   0x06 //75 Hz
+#define LSM303DLHC_MAG_220HZ  0x07 //220 Hz
 #endif
 
 //calibration info
-#define S_ACCEL_A                        0
-#define S_GYRO                           1
-#define S_MAG                            2
-#define S_ACCEL_D                        3
+#define S_ACCEL_A 0
+#define S_GYRO    1
+#define S_MAG     2
+#define S_ACCEL_D 3
 //#define S_ECG                     3
 //#define S_EMG                     4
 
 #if defined(SHIMMER3)
 //MPU9250 Gyro range
-#define MPU9150_GYRO_250DPS   0x00 //+/-250 dps
-#define MPU9150_GYRO_500DPS   0x01 //+/-500 dps
-#define MPU9150_GYRO_1000DPS  0x02 //+/-1000 dps
-#define MPU9150_GYRO_2000DPS  0x03 //+/-2000 dps
-#define MPU9250_GYRO_250DPS              0x00 //+/-250 dps
-#define MPU9250_GYRO_500DPS              0x01 //+/-500 dps
-#define MPU9250_GYRO_1000DPS             0x02 //+/-1000 dps
-#define MPU9250_GYRO_2000DPS             0x03 //+/-2000 dps
+#define MPU9150_GYRO_250DPS  0x00 //+/-250 dps
+#define MPU9150_GYRO_500DPS  0x01 //+/-500 dps
+#define MPU9150_GYRO_1000DPS 0x02 //+/-1000 dps
+#define MPU9150_GYRO_2000DPS 0x03 //+/-2000 dps
+#define MPU9250_GYRO_250DPS  0x00 //+/-250 dps
+#define MPU9250_GYRO_500DPS  0x01 //+/-500 dps
+#define MPU9250_GYRO_1000DPS 0x02 //+/-1000 dps
+#define MPU9250_GYRO_2000DPS 0x03 //+/-2000 dps
 
 //#digital accel_range
-#define RANGE_2G                         0
-#define RANGE_4G                         1
-#define RANGE_8G                         2
-#define RANGE_16G                        3
+#define RANGE_2G             0
+#define RANGE_4G             1
+#define RANGE_8G             2
+#define RANGE_16G            3
 
 //#mag_gain
-#define LSM303_MAG_13GA                  1
-#define LSM303_MAG_19GA                  2
-#define LSM303_MAG_25GA                  3
-#define LSM303_MAG_40GA                  4
-#define LSM303_MAG_47GA                  5
-#define LSM303_MAG_56GA                  6
-#define LSM303_MAG_81GA                  7
+#define LSM303_MAG_13GA      1
+#define LSM303_MAG_19GA      2
+#define LSM303_MAG_25GA      3
+#define LSM303_MAG_40GA      4
+#define LSM303_MAG_47GA      5
+#define LSM303_MAG_56GA      6
+#define LSM303_MAG_81GA      7
 
 //BMP Pressure oversampling ratio
-#define BMP180_OSS_1          0x00
-#define BMP180_OSS_2          0x01
-#define BMP180_OSS_4          0x02
-#define BMP180_OSS_8          0x03
+#define BMP180_OSS_1         0x00
+#define BMP180_OSS_2         0x01
+#define BMP180_OSS_4         0x02
+#define BMP180_OSS_8         0x03
 #endif
 
 //SD Log file header format
@@ -418,47 +418,47 @@ NV_SENSORS5
 #define SDH_RWCERROR_EN \
   0x10 //when 0, won't flash error. when 1, will flash error if RTC isn't set (RTC_offset == 0)
 //#define SDH_GYRO_BUTTON_ENABLE         0x10
-#define SDH_USER_BUTTON_ENABLE      0x20
-#define SDH_SET_PMUX                0x40 //not used now, reserved as 0
-#define SDH_RTC_SET_BY_BT           0x80
+#define SDH_USER_BUTTON_ENABLE 0x20
+#define SDH_SET_PMUX           0x40 //not used now, reserved as 0
+#define SDH_RTC_SET_BY_BT      0x80
 //SDH_TRIAL_CONFIG1
-#define SDH_SINGLETOUCH             0x80
+#define SDH_SINGLETOUCH        0x80
 //#define SDH_ACCEL_LPM                  0x40//config has this bit
 //#define SDH_ACCEL_HRM                  0x20//config has this bit
-#define SDH_TCXO                    0x10
+#define SDH_TCXO               0x10
 //#define SDH_EXP_POWER                  0x08//config has this bit
 //#define SDH_MONITOR                    0x04
-#define SD_WRITE_BUF_SIZE           512
-#define SD_HEAD_SIZE                256
+#define SD_WRITE_BUF_SIZE      512
+#define SD_HEAD_SIZE           256
 
-#define MAX_CHARS                   13
-#define UINT32_LEN                  11 //10+1, where the last byte should be 0x00
-#define UINT64_LEN                  21 //20+1, where the last byte should be 0x00
-#define RESPONSE_PACKET_SIZE        1024 //133
+#define MAX_CHARS              13
+#define UINT32_LEN             11   //10+1, where the last byte should be 0x00
+#define UINT64_LEN             21   //20+1, where the last byte should be 0x00
+#define RESPONSE_PACKET_SIZE   1024 //133
 
 //BATTERY
-#define BATT_LOW                    0x01
-#define BATT_MID                    0x02
-#define BATT_HIGH                   0x04
-#define BATT_INTERVAL               600 //600 seconds = 10min interval
-#define BATT_INTERVAL_D             30  //30 seconds
+#define BATT_LOW               0x01
+#define BATT_MID               0x02
+#define BATT_HIGH              0x04
+#define BATT_INTERVAL          600 //600 seconds = 10min interval
+#define BATT_INTERVAL_D        30  //30 seconds
 
-#define STAT_PERI_ADC         0x01
-#define STAT_PERI_I2C_SENS    0x02
+#define STAT_PERI_ADC          0x01
+#define STAT_PERI_I2C_SENS     0x02
 #if defined(SHIMMER4_SDK)
 #define STAT_PERI_I2C_BATT 0x04
 #endif
 #define STAT_PERI_SPI_SENS 0x08
 #define STAT_PERI_SDMMC    0x10
 #define STAT_PERI_BT       0x20
-#define PeriStat_Set(x) \
-  do                    \
-  {                     \
+#define PeriStat_Set(x)          \
+  do                             \
+  {                              \
     shimmerStatus.periStat |= x; \
   } while (0)
-#define PeriStat_Clr(x)  \
-  do                     \
-  {                      \
+#define PeriStat_Clr(x)           \
+  do                              \
+  {                               \
     shimmerStatus.periStat &= ~x; \
   } while (0)
 
