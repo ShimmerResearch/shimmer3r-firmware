@@ -5,11 +5,11 @@
  *      Author: MarkNolan
  */
 
-#include <s4_sd.h>
+#include "s4_sd.h"
 
 #include "main.h"
-#include "s4.h"
-#include "s4__cfg.h"
+#include "shimmer_include.h"
+#include "shimmer_definitions.h"
 #include "stm32u5xx_hal.h"
 
 #if USE_FATFS
@@ -74,25 +74,25 @@ uint8_t SD_test(void)
 #endif
 
   Board_sd2Arm();
-  stat.pinPvSd = 1;
+  shimmerStatus.pinPvSd = 1;
   SD_mount(0);
   SD_mount(1);
 
 #if USE_FATFS
-  stat.badFile += f_open(&test_file, file_name, FA_CREATE_ALWAYS | FA_WRITE);
-  stat.badFile += f_write(&test_file, test_text1, TEST_TEXT_LEN - 1, &bw);
-  stat.badFile += f_write(&test_file, test_text2, TEST_TEXT_LEN - 1, &bw);
-  stat.badFile += f_close(&test_file);
+  shimmerStatus.badFile += f_open(&test_file, file_name, FA_CREATE_ALWAYS | FA_WRITE);
+  shimmerStatus.badFile += f_write(&test_file, test_text1, TEST_TEXT_LEN - 1, &bw);
+  shimmerStatus.badFile += f_write(&test_file, test_text2, TEST_TEXT_LEN - 1, &bw);
+  shimmerStatus.badFile += f_close(&test_file);
 
   memset(test_text3, 0, 40);
-  stat.badFile += f_open(&test_file, file_name, FA_OPEN_EXISTING | FA_READ);
-  stat.badFile += f_read(&test_file, test_text3, TEST_TEXT_LEN - 1, &bw);
-  stat.badFile += f_close(&test_file);
+  shimmerStatus.badFile += f_open(&test_file, file_name, FA_OPEN_EXISTING | FA_READ);
+  shimmerStatus.badFile += f_read(&test_file, test_text3, TEST_TEXT_LEN - 1, &bw);
+  shimmerStatus.badFile += f_close(&test_file);
 #endif
 
-  stat.badFile += strcmp(test_text1, test_text3);
+  shimmerStatus.badFile += strcmp(test_text1, test_text3);
 
-  return stat.badFile;
+  return shimmerStatus.badFile;
 }
 
 uint8_t SD_test_alternative(void)
@@ -407,7 +407,7 @@ void SD_close(void)
   file_status = FR_OK;
 #endif
   //Board_sdPower(0);
-  stat.badFile = 0;
+  shimmerStatus.badFile = 0;
   sensing.isFileCreated = 0;
 #endif //USE_SD
 }
@@ -536,11 +536,11 @@ void SD_writeToCard(void)
 #if USE_FATFS
   if (file_status != 0)
   {
-    stat.badFile = 1;
+    shimmerStatus.badFile = 1;
   }
   else
   {
-    stat.badFile = 0;
+    shimmerStatus.badFile = 0;
   }
 #endif
 
@@ -567,7 +567,7 @@ void UpdateSdConfig(void)
 {
   FIL cfgFile;
 
-  if (!stat.isDocked && CheckSdInslot() && !stat.badFile)
+  if (!shimmerStatus.isDocked && CheckSdInslot() && !shimmerStatus.badFile)
   {
     uint8_t sd_power_state;
     if (!isSdPowerOn())
@@ -669,30 +669,39 @@ void UpdateSdConfig(void)
       sprintf(buffer, "sample_rate=%s\r\n", val_char);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       //setup config
-      sprintf(buffer, "mg_internal_rate=%d\r\n", storedConfig->magRateLsb);
+      sprintf(buffer, "mg_internal_rate=%d\r\n", get_config_byte_mag_rate());
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "mg_range=%d\r\n", storedConfig->magRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "acc_internal_rate=%d\r\n", storedConfig->wrAccelRate);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "accel_mpu_range=%d\r\n", storedConfig->altAccelRange);
+      sprintf(buffer, "accel_alt_range=%d\r\n", storedConfig->altAccelRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "pres_bmp390_prec=%d\r\n", get_configured_pressure_oversampling_ratio());
+      sprintf(buffer, "pres_bmp390_prec=%d\r\n", get_config_byte_pressure_oversampling_ratio());
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "gsr_range=%d\r\n", storedConfig->gsrRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "exp_power=%d\r\n", storedConfig->expansionBoardPower);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "gyro_range=%d\r\n", get_configured_gyro_range());
+      sprintf(buffer, "gyro_range=%d\r\n", get_config_byte_gyro_range());
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "gyro_samplingrate=%d\r\n", storedConfig->gyroRate);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "acc_range=%d\r\n", storedConfig->wrAccelRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "acc_lpm=%d\r\n", get_configured_wr_accel_lp_mode());
+      sprintf(buffer, "acc_lpm=%d\r\n", get_config_byte_wr_accel_lp_mode());
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "acc_hrm=%d\r\n", storedConfig->wrAccelHrMode);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
+      sprintf(buffer, "mag_alt_rate=%d\r\n", storedConfig->altMagRate);
+      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+      sprintf(buffer, "accel_alt_rate=%d\r\n", storedConfig->altAccelRate);
+      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+      sprintf(buffer, "pres_bmp390_rate=%d\r\n", storedConfig->pressureRate);
+      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+      sprintf(buffer, "mag_rate=%d\r\n", get_config_byte_mag_rate());
+      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+
       //trial config
       sprintf(buffer, "user_button_enable=%d\r\n", storedConfig->userButtonEnable);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
@@ -700,13 +709,15 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "sd_error_enable=%d\r\n", storedConfig->sdErrorEnable);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "iammaster=%d\r\n", storedConfig->master);
+      sprintf(buffer, "iammaster=%d\r\n", storedConfig->masterEnable);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "sync=%d\r\n", storedConfig->sync);
+      sprintf(buffer, "sync=%d\r\n", storedConfig->syncEnable);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "low_battery_autostop=%d\r\n", storedConfig->lowBatteryCutOut);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "interval=%d\r\n", storedConfig->btInterval);
+      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+      sprintf(buffer, "bluetooth=%d\r\n", storedConfig->bluetoothEnable);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
       sprintf(buffer, "max_exp_len=%d\r\n", storedConfig->experimentLengthMaxInMinutes);
@@ -745,8 +756,9 @@ void UpdateSdConfig(void)
       sprintf(buffer, "configtime=%s\r\n", configTimeText);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
-      sprintf(buffer, "baud_rate=%d\r\n", storedConfig->btCommsBaudRate);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "baud_rate=%d\r\n", storedConfig->btCommsBaudRate);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+
       //temp32 = storedConfig[NV_DERIVED_CHANNELS_0]
       //       + (((uint32_t)storedConfig[NV_DERIVED_CHANNELS_1])<<8)
       //       + (((uint32_t)storedConfig[NV_DERIVED_CHANNELS_2])<<16);
@@ -865,7 +877,7 @@ void ParseConfig(void)
   }
   else if (file_status != FR_OK)
   {
-    stat.badFile = 0;
+    shimmerStatus.badFile = 0;
     //fileBad = (initializing) ? 0 : 1;
     return;
   }
@@ -957,7 +969,7 @@ void ParseConfig(void)
       }
       else if (strstr(buffer, "mg_internal_rate="))
       {
-        stored_config_temp.magRateLsb = atoi(equals);
+        set_config_byte_mag_rate(&stored_config_temp, atoi(equals));
       }
       else if (strstr(buffer, "mg_range="))
       {
@@ -967,7 +979,7 @@ void ParseConfig(void)
       {
         stored_config_temp.wrAccelRate = atoi(equals);
       }
-      else if (strstr(buffer, "accel_mpu_range="))
+      else if (strstr(buffer, "accel_alt_range="))
       {
         stored_config_temp.altAccelRange = atoi(equals);
       }
@@ -977,7 +989,7 @@ void ParseConfig(void)
       }
       else if (strstr(buffer, "acc_lpm="))
       {
-        set_configured_wr_accel_lp_mode(&stored_config_temp, atoi(equals));
+        set_config_byte_wr_accel_lp_mode(&stored_config_temp, atoi(equals));
       }
       else if (strstr(buffer, "acc_hrm="))
       {
@@ -993,15 +1005,32 @@ void ParseConfig(void)
       }
       else if (strstr(buffer, "gyro_samplingrate="))
       {
-        set_configured_gyro_rate(&stored_config_temp, atoi(equals));
+        set_config_byte_gyro_rate(&stored_config_temp, atoi(equals));
       }
       else if (strstr(buffer, "gyro_range="))
       {
-        set_configured_gyro_range(&stored_config_temp, atoi(equals));
+        set_config_byte_gyro_range(&stored_config_temp, atoi(equals));
       }
       else if (strstr(buffer, "pres_bmp390_prec="))
       {
-        set_configured_pressure_oversampling_ratio(&stored_config_temp, atoi(equals));
+        set_config_byte_pressure_oversampling_ratio(&stored_config_temp, atoi(equals));
+      }
+
+      else if (strstr(buffer, "mag_alt_rate="))
+      {
+        stored_config_temp.altMagRate = atoi(equals);
+      }
+      else if (strstr(buffer, "accel_alt_rate="))
+      {
+        stored_config_temp.altAccelRate = atoi(equals);
+      }
+      else if (strstr(buffer, "pres_bmp390_rate="))
+      {
+        stored_config_temp.pressureRate = atoi(equals);
+      }
+      else if (strstr(buffer, "mag_rate="))
+      {
+        set_config_byte_mag_rate(&stored_config_temp, atoi(equals));
       }
 #if !RTC_OFF
       else if (strstr(buffer, "rtc_error_enable="))
@@ -1019,11 +1048,11 @@ void ParseConfig(void)
       }
       else if (strstr(buffer, "iammaster="))
       { //0=slave=node
-        stored_config_temp.master = atoi(equals);
+        stored_config_temp.masterEnable = atoi(equals);
       }
       else if (strstr(buffer, "sync="))
       {
-        stored_config_temp.sync = atoi(equals);
+        stored_config_temp.syncEnable = atoi(equals);
       }
       else if (strstr(buffer, "low_battery_autostop="))
       {
@@ -1041,6 +1070,10 @@ void ParseConfig(void)
       else if (strstr(buffer, "interval="))
       {
         broadcast_interval = atoi(equals) > 255 ? 255 : atoi(equals);
+      }
+      else if (strstr(buffer, "bluetooth="))
+      {
+        stored_config_temp.bluetoothEnable = atoi(equals);
       }
       else if (strstr(buffer, "exp_power="))
       {
@@ -1145,24 +1178,24 @@ void ParseConfig(void)
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP1] = atoi(equals);
       else if (strstr(buffer, "EXG_ADS1292R_2_RESP2="))
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP2] = atoi(equals);
-#if defined(SHIMMER3)
-      else if (strstr(buffer, "baud_rate="))
-      {
-        config_baudrate = atoi(equals);
-        if (config_baudrate != getCurrentBtBaudRate())
-        {
-#if BT_ENABLE_BAUD_RATE_CHANGE
-          if (config_baudrate <= BAUD_1000000)
-          {
-            changeBtBaudRate = config_baudrate;
-          }
-#else
-          triggerSdCardUpdate = 1;
-#endif
-        }
-        stored_config_temp[NV_BT_COMMS_BAUD_RATE] = getCurrentBtBaudRate();
-      }
-#endif
+//#if defined(SHIMMER3)
+//      else if (strstr(buffer, "baud_rate="))
+//      {
+//        config_baudrate = atoi(equals);
+//        if (config_baudrate != getCurrentBtBaudRate())
+//        {
+//#if BT_ENABLE_BAUD_RATE_CHANGE
+//          if (config_baudrate <= BAUD_1000000)
+//          {
+//            changeBtBaudRate = config_baudrate;
+//          }
+//#else
+//          triggerSdCardUpdate = 1;
+//#endif
+//        }
+//        stored_config_temp[NV_BT_COMMS_BAUD_RATE] = getCurrentBtBaudRate();
+//      }
+//#endif
       else if (strstr(buffer, "derived_channels="))
       {
         //derived_channels_val = atol(equals);
@@ -1241,7 +1274,7 @@ void ParseConfig(void)
     if (stored_config_temp.singleTouchStart)
     {
       stored_config_temp.userButtonEnable = 1;
-      stored_config_temp.sync = 1;
+      stored_config_temp.syncEnable = 1;
       triggerSdCardUpdate = 1;
     }
 

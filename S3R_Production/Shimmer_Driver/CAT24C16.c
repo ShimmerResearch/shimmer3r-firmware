@@ -43,9 +43,9 @@
  *
  */
 
+#include <shimmer_include.h>
 #include "CAT24C16.h"
 #include "hal_Board.h"
-#include "s4__cfg.h"
 
 I2C_HandleTypeDef *eeprom_hi2c;
 HAL_StatusTypeDef cat24c16_result;

@@ -40,7 +40,7 @@
  * @date May, 2016
  */
 
-#include "s4__cfg.h"
+#include <shimmer_include.h>
 #include <stdint.h>
 
 #ifndef HAL_BOARD_H

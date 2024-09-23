@@ -44,6 +44,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "s4_adc.h"
+#include "shimmer_externs.h"
+#include "shimmer_definitions.h"
 #include "gpdma.h"
 //#include "gpio.h"
 //#include "dma.h"
@@ -649,12 +651,12 @@ void S4_NORM_ADC_bufPoll()
 
   //Analog Battery Voltage
 #if USE_VBATT_ALWAYS
-  stat.battVal[0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
-  stat.battVal[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+  shimmerStatus.battVal[0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+  shimmerStatus.battVal[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   if (configBytes->chEnVBattery)
   {
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = stat.battVal[0];
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = stat.battVal[1];
+    sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = shimmerStatus.battVal[0];
+    sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = shimmerStatus.battVal[1];
   }
 #else
   if (configBytes->chEnVBattery)
@@ -835,78 +837,78 @@ void S4_NORM_ADC_stopSensing()
 
 void S4_NORM_ADC_rankBatt(void)
 {
-  if (stat.battStat == BATT_MID)
+  if (shimmerStatus.battStat == BATT_MID)
   {
-    if (*(uint16_t *) stat.battVal < BATT_MID_MIN)
+    if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MIN)
     {
-      stat.battStat = BATT_LOW;
+      shimmerStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) stat.battVal < BATT_MID_MAX)
+    else if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MAX)
     {
-      stat.battStat = BATT_MID;
+      shimmerStatus.battStat = BATT_MID;
     }
     else
     {
-      stat.battStat = BATT_HIGH;
+      shimmerStatus.battStat = BATT_HIGH;
     }
   }
-  else if (stat.battStat == BATT_LOW)
+  else if (shimmerStatus.battStat == BATT_LOW)
   {
-    if (*(uint16_t *) stat.battVal < BATT_LOW_MAX)
+    if (*(uint16_t *) shimmerStatus.battVal < BATT_LOW_MAX)
     {
-      stat.battStat = BATT_LOW;
+      shimmerStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) stat.battVal < BATT_MID_MAX)
+    else if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MAX)
     {
-      stat.battStat = BATT_MID;
+      shimmerStatus.battStat = BATT_MID;
     }
     else
     {
-      stat.battStat = BATT_HIGH;
+      shimmerStatus.battStat = BATT_HIGH;
     }
   }
   else
   { //high
-    if (*(uint16_t *) stat.battVal < BATT_MID_MIN)
+    if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MIN)
     {
-      stat.battStat = BATT_LOW;
+      shimmerStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) stat.battVal < BATT_HIGH_MIN)
+    else if (*(uint16_t *) shimmerStatus.battVal < BATT_HIGH_MIN)
     {
-      stat.battStat = BATT_MID;
+      shimmerStatus.battStat = BATT_MID;
     }
     else
     {
-      stat.battStat = BATT_HIGH;
+      shimmerStatus.battStat = BATT_HIGH;
     }
   }
-  switch (stat.battStat)
+  switch (shimmerStatus.battStat)
   {
 #if defined(SHIMMER3R)
   case BATT_LOW:
-    stat.battStatLed = LED_RGB_RED;
+    shimmerStatus.battStatLed = LED_RGB_RED;
     break;
   case BATT_MID:
-    stat.battStatLed = LED_RGB_YELLOW;
+    shimmerStatus.battStatLed = LED_RGB_YELLOW;
     break;
   case BATT_HIGH:
-    stat.battStatLed = LED_RGB_GREEN;
+    shimmerStatus.battStatLed = LED_RGB_GREEN;
     break;
   default:
-    stat.battStatLed = LED_RED;
+    shimmerStatus.battStatLed = LED_RED;
     break;
 #elif defined(SHIMMER4_SDK)
   case BATT_LOW:
-    stat.battStatLed = LED_RED;
+    shimmerStatus.battStatLed = LED_RED;
     break;
   case BATT_MID:
-    stat.battStatLed = LED_YELLOW;
+    shimmerStatus.battStatLed = LED_YELLOW;
     break;
   case BATT_HIGH:
-    stat.battStatLed = LED_GREEN;
+    shimmerStatus.battStatLed = LED_GREEN;
     break;
   default:
-    stat.battStatLed = LED_RED_LWR;
+    shimmerStatus.battStatLed = LED_RED_LWR;
     break;
 #endif
   }
@@ -922,7 +924,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
   if (adcConfig != ADC_CONFIG_BATT)
   {
     ADC_ChannelConfTypeDef sConfig;
-    if (adcConfig == ADC_CONFIG_SENS && stat.isSensing)
+    if (adcConfig == ADC_CONFIG_SENS && shimmerStatus.isSensing)
     {
       need_to_restore = 1;
     }
@@ -1053,7 +1055,7 @@ void manageReadBatt(uint8_t isBlockingRead)
   }
 
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  if (stat.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
+  if (shimmerStatus.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
     updateBatteryStatus(*(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog]);
   }
@@ -1070,11 +1072,11 @@ void manageReadBatt(uint8_t isBlockingRead)
 
 void updateBatteryStatus(uint16_t adc_battVal)
 {
-  stat.battVal[0] = adc_battVal & 0xff;
-  stat.battVal[1] = (adc_battVal >> 8) & 0xff;
-  stat.battVal[2] = 0;
-  stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
-  stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
+  shimmerStatus.battVal[0] = adc_battVal & 0xff;
+  shimmerStatus.battVal[1] = (adc_battVal >> 8) & 0xff;
+  shimmerStatus.battVal[2] = 0;
+  shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
+  shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
   S4_ADC_rankBatt();
 }
 

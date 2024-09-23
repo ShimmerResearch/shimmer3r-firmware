@@ -24,9 +24,10 @@
 //#include "../5xx_HAL/hal_DMA.h"
 #endif
 #elif defined(SHIMMER3R) || defined(SHIMMER4_SDK)
-#include "../S4_App/s4.h"
-#include "../S4_App/s4_sensing.h"
-#include "../S4_App/s4_taskList.h"
+#include "shimmer_definitions.h"
+#include "shimmer_externs.h"
+#include "s4_sensing.h"
+#include "s4_taskList.h"
 #include "bmp3_defs.h"
 #include "hal_FactoryTest.h"
 #endif
@@ -2385,19 +2386,19 @@ void BtUart_processCmd(void)
     samplingRateResponse = 1;
     break;
   case TOGGLE_LED_COMMAND:
-    stat.toggleLedRedCmd ^= 1;
+    shimmerStatus.toggleLedRedCmd ^= 1;
     break;
   case START_STREAMING_COMMAND:
-    stat.btstreamCmd = BT_STREAM_CMD_STATE_START;
+    shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_START;
     S4_Task_set(TASK_STARTSENSING);
     break;
   case START_SDBT_COMMAND:
-    stat.btstreamCmd = BT_STREAM_CMD_STATE_START;
-    stat.sdlogCmd = 1;
+    shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_START;
+    shimmerStatus.sdlogCmd = 1;
     S4_Task_set(TASK_STARTSENSING);
     break;
   case START_LOGGING_COMMAND:
-    stat.sdlogCmd = 1;
+    shimmerStatus.sdlogCmd = 1;
     S4_Task_set(TASK_STARTSENSING);
     break;
   case SET_CRC_COMMAND:
@@ -2407,16 +2408,16 @@ void BtUart_processCmd(void)
     useAckPrefixForInstreamResponses = args[0];
     break;
   case STOP_STREAMING_COMMAND:
-    stat.btstreamCmd = BT_STREAM_CMD_STATE_STOP;
+    shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_STOP;
     S4_Task_set(TASK_STOPSENSING);
     break;
   case STOP_SDBT_COMMAND:
-    stat.btstreamCmd = BT_STREAM_CMD_STATE_STOP;
-    stat.sdlogCmd = 2;
+    shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_STOP;
+    shimmerStatus.sdlogCmd = 2;
     S4_Task_set(TASK_STOPSENSING);
     break;
   case STOP_LOGGING_COMMAND:
-    stat.sdlogCmd = 2;
+    shimmerStatus.sdlogCmd = 2;
     S4_Task_set(TASK_STOPSENSING);
     break;
   case SET_SENSORS_COMMAND:
@@ -2430,7 +2431,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSet(&storedConfig->rawBytes[NV_SENSORS0], NV_SENSORS0, 3);
     InfoMem_write(NV_SENSORS0, &storedConfig->rawBytes[NV_SENSORS0], 3);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2476,7 +2477,7 @@ void BtUart_processCmd(void)
     if (storedConfig->singleTouchStart)
     {
       storedConfig->userButtonEnable = 1;
-      storedConfig->sync = 1;
+      storedConfig->syncEnable = 1;
     }
 
     if (storedConfig->btInterval < SYNC_INT_C)
@@ -2568,7 +2569,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2635,7 +2636,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2651,7 +2652,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE2, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2]);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2661,25 +2662,25 @@ void BtUart_processCmd(void)
 #if defined(SHIMMER3)
     storedConfig->magRateLsb = (args[0] <= LSM303DLHC_MAG_220HZ) ? args[0] : LSM303DLHC_MAG_75HZ;
 #elif defined(SHIMMER3R)
-    storedConfig->magRateLsb = (args[0] <= LSM303DLHC_MAG_220HZ) ? args[0] : LSM303DLHC_MAG_75HZ;
+    set_config_byte_mag_rate(storedConfig, args[0]);
 #endif
     InfoMem_write(NV_CONFIG_SETUP_BYTE2, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2], 1);
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE2, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2]);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
     }
     break;
   case SET_WR_ACCEL_LPMODE_COMMAND:
-    set_configured_wr_accel_lp_mode(storedConfig, args[0]);
+    set_config_byte_wr_accel_lp_mode(storedConfig, args[0]);
     InfoMem_write(NV_CONFIG_SETUP_BYTE0, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 1);
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2691,31 +2692,31 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
     }
     break;
   case SET_GYRO_RANGE_COMMAND:
-    set_configured_gyro_range(storedConfig, args[0]);
+    set_config_byte_gyro_range(storedConfig, args[0]);
     InfoMem_write(NV_CONFIG_SETUP_BYTE2, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2], 1);
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE2, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2]);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
     }
     break;
   case SET_GYRO_SAMPLING_RATE_COMMAND:
-    set_configured_gyro_rate(storedConfig, args[0]);
+    set_config_byte_gyro_rate(storedConfig, args[0]);
     InfoMem_write(NV_CONFIG_SETUP_BYTE1, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE1], 1);
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE1, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE1]);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2732,14 +2733,14 @@ void BtUart_processCmd(void)
         SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
 
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
     }
     break;
   case SET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
-    set_configured_pressure_oversampling_ratio(storedConfig, args[0]);
+    set_config_byte_pressure_oversampling_ratio(storedConfig, args[0]);
     InfoMem_write(NV_CONFIG_SETUP_BYTE3, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3], 1);
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
@@ -2751,7 +2752,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2766,7 +2767,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSet(&storedConfig->rawBytes[0], NV_CONFIG_SETUP_BYTE0, 4);
     S4Ram_config2SdHead();
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2777,7 +2778,7 @@ void BtUart_processCmd(void)
     InfoMem_write(NV_SAMPLING_RATE, &storedConfig->rawBytes[NV_SAMPLING_RATE], 2);
     S4Ram_sdHeadTextSet(&args[0], SDH_SAMPLE_RATE_0, 2);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       //restart sampling timer to use new sampling rate
       setStopSensing();
@@ -2880,7 +2881,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2947,7 +2948,7 @@ void BtUart_processCmd(void)
     S4Ram_SetDefaultInfomem();
     S4Ram_config2SdHead();
     update_sdconfig = 1;
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       setStopSensing();
       setStartSensing();
@@ -3179,9 +3180,9 @@ void BtUart_processCmd(void)
   {
     SetSdCfgFlag(1);
   }
-  if (update_calib_dump_file && CheckSdInslot() && !stat.badFile)
+  if (update_calib_dump_file && CheckSdInslot() && !shimmerStatus.badFile)
   {
-    if (!stat.isDocked)
+    if (!shimmerStatus.isDocked)
     {
       ShimmerCalib_ram2File();
     }
@@ -3202,7 +3203,7 @@ void BtUart_sendRsp(void)
 
   gConfigBytes *storedConfig = S4Ram_getStoredConfig();
 
-  if (stat.isBtConnected)
+  if (shimmerStatus.isBtConnected)
   {
     if (sendAck)
     {
@@ -3248,18 +3249,18 @@ void BtUart_sendRsp(void)
     else if (magSamplingRateResponse)
     {
       *(resPacket + packet_length++) = MAG_SAMPLING_RATE_RESPONSE;
-      *(resPacket + packet_length++) = storedConfig->magRateLsb;
+      *(resPacket + packet_length++) = get_config_byte_mag_rate();
       magSamplingRateResponse = 0;
     }
     else if (dockedResponse)
     {
       *(resPacket + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(resPacket + packet_length++) = STATUS_RESPONSE;
-      *(resPacket + packet_length++) = (stat.toggleLedRedCmd << 7)
-          + ((stat.badFile & 0x01) << 6) + ((stat.isSdInserted & 0x01) << 5)
-          + ((stat.isStreaming & 0x01) << 4) + ((stat.isLogging & 0x01) << 3)
-          + (isRwcTimeSet() << 2) + ((stat.isSensing & 0x01) << 1)
-          + (stat.isDocked & 0x01);
+      *(resPacket + packet_length++) = (shimmerStatus.toggleLedRedCmd << 7)
+          + ((shimmerStatus.badFile & 0x01) << 6) + ((shimmerStatus.isSdInserted & 0x01) << 5)
+          + ((shimmerStatus.isStreaming & 0x01) << 4) + ((shimmerStatus.isLogging & 0x01) << 3)
+          + (isRwcTimeSet() << 2) + ((shimmerStatus.isSensing & 0x01) << 1)
+          + (shimmerStatus.isDocked & 0x01);
       dockedResponse = 0;
 #if defined(SHIMMER4_SDK)
     }
@@ -3267,7 +3268,7 @@ void BtUart_sendRsp(void)
     {
       *(resPacket + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(resPacket + packet_length++) = RSP_I2C_BATT_STATUS_COMMAND;
-      memcpy((resPacket + packet_length), (uint8_t *) stat.battDigital, STC3100_DATA_LEN);
+      memcpy((resPacket + packet_length), (uint8_t *) shimmerStatus.battDigital, STC3100_DATA_LEN);
       packet_length += STC3100_DATA_LEN;
       i2cvBattBtRsp = 0;
 #endif
@@ -3277,7 +3278,7 @@ void BtUart_sendRsp(void)
       manageReadBatt(1);
       *(resPacket + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(resPacket + packet_length++) = VBATT_RESPONSE;
-      memcpy((uint8_t *) (resPacket + packet_length), (uint8_t *) stat.battVal, 3);
+      memcpy((uint8_t *) (resPacket + packet_length), (uint8_t *) shimmerStatus.battVal, 3);
       packet_length += 3;
       btVbattResponse = 0;
     }
@@ -3358,7 +3359,7 @@ void BtUart_sendRsp(void)
     else if (wrAccelLpModeResponse)
     {
       *(resPacket + packet_length++) = WR_ACCEL_LPMODE_RESPONSE;
-      *(resPacket + packet_length++) = get_configured_wr_accel_lp_mode();
+      *(resPacket + packet_length++) = get_config_byte_wr_accel_lp_mode();
       wrAccelLpModeResponse = 0;
     }
     else if (wrAccelHrModeResponse)
@@ -3370,7 +3371,7 @@ void BtUart_sendRsp(void)
     else if (gyroRangeResponse)
     {
       *(resPacket + packet_length++) = GYRO_RANGE_RESPONSE;
-      *(resPacket + packet_length++) = get_configured_gyro_range();
+      *(resPacket + packet_length++) = get_config_byte_gyro_range();
       gyroRangeResponse = 0;
     }
     else if (bmp180CalibrationCoefficientsResponse)
@@ -3441,7 +3442,7 @@ void BtUart_sendRsp(void)
     else if (bmpOversamplingRatioResponse)
     {
       *(resPacket + packet_length++) = PRESSURE_OVERSAMPLING_RATIO_RESPONSE;
-      *(resPacket + packet_length++) = get_configured_pressure_oversampling_ratio();
+      *(resPacket + packet_length++) = get_config_byte_pressure_oversampling_ratio();
       bmpOversamplingRatioResponse = 0;
     }
     else if (internalExpPowerEnableResponse)
@@ -3489,7 +3490,7 @@ void BtUart_sendRsp(void)
       //&storedConfig->gyroCalib.rawBytes[0], 21); packet_length += 21;
 
       sc1.id = SC_SENSOR_MPU9150_GYRO;
-      sc1.range = get_configured_gyro_range();
+      sc1.range = get_config_byte_gyro_range();
       sc1.data_len = SC_DATA_LEN_MPU9250_GYRO;
       ShimmerCalib_singleSensorRead(&sc1);
       memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
@@ -3552,7 +3553,7 @@ void BtUart_sendRsp(void)
         else if (i == 1)
         {
           sc1.id = SC_SENSOR_MPU9150_GYRO;
-          sc1.range = get_configured_gyro_range();
+          sc1.range = get_config_byte_gyro_range();
           sc1.data_len = SC_DATA_LEN_MPU9250_GYRO;
         }
         else if (i == 2)
@@ -3616,7 +3617,7 @@ void BtUart_sendRsp(void)
     else if (blinkLedResponse)
     {
       *(resPacket + packet_length++) = CHARGE_STATUS_LED_RESPONSE;
-      *(resPacket + packet_length++) = stat.battStat;
+      *(resPacket + packet_length++) = shimmerStatus.battStat;
       blinkLedResponse = 0;
     }
     else if (bufferSizeResponse)
@@ -3664,7 +3665,7 @@ void BtUart_sendRsp(void)
     {
       *(resPacket + packet_length++) = DAUGHTER_CARD_MEM_RESPONSE;
       *(resPacket + packet_length++) = dcMemLength;
-      if (!stat.isSensing)
+      if (!shimmerStatus.isSensing)
       {
         eepromRead(dcMemOffset + 16U, dcMemLength, resPacket + packet_length);
       }
@@ -3822,7 +3823,7 @@ uint8_t BT_getMacAddressHex(uint8_t *macHex)
 
 void BtsdSelfcmd(void)
 {
-  if (isBtConnected())
+  if (shimmerStatus.isBtConnected)
   {
     uint8_t i = 0;
     uint8_t selfcmd[6]; /* max is 6 bytes */
@@ -3833,9 +3834,9 @@ void BtsdSelfcmd(void)
     }
     selfcmd[i++] = INSTREAM_CMD_RESPONSE;
     selfcmd[i++] = STATUS_RESPONSE;
-    selfcmd[i++] = (stat.toggleLedRedCmd << 7) | (stat.badFile << 6)
-        | (stat.isSdInserted << 5) | (stat.isStreaming << 4) | (stat.isLogging << 3)
-        | (isRwcTimeSet() << 2) | (stat.isSensing << 1) | stat.isDocked;
+    selfcmd[i++] = (shimmerStatus.toggleLedRedCmd << 7) | (shimmerStatus.badFile << 6)
+        | (shimmerStatus.isSdInserted << 5) | (shimmerStatus.isStreaming << 4) | (shimmerStatus.isLogging << 3)
+        | (isRwcTimeSet() << 2) | (shimmerStatus.isSensing << 1) | shimmerStatus.isDocked;
 
     uint8_t crcMode = getBtCrcMode();
     if (crcMode != CRC_OFF)
@@ -3856,15 +3857,15 @@ void HandleBtRfCommStateChange(uint8_t isConnected)
     resetBtRxVariablesOnConnect();
 #endif
 
-    if (!S4Ram_getStoredConfig()->sync)
+    if (!S4Ram_getStoredConfig()->syncEnable)
     {
-      if (stat.syncEnabled)
+      if (shimmerStatus.syncEnabled)
       {
-        stat.btstreamReady = 0;
+        shimmerStatus.btstreamReady = 0;
       }
       else
       {
-        stat.btstreamReady = 1;
+        shimmerStatus.btstreamReady = 1;
 
 #if defined(SHIMMER3) & BT_DMA_USED_FOR_RX
         setDmaWaitingForResponseIfStatusStrDisabled();
@@ -3873,7 +3874,7 @@ void HandleBtRfCommStateChange(uint8_t isConnected)
     }
     else
     {
-      if (S4Ram_getStoredConfig()->master)
+      if (S4Ram_getStoredConfig()->masterEnable)
       {
         //center sends sync packet and is waiting for response
         if (isBtSdSyncRunning())
@@ -3898,10 +3899,10 @@ void HandleBtRfCommStateChange(uint8_t isConnected)
   }
   else
   { //BT is disconnected
-    if (!S4Ram_getStoredConfig()->sync)
+    if (!S4Ram_getStoredConfig()->syncEnable)
     {
-      stat.btstreamReady = 0;
-      stat.btstreamCmd = BT_STREAM_CMD_STATE_STOP;
+      shimmerStatus.btstreamReady = 0;
+      shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_STOP;
 
       setBtDataRateTestState(0);
 
@@ -3911,7 +3912,7 @@ void HandleBtRfCommStateChange(uint8_t isConnected)
     /* Revert to default state if changed */
     useAckPrefixForInstreamResponses = 1U;
   }
-  if (!S4Ram_getStoredConfig()->sync)
+  if (!S4Ram_getStoredConfig()->syncEnable)
   {
     S4_Task_set(TASK_SDLOG_CFG_UPDATE);
   }

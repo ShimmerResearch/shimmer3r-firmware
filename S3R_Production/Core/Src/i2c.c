@@ -21,7 +21,8 @@
 #include "i2c.h"
 
 /* USER CODE BEGIN 0 */
-#include "s4__cfg.h"
+#include "shimmer_include.h"
+#include "shimmer_definitions.h"
 
 #define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
@@ -268,7 +269,7 @@ void I2C_readBatt(void)
 {
   static uint16_t cnt = 0;
 #if USE_I2C_VBATT_REPORT
-  if (stat.isSensing && S4Ram_getStoredConfig()->chEnStc3100)
+  if (shimmerStatus.isSensing && S4Ram_getStoredConfig()->chEnStc3100)
   {
   }
   else if (i2c_batt_report_interval == 0)
@@ -279,11 +280,11 @@ void I2C_readBatt(void)
     if (++cnt >= i2c_batt_report_interval)
     {
       cnt = 0;
-      STC3100_readData((uint8_t *) stat.battDigital);
+      STC3100_readData((uint8_t *) shimmerStatus.battDigital);
       uint8_t bt_tx_data[131], packet_length = 0;
       *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(bt_tx_data + packet_length++) = RSP_I2C_BATT_STATUS_COMMAND;
-      memcpy((bt_tx_data + packet_length), (uint8_t *) stat.battDigital, STC3100_DATA_LEN);
+      memcpy((bt_tx_data + packet_length), (uint8_t *) shimmerStatus.battDigital, STC3100_DATA_LEN);
       packet_length += STC3100_DATA_LEN;
       BT_write(bt_tx_data, packet_length);
     }
@@ -473,7 +474,7 @@ void I2C_startSensing(void)
 #if defined(SHIMMER3R)
   if (configBytes->chEnMag)
   {
-    lis2mdl_configure(shimmerSamplingFreq, configBytes->magRateLsb);
+    lis2mdl_configure(shimmerSamplingFreq, configBytes->altMagRate);
   }
 
 #elif defined(SHIMMER4_SDK)
@@ -868,7 +869,7 @@ void BMP180RxDoneHandler(void)
 {
   if (i2c1Sens.status == I2C_STAT_BMP180_TEMP_GET_R)
   {
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       i2c1Sens.status = I2C_STAT_BMP180_PRES_START;
       BMP180_presStartMeasurement(sensorBmp180.oss);
@@ -878,7 +879,7 @@ void BMP180RxDoneHandler(void)
   }
   else if (i2c1Sens.status == I2C_STAT_BMP180_PRES_GET_R)
   {
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       if (!sensorBmp180.tempCnt)
       {

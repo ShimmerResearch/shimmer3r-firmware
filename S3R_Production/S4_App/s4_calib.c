@@ -11,7 +11,7 @@
 #include <string.h>
 //#include "msp430.h"
 
-#include "s4.h"
+#include "shimmer_definitions.h"
 #include "s4_calib.h"
 #if USE_FATFS
 #include "ff.h"
@@ -544,7 +544,7 @@ void CalibSaveFromInfoMemToCalibDump(uint8_t id)
   if (id == 0xFF || id == SC_SENSOR_MPU9150_GYRO)
   {
     ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_MPU9150_GYRO,
-        get_configured_gyro_range(), SC_DATA_LEN_MPU9250_GYRO,
+        get_config_byte_gyro_range(), SC_DATA_LEN_MPU9250_GYRO,
         &configBytes->gyroCalib.rawBytes[0]);
   }
   if (id == 0xFF || id == SC_SENSOR_LSM303DLHC_MAG)
@@ -670,7 +670,7 @@ void ShimmerCalibSyncFromDumpRamSingleSensor(uint8_t sensor)
     scs_infomem_offset = NV_MPU9250_GYRO_CALIBRATION;
     scs_sdhead_offset = SDH_MPU9250_GYRO_CALIBRATION;
     scs_sdhead_ts = SDH_MPU9250_GYRO_CALIB_TS;
-    sc1.range = get_configured_gyro_range();
+    sc1.range = get_config_byte_gyro_range();
     break;
   case SC_SENSOR_LSM303DLHC_MAG:
     scs_infomem_offset = NV_LSM303DLHC_MAG_CALIBRATION;

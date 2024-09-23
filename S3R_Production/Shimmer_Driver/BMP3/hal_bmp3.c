@@ -60,7 +60,7 @@ void bmp3_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-int8_t bmp390_self_test(void)
+int8_t bmp3_self_test(void)
 {
   int8_t result;
   result = bmp3_selftest_check(&bmp3);

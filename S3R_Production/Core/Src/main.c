@@ -33,8 +33,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "s4.h"
-#include "s4__cfg.h"
+#include "shimmer_definitions.h"
+#include "shimmer_globals.h"
+#include "shimmer_include.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -100,9 +101,6 @@ void ReadSdConfiguration(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-STATTypeDef stat;
-//SENSINGTypeDef *pSensing;
-
 volatile uint32_t time_start, time_end, time_diff;
 
 boot_stage_t bootStage;
@@ -127,8 +125,8 @@ void Init()
 #endif
 
   setBootStage(BOOT_STAGE_START);
-  stat.battStatLed = LED_YELLOW;
-  stat.isConfiguring = 1;
+  shimmerStatus.battStatLed = LED_YELLOW;
+  shimmerStatus.isConfiguring = 1;
 
   setHwId(DEVICE_VER);
 
@@ -190,7 +188,7 @@ void Init()
   /* Take initial measurement to update LED state */
   S4_ADC_readBatt(1);
 
-  stat.isConfiguring = 0;
+  shimmerStatus.isConfiguring = 0;
   DockUart_enable();
   //while(1){
   //   //__NOP();
@@ -215,8 +213,8 @@ int main(void)
   while (i++ < 1000000)
     ;
 
-  memset((uint8_t *) &stat, 0, sizeof(STATTypeDef));
-  stat.isInitialising = 1;
+  memset((uint8_t *) &shimmerStatus, 0, sizeof(STATTypeDef));
+  shimmerStatus.isInitialising = 1;
 
   /* USER CODE END 1 */
 
@@ -267,7 +265,7 @@ int main(void)
 #endif
 
   Init();
-  stat.isInitialising = 0;
+  shimmerStatus.isInitialising = 0;
   setBootStage(BOOT_STAGE_END);
 
   //S4_Task_set(TASK_STARTSENSING);
@@ -406,7 +404,7 @@ boot_stage_t getBootStage(void)
 
 STATTypeDef *GetStatus()
 {
-  return &stat;
+  return &shimmerStatus;
 }
 
 //TODO move out of here
@@ -427,7 +425,7 @@ void btInitialise(void)
   BT_getMacAddressAscii(temp_btMacAscii);
   S4Ram_btMacAsciiSet(temp_btMacAscii);
 
-  stat.isBtPoweredOn = 1;
+  shimmerStatus.isBtPoweredOn = 1;
 
   SHIMMER_PRINTF("BT init end\r\n");
 }
@@ -537,15 +535,15 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
 
 void setBtConnectionState(bool state)
 {
-  stat.isBtConnected = state;
+  shimmerStatus.isBtConnected = state;
   //HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
 
-  HandleBtRfCommStateChange(stat.isBtConnected);
+  HandleBtRfCommStateChange(shimmerStatus.isBtConnected);
 }
 
 bool isBtConnected(void)
 {
-  return stat.isBtConnected;
+  return shimmerStatus.isBtConnected;
 }
 
 #endif
@@ -555,7 +553,7 @@ void loadSensorConfigurationAndCalibration(void)
   ShimmerCalib_init();
   ShimmerCalibInitFromInfoAll();
 
-  if (!stat.isDocked && CheckSdInslot())
+  if (!shimmerStatus.isDocked && CheckSdInslot())
   { //sd card ready to access
     if (!isSdPowerOn())
     {
@@ -569,8 +567,8 @@ void loadSensorConfigurationAndCalibration(void)
       SetSdCfgFlag(0);
       if (!isFileStatusOk())
       {
-        stat.sdlogReady = 0;
-        stat.badFile = 1;
+        shimmerStatus.sdlogReady = 0;
+        shimmerStatus.badFile = 1;
       }
     }
     else
@@ -597,13 +595,13 @@ void loadSensorConfigurationAndCalibration(void)
 
 void SetupDock(void)
 {
-  stat.isConfiguring = 1;
-  if (stat.isDocked)
+  shimmerStatus.isConfiguring = 1;
+  if (shimmerStatus.isDocked)
   {
     setBatteryInterval(BATT_INTERVAL_DOCKED);
     resetBatteryCriticalCount();
-    stat.sdlogCmd = 0;
-    stat.sdlogReady = 0;
+    shimmerStatus.sdlogCmd = 0;
+    shimmerStatus.sdlogReady = 0;
     if (CheckSdInslot())
     {
       Board_sdPowerCycle();
@@ -620,7 +618,7 @@ void SetupDock(void)
     //SendStatusByte();
     BtsdSelfcmd();
     SdPowerOff();
-    if (CheckSdInslot() && !stat.isSensing && !stat.badFile)
+    if (CheckSdInslot() && !shimmerStatus.isSensing && !shimmerStatus.badFile)
     {
       HAL_Delay(120); //120ms
       SdPowerOn();
@@ -632,7 +630,7 @@ void SetupDock(void)
     }
   }
   setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
-  stat.isConfiguring = 0;
+  shimmerStatus.isConfiguring = 0;
 }
 
 void SdInfoSync(void)
@@ -677,15 +675,15 @@ void SdInfoSync(void)
 uint8_t CheckOnDefault(void)
 {
   if (!S4Ram_getStoredConfig()->singleTouchStart && !S4Ram_getStoredConfig()->userButtonEnable
-      && stat.sdlogReady && !stat.isSensing && !stat.badFile)
+      && shimmerStatus.sdlogReady && !shimmerStatus.isSensing && !shimmerStatus.badFile)
   { //state == BTSD_IDLESD
     //startSensing = 1;
     setStartSensing();
     //sdlogCmd = (SD_ERROR) ? 0 : 1;
-    stat.sdlogCmd = 1;
-    stat.isSensing = 1;
+    shimmerStatus.sdlogCmd = 1;
+    shimmerStatus.isSensing = 1;
     BtsdSelfcmd();
-    stat.isSensing = 0;
+    shimmerStatus.isSensing = 0;
     return 1;
   }
   return 0;

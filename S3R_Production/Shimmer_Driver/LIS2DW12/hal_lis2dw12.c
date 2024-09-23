@@ -371,7 +371,7 @@ uint8_t lis2dw12_self_test(void)
   return st_result;
 }
 
-int32_t lis2dw12_configure(float shimmerSamplingFreq, lis2dw12_odr_t rate, lis2dw12_fs_t range)
+int32_t lis2dw12_configure(float shimmerSamplingFreq, lis2dw12_odr_t rate, lis2dw12_fs_t range, lis2dw12_mode_t mode)
 {
   LIS2DW12_Init(&lis2dw12_obj);
 
@@ -392,11 +392,11 @@ int32_t lis2dw12_configure(float shimmerSamplingFreq, lis2dw12_odr_t rate, lis2d
     return LIS2DW12_ERROR;
   }
 
-  ///* Power mode selection. */
-  //if (lis2dw12_power_mode_set(&(pObj->Ctx), LIS2DW12_HIGH_PERFORMANCE) != LIS2DW12_OK)
-  //{
-  //  return LIS2DW12_ERROR;
-  //}
+  /* Power mode selection. */
+  if (lis2dw12_power_mode_set(&(lis2dw12_obj.Ctx), mode) != LIS2DW12_OK)
+  {
+    return LIS2DW12_ERROR;
+  }
 
   isDrdyIntEnabled = false;
 #if defined(LIS2DW12_INT1_Pin)

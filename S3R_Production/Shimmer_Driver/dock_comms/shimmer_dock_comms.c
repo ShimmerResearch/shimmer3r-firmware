@@ -22,7 +22,7 @@
 #include "../CAT24C16/cat24c16.h"
 #include "../shimmer_boards/shimmer_boards.h"
 #else
-#include "s4.h"
+#include "shimmer_definitions.h"
 #include "s4_taskList.h"
 
 #include "stm32u5xx_hal_uart.h"
@@ -96,7 +96,7 @@ uint8_t DockUart_rxCallback(uint8_t data)
 #if defined(SHIMMER3)
   if (initializing)
 #else
-  if (stat.isInitialising)
+  if (shimmerStatus.isInitialising)
 #endif
   {
     return 0;
@@ -643,7 +643,7 @@ void DockUart_sendRsp(void)
 #if defined(SHIMMER3)
     memcpy(uartRespBuf + uart_resp_len, battVal, 3);
 #else
-    memcpy(uartRespBuf + uart_resp_len, (uint8_t *) stat.battVal, 3);
+    memcpy(uartRespBuf + uart_resp_len, (uint8_t *) shimmerStatus.battVal, 3);
 #endif
     uart_resp_len += 3;
   }
@@ -711,7 +711,7 @@ void DockUart_sendRsp(void)
 #if defined(SHIMMER3)
       if (!sensing)
 #else
-      if (!stat.isSensing)
+      if (!shimmerStatus.isSensing)
 #endif
       {
         eepromRead(uartDcMemOffset + 16U, (uint16_t) uartDcMemLength,

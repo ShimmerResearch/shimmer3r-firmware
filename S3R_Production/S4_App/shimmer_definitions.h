@@ -1,7 +1,9 @@
 //s4.h
 
-#ifndef S4_H
-#define S4_H
+#ifndef SHIMMER_DEFINITIONS_H
+#define SHIMMER_DEFINITIONS_H
+
+#include <stdint.h>
 
 #if defined(SHIMMER3R)
 #define DEVICE_VER    3 //For older Consensys support
@@ -14,10 +16,42 @@
 #define DEVICE_VER 58 //HARDWARE VERSION: SR_58 for Shimmer4SDK
 #define FW_IDENTIFIER \
   12 //12 is the firmware for shimmer4sdk, with LogAndStream in side
-#define FW_VER_MAJOR 0  //Maor version number: 0-65535
+#define FW_VER_MAJOR 0  //Major version number: 0-65535
 #define FW_VER_MINOR 0  //Minor version number: 0-255
 #define FW_VER_REL   23 //internal version number: 0-255
 #endif
+
+#define FW_IS_LOGANDSTREAM        1
+
+#define IS_CONNECTED_EEPROM 0
+
+#define USE_DEFAULT_SENSOR  0
+#define RTC_FAST \
+  0 //need to increase rtc alarm interrupt priority before enabling this option
+#define USE_8BYTES_INIT_TS    0
+#define TEST_UNDOCKED         0
+#define FULL_TEST_MODE        0
+#define USE_FREERTOS          0
+#define SENS_CLK_RTC0TIM1     0
+
+#define USE_DEFAULT_LED       1
+#define USE_I2C_VBATT_REPORT  1
+#define SKIP_50MS             1
+#define USE_VBATT_ALWAYS      0
+#define HAL_TEST_INFOMEM      0
+#define USE_BT                1
+#define USE_SD                1
+#define USE_BMPX80            2 //x=1 for 180, x=2 for 280
+#define NUM_SDWRBUF           64
+#define USE_FATFS             1
+#define USE_USBX              0
+#define SHIMMER_ENABLE_PRINTF 1
+
+#ifdef SHIMMER_ENABLE_PRINTF
+#define SHIMMER_PRINTF(...) printf(__VA_ARGS__)
+#else /* SHIMMER_ENABLE_PRINTF */
+#define SHIMMER_PRINTF(...)
+#endif /* SHIMMER_ENABLE_PRINTF */
 
 //typedef uint8_t bool;
 //#define TRUE 1
@@ -102,115 +136,117 @@
 #define PPG_2                 0x37
 #endif
 
-////SENSORS0
-//#define SENSOR_A_ACCEL        0x80
-//#define SENSOR_MPU9250_GYRO   0x40
-//#define SENSOR_LSM303DLHC_MAG 0x20
-//#define SENSOR_EXG1_24BIT     0x10
-//#define SENSOR_EXG2_24BIT     0x08
-//#define SENSOR_GSR            0x04
-//#define SENSOR_EXT_ADC_0      0x02
-//#define SENSOR_EXT_ADC_1      0x01
-////SENSORS1
-//#define SENSOR_STRAIN         0x80
-////#define SDH_SENSOR_HR                0x40
-//#if defined(SHIMMER4_SDK)
-//#define SENSOR_APP_PPG 0x40
-//#endif
-//#define SENSOR_VBATT            0x20
-//#define SENSOR_LSM303DLHC_ACCEL 0x10
-//#define SENSOR_EXT_ADC_2        0x08
-//#define SENSOR_INT_ADC_3        0x04
-//#define SENSOR_INT_ADC_0        0x02
-//#define SENSOR_INT_ADC_1        0x01
-////SENORS2
-//#define SENSOR_INT_ADC_2        0x80
-//#define SENSOR_MPU9250_ACCEL    0x40
-//#define SENSOR_MPU9250_MAG      0x20
-//#define SENSOR_EXG1_16BIT       0x10
-//#define SENSOR_EXG2_16BIT       0x08
-//#define SENSOR_BMP180_PRESSURE  0x04
-//#if defined(SHIMMER4_SDK)
-//#define SENSOR_INT_ADC_4 0x02
-//#define SENSOR_STC3100   0x01
-//#endif
-//NV_SENSORS5
-//#define SENSOR_APP_STRAIN              0x80
-//#define SENSOR_APP_GSR                 0x40
-//#define SENSOR_APP_PPG                 0x20
+#if defined(SHIMMER3)
+//SENSORS0
+#define SENSOR_A_ACCEL        0x80
+#define SENSOR_MPU9250_GYRO   0x40
+#define SENSOR_LSM303DLHC_MAG 0x20
+#define SENSOR_EXG1_24BIT     0x10
+#define SENSOR_EXG2_24BIT     0x08
+#define SENSOR_GSR            0x04
+#define SENSOR_EXT_ADC_0      0x02
+#define SENSOR_EXT_ADC_1      0x01
+//SENSORS1
+#define SENSOR_STRAIN         0x80
+//#define SDH_SENSOR_HR                0x40
+#if defined(SHIMMER4_SDK)
+#define SENSOR_APP_PPG 0x40
+#endif
+#define SENSOR_VBATT            0x20
+#define SENSOR_LSM303DLHC_ACCEL 0x10
+#define SENSOR_EXT_ADC_2        0x08
+#define SENSOR_INT_ADC_3        0x04
+#define SENSOR_INT_ADC_0        0x02
+#define SENSOR_INT_ADC_1        0x01
+//SENORS2
+#define SENSOR_INT_ADC_2        0x80
+#define SENSOR_MPU9250_ACCEL    0x40
+#define SENSOR_MPU9250_MAG      0x20
+#define SENSOR_EXG1_16BIT       0x10
+#define SENSOR_EXG2_16BIT       0x08
+#define SENSOR_BMP180_PRESSURE  0x04
+#if defined(SHIMMER4_SDK)
+#define SENSOR_INT_ADC_4 0x02
+#define SENSOR_STC3100   0x01
+#endif
+NV_SENSORS5
+#define SENSOR_APP_STRAIN              0x80
+#define SENSOR_APP_GSR                 0x40
+#define SENSOR_APP_PPG                 0x20
 
-////Config byte masks
-////Config Byte0
-//#define LSM303DLHC_ACCEL_SAMPLING_RATE        0xF0
-//#define LSM303DLHC_ACCEL_RANGE                0x0C
-//#define LSM303DLHC_ACCEL_LOW_POWER_MODE       0x02
-//#define LSM303DLHC_ACCEL_HIGH_RESOLUTION_MODE 0x01
-////Config Byte1
-//#define MPU9250_SAMPLING_RATE                 0xFF
-////Config Byte2
-//#define LSM303DLHC_MAG_GAIN                   0xE0
-//#define LSM303DLHC_MAG_SAMPLING_RATE          0x1C
-//#define MPU9250_GYRO_RANGE                    0x03
-////Config Byte3
-//#define MPU9250_ACCEL_RANGE                   0xC0
-//#define BMP180_PRESSURE_RESOLUTION            0x30
-//#define GSR_RANGE                             0x0E
-//#define EXP_POWER_ENABLE                      0x01
-////Unused bits 3-0
-//
-////ADC initialisation mask
-//#define MASK_A_ACCEL                          0x0001
-//#define MASK_VBATT                            0x0002
-//#define MASK_EXT_A7                           0x0004
-//#define MASK_EXT_A6                           0x0008
-//#define MASK_EXT_A15                          0x0010
-//#define MASK_INT_A1                           0x0020
-//#define MASK_INT_A12                          0x0040
-//#define MASK_INT_A13                          0x0080
-//#define MASK_INT_A14                          0x0100
-//#define MASK_MSP_TEMP                         0x0200
-//#define MASK_STRAIN                           0x0180 //uses ADC13 and ADC14
-//
-////LSM303DLHC Accel Range
-////Corresponds to the FS field of the LSM303DLHC's CTRL_REG4_A register
-////and the AFS_SEL field of the MPU9250's ACCEL_CONFIG register
-//#define ACCEL_2G                              0x00
-//#define ACCEL_4G                              0x01
-//#define ACCEL_8G                              0x02
-//#define ACCEL_16G                             0x03
-//
-////LSM303DLHC Accel Sampling Rate
-////Corresponds to the ODR field of the LSM303DLHC's CTRL_REG1_A register
-//#define LSM303DLHC_ACCEL_POWER_DOWN           0x00
-//#define LSM303DLHC_ACCEL_1HZ                  0x01
-//#define LSM303DLHC_ACCEL_10HZ                 0x02
-//#define LSM303DLHC_ACCEL_25HZ                 0x03
-//#define LSM303DLHC_ACCEL_50HZ                 0x04
-//#define LSM303DLHC_ACCEL_100HZ                0x05
-//#define LSM303DLHC_ACCEL_200HZ                0x06
-//#define LSM303DLHC_ACCEL_400HZ                0x07
-//#define LSM303DLHC_ACCEL_1_620KHZ             0x08 //1.620kHz in Low-power mode only
-//#define LSM303DLHC_ACCEL_1_344kHz \
-//  0x09 //1.344kHz in normal mode, 5.376kHz in low-power mode
-//
-////LSM303DLHC Mag gain
-//#define LSM303DLHC_MAG_1_3G              0x01 //+/-1.3 Gauss
-//#define LSM303DLHC_MAG_1_9G              0x02 //+/-1.9 Gauss
-//#define LSM303DLHC_MAG_2_5G              0x03 //+/-2.5 Gauss
-//#define LSM303DLHC_MAG_4_0G              0x04 //+/-4.0 Gauss
-//#define LSM303DLHC_MAG_4_7G              0x05 //+/-4.7 Gauss
-//#define LSM303DLHC_MAG_5_6G              0x06 //+/-5.6 Gauss
-//#define LSM303DLHC_MAG_8_1G              0x07 //+/-8.1 Gauss
+//Config byte masks
+//Config Byte0
+#define LSM303DLHC_ACCEL_SAMPLING_RATE        0xF0
+#define LSM303DLHC_ACCEL_RANGE                0x0C
+#define LSM303DLHC_ACCEL_LOW_POWER_MODE       0x02
+#define LSM303DLHC_ACCEL_HIGH_RESOLUTION_MODE 0x01
+//Config Byte1
+#define MPU9250_SAMPLING_RATE                 0xFF
+//Config Byte2
+#define LSM303DLHC_MAG_GAIN                   0xE0
+#define LSM303DLHC_MAG_SAMPLING_RATE          0x1C
+#define MPU9250_GYRO_RANGE                    0x03
+//Config Byte3
+#define MPU9250_ACCEL_RANGE                   0xC0
+#define BMP180_PRESSURE_RESOLUTION            0x30
+#define GSR_RANGE                             0x0E
+#define EXP_POWER_ENABLE                      0x01
+//Unused bits 3-0
 
-////LSM303DLHC Mag sampling rate
-//#define LSM303DLHC_MAG_0_75HZ            0x00 //0.75 Hz
-//#define LSM303DLHC_MAG_1_5HZ             0x01 //1.5 Hz
-//#define LSM303DLHC_MAG_3HZ               0x02 //3.0 Hz
-//#define LSM303DLHC_MAG_7_5HZ             0x03 //7.5 Hz
-//#define LSM303DLHC_MAG_15HZ              0x04 //15 Hz
-//#define LSM303DLHC_MAG_30HZ              0x05 //30 Hz
-//#define LSM303DLHC_MAG_75HZ              0x06 //75 Hz
-//#define LSM303DLHC_MAG_220HZ             0x07 //220 Hz
+//ADC initialisation mask
+#define MASK_A_ACCEL                          0x0001
+#define MASK_VBATT                            0x0002
+#define MASK_EXT_A7                           0x0004
+#define MASK_EXT_A6                           0x0008
+#define MASK_EXT_A15                          0x0010
+#define MASK_INT_A1                           0x0020
+#define MASK_INT_A12                          0x0040
+#define MASK_INT_A13                          0x0080
+#define MASK_INT_A14                          0x0100
+#define MASK_MSP_TEMP                         0x0200
+#define MASK_STRAIN                           0x0180 //uses ADC13 and ADC14
+
+//LSM303DLHC Accel Range
+//Corresponds to the FS field of the LSM303DLHC's CTRL_REG4_A register
+//and the AFS_SEL field of the MPU9250's ACCEL_CONFIG register
+#define ACCEL_2G                              0x00
+#define ACCEL_4G                              0x01
+#define ACCEL_8G                              0x02
+#define ACCEL_16G                             0x03
+
+//LSM303DLHC Accel Sampling Rate
+//Corresponds to the ODR field of the LSM303DLHC's CTRL_REG1_A register
+#define LSM303DLHC_ACCEL_POWER_DOWN           0x00
+#define LSM303DLHC_ACCEL_1HZ                  0x01
+#define LSM303DLHC_ACCEL_10HZ                 0x02
+#define LSM303DLHC_ACCEL_25HZ                 0x03
+#define LSM303DLHC_ACCEL_50HZ                 0x04
+#define LSM303DLHC_ACCEL_100HZ                0x05
+#define LSM303DLHC_ACCEL_200HZ                0x06
+#define LSM303DLHC_ACCEL_400HZ                0x07
+#define LSM303DLHC_ACCEL_1_620KHZ             0x08 //1.620kHz in Low-power mode only
+#define LSM303DLHC_ACCEL_1_344kHz \
+  0x09 //1.344kHz in normal mode, 5.376kHz in low-power mode
+
+//LSM303DLHC Mag gain
+#define LSM303DLHC_MAG_1_3G              0x01 //+/-1.3 Gauss
+#define LSM303DLHC_MAG_1_9G              0x02 //+/-1.9 Gauss
+#define LSM303DLHC_MAG_2_5G              0x03 //+/-2.5 Gauss
+#define LSM303DLHC_MAG_4_0G              0x04 //+/-4.0 Gauss
+#define LSM303DLHC_MAG_4_7G              0x05 //+/-4.7 Gauss
+#define LSM303DLHC_MAG_5_6G              0x06 //+/-5.6 Gauss
+#define LSM303DLHC_MAG_8_1G              0x07 //+/-8.1 Gauss
+
+//LSM303DLHC Mag sampling rate
+#define LSM303DLHC_MAG_0_75HZ            0x00 //0.75 Hz
+#define LSM303DLHC_MAG_1_5HZ             0x01 //1.5 Hz
+#define LSM303DLHC_MAG_3HZ               0x02 //3.0 Hz
+#define LSM303DLHC_MAG_7_5HZ             0x03 //7.5 Hz
+#define LSM303DLHC_MAG_15HZ              0x04 //15 Hz
+#define LSM303DLHC_MAG_30HZ              0x05 //30 Hz
+#define LSM303DLHC_MAG_75HZ              0x06 //75 Hz
+#define LSM303DLHC_MAG_220HZ             0x07 //220 Hz
+#endif
 
 //calibration info
 #define S_ACCEL_A                        0
@@ -220,26 +256,38 @@
 //#define S_ECG                     3
 //#define S_EMG                     4
 
-////MPU9250 Gyro range
-//#define MPU9250_GYRO_250DPS              0x00 //+/-250 dps
-//#define MPU9250_GYRO_500DPS              0x01 //+/-500 dps
-//#define MPU9250_GYRO_1000DPS             0x02 //+/-1000 dps
-//#define MPU9250_GYRO_2000DPS             0x03 //+/-2000 dps
-//
-////#digital accel_range
-//#define RANGE_2G                         0
-//#define RANGE_4G                         1
-//#define RANGE_8G                         2
-//#define RANGE_16G                        3
-//
-////#mag_gain
-//#define LSM303_MAG_13GA                  1
-//#define LSM303_MAG_19GA                  2
-//#define LSM303_MAG_25GA                  3
-//#define LSM303_MAG_40GA                  4
-//#define LSM303_MAG_47GA                  5
-//#define LSM303_MAG_56GA                  6
-//#define LSM303_MAG_81GA                  7
+#if defined(SHIMMER3)
+//MPU9250 Gyro range
+#define MPU9150_GYRO_250DPS   0x00 //+/-250 dps
+#define MPU9150_GYRO_500DPS   0x01 //+/-500 dps
+#define MPU9150_GYRO_1000DPS  0x02 //+/-1000 dps
+#define MPU9150_GYRO_2000DPS  0x03 //+/-2000 dps
+#define MPU9250_GYRO_250DPS              0x00 //+/-250 dps
+#define MPU9250_GYRO_500DPS              0x01 //+/-500 dps
+#define MPU9250_GYRO_1000DPS             0x02 //+/-1000 dps
+#define MPU9250_GYRO_2000DPS             0x03 //+/-2000 dps
+
+//#digital accel_range
+#define RANGE_2G                         0
+#define RANGE_4G                         1
+#define RANGE_8G                         2
+#define RANGE_16G                        3
+
+//#mag_gain
+#define LSM303_MAG_13GA                  1
+#define LSM303_MAG_19GA                  2
+#define LSM303_MAG_25GA                  3
+#define LSM303_MAG_40GA                  4
+#define LSM303_MAG_47GA                  5
+#define LSM303_MAG_56GA                  6
+#define LSM303_MAG_81GA                  7
+
+//BMP Pressure oversampling ratio
+#define BMP180_OSS_1          0x00
+#define BMP180_OSS_2          0x01
+#define BMP180_OSS_4          0x02
+#define BMP180_OSS_8          0x03
+#endif
 
 //SD Log file header format
 #define SDHEAD_LEN                       256 //0-255
@@ -395,82 +443,6 @@
 #define BATT_INTERVAL               600 //600 seconds = 10min interval
 #define BATT_INTERVAL_D             30  //30 seconds
 
-////LSM303DLHC Accel Range
-////Corresponds to the FS field of the LSM303DLHC's CTRL_REG4_A register
-////and the AFS_SEL field of the MPU9150's ACCEL_CONFIG register
-//#define ACCEL_2G                    0x00
-//#define ACCEL_4G                    0x01
-//#define ACCEL_8G                    0x02
-//#define ACCEL_16G                   0x03
-//
-////LSM303DLHC Accel Sampling Rate
-////Corresponds to the ODR field of the LSM303DLHC's CTRL_REG1_A register
-//#define LSM303DLHC_ACCEL_POWER_DOWN 0x00
-//#define LSM303DLHC_ACCEL_1HZ        0x01
-//#define LSM303DLHC_ACCEL_10HZ       0x02
-//#define LSM303DLHC_ACCEL_25HZ       0x03
-//#define LSM303DLHC_ACCEL_50HZ       0x04
-//#define LSM303DLHC_ACCEL_100HZ      0x05
-//#define LSM303DLHC_ACCEL_200HZ      0x06
-//#define LSM303DLHC_ACCEL_400HZ      0x07
-//#define LSM303DLHC_ACCEL_1_620KHZ   0x08 //1.620kHz in Low-power mode only
-//#define LSM303DLHC_ACCEL_1_344kHz \
-//  0x09 //1.344kHz in normal mode, 5.376kHz in low-power mode
-//
-////LSM303DLHC Mag gain
-//#define LSM303DLHC_MAG_1_3G   0x01 //+/-1.3 Gauss
-//#define LSM303DLHC_MAG_1_9G   0x02 //+/-1.9 Gauss
-//#define LSM303DLHC_MAG_2_5G   0x03 //+/-2.5 Gauss
-//#define LSM303DLHC_MAG_4_0G   0x04 //+/-4.0 Gauss
-//#define LSM303DLHC_MAG_4_7G   0x05 //+/-4.7 Gauss
-//#define LSM303DLHC_MAG_5_6G   0x06 //+/-5.6 Gauss
-//#define LSM303DLHC_MAG_8_1G   0x07 //+/-8.1 Gauss
-//
-////LSM303DLHC Mag sampling rate
-//#define LSM303DLHC_MAG_0_75HZ 0x00 //0.75 Hz
-//#define LSM303DLHC_MAG_1_5HZ  0x01 //1.5 Hz
-//#define LSM303DLHC_MAG_3HZ    0x02 //3.0 Hz
-//#define LSM303DLHC_MAG_7_5HZ  0x03 //7.5 Hz
-//#define LSM303DLHC_MAG_15HZ   0x04 //15 Hz
-//#define LSM303DLHC_MAG_30HZ   0x05 //30 Hz
-//#define LSM303DLHC_MAG_75HZ   0x06 //75 Hz
-//#define LSM303DLHC_MAG_220HZ  0x07 //220 Hz
-
-//calibration info
-#define S_ACCEL_A             0
-#define S_GYRO                1
-#define S_MAG                 2
-#define S_ACCEL_D             3
-//#define S_ECG                     3
-//#define S_EMG                     4
-
-////MPU9150 Gyro range
-//#define MPU9150_GYRO_250DPS   0x00 //+/-250 dps
-//#define MPU9150_GYRO_500DPS   0x01 //+/-500 dps
-//#define MPU9150_GYRO_1000DPS  0x02 //+/-1000 dps
-//#define MPU9150_GYRO_2000DPS  0x03 //+/-2000 dps
-//
-////#digital accel_range
-//#define RANGE_2G              0
-//#define RANGE_4G              1
-//#define RANGE_8G              2
-//#define RANGE_16G             3
-//
-////#mag_gain
-//#define LSM303_MAG_13GA       1
-//#define LSM303_MAG_19GA       2
-//#define LSM303_MAG_25GA       3
-//#define LSM303_MAG_40GA       4
-//#define LSM303_MAG_47GA       5
-//#define LSM303_MAG_56GA       6
-//#define LSM303_MAG_81GA       7
-//
-////BMP Pressure oversampling ratio
-//#define BMP180_OSS_1          0x00
-//#define BMP180_OSS_2          0x01
-//#define BMP180_OSS_4          0x02
-//#define BMP180_OSS_8          0x03
-
 #define STAT_PERI_ADC         0x01
 #define STAT_PERI_I2C_SENS    0x02
 #if defined(SHIMMER4_SDK)
@@ -482,12 +454,12 @@
 #define PeriStat_Set(x) \
   do                    \
   {                     \
-    stat.periStat |= x; \
+    shimmerStatus.periStat |= x; \
   } while (0)
 #define PeriStat_Clr(x)  \
   do                     \
   {                      \
-    stat.periStat &= ~x; \
+    shimmerStatus.periStat &= ~x; \
   } while (0)
 
 typedef volatile struct STATTypeDef_t
@@ -539,9 +511,6 @@ typedef enum
   BOOT_STAGE_CONFIGURATION,
   BOOT_STAGE_END
 } boot_stage_t;
-
-//STATTypeDef * GetStatus(void);
-extern STATTypeDef stat;
 
 //typedef enum{//bt
 //   UART_BT_STAT_IDLE = 0,

@@ -8,12 +8,12 @@
 #ifndef SHIMMER3_COMMON_SOURCE_BLUETOOTH_SD_SHIMMER_BT_COMMS_H_
 #define SHIMMER3_COMMON_SOURCE_BLUETOOTH_SD_SHIMMER_BT_COMMS_H_
 
+#include <shimmer_include.h>
 #include "hal_CRC.h"
-#include "s4__cfg.h"
+#include "shimmer_definitions.h"
 #include <stdint.h>
 
 #define BT_DMA_USED_FOR_RX        1
-#define FW_IS_LOGANDSTREAM        1
 
 #define MAX_COMMAND_ARG_SIZE      131
 

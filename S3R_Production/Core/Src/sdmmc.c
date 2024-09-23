@@ -18,11 +18,11 @@
  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include "shimmer_definitions.h"
 #include "sdmmc.h"
 
 /* USER CODE BEGIN 0 */
 #include "gpio.h"
-#include "s4.h"
 #include "stdio.h"
 
 extern STATTypeDef stat;
@@ -44,8 +44,8 @@ void MX_SDMMC1_SD_Init(void)
 
   //Initialise will fail if an SD card is not detected
   SD_insertedCheck();
-  stat.badFile = 1;
-  if (stat.isSdInserted)
+  shimmerStatus.badFile = 1;
+  if (shimmerStatus.isSdInserted)
   {
     /* USER CODE END SDMMC1_Init 1 */
     hsd1.Instance = SDMMC1;
@@ -61,7 +61,7 @@ void MX_SDMMC1_SD_Init(void)
     /* USER CODE BEGIN SDMMC1_Init 2 */
     else
     {
-      stat.badFile = 0;
+      shimmerStatus.badFile = 0;
     }
   }
   /* USER CODE END SDMMC1_Init 2 */

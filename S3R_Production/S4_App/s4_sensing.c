@@ -41,6 +41,7 @@
  */
 
 #include "s4_sensing.h"
+#include "shimmer_definitions.h"
 
 SENSINGTypeDef sensing;
 //static STATTypeDef * pStat;
@@ -80,6 +81,8 @@ void S4Sens_configureChannels(void)
   sensing.ptr.ts = 1;
   sensing.dataLen = 1 + 3; //0x00 + timestamp
 
+  overWriteDefaultConfig();
+
   S4_ADC_configureChannels();
   I2C_configureChannels();
   SPI_configureChannels();
@@ -101,14 +104,49 @@ void S4Sens_configureChannels(void)
 #endif
 }
 
+//TODO Remove below. Overriding settings here as these are supported yet in Consensys.
+void overWriteDefaultConfig(void)
+{
+  gConfigBytes *storedConfigPtr = S4Ram_getStoredConfig();
+
+  storedConfigPtr->bluetoothEnable = 1;
+
+  if(storedConfigPtr->chEnLnAccel)
+  {
+    storedConfigPtr->altAccelRange = LSM6DSV_2g;
+  }
+  if(storedConfigPtr->chEnWrAccel)
+  {
+    set_config_byte_wr_accel_mode(storedConfigPtr, LIS2DW12_HIGH_PERFORMANCE);
+  }
+  if(storedConfigPtr->chEnMag)
+  {
+    set_config_byte_mag_rate(storedConfigPtr, LIS3MDL_UHP_155Hz);
+  }
+  if(storedConfigPtr->chEnAltMag)
+  {
+    storedConfigPtr->altMagRate = LIS2MDL_ODR_100Hz;
+  }
+  if(storedConfigPtr->chEnGyro)
+  {
+    set_config_byte_gyro_range(storedConfigPtr, LSM6DSV_500dps);
+    set_config_byte_gyro_rate(storedConfigPtr, LSM6DSV_ODR_AT_1920Hz);
+  }
+  if(storedConfigPtr->chEnPressureAndTemperature)
+  {
+    set_config_byte_pressure_oversampling_ratio(storedConfigPtr, BMP3_OVERSAMPLING_32X);
+    storedConfigPtr->pressureRate = BMP3_ODR_200_HZ;
+  }
+}
+
 uint8_t S4Sens_checkStartSensorConditions(void)
 {
-  if (stat.isSensing)
+  if (shimmerStatus.isSensing)
   {
     return 0;
   }
-  if (!((stat.sdlogCmd == 1 && stat.isSdInserted && !stat.badFile)
-          || (stat.btstreamCmd == BT_STREAM_CMD_STATE_START && stat.isBtConnected)))
+  if (!((shimmerStatus.sdlogCmd == 1 && shimmerStatus.isSdInserted && !shimmerStatus.badFile)
+          || (shimmerStatus.btstreamCmd == BT_STREAM_CMD_STATE_START && shimmerStatus.isBtConnected)))
   {
     return 0;
   }
@@ -117,18 +155,18 @@ uint8_t S4Sens_checkStartSensorConditions(void)
 
 uint8_t S4Sens_checkStartLoggingConditions(void)
 {
-  if (stat.isSdInserted)
+  if (shimmerStatus.isSdInserted)
   {
-    if ((!stat.isLogging) && (stat.sdlogCmd == 1))
+    if ((!shimmerStatus.isLogging) && (shimmerStatus.sdlogCmd == 1))
     {
-      stat.isLogging = 1;
-      stat.sdlogCmd = 0;
+      shimmerStatus.isLogging = 1;
+      shimmerStatus.sdlogCmd = 0;
       return 1; //good to go
     }
-    if ((stat.isLogging) && (stat.sdlogCmd == 2))
+    if ((shimmerStatus.isLogging) && (shimmerStatus.sdlogCmd == 2))
     {
-      stat.isLogging = 0;
-      stat.sdlogCmd = 0;
+      shimmerStatus.isLogging = 0;
+      shimmerStatus.sdlogCmd = 0;
       return 0;
     }
   }
@@ -141,23 +179,23 @@ uint8_t S4Sens_checkStartLoggingConditions(void)
 
 uint8_t S4Sens_checkStartStreamingConditions(void)
 {
-  if (stat.isBtConnected)
+  if (shimmerStatus.isBtConnected)
   {
-    if (!stat.isStreaming && (stat.btstreamCmd == BT_STREAM_CMD_STATE_START))
+    if (!shimmerStatus.isStreaming && (shimmerStatus.btstreamCmd == BT_STREAM_CMD_STATE_START))
     {
-      stat.isStreaming = 1;
-      stat.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
+      shimmerStatus.isStreaming = 1;
+      shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
     }
-    if (stat.isStreaming && (stat.btstreamCmd == BT_STREAM_CMD_STATE_STOP))
+    if (shimmerStatus.isStreaming && (shimmerStatus.btstreamCmd == BT_STREAM_CMD_STATE_STOP))
     {
-      stat.isStreaming = 0;
+      shimmerStatus.isStreaming = 0;
       setBtCrcMode(CRC_OFF);
-      stat.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
+      shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
     }
   }
   else
   {
-    stat.isStreaming = 0;
+    shimmerStatus.isStreaming = 0;
     setBtCrcMode(CRC_OFF);
   }
   return 0;
@@ -165,14 +203,14 @@ uint8_t S4Sens_checkStartStreamingConditions(void)
 
 void S4Sens_startSensing(void)
 {
-  //if(stat.isDocked){
+  //if(shimmerStatus.isDocked){
   //   return;
   //}
 
-  stat.isConfiguring = 1;
+  shimmerStatus.isConfiguring = 1;
   if (S4Sens_checkStartSensorConditions())
   {
-    stat.isSensing = 1;
+    shimmerStatus.isSensing = 1;
     sensing.isFileCreated = 0;
     S4Sens_configureChannels();
 
@@ -182,8 +220,8 @@ void S4Sens_startSensing(void)
     }
     else
     {
-      stat.isConfiguring = 0;
-      stat.isSensing = 0;
+      shimmerStatus.isConfiguring = 0;
+      shimmerStatus.isSensing = 0;
       return;
     }
 
@@ -191,8 +229,8 @@ void S4Sens_startSensing(void)
     sensing.freq = get_shimmer_sampling_freq();
     if (sensing.freq > 4096.0)
     { //Please don't go too fast, Thx, Best Regards.
-      stat.isConfiguring = 0;
-      stat.isSensing = 0;
+      shimmerStatus.isConfiguring = 0;
+      shimmerStatus.isSensing = 0;
       return;
     }
     sensing.clkInterval4096 = (uint16_t) 4096
@@ -237,28 +275,28 @@ void S4Sens_startSensing(void)
     }
   }
 
-  stat.isConfiguring = 0;
+  shimmerStatus.isConfiguring = 0;
 }
 
 uint8_t S4Sens_checkStopSensorConditions(void)
 {
-  if (!stat.isLogging && stat.isStreaming)
+  if (!shimmerStatus.isLogging && shimmerStatus.isStreaming)
   { //streaming only case
-    if (stat.btstreamCmd != BT_STREAM_CMD_STATE_STOP)
+    if (shimmerStatus.btstreamCmd != BT_STREAM_CMD_STATE_STOP)
     {
       return 0;
     }
   }
-  else if (stat.isLogging && !stat.isStreaming)
+  else if (shimmerStatus.isLogging && !shimmerStatus.isStreaming)
   { //logging only case
-    if (stat.sdlogCmd != 2)
+    if (shimmerStatus.sdlogCmd != 2)
     {
       return 0;
     }
   }
-  else if (stat.isLogging && stat.isStreaming)
+  else if (shimmerStatus.isLogging && shimmerStatus.isStreaming)
   {
-    if ((stat.btstreamCmd != BT_STREAM_CMD_STATE_STOP) || (stat.sdlogCmd != 2))
+    if ((shimmerStatus.btstreamCmd != BT_STREAM_CMD_STATE_STOP) || (shimmerStatus.sdlogCmd != 2))
     {
       return 0;
     }
@@ -272,21 +310,21 @@ uint8_t S4Sens_checkStopSensorConditions(void)
 
 uint8_t S4Sens_checkStopLoggingConditions(void)
 {
-  if (stat.sdlogCmd != 2)
+  if (shimmerStatus.sdlogCmd != 2)
   {
     return 0;
   }
   else
   {
-    stat.isLogging = 0;
-    stat.sdlogCmd = 0;
+    shimmerStatus.isLogging = 0;
+    shimmerStatus.sdlogCmd = 0;
     return 1;
   }
 }
 
 void S4Sens_stopSensing(void)
 {
-  if (!stat.isSensing)
+  if (!shimmerStatus.isSensing)
   {
     return;
   }
@@ -297,9 +335,9 @@ void S4Sens_stopSensing(void)
   }
   if (S4Sens_checkStopSensorConditions())
   {
-    stat.isConfiguring = 1;
-    stat.isSensing = 0;
-    stat.isStreaming = 0;
+    shimmerStatus.isConfiguring = 1;
+    shimmerStatus.isSensing = 0;
+    shimmerStatus.isStreaming = 0;
     setBtCrcMode(CRC_OFF);
     sensing.startTs = 0;
     //sensing.isSampling = 0;
@@ -307,15 +345,15 @@ void S4Sens_stopSensing(void)
     DockUart_enable();
   }
 
-  //stat.sdlogCmd = 0;
-  stat.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
+  //shimmerStatus.sdlogCmd = 0;
+  shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
 
   if (isSdInfoSyncDelayed())
   {
     SdInfoSync();
   }
 
-  stat.isConfiguring = 0;
+  shimmerStatus.isConfiguring = 0;
 }
 
 void S4Sens_stopPeripherals(void)
@@ -394,7 +432,7 @@ void S4Sens_bufPoll()
 //this is to be called in the ISR
 void S4Sens_gatherData(void)
 {
-  if (stat.isSensing)
+  if (shimmerStatus.isSensing)
   {
     //sensing.latestTs += ((sensing.latestTs-RTC_get64())/sensing.clkInterval4096)*sensing.clkInterval4096;
     sensing.latestTs = RTC_get64();
@@ -527,7 +565,7 @@ void S4Sens_stepDone(void)
 void saveData(void)
 {
 #if USE_SD
-  if (stat.isLogging)
+  if (shimmerStatus.isLogging)
   {
     PeriStat_Set(STAT_PERI_SDMMC);
     SD_writeToBuff(sensing.dataBuf + 1, sensing.dataLen - 1);
@@ -536,7 +574,7 @@ void saveData(void)
 #endif
 #if USE_BT
   S4Sens_checkStartStreamingConditions();
-  if (stat.isStreaming)
+  if (shimmerStatus.isStreaming)
   {
     uint8_t crcMode = getBtCrcMode();
     if (crcMode != CRC_OFF)
@@ -550,7 +588,7 @@ void saveData(void)
   }
 #endif
 
-  if ((!stat.isLogging) && (!stat.isStreaming))
+  if ((!shimmerStatus.isLogging) && (!shimmerStatus.isStreaming))
   {
     S4_Task_set(TASK_STOPSENSING);
   }

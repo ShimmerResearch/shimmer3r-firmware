@@ -3,8 +3,8 @@
 #define S4_CALIB_H
 //SC_ short for SHIMMER_CALIBRATION_
 
-#include "s4.h"
-#include "s4__cfg.h"
+#include <shimmer_include.h>
+#include "shimmer_definitions.h"
 
 #ifndef min
 #define min(a, b) a > b ? b : a

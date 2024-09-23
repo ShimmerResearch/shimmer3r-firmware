@@ -46,16 +46,16 @@ uint32_t run_factory_test(void)
     sd_card_test();
     send_test_report("\r\n");
 
-    stat.testResult += (!bt_module_test()) << 7;
+    shimmerStatus.testResult += (!bt_module_test()) << 7;
     send_test_report("\r\n");
 
-    stat.testResult += InfoMem_test() << 8;
+    shimmerStatus.testResult += InfoMem_test() << 8;
 
     Board_enableSensingPower(1);
 
-    stat.testResult += I2C_test();
+    shimmerStatus.testResult += I2C_test();
 
-    stat.testResult += SPI_test() << 16;
+    shimmerStatus.testResult += SPI_test() << 16;
 
     Board_enableSensingPower(0);
   }
@@ -63,7 +63,7 @@ uint32_t run_factory_test(void)
   send_test_report("//***************************** TEST END "
                    "*************************************//\r\n");
 
-  return stat.testResult;
+  return shimmerStatus.testResult;
 }
 
 void print_date_and_time(void)
@@ -185,7 +185,7 @@ void led_test(void)
 void sd_card_test(void)
 {
   send_test_report("SD Card:\r\n");
-  if (!stat.isSdInserted)
+  if (!shimmerStatus.isSdInserted)
   {
     send_test_report(" - FAIL: not detected\r\n");
   }
@@ -195,16 +195,16 @@ void sd_card_test(void)
     printSdCardInfo(buffer);
     send_test_report(buffer);
 
-    stat.testResult += SD_test() << 6;
+    shimmerStatus.testResult += SD_test() << 6;
     //SD_test_alternative();
-    sprintf(buffer, " - %s: read/write test\r\n", stat.badFile ? "FAIL" : "PASS");
+    sprintf(buffer, " - %s: read/write test\r\n", shimmerStatus.badFile ? "FAIL" : "PASS");
     send_test_report(buffer);
   }
 }
 
 uint8_t bt_module_test(void)
 {
-  if (stat.isBtPoweredOn)
+  if (shimmerStatus.isBtPoweredOn)
   {
     send_test_report("BT Module:\r\n");
 
@@ -229,7 +229,7 @@ uint8_t bt_module_test(void)
   {
     send_test_report(" - FAIL\r\n");
   }
-  return stat.isBtPoweredOn;
+  return shimmerStatus.isBtPoweredOn;
 }
 
 uint8_t I2C_test(void)
@@ -299,7 +299,7 @@ uint8_t SPI_test(void)
   sprintf(buffer, " - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
-  int8_t bmp390_result = bmp390_self_test();
+  int8_t bmp390_result = bmp3_self_test();
   sprintf(buffer, " - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
   send_test_report(buffer);
   if (bmp390_result)

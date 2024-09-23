@@ -853,7 +853,8 @@ void SPI_startSensing()
   /* SPI1 */
   if ((configBytes->chEnLnAccel) || (configBytes->chEnGyro))
   {
-    uint8_t gyroRange = get_configured_gyro_range();
+    uint8_t gyroRange = get_config_byte_gyro_range();
+    // Shimmer config maps 0x05 to the chip's 0x0C for 4000dps
     gyroRange = (gyroRange == 5) ? LSM6DSV_4000dps : gyroRange;
     lsm6dsv_configure(shimmerSamplingFreq, configBytes->chEnGyro, configBytes->chEnLnAccel,
         configBytes->gyroRate, gyroRange, configBytes->altAccelRange);
@@ -861,28 +862,24 @@ void SPI_startSensing()
 
   if (configBytes->chEnPressureAndTemperature)
   {
-    //TODO BMP390 rate
-    bmp3_configure(shimmerSamplingFreq, BMP3_ODR_200_HZ, get_configured_pressure_oversampling_ratio());
+    bmp3_configure(shimmerSamplingFreq, configBytes->pressureRate, get_config_byte_pressure_oversampling_ratio());
   }
 
   if (configBytes->chEnAltAccel)
   {
-    adxl371_configure(configBytes->wrAccelRate);
+    adxl371_configure(configBytes->altAccelRate);
   }
 
   /* SPI2 */
   if (configBytes->chEnWrAccel)
   {
-    //TODO decide how to handle configBytes->wrAccelHRM and configBytes->wrAccelLPM
     lis2dw12_configure(shimmerSamplingFreq, configBytes->wrAccelRate,
-        configBytes->wrAccelRange);
+        configBytes->wrAccelRange, get_config_byte_wr_accel_mode());
   }
 
   if (configBytes->chEnAltMag)
   {
-    lis3mdl_configure(shimmerSamplingFreq, LIS3MDL_UHP_155Hz, LIS3MDL_12_GAUSS);
-    //TODO decide if we need an specific rate setting for the alternative mag
-    //lis3mdl_config_mag(configBytes->magRate, configBytes->altMagRange);
+    lis3mdl_configure(shimmerSamplingFreq, get_config_byte_mag_rate(), configBytes->magRange);
   }
 
 #endif

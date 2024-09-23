@@ -44,7 +44,7 @@
 #define CAT24C16_H
 
 #include "stm32u5xx_hal.h"
-#include "string.h"
+#include <string.h>
 #include <stdint.h>
 
 #ifndef min
