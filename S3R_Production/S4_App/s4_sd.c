@@ -894,18 +894,20 @@ void ParseConfig(void)
 
     broadcast_interval = SYNC_INT_C;
 
-    memset((uint8_t *) (stored_config_temp.rawBytes), 0, NV_A_ACCEL_CALIBRATION); //0
-    memset((uint8_t *) (stored_config_temp.rawBytes + NV_A_ACCEL_CALIBRATION), 0xff, 84);
+    memset((uint8_t *) (stored_config_temp.rawBytes), 0, NV_LN_ACCEL_CALIBRATION); //0
+    memset((uint8_t *) (stored_config_temp.rawBytes + NV_LN_ACCEL_CALIBRATION), 0xff, 84);
     memset((uint8_t *) (stored_config_temp.rawBytes + NV_DERIVED_CHANNELS_3), 0, 5); //0
     memset((uint8_t *) (stored_config_temp.rawBytes + NV_SENSORS3), 0, 5); //0
-    memset((uint8_t *) (stored_config_temp.rawBytes + NV_MPL_ACCEL_CALIBRATION), 0xff, 82);
+    memset((uint8_t *) (stored_config_temp.rawBytes + NV_ALT_ACCEL_CALIBRATION), 0xff, 82);
     memset((uint8_t *) (stored_config_temp.rawBytes + NV_SD_MYTRIAL_ID), 0, 9); //0
     InfoMem_readRam(stored_config_temp.rawBytes + NV_MAC_ADDRESS, NV_MAC_ADDRESS, 7);
     memset((uint8_t *) (stored_config_temp.rawBytes + NV_BT_SET_PIN + 1), 0xff, 24);
     memset((uint8_t *) (stored_config_temp.rawBytes + NV_CENTER), 0xff, 128);
 
+#if defined(SHIMMER3)
     stored_config_temp.rawBytes[NV_SD_TRIAL_CONFIG0] &= ~SDH_SET_PMUX; //PMUX reserved as 0
     stored_config_temp.rawBytes[NV_SD_TRIAL_CONFIG0] |= SDH_TIME_STAMP; //TIME_STAMP always = 1
+#endif
     stored_config_temp.gsrRange = GSR_AUTORANGE;
     stored_config_temp.bufferSize = 1;
     stored_config_temp.btCommsBaudRate = 0xFF;

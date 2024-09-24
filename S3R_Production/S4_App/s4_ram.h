@@ -98,10 +98,10 @@
 #define NV_DERIVED_CHANNELS_0               31
 #define NV_DERIVED_CHANNELS_1               32
 #define NV_DERIVED_CHANNELS_2               33
-#define NV_A_ACCEL_CALIBRATION              34
-#define NV_MPU9250_GYRO_CALIBRATION         55
-#define NV_LSM303DLHC_MAG_CALIBRATION       76
-#define NV_LSM303DLHC_ACCEL_CALIBRATION     97 //97->117
+#define NV_LN_ACCEL_CALIBRATION              34
+#define NV_GYRO_CALIBRATION         55
+#define NV_MAG_CALIBRATION       76
+#define NV_WR_ACCEL_CALIBRATION     97 //97->117
 #define NV_CALIBRATION_END                  117
 #define NV_DERIVED_CHANNELS_3               118
 #define NV_DERIVED_CHANNELS_4               119
@@ -114,8 +114,8 @@
 #define NV_CONFIG_SETUP_BYTE4               (128 + 2)
 #define NV_CONFIG_SETUP_BYTE5               (128 + 3)
 #define NV_CONFIG_SETUP_BYTE6               (128 + 4)
-#define NV_MPL_ACCEL_CALIBRATION            (128 + 5)  //+21
-#define NV_MPL_MAG_CALIBRATION              (128 + 26) //+21
+#define NV_ALT_ACCEL_CALIBRATION            (128 + 5)  //+21
+#define NV_ALT_MAG_CALIBRATION              (128 + 26) //+21
 #define NV_MPL_GYRO_CALIBRATION             (128 + 47) //+12
 #define NV_SD_SHIMMER_NAME                  (128 + 59) //+12 bytes
 #define NV_SD_EXP_ID_NAME                   (128 + 71) //+12 bytes

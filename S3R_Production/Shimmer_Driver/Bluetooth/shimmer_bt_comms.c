@@ -2814,11 +2814,15 @@ void BtUart_processCmd(void)
     //   break;
   case SET_LN_ACCEL_CALIBRATION_COMMAND:
     memcpy(&storedConfig->lnAccelCalib.rawBytes[0], &args[0], 21);
-    InfoMem_write(NV_A_ACCEL_CALIBRATION, &storedConfig->lnAccelCalib.rawBytes[0], 21);
+    InfoMem_write(NV_LN_ACCEL_CALIBRATION, &storedConfig->lnAccelCalib.rawBytes[0], 21);
     S4Ram_sdHeadTextSet(
-        &storedConfig->lnAccelCalib.rawBytes[0], SDH_A_ACCEL_CALIBRATION, 21);
+        &storedConfig->lnAccelCalib.rawBytes[0], SDH_LN_ACCEL_CALIBRATION, 21);
 
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_ANALOG_ACCEL);
+#if defined(SHIMMER3)
+   CalibSaveFromInfoMemToCalibDump(SC_SENSOR_ANALOG_ACCEL);
+#elif defined(SHIMMER3R)
+   CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM6DSV_ACCEL);
+#endif
 
     update_calib_dump_file = 1;
     //calib_update = 1;
@@ -2829,11 +2833,15 @@ void BtUart_processCmd(void)
     break;
   case SET_GYRO_CALIBRATION_COMMAND:
     memcpy(&storedConfig->gyroCalib.rawBytes[0], &args[0], 21);
-    InfoMem_write(NV_MPU9250_GYRO_CALIBRATION, &storedConfig->gyroCalib.rawBytes[0], 21);
+    InfoMem_write(NV_GYRO_CALIBRATION, &storedConfig->gyroCalib.rawBytes[0], 21);
     S4Ram_sdHeadTextSet(
-        &storedConfig->gyroCalib.rawBytes[0], SDH_MPU9250_GYRO_CALIBRATION, 21);
+        &storedConfig->gyroCalib.rawBytes[0], SDH_GYRO_CALIBRATION, 21);
 
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_MPU9150_GYRO);
+#if defined(SHIMMER3)
+    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_MPU9X50_ICM20948_GYRO);
+#elif defined(SHIMMER3R)
+   CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM6DSV_GYRO);
+#endif
 
     update_calib_dump_file = 1;
     //calib_update = 1;
@@ -2845,11 +2853,15 @@ void BtUart_processCmd(void)
     break;
   case SET_MAG_CALIBRATION_COMMAND:
     memcpy(&storedConfig->magCalib.rawBytes[0], &args[0], 21);
-    InfoMem_write(NV_LSM303DLHC_MAG_CALIBRATION, &storedConfig->magCalib.rawBytes[0], 21);
+    InfoMem_write(NV_MAG_CALIBRATION, &storedConfig->magCalib.rawBytes[0], 21);
     S4Ram_sdHeadTextSet(
-        &storedConfig->magCalib.rawBytes[0], SDH_LSM303DLHC_MAG_CALIBRATION, 21);
+        &storedConfig->magCalib.rawBytes[0], SDH_MAG_CALIBRATION, 21);
 
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM303DLHC_MAG);
+#if defined(SHIMMER3)
+    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM303_MAG);
+#elif defined(SHIMMER3R)
+   CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LIS3MDL_MAG);
+#endif
 
     update_calib_dump_file = 1;
     //calib_update = 1;
@@ -2861,12 +2873,16 @@ void BtUart_processCmd(void)
     break;
   case SET_WR_ACCEL_CALIBRATION_COMMAND:
     memcpy(&storedConfig->wrAccelCalib.rawBytes[0], &args[0], 21);
-    InfoMem_write(NV_LSM303DLHC_ACCEL_CALIBRATION,
+    InfoMem_write(NV_WR_ACCEL_CALIBRATION,
         &storedConfig->wrAccelCalib.rawBytes[0], 21);
     S4Ram_sdHeadTextSet(&storedConfig->wrAccelCalib.rawBytes[0],
-        SDH_LSM303DLHC_ACCEL_CALIBRATION, 21);
+        SDH_WR_ACCEL_CALIBRATION, 21);
 
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM303DLHC_ACCEL);
+#if defined(SHIMMER3)
+    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM303_ACCEL);
+#elif defined(SHIMMER3R)
+    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LIS2DW12_ACCEL);
+#endif
 
     update_calib_dump_file = 1;
     //calib_update = 1;
@@ -3104,10 +3120,10 @@ void BtUart_processCmd(void)
       S4Ram_config2SdHead();
       SD_infomem2Names();
       update_sdconfig = 1;
-      if (((infomemOffset >= NV_A_ACCEL_CALIBRATION) && (infomemOffset <= NV_CALIBRATION_END))
-          || (((infomemLength + infomemOffset) >= NV_A_ACCEL_CALIBRATION)
+      if (((infomemOffset >= NV_LN_ACCEL_CALIBRATION) && (infomemOffset <= NV_CALIBRATION_END))
+          || (((infomemLength + infomemOffset) >= NV_LN_ACCEL_CALIBRATION)
               && ((infomemLength + infomemOffset) <= NV_CALIBRATION_END))
-          || ((infomemOffset <= NV_A_ACCEL_CALIBRATION)
+          || ((infomemOffset <= NV_LN_ACCEL_CALIBRATION)
               && ((infomemLength + infomemOffset) >= NV_CALIBRATION_END)))
       {
         ShimmerCalibUpdateFromInfoAll();
@@ -3474,9 +3490,14 @@ void BtUart_sendRsp(void)
       //memcpy((resPacket + packet_length),
       //&storedConfig->lnAccelCalib.rawBytes[0], 21); packet_length += 21;
 
+#if defined(SHIMMER3)
       sc1.id = SC_SENSOR_ANALOG_ACCEL;
       sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
-      sc1.data_len = SC_DATA_LEN_ANALOG_ACCEL;
+#elif defined(SHIMMER3R)
+      sc1.id = SC_SENSOR_LSM6DSV_ACCEL;
+      sc1.range = storedConfig->altAccelRange;
+#endif
+      sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
       ShimmerCalib_singleSensorRead(&sc1);
       memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
       packet_length += sc1.data_len;
@@ -3489,9 +3510,13 @@ void BtUart_sendRsp(void)
       //memcpy((resPacket + packet_length),
       //&storedConfig->gyroCalib.rawBytes[0], 21); packet_length += 21;
 
-      sc1.id = SC_SENSOR_MPU9150_GYRO;
+#if defined(SHIMMER3)
+      sc1.id = SC_SENSOR_MPU9X50_ICM20948_GYRO;
+#elif defined(SHIMMER3R)
+      sc1.id = SC_SENSOR_LSM6DSV_GYRO;
+#endif
       sc1.range = get_config_byte_gyro_range();
-      sc1.data_len = SC_DATA_LEN_MPU9250_GYRO;
+      sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
       ShimmerCalib_singleSensorRead(&sc1);
       memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
       packet_length += sc1.data_len;
@@ -3504,9 +3529,13 @@ void BtUart_sendRsp(void)
       //memcpy((resPacket + packet_length), &storedConfig->magCalib.rawBytes[0],
       //21); packet_length += 21;
 
-      sc1.id = SC_SENSOR_LSM303DLHC_MAG;
+#if defined(SHIMMER3)
+      sc1.id = SC_SENSOR_LSM303_MAG;
+#elif defined(SHIMMER3R)
+      sc1.id = SC_SENSOR_LIS3MDL_MAG;
+#endif
       sc1.range = storedConfig->magRange;
-      sc1.data_len = SC_DATA_LEN_LSM303DLHC_MAG;
+      sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
       ShimmerCalib_singleSensorRead(&sc1);
       memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
       packet_length += sc1.data_len;
@@ -3519,9 +3548,13 @@ void BtUart_sendRsp(void)
       //memcpy((resPacket + packet_length),
       //&storedConfig->wrAccelCalib.rawBytes[0], 21); packet_length += 21;
 
-      sc1.id = SC_SENSOR_LSM303DLHC_ACCEL;
+#if defined(SHIMMER3)
+      sc1.id = SC_SENSOR_LSM303_ACCEL;
+#elif defined(SHIMMER3R)
+      sc1.id = SC_SENSOR_LIS2DW12_ACCEL;
+#endif
       sc1.range = storedConfig->wrAccelRange;
-      sc1.data_len = SC_DATA_LEN_LSM303DLHC_ACCEL;
+      sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
       ShimmerCalib_singleSensorRead(&sc1);
       memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
       packet_length += sc1.data_len;
@@ -3546,27 +3579,44 @@ void BtUart_sendRsp(void)
       {
         if (i == 0)
         {
+#if defined(SHIMMER3)
           sc1.id = SC_SENSOR_ANALOG_ACCEL;
-          sc1.range = 0;
-          sc1.data_len = SC_DATA_LEN_ANALOG_ACCEL;
+          sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
+#elif defined(SHIMMER3R)
+          sc1.id = SC_SENSOR_LSM6DSV_ACCEL;
+          sc1.range = storedConfig->altAccelRange;
+#endif
+          sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
         }
         else if (i == 1)
         {
-          sc1.id = SC_SENSOR_MPU9150_GYRO;
+#if defined(SHIMMER3)
+          sc1.id = SC_SENSOR_MPU9X50_ICM20948_GYRO;
+#elif defined(SHIMMER3R)
+          sc1.id = SC_SENSOR_LSM6DSV_GYRO;
+#endif
           sc1.range = get_config_byte_gyro_range();
-          sc1.data_len = SC_DATA_LEN_MPU9250_GYRO;
+          sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
         }
         else if (i == 2)
         {
-          sc1.id = SC_SENSOR_LSM303DLHC_MAG;
+#if defined(SHIMMER3)
+          sc1.id = SC_SENSOR_LSM303_MAG;
+#elif defined(SHIMMER3R)
+          sc1.id = SC_SENSOR_LIS3MDL_MAG;
+#endif
           sc1.range = storedConfig->magRange;
-          sc1.data_len = SC_DATA_LEN_LSM303DLHC_MAG;
+          sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
         }
         else if (i == 3)
         {
-          sc1.id = SC_SENSOR_LSM303DLHC_ACCEL;
+#if defined(SHIMMER3)
+          sc1.id = SC_SENSOR_LSM303_ACCEL;
+#elif defined(SHIMMER3R)
+          sc1.id = SC_SENSOR_LIS2DW12_ACCEL;
+#endif
           sc1.range = storedConfig->wrAccelRange;
-          sc1.data_len = SC_DATA_LEN_LSM303DLHC_ACCEL;
+          sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
         }
         ShimmerCalib_singleSensorRead(&sc1);
         memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);

@@ -248,6 +248,7 @@ NV_SENSORS5
 #define LSM303DLHC_MAG_220HZ  0x07 //220 Hz
 #endif
 
+#if defined(SHIMMER3)
 //calibration info
 #define S_ACCEL_A 0
 #define S_GYRO    1
@@ -256,7 +257,6 @@ NV_SENSORS5
 //#define S_ECG                     3
 //#define S_EMG                     4
 
-#if defined(SHIMMER3)
 //MPU9250 Gyro range
 #define MPU9150_GYRO_250DPS  0x00 //+/-250 dps
 #define MPU9150_GYRO_500DPS  0x01 //+/-500 dps
@@ -290,7 +290,7 @@ NV_SENSORS5
 #endif
 
 //SD Log file header format
-#define SDHEAD_LEN                       256 //0-255
+#define SDHEAD_LEN                       384 //0-255
 
 #define SDH_SAMPLE_RATE_0                0
 #define SDH_SAMPLE_RATE_1                1
@@ -361,73 +361,77 @@ NV_SENSORS5
 #define SDH_EXG_ADS1292R_2_LOFF_STAT     73
 #define SDH_EXG_ADS1292R_2_RESP1         74
 #define SDH_EXG_ADS1292R_2_RESP2         75
-#define SDH_LSM303DLHC_ACCEL_CALIBRATION 76  //0x4c
-#define SDH_MPU9250_GYRO_CALIBRATION     97  //0x61
-#define SDH_LSM303DLHC_MAG_CALIBRATION   118 //0x76
-#define SDH_A_ACCEL_CALIBRATION          139 //0x8b
+#define SDH_WR_ACCEL_CALIBRATION         76  //0x4c
+#define SDH_GYRO_CALIBRATION             97  //0x61
+#define SDH_MAG_CALIBRATION              118 //0x76
+#define SDH_LN_ACCEL_CALIBRATION         139 //0x8b
 #define SDH_TEMP_PRES_CALIBRATION        160
-#define SDH_LSM303DLHC_ACCEL_CALIB_TS    (182) //+8
-#define SDH_MPU9250_GYRO_CALIB_TS        (190) //+8
-#define SDH_LSM303DLHC_MAG_CALIB_TS      (198) //+8
-#define SDH_A_ACCEL_CALIB_TS             (206) //+8
+#define SDH_WR_ACCEL_CALIB_TS            (182) //+8
+#define SDH_GYRO_CALIB_TS                (190) //+8
+#define SDH_MAG_CALIB_TS                 (198) //+8
+#define SDH_LN_ACCEL_CALIB_TS            (206) //+8
 #define SDH_DAUGHTER_CARD_ID_BYTE0       (214) //+3
 #define SDH_DERIVED_CHANNELS_3           (217)
 #define SDH_DERIVED_CHANNELS_4           (218)
 #define SDH_DERIVED_CHANNELS_5           (219)
 #define SDH_DERIVED_CHANNELS_6           (220)
 #define SDH_DERIVED_CHANNELS_7           (221)
-#define BMP280_XTRA_CALIB_BYTES          (222)
-#define SDH_MY_LOCALTIME_0TH             248
+#define SDH_TEMP_PRES_EXTRA_CALIB_BYTES  (222)
+//#define SDH_MY_LOCALTIME_0TH             248
 #define SDH_MY_LOCALTIME_5TH             251
 #define SDH_MY_LOCALTIME                 252 //252-255
+#define SDH_ALT_ACCEL_CALIBRATION        256 //+21
+#define SDH_ALT_ACCEL_CALIB_TS           277 //+8
+#define SDH_ALT_MAG_CALIBRATION          285 //+21
+#define SDH_ALT_MAG_CALIB_TS             306 //+8
 
-//SENSORS0
-#define SDH_SENSOR_A_ACCEL               0x80
-#define SDH_SENSOR_MPU9250_GYRO          0x40
-#define SDH_SENSOR_LSM303DLHC_MAG        0x20
-#define SDH_SENSOR_EXG1_24BIT            0x10
-#define SDH_SENSOR_EXG2_24BIT            0x08
-#define SDH_SENSOR_GSR                   0x04
-#define SDH_SENSOR_EXTCH7                0x02
-#define SDH_SENSOR_EXTCH6                0x01
-//SENSORS1
-#define SDH_SENSOR_STRAIN                0x80
-//#define SDH_SENSOR_HR                0x40
-#define SDH_SENSOR_VBATT                 0x20
-#define SDH_SENSOR_LSM303DLHC_ACCEL      0x10
-#define SDH_SENSOR_EXTCH15               0x08
-#define SDH_SENSOR_INTCH1                0x04
-#define SDH_SENSOR_INTCH12               0x02
-#define SDH_SENSOR_INTCH13               0x01
-//SENSORS2
-#define SDH_SENSOR_INTCH14               0x80
-#define SDH_SENSOR_MPU9250_ACCEL         0x40
-#define SDH_SENSOR_MPU9250_MAG           0x20
-#define SDH_SENSOR_EXG1_16BIT            0x10
-#define SDH_SENSOR_EXG2_16BIT            0x08
-#define SDH_SENSOR_BMP180_PRES           0x04
-//#define SDH_SENSOR_BMP180_TEMP       0x02
-//SENSORS3
-#define SDH_SENSOR_MSP430_TEMP           0x01
-#define SDH_SENSOR_TCXO                  0x80
-
-//SDH_TRIAL_CONFIG0
+////SENSORS0
+//#define SDH_SENSOR_A_ACCEL               0x80
+//#define SDH_SENSOR_MPU9250_GYRO          0x40
+//#define SDH_SENSOR_LSM303DLHC_MAG        0x20
+//#define SDH_SENSOR_EXG1_24BIT            0x10
+//#define SDH_SENSOR_EXG2_24BIT            0x08
+//#define SDH_SENSOR_GSR                   0x04
+//#define SDH_SENSOR_EXTCH7                0x02
+//#define SDH_SENSOR_EXTCH6                0x01
+////SENSORS1
+//#define SDH_SENSOR_STRAIN                0x80
+////#define SDH_SENSOR_HR                0x40
+//#define SDH_SENSOR_VBATT                 0x20
+//#define SDH_SENSOR_LSM303DLHC_ACCEL      0x10
+//#define SDH_SENSOR_EXTCH15               0x08
+//#define SDH_SENSOR_INTCH1                0x04
+//#define SDH_SENSOR_INTCH12               0x02
+//#define SDH_SENSOR_INTCH13               0x01
+////SENSORS2
+//#define SDH_SENSOR_INTCH14               0x80
+//#define SDH_SENSOR_MPU9250_ACCEL         0x40
+//#define SDH_SENSOR_MPU9250_MAG           0x20
+//#define SDH_SENSOR_EXG1_16BIT            0x10
+//#define SDH_SENSOR_EXG2_16BIT            0x08
+//#define SDH_SENSOR_BMP180_PRES           0x04
+////#define SDH_SENSOR_BMP180_TEMP       0x02
+////SENSORS3
+//#define SDH_SENSOR_MSP430_TEMP           0x01
+//#define SDH_SENSOR_TCXO                  0x80
+//
+////SDH_TRIAL_CONFIG0
 #define SDH_IAMMASTER                    0x02
-#define SDH_TIME_SYNC                    0x04
-#define SDH_TIME_STAMP                   0x08 //not used now, reserved as 1
-#define SDH_RWCERROR_EN \
-  0x10 //when 0, won't flash error. when 1, will flash error if RTC isn't set (RTC_offset == 0)
-//#define SDH_GYRO_BUTTON_ENABLE         0x10
-#define SDH_USER_BUTTON_ENABLE 0x20
-#define SDH_SET_PMUX           0x40 //not used now, reserved as 0
-#define SDH_RTC_SET_BY_BT      0x80
-//SDH_TRIAL_CONFIG1
-#define SDH_SINGLETOUCH        0x80
-//#define SDH_ACCEL_LPM                  0x40//config has this bit
-//#define SDH_ACCEL_HRM                  0x20//config has this bit
+//#define SDH_TIME_SYNC                    0x04
+//#define SDH_TIME_STAMP                   0x08 //not used now, reserved as 1
+//#define SDH_RWCERROR_EN \
+//  0x10 //when 0, won't flash error. when 1, will flash error if RTC isn't set (RTC_offset == 0)
+////#define SDH_GYRO_BUTTON_ENABLE         0x10
+//#define SDH_USER_BUTTON_ENABLE 0x20
+//#define SDH_SET_PMUX           0x40 //not used now, reserved as 0
+//#define SDH_RTC_SET_BY_BT      0x80
+////SDH_TRIAL_CONFIG1
+//#define SDH_SINGLETOUCH        0x80
+////#define SDH_ACCEL_LPM                  0x40//config has this bit
+////#define SDH_ACCEL_HRM                  0x20//config has this bit
 #define SDH_TCXO               0x10
-//#define SDH_EXP_POWER                  0x08//config has this bit
-//#define SDH_MONITOR                    0x04
+////#define SDH_EXP_POWER                  0x08//config has this bit
+////#define SDH_MONITOR                    0x04
 #define SD_WRITE_BUF_SIZE      512
 #define SD_HEAD_SIZE           256
 
