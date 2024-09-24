@@ -250,10 +250,10 @@ NV_SENSORS5
 
 #if defined(SHIMMER3)
 //calibration info
-#define S_ACCEL_A 0
-#define S_GYRO    1
-#define S_MAG     2
-#define S_ACCEL_D 3
+#define S_ACCEL_A            0
+#define S_GYRO               1
+#define S_MAG                2
+#define S_ACCEL_D            3
 //#define S_ECG                     3
 //#define S_EMG                     4
 
@@ -290,100 +290,100 @@ NV_SENSORS5
 #endif
 
 //SD Log file header format
-#define SDHEAD_LEN                       384 //0-255
+#define SDHEAD_LEN                      384 //0-255
 
-#define SDH_SAMPLE_RATE_0                0
-#define SDH_SAMPLE_RATE_1                1
-#define SDH_BUFFER_SIZE                  2
-#define SDH_SENSORS0                     3
-#define SDH_SENSORS1                     4
-#define SDH_SENSORS2                     5
-#define SDH_SENSORS3                     6
-#define SDH_SENSORS4                     7
-#define SDH_CONFIG_SETUP_BYTE0           8 //sensors setting bytes
-#define SDH_CONFIG_SETUP_BYTE1           9
-#define SDH_CONFIG_SETUP_BYTE2           10
-#define SDH_CONFIG_SETUP_BYTE3           11
-#define SDH_CONFIG_SETUP_BYTE4           12
-#define SDH_CONFIG_SETUP_BYTE5           13
-#define SDH_CONFIG_SETUP_BYTE6           14
-#define SDH_TRIAL_CONFIG0                16
-#define SDH_TRIAL_CONFIG1                17
-#define SDH_BROADCAST_INTERVAL           18
-#define SDH_BT_COMMS_BAUD_RATE           19
-#define SDH_EST_EXP_LEN_MSB              20
-#define SDH_EST_EXP_LEN_LSB              21
-#define SDH_MAX_EXP_LEN_MSB              22
-#define SDH_MAX_EXP_LEN_LSB              23
-#define SDH_MAC_ADDR                     24
-#define SDH_SHIMMERVERSION_BYTE_0        30
-#define SDH_SHIMMERVERSION_BYTE_1        31
-#define SDH_MYTRIAL_ID                   32
-#define SDH_NSHIMMER                     33
-#define SDH_FW_VERSION_TYPE_0            34
-#define SDH_FW_VERSION_TYPE_1            35
-#define SDH_FW_VERSION_MAJOR_0           36
-#define SDH_FW_VERSION_MAJOR_1           37
-#define SDH_FW_VERSION_MINOR             38
-#define SDH_FW_VERSION_INTERNAL          39
-#define SDH_DERIVED_CHANNELS_0           40
-#define SDH_DERIVED_CHANNELS_1           41
-#define SDH_DERIVED_CHANNELS_2           42
-#define SDH_RTC_DIFF_0                   44
-#define SDH_RTC_DIFF_1                   45
-#define SDH_RTC_DIFF_2                   46
-#define SDH_RTC_DIFF_3                   47
-#define SDH_RTC_DIFF_4                   48
-#define SDH_RTC_DIFF_5                   49
-#define SDH_RTC_DIFF_6                   50
-#define SDH_RTC_DIFF_7                   51
-#define SDH_CONFIG_TIME_0                52
-#define SDH_CONFIG_TIME_1                53
-#define SDH_CONFIG_TIME_2                54
-#define SDH_CONFIG_TIME_3                55
-#define SDH_EXG_ADS1292R_1_CONFIG1       56
-#define SDH_EXG_ADS1292R_1_CONFIG2       57
-#define SDH_EXG_ADS1292R_1_LOFF          58
-#define SDH_EXG_ADS1292R_1_CH1SET        59
-#define SDH_EXG_ADS1292R_1_CH2SET        60
-#define SDH_EXG_ADS1292R_1_RLD_SENS      61
-#define SDH_EXG_ADS1292R_1_LOFF_SENS     62
-#define SDH_EXG_ADS1292R_1_LOFF_STAT     63
-#define SDH_EXG_ADS1292R_1_RESP1         64
-#define SDH_EXG_ADS1292R_1_RESP2         65
-#define SDH_EXG_ADS1292R_2_CONFIG1       66
-#define SDH_EXG_ADS1292R_2_CONFIG2       67
-#define SDH_EXG_ADS1292R_2_LOFF          68
-#define SDH_EXG_ADS1292R_2_CH1SET        69
-#define SDH_EXG_ADS1292R_2_CH2SET        70
-#define SDH_EXG_ADS1292R_2_RLD_SENS      71
-#define SDH_EXG_ADS1292R_2_LOFF_SENS     72
-#define SDH_EXG_ADS1292R_2_LOFF_STAT     73
-#define SDH_EXG_ADS1292R_2_RESP1         74
-#define SDH_EXG_ADS1292R_2_RESP2         75
-#define SDH_WR_ACCEL_CALIBRATION         76  //0x4c
-#define SDH_GYRO_CALIBRATION             97  //0x61
-#define SDH_MAG_CALIBRATION              118 //0x76
-#define SDH_LN_ACCEL_CALIBRATION         139 //0x8b
-#define SDH_TEMP_PRES_CALIBRATION        160
-#define SDH_WR_ACCEL_CALIB_TS            (182) //+8
-#define SDH_GYRO_CALIB_TS                (190) //+8
-#define SDH_MAG_CALIB_TS                 (198) //+8
-#define SDH_LN_ACCEL_CALIB_TS            (206) //+8
-#define SDH_DAUGHTER_CARD_ID_BYTE0       (214) //+3
-#define SDH_DERIVED_CHANNELS_3           (217)
-#define SDH_DERIVED_CHANNELS_4           (218)
-#define SDH_DERIVED_CHANNELS_5           (219)
-#define SDH_DERIVED_CHANNELS_6           (220)
-#define SDH_DERIVED_CHANNELS_7           (221)
-#define SDH_TEMP_PRES_EXTRA_CALIB_BYTES  (222)
+#define SDH_SAMPLE_RATE_0               0
+#define SDH_SAMPLE_RATE_1               1
+#define SDH_BUFFER_SIZE                 2
+#define SDH_SENSORS0                    3
+#define SDH_SENSORS1                    4
+#define SDH_SENSORS2                    5
+#define SDH_SENSORS3                    6
+#define SDH_SENSORS4                    7
+#define SDH_CONFIG_SETUP_BYTE0          8 //sensors setting bytes
+#define SDH_CONFIG_SETUP_BYTE1          9
+#define SDH_CONFIG_SETUP_BYTE2          10
+#define SDH_CONFIG_SETUP_BYTE3          11
+#define SDH_CONFIG_SETUP_BYTE4          12
+#define SDH_CONFIG_SETUP_BYTE5          13
+#define SDH_CONFIG_SETUP_BYTE6          14
+#define SDH_TRIAL_CONFIG0               16
+#define SDH_TRIAL_CONFIG1               17
+#define SDH_BROADCAST_INTERVAL          18
+#define SDH_BT_COMMS_BAUD_RATE          19
+#define SDH_EST_EXP_LEN_MSB             20
+#define SDH_EST_EXP_LEN_LSB             21
+#define SDH_MAX_EXP_LEN_MSB             22
+#define SDH_MAX_EXP_LEN_LSB             23
+#define SDH_MAC_ADDR                    24
+#define SDH_SHIMMERVERSION_BYTE_0       30
+#define SDH_SHIMMERVERSION_BYTE_1       31
+#define SDH_MYTRIAL_ID                  32
+#define SDH_NSHIMMER                    33
+#define SDH_FW_VERSION_TYPE_0           34
+#define SDH_FW_VERSION_TYPE_1           35
+#define SDH_FW_VERSION_MAJOR_0          36
+#define SDH_FW_VERSION_MAJOR_1          37
+#define SDH_FW_VERSION_MINOR            38
+#define SDH_FW_VERSION_INTERNAL         39
+#define SDH_DERIVED_CHANNELS_0          40
+#define SDH_DERIVED_CHANNELS_1          41
+#define SDH_DERIVED_CHANNELS_2          42
+#define SDH_RTC_DIFF_0                  44
+#define SDH_RTC_DIFF_1                  45
+#define SDH_RTC_DIFF_2                  46
+#define SDH_RTC_DIFF_3                  47
+#define SDH_RTC_DIFF_4                  48
+#define SDH_RTC_DIFF_5                  49
+#define SDH_RTC_DIFF_6                  50
+#define SDH_RTC_DIFF_7                  51
+#define SDH_CONFIG_TIME_0               52
+#define SDH_CONFIG_TIME_1               53
+#define SDH_CONFIG_TIME_2               54
+#define SDH_CONFIG_TIME_3               55
+#define SDH_EXG_ADS1292R_1_CONFIG1      56
+#define SDH_EXG_ADS1292R_1_CONFIG2      57
+#define SDH_EXG_ADS1292R_1_LOFF         58
+#define SDH_EXG_ADS1292R_1_CH1SET       59
+#define SDH_EXG_ADS1292R_1_CH2SET       60
+#define SDH_EXG_ADS1292R_1_RLD_SENS     61
+#define SDH_EXG_ADS1292R_1_LOFF_SENS    62
+#define SDH_EXG_ADS1292R_1_LOFF_STAT    63
+#define SDH_EXG_ADS1292R_1_RESP1        64
+#define SDH_EXG_ADS1292R_1_RESP2        65
+#define SDH_EXG_ADS1292R_2_CONFIG1      66
+#define SDH_EXG_ADS1292R_2_CONFIG2      67
+#define SDH_EXG_ADS1292R_2_LOFF         68
+#define SDH_EXG_ADS1292R_2_CH1SET       69
+#define SDH_EXG_ADS1292R_2_CH2SET       70
+#define SDH_EXG_ADS1292R_2_RLD_SENS     71
+#define SDH_EXG_ADS1292R_2_LOFF_SENS    72
+#define SDH_EXG_ADS1292R_2_LOFF_STAT    73
+#define SDH_EXG_ADS1292R_2_RESP1        74
+#define SDH_EXG_ADS1292R_2_RESP2        75
+#define SDH_WR_ACCEL_CALIBRATION        76  //0x4c
+#define SDH_GYRO_CALIBRATION            97  //0x61
+#define SDH_MAG_CALIBRATION             118 //0x76
+#define SDH_LN_ACCEL_CALIBRATION        139 //0x8b
+#define SDH_TEMP_PRES_CALIBRATION       160
+#define SDH_WR_ACCEL_CALIB_TS           (182) //+8
+#define SDH_GYRO_CALIB_TS               (190) //+8
+#define SDH_MAG_CALIB_TS                (198) //+8
+#define SDH_LN_ACCEL_CALIB_TS           (206) //+8
+#define SDH_DAUGHTER_CARD_ID_BYTE0      (214) //+3
+#define SDH_DERIVED_CHANNELS_3          (217)
+#define SDH_DERIVED_CHANNELS_4          (218)
+#define SDH_DERIVED_CHANNELS_5          (219)
+#define SDH_DERIVED_CHANNELS_6          (220)
+#define SDH_DERIVED_CHANNELS_7          (221)
+#define SDH_TEMP_PRES_EXTRA_CALIB_BYTES (222)
 //#define SDH_MY_LOCALTIME_0TH             248
-#define SDH_MY_LOCALTIME_5TH             251
-#define SDH_MY_LOCALTIME                 252 //252-255
-#define SDH_ALT_ACCEL_CALIBRATION        256 //+21
-#define SDH_ALT_ACCEL_CALIB_TS           277 //+8
-#define SDH_ALT_MAG_CALIBRATION          285 //+21
-#define SDH_ALT_MAG_CALIB_TS             306 //+8
+#define SDH_MY_LOCALTIME_5TH            251
+#define SDH_MY_LOCALTIME                252 //252-255
+#define SDH_ALT_ACCEL_CALIBRATION       256 //+21
+#define SDH_ALT_ACCEL_CALIB_TS          277 //+8
+#define SDH_ALT_MAG_CALIBRATION         285 //+21
+#define SDH_ALT_MAG_CALIB_TS            306 //+8
 
 ////SENSORS0
 //#define SDH_SENSOR_A_ACCEL               0x80
@@ -416,7 +416,7 @@ NV_SENSORS5
 //#define SDH_SENSOR_TCXO                  0x80
 //
 ////SDH_TRIAL_CONFIG0
-#define SDH_IAMMASTER                    0x02
+#define SDH_IAMMASTER                   0x02
 //#define SDH_TIME_SYNC                    0x04
 //#define SDH_TIME_STAMP                   0x08 //not used now, reserved as 1
 //#define SDH_RWCERROR_EN \
@@ -429,26 +429,26 @@ NV_SENSORS5
 //#define SDH_SINGLETOUCH        0x80
 ////#define SDH_ACCEL_LPM                  0x40//config has this bit
 ////#define SDH_ACCEL_HRM                  0x20//config has this bit
-#define SDH_TCXO               0x10
+#define SDH_TCXO                        0x10
 ////#define SDH_EXP_POWER                  0x08//config has this bit
 ////#define SDH_MONITOR                    0x04
-#define SD_WRITE_BUF_SIZE      512
-#define SD_HEAD_SIZE           256
+#define SD_WRITE_BUF_SIZE               512
+#define SD_HEAD_SIZE                    256
 
-#define MAX_CHARS              13
-#define UINT32_LEN             11   //10+1, where the last byte should be 0x00
-#define UINT64_LEN             21   //20+1, where the last byte should be 0x00
-#define RESPONSE_PACKET_SIZE   1024 //133
+#define MAX_CHARS                       13
+#define UINT32_LEN                      11 //10+1, where the last byte should be 0x00
+#define UINT64_LEN                      21 //20+1, where the last byte should be 0x00
+#define RESPONSE_PACKET_SIZE            1024 //133
 
 //BATTERY
-#define BATT_LOW               0x01
-#define BATT_MID               0x02
-#define BATT_HIGH              0x04
-#define BATT_INTERVAL          600 //600 seconds = 10min interval
-#define BATT_INTERVAL_D        30  //30 seconds
+#define BATT_LOW                        0x01
+#define BATT_MID                        0x02
+#define BATT_HIGH                       0x04
+#define BATT_INTERVAL                   600 //600 seconds = 10min interval
+#define BATT_INTERVAL_D                 30  //30 seconds
 
-#define STAT_PERI_ADC          0x01
-#define STAT_PERI_I2C_SENS     0x02
+#define STAT_PERI_ADC                   0x01
+#define STAT_PERI_I2C_SENS              0x02
 #if defined(SHIMMER4_SDK)
 #define STAT_PERI_I2C_BATT 0x04
 #endif

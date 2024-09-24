@@ -66,52 +66,52 @@ typedef struct shimmer_calib_t
   sc_data_u data; //[SHIMMER_CALIB_DATA_MAX];
 } sc_t;
 
-#define SC_OFFSET_LENGTH_L                   0
-#define SC_OFFSET_LENGTH_H                   1
-#define SC_OFFSET_VER_HW_ID_L                2
-#define SC_OFFSET_VER_HW_ID_H                3
-#define SC_OFFSET_VER_FW_ID_L                4
-#define SC_OFFSET_VER_FW_ID_H                5
-#define SC_OFFSET_VER_FW_MAJOR_L             6
-#define SC_OFFSET_VER_FW_MAJOR_H             7
-#define SC_OFFSET_VER_FW_MINOR_L             8
-#define SC_OFFSET_VER_FW_INTER_L             9
-#define SC_OFFSET_FIRST_SENSOR               10
+#define SC_OFFSET_LENGTH_L         0
+#define SC_OFFSET_LENGTH_H         1
+#define SC_OFFSET_VER_HW_ID_L      2
+#define SC_OFFSET_VER_HW_ID_H      3
+#define SC_OFFSET_VER_FW_ID_L      4
+#define SC_OFFSET_VER_FW_ID_H      5
+#define SC_OFFSET_VER_FW_MAJOR_L   6
+#define SC_OFFSET_VER_FW_MAJOR_H   7
+#define SC_OFFSET_VER_FW_MINOR_L   8
+#define SC_OFFSET_VER_FW_INTER_L   9
+#define SC_OFFSET_FIRST_SENSOR     10
 
-#define SC_OFFSET_SENSOR_ID_L                0
-#define SC_OFFSET_SENSOR_ID_H                1
-#define SC_OFFSET_SENSOR_RANGE               2
-#define SC_OFFSET_SENSOR_LENGTH              3
-#define SC_OFFSET_SENSOR_TIMESTAMP           4
-#define SC_OFFSET_SENSOR_DATA                12
+#define SC_OFFSET_SENSOR_ID_L      0
+#define SC_OFFSET_SENSOR_ID_H      1
+#define SC_OFFSET_SENSOR_RANGE     2
+#define SC_OFFSET_SENSOR_LENGTH    3
+#define SC_OFFSET_SENSOR_TIMESTAMP 4
+#define SC_OFFSET_SENSOR_DATA      12
 
-#define SC_TIMESTAMP_LENGTH                  8
+#define SC_TIMESTAMP_LENGTH        8
 
 #if defined(SHIMMER3)
-#define SC_SENSOR_ANALOG_ACCEL               2
-#define SC_SENSOR_MPU9X50_ICM20948_GYRO      30
-#define SC_SENSOR_LSM303_ACCEL               31
-#define SC_SENSOR_LSM303_MAG                 32
-#define SC_SENSOR_MPU9X50_ICM20948_ACCEL     33
-#define SC_SENSOR_MPU9X50_ICM20948_MAG       34
-#define SC_SENSOR_BMP180_PRESSURE            36
+#define SC_SENSOR_ANALOG_ACCEL           2
+#define SC_SENSOR_MPU9X50_ICM20948_GYRO  30
+#define SC_SENSOR_LSM303_ACCEL           31
+#define SC_SENSOR_LSM303_MAG             32
+#define SC_SENSOR_MPU9X50_ICM20948_ACCEL 33
+#define SC_SENSOR_MPU9X50_ICM20948_MAG   34
+#define SC_SENSOR_BMP180_PRESSURE        36
 #elif defined(SHIMMER3R)
-#define SC_SENSOR_LSM6DSV_ACCEL              37
-#define SC_SENSOR_LSM6DSV_GYRO               38
-#define SC_SENSOR_LIS2DW12_ACCEL             39
-#define SC_SENSOR_ADXL371_ACCEL              40
-#define SC_SENSOR_LIS3MDL_MAG                41
-#define SC_SENSOR_LIS2MDL_MAG                42
-#define SC_SENSOR_BMP390_PRESSURE            43
+#define SC_SENSOR_LSM6DSV_ACCEL          37
+#define SC_SENSOR_LSM6DSV_GYRO           38
+#define SC_SENSOR_LIS2DW12_ACCEL         39
+#define SC_SENSOR_ADXL371_ACCEL          40
+#define SC_SENSOR_LIS3MDL_MAG            41
+#define SC_SENSOR_LIS2MDL_MAG            42
+#define SC_SENSOR_BMP390_PRESSURE        43
 #endif
-#define SC_SENSOR_HOST_ECG                   100
+#define SC_SENSOR_HOST_ECG        100
 
-#define SC_DATA_LEN_STD_IMU_CALIB            21
+#define SC_DATA_LEN_STD_IMU_CALIB 21
 #if defined(SHIMMER3)
 //Analogue Accel Range
-#define SC_SENSOR_RANGE_ANALOG_ACCEL         0
-#define SC_SENSOR_RANGE_MAX_ANALOG_ACCEL     1
-#define SC_DATA_LEN_ANALOG_ACCEL             SC_DATA_LEN_STD_IMU_CALIB
+#define SC_SENSOR_RANGE_ANALOG_ACCEL                  0
+#define SC_SENSOR_RANGE_MAX_ANALOG_ACCEL              1
+#define SC_DATA_LEN_ANALOG_ACCEL                      SC_DATA_LEN_STD_IMU_CALIB
 //MPU9x50 Gyro range
 #define SC_SENSOR_RANGE_MPU9X50_ICM20948_GYRO_250DPS  0x00 //+/-250 dps
 #define SC_SENSOR_RANGE_MPU9X50_ICM20948_GYRO_500DPS  0x01 //+/-500 dps
@@ -120,26 +120,26 @@ typedef struct shimmer_calib_t
 #define SC_SENSOR_RANGE_MAX_MPU9X50_ICM20948_GYRO     4
 #define SC_DATA_LEN_MPU9X50_ICM20948_GYRO             SC_DATA_LEN_STD_IMU_CALIB
 //LSM303DLHC Accel Range
-#define SC_SENSOR_RANGE_LSM303_ACCEL_2G  0x00
-#define SC_SENSOR_RANGE_LSM303_ACCEL_4G  0x01
-#define SC_SENSOR_RANGE_LSM303_ACCEL_8G  0x02
-#define SC_SENSOR_RANGE_LSM303_ACCEL_16G 0x03
-#define SC_SENSOR_RANGE_MAX_LSM303_ACCEL 4
-#define SC_DATA_LEN_LSM303_ACCEL         SC_DATA_LEN_STD_IMU_CALIB
+#define SC_SENSOR_RANGE_LSM303_ACCEL_2G               0x00
+#define SC_SENSOR_RANGE_LSM303_ACCEL_4G               0x01
+#define SC_SENSOR_RANGE_LSM303_ACCEL_8G               0x02
+#define SC_SENSOR_RANGE_LSM303_ACCEL_16G              0x03
+#define SC_SENSOR_RANGE_MAX_LSM303_ACCEL              4
+#define SC_DATA_LEN_LSM303_ACCEL                      SC_DATA_LEN_STD_IMU_CALIB
 //LSM303DLHC Mag gain
-#define SC_SENSOR_RANGE_LSM303_MAG_1_3G  0x01 //+/-1.3 Gauss
-#define SC_SENSOR_RANGE_LSM303_MAG_1_9G  0x02 //+/-1.9 Gauss
-#define SC_SENSOR_RANGE_LSM303_MAG_2_5G  0x03 //+/-2.5 Gauss
-#define SC_SENSOR_RANGE_LSM303_MAG_4_0G  0x04 //+/-4.0 Gauss
-#define SC_SENSOR_RANGE_LSM303_MAG_4_7G  0x05 //+/-4.7 Gauss
-#define SC_SENSOR_RANGE_LSM303_MAG_5_6G  0x06 //+/-5.6 Gauss
-#define SC_SENSOR_RANGE_LSM303_MAG_8_1G  0x07 //+/-8.1 Gauss
-#define SC_SENSOR_RANGE_MAX_LSM303_MAG   7
-#define SC_DATA_LEN_LSM303_MAG           SC_DATA_LEN_STD_IMU_CALIB
+#define SC_SENSOR_RANGE_LSM303_MAG_1_3G               0x01 //+/-1.3 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_1_9G               0x02 //+/-1.9 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_2_5G               0x03 //+/-2.5 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_4_0G               0x04 //+/-4.0 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_4_7G               0x05 //+/-4.7 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_5_6G               0x06 //+/-5.6 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_8_1G               0x07 //+/-8.1 Gauss
+#define SC_SENSOR_RANGE_MAX_LSM303_MAG                7
+#define SC_DATA_LEN_LSM303_MAG                        SC_DATA_LEN_STD_IMU_CALIB
 //BMP180 Temperature/Pressure Range
-#define SC_SENSOR_RANGE_BMP180               0
-#define SC_SENSOR_RANGE_MAX_BMP180           1
-#define SC_DATA_LEN_BMP180                   22
+#define SC_SENSOR_RANGE_BMP180                        0
+#define SC_SENSOR_RANGE_MAX_BMP180                    1
+#define SC_DATA_LEN_BMP180                            22
 #endif
 
 extern void ShimmerCalib_init(void);

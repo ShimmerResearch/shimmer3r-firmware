@@ -418,7 +418,8 @@ void setDefaultKionixCalib(sc_t *sc1Ptr)
   uint16_t bias, sensitivity;
   sc1Ptr->id = SC_SENSOR_ANALOG_ACCEL;
   sc1Ptr->data_len = SC_DATA_LEN_ANALOG_ACCEL;
-  for (sc1Ptr->range = 0; sc1Ptr->range < SC_SENSOR_RANGE_MAX_ANALOG_ACCEL; sc1Ptr->range++)
+  for (sc1Ptr->range = 0; sc1Ptr->range < SC_SENSOR_RANGE_MAX_ANALOG_ACCEL;
+       sc1Ptr->range++)
   {
     bias = 2047;
     sensitivity = 83;
@@ -446,7 +447,8 @@ void setDefaultMpu9X50Icm20948GyroCalib(sc_t *sc1Ptr)
   uint16_t bias, sensitivity;
   sc1Ptr->id = SC_SENSOR_MPU9X50_ICM20948_GYRO;
   sc1Ptr->data_len = SC_DATA_LEN_MPU9X50_ICM20948_GYRO;
-  for (sc1Ptr->range = 0; sc1Ptr->range < SC_SENSOR_RANGE_MAX_MPU9X50_ICM20948_GYRO; sc1Ptr->range++)
+  for (sc1Ptr->range = 0;
+       sc1Ptr->range < SC_SENSOR_RANGE_MAX_MPU9X50_ICM20948_GYRO; sc1Ptr->range++)
   {
     bias = 0;
     if (sc1Ptr->range == SC_SENSOR_RANGE_MPU9X50_ICM20948_GYRO_250DPS)
@@ -489,7 +491,8 @@ void setDefaultLsm303AccelCalib(sc_t *sc1Ptr)
   uint16_t bias, sensitivity;
   sc1Ptr->id = SC_SENSOR_LSM303_ACCEL;
   sc1Ptr->data_len = SC_DATA_LEN_LSM303_ACCEL;
-  for (sc1Ptr->range = 0; sc1Ptr->range < SC_SENSOR_RANGE_MAX_LSM303_ACCEL; sc1Ptr->range++)
+  for (sc1Ptr->range = 0; sc1Ptr->range < SC_SENSOR_RANGE_MAX_LSM303_ACCEL;
+       sc1Ptr->range++)
   {
     bias = 0;
     if (sc1Ptr->range == SC_SENSOR_RANGE_LSM303_ACCEL_2G)
@@ -859,9 +862,8 @@ void CalibSaveFromInfoMemToCalibDump(uint8_t id)
   }
   if (id == 0xFF || id == SC_SENSOR_LSM303_MAG)
   {
-    ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_LSM303_MAG,
-        configBytes->magRange, SC_DATA_LEN_LSM303_MAG,
-        &configBytes->magCalib.rawBytes[0]);
+    ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_LSM303_MAG, configBytes->magRange,
+        SC_DATA_LEN_LSM303_MAG, &configBytes->magCalib.rawBytes[0]);
   }
   if (id == 0xFF || id == SC_SENSOR_LSM303_ACCEL)
   {
@@ -895,9 +897,8 @@ void CalibSaveFromInfoMemToCalibDump(uint8_t id)
   }
   if (id == 0xFF || id == SC_SENSOR_LIS3MDL_MAG)
   {
-    ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_LIS3MDL_MAG,
-        configBytes->magRange, SC_DATA_LEN_STD_IMU_CALIB,
-        &configBytes->magCalib.rawBytes[0]);
+    ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_LIS3MDL_MAG, configBytes->magRange,
+        SC_DATA_LEN_STD_IMU_CALIB, &configBytes->magCalib.rawBytes[0]);
   }
   if (id == 0xFF || id == SC_SENSOR_LIS2MDL_MAG)
   {
@@ -939,7 +940,6 @@ void ShimmerCalibUpdateFromInfoAll(void)
   ShimmerCalibFromInfo(SC_SENSOR_LIS3MDL_MAG, 1);
   ShimmerCalibFromInfo(SC_SENSOR_LIS2MDL_MAG, 1);
 #endif
-
 }
 
 void ShimmerCalibFromInfo(uint8_t sensor, uint8_t use_sys_time)

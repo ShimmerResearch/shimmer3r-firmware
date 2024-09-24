@@ -98,10 +98,10 @@
 #define NV_DERIVED_CHANNELS_0               31
 #define NV_DERIVED_CHANNELS_1               32
 #define NV_DERIVED_CHANNELS_2               33
-#define NV_LN_ACCEL_CALIBRATION              34
-#define NV_GYRO_CALIBRATION         55
-#define NV_MAG_CALIBRATION       76
-#define NV_WR_ACCEL_CALIBRATION     97 //97->117
+#define NV_LN_ACCEL_CALIBRATION             34
+#define NV_GYRO_CALIBRATION                 55
+#define NV_MAG_CALIBRATION                  76
+#define NV_WR_ACCEL_CALIBRATION             97 //97->117
 #define NV_CALIBRATION_END                  117
 #define NV_DERIVED_CHANNELS_3               118
 #define NV_DERIVED_CHANNELS_4               119
