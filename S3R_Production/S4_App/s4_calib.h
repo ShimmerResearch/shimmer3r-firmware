@@ -96,13 +96,13 @@ typedef struct shimmer_calib_t
 #define SC_SENSOR_MPU9X50_ICM20948_MAG       34
 #define SC_SENSOR_BMP180_PRESSURE            36
 #elif defined(SHIMMER3R)
-#define SC_SENSOR_LSM6DSV_ACCEL              33
-#define SC_SENSOR_LSM6DSV_GYRO               34
-#define SC_SENSOR_LIS2DW12_ACCEL             35
-#define SC_SENSOR_ADXL371_ACCEL              37
-#define SC_SENSOR_LIS3MDL_MAG                38
-#define SC_SENSOR_LIS2MDL_MAG                39
-#define SC_SENSOR_BMP390_PRESSURE            40
+#define SC_SENSOR_LSM6DSV_ACCEL              37
+#define SC_SENSOR_LSM6DSV_GYRO               38
+#define SC_SENSOR_LIS2DW12_ACCEL             39
+#define SC_SENSOR_ADXL371_ACCEL              40
+#define SC_SENSOR_LIS3MDL_MAG                41
+#define SC_SENSOR_LIS2MDL_MAG                42
+#define SC_SENSOR_BMP390_PRESSURE            43
 #endif
 #define SC_SENSOR_HOST_ECG                   100
 
