@@ -2819,9 +2819,9 @@ void BtUart_processCmd(void)
         &storedConfig->lnAccelCalib.rawBytes[0], SDH_LN_ACCEL_CALIBRATION, 21);
 
 #if defined(SHIMMER3)
-   CalibSaveFromInfoMemToCalibDump(SC_SENSOR_ANALOG_ACCEL);
+    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_ANALOG_ACCEL);
 #elif defined(SHIMMER3R)
-   CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM6DSV_ACCEL);
+    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM6DSV_ACCEL);
 #endif
 
     update_calib_dump_file = 1;
@@ -2834,13 +2834,12 @@ void BtUart_processCmd(void)
   case SET_GYRO_CALIBRATION_COMMAND:
     memcpy(&storedConfig->gyroCalib.rawBytes[0], &args[0], 21);
     InfoMem_write(NV_GYRO_CALIBRATION, &storedConfig->gyroCalib.rawBytes[0], 21);
-    S4Ram_sdHeadTextSet(
-        &storedConfig->gyroCalib.rawBytes[0], SDH_GYRO_CALIBRATION, 21);
+    S4Ram_sdHeadTextSet(&storedConfig->gyroCalib.rawBytes[0], SDH_GYRO_CALIBRATION, 21);
 
 #if defined(SHIMMER3)
     CalibSaveFromInfoMemToCalibDump(SC_SENSOR_MPU9X50_ICM20948_GYRO);
 #elif defined(SHIMMER3R)
-   CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM6DSV_GYRO);
+    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM6DSV_GYRO);
 #endif
 
     update_calib_dump_file = 1;
@@ -2854,13 +2853,12 @@ void BtUart_processCmd(void)
   case SET_MAG_CALIBRATION_COMMAND:
     memcpy(&storedConfig->magCalib.rawBytes[0], &args[0], 21);
     InfoMem_write(NV_MAG_CALIBRATION, &storedConfig->magCalib.rawBytes[0], 21);
-    S4Ram_sdHeadTextSet(
-        &storedConfig->magCalib.rawBytes[0], SDH_MAG_CALIBRATION, 21);
+    S4Ram_sdHeadTextSet(&storedConfig->magCalib.rawBytes[0], SDH_MAG_CALIBRATION, 21);
 
 #if defined(SHIMMER3)
     CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM303_MAG);
 #elif defined(SHIMMER3R)
-   CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LIS3MDL_MAG);
+    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LIS3MDL_MAG);
 #endif
 
     update_calib_dump_file = 1;
@@ -2873,10 +2871,9 @@ void BtUart_processCmd(void)
     break;
   case SET_WR_ACCEL_CALIBRATION_COMMAND:
     memcpy(&storedConfig->wrAccelCalib.rawBytes[0], &args[0], 21);
-    InfoMem_write(NV_WR_ACCEL_CALIBRATION,
-        &storedConfig->wrAccelCalib.rawBytes[0], 21);
-    S4Ram_sdHeadTextSet(&storedConfig->wrAccelCalib.rawBytes[0],
-        SDH_WR_ACCEL_CALIBRATION, 21);
+    InfoMem_write(NV_WR_ACCEL_CALIBRATION, &storedConfig->wrAccelCalib.rawBytes[0], 21);
+    S4Ram_sdHeadTextSet(
+        &storedConfig->wrAccelCalib.rawBytes[0], SDH_WR_ACCEL_CALIBRATION, 21);
 
 #if defined(SHIMMER3)
     CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM303_ACCEL);
