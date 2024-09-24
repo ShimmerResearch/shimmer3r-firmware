@@ -607,19 +607,19 @@ void setDefaultLsm6dsvAccelCalib(sc_t *sc1Ptr)
     bias = 0;
     if (sc1Ptr->range == LSM6DSV_2g)
     {
-      sensitivity = 1631;
+      sensitivity = 1672;
     }
     else if (sc1Ptr->range == LSM6DSV_4g)
     {
-      sensitivity = 815;
+      sensitivity = 836;
     }
     else if (sc1Ptr->range == LSM6DSV_8g)
     {
-      sensitivity = 408;
+      sensitivity = 418;
     }
     else
     { //(sc1Ptr->range == LSM6DSV_16g)
-      sensitivity = 135;
+      sensitivity = 209;
     }
     sc1Ptr->data.dd.bias_x = bias;
     sc1Ptr->data.dd.bias_y = bias;
@@ -650,27 +650,27 @@ void setDefaultLsm6dsvGyroCalib(sc_t *sc1Ptr)
     bias = 0;
     if (sc1Ptr->range == LSM6DSV_125dps)
     {
-      sensitivity = 1631;
+      sensitivity = 229;
     }
     else if (sc1Ptr->range == LSM6DSV_250dps)
     {
-      sensitivity = 815;
+      sensitivity = 114;
     }
     else if (sc1Ptr->range == LSM6DSV_500dps)
     {
-      sensitivity = 408;
+      sensitivity = 57;
     }
     else if (sc1Ptr->range == LSM6DSV_1000dps)
     {
-      sensitivity = 408;
+      sensitivity = 29;
     }
     else if (sc1Ptr->range == LSM6DSV_2000dps)
     {
-      sensitivity = 408;
+      sensitivity = 14;
     }
     else
     { //(sc1Ptr->range == LSM6DSV_4000dps)
-      sensitivity = 135;
+      sensitivity = 7;
     }
     sc1Ptr->data.dd.bias_x = bias;
     sc1Ptr->data.dd.bias_y = bias;
@@ -698,7 +698,7 @@ void setDefaultAdxl371AccelCalib(sc_t *sc1Ptr)
   sc1Ptr->data_len = SC_DATA_LEN_STD_IMU_CALIB;
 
   bias = 0;
-  sensitivity = 1631;
+  sensitivity = 16;
 
   sc1Ptr->range = 0;
   sc1Ptr->data.dd.bias_x = bias;
@@ -707,11 +707,11 @@ void setDefaultAdxl371AccelCalib(sc_t *sc1Ptr)
   sc1Ptr->data.dd.sens_x = sensitivity;
   sc1Ptr->data.dd.sens_y = sensitivity;
   sc1Ptr->data.dd.sens_z = sensitivity;
-  sc1Ptr->data.dd.align_xx = -100;
-  sc1Ptr->data.dd.align_xy = 0;
+  sc1Ptr->data.dd.align_xx = 0;
+  sc1Ptr->data.dd.align_xy = 100;
   sc1Ptr->data.dd.align_xz = 0;
-  sc1Ptr->data.dd.align_yx = 0;
-  sc1Ptr->data.dd.align_yy = 100;
+  sc1Ptr->data.dd.align_yx = 100;
+  sc1Ptr->data.dd.align_yy = 0;
   sc1Ptr->data.dd.align_yz = 0;
   sc1Ptr->data.dd.align_zx = 0;
   sc1Ptr->data.dd.align_zy = 0;
@@ -729,19 +729,19 @@ void setDefaultLis2dw12AccelCalib(sc_t *sc1Ptr)
     bias = 0;
     if (sc1Ptr->range == LIS2DW12_2g)
     {
-      sensitivity = 1631;
+      sensitivity = 1671;
     }
     else if (sc1Ptr->range == LIS2DW12_4g)
     {
-      sensitivity = 815;
+      sensitivity = 836;
     }
     else if (sc1Ptr->range == LIS2DW12_8g)
     {
-      sensitivity = 408;
+      sensitivity = 418;
     }
     else
     { //(sc1Ptr->range == LIS2DW12_16g)
-      sensitivity = 135;
+      sensitivity = 209;
     }
     sc1Ptr->data.dd.bias_x = bias;
     sc1Ptr->data.dd.bias_y = bias;
@@ -749,11 +749,11 @@ void setDefaultLis2dw12AccelCalib(sc_t *sc1Ptr)
     sc1Ptr->data.dd.sens_x = sensitivity;
     sc1Ptr->data.dd.sens_y = sensitivity;
     sc1Ptr->data.dd.sens_z = sensitivity;
-    sc1Ptr->data.dd.align_xx = -100;
-    sc1Ptr->data.dd.align_xy = 0;
+    sc1Ptr->data.dd.align_xx = 0;
+    sc1Ptr->data.dd.align_xy = -100;
     sc1Ptr->data.dd.align_xz = 0;
-    sc1Ptr->data.dd.align_yx = 0;
-    sc1Ptr->data.dd.align_yy = 100;
+    sc1Ptr->data.dd.align_yx = -100;
+    sc1Ptr->data.dd.align_yy = 0;
     sc1Ptr->data.dd.align_yz = 0;
     sc1Ptr->data.dd.align_zx = 0;
     sc1Ptr->data.dd.align_zy = 0;
@@ -769,7 +769,7 @@ void setDefaultLis2mdlMagCalib(sc_t *sc1Ptr)
   sc1Ptr->data_len = SC_DATA_LEN_STD_IMU_CALIB;
 
   bias = 0;
-  sensitivity = 1631;
+  sensitivity = 667;
 
   sc1Ptr->range = 0;
   sc1Ptr->data.dd.bias_x = bias;
@@ -782,7 +782,7 @@ void setDefaultLis2mdlMagCalib(sc_t *sc1Ptr)
   sc1Ptr->data.dd.align_xy = 0;
   sc1Ptr->data.dd.align_xz = 0;
   sc1Ptr->data.dd.align_yx = 0;
-  sc1Ptr->data.dd.align_yy = 100;
+  sc1Ptr->data.dd.align_yy = -100;
   sc1Ptr->data.dd.align_yz = 0;
   sc1Ptr->data.dd.align_zx = 0;
   sc1Ptr->data.dd.align_zy = 0;
@@ -800,19 +800,19 @@ void setDefaultLis3mdlMagCalib(sc_t *sc1Ptr)
     bias = 0;
     if (sc1Ptr->range == LIS3MDL_4_GAUSS)
     {
-      sensitivity = 1631;
+      sensitivity = 6842;
     }
     else if (sc1Ptr->range == LIS3MDL_8_GAUSS)
     {
-      sensitivity = 815;
+      sensitivity = 3421;
     }
     else if (sc1Ptr->range == LIS3MDL_12_GAUSS)
     {
-      sensitivity = 408;
+      sensitivity = 2281;
     }
     else
     { //(sc1Ptr->range == LIS3MDL_16_GAUSS)
-      sensitivity = 135;
+      sensitivity = 1711;
     }
     sc1Ptr->data.dd.bias_x = bias;
     sc1Ptr->data.dd.bias_y = bias;
@@ -820,11 +820,11 @@ void setDefaultLis3mdlMagCalib(sc_t *sc1Ptr)
     sc1Ptr->data.dd.sens_x = sensitivity;
     sc1Ptr->data.dd.sens_y = sensitivity;
     sc1Ptr->data.dd.sens_z = sensitivity;
-    sc1Ptr->data.dd.align_xx = -100;
+    sc1Ptr->data.dd.align_xx = 100;
     sc1Ptr->data.dd.align_xy = 0;
     sc1Ptr->data.dd.align_xz = 0;
     sc1Ptr->data.dd.align_yx = 0;
-    sc1Ptr->data.dd.align_yy = 100;
+    sc1Ptr->data.dd.align_yy = -100;
     sc1Ptr->data.dd.align_yz = 0;
     sc1Ptr->data.dd.align_zx = 0;
     sc1Ptr->data.dd.align_zy = 0;
