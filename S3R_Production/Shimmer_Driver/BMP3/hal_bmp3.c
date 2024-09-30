@@ -78,7 +78,7 @@ int8_t bmp3_self_test(void)
   return result;
 }
 
-void bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t precision)
+void bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSamplingRatio)
 {
   int8_t rslt;
 
@@ -92,8 +92,10 @@ void bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t precision)
   settings.temp_en = BMP3_ENABLE;
 
   /* Select the output data rate and over sampling settings for pressure and temperature */
-  settings.odr_filter.press_os = BMP3_NO_OVERSAMPLING;
-  settings.odr_filter.temp_os = BMP3_NO_OVERSAMPLING;
+//  settings.odr_filter.press_os = BMP3_NO_OVERSAMPLING;
+//  settings.odr_filter.temp_os = BMP3_NO_OVERSAMPLING;
+  settings.odr_filter.press_os = overSamplingRatio;
+  settings.odr_filter.temp_os = overSamplingRatio;
   settings.odr_filter.odr = rate;
 
   /* Assign the settings which needs to be set in the sensor */
