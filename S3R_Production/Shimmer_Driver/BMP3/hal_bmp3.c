@@ -92,8 +92,8 @@ void bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSamplin
   settings.temp_en = BMP3_ENABLE;
 
   /* Select the output data rate and over sampling settings for pressure and temperature */
-//  settings.odr_filter.press_os = BMP3_NO_OVERSAMPLING;
-//  settings.odr_filter.temp_os = BMP3_NO_OVERSAMPLING;
+  //settings.odr_filter.press_os = BMP3_NO_OVERSAMPLING;
+  //settings.odr_filter.temp_os = BMP3_NO_OVERSAMPLING;
   settings.odr_filter.press_os = overSamplingRatio;
   settings.odr_filter.temp_os = overSamplingRatio;
   settings.odr_filter.odr = rate;
