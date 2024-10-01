@@ -45,6 +45,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "s4_adc.h"
 #include "gpdma.h"
+#include "shimmer_definitions.h"
+#include "shimmer_externs.h"
 //#include "gpio.h"
 //#include "dma.h"
 
@@ -239,41 +241,41 @@ void S4_NORM_ADC_configureChannels(void)
   //External ADC 0
   if (configBytes->chEnExtADC0)
   {
-    *channel_contents_ptr++ = EXT_ADC_0;
+    *channel_contents_ptr++ = EXTERNAL_ADC_0;
     nbr_adc_chans += 1;
     sensing.ptr.extADC0 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXT_ADC_0;
+    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_0;
   }
 
   //External ADC 1
   if (configBytes->chEnExtADC1)
   {
-    *channel_contents_ptr++ = EXT_ADC_1;
+    *channel_contents_ptr++ = EXTERNAL_ADC_1;
     nbr_adc_chans += 1;
     sensing.ptr.extADC1 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXT_ADC_1;
+    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_1;
   }
 
   //External ADC 2
   if (configBytes->chEnExtADC2)
   {
-    *channel_contents_ptr++ = EXT_ADC_2;
+    *channel_contents_ptr++ = EXTERNAL_ADC_2;
     nbr_adc_chans += 1;
     sensing.ptr.extADC2 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXT_ADC_2;
+    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_2;
   }
 
   //Internal ADC 0
   if (configBytes->chEnIntADC0)
   {
-    *channel_contents_ptr++ = INT_ADC_0;
+    *channel_contents_ptr++ = INTERNAL_ADC_0;
     nbr_adc_chans += 1;
     sensing.ptr.intADC0 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INT_ADC_0;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_0;
   }
 
 #if defined(SHIMMER4_SDK)
@@ -291,31 +293,31 @@ void S4_NORM_ADC_configureChannels(void)
   //Internal ADC 1
   if (configBytes->chEnIntADC1)
   {
-    *channel_contents_ptr++ = INT_ADC_1;
+    *channel_contents_ptr++ = INTERNAL_ADC_1;
     nbr_adc_chans += 1;
     sensing.ptr.intADC1 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INT_ADC_1;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_1;
   }
 
   //Internal ADC 2
   if (configBytes->chEnIntADC2)
   {
-    *channel_contents_ptr++ = INT_ADC_2;
+    *channel_contents_ptr++ = INTERNAL_ADC_2;
     nbr_adc_chans += 1;
     sensing.ptr.intADC2 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INT_ADC_2;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_2;
   }
 
   //Internal ADC 3
   if (configBytes->chEnIntADC3)
   {
-    *channel_contents_ptr++ = INT_ADC_3;
+    *channel_contents_ptr++ = INTERNAL_ADC_3;
     nbr_adc_chans += 1;
     sensing.ptr.intADC3 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INT_ADC_3;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
   }
 
   sensing.nbrAdcChans += nbr_adc_chans;
@@ -750,12 +752,12 @@ void S4_NORM_ADC_bufPoll()
 
   //Analog Battery Voltage
 #if USE_VBATT_ALWAYS
-  stat.battVal[0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
-  stat.battVal[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+  shimmerStatus.battVal[0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+  shimmerStatus.battVal[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   if (configBytes->chEnVBattery)
   {
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = stat.battVal[0];
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = stat.battVal[1];
+    sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = shimmerStatus.battVal[0];
+    sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = shimmerStatus.battVal[1];
   }
 #else
   if (configBytes->chEnVBattery)
@@ -936,78 +938,78 @@ void S4_NORM_ADC_stopSensing()
 
 void S4_NORM_ADC_rankBatt(void)
 {
-  if (stat.battStat == BATT_MID)
+  if (shimmerStatus.battStat == BATT_MID)
   {
-    if (*(uint16_t *) stat.battVal < BATT_MID_MIN)
+    if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MIN)
     {
-      stat.battStat = BATT_LOW;
+      shimmerStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) stat.battVal < BATT_MID_MAX)
+    else if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MAX)
     {
-      stat.battStat = BATT_MID;
+      shimmerStatus.battStat = BATT_MID;
     }
     else
     {
-      stat.battStat = BATT_HIGH;
+      shimmerStatus.battStat = BATT_HIGH;
     }
   }
-  else if (stat.battStat == BATT_LOW)
+  else if (shimmerStatus.battStat == BATT_LOW)
   {
-    if (*(uint16_t *) stat.battVal < BATT_LOW_MAX)
+    if (*(uint16_t *) shimmerStatus.battVal < BATT_LOW_MAX)
     {
-      stat.battStat = BATT_LOW;
+      shimmerStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) stat.battVal < BATT_MID_MAX)
+    else if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MAX)
     {
-      stat.battStat = BATT_MID;
+      shimmerStatus.battStat = BATT_MID;
     }
     else
     {
-      stat.battStat = BATT_HIGH;
+      shimmerStatus.battStat = BATT_HIGH;
     }
   }
   else
   { //high
-    if (*(uint16_t *) stat.battVal < BATT_MID_MIN)
+    if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MIN)
     {
-      stat.battStat = BATT_LOW;
+      shimmerStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) stat.battVal < BATT_HIGH_MIN)
+    else if (*(uint16_t *) shimmerStatus.battVal < BATT_HIGH_MIN)
     {
-      stat.battStat = BATT_MID;
+      shimmerStatus.battStat = BATT_MID;
     }
     else
     {
-      stat.battStat = BATT_HIGH;
+      shimmerStatus.battStat = BATT_HIGH;
     }
   }
-  switch (stat.battStat)
+  switch (shimmerStatus.battStat)
   {
 #if defined(SHIMMER3R)
   case BATT_LOW:
-    stat.battStatLed = LED_RGB_RED;
+    shimmerStatus.battStatLed = LED_RGB_RED;
     break;
   case BATT_MID:
-    stat.battStatLed = LED_RGB_YELLOW;
+    shimmerStatus.battStatLed = LED_RGB_YELLOW;
     break;
   case BATT_HIGH:
-    stat.battStatLed = LED_RGB_GREEN;
+    shimmerStatus.battStatLed = LED_RGB_GREEN;
     break;
   default:
-    stat.battStatLed = LED_RED;
+    shimmerStatus.battStatLed = LED_RED;
     break;
 #elif defined(SHIMMER4_SDK)
   case BATT_LOW:
-    stat.battStatLed = LED_RED;
+    shimmerStatus.battStatLed = LED_RED;
     break;
   case BATT_MID:
-    stat.battStatLed = LED_YELLOW;
+    shimmerStatus.battStatLed = LED_YELLOW;
     break;
   case BATT_HIGH:
-    stat.battStatLed = LED_GREEN;
+    shimmerStatus.battStatLed = LED_GREEN;
     break;
   default:
-    stat.battStatLed = LED_RED_LWR;
+    shimmerStatus.battStatLed = LED_RED_LWR;
     break;
 #endif
   }
@@ -1023,7 +1025,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
   if (adcConfig != ADC_CONFIG_BATT)
   {
     ADC_ChannelConfTypeDef sConfig;
-    if (adcConfig == ADC_CONFIG_SENS && stat.isSensing)
+    if (adcConfig == ADC_CONFIG_SENS && shimmerStatus.isSensing)
     {
       need_to_restore = 1;
     }
@@ -1092,7 +1094,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 #if defined(SHIMMER3R)
   if (hadc->Instance == hadcSensPtr->Instance)
   {
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
@@ -1161,7 +1163,7 @@ void manageReadBatt(uint8_t isBlockingRead)
   }
 
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  if (stat.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
+  if (shimmerStatus.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
     updateBatteryStatus(*(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog], hadcSensPtr);
   }
@@ -1178,13 +1180,13 @@ void manageReadBatt(uint8_t isBlockingRead)
 
 void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
 {
-  stat.battVal[0] = adc_battVal & 0xff;
-  stat.battVal[1] = (adc_battVal >> 8) & 0xff;
-  stat.battVal[2] = 0;
-  stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
-  stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
+  shimmerStatus.battVal[0] = adc_battVal & 0xff;
+  shimmerStatus.battVal[1] = (adc_battVal >> 8) & 0xff;
+  shimmerStatus.battVal[2] = 0;
+  shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
+  shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
 
-  stat.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
+  shimmerStatus.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
                        adc_battVal, hadcPtr->Init.Resolution)
       * 2;
 

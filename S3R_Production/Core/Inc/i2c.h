@@ -31,8 +31,8 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
-#include "s4.h"
-#include "s4__cfg.h"
+#include "shimmer_definitions.h"
+#include <shimmer_include.h>
 
   /* USER CODE END Includes */
 
@@ -187,6 +187,7 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
+  void I2C1_DeInit(void);
   void I2C_scan_busses(void);
   void I2C_scan(I2C_HandleTypeDef *hi2c);
   I2C_HandleTypeDef *I2C_getHandlerSensor(void);

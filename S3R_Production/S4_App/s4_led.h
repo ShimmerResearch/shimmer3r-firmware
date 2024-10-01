@@ -45,7 +45,7 @@
 #ifndef S4_LED_H
 #define S4_LED_H
 
-#include "s4__cfg.h"
+#include <shimmer_include.h>
 
 void S4Led_Blink(void);
 

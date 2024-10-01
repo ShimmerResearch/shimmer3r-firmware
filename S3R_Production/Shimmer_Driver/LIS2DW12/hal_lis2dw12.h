@@ -14,7 +14,10 @@ void lis2dw12_driver_init(void);
 void lis2dw12_selectDevice(void);
 void lis2dw12_unselectDevice(void);
 uint8_t lis2dw12_self_test(void);
-int32_t lis2dw12_configure(float shimmerSamplingFreq, lis2dw12_odr_t rate, lis2dw12_fs_t range);
+int32_t lis2dw12_configure(float shimmerSamplingFreq,
+    lis2dw12_odr_t rate,
+    lis2dw12_fs_t range,
+    lis2dw12_mode_t mode);
 HAL_StatusTypeDef lis2dw12_accel_get(uint8_t *buf);
 bool lis2dw12_is_drdy_int_enabled(void);
 bool lis2dw12_is_shimmer_freq_higher(float shimmerSamplingFreq, lis2dw12_odr_t rate);

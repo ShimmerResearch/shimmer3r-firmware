@@ -50,16 +50,16 @@ uint32_t run_factory_test(void)
     sd_card_test();
     send_test_report("\r\n");
 
-    stat.testResult += (!bt_module_test()) << 7;
+    shimmerStatus.testResult += (!bt_module_test()) << 7;
     send_test_report("\r\n");
 
-    stat.testResult += InfoMem_test() << 8;
+    shimmerStatus.testResult += InfoMem_test() << 8;
 
     Board_enableSensingPower(1);
 
-    stat.testResult += I2C_test();
+    shimmerStatus.testResult += I2C_test();
 
-    stat.testResult += SPI_test() << 16;
+    shimmerStatus.testResult += SPI_test() << 16;
 
     Board_enableSensingPower(0);
   }
@@ -67,7 +67,7 @@ uint32_t run_factory_test(void)
   send_test_report("//***************************** TEST END "
                    "*************************************//\r\n");
 
-  return stat.testResult;
+  return shimmerStatus.testResult;
 }
 
 void print_date_and_time(void)
@@ -166,16 +166,16 @@ void print_battery_details(void)
   send_test_report("Battery:\r\n");
   manageReadBatt(1);
 
-  uint8_t testPass = (stat.battValMV > 2980 && stat.battValMV < 4750);
+  uint8_t testPass = (shimmerStatus.battValMV > 2980 && shimmerStatus.battValMV < 4750);
   sprintf(buffer, " - S3R_TEST_00XX - %s: VBatt = %ldmV\r\n",
-      testPass ? "PASS" : "FAIL", stat.battValMV);
+      testPass ? "PASS" : "FAIL", shimmerStatus.battValMV);
   send_test_report(buffer);
 
-  testPass = stat.battVal[2] == 0xC0 ? 0 : 1;
+  testPass = shimmerStatus.battVal[2] == 0xC0 ? 0 : 1;
   sprintf(buffer, " - S3R_TEST_00XX - %s: Charging status = ", testPass ? "PASS" : "FAIL");
   send_test_report(buffer);
 
-  switch (stat.battVal[2])
+  switch (shimmerStatus.battVal[2])
   {
   case 0x00:
     sprintf(buffer, "Suspended\r\n");
@@ -281,7 +281,7 @@ void led_test(void)
 void sd_card_test(void)
 {
   send_test_report("SD Card:\r\n");
-  if (!stat.isSdInserted)
+  if (!shimmerStatus.isSdInserted)
   {
     send_test_report(" - S3R_TEST_0004 - FAIL: not detected\r\n");
   }
@@ -291,17 +291,17 @@ void sd_card_test(void)
     printSdCardInfo(buffer);
     send_test_report(buffer);
 
-    stat.testResult += SD_test() << 6;
+    shimmerStatus.testResult += SD_test() << 6;
     //SD_test_alternative();
     sprintf(buffer, " - S3R_TEST_0004 - %s: read/write test\r\n",
-        stat.badFile ? "FAIL" : "PASS");
+        shimmerStatus.badFile ? "FAIL" : "PASS");
     send_test_report(buffer);
   }
 }
 
 uint8_t bt_module_test(void)
 {
-  if (stat.isBtPoweredOn)
+  if (shimmerStatus.isBtPoweredOn)
   {
     send_test_report("BT Module:\r\n");
 
@@ -331,7 +331,7 @@ uint8_t bt_module_test(void)
   {
     send_test_report("- S3R_TEST_0005 - FAIL\r\n");
   }
-  return stat.isBtPoweredOn;
+  return shimmerStatus.isBtPoweredOn;
 }
 
 uint8_t I2C_test(void)
@@ -401,7 +401,7 @@ uint8_t SPI_test(void)
   sprintf(buffer, " - S3R_TEST_0009 - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
-  int8_t bmp390_result = bmp390_self_test();
+  int8_t bmp390_result = bmp3_self_test();
   sprintf(buffer, " - S3R_TEST_0010 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
   send_test_report(buffer);
   if (bmp390_result)
