@@ -31,9 +31,9 @@ extern "C"
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* Exported types ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
-HAL_StatusTypeDef MX_ADCQueue_Config(void);
+  /* Exported types ------------------------------------------------------------*/
+  /* Exported constants --------------------------------------------------------*/
+  HAL_StatusTypeDef MX_ADCQueue_Config(void);
 
 #ifdef __cplusplus
 }

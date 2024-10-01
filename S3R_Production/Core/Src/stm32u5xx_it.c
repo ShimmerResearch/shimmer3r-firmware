@@ -320,8 +320,8 @@ void GPDMA1_Channel2_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles GPDMA1 Channel 4 global interrupt.
-  */
+ * @brief This function handles GPDMA1 Channel 4 global interrupt.
+ */
 void GPDMA1_Channel4_IRQHandler(void)
 {
   /* USER CODE BEGIN GPDMA1_Channel4_IRQn 0 */

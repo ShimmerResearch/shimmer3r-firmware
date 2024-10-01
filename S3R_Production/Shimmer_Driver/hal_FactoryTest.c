@@ -120,20 +120,22 @@ void print_mcu_details(void)
    * UID[39:32]: WAF_NUM[7:0] Wafer number (8-bit unsigned number)
    * UID[95:64]: LOT_NUM[55:24] Lot number (ASCII encoded)
    * */
-//  sprintf(buffer, " - Unique ID w0 = 0x%08X\r\n", HAL_GetUIDw0());
-//  send_test_report(buffer);
-//  sprintf(buffer, " - Unique ID w1 = 0x%08X\r\n", HAL_GetUIDw1());
-//  send_test_report(buffer);
-//  sprintf(buffer, " - Unique ID w2 = 0x%08X\r\n", HAL_GetUIDw2());
-//  send_test_report(buffer);
-  sprintf(buffer, " - Unique ID = 0x%08X%08X%08X\r\n", HAL_GetUIDw0(), HAL_GetUIDw1(), HAL_GetUIDw2());
+  //sprintf(buffer, " - Unique ID w0 = 0x%08X\r\n", HAL_GetUIDw0());
+  //send_test_report(buffer);
+  //sprintf(buffer, " - Unique ID w1 = 0x%08X\r\n", HAL_GetUIDw1());
+  //send_test_report(buffer);
+  //sprintf(buffer, " - Unique ID w2 = 0x%08X\r\n", HAL_GetUIDw2());
+  //send_test_report(buffer);
+  sprintf(buffer, " - Unique ID = 0x%08X%08X%08X\r\n", HAL_GetUIDw0(),
+      HAL_GetUIDw1(), HAL_GetUIDw2());
   send_test_report(buffer);
 
   ADCDebugInfo_t adcDebugInfo;
   getherMcuDebugInfo(&adcDebugInfo);
 
   uint8_t testPass = (adcDebugInfo.vRefMV > 2980 && adcDebugInfo.vRefMV < 3020);
-  sprintf(buffer, " - %s: VRef = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vRefMV);
+  sprintf(buffer, " - %s: VRef = %ldmV\r\n", testPass ? "PASS" : "FAIL",
+      adcDebugInfo.vRefMV);
   send_test_report(buffer);
 
   /*
@@ -143,7 +145,8 @@ void print_mcu_details(void)
    * Range 4 (VCORE = 0.9 V) with CPU and peripherals running at up to 25 MHz
    * */
   testPass = (adcDebugInfo.vCoreMV > 1120 && adcDebugInfo.vCoreMV < 1280);
-  sprintf(buffer, " - %s: VCore = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV);
+  sprintf(buffer, " - %s: VCore = %ldmV\r\n", testPass ? "PASS" : "FAIL",
+      adcDebugInfo.vCoreMV);
   send_test_report(buffer);
 
   // Specification = 1.9V from voltage external regulator
@@ -152,7 +155,8 @@ void print_mcu_details(void)
   send_test_report(buffer);
 
   testPass = (adcDebugInfo.temperature > 20 && adcDebugInfo.temperature < 30);
-  sprintf(buffer, " - %s: Temperature = %ld degC\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
+  sprintf(buffer, " - %s: Temperature = %ld degC\r\n",
+      testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   send_test_report(buffer);
 }
 

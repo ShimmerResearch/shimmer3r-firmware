@@ -576,7 +576,7 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
 
   Board_enableSensingPower(1);
 
-  // FIXME: reusing ADC1 here because I haven't been able to get DMA LL working with ADC4
+  //FIXME: reusing ADC1 here because I haven't been able to get DMA LL working with ADC4
   initSensAdc(numChannels);
 
   sConfig.SamplingTime = ADC_SAMPLETIME_814CYCLES;
@@ -619,8 +619,8 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
 
   adc_counter_sens = 0;
 
-    adcDebugInfo->vRefMV = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(hadcSensPtr,
-        adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution);
+  adcDebugInfo->vRefMV = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(
+      hadcSensPtr, adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution);
 
   // 5us sampling time. +-5% error. Vbatt channel is internally divided by 4
   adcDebugInfo->vBattPinMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, adcDebugInfo->vRefMV,
@@ -631,14 +631,13 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
    * V30 = 0.752V.
    * Vtemp = 30 + (Vsense - V30) / Avg_slope
    */
-//  float temperatureV = (float) adcBufSens[2] * referenceVoltageFloat / 16383.0;
-//  float temperatureFloat = (temperatureV - 0.752)/0.0025 + 30.0;
-  // 13us sampling time
-  adcDebugInfo->temperature = __HAL_ADC_CALC_TEMPERATURE(hadcSensPtr, adcDebugInfo->vRefMV,
-      adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution);
+  //float temperatureV = (float) adcBufSens[2] * referenceVoltageFloat /
+  //16383.0; float temperatureFloat = (temperatureV - 0.752)/0.0025 + 30.0;
+  //13us sampling time
+  adcDebugInfo->temperature = __HAL_ADC_CALC_TEMPERATURE(hadcSensPtr,
+      adcDebugInfo->vRefMV, adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution);
 
-
-  // Using ADC4 here to get Vcore
+  //Using ADC4 here to get Vcore
 
   MX_ADC4_Init();
   ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc4();
@@ -649,9 +648,9 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   if (status == HAL_OK)
   {
     vCoreCounts = HAL_ADC_GetValue(hadcFactoryTestPtr);
-    // 1us sampling time
-    adcDebugInfo->vCoreMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, 3300,
-        vCoreCounts, hadcFactoryTestPtr->Init.Resolution);
+    //1us sampling time
+    adcDebugInfo->vCoreMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr,
+        3300, vCoreCounts, hadcFactoryTestPtr->Init.Resolution);
   }
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
