@@ -580,48 +580,48 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
 
   linkedListConfigAdc4(hadcFactoryTestPtr);
 
-//  ADC_HandleTypeDef *hadcFactoryTestPtr = hadcSensPtr;
-//  initSensAdc(numChannels);
-//
-//  sConfig.SamplingTime = ADC_SAMPLETIME_814CYCLES;
-//  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-//  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-//  sConfig.Offset = 0;
-//
-//  sConfig.Channel = ADC_CHANNEL_VREFINT;
-//  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-//  if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
-//
-//  sConfig.Channel = ADC_CHANNEL_VBATT;
-//  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-//  if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
-//  adcGpioInit(VBAT_SENSE_Pin, VBAT_SENSE_GPIO_Port);
-//
-//  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
-//  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-//  if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
-//
-//  sConfig.Channel = ADC_CHANNEL_VBAT;
-//  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-//  if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
+  //ADC_HandleTypeDef *hadcFactoryTestPtr = hadcSensPtr;
+  //initSensAdc(numChannels);
+  //
+  //sConfig.SamplingTime = ADC_SAMPLETIME_814CYCLES;
+  //sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  //sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  //sConfig.Offset = 0;
+  //
+  //sConfig.Channel = ADC_CHANNEL_VREFINT;
+  //sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  //if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
+  //{
+  //  Error_Handler();
+  //}
+  //
+  //sConfig.Channel = ADC_CHANNEL_VBATT;
+  //sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  //if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
+  //{
+  //  Error_Handler();
+  //}
+  //adcGpioInit(VBAT_SENSE_Pin, VBAT_SENSE_GPIO_Port);
+  //
+  //sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+  //sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  //if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
+  //{
+  //  Error_Handler();
+  //}
+  //
+  //sConfig.Channel = ADC_CHANNEL_VBAT;
+  //sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  //if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
+  //{
+  //  Error_Handler();
+  //}
 
-//  HAL_ADCEx_Calibration_Start(hadcFactoryTestPtr, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED); //can be removed later
+  //HAL_ADCEx_Calibration_Start(hadcFactoryTestPtr, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED); //can be removed later
 
   waitingForDebugData = 1;
   HAL_ADC_Start_DMA(hadcFactoryTestPtr, (uint32_t *) adcBufSensTemp, (uint32_t) numChannels);
-//  HAL_ADC_Start_IT(hadcFactoryTestPtr);
+  //HAL_ADC_Start_IT(hadcFactoryTestPtr);
 
   while (waitingForDebugData)
   {
@@ -631,37 +631,41 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   HAL_ADC_Stop_DMA(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
 
-  //  float vRefV = ((float) adcBufSens[1] * referenceVoltageFloat / 16383.0);
-  //  adcDebugInfo->vRefMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, referenceVoltage,
-  //      adcBufSens[1], hadcFactoryTestPtr->Init.Resolution);
-    adcDebugInfo->vRefMV = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(hadcFactoryTestPtr,
-        adcBufSens[0], hadcFactoryTestPtr->Init.Resolution);
+  //float vRefV = ((float) adcBufSens[1] * referenceVoltageFloat / 16383.0);
+  //adcDebugInfo->vRefMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, referenceVoltage,
+  //    adcBufSens[1], hadcFactoryTestPtr->Init.Resolution);
+  adcDebugInfo->vRefMV = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(
+      hadcFactoryTestPtr, adcBufSens[0], hadcFactoryTestPtr->Init.Resolution);
 
-//    float referenceVoltageFloat = (float) adcDebugInfo->vRefMV / 1000.0;
+  //float referenceVoltageFloat = (float) adcDebugInfo->vRefMV / 1000.0;
 
-//  float battV = ((float) adcBufSens[0] * referenceVoltageFloat / 16383.0) * 2.0;
-  // External voltage divider dividing by half of supply voltage
-  adcDebugInfo->battMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
-      adcBufSens[1], hadcFactoryTestPtr->Init.Resolution) * 2.0;
+  //float battV = ((float) adcBufSens[0] * referenceVoltageFloat / 16383.0) * 2.0;
+  //External voltage divider dividing by half of supply voltage
+  adcDebugInfo->battMV
+      = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
+            adcBufSens[1], hadcFactoryTestPtr->Init.Resolution)
+      * 2.0;
 
   /* STM32U5Axxx:
    * Average slope (mv/C) = 2.5.
    * V30 = 0.752V.
    * Vtemp = 30 + (Vsense - V30) / Avg_slope
    */
-//  float temperatureV = (float) adcBufSens[2] * referenceVoltageFloat / 16383.0;
-//  float temperatureFloat = (temperatureV - 0.752)/0.0025 + 30.0;
-  adcDebugInfo->temperature = __HAL_ADC_CALC_TEMPERATURE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
-      adcBufSens[2], hadcFactoryTestPtr->Init.Resolution);
+  //float temperatureV = (float) adcBufSens[2] * referenceVoltageFloat /
+  //16383.0; float temperatureFloat = (temperatureV - 0.752)/0.0025 + 30.0;
+  adcDebugInfo->temperature = __HAL_ADC_CALC_TEMPERATURE(hadcFactoryTestPtr,
+      adcDebugInfo->vRefMV, adcBufSens[2], hadcFactoryTestPtr->Init.Resolution);
 
-//  float vbatt = ((float) adcBufSens[3] * referenceVoltageFloat / 16383.0) * 2.0;
-  // Vbatt channel is internally divided by 4
-  adcDebugInfo->vbattMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
-      adcBufSens[3], hadcFactoryTestPtr->Init.Resolution) * 4;
+  //float vbatt = ((float) adcBufSens[3] * referenceVoltageFloat / 16383.0) * 2.0;
+  //Vbatt channel is internally divided by 4
+  adcDebugInfo->vbattMV
+      = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
+            adcBufSens[3], hadcFactoryTestPtr->Init.Resolution)
+      * 4;
 
-////  float coreV = (float) adcBufSens[4] * referenceVoltageFloat / 16383.0;
-//  adcDebugInfo->coreMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
-//      adcBufSens[4], hadcFactoryTestPtr->Init.Resolution);
+  ////  float coreV = (float) adcBufSens[4] * referenceVoltageFloat / 16383.0;
+  //adcDebugInfo->coreMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
+  //    adcBufSens[4], hadcFactoryTestPtr->Init.Resolution);
 }
 
 void initSensAdc(uint32_t numChannels)

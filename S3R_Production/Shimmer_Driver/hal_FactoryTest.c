@@ -119,22 +119,26 @@ void print_mcu_details(void)
   send_test_report(buffer);
 
   S4_ADC_readBatt(1);
-//  stat.battVal
+  //stat.battVal
   //TODO
 
   ADCDebugInfo_t adcDebugInfo;
   getherMcuDebugInfo(&adcDebugInfo);
   uint8_t vRefFail = (adcDebugInfo.vRefMV > 2980 || adcDebugInfo.vRefMV < 3020);
-  sprintf(buffer, " - %s: VRef = %ldmV\r\n", vRefFail ? "FAIL" : "PASS", adcDebugInfo.vRefMV);
+  sprintf(buffer, " - %s: VRef = %ldmV\r\n", vRefFail ? "FAIL" : "PASS",
+      adcDebugInfo.vRefMV);
   send_test_report(buffer);
 
-  sprintf(buffer, " - %s: VBatt Ext = %ldmV\r\n", adcDebugInfo.battMV<3000 ? "FAIL" : "PASS", adcDebugInfo.battMV);
+  sprintf(buffer, " - %s: VBatt Ext = %ldmV\r\n",
+      adcDebugInfo.battMV < 3000 ? "FAIL" : "PASS", adcDebugInfo.battMV);
   send_test_report(buffer);
-  sprintf(buffer, " - %s: VBatt Int = %ldmV\r\n", adcDebugInfo.vbattMV<3000 ? "FAIL" : "PASS", adcDebugInfo.vbattMV);
+  sprintf(buffer, " - %s: VBatt Int = %ldmV\r\n",
+      adcDebugInfo.vbattMV < 3000 ? "FAIL" : "PASS", adcDebugInfo.vbattMV);
   send_test_report(buffer);
 
   uint8_t tempFail = (adcDebugInfo.temperature > 30 || adcDebugInfo.temperature < 20);
-  sprintf(buffer, " - %s: Temperature = %ld degC\r\n", tempFail ? "FAIL" : "PASS", adcDebugInfo.temperature);
+  sprintf(buffer, " - %s: Temperature = %ld degC\r\n",
+      tempFail ? "FAIL" : "PASS", adcDebugInfo.temperature);
   send_test_report(buffer);
 }
 
