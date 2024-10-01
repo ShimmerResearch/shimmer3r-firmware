@@ -1187,7 +1187,7 @@ void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
   shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
 
   shimmerStatus.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
-                       adc_battVal, hadcPtr->Init.Resolution)
+                                adc_battVal, hadcPtr->Init.Resolution)
       * 2;
 
   S4_ADC_rankBatt();
