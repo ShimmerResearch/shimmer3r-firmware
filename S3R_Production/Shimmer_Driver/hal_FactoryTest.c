@@ -134,7 +134,7 @@ void print_mcu_details(void)
   getherMcuDebugInfo(&adcDebugInfo);
 
   uint8_t testPass = (adcDebugInfo.vRefMV > 2980 && adcDebugInfo.vRefMV < 3020);
-  sprintf(buffer, " - S3R_TEST_00XX - %s: VRef = %ldmV\r\n",
+  sprintf(buffer, " - S3R_TEST_0003 - %s: VRef = %ldmV\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.vRefMV);
   send_test_report(buffer);
 
@@ -145,18 +145,18 @@ void print_mcu_details(void)
    * Range 4 (VCORE = 0.9 V) with CPU and peripherals running at up to 25 MHz
    * */
   testPass = (adcDebugInfo.vCoreMV > 1120 && adcDebugInfo.vCoreMV < 1280);
-  sprintf(buffer, " - S3R_TEST_00XX - %s: VCore = %ldmV\r\n",
+  sprintf(buffer, " - S3R_TEST_0004 - %s: VCore = %ldmV\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV);
   send_test_report(buffer);
 
   //Specification = 1.9V from voltage external regulator
   testPass = (adcDebugInfo.vBattPinMV > 1850 && adcDebugInfo.vBattPinMV < 1950);
-  sprintf(buffer, " - S3R_TEST_00XX - %s: VBatt Pin = %ldmV\r\n",
+  sprintf(buffer, " - S3R_TEST_0005 - %s: VBatt Pin = %ldmV\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV);
   send_test_report(buffer);
 
   testPass = (adcDebugInfo.temperature > 20 && adcDebugInfo.temperature < 30);
-  sprintf(buffer, " - S3R_TEST_00XX - %s: Temperature = %ld degC\r\n",
+  sprintf(buffer, " - S3R_TEST_0006 - %s: Temperature = %ld degC\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   send_test_report(buffer);
 }
@@ -167,12 +167,12 @@ void print_battery_details(void)
   manageReadBatt(1);
 
   uint8_t testPass = (shimmerStatus.battValMV > 2980 && shimmerStatus.battValMV < 4750);
-  sprintf(buffer, " - S3R_TEST_00XX - %s: VBatt = %ldmV\r\n",
+  sprintf(buffer, " - S3R_TEST_0007 - %s: VBatt = %ldmV\r\n",
       testPass ? "PASS" : "FAIL", shimmerStatus.battValMV);
   send_test_report(buffer);
 
   testPass = shimmerStatus.battVal[2] == 0xC0 ? 0 : 1;
-  sprintf(buffer, " - S3R_TEST_00XX - %s: Charging status = ", testPass ? "PASS" : "FAIL");
+  sprintf(buffer, " - S3R_TEST_0008 - %s: Charging status = ", testPass ? "PASS" : "FAIL");
   send_test_report(buffer);
 
   switch (shimmerStatus.battVal[2])
@@ -199,7 +199,7 @@ void print_battery_details(void)
 
 void led_test(void)
 {
-  send_test_report("LED test (S3R_TEST_0014):\r\n");
+  send_test_report("LED test (S3R_TEST_0019):\r\n");
 
 #if defined(SHIMMER3R)
   stopLedBlinkTimer();
@@ -283,7 +283,7 @@ void sd_card_test(void)
   send_test_report("SD Card:\r\n");
   if (!shimmerStatus.isSdInserted)
   {
-    send_test_report(" - S3R_TEST_0004 - FAIL: not detected\r\n");
+    send_test_report(" - S3R_TEST_0009 - FAIL: not detected\r\n");
   }
   else
   {
@@ -293,7 +293,7 @@ void sd_card_test(void)
 
     shimmerStatus.testResult += SD_test() << 6;
     //SD_test_alternative();
-    sprintf(buffer, " - S3R_TEST_0004 - %s: read/write test\r\n",
+    sprintf(buffer, " - S3R_TEST_0009 - %s: read/write test\r\n",
         shimmerStatus.badFile ? "FAIL" : "PASS");
     send_test_report(buffer);
   }
@@ -313,7 +313,7 @@ uint8_t bt_module_test(void)
     sprintf(buffer, " - %s\r\n", getBtVerStrPtr());
     send_test_report(buffer);
 
-    sprintf(buffer, " - S3R_TEST_0005 - %s BT firmware version\r\n",
+    sprintf(buffer, " - S3R_TEST_0010 - %s BT firmware version\r\n",
         strstr(buffer, "v01.04.16.16") != NULL ? "PASS: correct" : "FAIL: incorrect");
     send_test_report(buffer);
 
@@ -329,7 +329,7 @@ uint8_t bt_module_test(void)
   }
   else
   {
-    send_test_report("- S3R_TEST_0005 - FAIL\r\n");
+    send_test_report("- S3R_TEST_0010 - FAIL\r\n");
   }
   return shimmerStatus.isBtPoweredOn;
 }
@@ -369,11 +369,11 @@ uint8_t I2C_test(void)
   send_test_report("I2C1:\r\n");
 
   uint8_t st_result = lis2mdl_self_test();
-  sprintf(buffer, " - S3R_TEST_0007 - %s: LIS2MDL\r\n", st_result ? "PASS" : "FAIL");
+  sprintf(buffer, " - S3R_TEST_0011 - %s: LIS2MDL\r\n", st_result ? "PASS" : "FAIL");
   send_test_report(buffer);
 
   uint8_t eeprom_result = CAT24C16_test();
-  sprintf(buffer, " - S3R_TEST_0008 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0012 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
 #endif
@@ -398,11 +398,11 @@ uint8_t SPI_test(void)
   MX_SPI1_Init();
 
   uint8_t lsm6dsv_result = lsm6dsv_self_test();
-  sprintf(buffer, " - S3R_TEST_0009 - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0013 - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
   int8_t bmp390_result = bmp3_self_test();
-  sprintf(buffer, " - S3R_TEST_0010 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0014 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
   send_test_report(buffer);
   if (bmp390_result)
   {
@@ -414,7 +414,7 @@ uint8_t SPI_test(void)
   if (isAdxl371Detected())
   {
     uint8_t adxl371_result = adxl371_self_test();
-    sprintf(buffer, " - S3R_TEST_0011 - %s: ADXL371\r\n", adxl371_result ? "PASS" : "FAIL");
+    sprintf(buffer, " - S3R_TEST_0015 - %s: ADXL371\r\n", adxl371_result ? "PASS" : "FAIL");
   }
   else
   {
@@ -426,11 +426,11 @@ uint8_t SPI_test(void)
   send_test_report("SPI2:\r\n");
   MX_SPI2_Init();
   uint8_t lis3mdl_result = lis3mdl_self_test();
-  sprintf(buffer, " - S3R_TEST_0012 - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0016 - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
   uint8_t lis2dw12_result = lis2dw12_self_test();
-  sprintf(buffer, " - S3R_TEST_0013 - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
+  sprintf(buffer, " - S3R_TEST_0017 - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
   send_test_report(buffer);
   SPI2_DeInit();
 
