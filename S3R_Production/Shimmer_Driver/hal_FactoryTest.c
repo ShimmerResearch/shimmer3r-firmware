@@ -134,8 +134,8 @@ void print_mcu_details(void)
   getherMcuDebugInfo(&adcDebugInfo);
 
   uint8_t testPass = (adcDebugInfo.vRefMV > 2980 && adcDebugInfo.vRefMV < 3020);
-  sprintf(buffer, " - S3R_TEST_00XX - %s: VRef = %ldmV\r\n", testPass ? "PASS" : "FAIL",
-      adcDebugInfo.vRefMV);
+  sprintf(buffer, " - S3R_TEST_00XX - %s: VRef = %ldmV\r\n",
+      testPass ? "PASS" : "FAIL", adcDebugInfo.vRefMV);
   send_test_report(buffer);
 
   /*
@@ -145,14 +145,14 @@ void print_mcu_details(void)
    * Range 4 (VCORE = 0.9 V) with CPU and peripherals running at up to 25 MHz
    * */
   testPass = (adcDebugInfo.vCoreMV > 1120 && adcDebugInfo.vCoreMV < 1280);
-  sprintf(buffer, " - S3R_TEST_00XX - %s: VCore = %ldmV\r\n", testPass ? "PASS" : "FAIL",
-      adcDebugInfo.vCoreMV);
+  sprintf(buffer, " - S3R_TEST_00XX - %s: VCore = %ldmV\r\n",
+      testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV);
   send_test_report(buffer);
 
   //Specification = 1.9V from voltage external regulator
   testPass = (adcDebugInfo.vBattPinMV > 1850 && adcDebugInfo.vBattPinMV < 1950);
-  sprintf(buffer, " - S3R_TEST_00XX - %s: VBatt Pin = %ldmV\r\n", testPass ? "PASS" : "FAIL",
-      adcDebugInfo.vBattPinMV);
+  sprintf(buffer, " - S3R_TEST_00XX - %s: VBatt Pin = %ldmV\r\n",
+      testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV);
   send_test_report(buffer);
 
   testPass = (adcDebugInfo.temperature > 20 && adcDebugInfo.temperature < 30);
@@ -167,7 +167,8 @@ void print_battery_details(void)
   manageReadBatt(1);
 
   uint8_t testPass = (stat.battValMV > 2980 && stat.battValMV < 4750);
-  sprintf(buffer, " - S3R_TEST_00XX - %s: VBatt = %ldmV\r\n", testPass ? "PASS" : "FAIL", stat.battValMV);
+  sprintf(buffer, " - S3R_TEST_00XX - %s: VBatt = %ldmV\r\n",
+      testPass ? "PASS" : "FAIL", stat.battValMV);
   send_test_report(buffer);
 
   testPass = stat.battVal[2] == 0xC0 ? 0 : 1;
@@ -313,18 +314,18 @@ uint8_t bt_module_test(void)
     send_test_report(buffer);
 
     sprintf(buffer, " - S3R_TEST_0005 - %s BT firmware version\r\n",
-        strstr(buffer, "v01.04.16.16") != NULL? "PASS: correct": "FAIL: incorrect");
+        strstr(buffer, "v01.04.16.16") != NULL ? "PASS: correct" : "FAIL: incorrect");
     send_test_report(buffer);
 
-//    if (strstr(buffer, "v01.04.16.16") != NULL)
-//    {
-//      send_test_report(" - S3R_TEST_0005 - PASS: correct BT firmware version\r\n");
-//    }
-//    else
-//    {
-//      send_test_report(
-//          " - S3R_TEST_0005 - FAIL: incorrect BT firmware version\r\n");
-//    }
+    //if (strstr(buffer, "v01.04.16.16") != NULL)
+    //{
+    //  send_test_report(" - S3R_TEST_0005 - PASS: correct BT firmware version\r\n");
+    //}
+    //else
+    //{
+    //  send_test_report(
+    //      " - S3R_TEST_0005 - FAIL: incorrect BT firmware version\r\n");
+    //}
   }
   else
   {

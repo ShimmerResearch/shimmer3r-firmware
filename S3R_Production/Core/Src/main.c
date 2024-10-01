@@ -272,8 +272,8 @@ int main(void)
 
   //S4_Task_set(TASK_STARTSENSING);
 
-//  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-//  run_factory_test();
+  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
+  //run_factory_test();
 
   /* USER CODE END 2 */
 
