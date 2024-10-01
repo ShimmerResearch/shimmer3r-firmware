@@ -197,7 +197,8 @@ void sd_card_test(void)
 
     stat.testResult += SD_test() << 6;
     //SD_test_alternative();
-    sprintf(buffer, " - S3R_TEST_0004 - %s: read/write test\r\n", stat.badFile ? "FAIL" : "PASS");
+    sprintf(buffer, " - S3R_TEST_0004 - %s: read/write test\r\n",
+        stat.badFile ? "FAIL" : "PASS");
     send_test_report(buffer);
   }
 }
@@ -222,7 +223,8 @@ uint8_t bt_module_test(void)
     }
     else
     {
-      send_test_report(" - S3R_TEST_0005 - FAIL: incorrect BT firmware version\r\n");
+      send_test_report(
+          " - S3R_TEST_0005 - FAIL: incorrect BT firmware version\r\n");
     }
   }
   else
