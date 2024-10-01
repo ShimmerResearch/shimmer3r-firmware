@@ -22,33 +22,36 @@
 #define __GPDMA_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-  /* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
+extern DMA_HandleTypeDef handle_GPDMA1_Channel3;
 
-  /* USER CODE BEGIN Private defines */
+extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
 
-  /* USER CODE END Private defines */
+/* USER CODE BEGIN Private defines */
 
-  void MX_GPDMA1_Init(void);
+/* USER CODE END Private defines */
 
-  /* USER CODE BEGIN Prototypes */
+void MX_GPDMA1_Init(void);
+
+/* USER CODE BEGIN Prototypes */
 
   void linkedListConfig(ADC_HandleTypeDef *hadc);
+  void linkedListConfigAdc4(ADC_HandleTypeDef *hadc);
 
-  /* USER CODE END Prototypes */
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __GPDMA_H__ */
+

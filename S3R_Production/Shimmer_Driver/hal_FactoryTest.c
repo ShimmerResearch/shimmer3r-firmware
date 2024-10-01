@@ -27,6 +27,9 @@ uint32_t run_factory_test(void)
 
     print_shimmer_model();
     send_test_report("\r\n");
+
+    print_mcu_details();
+    send_test_report("\r\n");
   }
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
@@ -41,8 +44,6 @@ uint32_t run_factory_test(void)
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
   {
-    send_test_report("\r\n");
-
     sd_card_test();
     send_test_report("\r\n");
 
@@ -99,6 +100,42 @@ void print_shimmer_model(void)
   {
     send_test_report(" - FAIL: not set\r\n");
   }
+}
+
+void print_mcu_details(void)
+{
+  send_test_report("MCU:\r\n");
+
+  sprintf(buffer, " - Device ID = %lu\r\n", HAL_GetDEVID());
+  send_test_report(buffer);
+  sprintf(buffer, " - Revision ID = %lu\r\n", HAL_GetREVID());
+  send_test_report(buffer);
+
+  sprintf(buffer, " - Unique ID w0 = %lu\r\n", HAL_GetUIDw0());
+  send_test_report(buffer);
+  sprintf(buffer, " - Unique ID w1 = %lu\r\n", HAL_GetUIDw1());
+  send_test_report(buffer);
+  sprintf(buffer, " - Unique ID w2 = %lu\r\n", HAL_GetUIDw2());
+  send_test_report(buffer);
+
+  S4_ADC_readBatt(1);
+//  stat.battVal
+  //TODO
+
+  ADCDebugInfo_t adcDebugInfo;
+  getherMcuDebugInfo(&adcDebugInfo);
+  uint8_t vRefFail = (adcDebugInfo.vRefMV > 2980 || adcDebugInfo.vRefMV < 3020);
+  sprintf(buffer, " - %s: VRef = %ldmV\r\n", vRefFail ? "FAIL" : "PASS", adcDebugInfo.vRefMV);
+  send_test_report(buffer);
+
+  sprintf(buffer, " - %s: VBatt Ext = %ldmV\r\n", adcDebugInfo.battMV<3000 ? "FAIL" : "PASS", adcDebugInfo.battMV);
+  send_test_report(buffer);
+  sprintf(buffer, " - %s: VBatt Int = %ldmV\r\n", adcDebugInfo.vbattMV<3000 ? "FAIL" : "PASS", adcDebugInfo.vbattMV);
+  send_test_report(buffer);
+
+  uint8_t tempFail = (adcDebugInfo.temperature > 30 || adcDebugInfo.temperature < 20);
+  sprintf(buffer, " - %s: Temperature = %ld degC\r\n", tempFail ? "FAIL" : "PASS", adcDebugInfo.temperature);
+  send_test_report(buffer);
 }
 
 void led_test(void)
