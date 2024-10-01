@@ -182,7 +182,7 @@ void MX_ADC4_Init(void)
   }
 
   /** Configure Regular Channel
-  */
+   */
   sConfig.Channel = ADC_CHANNEL_VCORE;
   sConfig.Rank = ADC4_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC4_SAMPLINGTIME_COMMON_1;
@@ -312,7 +312,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle)
 
     /* ADC4 clock enable */
     __HAL_RCC_ADC4_CLK_ENABLE();
-  /* USER CODE BEGIN ADC4_MspInit 1 */
+    /* USER CODE BEGIN ADC4_MspInit 1 */
 
     /* USER CODE END ADC4_MspInit 1 */
   }
@@ -396,7 +396,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle)
     /* USER CODE END ADC4_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_ADC4_CLK_DISABLE();
-  /* USER CODE BEGIN ADC4_MspDeInit 1 */
+    /* USER CODE BEGIN ADC4_MspDeInit 1 */
 
     /* USER CODE END ADC4_MspDeInit 1 */
   }

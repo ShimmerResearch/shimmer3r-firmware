@@ -33,7 +33,7 @@ extern "C"
 
   /* USER CODE END Includes */
 
-extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
+  extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
 
   /* USER CODE BEGIN Private defines */
 

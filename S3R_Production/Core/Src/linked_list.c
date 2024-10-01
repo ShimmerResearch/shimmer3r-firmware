@@ -82,4 +82,3 @@ HAL_StatusTypeDef MX_ADCQueue_Config(void)
 
   return ret;
 }
-
