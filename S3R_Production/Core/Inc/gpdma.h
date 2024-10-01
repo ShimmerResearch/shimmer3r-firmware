@@ -32,8 +32,6 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-extern DMA_HandleTypeDef handle_GPDMA1_Channel3;
-
 extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
 
 /* USER CODE BEGIN Private defines */
@@ -45,7 +43,6 @@ void MX_GPDMA1_Init(void);
 /* USER CODE BEGIN Prototypes */
 
   void linkedListConfig(ADC_HandleTypeDef *hadc);
-  void linkedListConfigAdc4(ADC_HandleTypeDef *hadc);
 
 /* USER CODE END Prototypes */
 

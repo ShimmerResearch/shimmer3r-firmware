@@ -24,11 +24,11 @@ typedef struct
 
 typedef struct
 {
-  int32_t battMV;
+  int32_t vBattExtDividerMV;
   int32_t vRefMV;
   int32_t temperature;
-  int32_t vbattMV;
-//  int32_t coreMV;
+  int32_t vBattIntDividerMV;
+  int32_t vCoreMV;
 } ADCDebugInfo_t;
 
 #define ADC_CONFIG_NONE 0

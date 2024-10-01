@@ -62,7 +62,6 @@ void EXTI14_IRQHandler(void);
 void GPDMA1_Channel0_IRQHandler(void);
 void GPDMA1_Channel1_IRQHandler(void);
 void GPDMA1_Channel2_IRQHandler(void);
-void GPDMA1_Channel3_IRQHandler(void);
 void GPDMA1_Channel4_IRQHandler(void);
 void GPDMA1_Channel5_IRQHandler(void);
 void GPDMA1_Channel6_IRQHandler(void);
@@ -81,7 +80,6 @@ void GPDMA1_Channel8_IRQHandler(void);
 void GPDMA1_Channel9_IRQHandler(void);
 void GPDMA1_Channel10_IRQHandler(void);
 void SPI3_IRQHandler(void);
-void ADC4_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

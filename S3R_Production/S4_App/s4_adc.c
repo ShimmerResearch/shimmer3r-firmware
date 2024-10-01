@@ -62,7 +62,7 @@ ADC_HandleTypeDef *hadcSensPtr;
 ADC_HandleTypeDef *hadcBattPtr;
 
 #if defined(SHIMMER3R)
-uint16_t adc_battVal, adcBufSens[8], adcBufSensTemp[4]; //max 8 channels, each of 16 bits
+uint16_t adc_battVal, adcBufSens[8]; //max 8 channels, each of 16 bits
 #elif defined(SHIMMER4_SDK)
 uint32_t adc_battVal, adcBufSens[12], adcBufResv[12]; //max 12 channels, each of 16 bits
 #endif
@@ -574,75 +574,66 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   uint8_t adc_counter_sens = 0; //adc channel rank counter
   uint8_t numChannels = 4;
 
-  MX_ADC4_Init();
+  // FIXME: reusing ADC1 here because I haven't been able to get DMA LL working with ADC4
+  initSensAdc(numChannels);
 
-  ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc4();
+  sConfig.SamplingTime = ADC_SAMPLETIME_814CYCLES;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
 
-  linkedListConfigAdc4(hadcFactoryTestPtr);
+  sConfig.Channel = ADC_CHANNEL_VREFINT;
+  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-//  ADC_HandleTypeDef *hadcFactoryTestPtr = hadcSensPtr;
-//  initSensAdc(numChannels);
-//
-//  sConfig.SamplingTime = ADC_SAMPLETIME_814CYCLES;
-//  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-//  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-//  sConfig.Offset = 0;
-//
-//  sConfig.Channel = ADC_CHANNEL_VREFINT;
-//  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-//  if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
-//
-//  sConfig.Channel = ADC_CHANNEL_VBATT;
-//  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-//  if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
-//  adcGpioInit(VBAT_SENSE_Pin, VBAT_SENSE_GPIO_Port);
-//
-//  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
-//  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-//  if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
-//
-//  sConfig.Channel = ADC_CHANNEL_VBAT;
-//  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-//  if (HAL_ADC_ConfigChannel(hadcFactoryTestPtr, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
+  sConfig.Channel = ADC_CHANNEL_VBATT;
+  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  adcGpioInit(VBAT_SENSE_Pin, VBAT_SENSE_GPIO_Port);
 
-//  HAL_ADCEx_Calibration_Start(hadcFactoryTestPtr, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED); //can be removed later
+  sConfig.Channel = ADC_CHANNEL_VBAT;
+  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  HAL_ADCEx_Calibration_Start(hadcSensPtr, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED); //can be removed later
 
   waitingForDebugData = 1;
-  HAL_ADC_Start_DMA(hadcFactoryTestPtr, (uint32_t *) adcBufSensTemp, (uint32_t) numChannels);
-//  HAL_ADC_Start_IT(hadcFactoryTestPtr);
-
+  HAL_ADC_Start_DMA(hadcSensPtr, (uint32_t *) adcBufSens, (uint32_t) numChannels);
   while (waitingForDebugData)
   {
     Power_SleepUntilInterrupt();
   }
 
-  HAL_ADC_Stop_DMA(hadcFactoryTestPtr);
-  HAL_ADC_DeInit(hadcFactoryTestPtr);
+  HAL_ADC_Stop_DMA(hadcSensPtr);
+  HAL_ADC_DeInit(hadcSensPtr);
 
-  //  float vRefV = ((float) adcBufSens[1] * referenceVoltageFloat / 16383.0);
-  //  adcDebugInfo->vRefMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, referenceVoltage,
-  //      adcBufSens[1], hadcFactoryTestPtr->Init.Resolution);
-    adcDebugInfo->vRefMV = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(hadcFactoryTestPtr,
-        adcBufSens[0], hadcFactoryTestPtr->Init.Resolution);
+  adc_counter_sens = 0;
 
-//    float referenceVoltageFloat = (float) adcDebugInfo->vRefMV / 1000.0;
+    adcDebugInfo->vRefMV = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(hadcSensPtr,
+        adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution);
 
-//  float battV = ((float) adcBufSens[0] * referenceVoltageFloat / 16383.0) * 2.0;
-  // External voltage divider dividing by half of supply voltage
-  adcDebugInfo->battMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
-      adcBufSens[1], hadcFactoryTestPtr->Init.Resolution) * 2.0;
+  adcDebugInfo->vBattExtDividerMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, adcDebugInfo->vRefMV,
+      adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution) * 2.0;
+
+  // 5us sampling time. +-5% error. Vbatt channel is internally divided by 4
+  adcDebugInfo->vBattIntDividerMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, adcDebugInfo->vRefMV,
+      adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution) * 4;
 
   /* STM32U5Axxx:
    * Average slope (mv/C) = 2.5.
@@ -651,17 +642,28 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
    */
 //  float temperatureV = (float) adcBufSens[2] * referenceVoltageFloat / 16383.0;
 //  float temperatureFloat = (temperatureV - 0.752)/0.0025 + 30.0;
-  adcDebugInfo->temperature = __HAL_ADC_CALC_TEMPERATURE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
-      adcBufSens[2], hadcFactoryTestPtr->Init.Resolution);
+  // 13us sampling time
+  adcDebugInfo->temperature = __HAL_ADC_CALC_TEMPERATURE(hadcSensPtr, adcDebugInfo->vRefMV,
+      adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution);
 
-//  float vbatt = ((float) adcBufSens[3] * referenceVoltageFloat / 16383.0) * 2.0;
-  // Vbatt channel is internally divided by 4
-  adcDebugInfo->vbattMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
-      adcBufSens[3], hadcFactoryTestPtr->Init.Resolution) * 4;
 
-////  float coreV = (float) adcBufSens[4] * referenceVoltageFloat / 16383.0;
-//  adcDebugInfo->coreMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, adcDebugInfo->vRefMV,
-//      adcBufSens[4], hadcFactoryTestPtr->Init.Resolution);
+  // Using ADC4 here to get Vcore
+
+  MX_ADC4_Init();
+  ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc4();
+
+  uint32_t vCoreCounts = 0;
+  HAL_StatusTypeDef status = HAL_ADC_Start(hadcFactoryTestPtr);
+  status = HAL_ADC_PollForConversion(hadcFactoryTestPtr, 100);
+  if (status == HAL_OK)
+  {
+    vCoreCounts = HAL_ADC_GetValue(hadcFactoryTestPtr);
+    // 1us sampling time
+    adcDebugInfo->vCoreMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr, 3300,
+        vCoreCounts, hadcFactoryTestPtr->Init.Resolution);
+  }
+  HAL_ADC_Stop(hadcFactoryTestPtr);
+  HAL_ADC_DeInit(hadcFactoryTestPtr);
 }
 
 void initSensAdc(uint32_t numChannels)
@@ -1114,10 +1116,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
     HAL_ADC_Stop_IT(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
     Board_enableSensingPower(0);
-  }
-  else if (hadc->Instance == hadc4.Instance)
-  {
-    waitingForDebugData = 0;
   }
 #elif defined(SHIMMER4_SDK)
   if (hadc->Instance == hadcResv.Instance)

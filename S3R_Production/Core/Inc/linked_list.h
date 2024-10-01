@@ -33,7 +33,6 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 HAL_StatusTypeDef MX_ADCQueue_Config(void);
-HAL_StatusTypeDef MX_Adc4Queue_Config(void);
 
 #ifdef __cplusplus
 }

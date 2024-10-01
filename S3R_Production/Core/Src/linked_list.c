@@ -27,8 +27,6 @@
 
 DMA_NodeTypeDef ADCNode;
 DMA_QListTypeDef ADCQueue;
-DMA_NodeTypeDef FactoryTestNode;
-DMA_QListTypeDef Adc4Queue;
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
@@ -81,46 +79,6 @@ HAL_StatusTypeDef MX_ADCQueue_Config(void)
 
   /* Insert ADCNode to Queue */
   ret |= HAL_DMAEx_List_InsertNode_Tail(&ADCQueue, &ADCNode);
-
-   return ret;
-}
-
-/**
-  * @brief  DMA Linked-list Adc4Queue configuration
-  * @param  None
-  * @retval None
-  */
-HAL_StatusTypeDef MX_Adc4Queue_Config(void)
-{
-  HAL_StatusTypeDef ret = HAL_OK;
-  /* DMA node configuration declaration */
-  DMA_NodeConfTypeDef pNodeConfig;
-
-  /* Set node configuration ################################################*/
-  pNodeConfig.NodeType = DMA_GPDMA_LINEAR_NODE;
-  pNodeConfig.Init.Request = GPDMA1_REQUEST_ADC4;
-  pNodeConfig.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
-  pNodeConfig.Init.Direction = DMA_PERIPH_TO_MEMORY;
-  pNodeConfig.Init.SrcInc = DMA_SINC_FIXED;
-  pNodeConfig.Init.DestInc = DMA_DINC_INCREMENTED;
-  pNodeConfig.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_HALFWORD;
-  pNodeConfig.Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
-  pNodeConfig.Init.SrcBurstLength = 1;
-  pNodeConfig.Init.DestBurstLength = 1;
-  pNodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
-  pNodeConfig.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
-  pNodeConfig.TriggerConfig.TriggerPolarity = DMA_TRIG_POLARITY_MASKED;
-  pNodeConfig.DataHandlingConfig.DataExchange = DMA_EXCHANGE_NONE;
-  pNodeConfig.DataHandlingConfig.DataAlignment = DMA_DATA_RIGHTALIGN_ZEROPADDED;
-  pNodeConfig.SrcAddress = 0;
-  pNodeConfig.DstAddress = 0;
-  pNodeConfig.DataSize = 0;
-
-  /* Build FactoryTestNode Node */
-  ret |= HAL_DMAEx_List_BuildNode(&pNodeConfig, &FactoryTestNode);
-
-  /* Insert FactoryTestNode to Queue */
-  ret |= HAL_DMAEx_List_InsertNode_Tail(&Adc4Queue, &FactoryTestNode);
 
    return ret;
 }

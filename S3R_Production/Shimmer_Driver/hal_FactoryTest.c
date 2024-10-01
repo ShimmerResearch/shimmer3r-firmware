@@ -111,30 +111,49 @@ void print_mcu_details(void)
   sprintf(buffer, " - Revision ID = %lu\r\n", HAL_GetREVID());
   send_test_report(buffer);
 
-  sprintf(buffer, " - Unique ID w0 = %lu\r\n", HAL_GetUIDw0());
+  /*
+   * UID[31:0]: X and Y coordinates on the wafer expressed in BCD format
+   * UID[63:40]: LOT_NUM[23:0] Lot number (ASCII encoded)
+   * UID[39:32]: WAF_NUM[7:0] Wafer number (8-bit unsigned number)
+   * UID[95:64]: LOT_NUM[55:24] Lot number (ASCII encoded)
+   * */
+//  sprintf(buffer, " - Unique ID w0 = 0x%08X\r\n", HAL_GetUIDw0());
+//  send_test_report(buffer);
+//  sprintf(buffer, " - Unique ID w1 = 0x%08X\r\n", HAL_GetUIDw1());
+//  send_test_report(buffer);
+//  sprintf(buffer, " - Unique ID w2 = 0x%08X\r\n", HAL_GetUIDw2());
+//  send_test_report(buffer);
+  sprintf(buffer, " - Unique ID = 0x%08X%08X%08X\r\n", HAL_GetUIDw0(), HAL_GetUIDw1(), HAL_GetUIDw2());
   send_test_report(buffer);
-  sprintf(buffer, " - Unique ID w1 = %lu\r\n", HAL_GetUIDw1());
-  send_test_report(buffer);
-  sprintf(buffer, " - Unique ID w2 = %lu\r\n", HAL_GetUIDw2());
-  send_test_report(buffer);
-
-  S4_ADC_readBatt(1);
-//  stat.battVal
-  //TODO
 
   ADCDebugInfo_t adcDebugInfo;
   getherMcuDebugInfo(&adcDebugInfo);
-  uint8_t vRefFail = (adcDebugInfo.vRefMV > 2980 || adcDebugInfo.vRefMV < 3020);
-  sprintf(buffer, " - %s: VRef = %ldmV\r\n", vRefFail ? "FAIL" : "PASS", adcDebugInfo.vRefMV);
+
+  uint8_t testPass = (adcDebugInfo.vRefMV > 2980 && adcDebugInfo.vRefMV < 3020);
+  sprintf(buffer, " - %s: VRef = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vRefMV);
   send_test_report(buffer);
 
-  sprintf(buffer, " - %s: VBatt Ext = %ldmV\r\n", adcDebugInfo.battMV<3000 ? "FAIL" : "PASS", adcDebugInfo.battMV);
-  send_test_report(buffer);
-  sprintf(buffer, " - %s: VBatt Int = %ldmV\r\n", adcDebugInfo.vbattMV<3000 ? "FAIL" : "PASS", adcDebugInfo.vbattMV);
+  /*
+   * Range 1 (VCORE = 1.2 V) with CPU and peripherals running at up to 160 MHz
+   * Range 2 (VCORE = 1.1 V) with CPU and peripherals running at up to 110 MHz
+   * Range 3 (VCORE = 1.0 V) with CPU and peripherals running at up to 55 MHz
+   * Range 4 (VCORE = 0.9 V) with CPU and peripherals running at up to 25 MHz
+   * */
+  testPass = (adcDebugInfo.vCoreMV > 1120 && adcDebugInfo.vCoreMV < 1280);
+  sprintf(buffer, " - %s: VCore = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV);
   send_test_report(buffer);
 
-  uint8_t tempFail = (adcDebugInfo.temperature > 30 || adcDebugInfo.temperature < 20);
-  sprintf(buffer, " - %s: Temperature = %ld degC\r\n", tempFail ? "FAIL" : "PASS", adcDebugInfo.temperature);
+  testPass = (adcDebugInfo.vBattExtDividerMV > 2980 && adcDebugInfo.vBattExtDividerMV < 4750);
+  sprintf(buffer, " - %s: VBatt Ext = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vBattExtDividerMV);
+  send_test_report(buffer);
+
+  // Specification = 1.9V from voltage external regulator
+  testPass = (adcDebugInfo.vBattIntDividerMV > 1850 && adcDebugInfo.vBattIntDividerMV < 1950);
+  sprintf(buffer, " - %s: VBatt Int = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vBattIntDividerMV);
+  send_test_report(buffer);
+
+  testPass = (adcDebugInfo.temperature > 20 && adcDebugInfo.temperature < 30);
+  sprintf(buffer, " - %s: Temperature = %ld degC\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   send_test_report(buffer);
 }
 

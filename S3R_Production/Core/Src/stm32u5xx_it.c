@@ -57,8 +57,6 @@
 /* External variables --------------------------------------------------------*/
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
-extern ADC_HandleTypeDef hadc4;
-extern DMA_HandleTypeDef handle_GPDMA1_Channel3;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel10;
 extern I2C_HandleTypeDef hi2c1;
@@ -321,20 +319,6 @@ void GPDMA1_Channel2_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles GPDMA1 Channel 3 global interrupt.
-  */
-void GPDMA1_Channel3_IRQHandler(void)
-{
-  /* USER CODE BEGIN GPDMA1_Channel3_IRQn 0 */
-
-  /* USER CODE END GPDMA1_Channel3_IRQn 0 */
-  HAL_DMA_IRQHandler(&handle_GPDMA1_Channel3);
-  /* USER CODE BEGIN GPDMA1_Channel3_IRQn 1 */
-
-  /* USER CODE END GPDMA1_Channel3_IRQn 1 */
-}
-
-/**
   * @brief This function handles GPDMA1 Channel 4 global interrupt.
   */
 void GPDMA1_Channel4_IRQHandler(void)
@@ -594,20 +578,6 @@ void SPI3_IRQHandler(void)
   /* USER CODE BEGIN SPI3_IRQn 1 */
 
   /* USER CODE END SPI3_IRQn 1 */
-}
-
-/**
-  * @brief This function handles ADC4 (12bits) global interrupt.
-  */
-void ADC4_IRQHandler(void)
-{
-  /* USER CODE BEGIN ADC4_IRQn 0 */
-
-  /* USER CODE END ADC4_IRQn 0 */
-  HAL_ADC_IRQHandler(&hadc4);
-  /* USER CODE BEGIN ADC4_IRQn 1 */
-
-  /* USER CODE END ADC4_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
