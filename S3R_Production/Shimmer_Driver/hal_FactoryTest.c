@@ -88,7 +88,7 @@ void print_shimmer_model(void)
   send_test_report("Shimmer model:\r\n");
   if (isDaughterCardIdSet())
   {
-    sprintf(buffer, " - PASS: %s", getDaughtCardIdStrPtr());
+    sprintf(buffer, " - S3R_TEST_0001 - PASS: %s", getDaughtCardIdStrPtr());
     send_test_report(buffer);
     shimmer_expansion_brd *daughterCardId = getDaughtCardId();
     sprintf(buffer, " (SR%d-%d-%d)\r\n", daughterCardId->exp_brd_id,
@@ -97,13 +97,13 @@ void print_shimmer_model(void)
   }
   else
   {
-    send_test_report(" - FAIL: not set\r\n");
+    send_test_report(" - S3R_TEST_0001 - FAIL: not set\r\n");
   }
 }
 
 void led_test(void)
 {
-  send_test_report("LED test:\r\n");
+  send_test_report(" - S3R_TEST_0014 - LED test:\r\n");
 
 #if defined(SHIMMER3R)
   stopLedBlinkTimer();
@@ -187,7 +187,7 @@ void sd_card_test(void)
   send_test_report("SD Card:\r\n");
   if (!stat.isSdInserted)
   {
-    send_test_report(" - FAIL: not detected\r\n");
+    send_test_report(" - S3R_TEST_0004 - FAIL: not detected\r\n");
   }
   else
   {
@@ -197,7 +197,7 @@ void sd_card_test(void)
 
     stat.testResult += SD_test() << 6;
     //SD_test_alternative();
-    sprintf(buffer, " - %s: read/write test\r\n", stat.badFile ? "FAIL" : "PASS");
+    sprintf(buffer, " - S3R_TEST_0004 - %s: read/write test\r\n", stat.badFile ? "FAIL" : "PASS");
     send_test_report(buffer);
   }
 }
@@ -213,21 +213,21 @@ uint8_t bt_module_test(void)
     send_test_report(buffer);
     send_test_report("\r\n");
 
-    sprintf(buffer, " - %s\r\n", getBtVerStrPtr());
+    sprintf(buffer, " - S3R_TEST_0005 - %s\r\n", getBtVerStrPtr());
     send_test_report(buffer);
 
     if (strstr(buffer, "v01.04.16.16") != NULL)
     {
-      send_test_report(" - PASS\r\n");
+      send_test_report(" - S3R_TEST_0005 - PASS\r\n");
     }
     else
     {
-      send_test_report(" - FAIL: incorrect BT firmware version\r\n");
+      send_test_report(" - S3R_TEST_0005 - FAIL: incorrect BT firmware version\r\n");
     }
   }
   else
   {
-    send_test_report(" - FAIL\r\n");
+    send_test_report("- S3R_TEST_0005 - FAIL\r\n");
   }
   return stat.isBtPoweredOn;
 }
@@ -267,11 +267,11 @@ uint8_t I2C_test(void)
   send_test_report("I2C1:\r\n");
 
   uint8_t st_result = lis2mdl_self_test();
-  sprintf(buffer, " - %s: LIS2MDL\r\n", st_result ? "PASS" : "FAIL");
+  sprintf(buffer, " - S3R_TEST_0007 - %s: LIS2MDL\r\n", st_result ? "PASS" : "FAIL");
   send_test_report(buffer);
 
   uint8_t eeprom_result = CAT24C16_test();
-  sprintf(buffer, " - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0008 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
 #endif
@@ -296,11 +296,11 @@ uint8_t SPI_test(void)
   MX_SPI1_Init();
 
   uint8_t lsm6dsv_result = lsm6dsv_self_test();
-  sprintf(buffer, " - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0009 - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
   int8_t bmp390_result = bmp390_self_test();
-  sprintf(buffer, " - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0010 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
   send_test_report(buffer);
   if (bmp390_result)
   {
@@ -312,7 +312,7 @@ uint8_t SPI_test(void)
   if (isAdxl371Detected())
   {
     uint8_t adxl371_result = adxl371_self_test();
-    sprintf(buffer, " - %s: ADXL371\r\n", adxl371_result ? "PASS" : "FAIL");
+    sprintf(buffer, " - S3R_TEST_0011 - %s: ADXL371\r\n", adxl371_result ? "PASS" : "FAIL");
   }
   else
   {
@@ -324,11 +324,11 @@ uint8_t SPI_test(void)
   send_test_report("SPI2:\r\n");
   MX_SPI2_Init();
   uint8_t lis3mdl_result = lis3mdl_self_test();
-  sprintf(buffer, " - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0012 - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
   uint8_t lis2dw12_result = lis2dw12_self_test();
-  sprintf(buffer, " - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
+  sprintf(buffer, " - S3R_TEST_0013 - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
   send_test_report(buffer);
   SPI2_DeInit();
 
