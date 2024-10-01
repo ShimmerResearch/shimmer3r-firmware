@@ -24,10 +24,9 @@ typedef struct
 
 typedef struct
 {
-  int32_t vBattExtDividerMV;
   int32_t vRefMV;
   int32_t temperature;
-  int32_t vBattIntDividerMV;
+  int32_t vBattPinMV;
   int32_t vCoreMV;
 } ADCDebugInfo_t;
 
@@ -39,6 +38,9 @@ typedef struct
 #define BATT_MID_MIN    2568
 #define BATT_MID_MAX    2767
 #define BATT_HIGH_MIN   2717
+
+//TODO change to 3000 for production boards
+#define VREF_EXTERNAL_SUPPLY_MV 3300
 
 #if USE_FREERTOS
 #define S4_ADC_init              S4_RTOS_ADC_init
@@ -99,7 +101,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead);
 void S4_NORM_ADC_rankBatt(void);
 void adcGpioInit(uint32_t pin, GPIO_TypeDef *port);
 void manageReadBatt(uint8_t isBlockingRead);
-void updateBatteryStatus(uint16_t adc_battVal);
+void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr);
 battAlarmInterval_t getBatteryInterval(void);
 
 #if defined(SHIMMER3R)

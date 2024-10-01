@@ -30,6 +30,9 @@ uint32_t run_factory_test(void)
 
     print_mcu_details();
     send_test_report("\r\n");
+
+    print_battery_details();
+    send_test_report("\r\n");
   }
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
@@ -143,17 +146,48 @@ void print_mcu_details(void)
   sprintf(buffer, " - %s: VCore = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV);
   send_test_report(buffer);
 
-  testPass = (adcDebugInfo.vBattExtDividerMV > 2980 && adcDebugInfo.vBattExtDividerMV < 4750);
-  sprintf(buffer, " - %s: VBatt Ext = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vBattExtDividerMV);
-  send_test_report(buffer);
-
   // Specification = 1.9V from voltage external regulator
-  testPass = (adcDebugInfo.vBattIntDividerMV > 1850 && adcDebugInfo.vBattIntDividerMV < 1950);
-  sprintf(buffer, " - %s: VBatt Int = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vBattIntDividerMV);
+  testPass = (adcDebugInfo.vBattPinMV > 1850 && adcDebugInfo.vBattPinMV < 1950);
+  sprintf(buffer, " - %s: VBatt Pin = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV);
   send_test_report(buffer);
 
   testPass = (adcDebugInfo.temperature > 20 && adcDebugInfo.temperature < 30);
   sprintf(buffer, " - %s: Temperature = %ld degC\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
+  send_test_report(buffer);
+}
+
+void print_battery_details(void)
+{
+  send_test_report("Battery:\r\n");
+  manageReadBatt(1);
+
+  uint8_t testPass = (stat.battValMV > 2980 && stat.battValMV < 4750);
+  sprintf(buffer, " - %s: VBatt = %ldmV\r\n", testPass ? "PASS" : "FAIL", stat.battValMV);
+  send_test_report(buffer);
+
+  testPass = stat.battVal[2] == 0xC0 ? 0 : 1;
+  sprintf(buffer, " - %s: Charging status = ", testPass ? "PASS" : "FAIL");
+  send_test_report(buffer);
+
+  switch (stat.battVal[2])
+  {
+  case 0x00:
+    sprintf(buffer, "Suspended\r\n");
+    break;
+  case 0x40:
+    sprintf(buffer, "Fully Charged\r\n");
+    break;
+  case 0x80:
+    sprintf(buffer, "Preconditioning\r\n");
+    break;
+  case 0xC0:
+    sprintf(buffer, "Bad Battery\r\n");
+    break;
+  default:
+    // Shouldn't reach here unless fault with FW
+    sprintf(buffer, "Unknown\r\n");
+    break;
+  }
   send_test_report(buffer);
 }
 

@@ -31,6 +31,7 @@ uint32_t run_factory_test(void);
 void print_date_and_time(void);
 void print_shimmer_model(void);
 void print_mcu_details(void);
+void print_battery_details(void);
 void led_test(void);
 void sd_card_test(void);
 uint8_t bt_module_test(void);

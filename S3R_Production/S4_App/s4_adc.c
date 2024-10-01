@@ -572,7 +572,9 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
 {
   ADC_ChannelConfTypeDef sConfig = { 0 };
   uint8_t adc_counter_sens = 0; //adc channel rank counter
-  uint8_t numChannels = 4;
+  uint8_t numChannels = 3;
+
+  Board_enableSensingPower(1);
 
   // FIXME: reusing ADC1 here because I haven't been able to get DMA LL working with ADC4
   initSensAdc(numChannels);
@@ -588,14 +590,6 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   {
     Error_Handler();
   }
-
-  sConfig.Channel = ADC_CHANNEL_VBATT;
-  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-  if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  adcGpioInit(VBAT_SENSE_Pin, VBAT_SENSE_GPIO_Port);
 
   sConfig.Channel = ADC_CHANNEL_VBAT;
   sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
@@ -628,11 +622,8 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
     adcDebugInfo->vRefMV = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(hadcSensPtr,
         adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution);
 
-  adcDebugInfo->vBattExtDividerMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, adcDebugInfo->vRefMV,
-      adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution) * 2.0;
-
   // 5us sampling time. +-5% error. Vbatt channel is internally divided by 4
-  adcDebugInfo->vBattIntDividerMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, adcDebugInfo->vRefMV,
+  adcDebugInfo->vBattPinMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, adcDebugInfo->vRefMV,
       adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution) * 4;
 
   /* STM32U5Axxx:
@@ -664,6 +655,8 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   }
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
+
+  Board_enableSensingPower(0);
 }
 
 void initSensAdc(uint32_t numChannels)
@@ -1067,7 +1060,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
     if (status == HAL_OK)
     {
       adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
-      updateBatteryStatus(adc_battVal);
+      updateBatteryStatus(adc_battVal, hadcBattPtr);
     }
     HAL_ADC_Stop(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
@@ -1112,7 +1105,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   else if (hadc->Instance == hadcBattPtr->Instance)
   {
     adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
-    updateBatteryStatus(adc_battVal);
+    updateBatteryStatus(adc_battVal, hadcBattPtr);
     HAL_ADC_Stop_IT(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
     Board_enableSensingPower(0);
@@ -1169,7 +1162,7 @@ void manageReadBatt(uint8_t isBlockingRead)
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
   if (stat.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
-    updateBatteryStatus(*(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog]);
+    updateBatteryStatus(*(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog], hadcSensPtr);
   }
   else
   {
@@ -1182,13 +1175,16 @@ void manageReadBatt(uint8_t isBlockingRead)
   }
 }
 
-void updateBatteryStatus(uint16_t adc_battVal)
+void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
 {
   stat.battVal[0] = adc_battVal & 0xff;
   stat.battVal[1] = (adc_battVal >> 8) & 0xff;
   stat.battVal[2] = 0;
   stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
   stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
+
+  stat.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV, adc_battVal, hadcPtr->Init.Resolution) * 2;
+
   S4_ADC_rankBatt();
 }
 
