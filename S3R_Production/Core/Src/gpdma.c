@@ -83,7 +83,6 @@ void MX_GPDMA1_Init(void)
   /* USER CODE BEGIN GPDMA1_Init 2 */
 
   /* USER CODE END GPDMA1_Init 2 */
-
 }
 
 /* USER CODE BEGIN 1 */

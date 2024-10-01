@@ -24,7 +24,8 @@
 #define LINKED_LIST_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C"
+{
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -39,4 +40,3 @@ HAL_StatusTypeDef MX_ADCQueue_Config(void);
 #endif
 
 #endif /* LINKED_LIST_H */
-
