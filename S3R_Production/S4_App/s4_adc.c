@@ -622,9 +622,11 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   adcDebugInfo->vRefMV = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(
       hadcSensPtr, adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution);
 
-  // 5us sampling time. +-5% error. Vbatt channel is internally divided by 4
-  adcDebugInfo->vBattPinMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, adcDebugInfo->vRefMV,
-      adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution) * 4;
+  //5us sampling time. +-5% error. Vbatt channel is internally divided by 4
+  adcDebugInfo->vBattPinMV
+      = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, adcDebugInfo->vRefMV,
+            adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution)
+      * 4;
 
   /* STM32U5Axxx:
    * Average slope (mv/C) = 2.5.
@@ -1182,7 +1184,9 @@ void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
   stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
   stat.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
 
-  stat.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV, adc_battVal, hadcPtr->Init.Resolution) * 2;
+  stat.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
+                       adc_battVal, hadcPtr->Init.Resolution)
+      * 2;
 
   S4_ADC_rankBatt();
 }

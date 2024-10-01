@@ -149,9 +149,10 @@ void print_mcu_details(void)
       adcDebugInfo.vCoreMV);
   send_test_report(buffer);
 
-  // Specification = 1.9V from voltage external regulator
+  //Specification = 1.9V from voltage external regulator
   testPass = (adcDebugInfo.vBattPinMV > 1850 && adcDebugInfo.vBattPinMV < 1950);
-  sprintf(buffer, " - %s: VBatt Pin = %ldmV\r\n", testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV);
+  sprintf(buffer, " - %s: VBatt Pin = %ldmV\r\n", testPass ? "PASS" : "FAIL",
+      adcDebugInfo.vBattPinMV);
   send_test_report(buffer);
 
   testPass = (adcDebugInfo.temperature > 20 && adcDebugInfo.temperature < 30);
@@ -188,7 +189,7 @@ void print_battery_details(void)
     sprintf(buffer, "Bad Battery\r\n");
     break;
   default:
-    // Shouldn't reach here unless fault with FW
+    //Shouldn't reach here unless fault with FW
     sprintf(buffer, "Unknown\r\n");
     break;
   }
