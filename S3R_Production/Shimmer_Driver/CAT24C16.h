@@ -44,8 +44,8 @@
 #define CAT24C16_H
 
 #include "stm32u5xx_hal.h"
-#include "string.h"
 #include <stdint.h>
+#include <string.h>
 
 #ifndef min
 #define min(a, b) ((a < b) ? a : b)

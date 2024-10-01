@@ -41,6 +41,7 @@
  */
 
 #include "s4_ram.h"
+#include "shimmer_definitions.h"
 
 #include "Bluetooth/sd_sync.h"
 #include "bmp3_defs.h"
@@ -217,6 +218,7 @@ void S4Ram_SetDefaultInfomem(void)
   storedConfig.chEnGyro = 1;
   storedConfig.chEnVBattery = 1;
 
+#if defined(SHIMMER3)
   //LSM303DLHC Accel 100Hz, +/-2G, Low Power and High Resolution modes off
   storedConfig.wrAccelRate = LSM303DLHC_ACCEL_100HZ;
   storedConfig.wrAccelRange = ACCEL_2G;
@@ -224,12 +226,29 @@ void S4Ram_SetDefaultInfomem(void)
   storedConfig.gyroRate = 0x9B;
   //LSM303DLHC Mag 75Hz, +/-1.3 Gauss, MPU9150 Gyro +/-500 degrees per second
   storedConfig.magRange = LSM303DLHC_MAG_1_3G;
-  storedConfig.magRate = LSM303DLHC_MAG_75HZ;
-  storedConfig.gyroRange = MPU9150_GYRO_500DPS;
+  storedConfig.magRateLsb = LSM303DLHC_MAG_75HZ;
+  set_config_byte_gyro_range(&storedConfig, MPU9150_GYRO_500DPS);
   //MPU9150 Accel +/-2G, BMP pressure oversampling ratio 1, GSR auto range, EXP_RESET_N pin set low
   // todo: *** *** *** warning! *** *** ***  btStream for this here is not correct, this is mpu9150_accrange, not lsm303 acc range
   storedConfig.altAccelRange = ACCEL_2G;
-  storedConfig.pressurePrecision = BMP180_OSS_8;
+  set_config_byte_pressure_oversampling_ratio(&storedConfig, BMP180_OSS_8);
+#elif defined(SHIMMER3R)
+  //LIS2DW12 Accel 100Hz, +/-2G, Low Power and High Resolution modes off
+  storedConfig.wrAccelRate = LIS2DW12_XL_ODR_100Hz;
+  storedConfig.wrAccelRange = LIS2DW12_2g;
+  //LSM6DSV Gyro sampling rate, next highest to 51.2Hz
+  set_config_byte_gyro_rate(&storedConfig, LSM6DSV_ODR_AT_60Hz);
+  //LIS3MDL Mag 75Hz, +/-4 Gauss, MPU9150 Gyro +/-500 degrees per second
+  storedConfig.magRange = LIS3MDL_4_GAUSS;
+  set_config_byte_mag_rate(&storedConfig, LIS3MDL_UHP_80Hz);
+  //LSM6DSV Gyro +/-500 degrees per second
+  set_config_byte_gyro_range(&storedConfig, LSM6DSV_500dps);
+  storedConfig.altAccelRange = LSM6DSV_2g;
+  set_config_byte_pressure_oversampling_ratio(&storedConfig, BMP3_NO_OVERSAMPLING);
+  set_config_byte_wr_accel_mode(&storedConfig, LIS2DW12_HIGH_PERFORMANCE);
+  storedConfig.altMagRate = LIS2MDL_ODR_100Hz;
+  storedConfig.pressureRate = BMP3_ODR_100_HZ;
+#endif
   storedConfig.gsrRange = GSR_AUTORANGE;
   //set all ExG registers to their reset values
   //square wave test
@@ -317,15 +336,12 @@ void S4Ram_config2SdHead(void)
   sdHeadText[SDH_CONFIG_SETUP_BYTE1] = storedConfig.rawBytes[NV_CONFIG_SETUP_BYTE1];
   sdHeadText[SDH_CONFIG_SETUP_BYTE2] = storedConfig.rawBytes[NV_CONFIG_SETUP_BYTE2];
   sdHeadText[SDH_CONFIG_SETUP_BYTE3] = storedConfig.rawBytes[NV_CONFIG_SETUP_BYTE3];
-  //DMP related - start
   sdHeadText[SDH_SENSORS3] = storedConfig.rawBytes[NV_SENSORS3];
   sdHeadText[SDH_SENSORS4] = storedConfig.rawBytes[NV_SENSORS4];
   sdHeadText[SDH_CONFIG_SETUP_BYTE4] = storedConfig.rawBytes[NV_CONFIG_SETUP_BYTE4];
   sdHeadText[SDH_CONFIG_SETUP_BYTE5] = storedConfig.rawBytes[NV_CONFIG_SETUP_BYTE5];
   sdHeadText[SDH_CONFIG_SETUP_BYTE6] = storedConfig.rawBytes[NV_CONFIG_SETUP_BYTE6];
-  //DMP related - end
-  //little endian in fw, but they want big endian in sw
-  //trivial
+  //little endian in fw, but they want big endian in sw trivial
   sdHeadText[SDH_SHIMMERVERSION_BYTE_0] = DEVICE_VER >> 8;
   sdHeadText[SDH_SHIMMERVERSION_BYTE_1] = DEVICE_VER & 0xff;
   sdHeadText[SDH_FW_VERSION_TYPE_0] = FW_IDENTIFIER >> 8;
@@ -471,4 +487,91 @@ void SetRamCalibFlag(uint8_t flag)
 float get_shimmer_sampling_freq(void)
 {
   return 32768.0 / (float) storedConfig.samplingRateTicks;
+}
+
+void set_config_byte_gyro_range(gConfigBytes *storedConfigPtr, uint8_t value)
+{
+#if defined(SHIMMER3)
+  value = (value <= MPU9250_GYRO_2000DPS) ? value : MPU9250_GYRO_500DPS;
+#elif defined(SHIMMER3R)
+  value = (value <= (LSM6DSV_2000dps + 1)) ? value : LSM6DSV_500dps;
+#endif
+  storedConfigPtr->gyroRangeLsb = value & 0x03;
+  storedConfigPtr->gyroRangeMsb = (value >> 2) & 0x01;
+}
+
+uint8_t get_config_byte_gyro_range(void)
+{
+  return (storedConfig.gyroRangeMsb << 2) | storedConfig.gyroRangeLsb;
+}
+
+void set_config_byte_gyro_rate(gConfigBytes *storedConfigPtr, uint8_t value)
+{
+#if defined(SHIMMER3)
+#elif defined(SHIMMER3R)
+  value = (value < LSM6DSV_ODR_AT_7680Hz) ? value : LSM6DSV_ODR_AT_60Hz;
+#endif
+  storedConfigPtr->gyroRate = value;
+}
+
+void set_config_byte_wr_accel_lp_mode(gConfigBytes *storedConfigPtr, uint8_t value)
+{
+#if defined(SHIMMER3)
+  value = (value == 1) ? 1 : 0;
+#elif defined(SHIMMER3R)
+  value = (value <= 3) ? value : 0;
+#endif
+  storedConfigPtr->wrAccelLpModeLsb = value & 0x01;
+  storedConfigPtr->wrAccelLpModeMsb = (value >> 1) & 0x01;
+}
+
+uint8_t get_config_byte_wr_accel_lp_mode(void)
+{
+  return (storedConfig.wrAccelLpModeMsb << 1) | storedConfig.wrAccelLpModeLsb;
+}
+
+void set_config_byte_wr_accel_mode(gConfigBytes *storedConfigPtr, lis2dw12_mode_t value)
+{
+  storedConfigPtr->wrAccelHrMode = (value >> 2) & 0x01;
+  set_config_byte_wr_accel_lp_mode(storedConfigPtr, value & 0x03);
+}
+
+lis2dw12_mode_t get_config_byte_wr_accel_mode(void)
+{
+  lis2dw12_mode_t wrAccelMode = (lis2dw12_mode_t) ((storedConfig.wrAccelHrMode << 2)
+      | get_config_byte_wr_accel_lp_mode());
+  return wrAccelMode;
+}
+
+void set_config_byte_pressure_oversampling_ratio(gConfigBytes *storedConfigPtr, uint8_t value)
+{
+#if defined(SHIMMER3)
+  value = (value < 4) ? (value & 0x03) : BMP180_OSS_1;
+#elif defined(SHIMMER3R)
+  value = (value <= BMP3_OVERSAMPLING_32X) ? value : BMP3_NO_OVERSAMPLING;
+#endif
+  storedConfigPtr->pressureOversamplingRatioLsb = value & 0x03;
+  storedConfigPtr->pressureOversamplingRatioMsb = (value >> 2) & 0x01;
+}
+
+uint8_t get_config_byte_pressure_oversampling_ratio(void)
+{
+  return (storedConfig.pressureOversamplingRatioMsb << 2)
+      | storedConfig.pressureOversamplingRatioLsb;
+}
+
+void set_config_byte_mag_rate(gConfigBytes *storedConfigPtr, uint8_t value)
+{
+#if defined(SHIMMER3)
+  value = (value < 4) ? (value & 0x03) : BMP180_OSS_1;
+#elif defined(SHIMMER3R)
+  value = value <= (LIS3MDL_UHP_80Hz) ? value : LIS3MDL_UHP_80Hz;
+#endif
+  storedConfigPtr->magRateLsb = value & 0x07;
+  storedConfigPtr->magRateMsb = (value >> 3) & 0x07;
+}
+
+uint8_t get_config_byte_mag_rate(void)
+{
+  return (storedConfig.magRateMsb << 3) | storedConfig.magRateLsb;
 }

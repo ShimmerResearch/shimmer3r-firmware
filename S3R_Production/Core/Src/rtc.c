@@ -22,6 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "shimmer_definitions.h"
+#include "shimmer_externs.h"
+
 uint64_t rwcConfigTime64;
 uint32_t S4_RTC_Status = RTC_STATUS_ZERO;
 
@@ -699,7 +702,7 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 
   //TODO carried from Shimmer4, LED blinking only works when not sensing
 
-  if (stat.isSensing && !stat.isConfiguring)
+  if (shimmerStatus.isSensing && !shimmerStatus.isConfiguring)
   {
 //if(!green0_cnt++){
 //   Board_ledToggle(LED_GREEN0);

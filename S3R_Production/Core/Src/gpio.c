@@ -23,6 +23,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "shimmer_externs.h"
+
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -190,25 +192,25 @@ void GPIO_userButtonCheck()
 {
   if (HAL_GPIO_ReadPin(BOOT0_USER_BTN_GPIO_Port, BOOT0_USER_BTN_Pin) == GPIO_PIN_SET)
   { //pressed
-    stat.isButtonPressed = 1;
+    shimmerStatus.isButtonPressed = 1;
     Board_ledOn(LED_YELLOW);
     GPIO_tsPress = RTC_get64();
   }
   else
   {
-    stat.isButtonPressed = 0;
+    shimmerStatus.isButtonPressed = 0;
     Board_ledOff(LED_YELLOW);
     GPIO_tsRelease = RTC_get64();
     if (GPIO_tsRelease - GPIO_tsLastRelease > 3277)
     {
-      if (stat.isSensing == 0)
+      if (shimmerStatus.isSensing == 0)
       {
-        stat.sdlogCmd = 1;
+        shimmerStatus.sdlogCmd = 1;
         S4_Task_set(TASK_STARTSENSING);
       }
       else
       {
-        stat.sdlogCmd = 2;
+        shimmerStatus.sdlogCmd = 2;
         S4_Task_set(TASK_STOPSENSING);
       }
     }
@@ -242,7 +244,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   case GPIO_INTERNAL1_Pin:
     //TODO check if product is ExG unit
     //EXG1 DRDY active low
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       //EXG_dataReadyChip1();
       ext_cnt1++;
@@ -258,7 +260,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   case GPIO_INTERNAL0_Pin:
     //TODO check if product is ExG unit
     //EXG2 DRDY active low
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       //EXG_gatherDataStart();
       __NOP();
@@ -304,7 +306,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   switch (GPIO_Pin)
   {
   case GPIO_INTERNAL1_Pin:
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       //EXG_dataReadyChip1();
       ext_cnt1++;
@@ -319,7 +321,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     break; //EXG1
            //DOCK_Pin and gpio_internal share the same pin
   case GPIO_INTERNAL0_Pin:
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
 
       //EXG_gatherDataStart();
@@ -354,13 +356,13 @@ uint8_t SD_insertedCheck()
 {
   if (HAL_GPIO_ReadPin(SD_DETECT_N_GPIO_Port, SD_DETECT_N_Pin) == GPIO_PIN_RESET)
   { //inserted
-    stat.isSdInserted = 1;
+    shimmerStatus.isSdInserted = 1;
   }
   else
   {
-    stat.isSdInserted = 0;
+    shimmerStatus.isSdInserted = 0;
   }
-  return stat.isSdInserted;
+  return shimmerStatus.isSdInserted;
 }
 
 void SdPowerOn(void)

@@ -22,6 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "shimmer_definitions.h"
+#include "shimmer_externs.h"
+
 //static STATTypeDef *pStat;
 //static SENSINGTypeDef *pSensing;
 
@@ -47,7 +50,7 @@ void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 0 */
 
   //Control Return if peripheral is already initialised
-  if (!stat.isDocked || isDockUartInitialised())
+  if (!shimmerStatus.isDocked || isDockUartInitialised())
   {
     return;
   }
@@ -400,7 +403,7 @@ void DockUart_init(UART_HandleTypeDef *huart)
 
   HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
 
-  if (stat.isSensing)
+  if (shimmerStatus.isSensing)
   {
     DockUart_disable();
   }
@@ -458,7 +461,7 @@ void ExpUart_rxCallback(uint8_t data)
 
 uint8_t ExpUart_TxIT(uint8_t *pData, uint16_t Size)
 {
-  //if(!stat.isDocked){
+  //if(!shimmerStatus.isDocked){
   //   if(HAL_OK != HAL_UART_Transmit_IT(huartExp, pData, Size))
   //      return 1;//fail
   //}
@@ -476,18 +479,18 @@ uint8_t BtUart_connectIntCheck(void)
   { //connected
     //HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_RESET);//blue
     BT_connectionInterrupt(1);
-    stat.isBtConnected = 1;
+    shimmerStatus.isBtConnected = 1;
     Board_ledOn(LED_BLUE);
   }
   else
   {
     //HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_SET);//blue
     BT_connectionInterrupt(0);
-    stat.isBtConnected = 0;
+    shimmerStatus.isBtConnected = 0;
     S4_Task_set(TASK_STOPSENSING);
     Board_ledOff(LED_BLUE);
   }
-  return stat.isBtConnected;
+  return shimmerStatus.isBtConnected;
 }
 
 //void BtUart_rtsIntCheck(void) {
@@ -503,23 +506,23 @@ uint8_t DockUart_interruptCheck(void)
   if (HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET)
   { //docked
 #endif
-    stat.isDocked = 1;
+    shimmerStatus.isDocked = 1;
     //Board_sd2Pc();
     //Board_ledOn(LED_GREEN0);
   }
   else
   {
-    stat.isDocked = 0;
+    shimmerStatus.isDocked = 0;
     //Board_sd2Arm();
     //SD_mount(1);
     //Board_ledOff(LED_GREEN0);
   }
-  return stat.isDocked;
+  return shimmerStatus.isDocked;
 }
 
 void DockUart_setup(void)
 {
-  if (stat.isDocked)
+  if (shimmerStatus.isDocked)
   {
     Board_sd2Pc();
   }

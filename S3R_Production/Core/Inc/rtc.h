@@ -31,7 +31,7 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
-#include "s4__cfg.h"
+#include <shimmer_include.h>
 
   /* USER CODE END Includes */
 

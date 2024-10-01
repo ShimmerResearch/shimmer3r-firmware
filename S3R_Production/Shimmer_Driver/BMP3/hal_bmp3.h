@@ -18,7 +18,7 @@ void bmp3_driver_init(void);
 void bmp3_selectDevice(void);
 void bmp3_unselectDevice(void);
 int8_t bmp3_self_test(void);
-void bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t precision);
+void bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSamplingRatio);
 HAL_StatusTypeDef bmp3_pressure_temperature_get(uint8_t *buf);
 bool bmp3_is_drdy_int_enabled(void);
 bool bmp3_is_shimmer_freq_higher(float shimmerSamplingFreq, uint8_t rate);

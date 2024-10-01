@@ -19,8 +19,8 @@
 #include "shimmer_bt_comms.h"
 //#include "RN4X.h"
 //#include "../../shimmer_btsd.h"
-#include "s4.h"
 #include "s4_taskList.h"
+#include "shimmer_definitions.h"
 
 uint8_t nodeName[MAX_NODES][MAX_CHARS], shortExpFlag;
 uint8_t syncNodeCnt, syncNodeNum, syncThis, syncNodeSucc, nReboot, currNodeSucc, cReboot;
@@ -423,7 +423,7 @@ void SyncCenterT10(void)
 #else
   *(resPacket + packet_length++) = SET_SD_SYNC_COMMAND;
 #endif
-  *(resPacket + packet_length++) = stat.isSensing;
+  *(resPacket + packet_length++) = shimmerStatus.isSensing;
   myLocalTimeLong = RTC_get64();
   *(uint64_t *) (resPacket + packet_length) = myLocalTimeLong;
   packet_length += 8;
@@ -521,7 +521,7 @@ void SyncNodeR10(void)
     }
     else
     {
-      if (S4Ram_getStoredConfig()->singleTouchStart && !stat.isSensing && sd_tolog)
+      if (S4Ram_getStoredConfig()->singleTouchStart && !shimmerStatus.isSensing && sd_tolog)
       {
         taskSetCb(TASK_STARTSENSING);
       }
@@ -689,19 +689,19 @@ void handleSyncTimerTrigger(void)
   }
   else //idle: no_RC mode
   {
-    if (stat.isDocked)
+    if (shimmerStatus.isDocked)
     {
-      if (stat.isSensing)
+      if (shimmerStatus.isSensing)
       {
         /* Note SDLog calls TASK_STOPSENSING here whereas
          * LogAndStream could be in the middle of streaming over
          * Bluetooth */
         //stopLogging = 1;
         //TODO temp putting this in for Shimmer3r
-        stat.sdlogCmd = 2;
+        shimmerStatus.sdlogCmd = 2;
         taskSetCb(TASK_STOPSENSING);
       }
-      if (stat.isBtPoweredOn)
+      if (shimmerStatus.isBtPoweredOn)
       {
         btStopCb(0);
       }
@@ -711,7 +711,7 @@ void handleSyncTimerTrigger(void)
 
 void handleSyncTimerTriggerCenter(void)
 {
-  if (stat.isSensing && (syncNodeNum > 0))
+  if (shimmerStatus.isSensing && (syncNodeNum > 0))
   {
     if (syncCnt == 1)
     {
@@ -771,7 +771,7 @@ void handleSyncTimerTriggerCenter(void)
             }
             else if ((cReboot >= 2) && (cReboot < 5 * SYNC_FACTOR))
             {
-              if (stat.isBtPoweredOn)
+              if (shimmerStatus.isBtPoweredOn)
               {
                 syncCurrNodeDone = syncCurrNode + SYNC_CD * SYNC_FACTOR - 1;
                 cReboot = 0;

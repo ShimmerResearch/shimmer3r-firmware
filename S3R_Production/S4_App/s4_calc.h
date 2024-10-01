@@ -45,7 +45,7 @@
 #ifndef S4_CALC_H
 #define S4_CALC_H
 
-#include "s4__cfg.h"
+#include <shimmer_include.h>
 
 #define CRC_INIT 0xB0CA
 //uint16_t crcByte(uint16_t crc, uint8_t b);
