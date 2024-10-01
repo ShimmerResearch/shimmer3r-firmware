@@ -293,7 +293,7 @@ void sd_card_test(void)
 
     shimmerStatus.testResult += SD_test() << 6;
     //SD_test_alternative();
-    sprintf(buffer, " - S3R_TEST_0009 - %s: read/write test\r\n",
+    sprintf(buffer, " - S3R_TEST_0009 - %s: MCU read/write test\r\n",
         shimmerStatus.badFile ? "FAIL" : "PASS");
     send_test_report(buffer);
   }
