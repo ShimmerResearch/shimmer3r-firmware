@@ -82,7 +82,7 @@ void print_date_and_time(void)
   sprintf(buffer, "Date (yyyy-mm-dd): %.4u-%.2u-%.2u\r\n",
       ((sDate.Year >= 70 ? 1900 : 2000) + sDate.Year), sDate.Month, sDate.Date);
   send_test_report(buffer);
-  sprintf(buffer, "Time (hh:mm:ss): %.2u:%.2u:%.2u\r\n", sTime.Hours,
+  sprintf(buffer, "Time (hh:mm:ss): %.2u:%.2u:%.2u (UTC)\r\n", sTime.Hours,
       sTime.Minutes, sTime.Seconds);
   send_test_report(buffer);
 }
