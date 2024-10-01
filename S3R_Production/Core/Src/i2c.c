@@ -520,7 +520,7 @@ void I2C_startSensing(void)
     if (configBytes->chEnMag)
     {
       LSM303DLHC_magInit(get_config_byte_mag_rate(), //sampling rate
-          configBytes->magRange);                 //gain
+          configBytes->magRange);                    //gain
     }
   }
 
