@@ -324,7 +324,7 @@ void S4Ram_SetDefaultInfomem(void)
 
 void S4Ram_config2SdHead(void)
 {
-  memset(sdHeadText, 0xff, SDHEAD_LEN);
+  memset(sdHeadText, 0xff, SD_HEAD_SIZE);
 
   sdHeadText[SDH_SAMPLE_RATE_0] = storedConfig.rawBytes[NV_SAMPLING_RATE];
   sdHeadText[SDH_SAMPLE_RATE_1] = storedConfig.rawBytes[NV_SAMPLING_RATE + 1];

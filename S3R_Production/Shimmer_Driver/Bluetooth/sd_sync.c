@@ -50,7 +50,7 @@ uint8_t (*taskSetCb)(TASK_FLAGS);
 //extern uint8_t sensing, onSingleTouch, docked, btPowerOn, stopLogging;
 extern SENSINGTypeDef sensing;
 extern STATTypeDef stat;
-extern uint8_t sdHeadText[SDHEAD_LEN];
+extern uint8_t sdHeadText[SD_HEAD_SIZE];
 static uint8_t all0xff[7U] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 void sdSyncInit(void (*btStart_cb)(void),
