@@ -30,14 +30,14 @@ typedef struct
   int32_t vCoreMV;
 } ADCDebugInfo_t;
 
-#define ADC_CONFIG_NONE         0
-#define ADC_CONFIG_SENS         1
-#define ADC_CONFIG_BATT         2
+#define ADC_CONFIG_NONE 0
+#define ADC_CONFIG_SENS 1
+#define ADC_CONFIG_BATT 2
 
-#define BATT_LOW_MAX            2618
-#define BATT_MID_MIN            2568
-#define BATT_MID_MAX            2767
-#define BATT_HIGH_MIN           2717
+#define BATT_LOW_MAX    2618
+#define BATT_MID_MIN    2568
+#define BATT_MID_MAX    2767
+#define BATT_HIGH_MIN   2717
 
 #if USE_FREERTOS
 #define S4_ADC_init              S4_RTOS_ADC_init
