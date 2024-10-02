@@ -35,20 +35,7 @@ uint32_t run_factory_test(void)
 
     print_battery_details();
     send_test_report("\r\n");
-  }
 
-  if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
-  {
-    led_test();
-
-    if (factoryTestToRun == FACTORY_TEST_MAIN)
-    {
-      send_test_report("\r\n");
-    }
-  }
-
-  if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
-  {
     sd_card_test();
     send_test_report("\r\n");
 
@@ -64,6 +51,15 @@ uint32_t run_factory_test(void)
     shimmerStatus.testResult += SPI_test() << 16;
 
     Board_enableSensingPower(0);
+  }
+
+  if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
+  {
+    if (factoryTestToRun == FACTORY_TEST_MAIN)
+    {
+      send_test_report("\r\n");
+    }
+    led_test();
   }
 
   send_test_report("//***************************** TEST END "
@@ -411,6 +407,7 @@ uint8_t SPI_test(void)
     send_test_report(" - ");
     bmp3_check_rslt("BMP390", bmp390_result, buffer);
     send_test_report(buffer);
+    send_test_report(" - S3R_TEST_0015 - FAIL: Resolve main error with BMP390\r\n");
   }
   else
   {
