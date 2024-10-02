@@ -24,19 +24,20 @@
 #define LINKED_LIST_H
 
 #ifdef __cplusplus
-extern "C"
-{
+ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-  /* Exported types ------------------------------------------------------------*/
-  /* Exported constants --------------------------------------------------------*/
-  HAL_StatusTypeDef MX_ADCQueue_Config(void);
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+HAL_StatusTypeDef MX_ADCQueue_Config(void);
+HAL_StatusTypeDef MX_MicQueue_Config(void);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* LINKED_LIST_H */
+

@@ -22,37 +22,40 @@
 #define __ADC_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-  /* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc1;
 
-  extern ADC_HandleTypeDef hadc2;
+extern ADC_HandleTypeDef hadc2;
 
-  /* USER CODE BEGIN Private defines */
+extern ADC_HandleTypeDef hadc4;
 
-  /* USER CODE END Private defines */
+/* USER CODE BEGIN Private defines */
 
-  void MX_ADC1_Init(void);
-  void MX_ADC2_Init(void);
+/* USER CODE END Private defines */
 
-  /* USER CODE BEGIN Prototypes */
+void MX_ADC1_Init(void);
+void MX_ADC2_Init(void);
+void MX_ADC4_Init(void);
+
+/* USER CODE BEGIN Prototypes */
 
   ADC_HandleTypeDef *getHadc1(void);
   ADC_HandleTypeDef *getHadc2(void);
 
-  /* USER CODE END Prototypes */
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __ADC_H__ */
+
