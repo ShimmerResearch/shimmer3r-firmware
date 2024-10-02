@@ -50,13 +50,13 @@
 #define VREF_EXTERNAL_SUPPLY_MV 3300
 
 //Legacy approach for 5 individual LEDs before two RGB LEDs were introduced
-#define LED_RED      0x01 //== BATT_LOW
-#define LED_YELLOW   0x02 //== BATT_MID
-#define LED_GREEN0   0x04 //== BATT_HIGH
-#define LED_ALL_BATT (LED_RED + LED_YELLOW + LED_GREEN0)
-#define LED_GREEN1   0x08
-#define LED_BLUE     0x10
-#define LED_ALL      0xFF
+#define LED_RED                 0x01 //== BATT_LOW
+#define LED_YELLOW              0x02 //== BATT_MID
+#define LED_GREEN0              0x04 //== BATT_HIGH
+#define LED_ALL_BATT            (LED_RED + LED_YELLOW + LED_GREEN0)
+#define LED_GREEN1              0x08
+#define LED_BLUE                0x10
+#define LED_ALL                 0xFF
 
 #if defined(SHIMMER3R)
 typedef enum

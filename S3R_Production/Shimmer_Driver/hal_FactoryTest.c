@@ -135,7 +135,7 @@ void print_mcu_details(void)
       && adcDebugInfo.vRefMV < TEST_THRESHOLD_VREF_UPPER);
   sprintf(buffer, " - S3R_TEST_0003 - %s: VRef = %ldmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.vRefMV,
-          TEST_THRESHOLD_VREF_LOWER, TEST_THRESHOLD_VREF_UPPER);
+      TEST_THRESHOLD_VREF_LOWER, TEST_THRESHOLD_VREF_UPPER);
   send_test_report(buffer);
 
   /*
@@ -148,7 +148,7 @@ void print_mcu_details(void)
       && adcDebugInfo.vCoreMV < TEST_THRESHOLD_VCORE_UPPER);
   sprintf(buffer, " - S3R_TEST_0004 - %s: VCore = %ldmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV,
-          TEST_THRESHOLD_VCORE_LOWER, TEST_THRESHOLD_VCORE_UPPER);
+      TEST_THRESHOLD_VCORE_LOWER, TEST_THRESHOLD_VCORE_UPPER);
   send_test_report(buffer);
 
   //Specification = 1.9V from voltage external regulator
@@ -156,14 +156,14 @@ void print_mcu_details(void)
       && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_VBATT_PIN_UPPER);
   sprintf(buffer, " - S3R_TEST_0005 - %s: VBatt pin = %ldmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
-          TEST_THRESHOLD_VBATT_PIN_LOWER, TEST_THRESHOLD_VBATT_PIN_UPPER);
+      TEST_THRESHOLD_VBATT_PIN_LOWER, TEST_THRESHOLD_VBATT_PIN_UPPER);
   send_test_report(buffer);
 
   testPass = (adcDebugInfo.temperature > TEST_THRESHOLD_MCU_TEMPERATURE_LOWER
       && adcDebugInfo.temperature < TEST_THRESHOLD_MCU_TEMPERATURE_UPPER);
   sprintf(buffer, " - S3R_TEST_0006 - %s: Temperature = %ld\xB0 C (%d-%d\xB0 C)\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.temperature,
-          TEST_THRESHOLD_MCU_TEMPERATURE_LOWER, TEST_THRESHOLD_MCU_TEMPERATURE_UPPER);
+      TEST_THRESHOLD_MCU_TEMPERATURE_LOWER, TEST_THRESHOLD_MCU_TEMPERATURE_UPPER);
   send_test_report(buffer);
 }
 
@@ -176,7 +176,7 @@ void print_battery_details(void)
       && shimmerStatus.battValMV < TEST_THRESHOLD_VBATT_UPPER);
   sprintf(buffer, " - S3R_TEST_0007 - %s: VBatt = %ldmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", shimmerStatus.battValMV,
-          TEST_THRESHOLD_VBATT_LOWER, TEST_THRESHOLD_VBATT_UPPER);
+      TEST_THRESHOLD_VBATT_LOWER, TEST_THRESHOLD_VBATT_UPPER);
   send_test_report(buffer);
 
   testPass = shimmerStatus.battVal[2] == 0xC0 ? 0 : 1;
@@ -416,10 +416,9 @@ uint8_t SPI_test(void)
         && bmp3_data->temperature < TEST_THRESHOLD_BMP_TEMPERATURE_UPPER);
     sprintf(buffer, " - S3R_TEST_0015 - %s: Temperature = %.2f\xB0 C (%d-%d\xB0 C)\r\n",
         testPass ? "PASS" : "FAIL", bmp3_data->temperature,
-            TEST_THRESHOLD_BMP_TEMPERATURE_LOWER, TEST_THRESHOLD_BMP_TEMPERATURE_UPPER);
+        TEST_THRESHOLD_BMP_TEMPERATURE_LOWER, TEST_THRESHOLD_BMP_TEMPERATURE_UPPER);
     send_test_report(buffer);
   }
-
 
   if (isAdxl371Detected())
   {
