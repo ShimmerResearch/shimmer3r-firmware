@@ -407,7 +407,8 @@ uint8_t SPI_test(void)
     send_test_report(" - ");
     bmp3_check_rslt("BMP390", bmp390_result, buffer);
     send_test_report(buffer);
-    send_test_report(" - S3R_TEST_0015 - FAIL: Resolve main error with BMP390\r\n");
+    send_test_report(
+        " - S3R_TEST_0015 - FAIL: Resolve main error with BMP390\r\n");
   }
   else
   {
