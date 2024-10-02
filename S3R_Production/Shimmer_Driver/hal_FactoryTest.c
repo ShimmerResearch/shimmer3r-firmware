@@ -10,6 +10,8 @@
 #include "i2c.h"
 #include "spi.h"
 
+#include "bmp3_defs.h"
+
 factory_test_target_t factoryTestTarget = PRINT_TO_DEBUGGER;
 factory_test_t factoryTestToRun;
 
@@ -133,9 +135,11 @@ void print_mcu_details(void)
   ADCDebugInfo_t adcDebugInfo;
   getherMcuDebugInfo(&adcDebugInfo);
 
-  uint8_t testPass = (adcDebugInfo.vRefMV > 2980 && adcDebugInfo.vRefMV < 3020);
-  sprintf(buffer, " - S3R_TEST_0003 - %s: VRef = %ldmV\r\n",
-      testPass ? "PASS" : "FAIL", adcDebugInfo.vRefMV);
+  uint8_t testPass = (adcDebugInfo.vRefMV > TEST_THRESHOLD_VREF_LOWER
+      && adcDebugInfo.vRefMV < TEST_THRESHOLD_VREF_UPPER);
+  sprintf(buffer, " - S3R_TEST_0003 - %s: VRef = %ldmV (%d-%dmV)\r\n",
+      testPass ? "PASS" : "FAIL", adcDebugInfo.vRefMV,
+          TEST_THRESHOLD_VREF_LOWER, TEST_THRESHOLD_VREF_UPPER);
   send_test_report(buffer);
 
   /*
@@ -144,20 +148,26 @@ void print_mcu_details(void)
    * Range 3 (VCORE = 1.0 V) with CPU and peripherals running at up to 55 MHz
    * Range 4 (VCORE = 0.9 V) with CPU and peripherals running at up to 25 MHz
    * */
-  testPass = (adcDebugInfo.vCoreMV > 1120 && adcDebugInfo.vCoreMV < 1280);
-  sprintf(buffer, " - S3R_TEST_0004 - %s: VCore = %ldmV\r\n",
-      testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV);
+  testPass = (adcDebugInfo.vCoreMV > TEST_THRESHOLD_VCORE_LOWER
+      && adcDebugInfo.vCoreMV < TEST_THRESHOLD_VCORE_UPPER);
+  sprintf(buffer, " - S3R_TEST_0004 - %s: VCore = %ldmV (%d-%dmV)\r\n",
+      testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV,
+          TEST_THRESHOLD_VCORE_LOWER, TEST_THRESHOLD_VCORE_UPPER);
   send_test_report(buffer);
 
   //Specification = 1.9V from voltage external regulator
-  testPass = (adcDebugInfo.vBattPinMV > 1850 && adcDebugInfo.vBattPinMV < 1950);
-  sprintf(buffer, " - S3R_TEST_0005 - %s: VBatt Pin = %ldmV\r\n",
-      testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV);
+  testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_VBATT_PIN_LOWER
+      && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_VBATT_PIN_UPPER);
+  sprintf(buffer, " - S3R_TEST_0005 - %s: VBatt pin = %ldmV (%d-%dmV)\r\n",
+      testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
+          TEST_THRESHOLD_VBATT_PIN_LOWER, TEST_THRESHOLD_VBATT_PIN_UPPER);
   send_test_report(buffer);
 
-  testPass = (adcDebugInfo.temperature > 20 && adcDebugInfo.temperature < 30);
-  sprintf(buffer, " - S3R_TEST_0006 - %s: Temperature = %ld degC\r\n",
-      testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
+  testPass = (adcDebugInfo.temperature > TEST_THRESHOLD_MCU_TEMPERATURE_LOWER
+      && adcDebugInfo.temperature < TEST_THRESHOLD_MCU_TEMPERATURE_UPPER);
+  sprintf(buffer, " - S3R_TEST_0006 - %s: Temperature = %ld\xB0 C (%d-%d\xB0 C)\r\n",
+      testPass ? "PASS" : "FAIL", adcDebugInfo.temperature,
+          TEST_THRESHOLD_MCU_TEMPERATURE_LOWER, TEST_THRESHOLD_MCU_TEMPERATURE_UPPER);
   send_test_report(buffer);
 }
 
@@ -166,9 +176,11 @@ void print_battery_details(void)
   send_test_report("Battery:\r\n");
   manageReadBatt(1);
 
-  uint8_t testPass = (shimmerStatus.battValMV > 2980 && shimmerStatus.battValMV < 4750);
-  sprintf(buffer, " - S3R_TEST_0007 - %s: VBatt = %ldmV\r\n",
-      testPass ? "PASS" : "FAIL", shimmerStatus.battValMV);
+  uint8_t testPass = (shimmerStatus.battValMV > TEST_THRESHOLD_VBATT_LOWER
+      && shimmerStatus.battValMV < TEST_THRESHOLD_VBATT_UPPER);
+  sprintf(buffer, " - S3R_TEST_0007 - %s: VBatt = %ldmV (%d-%dmV)\r\n",
+      testPass ? "PASS" : "FAIL", shimmerStatus.battValMV,
+          TEST_THRESHOLD_VBATT_LOWER, TEST_THRESHOLD_VBATT_UPPER);
   send_test_report(buffer);
 
   testPass = shimmerStatus.battVal[2] == 0xC0 ? 0 : 1;
@@ -199,7 +211,7 @@ void print_battery_details(void)
 
 void led_test(void)
 {
-  send_test_report("LED test (S3R_TEST_0019):\r\n");
+  send_test_report("LED test (S3R_TEST_0020):\r\n");
 
 #if defined(SHIMMER3R)
   stopLedBlinkTimer();
@@ -314,18 +326,8 @@ uint8_t bt_module_test(void)
     send_test_report(buffer);
 
     sprintf(buffer, " - S3R_TEST_0010 - %s BT firmware version\r\n",
-        strstr(buffer, "v01.04.16.16") != NULL ? "PASS: correct" : "FAIL: incorrect");
+        strstr(buffer, TEST_BT_MODULE_FW) != NULL ? "PASS: Correct" : "FAIL: Incorrect");
     send_test_report(buffer);
-
-    //if (strstr(buffer, "v01.04.16.16") != NULL)
-    //{
-    //  send_test_report(" - S3R_TEST_0005 - PASS: correct BT firmware version\r\n");
-    //}
-    //else
-    //{
-    //  send_test_report(
-    //      " - S3R_TEST_0005 - FAIL: incorrect BT firmware version\r\n");
-    //}
   }
   else
   {
@@ -410,11 +412,22 @@ uint8_t SPI_test(void)
     bmp3_check_rslt("BMP390", bmp390_result, buffer);
     send_test_report(buffer);
   }
+  else
+  {
+    struct bmp3_data *bmp3_data = get_bmp3_selftest_data();
+    uint8_t testPass = (bmp3_data->temperature > TEST_THRESHOLD_BMP_TEMPERATURE_LOWER
+        && bmp3_data->temperature < TEST_THRESHOLD_BMP_TEMPERATURE_UPPER);
+    sprintf(buffer, " - S3R_TEST_0015 - %s: Temperature = %.2f\xB0 C (%d-%d\xB0 C)\r\n",
+        testPass ? "PASS" : "FAIL", bmp3_data->temperature,
+            TEST_THRESHOLD_BMP_TEMPERATURE_LOWER, TEST_THRESHOLD_BMP_TEMPERATURE_UPPER);
+    send_test_report(buffer);
+  }
+
 
   if (isAdxl371Detected())
   {
     uint8_t adxl371_result = adxl371_self_test();
-    sprintf(buffer, " - S3R_TEST_0015 - %s: ADXL371\r\n", adxl371_result ? "PASS" : "FAIL");
+    sprintf(buffer, " - S3R_TEST_0016 - %s: ADXL371\r\n", adxl371_result ? "PASS" : "FAIL");
   }
   else
   {
@@ -426,11 +439,11 @@ uint8_t SPI_test(void)
   send_test_report("SPI2:\r\n");
   MX_SPI2_Init();
   uint8_t lis3mdl_result = lis3mdl_self_test();
-  sprintf(buffer, " - S3R_TEST_0016 - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0017 - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
   uint8_t lis2dw12_result = lis2dw12_self_test();
-  sprintf(buffer, " - S3R_TEST_0017 - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
+  sprintf(buffer, " - S3R_TEST_0018 - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
   send_test_report(buffer);
   SPI2_DeInit();
 

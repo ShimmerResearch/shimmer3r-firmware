@@ -39,9 +39,6 @@ typedef struct
 #define BATT_MID_MAX            2767
 #define BATT_HIGH_MIN           2717
 
-//TODO change to 3000 for production boards
-#define VREF_EXTERNAL_SUPPLY_MV 3300
-
 #if USE_FREERTOS
 #define S4_ADC_init              S4_RTOS_ADC_init
 #define S4_ADC_init1             S4_RTOS_ADC_init1
