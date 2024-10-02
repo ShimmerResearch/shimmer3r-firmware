@@ -290,7 +290,8 @@ NV_SENSORS5
 #endif
 
 //SD Log file header format
-#define SDHEAD_LEN                      384 //0-255
+#define SD_HEAD_SIZE                    384
+#define SD_WRITE_BUF_SIZE               512
 
 #define SDH_SAMPLE_RATE_0               0
 #define SDH_SAMPLE_RATE_1               1
@@ -432,8 +433,6 @@ NV_SENSORS5
 #define SDH_TCXO                        0x10
 ////#define SDH_EXP_POWER                  0x08//config has this bit
 ////#define SDH_MONITOR                    0x04
-#define SD_WRITE_BUF_SIZE               512
-#define SD_HEAD_SIZE                    256
 
 #define MAX_CHARS                       13
 #define UINT32_LEN                      11 //10+1, where the last byte should be 0x00

@@ -1156,7 +1156,7 @@ void ShimmerCalibSyncFromDumpRamSingleSensor(uint8_t sensor)
   }
 
   ShimmerCalib_singleSensorRead(&sc1);
-  memcpy(&S4Ram_getStoredConfig()->rawBytes[scs_infomem_offset], sc1.data.raw, sc1.data_len);
+  memcpy(&configBytes->rawBytes[scs_infomem_offset], sc1.data.raw, sc1.data_len);
   InfoMem_update();
   memcpy(S4Ram_getSdHeadText() + scs_sdhead_offset, sc1.data.raw, sc1.data_len);
   memcpy(S4Ram_getSdHeadText() + scs_sdhead_ts, sc1.ts, 8);
