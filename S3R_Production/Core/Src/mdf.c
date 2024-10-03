@@ -23,17 +23,7 @@
 /* USER CODE BEGIN 0 */
 
 #include "hal_Board.h"
-uint8_t data[100] = { 0 };
-
-#define MDF_DECIMATION_RATIO(__FREQUENCY__)                 \
-  ((__FREQUENCY__) == (AUDIO_FREQUENCY_8K))      ? (512U) : \
-      ((__FREQUENCY__) == (AUDIO_FREQUENCY_11K)) ? (256U) : \
-      ((__FREQUENCY__) == (AUDIO_FREQUENCY_16K)) ? (176U) : \
-      ((__FREQUENCY__) == (AUDIO_FREQUENCY_22K)) ? (128U) : \
-      ((__FREQUENCY__) == (AUDIO_FREQUENCY_32K)) ? (88U) :  \
-      ((__FREQUENCY__) == (AUDIO_FREQUENCY_44K)) ? (64U) :  \
-      ((__FREQUENCY__) == (AUDIO_FREQUENCY_48K)) ? (44U) :  \
-                                                   (128U)
+uint8_t data[512] = { 0 };
 
 MDF_DmaConfigTypeDef mdfDmaConfig;
 /* USER CODE END 0 */
@@ -61,7 +51,7 @@ void MX_MDF1_Init(void)
   MdfHandle4.Init.CommonParam.ProcClockDivider = 1;
   MdfHandle4.Init.CommonParam.OutputClock.Activation = DISABLE;
   MdfHandle4.Init.SerialInterface.Activation = ENABLE;
-  MdfHandle4.Init.SerialInterface.Mode = MDF_SITF_MANCHESTER_FALLING_MODE;
+  MdfHandle4.Init.SerialInterface.Mode = MDF_SITF_NORMAL_SPI_MODE;
   MdfHandle4.Init.SerialInterface.ClockSource = MDF_SITF_CKI_SOURCE;
   MdfHandle4.Init.SerialInterface.Threshold = 4;
   MdfHandle4.Init.FilterBistream = MDF_BITSTREAM4_RISING;
@@ -77,43 +67,18 @@ void MX_MDF1_Init(void)
   */
   MdfFilterConfig4.DataSource = MDF_DATA_SOURCE_BSMX;
   MdfFilterConfig4.Delay = 0;
-  MdfFilterConfig4.CicMode = MDF_TWO_FILTERS_MCIC_FASTSINC;
-  MdfFilterConfig4.DecimationRatio = 2;
+  MdfFilterConfig4.CicMode = MDF_ONE_FILTER_SINC4;
+  MdfFilterConfig4.DecimationRatio = 64;
   MdfFilterConfig4.Offset = 0;
-  MdfFilterConfig4.Gain = 0;
+  MdfFilterConfig4.Gain = 5;
   MdfFilterConfig4.ReshapeFilter.Activation = DISABLE;
-  MdfFilterConfig4.HighPassFilter.Activation = DISABLE;
+  MdfFilterConfig4.HighPassFilter.Activation = ENABLE;
   MdfFilterConfig4.Integrator.Activation = DISABLE;
   MdfFilterConfig4.SoundActivity.Activation = DISABLE;
   MdfFilterConfig4.AcquisitionMode = MDF_MODE_ASYNC_CONT;
   MdfFilterConfig4.FifoThreshold = MDF_FIFO_THRESHOLD_NOT_EMPTY;
-  MdfFilterConfig4.DiscardSamples = 1;
+  MdfFilterConfig4.DiscardSamples = 0;
   /* USER CODE BEGIN MDF1_Init 2 */
-
-  MdfFilterConfig4.ReshapeFilter.Activation = DISABLE;
-  MdfFilterConfig4.ReshapeFilter.DecimationRatio = MDF_RSF_DECIMATION_RATIO_4;
-  MdfFilterConfig4.HighPassFilter.Activation = DISABLE;
-  MdfFilterConfig4.HighPassFilter.CutOffFrequency = MDF_HPF_CUTOFF_0_000625FPCM;
-  MdfFilterConfig4.Integrator.Activation = DISABLE;
-  MdfFilterConfig4.Integrator.Value = 4U;
-  MdfFilterConfig4.Integrator.OutputDivision = MDF_INTEGRATOR_OUTPUT_NO_DIV;
-  MdfFilterConfig4.SoundActivity.Activation = DISABLE;
-  MdfFilterConfig4.SoundActivity.Mode = MDF_SAD_VOICE_ACTIVITY_DETECTOR;
-  MdfFilterConfig4.SoundActivity.FrameSize = MDF_SAD_8_PCM_SAMPLES;
-  MdfFilterConfig4.SoundActivity.Hysteresis = DISABLE;
-  MdfFilterConfig4.SoundActivity.SoundTriggerEvent = MDF_SAD_ENTER_DETECT;
-  MdfFilterConfig4.SoundActivity.DataMemoryTransfer = MDF_SAD_NO_MEMORY_TRANSFER;
-  MdfFilterConfig4.SoundActivity.MinNoiseLevel = 0U;
-  MdfFilterConfig4.SoundActivity.HangoverWindow = MDF_SAD_HANGOVER_4_FRAMES;
-  MdfFilterConfig4.SoundActivity.LearningFrames = MDF_SAD_LEARNING_2_FRAMES;
-  MdfFilterConfig4.SoundActivity.AmbientNoiseSlope = 0U;
-  MdfFilterConfig4.SoundActivity.SignalNoiseThreshold = MDF_SAD_SIGNAL_NOISE_18DB;
-  MdfFilterConfig4.AcquisitionMode = MDF_MODE_ASYNC_CONT;
-  MdfFilterConfig4.FifoThreshold = MDF_FIFO_THRESHOLD_NOT_EMPTY;
-  MdfFilterConfig4.DiscardSamples = 1U;
-  MdfFilterConfig4.Trigger.Source = MDF_FILTER_TRIG_TRGO;
-  MdfFilterConfig4.Trigger.Edge = MDF_FILTER_TRIG_RISING_EDGE;
-  MdfFilterConfig4.SnapshotFormat = MDF_SNAPSHOT_23BITS;
 
   /* USER CODE END MDF1_Init 2 */
 }
@@ -199,7 +164,7 @@ void startDataGather(void)
 {
 
   mdfDmaConfig.Address = (uint32_t) data;
-  mdfDmaConfig.DataLength = 10U;
+  mdfDmaConfig.DataLength = 16U;
   mdfDmaConfig.MsbOnly = ENABLE;
   HAL_MDF_AcqStart_DMA(&MdfHandle4, &MdfFilterConfig4, &mdfDmaConfig);
 }
