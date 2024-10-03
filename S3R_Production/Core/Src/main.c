@@ -698,6 +698,9 @@ void ReadSdConfiguration(void)
   ParseConfig();
 }
 
+/* TODO: Overriding HAL_DELAY() with this because USB peripheral init based on VBUS interrupt was
+ * cause HAL_DELAY() to be stuck in a loop changing the interrupt priority didn't help*/
+
 void HAL_Delay(uint32_t Delay)
 {
   /* Delay for amount of milliseconds */
