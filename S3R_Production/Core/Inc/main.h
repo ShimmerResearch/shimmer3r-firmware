@@ -130,6 +130,8 @@ void Error_Handler(void);
 #define BT_CONNECTION_Pin GPIO_PIN_14
 #define BT_CONNECTION_GPIO_Port GPIOD
 #define BT_CONNECTION_EXTI_IRQn EXTI14_IRQn
+#define BT_CYSPP_Pin GPIO_PIN_15
+#define BT_CYSPP_GPIO_Port GPIOD
 #define BT_CP_ROLE_Pin GPIO_PIN_6
 #define BT_CP_ROLE_GPIO_Port GPIOC
 #define SW_BT_Pin GPIO_PIN_7
