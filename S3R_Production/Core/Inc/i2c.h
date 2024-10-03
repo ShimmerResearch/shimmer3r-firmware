@@ -31,14 +31,22 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
-#include "s4.h"
-#include "s4__cfg.h"
+#include "shimmer_definitions.h"
+#include <shimmer_include.h>
 
   /* USER CODE END Includes */
 
   extern I2C_HandleTypeDef hi2c1;
 
   /* USER CODE BEGIN Private defines */
+
+  typedef enum
+  {
+    I2C_BUSES_ENABLED_NONE,
+    I2C1_BUS_FLAG = 0x01, //EEPROM and LIS2MDL
+    I2C3_BUS_FLAG = 0x02, //I2C via dock connector
+    I2C4_BUS_FLAG = 0x04  //I2C via internal expansion pins
+  } I2C_BUS_INDEX;
 
   typedef enum
   { //i2c
@@ -97,6 +105,14 @@ extern "C"
 #endif
   } I2C_SENSOR;
 
+  typedef enum
+  {
+    I2C1_CHIP_INDEX_LIS2MDL,
+    I2C1_CHIP_INDEX_EEPROM,
+    I2C1_CHIP_QTY,
+    I2C1_CHIP_ALL
+  } I2C1_CHIP_INDEX;
+
   typedef struct
   { //i2c_1 - Sensors
     I2C_STATUS status;
@@ -104,6 +120,7 @@ extern "C"
     uint8_t sensorList[20];
     uint8_t sensorLen;
     uint8_t sensorCnt;
+    I2C_BUS_INDEX busId;
   } I2CTypeDef;
 
   //typedef struct {//i2c_2 - BatteryMonitor
@@ -170,8 +187,7 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
-  void I2C_init(void);
-  void set_power_i2c_main_bus(uint8_t state);
+  void I2C1_DeInit(void);
   void I2C_scan_busses(void);
   void I2C_scan(I2C_HandleTypeDef *hi2c);
   I2C_HandleTypeDef *I2C_getHandlerSensor(void);
@@ -183,7 +199,7 @@ extern "C"
   void I2C_readBattSetFreq(uint16_t val);
 #endif
 
-  void I2cSensing(I2C_SENSING_TYPE start);
+  void I2cSensing(I2CTypeDef *i2cSensingInfo, I2C_SENSING_TYPE start);
 #if defined(SHIMMER4_SDK)
   void I2cBattMonitor(I2C_SENSING_TYPE start);
 #endif
@@ -195,9 +211,12 @@ extern "C"
 #if defined(SHIMMER4_SDK)
   void I2cBatt_gatherDataCb(void (*done_cb)(void));
 #endif
+#if defined(SHIMMER3R)
+  void I2C_busGatherDataDone_cb(uint8_t flag);
+#endif
+#if defined(SHIMMER4_SDK)
   void I2C_gatherDataStart(void);
   void I2cSens_gatherDataStart(void);
-#if defined(SHIMMER4_SDK)
   void I2cBatt_gatherDataStart(void);
 #endif
 
@@ -225,11 +244,11 @@ extern "C"
   void I2cBatt_stopSensing(void);
 #endif
 
-  void I2cSens_sensorNext(void);
+  uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo);
 
 #if defined(SHIMMER3R)
   bool areI2cChannelsEnabled(void);
-  void I2C2_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
+  void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
 #elif defined(SHIMMER4_SDK)
 void I2cBatt_sensorNext(void);
 #endif

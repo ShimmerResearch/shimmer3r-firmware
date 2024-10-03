@@ -45,6 +45,8 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
+  void MDF1_DeInit(void);
+
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

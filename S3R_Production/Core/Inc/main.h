@@ -68,8 +68,8 @@ extern "C"
 #define LED_LWR_BLU_GPIO_Port        GPIOE
 #define CS_LIS3MDL_Pin               GPIO_PIN_6
 #define CS_LIS3MDL_GPIO_Port         GPIOE
-#define USER_BTN_N_Pin               GPIO_PIN_13
-#define USER_BTN_N_GPIO_Port         GPIOC
+#define GPIO_INTERNAL0_Pin           GPIO_PIN_13
+#define GPIO_INTERNAL0_GPIO_Port     GPIOC
 #define MIC_SD_Pin                   GPIO_PIN_0
 #define MIC_SD_GPIO_Port             GPIOC
 #define MIC_CK_Pin                   GPIO_PIN_1
@@ -110,8 +110,8 @@ extern "C"
 #define LIS2MDL_DRDY_GPIO_Port       GPIOE
 #define BMP390_INT_Pin               GPIO_PIN_11
 #define BMP390_INT_GPIO_Port         GPIOE
-#define SW_SPI1_Pin                  GPIO_PIN_12
-#define SW_SPI1_GPIO_Port            GPIOE
+#define SW_SENSE_IO_Pin              GPIO_PIN_12
+#define SW_SENSE_IO_GPIO_Port        GPIOE
 #define CHG_STAT1_Pin                GPIO_PIN_10
 #define CHG_STAT1_GPIO_Port          GPIOB
 #define CHG_STAT2_Pin                GPIO_PIN_11
@@ -141,8 +141,8 @@ extern "C"
 #define SDMMC1_D0_GPIO_Port          GPIOC
 #define SDMMC1_D1_Pin                GPIO_PIN_9
 #define SDMMC1_D1_GPIO_Port          GPIOC
-#define SW_SPI2_Pin                  GPIO_PIN_8
-#define SW_SPI2_GPIO_Port            GPIOA
+#define SW_MIC_Pin                   GPIO_PIN_8
+#define SW_MIC_GPIO_Port             GPIOA
 #define USB_VBUS_Pin                 GPIO_PIN_9
 #define USB_VBUS_GPIO_Port           GPIOA
 #define CS_HIGH_G_Pin                GPIO_PIN_10
@@ -161,8 +161,8 @@ extern "C"
 #define SW_FLASH_GPIO_Port           GPIOD
 #define SDMMC1_CMD_Pin               GPIO_PIN_2
 #define SDMMC1_CMD_GPIO_Port         GPIOD
-#define GPIO_INTERNAL0_Pin           GPIO_PIN_3
-#define GPIO_INTERNAL0_GPIO_Port     GPIOD
+#define SW_SENSE_Pin                 GPIO_PIN_3
+#define SW_SENSE_GPIO_Port           GPIOD
 #define GPIO_INTERNAL1_Pin           GPIO_PIN_4
 #define GPIO_INTERNAL1_GPIO_Port     GPIOD
 #define GPIO_INTERNAL2_Pin           GPIO_PIN_5
@@ -175,8 +175,11 @@ extern "C"
 #define DOCK_TXD_GPIO_Port           GPIOB
 #define DOCK_RXD_Pin                 GPIO_PIN_7
 #define DOCK_RXD_GPIO_Port           GPIOB
-#define SW_I2C1_Pin                  GPIO_PIN_0
-#define SW_I2C1_GPIO_Port            GPIOE
+#define BOOT0_USER_BTN_Pin           GPIO_PIN_3
+#define BOOT0_USER_BTN_GPIO_Port     GPIOH
+#define BOOT0_USER_BTN_EXTI_IRQn     EXTI3_IRQn
+#define SW_GSR_Pin                   GPIO_PIN_0
+#define SW_GSR_GPIO_Port             GPIOE
 
   /* USER CODE BEGIN Private defines */
 

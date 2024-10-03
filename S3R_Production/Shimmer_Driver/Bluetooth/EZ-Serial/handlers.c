@@ -44,7 +44,8 @@
 
 #include "stm32u5xx.h"
 
-#include "../../S4_App/s4.h"
+#include "../../S4_App/shimmer_definitions.h"
+#include "../../S4_App/shimmer_externs.h"
 #include "../EZ-Serial/handlers.h"
 #include "../shimmer_bt_comms.h"
 
@@ -329,7 +330,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if (isBtConnected())
+  if (shimmerStatus.isBtConnected)
   {
     if (dataRateTestState)
     {
@@ -530,6 +531,11 @@ HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len)
   //ret_val = HAL_UART_Transmit_DMA(huart, bt_txBuf, len);
 
   //SHIMMER_PRINTF("BT_write=%d\n", len);
+
+  if (getSpaceInBtTxBuf() <= len)
+  {
+    return HAL_ERROR; //fail
+  }
 
   pushBytesToBtTxBuf(buf, len);
 

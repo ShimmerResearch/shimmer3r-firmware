@@ -45,7 +45,7 @@
 
 #include "CAT24C16.h"
 #include "hal_Board.h"
-#include "s4__cfg.h"
+#include <shimmer_include.h>
 
 I2C_HandleTypeDef *eeprom_hi2c;
 HAL_StatusTypeDef cat24c16_result;
@@ -56,26 +56,19 @@ uint8_t eepromContents[512] = { 0 };
 void CAT24C16_init(I2C_HandleTypeDef *hi2c)
 {
   eeprom_hi2c = hi2c;
-
-#if !IS_CONNECTED_EEPROM
-  eepromContents[0] = EXP_BRD_PROTO3_DELUXE; //0xFF
-  eepromContents[1] = 9;                     //0xFF
-  eepromContents[2] = 0;                     //0xFF
-#endif
 }
 
 void CAT24C16_powerOn(void)
 {
-  //TODO initialise I2C if not on?
-  set_power_i2c_main_bus(1);
-  HAL_Delay(2); //2ms
+  Board_enableSensingPower(1);
+  MX_I2C1_Init();
 }
 
 void CAT24C16_powerOff(void)
 {
   HAL_Delay(5); //5ms to ensure no writes pending
-  set_power_i2c_main_bus(0);
-  //TODO deinitialise I2C?
+  I2C1_DeInit();
+  Board_enableSensingPower(0);
 }
 
 void CAT24C16_read(uint16_t address, uint16_t length, uint8_t *outBuffer)
@@ -226,3 +219,12 @@ void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enu
   }
 #endif
 }
+
+#if !IS_CONNECTED_EEPROM
+void setMockExpansionBrdDetails(void)
+{
+  eepromContents[0] = EXP_BRD_PROTO3_DELUXE; //0xFF
+  eepromContents[1] = 9;                     //0xFF
+  eepromContents[2] = 0;                     //0xFF
+}
+#endif

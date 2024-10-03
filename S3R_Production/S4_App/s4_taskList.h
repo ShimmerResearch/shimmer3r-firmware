@@ -42,10 +42,10 @@
 
 #ifndef S4_TASKLIST_H
 #define S4_TASKLIST_H
+#include <shimmer_include.h>
 #include <stdint.h>
 
-#include "s4.h"
-#include "s4__cfg.h"
+#include "shimmer_definitions.h"
 
 #if USE_FREERTOS
 #define S4_Task_init       S4_RTOS_Task_init

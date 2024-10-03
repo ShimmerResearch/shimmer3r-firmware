@@ -1,624 +1,1461 @@
-/*
+/**
  ******************************************************************************
- * @file    lsm6dsv_self_test.c
- * @author  Sensors Software Solution Team
- * @brief   This file implements the self test procedure.
- *
+ * @file    lsm6dsv.c
+ * @author  MEMS Software Solutions Team
+ * @brief   LSM6DSV driver file
  ******************************************************************************
  * @attention
  *
- * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
- * All rights reserved.</center></h2>
+ * Copyright (c) 2022 STMicroelectronics.
+ * All rights reserved.
  *
- * This software component is licensed by ST under BSD 3-Clause license,
- * the "License"; You may not use this file except in compliance with the
- * License. You may obtain a copy of the License at:
- *                        opensource.org/licenses/BSD-3-Clause
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
  *
  ******************************************************************************
  */
 
-/*
- * This example was developed using the following STMicroelectronics
- * evaluation boards:
- *
- * - STEVAL_MKI109V3 + STEVAL-MKI196V1
- * - NUCLEO_F411RE + X_NUCLEO_IKS01A3
- * - DISCOVERY_SPC584B + STEVAL-MKI196V1
- *
- * Used interfaces:
- *
- * STEVAL_MKI109V3    - Host side:   USB (Virtual COM)
- *                    - Sensor side: SPI(Default) / I2C(supported)
- *
- * NUCLEO_STM32F411RE - Host side: UART(COM) to USB bridge
- *                    - I2C(Default) / SPI(supported)
- *
- * DISCOVERY_SPC584B  - Host side: UART(COM) to USB bridge
- *                    - Sensor side: I2C(Default) / SPI(supported)
- *
- * If you need to run this example on a different hardware platform a
- * modification of the functions: `platform_write`, `platform_read`,
- * `tx_com` and 'platform_init' is required.
- *
- */
-
-/* STMicroelectronics evaluation boards definition
- *
- * Please uncomment ONLY the evaluation boards in use.
- * If a different hardware is used please comment all
- * following target board and redefine yours.
- */
-
-//#define STEVAL_MKI109V3  /* little endian */
-//#define NUCLEO_F411RE    /* little endian */
-//#define SPC584B_DIS      /* big endian */
-
-/* ATTENTION: By default the driver is little endian. If you need switch
- *            to big endian please see "Endianness definitions" in the
- *            header file of the driver (_reg.h).
- */
-
-//https://github.com/STMicroelectronics/STMems_Standard_C_drivers/tree/master/lsm6dsv_STdC/examples
-
-#if defined(STEVAL_MKI109V3)
-/* MKI109V3: Define communication interface */
-#define SENSOR_BUS hspi2
-/* MKI109V3: Vdd and Vddio power supply values */
-#define PWM_3V3    915
-
-#elif defined(NUCLEO_F411RE)
-/* NUCLEO_F411RE: Define communication interface */
-#define SENSOR_BUS hi2c1
-
-#elif defined(SPC584B_DIS)
-/* DISCOVERY_SPC584B: Define communication interface */
-#define SENSOR_BUS I2CD1
-
-#elif defined(SHIMMER3R)
-#define SENSOR_BUS hspi1
-
-#define CS_PORT    CS_LSM6DSV_GPIO_Port
-#define CS_PIN     CS_LSM6DSV_Pin
-
-#endif
-
 /* Includes ------------------------------------------------------------------*/
-#include <stdio.h>
-#include <string.h>
+#include "lsm6dsv.h"
 
-#if defined(NUCLEO_F411RE)
-#include "lsm6dsv_reg.h"
-
-#include "gpio.h"
-#include "i2c.h"
-#include "stm32f4xx_hal.h"
-#include "usart.h"
-
-#elif defined(STEVAL_MKI109V3)
-#include "lsm6dsv_reg.h"
-
-#include "gpio.h"
-#include "spi.h"
-#include "stm32f4xx_hal.h"
-#include "tim.h"
-#include "usbd_cdc_if.h"
-
-#elif defined(SPC584B_DIS)
-#include "lsm6dsv_reg.h"
-
-#include "components.h"
-
-#elif defined(SHIMMER3R)
-#include "lsm6dsv-pid/lsm6dsv_reg.h"
-
-#include "gpio.h"
-#include "spi.h"
-#include "stm32u5xx.h"
-#include "usart.h"
-#endif
-
-/* Private macro -------------------------------------------------------------*/
-#define BOOT_TIME                 10
-
-/* Self test limits. */
-#define SELF_TEST_MIN_ST_LIMIT_mg 50.0f
-#define SELF_TEST_MAX_ST_LIMIT_mg 1700.0f
-#define MIN_ST_LIMIT_mdps         150000.0f
-#define MAX_ST_LIMIT_mdps         700000.0f
-
-/* Self test results. */
-#define ST_PASS                   1U
-#define ST_FAIL                   0U
-
-uint8_t tx_buffer[1000];
-
-/* Private variables ---------------------------------------------------------*/
-static stmdev_ctx_t dev_ctx;
-
-/* Extern variables ----------------------------------------------------------*/
-
-/* Private functions ---------------------------------------------------------*/
-
-/*
- *   WARNING:
- *   Functions declare in this section are defined at the end of this file
- *   and are strictly related to the hardware platform used.
- *
+/** @addtogroup BSP BSP
+ * @{
  */
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
-static void tx_com(uint8_t *tx_buffer, uint16_t len);
-static void platform_delay(uint32_t ms);
-#if defined(SHIMMER3R)
+
+/** @addtogroup Component Component
+ * @{
+ */
+
+/** @defgroup LSM6DSV LSM6DSV
+ * @{
+ */
+
+/** @defgroup LSM6DSV_Exported_Variables LSM6DSV Exported Variables
+ * @{
+ */
+
+LSM6DSV_CommonDrv_t LSM6DSV_COMMON_Driver = {
+  LSM6DSV_Init,
+  LSM6DSV_DeInit,
+  LSM6DSV_ReadID,
+  LSM6DSV_GetCapabilities,
+};
+
+LSM6DSV_ACC_Drv_t LSM6DSV_ACC_Driver = {
+  LSM6DSV_ACC_Enable,
+  LSM6DSV_ACC_Disable,
+  LSM6DSV_ACC_GetSensitivity,
+  LSM6DSV_ACC_GetOutputDataRate,
+  LSM6DSV_ACC_SetOutputDataRate,
+  LSM6DSV_ACC_GetFullScale,
+  LSM6DSV_ACC_SetFullScale,
+  LSM6DSV_ACC_GetAxes,
+  LSM6DSV_ACC_GetAxesRaw,
+};
+
+LSM6DSV_GYRO_Drv_t LSM6DSV_GYRO_Driver = {
+  LSM6DSV_GYRO_Enable,
+  LSM6DSV_GYRO_Disable,
+  LSM6DSV_GYRO_GetSensitivity,
+  LSM6DSV_GYRO_GetOutputDataRate,
+  LSM6DSV_GYRO_SetOutputDataRate,
+  LSM6DSV_GYRO_GetFullScale,
+  LSM6DSV_GYRO_SetFullScale,
+  LSM6DSV_GYRO_GetAxes,
+  LSM6DSV_GYRO_GetAxesRaw,
+};
+
+/**
+ * @}
+ */
+
+/** @defgroup LSM6DSV_Private_Function_Prototypes LSM6DSV Private Function Prototypes
+ * @{
+ */
+
+static int32_t ReadRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length);
+static int32_t WriteRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length);
+static int32_t LSM6DSV_ACC_SetOutputDataRate_When_Enabled(LSM6DSV_Object_t *pObj, float_t Odr);
 static int32_t
-platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len);
-#else
-static void platform_init(void);
-#endif
+LSM6DSV_ACC_SetOutputDataRate_When_Disabled(LSM6DSV_Object_t *pObj, float_t Odr);
+static int32_t
+LSM6DSV_GYRO_SetOutputDataRate_When_Enabled(LSM6DSV_Object_t *pObj, float_t Odr);
+static int32_t
+LSM6DSV_GYRO_SetOutputDataRate_When_Disabled(LSM6DSV_Object_t *pObj, float_t Odr);
 
-/* Main Example --------------------------------------------------------------*/
-uint8_t lsm6dsv_self_test(void)
+/**
+ * @}
+ */
+
+/** @defgroup LSM6DSV_Exported_Functions LSM6DSV Exported Functions
+ * @{
+ */
+
+/**
+ * @brief  Register Component Bus IO operations
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_RegisterBusIO(LSM6DSV_Object_t *pObj, LSM6DSV_IO_t *pIO)
 {
-  lsm6dsv_all_sources_t all_sources;
-  int16_t data_raw[3];
-  float val_st_off[3];
-  float val_st_on[3];
-  float test_val[3];
-  uint8_t st_result;
-  uint8_t whoamI;
-  lsm6dsv_reset_t rst;
-  uint8_t i;
-  uint8_t j;
+  int32_t ret = LSM6DSV_OK;
 
-  /* Check device ID */
-  lsm6dsv_device_id_get(&dev_ctx, &whoamI);
-
-  if (whoamI != LSM6DSV_ID)
+  if (pObj == NULL)
   {
-    st_result = ST_FAIL;
+    ret = LSM6DSV_ERROR;
   }
   else
   {
-    /* Restore default configuration */
-    lsm6dsv_reset_set(&dev_ctx, LSM6DSV_RESTORE_CTRL_REGS);
-    do
+    pObj->IO.Init = pIO->Init;
+    pObj->IO.DeInit = pIO->DeInit;
+    pObj->IO.BusType = pIO->BusType;
+    pObj->IO.Address = pIO->Address;
+    pObj->IO.WriteReg = pIO->WriteReg;
+    pObj->IO.ReadReg = pIO->ReadReg;
+    pObj->IO.GetTick = pIO->GetTick;
+
+    pObj->Ctx.read_reg = ReadRegWrap;
+    pObj->Ctx.write_reg = WriteRegWrap;
+    pObj->Ctx.mdelay = pIO->Delay;
+    pObj->Ctx.handle = pObj;
+
+    if (pObj->IO.Init == NULL)
     {
-      lsm6dsv_reset_get(&dev_ctx, &rst);
-    } while (rst != LSM6DSV_READY);
-
-    /* Enable Block Data Update */
-    lsm6dsv_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
-    /*
-     * Accelerometer Self Test
-     */
-    /* Set Output Data Rate */
-    lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_60Hz);
-    /* Set full scale */
-    lsm6dsv_xl_full_scale_set(&dev_ctx, LSM6DSV_4g);
-    /* Wait stable output */
-    platform_delay(100);
-
-    /* Check if new value available */
-    do
+      ret = LSM6DSV_ERROR;
+    }
+    else if (pObj->IO.Init() != LSM6DSV_OK)
     {
-      lsm6dsv_all_sources_get(&dev_ctx, &all_sources);
-    } while (!all_sources.drdy_xl);
-
-    /* Read dummy data and discard it */
-    lsm6dsv_acceleration_raw_get(&dev_ctx, data_raw);
-    /* Read 5 sample and get the average vale for each axis */
-    memset(val_st_off, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < 5; i++)
+      ret = LSM6DSV_ERROR;
+    }
+    else
     {
-      /* Check if new value available */
-      do
+      if (pObj->IO.BusType == LSM6DSV_SPI_3WIRES_BUS) /* SPI 3-Wires */
       {
-        lsm6dsv_all_sources_get(&dev_ctx, &all_sources);
-      } while (!all_sources.drdy_xl);
+        /* Enable the SPI 3-Wires support only the first time */
+        if (pObj->is_initialized == 0U)
+        {
+          /* Enable SPI 3-Wires on the component */
+          uint8_t data = 0x04;
 
-      /* Read data and accumulate the mg value */
-      lsm6dsv_acceleration_raw_get(&dev_ctx, data_raw);
+          if (LSM6DSV_Write_Reg(pObj, LSM6DSV_CTRL3, data) != LSM6DSV_OK)
+          {
+            ret = LSM6DSV_ERROR;
+          }
 
-      for (j = 0; j < 3; j++)
-      {
-        val_st_off[j] += lsm6dsv_from_fs4_to_mg(data_raw[j]);
+          if (LSM6DSV_Write_Reg(pObj, LSM6DSV_IF_CFG, data) != LSM6DSV_OK)
+          {
+            ret = LSM6DSV_ERROR;
+          }
+        }
       }
     }
-
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_off[i] /= 5.0f;
-    }
-
-    /* Enable Self Test positive (or negative) */
-    lsm6dsv_xl_self_test_set(&dev_ctx, LSM6DSV_XL_ST_NEGATIVE);
-    //lsm6dsv_xl_self_test_set(&dev_ctx, LSM6DSV_XL_ST_POSITIVE);
-    /* Wait stable output */
-    platform_delay(100);
-
-    /* Check if new value available */
-    do
-    {
-      lsm6dsv_all_sources_get(&dev_ctx, &all_sources);
-    } while (!all_sources.drdy_xl);
-
-    /* Read dummy data and discard it */
-    lsm6dsv_acceleration_raw_get(&dev_ctx, data_raw);
-    /* Read 5 sample and get the average vale for each axis */
-    memset(val_st_on, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < 5; i++)
-    {
-      /* Check if new value available */
-      do
-      {
-        lsm6dsv_all_sources_get(&dev_ctx, &all_sources);
-      } while (!all_sources.drdy_xl);
-
-      /* Read data and accumulate the mg value */
-      lsm6dsv_acceleration_raw_get(&dev_ctx, data_raw);
-
-      for (j = 0; j < 3; j++)
-      {
-        val_st_on[j] += lsm6dsv_from_fs4_to_mg(data_raw[j]);
-      }
-    }
-
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_on[i] /= 5.0f;
-    }
-
-    /* Calculate the mg values for self test */
-    for (i = 0; i < 3; i++)
-    {
-      test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
-    }
-
-    /* Check self test limit */
-    st_result = ST_PASS;
-
-    for (i = 0; i < 3; i++)
-    {
-      if ((SELF_TEST_MIN_ST_LIMIT_mg > test_val[i]) || (test_val[i] > SELF_TEST_MAX_ST_LIMIT_mg))
-      {
-        st_result = ST_FAIL;
-      }
-    }
-
-    /* Disable Self Test */
-    lsm6dsv_xl_self_test_set(&dev_ctx, LSM6DSV_XL_ST_DISABLE);
-    /* Disable sensor. */
-    lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_OFF);
-    /*
-     * Gyroscope Self Test
-     */
-    /* Set Output Data Rate */
-    lsm6dsv_gy_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_240Hz);
-    /* Set full scale */
-    lsm6dsv_gy_full_scale_set(&dev_ctx, LSM6DSV_2000dps);
-    /* Wait stable output */
-    platform_delay(100);
-
-    /* Check if new value available */
-    do
-    {
-      lsm6dsv_all_sources_get(&dev_ctx, &all_sources);
-    } while (!all_sources.drdy_gy);
-
-    /* Read dummy data and discard it */
-    lsm6dsv_angular_rate_raw_get(&dev_ctx, data_raw);
-    /* Read 5 sample and get the average vale for each axis */
-    memset(val_st_off, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < 5; i++)
-    {
-      /* Check if new value available */
-      do
-      {
-        lsm6dsv_all_sources_get(&dev_ctx, &all_sources);
-      } while (!all_sources.drdy_gy);
-      /* Read data and accumulate the mg value */
-      lsm6dsv_angular_rate_raw_get(&dev_ctx, data_raw);
-
-      for (j = 0; j < 3; j++)
-      {
-        val_st_off[j] += lsm6dsv_from_fs2000_to_mdps(data_raw[j]);
-      }
-    }
-
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_off[i] /= 5.0f;
-    }
-
-    /* Enable Self Test positive (or negative) */
-    lsm6dsv_gy_self_test_set(&dev_ctx, LSM6DSV_GY_ST_POSITIVE);
-    //lsm6dsv_gy_self_test_set(&dev_ctx, LIS2DH12_GY_ST_NEGATIVE);
-    /* Wait stable output */
-    platform_delay(100);
-    /* Read 5 sample and get the average vale for each axis */
-    memset(val_st_on, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < 5; i++)
-    {
-      /* Check if new value available */
-      do
-      {
-        lsm6dsv_all_sources_get(&dev_ctx, &all_sources);
-      } while (!all_sources.drdy_gy);
-
-      /* Read data and accumulate the mg value */
-      lsm6dsv_angular_rate_raw_get(&dev_ctx, data_raw);
-
-      for (j = 0; j < 3; j++)
-      {
-        val_st_on[j] += lsm6dsv_from_fs2000_to_mdps(data_raw[j]);
-      }
-    }
-
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_on[i] /= 5.0f;
-    }
-
-    /* Calculate the mg values for self test */
-    for (i = 0; i < 3; i++)
-    {
-      test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
-    }
-
-    /* Check self test limit */
-    for (i = 0; i < 3; i++)
-    {
-      if ((MIN_ST_LIMIT_mdps > test_val[i]) || (test_val[i] > MAX_ST_LIMIT_mdps))
-      {
-        st_result = ST_FAIL;
-      }
-    }
-
-    /* Disable Self Test */
-    lsm6dsv_gy_self_test_set(&dev_ctx, LSM6DSV_GY_ST_DISABLE);
-    /* Disable sensor. */
-    lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_OFF);
   }
 
-  //if (st_result == ST_PASS)
-  //{
-  //  sprintf((char *) tx_buffer, "LSM6DSV Self Test - PASS\r\n");
-  //}
-  //
-  //else
-  //{
-  //  sprintf((char *) tx_buffer, "LSM6DSV Self Test - FAIL\r\n");
-  //}
-  //
-  //tx_com(tx_buffer, strlen((char const *) tx_buffer));
-  return (st_result == ST_PASS ? 0 : 1);
-}
-
-/*
- * @brief  Write generic device register (platform dependent)
- *
- * @param  handle    customizable argument. In this examples is used in
- *                   order to select the correct sensor bus handler.
- * @param  reg       register to write
- * @param  bufp      pointer to data to write in register reg
- * @param  len       number of consecutive register to write
- *
- */
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len)
-{
-#if defined(NUCLEO_F411RE)
-  HAL_I2C_Mem_Write(handle, LSM6DSV_I2C_ADD_L, reg, I2C_MEMADD_SIZE_8BIT,
-      (uint8_t *) bufp, len, 1000);
-#elif defined(STEVAL_MKI109V3)
-  HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Transmit(handle, (uint8_t *) bufp, len, 1000);
-  HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_SET);
-#elif defined(SPC584B_DIS)
-  i2c_lld_write(handle, LSM6DSV_I2C_ADD_H & 0xFE, reg, (uint8_t *) bufp, len);
-#elif defined(SHIMMER3R)
-  lsm6dsv_SelectDevice();
-  HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Transmit(handle, (uint8_t *) bufp, len, 1000);
-  lsm6dsv_UnselectDevice();
-#endif
-  return 0;
-}
-
-/*
- * @brief  Read generic device register (platform dependent)
- *
- * @param  handle    customizable argument. In this examples is used in
- *                   order to select the correct sensor bus handler.
- * @param  reg       register to read
- * @param  bufp      pointer to buffer that store the data read
- * @param  len       number of consecutive register to read
- *
- */
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len)
-{
-#if defined(NUCLEO_F411RE)
-  HAL_I2C_Mem_Read(handle, LSM6DSV_I2C_ADD_L, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
-#elif defined(STEVAL_MKI109V3)
-  reg |= 0x80;
-  HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Receive(handle, bufp, len, 1000);
-  HAL_GPIO_WritePin(CS_up_GPIO_Port, CS_up_Pin, GPIO_PIN_SET);
-#elif defined(SPC584B_DIS)
-  i2c_lld_read(handle, LSM6DSV_I2C_ADD_H & 0xFE, reg, bufp, len);
-#elif defined(SHIMMER3R)
-  reg |= SPI_READ_REGISTER;
-  lsm6dsv_SelectDevice();
-  HAL_SPI_Transmit(handle, &reg, 1, 1000);
-  HAL_SPI_Receive(handle, bufp, len, 1000);
-  lsm6dsv_UnselectDevice();
-#endif
-  return 0;
-}
-
-static int32_t
-platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len)
-{
-  HAL_StatusTypeDef ret;
-  lsm6dsv_SelectDevice();
-  ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
   return ret;
 }
 
-/*
- * @brief  Send buffer to console (platform dependent)
- *
- * @param  tx_buffer     buffer to transmit
- * @param  len           number of byte to send
- *
+/**
+ * @brief  Initialize the LSM6DSV sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
  */
-static void tx_com(uint8_t *tx_buffer, uint16_t len)
+int32_t LSM6DSV_Init(LSM6DSV_Object_t *pObj)
 {
-#if defined(NUCLEO_F411RE)
-  HAL_UART_Transmit(&huart2, tx_buffer, len, 1000);
-#elif defined(STEVAL_MKI109V3)
-  CDC_Transmit_FS(tx_buffer, len);
-#elif defined(SPC584B_DIS)
-  sd_lld_write(&SD2, tx_buffer, len);
-#elif defined(SHIMMER3R)
-  SHIMMER_PRINTF((char *) tx_buffer, len);
-#endif
-}
-
-/*
- * @brief  platform specific delay (platform dependent)
- *
- * @param  ms        delay in ms
- *
- */
-static void platform_delay(uint32_t ms)
-{
-#if defined(NUCLEO_F411RE) | defined(STEVAL_MKI109V3) | defined(SHIMMER3R)
-  HAL_Delay(ms);
-#elif defined(SPC584B_DIS)
-  osalThreadDelayMilliseconds(ms);
-#endif
-}
-
-#if !defined(SHIMMER3R)
-/*
- * @brief  platform specific initialization (platform dependent)
- */
-static void platform_init(void)
-{
-#if defined(STEVAL_MKI109V3)
-  TIM3->CCR1 = PWM_3V3;
-  TIM3->CCR2 = PWM_3V3;
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-  HAL_Delay(1000);
-#endif
-}
-
-#elif defined(SHIMMER3R)
-void lsm6dsv_driver_init(void)
-{
-  /* Initialize mems driver interface */
-  dev_ctx.write_reg = platform_write;
-  dev_ctx.read_reg = platform_read;
-  dev_ctx.mdelay = platform_delay;
-  dev_ctx.handle = &SENSOR_BUS;
-}
-
-void lsm6dsv_power_on(void)
-{
-  set_power_spi1_bus(true, SPI1_CHIP_INDEX_LSM6DSV);
-}
-
-void lsm6dsv_power_off(void)
-{
-  set_power_spi1_bus(false, SPI1_CHIP_INDEX_LSM6DSV);
-}
-
-void lsm6dsv_SelectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
-}
-
-void lsm6dsv_UnselectDevice(void)
-{
-  HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
-}
-
-void lsm6dsv_config_accel(uint8_t rate, uint8_t range)
-{
-  //TODO if chip sampling rate is lower than Shimmer sampling, enable pin
-  //interrupt to only read data from chip when it's ready pin_int.drdy_xl =
-  //PROPERTY_ENABLE; lsm6dsv_pin_int1_route_set(&dev_ctx, &pin_int);
-
-  /* Set Output Data Rate.
-   * Selected data rate have to be equal or greater with respect
-   * with MLC data rate.
-   */
-  lsm6dsv_xl_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_1920Hz);
-  /* Set full scale */
-  lsm6dsv_xl_full_scale_set(&dev_ctx, (lsm6dsv_xl_full_scale_t) range);
-
-  ///* Configure filtering chain */
-  //filt_settling_mask.drdy = PROPERTY_ENABLE;
-  //filt_settling_mask.irq_xl = PROPERTY_ENABLE;
-  //filt_settling_mask.irq_g = PROPERTY_ENABLE;
-  //lsm6dsv_filt_settling_mask_set(&dev_ctx, filt_settling_mask);
-  //lsm6dsv_filt_xl_lp2_set(&dev_ctx, PROPERTY_ENABLE);
-  //lsm6dsv_filt_xl_lp2_bandwidth_set(&dev_ctx, LSM6DSV_XL_STRONG);
-}
-
-void lsm6dsv_config_gyro(uint8_t rate, uint8_t range)
-{
-  lsm6dsv_gy_data_rate_set(&dev_ctx, LSM6DSV_ODR_AT_1920Hz);
-  lsm6dsv_gy_full_scale_set(&dev_ctx, range);
-}
-
-void lsm6dsv_status_get(void)
-{
-  lsm6dsv_data_ready_t drdy;
-  lsm6dsv_flag_data_ready_get(&dev_ctx, &drdy);
-}
-
-HAL_StatusTypeDef lsm6dsv_accel_get(uint8_t *buf)
-{
-  HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_A | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
-  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
-  return ret;
-}
-
-HAL_StatusTypeDef lsm6dsv_gyro_get(uint8_t *buf)
-{
-  HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { LSM6DSV_OUTX_L_G | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
-  ret = platform_read_raw_data_dma(dev_ctx.handle, &txBuff[0], buf, sizeof(txBuff));
-  return ret;
-}
-
-void lsm6dsv_restore_default_config(void)
-{
-  lsm6dsv_reset_t rst;
-
-  /* Restore default configuration */
-  lsm6dsv_reset_set(&dev_ctx, LSM6DSV_RESTORE_CTRL_REGS);
-  do
+  /* Enable register address automatically incremented during a multiple byte
+  access with a serial interface. */
+  if (lsm6dsv_auto_increment_set(&(pObj->Ctx), PROPERTY_ENABLE) != LSM6DSV_OK)
   {
-    lsm6dsv_reset_get(&dev_ctx, &rst);
-  } while (rst != LSM6DSV_READY);
+    return LSM6DSV_ERROR;
+  }
 
-  /* Enable Block Data Update */
-  lsm6dsv_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
+  /* Enable BDU */
+  if (lsm6dsv_block_data_update_set(&(pObj->Ctx), PROPERTY_ENABLE) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* FIFO mode selection */
+  if (lsm6dsv_fifo_mode_set(&(pObj->Ctx), LSM6DSV_BYPASS_MODE) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Select default output data rate. */
+  pObj->acc_odr = LSM6DSV_ODR_AT_120Hz;
+
+  /* Output data rate selection - power down. */
+  if (lsm6dsv_xl_data_rate_set(&(pObj->Ctx), LSM6DSV_ODR_OFF) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Full scale selection. */
+  if (lsm6dsv_xl_full_scale_set(&(pObj->Ctx), LSM6DSV_2g) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Select default output data rate. */
+  pObj->gyro_odr = LSM6DSV_ODR_AT_120Hz;
+
+  /* Output data rate selection - power down. */
+  if (lsm6dsv_gy_data_rate_set(&(pObj->Ctx), LSM6DSV_ODR_OFF) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Full scale selection. */
+  if (lsm6dsv_gy_full_scale_set(&(pObj->Ctx), LSM6DSV_2000dps) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  pObj->is_initialized = 1;
+
+  return LSM6DSV_OK;
 }
 
-#endif
+/**
+ * @brief  Deinitialize the LSM6DSV sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_DeInit(LSM6DSV_Object_t *pObj)
+{
+  /* Disable the component */
+  if (LSM6DSV_ACC_Disable(pObj) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  if (LSM6DSV_GYRO_Disable(pObj) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Reset output data rate. */
+  pObj->acc_odr = LSM6DSV_ODR_OFF;
+  pObj->gyro_odr = LSM6DSV_ODR_OFF;
+
+  pObj->is_initialized = 0;
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Read component ID
+ * @param  pObj the device pObj
+ * @param  Id the WHO_AM_I value
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ReadID(LSM6DSV_Object_t *pObj, uint8_t *Id)
+{
+  if (lsm6dsv_device_id_get(&(pObj->Ctx), Id) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get LSM6DSV sensor capabilities
+ * @param  pObj Component object pointer
+ * @param  Capabilities pointer to LSM6DSV sensor capabilities
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GetCapabilities(LSM6DSV_Object_t *pObj, LSM6DSV_Capabilities_t *Capabilities)
+{
+  /* Prevent unused argument(s) compilation warning */
+  (void) (pObj);
+
+  Capabilities->Acc = 1;
+  Capabilities->Gyro = 1;
+  Capabilities->Magneto = 0;
+  Capabilities->LowPower = 1;
+  Capabilities->GyroMaxFS = 4000;
+  Capabilities->AccMaxFS = 16;
+  Capabilities->MagMaxFS = 0;
+  Capabilities->GyroMaxOdr = 7680.0f;
+  Capabilities->AccMaxOdr = 7680.0f;
+  Capabilities->MagMaxOdr = 0.0f;
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Enable the LSM6DSV accelerometer sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_Enable(LSM6DSV_Object_t *pObj)
+{
+  /* Check if the component is already enabled */
+  if (pObj->acc_is_enabled == 1U)
+  {
+    return LSM6DSV_OK;
+  }
+
+  /* Output data rate selection. */
+  if (lsm6dsv_xl_data_rate_set(&(pObj->Ctx), pObj->acc_odr) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  pObj->acc_is_enabled = 1;
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Disable the LSM6DSV accelerometer sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_Disable(LSM6DSV_Object_t *pObj)
+{
+  /* Check if the component is already disabled */
+  if (pObj->acc_is_enabled == 0U)
+  {
+    return LSM6DSV_OK;
+  }
+
+  /* Get current output data rate. */
+  if (lsm6dsv_xl_data_rate_get(&(pObj->Ctx), &pObj->acc_odr) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Output data rate selection - power down. */
+  if (lsm6dsv_xl_data_rate_set(&(pObj->Ctx), LSM6DSV_ODR_OFF) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  pObj->acc_is_enabled = 0;
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV accelerometer sensor sensitivity
+ * @param  pObj the device pObj
+ * @param  Sensitivity pointer
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_GetSensitivity(LSM6DSV_Object_t *pObj, float_t *Sensitivity)
+{
+  int32_t ret = LSM6DSV_OK;
+  lsm6dsv_xl_full_scale_t full_scale;
+
+  /* Read actual full scale selection from sensor. */
+  if (lsm6dsv_xl_full_scale_get(&(pObj->Ctx), &full_scale) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Store the Sensitivity based on actual full scale. */
+  switch (full_scale)
+  {
+  case LSM6DSV_2g:
+    *Sensitivity = LSM6DSV_ACC_SENSITIVITY_FS_2G;
+    break;
+
+  case LSM6DSV_4g:
+    *Sensitivity = LSM6DSV_ACC_SENSITIVITY_FS_4G;
+    break;
+
+  case LSM6DSV_8g:
+    *Sensitivity = LSM6DSV_ACC_SENSITIVITY_FS_8G;
+    break;
+
+  case LSM6DSV_16g:
+    *Sensitivity = LSM6DSV_ACC_SENSITIVITY_FS_16G;
+    break;
+
+  default:
+    ret = LSM6DSV_ERROR;
+    break;
+  }
+
+  return ret;
+}
+
+/**
+ * @brief  Get the LSM6DSV accelerometer sensor output data rate
+ * @param  pObj the device pObj
+ * @param  Odr pointer where the output data rate is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_GetOutputDataRate(LSM6DSV_Object_t *pObj, float_t *Odr)
+{
+  int32_t ret = LSM6DSV_OK;
+  lsm6dsv_data_rate_t odr_low_level;
+
+  /* Get current output data rate. */
+  if (lsm6dsv_xl_data_rate_get(&(pObj->Ctx), &odr_low_level) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  switch (odr_low_level)
+  {
+  case LSM6DSV_ODR_OFF:
+    *Odr = 0.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_1Hz875:
+    *Odr = 1.875f;
+    break;
+
+  case LSM6DSV_ODR_AT_7Hz5:
+    *Odr = 7.5f;
+    break;
+
+  case LSM6DSV_ODR_AT_15Hz:
+    *Odr = 15.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_30Hz:
+    *Odr = 30.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_60Hz:
+    *Odr = 60.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_120Hz:
+    *Odr = 120.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_240Hz:
+    *Odr = 240.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_480Hz:
+    *Odr = 480.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_960Hz:
+    *Odr = 960.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_1920Hz:
+    *Odr = 1920.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_3840Hz:
+    *Odr = 3840.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_7680Hz:
+    *Odr = 7680.0f;
+    break;
+
+  default:
+    ret = LSM6DSV_ERROR;
+    break;
+  }
+
+  return ret;
+}
+
+/**
+ * @brief  Set the LSM6DSV accelerometer sensor output data rate
+ * @param  pObj the device pObj
+ * @param  Odr the output data rate value to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_SetOutputDataRate(LSM6DSV_Object_t *pObj, float_t Odr)
+{
+  return LSM6DSV_ACC_SetOutputDataRate_With_Mode(pObj, Odr, LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
+}
+
+/**
+ * @brief  Set the LSM6DSV accelerometer sensor output data rate with operating mode
+ * @param  pObj the device pObj
+ * @param  Odr the output data rate value to be set
+ * @param  Mode the accelerometer operating mode
+ * @note   This function switches off the gyroscope if Ultra Low Power Mode is set
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_SetOutputDataRate_With_Mode(LSM6DSV_Object_t *pObj,
+    float_t Odr,
+    LSM6DSV_ACC_Operating_Mode_t Mode)
+{
+  int32_t ret = LSM6DSV_OK;
+  float_t new_odr = 15.0f;
+
+  switch (Mode)
+  {
+  case LSM6DSV_ACC_HIGH_PERFORMANCE_MODE:
+    if (lsm6dsv_xl_mode_set(&(pObj->Ctx), LSM6DSV_XL_HIGH_PERFORMANCE_MD) != LSM6DSV_OK)
+    {
+      ret = LSM6DSV_ERROR;
+    }
+
+    /* Valid ODR: 7.5Hz <= Odr <= 7.68kHz */
+    new_odr = (Odr < 7.5f) ? 7.5f : (Odr > 7680.0f) ? 7680.0f : Odr;
+    break;
+
+  case LSM6DSV_ACC_HIGH_ACCURACY_MODE:
+    ret = LSM6DSV_ERROR;
+    break;
+
+  case LSM6DSV_ACC_NORMAL_MODE:
+    if (lsm6dsv_xl_mode_set(&(pObj->Ctx), LSM6DSV_XL_NORMAL_MD) != LSM6DSV_OK)
+    {
+      ret = LSM6DSV_ERROR;
+    }
+
+    /* Valid ODR: 7.5Hz <= Odr <= 1.92kHz */
+    new_odr = (Odr < 7.5f) ? 7.5f : (Odr > 1920.0f) ? 1920.0f : Odr;
+    break;
+
+  case LSM6DSV_ACC_LOW_POWER_MODE1:
+    if (lsm6dsv_xl_mode_set(&(pObj->Ctx), LSM6DSV_XL_LOW_POWER_2_AVG_MD) != LSM6DSV_OK)
+    {
+      ret = LSM6DSV_ERROR;
+    }
+
+    /* Valid ODR: 1.875Hz;  15Hz <= Odr <= 240kHz */
+    new_odr = (Odr == 1.875f) ? Odr :
+        (Odr < 15.000f)       ? 15.0f :
+        (Odr > 240.000f)      ? 240.0f :
+                                Odr;
+    break;
+
+  case LSM6DSV_ACC_LOW_POWER_MODE2:
+    if (lsm6dsv_xl_mode_set(&(pObj->Ctx), LSM6DSV_XL_LOW_POWER_4_AVG_MD) != LSM6DSV_OK)
+    {
+      ret = LSM6DSV_ERROR;
+    }
+
+    /* Valid ODR: 1.875Hz;  15Hz <= Odr <= 240kHz */
+    new_odr = (Odr == 1.875f) ? Odr :
+        (Odr < 15.000f)       ? 15.0f :
+        (Odr > 240.000f)      ? 240.0f :
+                                Odr;
+    break;
+
+  case LSM6DSV_ACC_LOW_POWER_MODE3:
+    if (lsm6dsv_xl_mode_set(&(pObj->Ctx), LSM6DSV_XL_LOW_POWER_8_AVG_MD) != LSM6DSV_OK)
+    {
+      ret = LSM6DSV_ERROR;
+    }
+
+    /* Valid ODR: 1.875Hz;  15Hz <= Odr <= 240kHz */
+    new_odr = (Odr == 1.875f) ? Odr :
+        (Odr < 15.000f)       ? 15.0f :
+        (Odr > 240.000f)      ? 240.0f :
+                                Odr;
+    break;
+
+  default:
+    ret = LSM6DSV_ERROR;
+    break;
+  }
+
+  if (ret != LSM6DSV_OK)
+  {
+    return ret;
+  }
+
+  if (pObj->acc_is_enabled == 1U)
+  {
+    return LSM6DSV_ACC_SetOutputDataRate_When_Enabled(pObj, new_odr);
+  }
+  else
+  {
+    return LSM6DSV_ACC_SetOutputDataRate_When_Disabled(pObj, new_odr);
+  }
+}
+
+/**
+ * @brief  Get the LSM6DSV accelerometer sensor full scale
+ * @param  pObj the device pObj
+ * @param  FullScale pointer where the full scale is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_GetFullScale(LSM6DSV_Object_t *pObj, int32_t *FullScale)
+{
+  int32_t ret = LSM6DSV_OK;
+  lsm6dsv_xl_full_scale_t fs_low_level;
+
+  /* Read actual full scale selection from sensor. */
+  if (lsm6dsv_xl_full_scale_get(&(pObj->Ctx), &fs_low_level) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  switch (fs_low_level)
+  {
+  case LSM6DSV_2g:
+    *FullScale = 2;
+    break;
+
+  case LSM6DSV_4g:
+    *FullScale = 4;
+    break;
+
+  case LSM6DSV_8g:
+    *FullScale = 8;
+    break;
+
+  case LSM6DSV_16g:
+    *FullScale = 16;
+    break;
+
+  default:
+    ret = LSM6DSV_ERROR;
+    break;
+  }
+
+  return ret;
+}
+
+/**
+ * @brief  Set the LSM6DSV accelerometer sensor full scale
+ * @param  pObj the device pObj
+ * @param  FullScale the functional full scale to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_SetFullScale(LSM6DSV_Object_t *pObj, int32_t FullScale)
+{
+  lsm6dsv_xl_full_scale_t new_fs;
+
+  /* Seems like MISRA C-2012 rule 14.3a violation but only from single file statical analysis point of view because
+     the parameter passed to the function is not known at the moment of analysis */
+  new_fs = (FullScale <= 2) ? LSM6DSV_2g :
+      (FullScale <= 4)      ? LSM6DSV_4g :
+      (FullScale <= 8)      ? LSM6DSV_8g :
+                              LSM6DSV_16g;
+
+  if (lsm6dsv_xl_full_scale_set(&(pObj->Ctx), new_fs) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV accelerometer sensor raw axes
+ * @param  pObj the device pObj
+ * @param  Value pointer where the raw values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_GetAxesRaw(LSM6DSV_Object_t *pObj, LSM6DSV_AxesRaw_t *Value)
+{
+  lsm6dsv_axis3bit16_t data_raw;
+
+  /* Read raw data values. */
+  if (lsm6dsv_acceleration_raw_get(&(pObj->Ctx), data_raw.i16bit) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Format the data. */
+  Value->x = data_raw.i16bit[0];
+  Value->y = data_raw.i16bit[1];
+  Value->z = data_raw.i16bit[2];
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV accelerometer sensor axes
+ * @param  pObj the device pObj
+ * @param  Acceleration pointer where the values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_GetAxes(LSM6DSV_Object_t *pObj, LSM6DSV_Axes_t *Acceleration)
+{
+  lsm6dsv_axis3bit16_t data_raw;
+  float_t sensitivity = 0.0f;
+
+  /* Read raw data values. */
+  if (lsm6dsv_acceleration_raw_get(&(pObj->Ctx), data_raw.i16bit) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Get LSM6DSV actual sensitivity. */
+  if (LSM6DSV_ACC_GetSensitivity(pObj, &sensitivity) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Calculate the data. */
+  Acceleration->x = (int32_t) ((float_t) ((float_t) data_raw.i16bit[0] * sensitivity));
+  Acceleration->y = (int32_t) ((float_t) ((float_t) data_raw.i16bit[1] * sensitivity));
+  Acceleration->z = (int32_t) ((float_t) ((float_t) data_raw.i16bit[2] * sensitivity));
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Enable the LSM6DSV gyroscope sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_Enable(LSM6DSV_Object_t *pObj)
+{
+  /* Check if the component is already enabled */
+  if (pObj->gyro_is_enabled == 1U)
+  {
+    return LSM6DSV_OK;
+  }
+
+  /* Output data rate selection. */
+  if (lsm6dsv_gy_data_rate_set(&(pObj->Ctx), pObj->gyro_odr) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  pObj->gyro_is_enabled = 1;
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Disable the LSM6DSV gyroscope sensor
+ * @param  pObj the device pObj
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_Disable(LSM6DSV_Object_t *pObj)
+{
+  /* Check if the component is already disabled */
+  if (pObj->gyro_is_enabled == 0U)
+  {
+    return LSM6DSV_OK;
+  }
+
+  /* Get current output data rate. */
+  if (lsm6dsv_gy_data_rate_get(&(pObj->Ctx), &pObj->gyro_odr) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Output data rate selection - power down. */
+  if (lsm6dsv_gy_data_rate_set(&(pObj->Ctx), LSM6DSV_ODR_OFF) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  pObj->gyro_is_enabled = 0;
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV gyroscope sensor sensitivity
+ * @param  pObj the device pObj
+ * @param  Sensitivity pointer
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_GetSensitivity(LSM6DSV_Object_t *pObj, float_t *Sensitivity)
+{
+  int32_t ret = LSM6DSV_OK;
+  lsm6dsv_gy_full_scale_t full_scale;
+
+  /* Read actual full scale selection from sensor. */
+  if (lsm6dsv_gy_full_scale_get(&(pObj->Ctx), &full_scale) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Store the sensitivity based on actual full scale. */
+  switch (full_scale)
+  {
+  case LSM6DSV_125dps:
+    *Sensitivity = LSM6DSV_GYRO_SENSITIVITY_FS_125DPS;
+    break;
+
+  case LSM6DSV_250dps:
+    *Sensitivity = LSM6DSV_GYRO_SENSITIVITY_FS_250DPS;
+    break;
+
+  case LSM6DSV_500dps:
+    *Sensitivity = LSM6DSV_GYRO_SENSITIVITY_FS_500DPS;
+    break;
+
+  case LSM6DSV_1000dps:
+    *Sensitivity = LSM6DSV_GYRO_SENSITIVITY_FS_1000DPS;
+    break;
+
+  case LSM6DSV_2000dps:
+    *Sensitivity = LSM6DSV_GYRO_SENSITIVITY_FS_2000DPS;
+    break;
+
+  case LSM6DSV_4000dps:
+    *Sensitivity = LSM6DSV_GYRO_SENSITIVITY_FS_4000DPS;
+    break;
+
+  default:
+    ret = LSM6DSV_ERROR;
+    break;
+  }
+
+  return ret;
+}
+
+/**
+ * @brief  Get the LSM6DSV gyroscope sensor output data rate
+ * @param  pObj the device pObj
+ * @param  Odr pointer where the output data rate is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_GetOutputDataRate(LSM6DSV_Object_t *pObj, float_t *Odr)
+{
+  int32_t ret = LSM6DSV_OK;
+  lsm6dsv_data_rate_t odr_low_level;
+
+  /* Get current output data rate. */
+  if (lsm6dsv_gy_data_rate_get(&(pObj->Ctx), &odr_low_level) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  switch (odr_low_level)
+  {
+  case LSM6DSV_ODR_OFF:
+    *Odr = 0.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_7Hz5:
+    *Odr = 7.5f;
+    break;
+
+  case LSM6DSV_ODR_AT_15Hz:
+    *Odr = 15.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_30Hz:
+    *Odr = 30.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_60Hz:
+    *Odr = 60.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_120Hz:
+    *Odr = 120.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_240Hz:
+    *Odr = 240.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_480Hz:
+    *Odr = 480.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_960Hz:
+    *Odr = 960.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_1920Hz:
+    *Odr = 1920.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_3840Hz:
+    *Odr = 3840.0f;
+    break;
+
+  case LSM6DSV_ODR_AT_7680Hz:
+    *Odr = 7680.0f;
+    break;
+
+  default:
+    ret = LSM6DSV_ERROR;
+    break;
+  }
+
+  return ret;
+}
+
+/**
+ * @brief  Set the LSM6DSV gyroscope sensor output data rate
+ * @param  pObj the device pObj
+ * @param  Odr the output data rate value to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_SetOutputDataRate(LSM6DSV_Object_t *pObj, float_t Odr)
+{
+  return LSM6DSV_GYRO_SetOutputDataRate_With_Mode(pObj, Odr, LSM6DSV_GYRO_HIGH_PERFORMANCE_MODE);
+}
+
+/**
+ * @brief  Set the LSM6DSV gyroscope sensor output data rate with operating mode
+ * @param  pObj the device pObj
+ * @param  Odr the output data rate value to be set
+ * @param  Mode the gyroscope operating mode
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_SetOutputDataRate_With_Mode(LSM6DSV_Object_t *pObj,
+    float_t Odr,
+    LSM6DSV_GYRO_Operating_Mode_t Mode)
+{
+  int32_t ret = LSM6DSV_OK;
+  float_t new_odr = 15.0f;
+
+  switch (Mode)
+  {
+  case LSM6DSV_GYRO_HIGH_PERFORMANCE_MODE:
+    if (lsm6dsv_gy_mode_set(&(pObj->Ctx), LSM6DSV_GY_HIGH_PERFORMANCE_MD) != LSM6DSV_OK)
+    {
+      ret = LSM6DSV_ERROR;
+    }
+
+    /* Valid ODR: 7.5Hz <= Odr <= 7.68kHz */
+    new_odr = (Odr < 7.5f) ? 7.5f : (Odr > 7680.0f) ? 7680.0f : Odr;
+    break;
+
+  case LSM6DSV_GYRO_HIGH_ACCURACY_MODE:
+    ret = LSM6DSV_ERROR;
+    break;
+
+  case LSM6DSV_GYRO_SLEEP_MODE:
+    ret = LSM6DSV_ERROR;
+    break;
+
+  case LSM6DSV_GYRO_LOW_POWER_MODE:
+    if (lsm6dsv_gy_mode_set(&(pObj->Ctx), LSM6DSV_GY_LOW_POWER_MD) != LSM6DSV_OK)
+    {
+      ret = LSM6DSV_ERROR;
+    }
+
+    /* Valid ODR: 7.5Hz <= Odr <= 240kHz */
+    new_odr = (Odr < 7.5f) ? 7.5f : (Odr > 240.0f) ? 240.0f : Odr;
+    break;
+
+  default:
+    ret = LSM6DSV_ERROR;
+    break;
+  }
+
+  if (ret != LSM6DSV_OK)
+  {
+    return ret;
+  }
+
+  if (pObj->gyro_is_enabled == 1U)
+  {
+    return LSM6DSV_GYRO_SetOutputDataRate_When_Enabled(pObj, new_odr);
+  }
+  else
+  {
+    return LSM6DSV_GYRO_SetOutputDataRate_When_Disabled(pObj, new_odr);
+  }
+}
+
+/**
+ * @brief  Get the LSM6DSV gyroscope sensor full scale
+ * @param  pObj the device pObj
+ * @param  FullScale pointer where the full scale is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_GetFullScale(LSM6DSV_Object_t *pObj, int32_t *FullScale)
+{
+  int32_t ret = LSM6DSV_OK;
+  lsm6dsv_gy_full_scale_t fs_low_level;
+
+  /* Read actual full scale selection from sensor. */
+  if (lsm6dsv_gy_full_scale_get(&(pObj->Ctx), &fs_low_level) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  switch (fs_low_level)
+  {
+  case LSM6DSV_125dps:
+    *FullScale = 125;
+    break;
+
+  case LSM6DSV_250dps:
+    *FullScale = 250;
+    break;
+
+  case LSM6DSV_500dps:
+    *FullScale = 500;
+    break;
+
+  case LSM6DSV_1000dps:
+    *FullScale = 1000;
+    break;
+
+  case LSM6DSV_2000dps:
+    *FullScale = 2000;
+    break;
+
+  case LSM6DSV_4000dps:
+    *FullScale = 4000;
+    break;
+
+  default:
+    ret = LSM6DSV_ERROR;
+    break;
+  }
+
+  return ret;
+}
+
+/**
+ * @brief  Set the LSM6DSV gyroscope sensor full scale
+ * @param  pObj the device pObj
+ * @param  FullScale the functional full scale to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_SetFullScale(LSM6DSV_Object_t *pObj, int32_t FullScale)
+{
+  lsm6dsv_gy_full_scale_t new_fs;
+
+  new_fs = (FullScale <= 125) ? LSM6DSV_125dps :
+      (FullScale <= 250)      ? LSM6DSV_250dps :
+      (FullScale <= 500)      ? LSM6DSV_500dps :
+      (FullScale <= 1000)     ? LSM6DSV_1000dps :
+      (FullScale <= 2000)     ? LSM6DSV_2000dps :
+                                LSM6DSV_4000dps;
+
+  if (lsm6dsv_gy_full_scale_set(&(pObj->Ctx), new_fs) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV gyroscope sensor raw axes
+ * @param  pObj the device pObj
+ * @param  Value pointer where the raw values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_GetAxesRaw(LSM6DSV_Object_t *pObj, LSM6DSV_AxesRaw_t *Value)
+{
+  lsm6dsv_axis3bit16_t data_raw;
+
+  /* Read raw data values. */
+  if (lsm6dsv_angular_rate_raw_get(&(pObj->Ctx), data_raw.i16bit) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Format the data. */
+  Value->x = data_raw.i16bit[0];
+  Value->y = data_raw.i16bit[1];
+  Value->z = data_raw.i16bit[2];
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV gyroscope sensor axes
+ * @param  pObj the device pObj
+ * @param  AngularRate pointer where the values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_GetAxes(LSM6DSV_Object_t *pObj, LSM6DSV_Axes_t *AngularRate)
+{
+  lsm6dsv_axis3bit16_t data_raw;
+  float_t sensitivity;
+
+  /* Read raw data values. */
+  if (lsm6dsv_angular_rate_raw_get(&(pObj->Ctx), data_raw.i16bit) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Get LSM6DSV actual sensitivity. */
+  if (LSM6DSV_GYRO_GetSensitivity(pObj, &sensitivity) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Calculate the data. */
+  AngularRate->x = (int32_t) ((float_t) ((float_t) data_raw.i16bit[0] * sensitivity));
+  AngularRate->y = (int32_t) ((float_t) ((float_t) data_raw.i16bit[1] * sensitivity));
+  AngularRate->z = (int32_t) ((float_t) ((float_t) data_raw.i16bit[2] * sensitivity));
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV register value
+ * @param  pObj the device pObj
+ * @param  Reg address to be read
+ * @param  Data pointer where the value is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_Read_Reg(LSM6DSV_Object_t *pObj, uint8_t Reg, uint8_t *Data)
+{
+  if (lsm6dsv_read_reg(&(pObj->Ctx), Reg, Data, 1) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Set the LSM6DSV register value
+ * @param  pObj the device pObj
+ * @param  Reg address to be written
+ * @param  Data value to be written
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_Write_Reg(LSM6DSV_Object_t *pObj, uint8_t Reg, uint8_t Data)
+{
+  if (lsm6dsv_write_reg(&(pObj->Ctx), Reg, &Data, 1) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV ACC data ready bit value
+ * @param  pObj the device pObj
+ * @param  Status the status of data ready bit
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_Get_DRDY_Status(LSM6DSV_Object_t *pObj, uint8_t *Status)
+{
+  lsm6dsv_all_sources_t val;
+
+  if (lsm6dsv_all_sources_get(&(pObj->Ctx), &val) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  *Status = val.drdy_xl;
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV GYRO data ready bit value
+ * @param  pObj the device pObj
+ * @param  Status the status of data ready bit
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_Get_DRDY_Status(LSM6DSV_Object_t *pObj, uint8_t *Status)
+{
+  lsm6dsv_all_sources_t val;
+
+  if (lsm6dsv_all_sources_get(&(pObj->Ctx), &val) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  *Status = val.drdy_gy;
+  return LSM6DSV_OK;
+}
+
+/**
+ * @}
+ */
+
+/** @defgroup LSM6DSV_Private_Functions LSM6DSV Private Functions
+ * @{
+ */
+
+/**
+ * @brief  Set the LSM6DSV accelerometer sensor output data rate when enabled
+ * @param  pObj the device pObj
+ * @param  Odr the functional output data rate to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+static int32_t LSM6DSV_ACC_SetOutputDataRate_When_Enabled(LSM6DSV_Object_t *pObj, float_t Odr)
+{
+  lsm6dsv_data_rate_t new_odr;
+
+  new_odr = (Odr <= 1.875f) ? LSM6DSV_ODR_AT_1Hz875 :
+      (Odr <= 7.5f)         ? LSM6DSV_ODR_AT_7Hz5 :
+      (Odr <= 15.0f)        ? LSM6DSV_ODR_AT_15Hz :
+      (Odr <= 30.0f)        ? LSM6DSV_ODR_AT_30Hz :
+      (Odr <= 60.0f)        ? LSM6DSV_ODR_AT_60Hz :
+      (Odr <= 120.0f)       ? LSM6DSV_ODR_AT_120Hz :
+      (Odr <= 240.0f)       ? LSM6DSV_ODR_AT_240Hz :
+      (Odr <= 480.0f)       ? LSM6DSV_ODR_AT_480Hz :
+      (Odr <= 960.0f)       ? LSM6DSV_ODR_AT_960Hz :
+      (Odr <= 1920.0f)      ? LSM6DSV_ODR_AT_1920Hz :
+      (Odr <= 3840.0f)      ? LSM6DSV_ODR_AT_3840Hz :
+                              LSM6DSV_ODR_AT_7680Hz;
+
+  /* Output data rate selection. */
+  if (lsm6dsv_xl_data_rate_set(&(pObj->Ctx), new_odr) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Set the LSM6DSV accelerometer sensor output data rate when disabled
+ * @param  pObj the device pObj
+ * @param  Odr the functional output data rate to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+static int32_t LSM6DSV_ACC_SetOutputDataRate_When_Disabled(LSM6DSV_Object_t *pObj, float_t Odr)
+{
+  pObj->acc_odr = (Odr <= 1.875f) ? LSM6DSV_ODR_AT_1Hz875 :
+      (Odr <= 7.5f)               ? LSM6DSV_ODR_AT_7Hz5 :
+      (Odr <= 15.0f)              ? LSM6DSV_ODR_AT_15Hz :
+      (Odr <= 30.0f)              ? LSM6DSV_ODR_AT_30Hz :
+      (Odr <= 60.0f)              ? LSM6DSV_ODR_AT_60Hz :
+      (Odr <= 120.0f)             ? LSM6DSV_ODR_AT_120Hz :
+      (Odr <= 240.0f)             ? LSM6DSV_ODR_AT_240Hz :
+      (Odr <= 480.0f)             ? LSM6DSV_ODR_AT_480Hz :
+      (Odr <= 960.0f)             ? LSM6DSV_ODR_AT_960Hz :
+      (Odr <= 1920.0f)            ? LSM6DSV_ODR_AT_1920Hz :
+      (Odr <= 3840.0f)            ? LSM6DSV_ODR_AT_3840Hz :
+                                    LSM6DSV_ODR_AT_7680Hz;
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Set the LSM6DSV gyroscope sensor output data rate when enabled
+ * @param  pObj the device pObj
+ * @param  Odr the functional output data rate to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+static int32_t LSM6DSV_GYRO_SetOutputDataRate_When_Enabled(LSM6DSV_Object_t *pObj, float_t Odr)
+{
+  lsm6dsv_data_rate_t new_odr;
+
+  new_odr = (Odr <= 7.5f) ? LSM6DSV_ODR_AT_7Hz5 :
+      (Odr <= 15.0f)      ? LSM6DSV_ODR_AT_15Hz :
+      (Odr <= 30.0f)      ? LSM6DSV_ODR_AT_30Hz :
+      (Odr <= 60.0f)      ? LSM6DSV_ODR_AT_60Hz :
+      (Odr <= 120.0f)     ? LSM6DSV_ODR_AT_120Hz :
+      (Odr <= 240.0f)     ? LSM6DSV_ODR_AT_240Hz :
+      (Odr <= 480.0f)     ? LSM6DSV_ODR_AT_480Hz :
+      (Odr <= 960.0f)     ? LSM6DSV_ODR_AT_960Hz :
+      (Odr <= 1920.0f)    ? LSM6DSV_ODR_AT_1920Hz :
+      (Odr <= 3840.0f)    ? LSM6DSV_ODR_AT_3840Hz :
+                            LSM6DSV_ODR_AT_7680Hz;
+
+  /* Output data rate selection. */
+  if (lsm6dsv_gy_data_rate_set(&(pObj->Ctx), new_odr) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Set the LSM6DSV gyroscope sensor output data rate when disabled
+ * @param  pObj the device pObj
+ * @param  Odr the functional output data rate to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+static int32_t LSM6DSV_GYRO_SetOutputDataRate_When_Disabled(LSM6DSV_Object_t *pObj, float_t Odr)
+{
+  pObj->gyro_odr = (Odr <= 7.5f) ? LSM6DSV_ODR_AT_7Hz5 :
+      (Odr <= 15.0f)             ? LSM6DSV_ODR_AT_15Hz :
+      (Odr <= 30.0f)             ? LSM6DSV_ODR_AT_30Hz :
+      (Odr <= 60.0f)             ? LSM6DSV_ODR_AT_60Hz :
+      (Odr <= 120.0f)            ? LSM6DSV_ODR_AT_120Hz :
+      (Odr <= 240.0f)            ? LSM6DSV_ODR_AT_240Hz :
+      (Odr <= 480.0f)            ? LSM6DSV_ODR_AT_480Hz :
+      (Odr <= 960.0f)            ? LSM6DSV_ODR_AT_960Hz :
+      (Odr <= 1920.0f)           ? LSM6DSV_ODR_AT_1920Hz :
+      (Odr <= 3840.0f)           ? LSM6DSV_ODR_AT_3840Hz :
+                                   LSM6DSV_ODR_AT_7680Hz;
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Wrap Read register component function to Bus IO function
+ * @param  Handle the device handler
+ * @param  Reg the register address
+ * @param  pData the stored data pointer
+ * @param  Length the length
+ * @retval 0 in case of success, an error code otherwise
+ */
+static int32_t ReadRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
+{
+  LSM6DSV_Object_t *pObj = (LSM6DSV_Object_t *) Handle;
+
+  return pObj->IO.ReadReg(pObj->IO.Address, Reg, pData, Length);
+}
+
+/**
+ * @brief  Wrap Write register component function to Bus IO function
+ * @param  Handle the device handler
+ * @param  Reg the register address
+ * @param  pData the stored data pointer
+ * @param  Length the length
+ * @retval 0 in case of success, an error code otherwise
+ */
+static int32_t WriteRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
+{
+  LSM6DSV_Object_t *pObj = (LSM6DSV_Object_t *) Handle;
+
+  return pObj->IO.WriteReg(pObj->IO.Address, Reg, pData, Length);
+}
+
+/**
+ * @brief  Set the LSM6DSV accelerometer power mode
+ * @param  pObj the device pObj
+ * @param  PowerMode Value of the powerMode
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_Set_Power_Mode(LSM6DSV_Object_t *pObj, uint8_t PowerMode)
+{
+  lsm6dsv_xl_mode_t new_pm;
+
+  new_pm = (PowerMode == 0x0U) ? LSM6DSV_XL_HIGH_PERFORMANCE_MD :
+      (PowerMode == 0x4U)      ? LSM6DSV_XL_LOW_POWER_2_AVG_MD :
+      (PowerMode == 0x5U)      ? LSM6DSV_XL_LOW_POWER_4_AVG_MD :
+      (PowerMode == 0x6U)      ? LSM6DSV_XL_LOW_POWER_8_AVG_MD :
+                                 LSM6DSV_XL_NORMAL_MD;
+
+  if (lsm6dsv_xl_mode_set(&(pObj->Ctx), new_pm) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Set the LSM6DSV gyroscope power mode
+ * @param  pObj the device pObj
+ * @param  PowerMode Value of the powerMode
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_Set_Power_Mode(LSM6DSV_Object_t *pObj, uint8_t PowerMode)
+{
+  lsm6dsv_gy_mode_t new_pm;
+
+  new_pm = (PowerMode == 0x0U) ? LSM6DSV_GY_HIGH_PERFORMANCE_MD :
+      (PowerMode == 0x4U)      ? LSM6DSV_GY_SLEEP_MD :
+                                 LSM6DSV_GY_LOW_POWER_MD;
+
+  if (lsm6dsv_gy_mode_set(&(pObj->Ctx), new_pm) != LSM6DSV_OK)
+  {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Set the LSM6DSV accelerometer filter mode
+ * @param  pObj the device pObj
+ * @param  LowHighPassFlag 0/1 for setting low-pass/high-pass filter mode
+ * @param  FilterMode Value of the filter Mode
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_ACC_Set_Filter_Mode(LSM6DSV_Object_t *pObj, uint8_t LowHighPassFlag, uint8_t FilterMode)
+{
+  lsm6dsv_filt_xl_lp2_bandwidth_t new_fm;
+
+  new_fm = (FilterMode == 0x0U) ? LSM6DSV_XL_ULTRA_LIGHT :
+      (FilterMode == 0x1U)      ? LSM6DSV_XL_VERY_LIGHT :
+      (FilterMode == 0x2U)      ? LSM6DSV_XL_LIGHT :
+      (FilterMode == 0x3U)      ? LSM6DSV_XL_MEDIUM :
+      (FilterMode == 0x4U)      ? LSM6DSV_XL_STRONG :
+      (FilterMode == 0x5U)      ? LSM6DSV_XL_VERY_STRONG :
+      (FilterMode == 0x6U)      ? LSM6DSV_XL_AGGRESSIVE :
+                                  LSM6DSV_XL_XTREME;
+
+  if (LowHighPassFlag == 0U)
+  {
+    /* Set accelerometer low_pass filter-mode */
+    /* Set to 1 LPF2 bit (CTRL8_XL) */
+    if (lsm6dsv_filt_xl_lp2_set(&(pObj->Ctx), 1) != LSM6DSV_OK)
+    {
+      return LSM6DSV_ERROR;
+    }
+    if (lsm6dsv_filt_xl_lp2_bandwidth_set(&(pObj->Ctx), new_fm) != LSM6DSV_OK)
+    {
+      return LSM6DSV_ERROR;
+    }
+  }
+  else
+  {
+    if (lsm6dsv_filt_xl_lp2_set(&(pObj->Ctx), 0) != LSM6DSV_OK)
+    {
+      return LSM6DSV_ERROR;
+    }
+    /* Set accelerometer high_pass filter-mode */
+    if (lsm6dsv_filt_xl_lp2_bandwidth_set(&(pObj->Ctx), new_fm) != LSM6DSV_OK)
+    {
+      return LSM6DSV_ERROR;
+    }
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Set the LSM6DSV gyroscope filter mode
+ * @param  pObj the device pObj
+ * @param  LowHighPassFlag 0/1 for setting low-pass/high-pass filter mode
+ * @param  FilterMode Value of the filter Mode
+ * @retval 0 in case of success, an error code otherwise
+ */
+int32_t LSM6DSV_GYRO_Set_Filter_Mode(LSM6DSV_Object_t *pObj, uint8_t LowHighPassFlag, uint8_t FilterMode)
+{
+  lsm6dsv_filt_gy_lp1_bandwidth_t new_fm;
+
+  new_fm = (FilterMode == 0x0U) ? LSM6DSV_GY_ULTRA_LIGHT :
+      (FilterMode == 0x1U)      ? LSM6DSV_GY_VERY_LIGHT :
+      (FilterMode == 0x2U)      ? LSM6DSV_GY_LIGHT :
+      (FilterMode == 0x3U)      ? LSM6DSV_GY_MEDIUM :
+      (FilterMode == 0x4U)      ? LSM6DSV_GY_STRONG :
+      (FilterMode == 0x5U)      ? LSM6DSV_GY_VERY_STRONG :
+      (FilterMode == 0x6U)      ? LSM6DSV_GY_AGGRESSIVE :
+                                  LSM6DSV_GY_XTREME;
+
+  if (LowHighPassFlag == 0U)
+  {
+    /* Set gyroscope low_pass 1 filter-mode */
+    /* Enable low-pass filter */
+    if (lsm6dsv_filt_gy_lp1_set(&(pObj->Ctx), 1) != LSM6DSV_OK)
+    {
+      return LSM6DSV_ERROR;
+    }
+    if (lsm6dsv_filt_gy_lp1_bandwidth_set(&(pObj->Ctx), new_fm) != LSM6DSV_OK)
+    {
+      return LSM6DSV_ERROR;
+    }
+  }
+  else
+  {
+    /* Set gyroscope high_pass filter-mode */
+    /* Enable high-pass filter */
+    if (lsm6dsv_filt_gy_lp1_set(&(pObj->Ctx), 0) != LSM6DSV_OK)
+    {
+      return LSM6DSV_ERROR;
+    }
+    if (lsm6dsv_filt_gy_lp1_bandwidth_set(&(pObj->Ctx), new_fm) != LSM6DSV_OK)
+    {
+      return LSM6DSV_ERROR;
+    }
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

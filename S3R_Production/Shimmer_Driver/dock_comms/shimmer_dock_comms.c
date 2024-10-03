@@ -22,8 +22,8 @@
 #include "../CAT24C16/cat24c16.h"
 #include "../shimmer_boards/shimmer_boards.h"
 #else
-#include "s4.h"
 #include "s4_taskList.h"
+#include "shimmer_definitions.h"
 
 #include "stm32u5xx_hal_uart.h"
 #endif
@@ -55,7 +55,7 @@ extern void eepromWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
 
 extern uint8_t initializing, sensing;
 extern uint8_t storedConfig[NV_NUM_RWMEM_BYTES];
-extern uint8_t sdHeadText[SDHEAD_LEN];
+extern uint8_t sdHeadText[SD_HEAD_SIZE];
 extern uint8_t daughtCardId[PAGE_SIZE];
 extern uint8_t battVal[3];
 #else
@@ -96,7 +96,7 @@ uint8_t DockUart_rxCallback(uint8_t data)
 #if defined(SHIMMER3)
   if (initializing)
 #else
-  if (stat.isInitialising)
+  if (shimmerStatus.isInitialising)
 #endif
   {
     return 0;
@@ -643,7 +643,7 @@ void DockUart_sendRsp(void)
 #if defined(SHIMMER3)
     memcpy(uartRespBuf + uart_resp_len, battVal, 3);
 #else
-    memcpy(uartRespBuf + uart_resp_len, (uint8_t *) stat.battVal, 3);
+    memcpy(uartRespBuf + uart_resp_len, (uint8_t *) shimmerStatus.battVal, 3);
 #endif
     uart_resp_len += 3;
   }
@@ -690,11 +690,6 @@ void DockUart_sendRsp(void)
     *(uartRespBuf + uart_resp_len++) = UART_PROP_CARD_ID;
     if ((uartDcMemLength + uart_resp_len) < UART_RSP_PACKET_SIZE)
     {
-      //CAT24C16_init();
-      //CAT24C16_read(uartDcMemOffset, (uint16_t) uartDcMemLength,
-      //  (uartRespBuf + uart_resp_len));
-      //CAT24C16_powerOff();
-
 #if defined(SHIMMER3)
       memcpy(uartRespBuf + uart_resp_len, daughtCardId + uartDcMemOffset, uartDcMemLength);
 #else
@@ -716,7 +711,7 @@ void DockUart_sendRsp(void)
 #if defined(SHIMMER3)
       if (!sensing)
 #else
-      if (!stat.isSensing)
+      if (!shimmerStatus.isSensing)
 #endif
       {
         eepromRead(uartDcMemOffset + 16U, (uint16_t) uartDcMemLength,

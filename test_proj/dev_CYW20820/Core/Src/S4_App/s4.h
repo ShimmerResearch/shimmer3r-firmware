@@ -140,14 +140,14 @@
 #define STC3100_CH_3                      0x2B
 #define STC3100_CH_4                      0x2C
 #define STC3100_CH_5                      0x2D
-#define EXT_ADC_0                         0x2E
-#define EXT_ADC_1                         0x2F
-#define EXT_ADC_2                         0x30
-#define INT_ADC_0                         0x31
+#define EXTERNAL_ADC_0                         0x2E
+#define EXTERNAL_ADC_1                         0x2F
+#define EXTERNAL_ADC_2                         0x30
+#define INTERNAL_ADC_0                         0x31
 #define INT_ADC_4                         0x32
 #define INT_ADC_1                         0x33
-#define INT_ADC_2                         0x34
-#define INT_ADC_3                         0x35
+#define INTERNAL_ADC_2                         0x34
+#define INTERNAL_ADC_3                         0x35
 #define PPG_1                             0x36
 #define PPG_2                             0x37
 
@@ -164,24 +164,24 @@
 #define TOGGLE_LED_COMMAND                            0x06
 #define START_STREAMING_COMMAND                       0x07  //maintain compatibility with Shimmer2/2r BtStream
 #define SET_SENSORS_COMMAND                           0x08
-#define SET_LSM303DLHC_ACCEL_RANGE_COMMAND            0x09
-#define LSM303DLHC_ACCEL_RANGE_RESPONSE               0x0A
-#define GET_LSM303DLHC_ACCEL_RANGE_COMMAND            0x0B
+#define SET_WR_ACCEL_RANGE_COMMAND            0x09
+#define WR_ACCEL_RANGE_RESPONSE               0x0A
+#define GET_WR_ACCEL_RANGE_COMMAND            0x0B
 #define SET_CONFIG_SETUP_BYTES_COMMAND                0x0E
 #define CONFIG_SETUP_BYTES_RESPONSE                   0x0F
 #define GET_CONFIG_SETUP_BYTES_COMMAND                0x10
-#define SET_A_ACCEL_CALIBRATION_COMMAND               0x11
-#define A_ACCEL_CALIBRATION_RESPONSE                  0x12
-#define GET_A_ACCEL_CALIBRATION_COMMAND               0x13
+#define SET_LN_ACCEL_CALIBRATION_COMMAND               0x11
+#define LN_ACCEL_CALIBRATION_RESPONSE                  0x12
+#define GET_LN_ACCEL_CALIBRATION_COMMAND               0x13
 #define SET_MPU9250_GYRO_CALIBRATION_COMMAND          0x14
 #define MPU9250_GYRO_CALIBRATION_RESPONSE             0x15
 #define GET_MPU9250_GYRO_CALIBRATION_COMMAND          0x16
-#define SET_LSM303DLHC_MAG_CALIBRATION_COMMAND        0x17
-#define LSM303DLHC_MAG_CALIBRATION_RESPONSE           0x18
-#define GET_LSM303DLHC_MAG_CALIBRATION_COMMAND        0x19
-#define SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND      0x1A
-#define LSM303DLHC_ACCEL_CALIBRATION_RESPONSE         0x1B
-#define GET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND      0x1C
+#define SET_MAG_CALIBRATION_COMMAND        0x17
+#define MAG_CALIBRATION_RESPONSE           0x18
+#define GET_MAG_CALIBRATION_COMMAND        0x19
+#define SET_WR_ACCEL_CALIBRATION_COMMAND      0x1A
+#define WR_ACCEL_CALIBRATION_RESPONSE         0x1B
+#define GET_WR_ACCEL_CALIBRATION_COMMAND      0x1C
 #define STOP_STREAMING_COMMAND                        0x20  //maintain compatibility with Shimmer2/2r BtStream
 #define SET_GSR_RANGE_COMMAND                         0x21
 #define GSR_RANGE_RESPONSE                            0x22
@@ -200,24 +200,24 @@
 #define GET_CHARGE_STATUS_LED_COMMAND                 0x32
 #define BUFFER_SIZE_RESPONSE                          0x35
 #define GET_BUFFER_SIZE_COMMAND                       0x36
-#define SET_LSM303DLHC_MAG_GAIN_COMMAND               0x37
-#define LSM303DLHC_MAG_GAIN_RESPONSE                  0x38
-#define GET_LSM303DLHC_MAG_GAIN_COMMAND               0x39
-#define SET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND      0x3A
-#define LSM303DLHC_MAG_SAMPLING_RATE_RESPONSE         0x3B
-#define GET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND      0x3C
+#define SET_MAG_GAIN_COMMAND               0x37
+#define MAG_GAIN_RESPONSE                  0x38
+#define GET_MAG_GAIN_COMMAND               0x39
+#define SET_MAG_SAMPLING_RATE_COMMAND      0x3A
+#define MAG_SAMPLING_RATE_RESPONSE         0x3B
+#define GET_MAG_SAMPLING_RATE_COMMAND      0x3C
 #define UNIQUE_SERIAL_RESPONSE                        0x3D
 #define GET_UNIQUE_SERIAL_COMMAND                     0x3E
 #define GET_DEVICE_VERSION_COMMAND                    0x3F
-#define SET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND    0x40
-#define LSM303DLHC_ACCEL_SAMPLING_RATE_RESPONSE       0x41
-#define GET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND    0x42
-#define SET_LSM303DLHC_ACCEL_LPMODE_COMMAND           0x43
-#define LSM303DLHC_ACCEL_LPMODE_RESPONSE              0x44
-#define GET_LSM303DLHC_ACCEL_LPMODE_COMMAND           0x45
-#define SET_LSM303DLHC_ACCEL_HRMODE_COMMAND           0x46
-#define LSM303DLHC_ACCEL_HRMODE_RESPONSE              0x47
-#define GET_LSM303DLHC_ACCEL_HRMODE_COMMAND           0x48
+#define SET_WR_ACCEL_SAMPLING_RATE_COMMAND    0x40
+#define WR_ACCEL_SAMPLING_RATE_RESPONSE       0x41
+#define GET_WR_ACCEL_SAMPLING_RATE_COMMAND    0x42
+#define SET_WR_ACCEL_LPMODE_COMMAND           0x43
+#define WR_ACCEL_LPMODE_RESPONSE              0x44
+#define GET_WR_ACCEL_LPMODE_COMMAND           0x45
+#define SET_WR_ACCEL_HRMODE_COMMAND           0x46
+#define WR_ACCEL_HRMODE_RESPONSE              0x47
+#define GET_WR_ACCEL_HRMODE_COMMAND           0x48
 #define SET_MPU9250_GYRO_RANGE_COMMAND                0x49
 #define MPU9250_GYRO_RANGE_RESPONSE                   0x4A
 #define GET_MPU9250_GYRO_RANGE_COMMAND                0x4B
@@ -350,10 +350,10 @@
 #define NV_DERIVED_CHANNELS_0             31
 #define NV_DERIVED_CHANNELS_1             32
 #define NV_DERIVED_CHANNELS_2             33
-#define NV_A_ACCEL_CALIBRATION            34
-#define NV_MPU9250_GYRO_CALIBRATION       55
-#define NV_LSM303DLHC_MAG_CALIBRATION     76
-#define NV_LSM303DLHC_ACCEL_CALIBRATION   97  //97->117
+#define NV_LN_ACCEL_CALIBRATION            34
+#define NV_GYRO_CALIBRATION       55
+#define NV_MAG_CALIBRATION     76
+#define NV_WR_ACCEL_CALIBRATION   97  //97->117
 #define NV_CALIBRATION_END               117
 #define NV_SENSORS5                       NV_BUFFER_SIZE//118
 
@@ -362,8 +362,8 @@
 #define NV_CONFIG_SETUP_BYTE4             128+2
 #define NV_CONFIG_SETUP_BYTE5             128+3
 #define NV_CONFIG_SETUP_BYTE6             128+4
-#define NV_MPL_ACCEL_CALIBRATION          128+5 //+21
-#define NV_MPL_MAG_CALIBRATION            128+26 //+21
+#define NV_ALT_ACCEL_CALIBRATION          128+5 //+21
+#define NV_ALT_MAG_CALIBRATION            128+26 //+21
 #define NV_MPL_GYRO_CALIBRATION           128+47 //+12
 #define NV_SD_SHIMMER_NAME                128+59   // +12 bytes
 #define NV_SD_EXP_ID_NAME                 128+71   // +12 bytes
@@ -595,10 +595,10 @@
 #define SDH_EXG_ADS1292R_2_LOFF_STAT      73
 #define SDH_EXG_ADS1292R_2_RESP1          74
 #define SDH_EXG_ADS1292R_2_RESP2          75
-#define SDH_LSM303DLHC_ACCEL_CALIBRATION  76 //0x4c
-#define SDH_MPU9250_GYRO_CALIBRATION      97 //0x61
-#define SDH_LSM303DLHC_MAG_CALIBRATION    118//0x76
-#define SDH_A_ACCEL_CALIBRATION           139//0x8b
+#define SDH_WR_ACCEL_CALIBRATION  76 //0x4c
+#define SDH_GYRO_CALIBRATION      97 //0x61
+#define SDH_MAG_CALIBRATION    118//0x76
+#define SDH_LN_ACCEL_CALIBRATION           139//0x8b
 #define SDH_TEMP_PRES_CALIBRATION         160
 #define SDH_MY_LOCALTIME_0TH              248
 #define SDH_MY_LOCALTIME_5TH              251

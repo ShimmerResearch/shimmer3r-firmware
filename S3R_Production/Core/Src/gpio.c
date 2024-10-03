@@ -23,6 +23,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "shimmer_externs.h"
+
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -62,7 +64,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, CS_LSM6DSV_Pin | BT_CP_ROLE_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, SW_SPI1_Pin | SW_I2C1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, SW_SENSE_IO_Pin | SW_GSR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD,
@@ -72,13 +74,13 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(SW_BT_GPIO_Port, SW_BT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SW_SPI2_Pin | SW_SD_MCU_DOCK_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, SW_MIC_Pin | SW_SD_MCU_DOCK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CS_HIGH_G_GPIO_Port, CS_HIGH_G_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, SW_FLASH_Pin | SW_SENSE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PEPin PEPin PEPin PEPin
                            PEPin PEPin */
@@ -89,17 +91,17 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PEPin PEPin PEPin */
-  GPIO_InitStruct.Pin = CS_LIS3MDL_Pin | SW_SPI1_Pin | SW_I2C1_Pin;
+  GPIO_InitStruct.Pin = CS_LIS3MDL_Pin | SW_SENSE_IO_Pin | SW_GSR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = USER_BTN_N_Pin;
+  GPIO_InitStruct.Pin = GPIO_INTERNAL0_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(USER_BTN_N_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIO_INTERNAL0_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PCPin PCPin PCPin */
   GPIO_InitStruct.Pin = CS_LSM6DSV_Pin | BT_CP_ROLE_Pin | SW_BT_Pin;
@@ -127,9 +129,9 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PDPin PDPin PDPin PDPin
-                           PDPin */
+                           PDPin PDPin */
   GPIO_InitStruct.Pin = BT_LP_MODE_Pin | BT_RST_Pin | SW_FLASH_Pin
-      | CS_BMP390_Pin | CS_LIS2DW12_Pin;
+      | SW_SENSE_Pin | CS_BMP390_Pin | CS_LIS2DW12_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -142,7 +144,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin PAPin */
-  GPIO_InitStruct.Pin = SW_SPI2_Pin | CS_HIGH_G_Pin | SW_SD_MCU_DOCK_Pin;
+  GPIO_InitStruct.Pin = SW_MIC_Pin | CS_HIGH_G_Pin | SW_SD_MCU_DOCK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -154,15 +156,24 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(SD_DETECT_N_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PDPin PDPin PDPin */
-  GPIO_InitStruct.Pin = GPIO_INTERNAL0_Pin | GPIO_INTERNAL1_Pin | GPIO_INTERNAL2_Pin;
+  /*Configure GPIO pins : PDPin PDPin */
+  GPIO_InitStruct.Pin = GPIO_INTERNAL1_Pin | GPIO_INTERNAL2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = BOOT0_USER_BTN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(BOOT0_USER_BTN_GPIO_Port, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+  
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
   HAL_NVIC_SetPriority(EXTI9_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_IRQn);
@@ -195,27 +206,27 @@ void GPIO_VBUS_init(uint8_t state)
 
 void GPIO_userButtonCheck()
 {
-  if (HAL_GPIO_ReadPin(USER_BTN_N_GPIO_Port, USER_BTN_N_Pin) == GPIO_PIN_RESET)
+  if (HAL_GPIO_ReadPin(BOOT0_USER_BTN_GPIO_Port, BOOT0_USER_BTN_Pin) == GPIO_PIN_SET)
   { //pressed
-    stat.isButtonPressed = 1;
+    shimmerStatus.isButtonPressed = 1;
     Board_ledOn(LED_YELLOW);
     GPIO_tsPress = RTC_get64();
   }
   else
   {
-    stat.isButtonPressed = 0;
+    shimmerStatus.isButtonPressed = 0;
     Board_ledOff(LED_YELLOW);
     GPIO_tsRelease = RTC_get64();
     if (GPIO_tsRelease - GPIO_tsLastRelease > 3277)
     {
-      if (stat.isSensing == 0)
+      if (shimmerStatus.isSensing == 0)
       {
-        stat.sdlogCmd = 1;
+        shimmerStatus.sdlogCmd = 1;
         S4_Task_set(TASK_STARTSENSING);
       }
       else
       {
-        stat.sdlogCmd = 2;
+        shimmerStatus.sdlogCmd = 2;
         S4_Task_set(TASK_STOPSENSING);
       }
     }
@@ -249,7 +260,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   case GPIO_INTERNAL1_Pin:
     //TODO check if product is ExG unit
     //EXG1 DRDY active low
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       //EXG_dataReadyChip1();
       ext_cnt1++;
@@ -265,7 +276,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   case GPIO_INTERNAL0_Pin:
     //TODO check if product is ExG unit
     //EXG2 DRDY active low
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       //EXG_gatherDataStart();
       __NOP();
@@ -294,7 +305,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     DockUart_interruptCheck();
     S4_Task_set(TASK_DOCKSETUP);
     break;
-  case USER_BTN_N_Pin:
+  case BOOT0_USER_BTN_Pin:
     GPIO_userButtonCheck();
     break;
   case SD_DETECT_N_Pin:
@@ -314,7 +325,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   switch (GPIO_Pin)
   {
   case GPIO_INTERNAL1_Pin:
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       //EXG_dataReadyChip1();
       ext_cnt1++;
@@ -329,7 +340,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     break; //EXG1
            //DOCK_Pin and gpio_internal share the same pin
   case GPIO_INTERNAL0_Pin:
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
 
       //EXG_gatherDataStart();
@@ -364,13 +375,13 @@ uint8_t SD_insertedCheck()
 {
   if (HAL_GPIO_ReadPin(SD_DETECT_N_GPIO_Port, SD_DETECT_N_Pin) == GPIO_PIN_RESET)
   { //inserted
-    stat.isSdInserted = 1;
+    shimmerStatus.isSdInserted = 1;
   }
   else
   {
-    stat.isSdInserted = 0;
+    shimmerStatus.isSdInserted = 0;
   }
-  return stat.isSdInserted;
+  return shimmerStatus.isSdInserted;
 }
 
 void SdPowerOn(void)
