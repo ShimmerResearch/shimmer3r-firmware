@@ -376,13 +376,8 @@ static int8_t CDC_Control(uint8_t cdc_ch, uint8_t cmd, uint8_t *pbuf, uint16_t l
     Line_Coding[cdc_ch].paritytype = pbuf[5];
     Line_Coding[cdc_ch].datatype = pbuf[6];
 
-    tempbuf[0] = pbuf[0];
-    tempbuf[1] = pbuf[1];
-    tempbuf[2] = pbuf[2];
-    tempbuf[3] = pbuf[3];
-    tempbuf[4] = pbuf[4];
-    tempbuf[5] = pbuf[5];
-    tempbuf[6] = pbuf[6];
+    memcpy(&tempbuf[0], pbuf, sizeof(tempbuf));
+
     //Change_UART_Setting(cdc_ch);
     break;
 
@@ -395,13 +390,7 @@ static int8_t CDC_Control(uint8_t cdc_ch, uint8_t cmd, uint8_t *pbuf, uint16_t l
     pbuf[5] = Line_Coding[cdc_ch].paritytype;
     pbuf[6] = Line_Coding[cdc_ch].datatype;
 
-    pbuf[0] =  tempbuf[0];
-    pbuf[1] = tempbuf[1];
-    pbuf[2] = tempbuf[2];
-    pbuf[3] = tempbuf[3];
-    pbuf[4] = tempbuf[4];
-    pbuf[5] = tempbuf[5];
-    pbuf[6] = tempbuf[6];
+    memcpy(pbuf, &tempbuf[0], sizeof(tempbuf));
     break;
 
   case CDC_SET_CONTROL_LINE_STATE:
