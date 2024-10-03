@@ -23,7 +23,7 @@
 /* USER CODE BEGIN 0 */
 
 #include "hal_Board.h"
-uint8_t data[512] = { 0 };
+uint8_t data[100] = { 0 };
 
 MDF_DmaConfigTypeDef mdfDmaConfig;
 /* USER CODE END 0 */
@@ -162,22 +162,22 @@ void MDF1_DeInit(void)
 
 void startDataGather(void)
 {
-
-  mdfDmaConfig.Address = (uint32_t) data;
-  mdfDmaConfig.DataLength = 16U;
-  mdfDmaConfig.MsbOnly = ENABLE;
+  mdfDmaConfiguration();
   HAL_MDF_AcqStart_DMA(&MdfHandle4, &MdfFilterConfig4, &mdfDmaConfig);
 }
 
-void getData(int32_t *buf)
+void mdfDmaConfiguration(void)
 {
-  //HAL_MDF_PollForAcq(&MdfHandle4, 500);
-  HAL_MDF_GetAcqValue(&MdfHandle4, buf);
+  mdfDmaConfig.Address = (uint32_t) data;
+  mdfDmaConfig.DataLength = 16U;
+  mdfDmaConfig.MsbOnly = ENABLE;
 }
 
 void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf)
 {
-  printf("here");
+  //printf("here");
+  mdfDmaConfiguration();
+  //TODO: Take care of the data here.
 }
 
 /* USER CODE END 1 */

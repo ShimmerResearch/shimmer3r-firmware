@@ -46,6 +46,7 @@ extern "C"
   void startDataGather(void);
   void MDF1_DeInit(void);
   void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf);
+  void mdfDmaConfiguration(void);
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
