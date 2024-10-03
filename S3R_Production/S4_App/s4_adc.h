@@ -2,12 +2,12 @@
 #ifndef S4_ADC_H
 #define S4_ADC_H
 
+#include "shimmer_include.h"
 #include "stm32u5xx_hal.h"
 //#include "main.h"
 
 #include "linked_list.h"
-#include "s4.h"
-#include "s4__cfg.h"
+#include "shimmer_definitions.h"
 
 typedef struct
 { //adc - Sensors

@@ -10,7 +10,9 @@
 
 #include <stdint.h>
 
-#define CheckSdInslot SD_insertedCheck
+#define CheckSdInslot             SD_insertedCheck
+#define BIN_FILE_SPLIT_TIME_TICKS (32768 * 3600)
+#define BIN_FILE_SYNC_TIME_TICKS  (32768 * 60)
 
 void SD_init(void);
 uint8_t SD_test(void);

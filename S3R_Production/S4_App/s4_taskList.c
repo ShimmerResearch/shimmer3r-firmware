@@ -41,6 +41,7 @@
  */
 
 #include "s4_taskList.h"
+#include "shimmer_definitions.h"
 
 uint32_t taskList = 0;
 uint32_t taskCurrent;
@@ -62,14 +63,14 @@ void S4_NORM_Task_manage(void)
   if (!taskCurrent)
   {
     Power_SleepUntilInterrupt();
-    //if(stat.isBtConnected && !stat.isSensing){
+    //if(shimmerStatus.isBtConnected && !shimmerStatus.isSensing){
     //   Power_SleepUntilInterrupt();
     //
     //   __NOP();
     //   __NOP();
     //   __NOP();
     //}else{
-    //   if(stat.periStat == 0)
+    //   if(shimmerStatus.periStat == 0)
     //   {
     ////            static uint8_t green1_cnt = 0;
     ////            if(!green1_cnt++){
@@ -134,13 +135,14 @@ void S4_NORM_Task_manage(void)
       SD_writeToCard();
       break;
     case TASK_SDLOG_CFG_UPDATE:
-      if (!stat.isDocked && !stat.isSensing && stat.isSdInserted && GetSdCfgFlag())
+      if (!shimmerStatus.isDocked && !shimmerStatus.isSensing
+          && shimmerStatus.isSdInserted && GetSdCfgFlag())
       {
-        stat.isConfiguring = 1;
+        shimmerStatus.isConfiguring = 1;
         IniReadInfoMem();
         UpdateSdConfig();
         SetSdCfgFlag(0);
-        stat.isConfiguring = 0;
+        shimmerStatus.isConfiguring = 0;
       }
       break;
     case TASK_BATT_READ_FROM_ALARM:

@@ -43,7 +43,7 @@
 #ifndef RN42_H
 #define RN42_H
 
-#include "s4.h"
+#include "shimmer_definitions.h"
 #include "stm32u5xx_hal.h"
 #include <stdint.h>
 

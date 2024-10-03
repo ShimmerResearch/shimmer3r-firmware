@@ -44,8 +44,8 @@
 #define CAT24C16_H
 
 #include "stm32u5xx_hal.h"
-#include "string.h"
 #include <stdint.h>
+#include <string.h>
 
 #ifndef min
 #define min(a, b) ((a < b) ? a : b)
@@ -102,5 +102,9 @@ uint8_t CAT24C16_test(void);
 void eepromRead(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
 void eepromWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
 void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enum EEPROM_RW eepromRW);
+
+#if !IS_CONNECTED_EEPROM
+void setMockExpansionBrdDetails(void);
+#endif
 
 #endif

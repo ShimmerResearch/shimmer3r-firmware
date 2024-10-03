@@ -46,20 +46,24 @@ uint32_t run_factory_test(void)
     sd_card_test();
     send_test_report("\r\n");
 
-    stat.testResult += (!bt_module_test()) << 7;
+    shimmerStatus.testResult += (!bt_module_test()) << 7;
     send_test_report("\r\n");
 
-    stat.testResult += InfoMem_test() << 8;
+    shimmerStatus.testResult += InfoMem_test() << 8;
 
-    stat.testResult += I2C_test();
+    Board_enableSensingPower(1);
 
-    stat.testResult += SPI_test() << 16;
+    shimmerStatus.testResult += I2C_test();
+
+    shimmerStatus.testResult += SPI_test() << 16;
+
+    Board_enableSensingPower(0);
   }
 
   send_test_report("//***************************** TEST END "
                    "*************************************//\r\n");
 
-  return stat.testResult;
+  return shimmerStatus.testResult;
 }
 
 void print_date_and_time(void)
@@ -181,7 +185,7 @@ void led_test(void)
 void sd_card_test(void)
 {
   send_test_report("SD Card:\r\n");
-  if (!stat.isSdInserted)
+  if (!shimmerStatus.isSdInserted)
   {
     send_test_report(" - FAIL: not detected\r\n");
   }
@@ -191,16 +195,16 @@ void sd_card_test(void)
     printSdCardInfo(buffer);
     send_test_report(buffer);
 
-    stat.testResult += SD_test() << 6;
+    shimmerStatus.testResult += SD_test() << 6;
     //SD_test_alternative();
-    sprintf(buffer, " - %s: read/write test\r\n", stat.badFile ? "FAIL" : "PASS");
+    sprintf(buffer, " - %s: read/write test\r\n", shimmerStatus.badFile ? "FAIL" : "PASS");
     send_test_report(buffer);
   }
 }
 
 uint8_t bt_module_test(void)
 {
-  if (stat.isBtPoweredOn)
+  if (shimmerStatus.isBtPoweredOn)
   {
     send_test_report("BT Module:\r\n");
 
@@ -225,15 +229,14 @@ uint8_t bt_module_test(void)
   {
     send_test_report(" - FAIL\r\n");
   }
-  return stat.isBtPoweredOn;
+  return shimmerStatus.isBtPoweredOn;
 }
 
 uint8_t I2C_test(void)
 {
   uint8_t ret_val = 0;
 
-  set_power_i2c_main_bus(1);
-  HAL_Delay(50);
+  MX_I2C1_Init();
 
   I2C_scan_busses();
 
@@ -270,9 +273,8 @@ uint8_t I2C_test(void)
   uint8_t eeprom_result = CAT24C16_test();
   sprintf(buffer, " - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
   send_test_report(buffer);
-#endif
 
-  set_power_i2c_main_bus(0);
+#endif
 
 #if defined(SHIMMER4_SDK)
   if (bmp280_test(hi2cMainBus))
@@ -280,6 +282,8 @@ uint8_t I2C_test(void)
     ret_val |= 0x10;
   }
 #endif
+
+  I2C1_DeInit();
 
   return ret_val;
 }
@@ -289,14 +293,13 @@ uint8_t SPI_test(void)
   uint8_t ret_val = 0;
 #if defined(SHIMMER3R)
   send_test_report("SPI1:\r\n");
-  set_power_spi1_bus(1, SPI1_CHIP_ALL);
-  HAL_Delay(50);
+  MX_SPI1_Init();
 
   uint8_t lsm6dsv_result = lsm6dsv_self_test();
   sprintf(buffer, " - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
-  int8_t bmp390_result = bmp390_self_test();
+  int8_t bmp390_result = bmp3_self_test();
   sprintf(buffer, " - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
   send_test_report(buffer);
   if (bmp390_result)
@@ -316,12 +319,10 @@ uint8_t SPI_test(void)
     sprintf(buffer, " - WARNING: ADXL371 not detected\r\n");
   }
   send_test_report(buffer);
-
-  set_power_spi1_bus(0, SPI1_CHIP_ALL);
+  SPI1_DeInit();
 
   send_test_report("SPI2:\r\n");
-  set_power_spi2_bus(1, SPI2_CHIP_ALL);
-  HAL_Delay(50);
+  MX_SPI2_Init();
   uint8_t lis3mdl_result = lis3mdl_self_test();
   sprintf(buffer, " - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
   send_test_report(buffer);
@@ -329,14 +330,19 @@ uint8_t SPI_test(void)
   uint8_t lis2dw12_result = lis2dw12_self_test();
   sprintf(buffer, " - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
   send_test_report(buffer);
+  SPI2_DeInit();
 
-  set_power_spi2_bus(0, SPI2_CHIP_ALL);
 #endif
 
   if (isAds1292Present())
   {
+    send_test_report("SPI3:\r\n");
+    MX_SPI3_Init();
+    send_test_report(" - WARNING: Test not implemented yet\r\n");
+
     //EXG_init(hspiExg);
     //ret_val |= EXG_test();
+    SPI3_DeInit();
   }
 
   return ret_val;

@@ -45,8 +45,8 @@
 #ifndef S4_SENSING_H
 #define S4_SENSING_H
 
-#include "s4.h"
-#include "s4__cfg.h"
+#include "shimmer_definitions.h"
+#include "shimmer_include.h"
 
 //uint8_t pDataTs, pDataTemp, pDataPres, pDataLsm303dlhcAccel,
 //pDataLsm303dlhcMag, pDataMpu9250Gyro, pDataMpu9250Accel,
@@ -120,6 +120,7 @@ extern SENSINGTypeDef sensing;
 void S4Sens_init(void);
 SENSINGTypeDef *S4Sens_getSensing(void);
 void S4Sens_configureChannels(void);
+void overWriteDefaultConfig(void);
 uint8_t S4Sens_checkStartSensorConditions(void);
 uint8_t S4Sens_checkStartLoggingConditions(void);
 uint8_t S4Sens_checkStartStreamingConditions(void);
@@ -149,5 +150,6 @@ void S4Sens_step5Start(void);
 void S4Sens_stepDone(void);
 
 void saveData(void);
+uint8_t areAnyChannelsEnabled(void);
 
 #endif //S4_SENSING_H

@@ -88,8 +88,8 @@ yes      IROM1    0x8008000   0xf8000
 
 */
 
-#include "s4__cfg.h"
 #include "stm32u5xx_hal.h"
+#include <shimmer_include.h>
 #include <stdint.h>
 #include <string.h>
 

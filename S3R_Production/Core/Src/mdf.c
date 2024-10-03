@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "hal_Board.h"
+
 /* USER CODE END 0 */
 
 MDF_HandleTypeDef MdfHandle4;
@@ -144,5 +146,11 @@ void HAL_MDF_MspDeInit(MDF_HandleTypeDef *mdfHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+void MDF1_DeInit(void)
+{
+  HAL_MDF_MspDeInit(&MdfHandle4);
+  Board_SW_MIC(0);
+}
 
 /* USER CODE END 1 */
