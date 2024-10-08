@@ -717,11 +717,11 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "sync=%d\r\n", storedConfig->syncEnable);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
+      sprintf(buffer, "bluetoothDisabled=%d\r\n", storedConfig->bluetoothDisabled);
+      f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "low_battery_autostop=%d\r\n", storedConfig->lowBatteryCutOut);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "interval=%d\r\n", storedConfig->btInterval);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "bluetooth=%d\r\n", storedConfig->bluetoothEnable);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
       sprintf(buffer, "max_exp_len=%d\r\n", storedConfig->experimentLengthMaxInMinutes);
@@ -1060,6 +1060,10 @@ void ParseConfig(void)
       {
         stored_config_temp.syncEnable = atoi(equals);
       }
+      else if (strstr(buffer, "bluetoothDisabled="))
+      {
+        stored_config_temp.bluetoothDisabled = atoi(equals);
+      }
       else if (strstr(buffer, "low_battery_autostop="))
       {
         stored_config_temp.lowBatteryCutOut = atoi(equals);
@@ -1076,10 +1080,6 @@ void ParseConfig(void)
       else if (strstr(buffer, "interval="))
       {
         broadcast_interval = atoi(equals) > 255 ? 255 : atoi(equals);
-      }
-      else if (strstr(buffer, "bluetooth="))
-      {
-        stored_config_temp.bluetoothEnable = atoi(equals);
       }
       else if (strstr(buffer, "exp_power="))
       {
@@ -1100,6 +1100,17 @@ void ParseConfig(void)
       else if (strstr(buffer, "max_exp_len="))
       {
         stored_config_temp.experimentLengthMaxInMinutes = atoi(equals);
+      }
+      else if (strstr(buffer, "singletouch="))
+      {
+          if (IS_SUPPORTED_SINGLE_TOUCH)
+          {
+            stored_config_temp.singleTouchStart = 0;
+          }
+          else
+          {
+            stored_config_temp.singleTouchStart = atoi(equals);
+          }
       }
       else if (strstr(buffer, "myid="))
       {

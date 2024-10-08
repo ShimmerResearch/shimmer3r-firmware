@@ -443,9 +443,20 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
         uint8_t data = btRxBuffPtr[0];
         uint8_t wakeupMcu = 0;
 
+        /* Filter supported BT commands if SD sync is enabled */
+        if (shimmerStatus.isSyncEnabled && (
+#if defined(SHIMMER3)
+                data!=RN4678_STATUS_STRING_SEPARATOR ||
+#endif
+                data!=ACK_COMMAND_PROCESSED
+                || data!=SET_SD_SYNC_COMMAND))
+        {
+            setDmaWaitingForResponse(1U);
+            return wakeupMcu;
+        }
+
         switch (data)
         {
-#if FW_IS_LOGANDSTREAM
         case INQUIRY_COMMAND:
         case DUMMY_COMMAND:
         case GET_SAMPLING_RATE_COMMAND:
@@ -574,7 +585,6 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
           *(gActionPtr) = data;
           waitingForArgs = 21U;
           break;
-#endif
 #if defined(SHIMMER3)
         case RN4678_STATUS_STRING_SEPARATOR:
           memset(btStatusStr, 0, sizeof(btStatusStr));
@@ -3907,7 +3917,7 @@ void HandleBtRfCommStateChange(uint8_t isConnected)
 
     if (!S4Ram_getStoredConfig()->syncEnable)
     {
-      if (shimmerStatus.syncEnabled)
+      if (shimmerStatus.isSyncEnabled)
       {
         shimmerStatus.btstreamReady = 0;
       }

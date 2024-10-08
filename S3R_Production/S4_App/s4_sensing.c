@@ -109,7 +109,7 @@ void overWriteDefaultConfig(void)
 {
   gConfigBytes *storedConfigPtr = S4Ram_getStoredConfig();
 
-  storedConfigPtr->bluetoothEnable = 1;
+  storedConfigPtr->bluetoothDisabled = 0;
 
   if (storedConfigPtr->chEnLnAccel)
   {

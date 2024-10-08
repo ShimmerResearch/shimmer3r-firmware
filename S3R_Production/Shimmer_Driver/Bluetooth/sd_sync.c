@@ -717,7 +717,7 @@ void handleSyncTimerTriggerCenter(void)
     {
       //start
       resetSyncVariablesCenter();
-      startBtForSync();
+      btStartCb();
     }
     else if ((syncCnt > SYNC_BOOT * SYNC_FACTOR) && (syncCnt < SYNC_WINDOW_C * SYNC_FACTOR))
     {
@@ -767,7 +767,7 @@ void handleSyncTimerTriggerCenter(void)
             if (cReboot == 1)
             {
               cReboot = 2;
-              startBtForSync();
+              btStartCb();
             }
             else if ((cReboot >= 2) && (cReboot < 5 * SYNC_FACTOR))
             {
@@ -864,23 +864,11 @@ void handleSyncTimerTriggerNode(void)
     }
     else if (syncCnt == (SYNC_CD * (nReboot + 1) + SYNC_WINDOW_N * nReboot) * SYNC_FACTOR)
     {
-      startBtForSync();
+      btStartCb();
       syncNodeWinExpire
           = (SYNC_CD * (nReboot + 1) + SYNC_WINDOW_N * (nReboot + 1)) * SYNC_FACTOR;
     }
   }
-}
-
-void startBtForSync(void)
-{
-#if defined(SHIMMER3)
-  BT_init();
-  BT_rn4xDisableRemoteConfig(1);
-  BT_setUpdateBaudDuringBoot(1);
-  btStartCb();
-#elif defined(SHIMMER3R)
-  //TODO
-#endif
 }
 
 //Timer2:

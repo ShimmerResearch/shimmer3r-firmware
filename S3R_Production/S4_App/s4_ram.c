@@ -310,6 +310,7 @@ void S4Ram_SetDefaultInfomem(void)
   storedConfig.myTrialID = 0;
   storedConfig.numberOfShimmers = 0;
   storedConfig.userButtonEnable = 1;
+  storedConfig.bluetoothDisabled = 0;
   storedConfig.rtcErrorEnable = 1;
   storedConfig.sdErrorEnable = 1;
   storedConfig.btInterval = 54;
