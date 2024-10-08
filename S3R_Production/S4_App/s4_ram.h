@@ -412,14 +412,14 @@ typedef union
     uint8_t numberOfShimmers;
 
     //SDTrialConfig0
-    uint8_t sdErrorEnable    : 1;
-    uint8_t masterEnable     : 1;
-    uint8_t syncEnable       : 1;
+    uint8_t sdErrorEnable     : 1;
+    uint8_t masterEnable      : 1;
+    uint8_t syncEnable        : 1;
     uint8_t bluetoothDisabled : 1;
-    uint8_t rtcErrorEnable   : 1;
-    uint8_t userButtonEnable : 1;
-    uint8_t btPinSetup       : 1;
-    uint8_t rtcSetByBt       : 1;
+    uint8_t rtcErrorEnable    : 1;
+    uint8_t userButtonEnable  : 1;
+    uint8_t btPinSetup        : 1;
+    uint8_t rtcSetByBt        : 1;
 
     //SDTrialConfig1
     uint8_t lowBatteryCutOut : 1;

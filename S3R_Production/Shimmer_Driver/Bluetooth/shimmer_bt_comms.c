@@ -444,15 +444,15 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
         uint8_t wakeupMcu = 0;
 
         /* Filter supported BT commands if SD sync is enabled */
-        if (shimmerStatus.isSyncEnabled && (
+        if (shimmerStatus.isSyncEnabled
+            && (
 #if defined(SHIMMER3)
-                data!=RN4678_STATUS_STRING_SEPARATOR ||
+                data != RN4678_STATUS_STRING_SEPARATOR ||
 #endif
-                data!=ACK_COMMAND_PROCESSED
-                || data!=SET_SD_SYNC_COMMAND))
+                data != ACK_COMMAND_PROCESSED || data != SET_SD_SYNC_COMMAND))
         {
-            setDmaWaitingForResponse(1U);
-            return wakeupMcu;
+          setDmaWaitingForResponse(1U);
+          return wakeupMcu;
         }
 
         switch (data)
