@@ -17,11 +17,9 @@
 #include "../5xx_HAL/hal_RTC.h"
 #include "../5xx_HAL/hal_board.h"
 #include "RN4X.h"
-#include "hal_CRC.h"
-#include "shimmer_btsd.h"
 
 #if BT_DMA_USED_FOR_RX
-//#include "../5xx_HAL/hal_DMA.h"
+#include "../5xx_HAL/hal_DMA.h"
 #endif
 #elif defined(SHIMMER3R) || defined(SHIMMER4_SDK)
 #include "bmp3_defs.h"
@@ -2313,10 +2311,9 @@ void resetBtResponseBools(void)
   gyroRangeResponse = 0;
   bmp180CalibrationCoefficientsResponse = 0;
   bmp280CalibrationCoefficientsResponse = 0;
-  setEepromIsPresent(0);
   gyroSamplingRateResponse = 0;
   altAccelRangeResponse = 0;
-  bmpOversamplingRatioResponse = 0;
+  pressureOversamplingRatioResponse = 0;
   internalExpPowerEnableResponse = 0;
   configSetupBytesResponse = 0;
   gyroCalibrationResponse = 0;
@@ -2344,6 +2341,8 @@ void resetBtResponseBools(void)
   bmpGenericCalibrationCoefficientsResponse = 0;
 
   useAckPrefixForInstreamResponses = 1U;
+
+//  changeBtBaudRate = BAUD_NO_CHANGE_NEEDED;   //indicates doesn't need changing
 
 #if defined(SHIMMER4_SDK)
   i2cvBattBtRsp = 0;
@@ -2612,7 +2611,7 @@ void BtUart_processCmd(void)
     altAccelRangeResponse = 1;
     break;
   case GET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
-    bmpOversamplingRatioResponse = 1;
+    pressureOversamplingRatioResponse = 1;
     break;
   case GET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
     internalExpPowerEnableResponse = 1;
@@ -3462,11 +3461,11 @@ void BtUart_sendRsp(void)
       *(resPacket + packet_length++) = storedConfig->altAccelRange;
       altAccelRangeResponse = 0;
     }
-    else if (bmpOversamplingRatioResponse)
+    else if (pressureOversamplingRatioResponse)
     {
       *(resPacket + packet_length++) = PRESSURE_OVERSAMPLING_RATIO_RESPONSE;
       *(resPacket + packet_length++) = get_config_byte_pressure_oversampling_ratio();
-      bmpOversamplingRatioResponse = 0;
+      pressureOversamplingRatioResponse = 0;
     }
     else if (internalExpPowerEnableResponse)
     {

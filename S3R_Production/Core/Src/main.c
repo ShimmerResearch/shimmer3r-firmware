@@ -143,6 +143,7 @@ void Init()
 
   setBootStage(BOOT_STAGE_I2C);
   //TODO Shimmer3 performs bus scan on boot - not needed for Shimmer3r?
+//  setEepromIsPresent(0);
   loadDaughterCardIdFromEeprom();
 
   setUartPeripheralPointers();
