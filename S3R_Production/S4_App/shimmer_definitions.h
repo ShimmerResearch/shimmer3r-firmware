@@ -21,12 +21,12 @@
 #define FW_VER_REL   23 //internal version number: 0-255
 #endif
 
-#define FW_IS_LOGANDSTREAM  1
+#define FW_IS_LOGANDSTREAM        1
 
-#define IS_CONNECTED_EEPROM 0
+#define IS_CONNECTED_EEPROM       0
 #define IS_SUPPORTED_SINGLE_TOUCH 0
 
-#define USE_DEFAULT_SENSOR  0
+#define USE_DEFAULT_SENSOR        0
 #define RTC_FAST \
   0 //need to increase rtc alarm interrupt priority before enabling this option
 #define USE_8BYTES_INIT_TS    0

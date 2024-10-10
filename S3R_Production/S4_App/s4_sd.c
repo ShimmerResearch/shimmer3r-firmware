@@ -1103,14 +1103,14 @@ void ParseConfig(void)
       }
       else if (strstr(buffer, "singletouch="))
       {
-          if (IS_SUPPORTED_SINGLE_TOUCH)
-          {
-            stored_config_temp.singleTouchStart = 0;
-          }
-          else
-          {
-            stored_config_temp.singleTouchStart = atoi(equals);
-          }
+        if (IS_SUPPORTED_SINGLE_TOUCH)
+        {
+          stored_config_temp.singleTouchStart = 0;
+        }
+        else
+        {
+          stored_config_temp.singleTouchStart = atoi(equals);
+        }
       }
       else if (strstr(buffer, "myid="))
       {
