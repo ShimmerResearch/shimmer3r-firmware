@@ -2342,7 +2342,7 @@ void resetBtResponseBools(void)
 
   useAckPrefixForInstreamResponses = 1U;
 
-//  changeBtBaudRate = BAUD_NO_CHANGE_NEEDED;   //indicates doesn't need changing
+  //changeBtBaudRate = BAUD_NO_CHANGE_NEEDED;   //indicates doesn't need changing
 
 #if defined(SHIMMER4_SDK)
   i2cvBattBtRsp = 0;
