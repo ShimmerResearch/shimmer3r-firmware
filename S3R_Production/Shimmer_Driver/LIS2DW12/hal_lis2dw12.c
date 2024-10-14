@@ -402,11 +402,15 @@ int32_t lis2dw12_configure(float shimmerSamplingFreq,
   }
 
   isDrdyIntEnabled = false;
-#if defined(LIS2DW12_INT1_Pin)
+  //TODO remove IF when fully switched from eval board to BGA variant
+#if defined(S3R_BGA_VARIANT)
   if (lis2dw12_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
   {
     lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
-    lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), int1_drdy);
+
+    lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl;
+    int1_pad_ctrl.int1_drdy = PROPERTY_ENABLE;
+    lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
     isDrdyIntEnabled = true;
   }
 #endif

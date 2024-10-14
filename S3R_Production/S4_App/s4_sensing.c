@@ -251,7 +251,12 @@ void S4Sens_startSensing(void)
 
     if (S4Ram_getStoredConfig()->chEnMicrophone)
     {
+      //TODO remove IF when fully switched from eval board to BGA variant
+#if defined(S3R_BGA_VARIANT)
+      MX_ADF1_Init();
+#else
       MX_MDF1_Init();
+#endif
     }
 
     //I2cSensing(1);// gather the first set of sample?

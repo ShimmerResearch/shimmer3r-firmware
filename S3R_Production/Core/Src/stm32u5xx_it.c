@@ -375,8 +375,8 @@ void GPDMA1_Channel7_IRQHandler(void)
 }
 
 /**
- * @brief This function handles ADC1_2 global interrupt.
- */
+  * @brief This function handles ADC1_2 global interrupt.
+  */
 void ADC1_2_IRQHandler(void)
 {
   /* USER CODE BEGIN ADC1_2_IRQn 0 */
