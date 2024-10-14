@@ -26,122 +26,120 @@
 
 /* USER CODE END 0 */
 
-MDF_HandleTypeDef MdfHandle4;
-MDF_FilterConfigTypeDef MdfFilterConfig4;
+MDF_HandleTypeDef AdfHandle0;
+MDF_FilterConfigTypeDef AdfFilterConfig0;
 
-/* MDF1 init function */
-void MX_MDF1_Init(void)
+/* ADF1 init function */
+void MX_ADF1_Init(void)
 {
 
-  /* USER CODE BEGIN MDF1_Init 0 */
+  /* USER CODE BEGIN ADF1_Init 0 */
 
-  /* USER CODE END MDF1_Init 0 */
+  /* USER CODE END ADF1_Init 0 */
 
-  /* USER CODE BEGIN MDF1_Init 1 */
+  /* USER CODE BEGIN ADF1_Init 1 */
 
-  /* USER CODE END MDF1_Init 1 */
+  /* USER CODE END ADF1_Init 1 */
 
   /**
-    MdfHandle4 structure initialization and HAL_MDF_Init function call
+    AdfHandle0 structure initialization and HAL_MDF_Init function call
   */
-  MdfHandle4.Instance = MDF1_Filter4;
-  MdfHandle4.Init.CommonParam.InterleavedFilters = 0;
-  MdfHandle4.Init.CommonParam.ProcClockDivider = 1;
-  MdfHandle4.Init.CommonParam.OutputClock.Activation = DISABLE;
-  MdfHandle4.Init.SerialInterface.Activation = ENABLE;
-  MdfHandle4.Init.SerialInterface.Mode = MDF_SITF_LF_MASTER_SPI_MODE;
-  MdfHandle4.Init.SerialInterface.ClockSource = MDF_SITF_CKI_SOURCE;
-  MdfHandle4.Init.SerialInterface.Threshold = 4;
-  MdfHandle4.Init.FilterBistream = MDF_BITSTREAM4_RISING;
-  if (HAL_MDF_Init(&MdfHandle4) != HAL_OK)
+  AdfHandle0.Instance = ADF1_Filter0;
+  AdfHandle0.Init.CommonParam.ProcClockDivider = 1;
+  AdfHandle0.Init.CommonParam.OutputClock.Activation = DISABLE;
+  AdfHandle0.Init.SerialInterface.Activation = ENABLE;
+  AdfHandle0.Init.SerialInterface.Mode = MDF_SITF_LF_MASTER_SPI_MODE;
+  AdfHandle0.Init.SerialInterface.ClockSource = MDF_SITF_CCK0_SOURCE;
+  AdfHandle0.Init.SerialInterface.Threshold = 4;
+  AdfHandle0.Init.FilterBistream = MDF_BITSTREAM0_FALLING;
+  if (HAL_MDF_Init(&AdfHandle0) != HAL_OK)
   {
     Error_Handler();
   }
 
   /**
-    MdfFilterConfig4, MdfOldConfig4 and/or MdfScdConfig4 structures initialization
+    AdfFilterConfig0 structure initialization
 
-    WARNING : only structures are filled, no specific init function call for filter
+    WARNING : only structure is filled, no specific init function call for filter
   */
-  MdfFilterConfig4.DataSource = MDF_DATA_SOURCE_BSMX;
-  MdfFilterConfig4.Delay = 0;
-  MdfFilterConfig4.CicMode = MDF_TWO_FILTERS_MCIC_FASTSINC;
-  MdfFilterConfig4.DecimationRatio = 2;
-  MdfFilterConfig4.Offset = 0;
-  MdfFilterConfig4.Gain = 0;
-  MdfFilterConfig4.ReshapeFilter.Activation = DISABLE;
-  MdfFilterConfig4.HighPassFilter.Activation = DISABLE;
-  MdfFilterConfig4.Integrator.Activation = DISABLE;
-  MdfFilterConfig4.SoundActivity.Activation = DISABLE;
-  MdfFilterConfig4.AcquisitionMode = MDF_MODE_ASYNC_CONT;
-  MdfFilterConfig4.FifoThreshold = MDF_FIFO_THRESHOLD_NOT_EMPTY;
-  MdfFilterConfig4.DiscardSamples = 0;
-  /* USER CODE BEGIN MDF1_Init 2 */
+  AdfFilterConfig0.DataSource = MDF_DATA_SOURCE_BSMX;
+  AdfFilterConfig0.Delay = 0;
+  AdfFilterConfig0.CicMode = MDF_ONE_FILTER_SINC4;
+  AdfFilterConfig0.DecimationRatio = 2;
+  AdfFilterConfig0.Gain = 0;
+  AdfFilterConfig0.ReshapeFilter.Activation = DISABLE;
+  AdfFilterConfig0.HighPassFilter.Activation = DISABLE;
+  AdfFilterConfig0.SoundActivity.Activation = DISABLE;
+  AdfFilterConfig0.AcquisitionMode = MDF_MODE_ASYNC_CONT;
+  AdfFilterConfig0.FifoThreshold = MDF_FIFO_THRESHOLD_NOT_EMPTY;
+  AdfFilterConfig0.DiscardSamples = 0;
+  /* USER CODE BEGIN ADF1_Init 2 */
 
-  /* USER CODE END MDF1_Init 2 */
+  /* USER CODE END ADF1_Init 2 */
+
 }
 
-void HAL_MDF_MspInit(MDF_HandleTypeDef *mdfHandle)
+void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
-  if (IS_MDF_INSTANCE(mdfHandle->Instance))
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  if(IS_ADF_INSTANCE(mdfHandle->Instance))
   {
-    /* USER CODE BEGIN MDF1_MspInit 0 */
+  /* USER CODE BEGIN ADF1_MspInit 0 */
 
-    /* USER CODE END MDF1_MspInit 0 */
+  /* USER CODE END ADF1_MspInit 0 */
 
-    /** Initializes the peripherals clock
-     */
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_MDF1;
-    PeriphClkInit.Mdf1ClockSelection = RCC_MDF1CLKSOURCE_HCLK;
+  /** Initializes the peripherals clock
+  */
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADF1;
+    PeriphClkInit.Adf1ClockSelection = RCC_ADF1CLKSOURCE_HCLK;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
       Error_Handler();
     }
 
-    /* MDF1 clock enable */
-    __HAL_RCC_MDF1_CLK_ENABLE();
+    /* ADF1 clock enable */
+    __HAL_RCC_ADF1_CLK_ENABLE();
 
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    /**MDF1 GPIO Configuration
-    PC0     ------> MDF1_SDI4
-    PC1     ------> MDF1_CKI4
+    __HAL_RCC_GPIOF_CLK_ENABLE();
+    /**ADF1 GPIO Configuration
+    PF3     ------> ADF1_CCK0
+    PF4     ------> ADF1_SDI0
     */
-    GPIO_InitStruct.Pin = MIC_SD_Pin | MIC_CK_Pin;
+    GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF6_MDF1;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    GPIO_InitStruct.Alternate = GPIO_AF3_ADF1;
+    HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-    /* USER CODE BEGIN MDF1_MspInit 1 */
+  /* USER CODE BEGIN ADF1_MspInit 1 */
 
-    /* USER CODE END MDF1_MspInit 1 */
+  /* USER CODE END ADF1_MspInit 1 */
   }
 }
 
-void HAL_MDF_MspDeInit(MDF_HandleTypeDef *mdfHandle)
+void HAL_MDF_MspDeInit(MDF_HandleTypeDef* mdfHandle)
 {
 
-  if (IS_MDF_INSTANCE(mdfHandle->Instance))
+  if(IS_ADF_INSTANCE(mdfHandle->Instance))
   {
-    /* USER CODE BEGIN MDF1_MspDeInit 0 */
+  /* USER CODE BEGIN ADF1_MspDeInit 0 */
 
-    /* USER CODE END MDF1_MspDeInit 0 */
+  /* USER CODE END ADF1_MspDeInit 0 */
     /* Peripheral clock disable */
-    __HAL_RCC_MDF1_CLK_DISABLE();
+    __HAL_RCC_ADF1_CLK_DISABLE();
 
-    /**MDF1 GPIO Configuration
-    PC0     ------> MDF1_SDI4
-    PC1     ------> MDF1_CKI4
+    /**ADF1 GPIO Configuration
+    PF3     ------> ADF1_CCK0
+    PF4     ------> ADF1_SDI0
     */
-    HAL_GPIO_DeInit(GPIOC, MIC_SD_Pin | MIC_CK_Pin);
+    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_3|GPIO_PIN_4);
 
-    /* USER CODE BEGIN MDF1_MspDeInit 1 */
+  /* USER CODE BEGIN ADF1_MspDeInit 1 */
 
-    /* USER CODE END MDF1_MspDeInit 1 */
+  /* USER CODE END ADF1_MspDeInit 1 */
   }
 }
 
