@@ -23,6 +23,9 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "usb_device.h"
+#include "usbd_core.h"
+
 #include "shimmer_externs.h"
 
 /* USER CODE END 0 */
@@ -245,12 +248,18 @@ uint16_t ext_cnt6 = 0;
 #if defined(SHIMMER3R)
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
-  //switch (GPIO_Pin)
-  //{
-  //default:
-  //  break;
-  //}
-  gpioExtiCommon(GPIO_Pin, 1);
+  switch (GPIO_Pin)
+  {
+  case USB_VBUS_Pin:
+    if(!(S4_NORM_Task_getList() & TASK_USB_SETUP))
+    {
+      S4_Task_set(TASK_USB_SETUP);
+    }
+    break;
+  default:
+    gpioExtiCommon(GPIO_Pin, 1);
+    break;
+  }
 }
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
@@ -310,9 +319,6 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
   case SD_DETECT_N_Pin:
     SD_insertedCheck();
-    break;
-  case USB_VBUS_Pin:
-    vbusPinStateCheck();
     break;
   default:
     break;
@@ -410,12 +416,15 @@ void vbusPinStateCheck(void)
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   if (pin == GPIO_PIN_SET)
   {
+    // Disable GPIO on pin so that USB peripheral can take control
     GPIO_VBUS_init(0);
+    // Clear interrupt flag else it triggers multiple times.
+    __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
+
     MX_USB_OTG_HS_PCD_Init();
 #if !USE_USBX
     MX_USB_DEVICE_Init(); //usb pluggedin
 #endif
-    __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin); //clear interrupt flag else it triggers multiple times.
   }
   else if (pin == GPIO_PIN_RESET)
   {
