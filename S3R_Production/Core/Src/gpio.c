@@ -251,7 +251,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
   switch (GPIO_Pin)
   {
   case USB_VBUS_Pin:
-    if(!(S4_NORM_Task_getList() & TASK_USB_SETUP))
+    if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
     {
       S4_Task_set(TASK_USB_SETUP);
     }
@@ -416,9 +416,9 @@ void vbusPinStateCheck(void)
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   if (pin == GPIO_PIN_SET)
   {
-    // Disable GPIO on pin so that USB peripheral can take control
+    //Disable GPIO on pin so that USB peripheral can take control
     GPIO_VBUS_init(0);
-    // Clear interrupt flag else it triggers multiple times.
+    //Clear interrupt flag else it triggers multiple times.
     __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
 
     MX_USB_OTG_HS_PCD_Init();
