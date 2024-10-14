@@ -22,23 +22,22 @@
 #define __I2C_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-  /* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */
 
 #include "shimmer_definitions.h"
 #include <shimmer_include.h>
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  extern I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c1;
 
-  /* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
 
   typedef enum
   {
@@ -181,11 +180,11 @@ extern "C"
 #endif
   } i2cReadBufTypeDef;
 
-  /* USER CODE END Private defines */
+/* USER CODE END Private defines */
 
-  void MX_I2C1_Init(void);
+void MX_I2C1_Init(void);
 
-  /* USER CODE BEGIN Prototypes */
+/* USER CODE BEGIN Prototypes */
 
   void I2C1_DeInit(void);
   void I2C_scan_busses(void);
@@ -287,10 +286,11 @@ void I2cBatt_sensorNext(void);
 
   void loadDaughterCardIdFromEeprom(void);
 
-  /* USER CODE END Prototypes */
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __I2C_H__ */
+
