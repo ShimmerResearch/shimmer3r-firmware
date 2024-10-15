@@ -417,9 +417,8 @@ uint8_t SPI_test(void)
   if (isAdxl371Detected())
   {
     uint8_t adxl371_result = adxl371_self_test();
-    sprintf(buffer, " - S3R_TEST_0020 - %s: ADXL371%s\r\n",
-        adxl371_result ? "PASS" : "FAIL",
-            adxl371_result ? "" : " - Detected but signal issue");
+    sprintf(buffer, " - S3R_TEST_0020 - %s: ADXL371%s\r\n", adxl371_result ? "PASS" : "FAIL",
+        adxl371_result ? "" : " - Detected but signal issue");
   }
   else
   {

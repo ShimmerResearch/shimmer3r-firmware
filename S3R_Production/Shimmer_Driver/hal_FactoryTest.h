@@ -14,12 +14,12 @@
 
 #define TEST_THRESHOLD_VREF_LOWER            (VREF_EXTERNAL_SUPPLY_MV - 80)
 #define TEST_THRESHOLD_VREF_UPPER            (VREF_EXTERNAL_SUPPLY_MV + 80)
-  /*
-   * Range 1 (VCORE = 1.2 V) with CPU and peripherals running at up to 160 MHz
-   * Range 2 (VCORE = 1.1 V) with CPU and peripherals running at up to 110 MHz
-   * Range 3 (VCORE = 1.0 V) with CPU and peripherals running at up to 55 MHz
-   * Range 4 (VCORE = 0.9 V) with CPU and peripherals running at up to 25 MHz
-   * */
+/*
+ * Range 1 (VCORE = 1.2 V) with CPU and peripherals running at up to 160 MHz
+ * Range 2 (VCORE = 1.1 V) with CPU and peripherals running at up to 110 MHz
+ * Range 3 (VCORE = 1.0 V) with CPU and peripherals running at up to 55 MHz
+ * Range 4 (VCORE = 0.9 V) with CPU and peripherals running at up to 25 MHz
+ * */
 /* TODO values we're measuring (1376mV at time of writing) don't match values
 given above */
 #define TEST_THRESHOLD_VCORE_LOWER           900
