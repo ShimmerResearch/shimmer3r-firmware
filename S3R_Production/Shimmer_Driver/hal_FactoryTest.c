@@ -138,12 +138,6 @@ void print_mcu_details(void)
       TEST_THRESHOLD_VREF_LOWER, TEST_THRESHOLD_VREF_UPPER);
   send_test_report(buffer);
 
-  /*
-   * Range 1 (VCORE = 1.2 V) with CPU and peripherals running at up to 160 MHz
-   * Range 2 (VCORE = 1.1 V) with CPU and peripherals running at up to 110 MHz
-   * Range 3 (VCORE = 1.0 V) with CPU and peripherals running at up to 55 MHz
-   * Range 4 (VCORE = 0.9 V) with CPU and peripherals running at up to 25 MHz
-   * */
   testPass = (adcDebugInfo.vCoreMV > TEST_THRESHOLD_VCORE_LOWER
       && adcDebugInfo.vCoreMV < TEST_THRESHOLD_VCORE_UPPER);
   sprintf(buffer, " - S3R_TEST_0008 - %s: VCore = %ldmV (%d-%dmV)\r\n",
@@ -424,7 +418,9 @@ uint8_t SPI_test(void)
   if (isAdxl371Detected())
   {
     uint8_t adxl371_result = adxl371_self_test();
-    sprintf(buffer, " - S3R_TEST_0020 - %s: ADXL371\r\n", adxl371_result ? "PASS" : "FAIL");
+    sprintf(buffer, " - S3R_TEST_0020 - %s: ADXL371%s\r\n",
+        adxl371_result ? "PASS" : "FAIL",
+            adxl371_result ? "" : " - Detected but signal issue");
   }
   else
   {
