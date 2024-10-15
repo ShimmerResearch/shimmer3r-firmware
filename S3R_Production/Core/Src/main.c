@@ -415,6 +415,8 @@ void btInitialise(void)
 {
   SHIMMER_PRINTF("\r\nBT init start\r\n");
 
+  Board_SW_BT(1);
+
   //20 * 100ms = 2s per baud rate attempt
   btCommWithDiffBaudRates(true, 20U);
 

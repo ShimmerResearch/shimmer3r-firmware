@@ -217,9 +217,10 @@ void btInitCommands(void)
   if (btInitCmdsStep == WAIT_FOR_BOOT)
   {
     btInitCmdsStep++;
-    //// TODO will be needed once we can turn the module on/off
-    //setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
-    //return;
+#ifndef S3R_NUCLEO
+    setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+    return;
+#endif
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)

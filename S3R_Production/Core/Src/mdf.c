@@ -147,10 +147,10 @@ void HAL_MDF_MspDeInit(MDF_HandleTypeDef *mdfHandle)
 void MDF1_DeInit(void)
 {
   //TODO remove IF when fully switched from eval board to BGA variant
-#if defined(S3R_BGA_VARIANT)
-  HAL_MDF_MspDeInit(&AdfHandle0);
-#else
+#ifdef S3R_NUCLEO
   HAL_MDF_MspDeInit(&MdfHandle4);
+#else
+  HAL_MDF_MspDeInit(&AdfHandle0);
 #endif
   Board_SW_MIC(0);
 }

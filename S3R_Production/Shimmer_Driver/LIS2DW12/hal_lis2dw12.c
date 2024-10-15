@@ -403,7 +403,7 @@ int32_t lis2dw12_configure(float shimmerSamplingFreq,
 
   isDrdyIntEnabled = false;
   //TODO remove IF when fully switched from eval board to BGA variant
-#if defined(S3R_BGA_VARIANT)
+#ifndef S3R_NUCLEO
   if (lis2dw12_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
   {
     lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
