@@ -46,8 +46,11 @@
 #ifndef HAL_BOARD_H
 #define HAL_BOARD_H
 
-//TODO change to 3000 for production boards
+#if S3R_NUCLEO
 #define VREF_EXTERNAL_SUPPLY_MV 3300
+#else
+#define VREF_EXTERNAL_SUPPLY_MV 3000
+#endif
 
 //Legacy approach for 5 individual LEDs before two RGB LEDs were introduced
 #define LED_RED                 0x01 //== BATT_LOW
