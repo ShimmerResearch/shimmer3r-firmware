@@ -47,7 +47,7 @@ void MX_SDMMC1_SD_Init(void)
   if (shimmerStatus.isSdInserted)
   {
     //TODO replace with Board_sd2Arm when we have it working
-//    Board_sd2Arm();
+    //Board_sd2Arm();
     Board_sdcard_arm0pc1(0);
     Board_sdPower(1);
 
