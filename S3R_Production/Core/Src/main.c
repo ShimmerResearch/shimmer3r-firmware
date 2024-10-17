@@ -189,7 +189,10 @@ void Init()
   /* Take initial measurement to update LED state */
   S4_ADC_readBatt(1);
 
-  GPIO_VBUS_init(1); //for VBUS interrupt
+
+  // Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
+//  GPIO_usbVbusInputInit();
+  GPIO_usbVbusIntInit(1);
   vbusPinStateCheck();
 
   shimmerStatus.isConfiguring = 0;
@@ -698,31 +701,33 @@ void ReadSdConfiguration(void)
   ParseConfig();
 }
 
+#if USE_CUSTOM_HAL_DELAY
 /* TODO: Overriding HAL_DELAY() with this because USB peripheral init based
  * on VBUS interrupt was cause HAL_DELAY() to be stuck in a loop changing the
  * interrupt priority didn't help */
-//void HAL_Delay(uint32_t Delay)
-//{
-//  /* Delay for amount of milliseconds */
-//  if (__get_IPSR() == 0)
-//  {
-//    uint32_t tickstart = HAL_GetTick();
-//    while ((HAL_GetTick() - tickstart) < Delay)
-//    {
-//      __WFI();
-//    }
-//  }
-//  else
-//  {
-//    while (Delay)
-//    {
-//      if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
-//      {
-//        Delay--;
-//      }
-//    }
-//  }
-//}
+void HAL_Delay(uint32_t Delay)
+{
+  /* Delay for amount of milliseconds */
+  if (__get_IPSR() == 0)
+  {
+    uint32_t tickstart = HAL_GetTick();
+    while ((HAL_GetTick() - tickstart) < Delay)
+    {
+      __WFI();
+    }
+  }
+  else
+  {
+    while (Delay)
+    {
+      if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+      {
+        Delay--;
+      }
+    }
+  }
+}
+#endif
 
 /* USER CODE END 4 */
 

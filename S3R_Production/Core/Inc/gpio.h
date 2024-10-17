@@ -44,7 +44,8 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
-  void GPIO_VBUS_init(uint8_t state);
+  void GPIO_usbVbusInputInit(void);
+  void GPIO_usbVbusIntInit(uint8_t state);
   void GPIO_userButtonCheck(void);
 
 #if defined(SHIMMER3R)

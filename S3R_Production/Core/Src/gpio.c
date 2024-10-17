@@ -187,11 +187,18 @@ void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 2 */
 
-void GPIO_VBUS_init(uint8_t state)
+void GPIO_usbVbusInputInit(void)
 {
-  //pSensing = S4Sens_getSensing();
-  //pStat = GetStatus();
-  //GPIO_tsPress = GPIO_tsRelease = GPIO_tsLastRelease = 0;
+  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  GPIO_InitStruct.Pin = USB_VBUS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(USB_VBUS_GPIO_Port, &GPIO_InitStruct);
+}
+
+void GPIO_usbVbusIntInit(uint8_t state)
+{
   if (state)
   {
     GPIO_InitTypeDef GPIO_InitStruct = { 0 };
@@ -416,26 +423,33 @@ void vbusPinStateCheck(void)
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   if (pin == GPIO_PIN_SET)
   {
-    //Disable GPIO on pin so that USB peripheral can take control
-    GPIO_VBUS_init(0);
-    //Clear interrupt flag else it triggers multiple times.
-    __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
+    if(hUsbDevice.pDesc == NULL)
+    {
+      //Disable GPIO interrupt on pin so that USB peripheral can take control
+      GPIO_usbVbusIntInit(0);
+      //Clear interrupt flag else it triggers multiple times.
+      __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
 
-    MX_USB_OTG_HS_PCD_Init();
+      // Enable USB peripheral
+      MX_USB_OTG_HS_PCD_Init();
 #if !USE_USBX
-    MX_USB_DEVICE_Init(); //usb pluggedin
+      MX_USB_DEVICE_Init();
 #endif
+    }
   }
   else if (pin == GPIO_PIN_RESET)
   {
     USB_STATE state = usbPlugInState();
     if (state == USB_CABLE_UNPLUGGED)
     {
+      // Disable USB peripheral
 #if !USE_USBX
       USBD_DeInit(&hUsbDevice);
 #endif
-      HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS); //deinit if unplugged
-      GPIO_VBUS_init(1);
+      HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS);
+
+      //Re-enable GPIO interrupt on pin
+      GPIO_usbVbusIntInit(1);
     }
   }
 }

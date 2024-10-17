@@ -175,6 +175,7 @@ USB_STATE usbPlugInState(void)
   {
     lastState = USB_CABLE_UNPLUGGED;
   }
+  //TODO no else and not all conditions handled
   return lastState;
 }
 
