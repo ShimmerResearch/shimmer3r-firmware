@@ -52,10 +52,7 @@ extern "C"
 #endif
 
   uint8_t SD_insertedCheck(void);
-  void SdPowerOn(void);
-  void SdPowerOff(void);
   uint8_t isSdPowerOn(void);
-  void setMcuHasSdcardControl(uint8_t state);
 
   /* USER CODE END Prototypes */
 

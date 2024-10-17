@@ -46,6 +46,11 @@ void MX_SDMMC1_SD_Init(void)
   shimmerStatus.badFile = 1;
   if (shimmerStatus.isSdInserted)
   {
+    //TODO replace with Board_sd2Arm when we have it working
+//    Board_sd2Arm();
+    Board_sdcard_arm0pc1(0);
+    Board_sdPower(1);
+
     /* USER CODE END SDMMC1_Init 1 */
     hsd1.Instance = SDMMC1;
     hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;

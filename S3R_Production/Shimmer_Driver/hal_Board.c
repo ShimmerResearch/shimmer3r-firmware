@@ -370,9 +370,11 @@ void Board_ledToggle(uint8_t ledMask)
  */
 void Board_sdPowerCycle(void)
 {
+#if defined(SHIMMER4_SDK)
   Board_detectN(1);
+#endif
   Board_sdPower(0);
-  Board_arm0pc1(0);
+  Board_sdcard_arm0pc1(0);
   HAL_Delay(120);
   Board_sdPower(1);
   HAL_Delay(50);
@@ -393,12 +395,14 @@ void Board_sd2Pc(void)
   //Board_detectN(1);
   HAL_Delay(120);
   Board_sdPower(0);
-  Board_arm0pc1(1);
+  Board_sdcard_arm0pc1(1);
   //Board_detectN(GPIO_PIN_RESET);
   HAL_Delay(120);
   Board_sdPower(1);
   HAL_Delay(50);
+#if defined(SHIMMER4_SDK)
   Board_detectN(0);
+#endif
   SD_mount(0);
 }
 
@@ -409,10 +413,12 @@ void Board_sd2Pc(void)
  */
 void Board_sd2Arm(void)
 {
+#if defined(SHIMMER4_SDK)
   Board_detectN(1);
+#endif
   HAL_Delay(120);
   Board_sdPower(0);
-  Board_arm0pc1(0);
+  Board_sdcard_arm0pc1(0);
   HAL_Delay(120);
   Board_sdPower(1);
   HAL_Delay(50);

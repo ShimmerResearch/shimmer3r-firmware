@@ -562,7 +562,7 @@ void loadSensorConfigurationAndCalibration(void)
     if (!isSdPowerOn())
     {
       //Hits here when undocked
-      SdPowerOn();
+      Board_sdPower(1);
     }
     if (GetSdCfgFlag())
     { //info > sdcard
@@ -617,15 +617,15 @@ void SetupDock(void)
   {
     setBatteryInterval(BATT_INTERVAL_UNDOCKED);
     DockUart_deint();
-    setMcuHasSdcardControl(1);
+    Board_sdcard_arm0pc1(0);
 
     //SendStatusByte();
     BtsdSelfcmd();
-    SdPowerOff();
+    Board_sdPower(0);
     if (CheckSdInslot() && !shimmerStatus.isSensing && !shimmerStatus.badFile)
     {
       HAL_Delay(120); //120ms
-      SdPowerOn();
+      Board_sdPower(1);
       SdInfoSync();
     }
     else
@@ -696,7 +696,7 @@ uint8_t CheckOnDefault(void)
 void ReadSdConfiguration(void)
 {
   S4_Task_clear(TASK_STREAMDATA); //this will skip one sample
-  SdPowerOn();
+  Board_sdPower(1);
   ParseConfig();
 }
 
