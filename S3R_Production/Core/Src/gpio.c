@@ -423,14 +423,14 @@ void vbusPinStateCheck(void)
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   if (pin == GPIO_PIN_SET)
   {
-    if(hUsbDevice.pDesc == NULL)
+    if (hUsbDevice.pDesc == NULL)
     {
       //Disable GPIO interrupt on pin so that USB peripheral can take control
       GPIO_usbVbusIntInit(0);
       //Clear interrupt flag else it triggers multiple times.
       __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
 
-      // Enable USB peripheral
+      //Enable USB peripheral
       MX_USB_OTG_HS_PCD_Init();
 #if !USE_USBX
       MX_USB_DEVICE_Init();
@@ -442,7 +442,7 @@ void vbusPinStateCheck(void)
     USB_STATE state = usbPlugInState();
     if (state == USB_CABLE_UNPLUGGED)
     {
-      // Disable USB peripheral
+      //Disable USB peripheral
 #if !USE_USBX
       USBD_DeInit(&hUsbDevice);
 #endif

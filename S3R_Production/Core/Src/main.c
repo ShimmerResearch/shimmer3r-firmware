@@ -189,9 +189,8 @@ void Init()
   /* Take initial measurement to update LED state */
   S4_ADC_readBatt(1);
 
-
-  // Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
-//  GPIO_usbVbusInputInit();
+  //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
+  //GPIO_usbVbusInputInit();
   GPIO_usbVbusIntInit(1);
   vbusPinStateCheck();
 
