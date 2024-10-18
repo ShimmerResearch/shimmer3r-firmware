@@ -126,7 +126,8 @@ uint8_t adxl371_self_test(void)
 
   /*8. If the absolute value of the difference between the two averaged values
    * is greater than 5 LSB, the self test passes. */
-  result = second_set_avg - first_set_avg > 5;
+  uint16_t diff = abs((int16_t) second_set_avg - (int16_t) first_set_avg);
+  result = diff > 5;
 
   //adxl371_reset(&adxl371);
   ret = adxl371_set_op_mode(&adxl371, ADXL371_STANDBY);
