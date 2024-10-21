@@ -43,7 +43,7 @@
 #include "s4_taskList.h"
 #include "shimmer_definitions.h"
 
-uint32_t taskList = 0;
+volatile uint32_t taskList = 0;
 uint32_t taskCurrent;
 
 void S4_NORM_Task_init(void)
@@ -156,6 +156,9 @@ void S4_NORM_Task_manage(void)
       break;
     case TASK_FACTORY_TEST:
       run_factory_test();
+      break;
+    case TASK_USB_SETUP:
+      vbusPinStateCheck();
       break;
     default:
       break;
