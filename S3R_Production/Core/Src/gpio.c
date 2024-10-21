@@ -23,6 +23,9 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "usb_device.h"
+#include "usbd_core.h"
+
 #include "shimmer_externs.h"
 
 /* USER CODE END 0 */
@@ -219,17 +222,30 @@ void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
+  HAL_NVIC_SetPriority(EXTI9_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_IRQn);
+
   HAL_NVIC_SetPriority(EXTI14_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI14_IRQn);
 }
 
 /* USER CODE BEGIN 2 */
 
-void GPIO_init(void)
+void GPIO_usbVbusIntInit(uint8_t state)
 {
-  //pSensing = S4Sens_getSensing();
-  //pStat = GetStatus();
-  //GPIO_tsPress = GPIO_tsRelease = GPIO_tsLastRelease = 0;
+  if (state)
+  {
+    GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    GPIO_InitStruct.Pin = USB_VBUS_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+    HAL_GPIO_Init(USB_VBUS_GPIO_Port, &GPIO_InitStruct);
+  }
+  else
+  {
+    HAL_GPIO_DeInit(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
+  }
 }
 
 void GPIO_userButtonCheck()
@@ -273,12 +289,18 @@ uint16_t ext_cnt6 = 0;
 #if defined(SHIMMER3R)
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
-  //switch (GPIO_Pin)
-  //{
-  //default:
-  //  break;
-  //}
-  gpioExtiCommon(GPIO_Pin, 1);
+  switch (GPIO_Pin)
+  {
+  case USB_VBUS_Pin:
+    if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
+    {
+      S4_Task_set(TASK_USB_SETUP);
+    }
+    break;
+  default:
+    gpioExtiCommon(GPIO_Pin, 1);
+    break;
+  }
 }
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
@@ -425,6 +447,42 @@ void gpioInitPerBoard(void)
   //  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
   //
   //}
+}
+
+void vbusPinStateCheck(void)
+{
+  GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
+  if (pin == GPIO_PIN_SET)
+  {
+    if (hUsbDevice.pDesc == NULL)
+    {
+      //Disable GPIO interrupt on pin so that USB peripheral can take control
+      GPIO_usbVbusIntInit(0);
+      //Clear interrupt flag else it triggers multiple times.
+      __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
+
+      //Enable USB peripheral
+      MX_USB_OTG_HS_PCD_Init();
+#if !USE_USBX
+      MX_USB_DEVICE_Init();
+#endif
+    }
+  }
+  else if (pin == GPIO_PIN_RESET)
+  {
+    USB_STATE state = usbPlugInState();
+    if (state == USB_CABLE_UNPLUGGED)
+    {
+      //Disable USB peripheral
+#if !USE_USBX
+      USBD_DeInit(&hUsbDevice);
+#endif
+      HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS);
+
+      //Re-enable GPIO interrupt on pin
+      GPIO_usbVbusIntInit(1);
+    }
+  }
 }
 
 /* USER CODE END 2 */

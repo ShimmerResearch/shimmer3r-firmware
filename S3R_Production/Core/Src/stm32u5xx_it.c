@@ -245,7 +245,6 @@ void EXTI1_IRQHandler(void)
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
-
   /* USER CODE END EXTI1_IRQn 1 */
 }
 
@@ -264,6 +263,20 @@ void EXTI3_IRQHandler(void)
 }
 
 /**
+ * @brief This function handles EXTI Line9 interrupt.
+ */
+void EXTI9_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI9_IRQn 0 */
+
+  /* USER CODE END EXTI9_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_EXTERNAL_Pin);
+  /* USER CODE BEGIN EXTI9_IRQn 1 */
+
+  /* USER CODE END EXTI9_IRQn 1 */
+}
+
+/**
  * @brief This function handles EXTI Line14 interrupt.
  */
 void EXTI14_IRQHandler(void)
@@ -273,7 +286,6 @@ void EXTI14_IRQHandler(void)
   /* USER CODE END EXTI14_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(BT_CONNECTION_Pin);
   /* USER CODE BEGIN EXTI14_IRQn 1 */
-
   /* USER CODE END EXTI14_IRQn 1 */
 }
 
