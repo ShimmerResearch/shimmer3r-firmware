@@ -372,6 +372,9 @@ uint8_t I2C_test(void)
 
 #endif
 
+
+
+
 #if defined(SHIMMER4_SDK)
   if (bmp280_test(hi2cMainBus))
   {
