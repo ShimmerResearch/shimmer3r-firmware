@@ -451,7 +451,8 @@ uint8_t SPI_test(void)
     //EXG_init(hspiExg);
     //ret_val |= EXG_test();
 
-    send_test_report(" - S3R_TEST_0024 - WARNING: Test not implemented yet\r\n");
+    send_test_report(
+        " - S3R_TEST_0024 - WARNING: Test not implemented yet\r\n");
 
     SPI3_DeInit();
   }
