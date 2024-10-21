@@ -447,13 +447,18 @@ uint8_t SPI_test(void)
   if (isAds1292Present())
   {
     MX_SPI3_Init();
+
     //EXG_init(hspiExg);
     //ret_val |= EXG_test();
+
+    send_test_report(" - S3R_TEST_0024 - WARNING: Test not implemented yet\r\n");
+
     SPI3_DeInit();
   }
   else
-    send_test_report(
-        " - S3R_TEST_0024 - WARNING: Test not implemented yet\r\n");
+  {
+    send_test_report(" - S3R_TEST_0024 - Not applicable for this model\r\n");
+  }
   return ret_val;
 }
 
