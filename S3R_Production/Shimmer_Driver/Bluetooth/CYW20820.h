@@ -13,8 +13,13 @@
 //TODO decide if needed and remove it and associated code if not. Seems to be needed or else BLE won't advertise just using ezs_cmd_gap_start_adv.
 #define USE_GET_SET_ADV_PARAM 0
 
+#ifdef S3R_NUCLEO
 #define BAUD_TO_USE           2000000L //2000000L //1000000L //115200L
 #define FLOW_CONTROL          1
+#else
+#define BAUD_TO_USE           115200L
+#define FLOW_CONTROL          0
+#endif
 
 enum BT_SET_COMMAND_STAGES
 {

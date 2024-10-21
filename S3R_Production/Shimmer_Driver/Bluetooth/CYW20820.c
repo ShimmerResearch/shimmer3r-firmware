@@ -217,10 +217,11 @@ void btInitCommands(void)
   if (btInitCmdsStep == WAIT_FOR_BOOT)
   {
     btInitCmdsStep++;
-#ifndef S3R_NUCLEO
-    setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
-    return;
-#endif
+    //TODO remove hard-coded long delay after BT is powered on and try to parse the boot message
+//#ifndef S3R_NUCLEO
+//    setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+//    return;
+//#endif
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)

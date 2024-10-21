@@ -129,8 +129,8 @@ void Board_enableSensingPower(uint8_t state);
 #define RESP_CS_GPIO              GPIO_ADC_INT_EXP0_GPIO_Port
 #define RESP_CS_PIN               GPIO_ADC_INT_EXP0_Pin
 
-#define GSR_RANGE_A0_Pin          GPIO_ADC_INT_EXP3_Pin
-#define GSR_RANGE_A1_Pin          GPIO_ADC_INT_EXP2_Pin
+#define GSR_RANGE_A0_Pin          GPIO_INTERNAL0_Pin
+#define GSR_RANGE_A1_Pin          GPIO_INTERNAL1_Pin
 
 #define SW_STRAIN_GAUGE_Pin       GPIO_INTERNAL1_Pin
 #define SW_STRAIN_GAUGE_GPIO_Port GPIO_INTERNAL1_GPIO_Port
