@@ -189,7 +189,9 @@ void Init()
   /* Take initial measurement to update LED state */
   S4_ADC_readBatt(1);
 
-  /*Check USB plugin state during boot*/
+  //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
+  //GPIO_usbVbusInputInit();
+  GPIO_usbVbusIntInit(1);
   vbusPinStateCheck();
 
   shimmerStatus.isConfiguring = 0;
@@ -255,7 +257,7 @@ int main(void)
   MX_TIM6_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  GPIO_VBUS_init(1); //for VBUS interrupt
+
 #if USE_FATFS
   MX_FATFS_Init();
 #endif
@@ -698,9 +700,10 @@ void ReadSdConfiguration(void)
   ParseConfig();
 }
 
-/* TODO: Overriding HAL_DELAY() with this because USB peripheral init based on VBUS interrupt was
- * cause HAL_DELAY() to be stuck in a loop changing the interrupt priority didn't help*/
-
+#if USE_CUSTOM_HAL_DELAY
+/* TODO: Overriding HAL_DELAY() with this because USB peripheral init based
+ * on VBUS interrupt was cause HAL_DELAY() to be stuck in a loop changing the
+ * interrupt priority didn't help */
 void HAL_Delay(uint32_t Delay)
 {
   /* Delay for amount of milliseconds */
@@ -723,6 +726,7 @@ void HAL_Delay(uint32_t Delay)
     }
   }
 }
+#endif
 
 /* USER CODE END 4 */
 

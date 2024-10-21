@@ -44,7 +44,8 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
-  void GPIO_VBUS_init(uint8_t state);
+  void GPIO_usbVbusInputInit(void);
+  void GPIO_usbVbusIntInit(uint8_t state);
   void GPIO_userButtonCheck(void);
 
 #if defined(SHIMMER3R)
@@ -57,6 +58,7 @@ extern "C"
   uint8_t isSdPowerOn(void);
   void setMcuHasSdcardControl(uint8_t state);
   void vbusPinStateCheck(void);
+
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

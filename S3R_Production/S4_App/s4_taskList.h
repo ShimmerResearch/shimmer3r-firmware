@@ -94,7 +94,8 @@ typedef enum
   //TASK_TESTLEDS      = 0x1<<18,
   //TASK_DELAYEDRADIOISR = 0x1<<19,
   TASK_NEXTSENSOR = 0x1 << 20,
-  TASK_FACTORY_TEST = 0x1 << 21
+  TASK_FACTORY_TEST = 0x1 << 21,
+  TASK_USB_SETUP = 0x1 << 22
 } TASK_FLAGS;
 //return the task id of the current task
 
