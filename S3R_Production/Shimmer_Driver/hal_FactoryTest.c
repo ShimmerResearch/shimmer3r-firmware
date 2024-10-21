@@ -372,9 +372,6 @@ uint8_t I2C_test(void)
 
 #endif
 
-
-
-
 #if defined(SHIMMER4_SDK)
   if (bmp280_test(hi2cMainBus))
   {
@@ -455,7 +452,8 @@ uint8_t SPI_test(void)
     SPI3_DeInit();
   }
   else
-    send_test_report(" - S3R_TEST_0024 - WARNING: Test not implemented yet\r\n");
+    send_test_report(
+        " - S3R_TEST_0024 - WARNING: Test not implemented yet\r\n");
   return ret_val;
 }
 
