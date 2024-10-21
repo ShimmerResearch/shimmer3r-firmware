@@ -701,7 +701,7 @@ void handleSyncTimerTrigger(void)
         shimmerStatus.sdlogCmd = 2;
         taskSetCb(TASK_STOPSENSING);
       }
-      if (shimmerStatus.isBtPoweredOn)
+      if (isBtIsInitialised())
       {
         btStopCb(0);
       }
@@ -771,7 +771,7 @@ void handleSyncTimerTriggerCenter(void)
             }
             else if ((cReboot >= 2) && (cReboot < 5 * SYNC_FACTOR))
             {
-              if (shimmerStatus.isBtPoweredOn)
+              if (isBtIsInitialised())
               {
                 syncCurrNodeDone = syncCurrNode + SYNC_CD * SYNC_FACTOR - 1;
                 cReboot = 0;

@@ -304,7 +304,7 @@ void sd_card_test(void)
 uint8_t bt_module_test(void)
 {
   send_test_report("BT Module:\r\n");
-  if (shimmerStatus.isBtPoweredOn)
+  if (isBtIsInitialised())
   {
     send_test_report(" - MAC ID: ");
     BT_getMacAddressAscii(buffer);
@@ -320,9 +320,9 @@ uint8_t bt_module_test(void)
   }
   else
   {
-    send_test_report(" - S3R_TEST_0014 - FAIL - BT hasn't booted\r\n");
+    send_test_report(" - S3R_TEST_0014 - FAIL - BT hasn't initialised\r\n");
   }
-  return shimmerStatus.isBtPoweredOn;
+  return isBtIsInitialised();
 }
 
 uint8_t I2C_test(void)

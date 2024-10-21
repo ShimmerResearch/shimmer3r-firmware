@@ -79,13 +79,8 @@ typedef enum
   LED_MODE_TOGGLE
 } led_mode;
 
-#ifdef S3R_NUCLEO
 #define LED_PWM_ON  255
 #define LED_PWM_OFF 0
-#else
-#define LED_PWM_ON  0
-#define LED_PWM_OFF 255
-#endif
 
 void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
     TIM_HandleTypeDef *htimUprLeds,

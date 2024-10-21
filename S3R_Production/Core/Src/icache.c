@@ -37,7 +37,7 @@ void MX_ICACHE_Init(void)
   /* USER CODE END ICACHE_Init 1 */
 
   /** Enable instruction cache in 1-way (direct mapped cache)
-   */
+  */
   if (HAL_ICACHE_ConfigAssociativityMode(ICACHE_1WAY) != HAL_OK)
   {
     Error_Handler();
@@ -49,6 +49,7 @@ void MX_ICACHE_Init(void)
   /* USER CODE BEGIN ICACHE_Init 2 */
 
   /* USER CODE END ICACHE_Init 2 */
+
 }
 
 /* USER CODE BEGIN 1 */
