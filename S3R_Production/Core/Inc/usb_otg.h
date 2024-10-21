@@ -31,7 +31,7 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
-  #include "usbd_def.h"
+#include "usbd_def.h"
 
   /* USER CODE END Includes */
 
