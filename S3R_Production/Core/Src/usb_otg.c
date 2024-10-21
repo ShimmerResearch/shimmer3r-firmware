@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 
+USB_STATE lastState = USB_CABLE_RESET;
 /* USER CODE END 0 */
 
 PCD_HandleTypeDef hpcd_USB_OTG_HS;
@@ -70,6 +71,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *pcdHandle)
     /* Enable SYSCFG Clock */
     __HAL_RCC_SYSCFG_CLK_ENABLE();
 
+    HAL_GPIO_DeInit(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
     /* USER CODE END USB_OTG_HS_MspInit 0 */
 
     /** Initializes the peripherals clock
@@ -91,10 +93,10 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *pcdHandle)
     PA11     ------> USB_OTG_HS_DM
     PA12     ------> USB_OTG_HS_DP
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_9;
+    GPIO_InitStruct.Pin = USB_VBUS_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(USB_VBUS_GPIO_Port, &GPIO_InitStruct);
 
     /* USB_OTG_HS clock enable */
     __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
@@ -148,7 +150,7 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef *pcdHandle)
     PA11     ------> USB_OTG_HS_DM
     PA12     ------> USB_OTG_HS_DP
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9 | GPIO_PIN_11 | GPIO_PIN_12);
+    HAL_GPIO_DeInit(GPIOA, USB_VBUS_Pin | GPIO_PIN_11 | GPIO_PIN_12);
 
     /* USB_OTG_HS interrupt Deinit */
     HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
@@ -159,5 +161,22 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef *pcdHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+USB_STATE usbPlugInState(void)
+{
+  uint8_t stateNow = hUsbDevice.dev_state;
+  uint8_t stateOld = hUsbDevice.dev_old_state;
+
+  if ((stateNow == USBD_STATE_SUSPENDED) && (stateOld == USBD_STATE_DEFAULT))
+  {
+    lastState = USB_CABLE_PLUGGED;
+  }
+  else if ((stateNow == USBD_STATE_CONFIGURED) && (stateOld == USBD_STATE_CONFIGURED))
+  {
+    lastState = USB_CABLE_UNPLUGGED;
+  }
+  //TODO no else and not all conditions handled
+  return lastState;
+}
 
 /* USER CODE END 1 */

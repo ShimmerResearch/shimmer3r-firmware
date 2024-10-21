@@ -143,6 +143,8 @@ extern "C"
 #define SDMMC1_D1_GPIO_Port          GPIOC
 #define SW_MIC_Pin                   GPIO_PIN_8
 #define SW_MIC_GPIO_Port             GPIOA
+#define USB_VBUS_Pin                 GPIO_PIN_9
+#define USB_VBUS_GPIO_Port           GPIOA
 #define CS_HIGH_G_Pin                GPIO_PIN_10
 #define CS_HIGH_G_GPIO_Port          GPIOA
 #define SW_SD_MCU_DOCK_Pin           GPIO_PIN_15

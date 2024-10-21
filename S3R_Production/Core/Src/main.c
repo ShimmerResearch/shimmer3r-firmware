@@ -28,7 +28,6 @@
 #include "sdmmc.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_otg.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -36,6 +35,7 @@
 #include "shimmer_definitions.h"
 #include "shimmer_globals.h"
 #include "shimmer_include.h"
+#include "usb_otg.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -94,6 +94,9 @@ void SetupDock(void);
 void SdInfoSync(void);
 uint8_t CheckOnDefault(void);
 void ReadSdConfiguration(void);
+#if USE_CUSTOM_HAL_DELAY
+void HAL_Delay(uint32_t Delay);
+#endif
 #endif
 
 /* USER CODE END PFP */
@@ -188,8 +191,13 @@ void Init()
   /* Take initial measurement to update LED state */
   S4_ADC_readBatt(1);
 
+  //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
+  GPIO_usbVbusIntInit(1);
+  vbusPinStateCheck();
+
   shimmerStatus.isConfiguring = 0;
   DockUart_enable();
+
   //while(1){
   //   //__NOP();
   //   Power_StopUntilInterrupt();
@@ -244,18 +252,15 @@ int main(void)
   MX_RTC_Init();
   MX_SDMMC1_SD_Init();
   MX_USART3_UART_Init();
-  MX_USB_OTG_HS_PCD_Init();
   MX_ICACHE_Init();
   MX_CRC_Init();
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+
 #if USE_FATFS
   MX_FATFS_Init();
-#endif
-#if !USE_USBX
-  MX_USB_DEVICE_Init();
 #endif
 
   linkedListConfig(&hadc1); //configure linkedlist for ADC
@@ -695,6 +700,34 @@ void ReadSdConfiguration(void)
   SdPowerOn();
   ParseConfig();
 }
+
+#if USE_CUSTOM_HAL_DELAY
+/* TODO: Overriding HAL_DELAY() with this because USB peripheral init based
+ * on VBUS interrupt was cause HAL_DELAY() to be stuck in a loop changing the
+ * interrupt priority didn't help */
+void HAL_Delay(uint32_t Delay)
+{
+  /* Delay for amount of milliseconds */
+  if (__get_IPSR() == 0)
+  {
+    uint32_t tickstart = HAL_GetTick();
+    while ((HAL_GetTick() - tickstart) < Delay)
+    {
+      __WFI();
+    }
+  }
+  else
+  {
+    while (Delay)
+    {
+      if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+      {
+        Delay--;
+      }
+    }
+  }
+}
+#endif
 
 /* USER CODE END 4 */
 

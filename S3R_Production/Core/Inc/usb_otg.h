@@ -31,18 +31,29 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
+#include "usbd_def.h"
+
   /* USER CODE END Includes */
 
   extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 
   /* USER CODE BEGIN Private defines */
 
+  extern USBD_HandleTypeDef hUsbDevice;
+
+  typedef enum
+  {
+    USB_CABLE_RESET = 0U,
+    USB_CABLE_UNPLUGGED = 1U,
+    USB_CABLE_PLUGGED = 2U
+  } USB_STATE;
+
   /* USER CODE END Private defines */
 
   void MX_USB_OTG_HS_PCD_Init(void);
 
   /* USER CODE BEGIN Prototypes */
-
+  USB_STATE usbPlugInState(void);
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
