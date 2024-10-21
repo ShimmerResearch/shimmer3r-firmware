@@ -201,7 +201,7 @@ void print_battery_details(void)
 
 void led_test(void)
 {
-  send_test_report("LED test (S3R_TEST_0024):\r\n");
+  send_test_report("LED test (S3R_TEST_0025):\r\n");
 
 #if defined(SHIMMER3R)
   stopLedBlinkTimer();
@@ -367,6 +367,9 @@ uint8_t I2C_test(void)
   sprintf(buffer, " - S3R_TEST_0016 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
+  send_test_report("I2C4:\r\n");
+  send_test_report(" - S3R_TEST_0017 - WARNING: Test not implemented yet\r\n");
+
 #endif
 
 #if defined(SHIMMER4_SDK)
@@ -389,11 +392,11 @@ uint8_t SPI_test(void)
   MX_SPI1_Init();
 
   uint8_t lsm6dsv_result = lsm6dsv_self_test();
-  sprintf(buffer, " - S3R_TEST_0017 - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0018 - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
   int8_t bmp390_result = bmp3_self_test();
-  sprintf(buffer, " - S3R_TEST_0018 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0019 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
   send_test_report(buffer);
   if (bmp390_result)
   {
@@ -401,14 +404,14 @@ uint8_t SPI_test(void)
     bmp3_check_rslt("BMP390", bmp390_result, buffer);
     send_test_report(buffer);
     send_test_report(
-        " - S3R_TEST_0018 - FAIL: Resolve main error with BMP390\r\n");
+        " - S3R_TEST_0019 - FAIL: Resolve main error with BMP390\r\n");
   }
   else
   {
     struct bmp3_data *bmp3_data = get_bmp3_selftest_data();
     uint8_t testPass = (bmp3_data->temperature > TEST_THRESHOLD_BMP_TEMPERATURE_LOWER
         && bmp3_data->temperature < TEST_THRESHOLD_BMP_TEMPERATURE_UPPER);
-    sprintf(buffer, " - S3R_TEST_0019 - %s: Temperature = %.2f\xB0 C (%d-%d\xB0 C)\r\n",
+    sprintf(buffer, " - S3R_TEST_0020 - %s: Temperature = %.2f\xB0 C (%d-%d\xB0 C)\r\n",
         testPass ? "PASS" : "FAIL", bmp3_data->temperature,
         TEST_THRESHOLD_BMP_TEMPERATURE_LOWER, TEST_THRESHOLD_BMP_TEMPERATURE_UPPER);
     send_test_report(buffer);
@@ -417,7 +420,7 @@ uint8_t SPI_test(void)
   if (isAdxl371Detected())
   {
     uint8_t adxl371_result = adxl371_self_test();
-    sprintf(buffer, " - S3R_TEST_0020 - %s: ADXL371%s\r\n", adxl371_result ? "PASS" : "FAIL",
+    sprintf(buffer, " - S3R_TEST_0021 - %s: ADXL371%s\r\n", adxl371_result ? "PASS" : "FAIL",
         adxl371_result ? "" : " - Detected but signal issue");
   }
   else
@@ -430,27 +433,26 @@ uint8_t SPI_test(void)
   send_test_report("SPI2:\r\n");
   MX_SPI2_Init();
   uint8_t lis3mdl_result = lis3mdl_self_test();
-  sprintf(buffer, " - S3R_TEST_0021 - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0022 - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
   send_test_report(buffer);
 
   uint8_t lis2dw12_result = lis2dw12_self_test();
-  sprintf(buffer, " - S3R_TEST_0022 - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
+  sprintf(buffer, " - S3R_TEST_0023 - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
   send_test_report(buffer);
   SPI2_DeInit();
 
 #endif
 
+  send_test_report("SPI3:\r\n");
   if (isAds1292Present())
   {
-    send_test_report("SPI3:\r\n");
     MX_SPI3_Init();
-    send_test_report(" - WARNING: Test not implemented yet\r\n");
-
     //EXG_init(hspiExg);
     //ret_val |= EXG_test();
     SPI3_DeInit();
   }
-
+  else
+    send_test_report(" - S3R_TEST_0024 - WARNING: Test not implemented yet\r\n");
   return ret_val;
 }
 
