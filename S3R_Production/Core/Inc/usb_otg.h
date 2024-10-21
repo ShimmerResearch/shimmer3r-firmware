@@ -29,13 +29,16 @@ extern "C"
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* USER CODE BEGIN Includes */
-#include "usbd_def.h"
+  /* USER CODE BEGIN Includes */
+
+  #include "usbd_def.h"
+
   /* USER CODE END Includes */
 
   extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 
   /* USER CODE BEGIN Private defines */
+
   extern USBD_HandleTypeDef hUsbDevice;
 
   typedef enum

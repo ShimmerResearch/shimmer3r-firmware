@@ -187,16 +187,6 @@ void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 2 */
 
-void GPIO_usbVbusInputInit(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  GPIO_InitStruct.Pin = USB_VBUS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(USB_VBUS_GPIO_Port, &GPIO_InitStruct);
-}
-
 void GPIO_usbVbusIntInit(uint8_t state)
 {
   if (state)

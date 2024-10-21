@@ -94,7 +94,9 @@ void SetupDock(void);
 void SdInfoSync(void);
 uint8_t CheckOnDefault(void);
 void ReadSdConfiguration(void);
+#if USE_CUSTOM_HAL_DELAY
 void HAL_Delay(uint32_t Delay);
+#endif
 #endif
 
 /* USER CODE END PFP */
@@ -190,7 +192,6 @@ void Init()
   S4_ADC_readBatt(1);
 
   //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
-  //GPIO_usbVbusInputInit();
   GPIO_usbVbusIntInit(1);
   vbusPinStateCheck();
 

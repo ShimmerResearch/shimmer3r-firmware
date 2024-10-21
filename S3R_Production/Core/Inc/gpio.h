@@ -44,7 +44,6 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
-  void GPIO_usbVbusInputInit(void);
   void GPIO_usbVbusIntInit(uint8_t state);
   void GPIO_userButtonCheck(void);
 
