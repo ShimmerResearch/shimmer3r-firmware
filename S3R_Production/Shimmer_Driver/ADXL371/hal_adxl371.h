@@ -8,10 +8,10 @@
 #ifndef ADXL371_HAL_ADXL371_H_
 #define ADXL371_HAL_ADXL371_H_
 
+#include "hal_FactoryTest.h"
 #include "stm32u5xx.h"
 #include <stddef.h>
 #include <stdint.h>
-#include "hal_FactoryTest.h"
 
 /* From https://github.com/analogdevicesinc/arduino/blob/master/Arduino%20Uno%20R3/examples/ADXL372_example/adxl372.h */
 /*Acceleremoter configuration*/

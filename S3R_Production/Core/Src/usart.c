@@ -494,29 +494,30 @@ uint8_t BtUart_connectIntCheck(void)
 
 uint8_t DockUart_interruptCheck(void)
 {
-//#if TEST_UNDOCKED
-//  if (0)
-//  {
-//#else
-//  if (HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET)
-//  { //docked
-//#endif
-//    shimmerStatus.isDocked = 1;
-//    //Board_sd2Pc();
-//    //Board_ledOn(LED_GREEN0);
-//  }
-//  else
-//  {
-//    shimmerStatus.isDocked = 0;
-//    //Board_sd2Arm();
-//    //SD_mount(1);
-//    //Board_ledOff(LED_GREEN0);
-//  }
+  //#if TEST_UNDOCKED
+  //  if (0)
+  //  {
+  //#else
+  //  if (HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) ==
+  //  GPIO_PIN_SET) { //docked
+  //#endif
+  //    shimmerStatus.isDocked = 1;
+  //    //Board_sd2Pc();
+  //    //Board_ledOn(LED_GREEN0);
+  //  }
+  //  else
+  //  {
+  //    shimmerStatus.isDocked = 0;
+  //    //Board_sd2Arm();
+  //    //SD_mount(1);
+  //    //Board_ledOff(LED_GREEN0);
+  //  }
 
 #if TEST_UNDOCKED
   shimmerStatus.isDocked = 1;
 #else
-  shimmerStatus.isDocked = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
+  shimmerStatus.isDocked
+      = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
 #endif
 
   return shimmerStatus.isDocked;

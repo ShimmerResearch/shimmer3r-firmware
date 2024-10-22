@@ -163,7 +163,7 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef *sdHandle)
 
 void mmc1DeInit(void)
 {
-  if(shimmerStatus.isSdPeripheralInit)
+  if (shimmerStatus.isSdPeripheralInit)
   {
     HAL_SD_DeInit(&hsd1);
     shimmerStatus.isSdPeripheralInit = 0;

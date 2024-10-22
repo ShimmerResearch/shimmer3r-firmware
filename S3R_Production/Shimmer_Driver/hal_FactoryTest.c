@@ -456,7 +456,8 @@ uint8_t SPI_test(void)
   if (isAdxl371Present())
   {
     self_test_result = adxl371_self_test();
-    print_chip_test_result("S3R_TEST_0020", "ADXL371", self_test_result, TEST_THRESHOLD_IMU_TEMPERATURE_INVALID);
+    print_chip_test_result("S3R_TEST_0020", "ADXL371", self_test_result,
+        TEST_THRESHOLD_IMU_TEMPERATURE_INVALID);
   }
   else
   {
@@ -514,7 +515,8 @@ uint8_t SPI_test(void)
   }
   else
   {
-    send_test_report(" - S3R_TEST_0023 - ADS1292R test not applicable for this model\r\n");
+    send_test_report(
+        " - S3R_TEST_0023 - ADS1292R test not applicable for this model\r\n");
   }
   return ret_val;
 }
