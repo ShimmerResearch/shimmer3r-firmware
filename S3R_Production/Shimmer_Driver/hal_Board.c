@@ -374,7 +374,7 @@ void Board_sdPowerCycle(void)
   Board_detectN(1);
 #endif
   Board_sdPower(0);
-  Board_sdcard_arm0pc1(0);
+  Board_sdArm0pc1(0);
   HAL_Delay(120);
   Board_sdPower(1);
   HAL_Delay(50);
@@ -389,21 +389,25 @@ void Board_sdPowerCycle(void)
  */
 void Board_sd2Pc(void)
 {
+  send_test_report("SD to PC\r\n");
 
   //Board_sdPowerCycle();
 
   //Board_detectN(1);
   HAL_Delay(120);
   Board_sdPower(0);
-  Board_sdcard_arm0pc1(1);
+  Board_sdArm0pc1(1);
   //Board_detectN(GPIO_PIN_RESET);
   HAL_Delay(120);
   Board_sdPower(1);
   HAL_Delay(50);
+
 #if defined(SHIMMER4_SDK)
   Board_detectN(0);
 #endif
   SD_mount(0);
+
+  mmc1DeInit();
 }
 
 /**
@@ -413,15 +417,24 @@ void Board_sd2Pc(void)
  */
 void Board_sd2Arm(void)
 {
+  send_test_report("SD to MCU\r\n");
+
 #if defined(SHIMMER4_SDK)
   Board_detectN(1);
 #endif
+
   HAL_Delay(120);
   Board_sdPower(0);
-  Board_sdcard_arm0pc1(0);
+  Board_sdArm0pc1(0);
   HAL_Delay(120);
   Board_sdPower(1);
   HAL_Delay(50);
+
+  MX_SDMMC1_SD_Init();
+#if USE_FATFS
+  MX_FATFS_Init();
+#endif
+
   SD_mount(0);
   SD_mount(1);
 }

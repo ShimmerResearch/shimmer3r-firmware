@@ -46,6 +46,8 @@
 volatile uint32_t taskList = 0;
 uint32_t taskCurrent;
 
+extern void SetupDock(void);
+
 void S4_NORM_Task_init(void)
 {
   taskList = 0;
@@ -96,7 +98,7 @@ void S4_NORM_Task_manage(void)
     switch (taskCurrent)
     {
     case TASK_DOCKSETUP:
-      DockUart_setup();
+      SetupDock();
       break;
     case TASK_DOCK_PROCESS_CMD:
       DockUart_processCmd();
@@ -125,7 +127,8 @@ void S4_NORM_Task_manage(void)
       break;
 #endif
     case TASK_STARTSENSING:
-      S4Sens_startSensing();
+      send_test_report("TODO: Blocking call to start sensing due to high current\r\n");
+//      S4Sens_startSensing();
       break;
     case TASK_STOPSENSING:
       S4Sens_stopSensing();

@@ -294,6 +294,12 @@ void sd_card_test(void)
   }
   else
   {
+    if (shimmerStatus.isDocked)
+    {
+      Board_sd2Arm();
+      HAL_Delay(120); //120ms
+    }
+
     send_test_report(" - ");
     printSdCardInfo(buffer);
     send_test_report(buffer);
@@ -303,6 +309,11 @@ void sd_card_test(void)
     sprintf(buffer, " - S3R_TEST_0013 - %s: MCU read/write test\r\n",
         shimmerStatus.badFile ? "FAIL" : "PASS");
     send_test_report(buffer);
+
+    if (shimmerStatus.isDocked)
+    {
+      Board_sd2Pc();
+    }
   }
 }
 
@@ -441,17 +452,17 @@ uint8_t SPI_test(void)
     send_test_report(buffer);
   }
 
-  if (isAdxl371Detected())
+  if (isAdxl371Present())
   {
-    uint8_t adxl371_result = adxl371_self_test();
-    sprintf(buffer, " - S3R_TEST_0020 - %s: ADXL371%s\r\n", adxl371_result ? "PASS" : "FAIL",
-        adxl371_result ? "" : " - Detected but signal issue");
+    self_test_result = adxl371_self_test();
+    print_chip_test_result("S3R_TEST_0020", "ADXL371", self_test_result, TEST_THRESHOLD_IMU_TEMPERATURE_INVALID);
   }
   else
   {
-    sprintf(buffer, " - WARNING: ADXL371 not detected\r\n");
+    sprintf(buffer, " - S3R_TEST_0020 - ADXL371 test not applicable for this model\r\n");
+    send_test_report(buffer);
   }
-  send_test_report(buffer);
+
   SPI1_DeInit();
 
   send_test_report("SPI2:\r\n");
@@ -502,7 +513,7 @@ uint8_t SPI_test(void)
   }
   else
   {
-    send_test_report(" - S3R_TEST_0023 - ADS1292R not applicable for this model\r\n");
+    send_test_report(" - S3R_TEST_0023 - ADS1292R test not applicable for this model\r\n");
   }
   return ret_val;
 }

@@ -55,9 +55,8 @@ void adxl371_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-uint8_t adxl371_self_test(void)
+self_test_result_t adxl371_self_test(void)
 {
-  uint8_t result = 0;
   /*Needs to contain >=200ms worth of data. @320Hz, 100 samples = 312ms */
   struct adxl371_xyz_accel_data accel_data;
   uint16_t self_test_data[100] = { 0 };
@@ -67,10 +66,12 @@ uint8_t adxl371_self_test(void)
   uint16_t second_set_avg = 0;
   int32_t ret;
   uint8_t i;
+  self_test_result_t self_test_result = SELF_TEST_PASS;
 
   if (!isAdxl371Detected())
   {
-    return result;
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
+    return self_test_result;
   }
 
   /*1. Ensure that the low-pass activity filter is enabled. */
@@ -127,12 +128,12 @@ uint8_t adxl371_self_test(void)
   /*8. If the absolute value of the difference between the two averaged values
    * is greater than 5 LSB, the self test passes. */
   uint16_t diff = abs((int16_t) second_set_avg - (int16_t) first_set_avg);
-  result = diff > 5;
+  self_test_result = diff > 5 ? SELF_TEST_PASS : SELF_TEST_FAIL_SIGNAL_ISSUE;
 
   //adxl371_reset(&adxl371);
   ret = adxl371_set_op_mode(&adxl371, ADXL371_STANDBY);
 
-  return result;
+  return self_test_result;
 }
 
 void adxl371_configure(uint8_t rate)

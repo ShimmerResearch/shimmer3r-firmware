@@ -43,6 +43,7 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
+  void mmc1DeInit(void);
   void printSdCardInfo(char *outputStr);
 
   /* USER CODE END Prototypes */

@@ -170,7 +170,8 @@ void Init()
   BtUart_init();
 #endif
 
-  DockUart_setup();
+  SetupDock();
+  // Disable dock comms until sensor is ready to communicate
   DockUart_disable();
 
   setBootStage(BOOT_STAGE_CONFIGURATION);
@@ -199,6 +200,7 @@ void Init()
   vbusPinStateCheck();
 
   shimmerStatus.isConfiguring = 0;
+  // Enable dock comms now that sensor is ready to communicate
   DockUart_enable();
 
   //while(1){
@@ -255,7 +257,6 @@ int main(void)
   MX_ICACHE_Init();
   MX_RNG_Init();
   MX_RTC_Init();
-  MX_SDMMC1_SD_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM6_Init();
@@ -263,9 +264,9 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
 
-#if USE_FATFS
-  MX_FATFS_Init();
-#endif
+//#if USE_FATFS
+//  MX_FATFS_Init();
+//#endif
 
   linkedListConfig(&hadc1); //configure linkedlist for ADC
 
@@ -610,6 +611,7 @@ void loadSensorConfigurationAndCalibration(void)
 void SetupDock(void)
 {
   shimmerStatus.isConfiguring = 1;
+
   if (shimmerStatus.isDocked)
   {
     setBatteryInterval(BATT_INTERVAL_DOCKED);
@@ -618,7 +620,9 @@ void SetupDock(void)
     shimmerStatus.sdlogReady = 0;
     if (CheckSdInslot())
     {
-      Board_sdPowerCycle();
+      Board_sd2Pc();
+
+//      Board_sdPowerCycle();
     }
     MX_USART1_UART_Init();
     BtsdSelfcmd();
@@ -627,15 +631,19 @@ void SetupDock(void)
   {
     setBatteryInterval(BATT_INTERVAL_UNDOCKED);
     DockUart_deint();
-    Board_sdcard_arm0pc1(0);
+//    Board_sdcard_arm0pc1(0);
 
     //SendStatusByte();
     BtsdSelfcmd();
-    Board_sdPower(0);
-    if (CheckSdInslot() && !shimmerStatus.isSensing && !shimmerStatus.badFile)
+//    Board_sdPower(0);
+//    if (CheckSdInslot() && !shimmerStatus.isSensing && !shimmerStatus.badFile)
+    if (CheckSdInslot() && !shimmerStatus.isSensing)
     {
+      Board_sd2Arm();
+
       HAL_Delay(120); //120ms
-      Board_sdPower(1);
+//      Board_sdPower(1);
+
       SdInfoSync();
     }
     else

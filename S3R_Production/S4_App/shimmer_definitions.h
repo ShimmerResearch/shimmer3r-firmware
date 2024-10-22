@@ -498,6 +498,7 @@ typedef volatile struct STATTypeDef_t
   uint8_t pinPvExt;
   uint8_t periStat;
   uint8_t syncEnabled;
+  uint8_t isSdPeripheralInit;
 } STATTypeDef;
 
 typedef enum

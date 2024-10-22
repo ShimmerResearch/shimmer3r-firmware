@@ -73,11 +73,6 @@ uint8_t SD_test(void)
   UINT bw;
 #endif
 
-  Board_sd2Arm();
-  shimmerStatus.pinPvSd = 1;
-  SD_mount(0);
-  SD_mount(1);
-
 #if USE_FATFS
   shimmerStatus.badFile += f_open(&test_file, file_name, FA_CREATE_ALWAYS | FA_WRITE);
   shimmerStatus.badFile += f_write(&test_file, test_text1, TEST_TEXT_LEN - 1, &bw);

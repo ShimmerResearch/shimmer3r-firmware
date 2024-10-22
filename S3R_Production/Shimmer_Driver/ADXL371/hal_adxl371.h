@@ -11,6 +11,7 @@
 #include "stm32u5xx.h"
 #include <stddef.h>
 #include <stdint.h>
+#include "hal_FactoryTest.h"
 
 /* From https://github.com/analogdevicesinc/arduino/blob/master/Arduino%20Uno%20R3/examples/ADXL372_example/adxl372.h */
 /*Acceleremoter configuration*/
@@ -46,7 +47,7 @@ typedef void (*dev_mdelay_ptr)(uint32_t millisec);
 void adxl371_driver_init(void);
 void adxl371_selectDevice(void);
 void adxl371_unselectDevice(void);
-uint8_t adxl371_self_test(void);
+self_test_result_t adxl371_self_test(void);
 void adxl371_configure(uint8_t rate);
 HAL_StatusTypeDef adxl371_accel_get(uint8_t *buf);
 int32_t adxl371_is_data_rdy(void);
