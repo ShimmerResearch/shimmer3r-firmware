@@ -158,11 +158,11 @@ void S4Led_Blink(void)
   if (!shimmerStatus.isDocked && (shimmerStatus.badFile || !shimmerStatus.isSdInserted)
       && S4Ram_getStoredConfig()->sdErrorEnable)
   {
-    // Alternate Red/Yellow for SD error
+    //Alternate Red/Yellow for SD error
     if (cntBlink % 2)
     {
 #if defined(SHIMMER3R)
-      Board_ledUprSetColourRgb(LED_PWM_ON, LED_PWM_ON, LED_PWM_OFF); // Yellow
+      Board_ledUprSetColourRgb(LED_PWM_ON, LED_PWM_ON, LED_PWM_OFF); //Yellow
 #elif defined(SHIMMER4_SDK)
       Board_ledOn(LED_BLUE_UPR);
       Board_ledOff(LED_GREEN_UPR);
@@ -171,7 +171,7 @@ void S4Led_Blink(void)
     else
     {
 #if defined(SHIMMER3R)
-      Board_ledUprSetColourRgb(LED_PWM_ON, LED_PWM_OFF, LED_PWM_OFF); // Red
+      Board_ledUprSetColourRgb(LED_PWM_ON, LED_PWM_OFF, LED_PWM_OFF); //Red
 #elif defined(SHIMMER4_SDK)
       Board_ledOff(LED_BLUE_UPR);
       Board_ledOn(LED_GREEN_UPR);
