@@ -185,18 +185,19 @@ void lis3mdl_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-uint8_t lis3mdl_self_test(void)
+self_test_result_t lis3mdl_self_test(void)
 {
   uint8_t tx_buffer[1000];
   int16_t data_raw[3];
   float val_st_off[3];
   float val_st_on[3];
   float test_val[3];
-  uint8_t st_result;
+//  uint8_t st_result;
   uint8_t whoamI;
   uint8_t drdy;
   uint8_t i;
   uint8_t j;
+  self_test_result_t self_test_result = SELF_TEST_PASS;
 
   lis3mdl_driver_init();
 
@@ -205,7 +206,8 @@ uint8_t lis3mdl_self_test(void)
 
   if (whoamI != LIS3MDL_ID)
   {
-    st_result = ST_FAIL;
+//    st_result = ST_FAIL;
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
   {
@@ -295,7 +297,7 @@ uint8_t lis3mdl_self_test(void)
       val_st_on[i] /= SAMPLES;
     }
 
-    st_result = ST_PASS;
+//    st_result = ST_PASS;
 
     /* Calculate the mg values for self test */
     for (i = 0; i < 3; i++)
@@ -308,9 +310,13 @@ uint8_t lis3mdl_self_test(void)
     {
       if ((min_st_limit[i] > test_val[i]) || (test_val[i] > max_st_limit[i]))
       {
-        st_result = ST_FAIL;
+//        st_result = ST_FAIL;
+        self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
       }
     }
+
+    float_t tempCal;
+    lis3mdl_temperature_get(&tempCal);
 
     /* Disable Self Test */
     lis3mdl_self_test_set(&lis3mdl_obj.Ctx, PROPERTY_DISABLE);
@@ -330,7 +336,8 @@ uint8_t lis3mdl_self_test(void)
   //
   //tx_com(tx_buffer, strlen((char const *) tx_buffer));
 
-  return st_result == ST_PASS ? 0 : 1;
+//  return st_result == ST_PASS ? 0 : 1;
+  return self_test_result;
 }
 
 void lis3mdl_configure(float shimmerSamplingFreq, lis3mdl_om_t rate, lis3mdl_fs_t range)
@@ -474,6 +481,22 @@ void lis3mdl_spi_three_wire_set(void)
   ctrl_reg3.md = 3; //Default = 3
 
   ret = lis3mdl_write_reg(&lis3mdl_obj.Ctx, LIS3MDL_CTRL_REG3, (uint8_t *) &ctrl_reg3, 1);
+}
+
+int32_t lis3mdl_temperature_get(float_t *tempCal)
+{
+  int16_t tempUncal = 0;
+
+  lis3mdl_temperature_meas_set(&lis3mdl_obj.Ctx, 1);
+  /* Wait stable output - just picking an existing delay here */
+  platform_delay(WAIT_TIME_02);
+
+  int32_t res = lis3mdl_temperature_raw_get(&lis3mdl_obj.Ctx, &tempUncal);
+
+  lis3mdl_temperature_meas_set(&lis3mdl_obj.Ctx, 0);
+
+  *tempCal = lis3mdl_from_lsb_to_celsius(tempUncal);
+  return res;
 }
 
 /*

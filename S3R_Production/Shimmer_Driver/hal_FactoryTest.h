@@ -9,6 +9,7 @@
 #define HAL_FACTORYTEST_H_
 
 #include <stdint.h>
+#include <math.h>
 
 #define DELAY_BETWEEN_LED_CHANGES_MS         2000
 
@@ -30,10 +31,19 @@ given above */
 #define TEST_THRESHOLD_MCU_TEMPERATURE_UPPER 35
 #define TEST_THRESHOLD_VBATT_LOWER           2980
 #define TEST_THRESHOLD_VBATT_UPPER           4750
-#define TEST_THRESHOLD_BMP_TEMPERATURE_LOWER 10
-#define TEST_THRESHOLD_BMP_TEMPERATURE_UPPER 35
+#define TEST_THRESHOLD_IMU_TEMPERATURE_LOWER 10.0
+#define TEST_THRESHOLD_IMU_TEMPERATURE_UPPER 35.0
+
+#define TEST_THRESHOLD_IMU_TEMPERATURE_INVALID -1.0
 
 #define TEST_BT_MODULE_FW                    "v01.04.16.16"
+
+#define SELF_TEST_STR_PASS                    "PASS"
+#define SELF_TEST_STR_FAIL                    "FAIL"
+#define SELF_TEST_STR_EMPTY                   ""
+#define SELF_TEST_STR_CHIP_DETECTION          " - Chip not detected"
+#define SELF_TEST_STR_SIGNAL_ISSUE            " - Signal issue"
+#define SELF_TEST_STR_TEMPERATURE_ISSUE       " - Temperature issue"
 
 typedef enum
 {
@@ -50,6 +60,14 @@ typedef enum
   FACTORY_TEST_COUNT
 } factory_test_t;
 
+typedef enum
+{
+  SELF_TEST_PASS = 0,
+  SELF_TEST_FAIL_CHIP_DETECTION,
+  SELF_TEST_FAIL_SIGNAL_ISSUE,
+  SELF_TEST_FAIL_TEMPERATURE_ISSUE,
+} self_test_result_t;
+
 uint32_t run_factory_test(void);
 void print_date_and_time(void);
 void print_shimmer_model(void);
@@ -61,6 +79,8 @@ uint8_t bt_module_test(void);
 uint8_t I2C_test(void);
 uint8_t SPI_test(void);
 void setup_factory_test(factory_test_target_t target, factory_test_t testToRun);
+uint8_t is_temperature_outside_of_range(float_t temperature);
+void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_test_result, float_t tempCal);
 void send_test_report(char *str);
 
 #endif /* HAL_FACTORYTEST_H_ */

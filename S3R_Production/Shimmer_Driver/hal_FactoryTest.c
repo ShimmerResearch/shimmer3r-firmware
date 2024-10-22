@@ -11,6 +11,7 @@
 #include "spi.h"
 
 #include "bmp3_defs.h"
+#include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
 
 factory_test_target_t factoryTestTarget = PRINT_TO_DEBUGGER;
 factory_test_t factoryTestToRun;
@@ -25,6 +26,11 @@ uint32_t run_factory_test(void)
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
   {
     print_date_and_time();
+    send_test_report("\r\n");
+
+    sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f\xB0 C\r\n",
+        TEST_THRESHOLD_IMU_TEMPERATURE_LOWER, TEST_THRESHOLD_IMU_TEMPERATURE_UPPER);
+    send_test_report(buffer);
     send_test_report("\r\n");
 
     print_shimmer_model();
@@ -155,9 +161,8 @@ void print_mcu_details(void)
 
   testPass = (adcDebugInfo.temperature > TEST_THRESHOLD_MCU_TEMPERATURE_LOWER
       && adcDebugInfo.temperature < TEST_THRESHOLD_MCU_TEMPERATURE_UPPER);
-  sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xB0 C (%d-%d\xB0 C)\r\n",
-      testPass ? "PASS" : "FAIL", adcDebugInfo.temperature,
-      TEST_THRESHOLD_MCU_TEMPERATURE_LOWER, TEST_THRESHOLD_MCU_TEMPERATURE_UPPER);
+  sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xB0 C\r\n",
+      testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   send_test_report(buffer);
 }
 
@@ -327,7 +332,9 @@ uint8_t bt_module_test(void)
 
 uint8_t I2C_test(void)
 {
+  self_test_result_t self_test_result = SELF_TEST_PASS;
   uint8_t ret_val = 0;
+  float_t tempCal = 0;
 
   MX_I2C1_Init();
 
@@ -359,9 +366,18 @@ uint8_t I2C_test(void)
 #elif defined(SHIMMER3R)
   send_test_report("I2C1:\r\n");
 
-  uint8_t st_result = lis2mdl_self_test();
-  sprintf(buffer, " - S3R_TEST_0015 - %s: LIS2MDL\r\n", st_result ? "PASS" : "FAIL");
-  send_test_report(buffer);
+  tempCal = TEST_THRESHOLD_IMU_TEMPERATURE_INVALID;
+  self_test_result = lis2mdl_self_test();
+  if (self_test_result == SELF_TEST_PASS)
+  {
+    // Get last temperature value left over from self test
+    ret_val = lis2mdl_temperature_get(&tempCal);
+    if(is_temperature_outside_of_range(tempCal))
+    {
+      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+    }
+  }
+  print_chip_test_result("S3R_TEST_0015", "LIS2MDL", self_test_result, tempCal);
 
   uint8_t eeprom_result = CAT24C16_test();
   sprintf(buffer, " - S3R_TEST_0016 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
@@ -386,41 +402,49 @@ uint8_t I2C_test(void)
 
 uint8_t SPI_test(void)
 {
+  self_test_result_t self_test_result = SELF_TEST_PASS;
   uint8_t ret_val = 0;
+  float_t tempCal = 0;
+
 #if defined(SHIMMER3R)
   send_test_report("SPI1:\r\n");
   MX_SPI1_Init();
 
-  uint8_t lsm6dsv_result = lsm6dsv_self_test();
-  sprintf(buffer, " - S3R_TEST_0018 - %s: LSM6DSV\r\n", lsm6dsv_result ? "FAIL" : "PASS");
-  send_test_report(buffer);
+  tempCal = TEST_THRESHOLD_IMU_TEMPERATURE_INVALID;
+  self_test_result = lsm6dsv_self_test();
+  if (self_test_result == SELF_TEST_PASS)
+  {
+    // Get last temperature value left over from self test
+    ret_val = lsm6dsv_temperature_get(&tempCal);
+    if(is_temperature_outside_of_range(tempCal))
+    {
+      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+    }
+  }
+  print_chip_test_result("S3R_TEST_0018", "LSM6DSV", self_test_result, tempCal);
 
   int8_t bmp390_result = bmp3_self_test();
-  sprintf(buffer, " - S3R_TEST_0019 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
-  send_test_report(buffer);
-  if (bmp390_result)
+  if (bmp390_result == 0)
   {
-    send_test_report(" - ");
-    bmp3_check_rslt("BMP390", bmp390_result, buffer);
+    struct bmp3_data *bmp3_data = (struct bmp3_data*) get_bmp3_selftest_data();
+    uint8_t testPass = (bmp3_data->temperature > TEST_THRESHOLD_IMU_TEMPERATURE_LOWER
+        && bmp3_data->temperature < TEST_THRESHOLD_IMU_TEMPERATURE_UPPER);
+    sprintf(buffer, " - S3R_TEST_0019 - %s: BMP390 (%.2f\xB0 C)\r\n", bmp390_result ? "FAIL" : "PASS", bmp3_data->temperature);
     send_test_report(buffer);
-    send_test_report(
-        " - S3R_TEST_0019 - FAIL: Resolve main error with BMP390\r\n");
   }
   else
   {
-    struct bmp3_data *bmp3_data = get_bmp3_selftest_data();
-    uint8_t testPass = (bmp3_data->temperature > TEST_THRESHOLD_BMP_TEMPERATURE_LOWER
-        && bmp3_data->temperature < TEST_THRESHOLD_BMP_TEMPERATURE_UPPER);
-    sprintf(buffer, " - S3R_TEST_0020 - %s: Temperature = %.2f\xB0 C (%d-%d\xB0 C)\r\n",
-        testPass ? "PASS" : "FAIL", bmp3_data->temperature,
-        TEST_THRESHOLD_BMP_TEMPERATURE_LOWER, TEST_THRESHOLD_BMP_TEMPERATURE_UPPER);
+    sprintf(buffer, " - S3R_TEST_0019 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
+    send_test_report(buffer);
+    send_test_report(" - ");
+    bmp3_check_rslt("BMP390", bmp390_result, buffer);
     send_test_report(buffer);
   }
 
   if (isAdxl371Detected())
   {
     uint8_t adxl371_result = adxl371_self_test();
-    sprintf(buffer, " - S3R_TEST_0021 - %s: ADXL371%s\r\n", adxl371_result ? "PASS" : "FAIL",
+    sprintf(buffer, " - S3R_TEST_0020 - %s: ADXL371%s\r\n", adxl371_result ? "PASS" : "FAIL",
         adxl371_result ? "" : " - Detected but signal issue");
   }
   else
@@ -432,13 +456,33 @@ uint8_t SPI_test(void)
 
   send_test_report("SPI2:\r\n");
   MX_SPI2_Init();
-  uint8_t lis3mdl_result = lis3mdl_self_test();
-  sprintf(buffer, " - S3R_TEST_0022 - %s: LIS3MDL\r\n", lis3mdl_result ? "FAIL" : "PASS");
-  send_test_report(buffer);
 
-  uint8_t lis2dw12_result = lis2dw12_self_test();
-  sprintf(buffer, " - S3R_TEST_0023 - %s: LIS2DW12\r\n", lis2dw12_result ? "PASS" : "FAIL");
-  send_test_report(buffer);
+  tempCal = TEST_THRESHOLD_IMU_TEMPERATURE_INVALID;
+  self_test_result = lis3mdl_self_test();
+  if (self_test_result == SELF_TEST_PASS)
+  {
+    // Get new temperature value
+    ret_val = lis3mdl_temperature_get(&tempCal);
+    if(is_temperature_outside_of_range(tempCal))
+    {
+      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+    }
+  }
+  print_chip_test_result("S3R_TEST_0021", "LIS3MDL", self_test_result, tempCal);
+
+  tempCal = TEST_THRESHOLD_IMU_TEMPERATURE_INVALID;
+  self_test_result = lis2dw12_self_test();
+  if (self_test_result == SELF_TEST_PASS)
+  {
+    // Get last temperature value left over from self test
+    ret_val = lis2dw12_temperature_get(&tempCal);
+    if(is_temperature_outside_of_range(tempCal))
+    {
+      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+    }
+  }
+  print_chip_test_result("S3R_TEST_0022", "LIS2DW12", self_test_result, tempCal);
+
   SPI2_DeInit();
 
 #endif
@@ -452,13 +496,13 @@ uint8_t SPI_test(void)
     //ret_val |= EXG_test();
 
     send_test_report(
-        " - S3R_TEST_0024 - WARNING: Test not implemented yet\r\n");
+        " - S3R_TEST_0023 - WARNING: ADS1292R test not implemented yet\r\n");
 
     SPI3_DeInit();
   }
   else
   {
-    send_test_report(" - S3R_TEST_0024 - Not applicable for this model\r\n");
+    send_test_report(" - S3R_TEST_0023 - ADS1292R not applicable for this model\r\n");
   }
   return ret_val;
 }
@@ -467,6 +511,51 @@ void setup_factory_test(factory_test_target_t target, factory_test_t testToRun)
 {
   factoryTestTarget = target;
   factoryTestToRun = testToRun;
+}
+
+uint8_t is_temperature_outside_of_range(float_t temperature)
+{
+  return (temperature < TEST_THRESHOLD_IMU_TEMPERATURE_LOWER
+      || temperature > TEST_THRESHOLD_IMU_TEMPERATURE_UPPER);
+}
+
+void print_chip_test_result(char *testId, char *chipId,
+    self_test_result_t self_test_result, float_t tempCal)
+{
+  char *selfTestResultStr;
+  char *selfTestDetailsStr;
+  if (self_test_result == SELF_TEST_PASS)
+  {
+    selfTestResultStr = &SELF_TEST_STR_PASS[0];
+    selfTestDetailsStr = &SELF_TEST_STR_EMPTY[0];
+  }
+  else if (self_test_result == SELF_TEST_FAIL_CHIP_DETECTION)
+  {
+    selfTestResultStr = &SELF_TEST_STR_FAIL[0];
+    selfTestDetailsStr = &SELF_TEST_STR_CHIP_DETECTION[0];
+  }
+  else if (self_test_result == SELF_TEST_FAIL_SIGNAL_ISSUE)
+  {
+    selfTestResultStr = &SELF_TEST_STR_FAIL[0];
+    selfTestDetailsStr = &SELF_TEST_STR_SIGNAL_ISSUE[0];
+  }
+  else if (self_test_result == SELF_TEST_FAIL_TEMPERATURE_ISSUE)
+  {
+    selfTestResultStr = &SELF_TEST_STR_FAIL[0];
+    selfTestDetailsStr = &SELF_TEST_STR_TEMPERATURE_ISSUE[0];
+  }
+
+  if (tempCal == TEST_THRESHOLD_IMU_TEMPERATURE_INVALID)
+  {
+    sprintf(buffer, " - %s - %s: %s%s\r\n", testId,
+        selfTestResultStr, chipId, selfTestDetailsStr);
+  }
+  else
+  {
+    sprintf(buffer, " - %s - %s: %s%s (%.2f\xB0 C)\r\n", testId,
+        selfTestResultStr, chipId, selfTestDetailsStr, tempCal);
+  }
+  send_test_report(buffer);
 }
 
 void send_test_report(char *str)

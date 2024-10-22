@@ -52,6 +52,7 @@ void MX_GPIO_Init(void);
 
   uint8_t SD_insertedCheck(void);
   uint8_t isSdPowerOn(void);
+  void gpioInitPerBoard(void);
   void vbusPinStateCheck(void);
   void setBtPower(uint8_t state);
 

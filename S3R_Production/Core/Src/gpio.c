@@ -433,15 +433,23 @@ uint8_t isSdPowerOn(void)
 
 void gpioInitPerBoard(void)
 {
-  //shimmer_expansion_brd *daughtCardId = getDaughtCardId();
-  //if(daughtCardId->exp_brd_id==EXP_BRD_GSR_UNIFIED)
-  //{
-  //  GPIO_InitStruct.Pin = GPIO_INTERNAL2_Pin|GPIO_INTERNAL1_Pin;
-  //  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  //  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  //  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-  //
-  //}
+  shimmer_expansion_brd *daughtCardId = getDaughtCardId();
+  if(daughtCardId->exp_brd_id==EXP_BRD_GSR_UNIFIED)
+  {
+
+    GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+
+    // Enable ADCs on PPG connector and disable I2C4
+    HAL_GPIO_DeInit(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin);
+    GPIO_InitStruct.Pin = GPIO_ADC_INT_EXP2_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIO_ADC_INT_EXP2_GPIO_Port, &GPIO_InitStruct);
+
+    HAL_GPIO_WritePin(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin, GPIO_PIN_SET);
+
+  }
 }
 
 void vbusPinStateCheck(void)

@@ -23,7 +23,7 @@
 
 #define FW_IS_LOGANDSTREAM  1
 
-#define IS_CONNECTED_EEPROM 0
+#define IS_CONNECTED_EEPROM 1
 
 #define USE_DEFAULT_SENSOR  0
 #define RTC_FAST \

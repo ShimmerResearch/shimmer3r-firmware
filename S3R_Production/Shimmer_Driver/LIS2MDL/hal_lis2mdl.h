@@ -9,9 +9,10 @@
 #define LIS2MDL_HAL_LIS2MDL_H_
 
 #include <lis2mdl_reg.h>
+#include "hal_FactoryTest.h"
 
 void lis2mdl_driver_init(void);
-uint8_t lis2mdl_self_test(void);
+self_test_result_t lis2mdl_self_test(void);
 void lis2mdl_configure(float shimmerSamplingFreq, lis2mdl_odr_t rate);
 HAL_StatusTypeDef lis2mdl_mag_get(uint8_t *buf);
 bool lis2mdl_is_drdy_int_enabled(void);
@@ -20,5 +21,6 @@ float lis2mdl_get_sensor_freq_from_rate(lis2mdl_odr_t rate);
 
 void lis2mdl_set_default_config(void);
 void lis2mdl_sleep(void);
+int32_t lis2mdl_temperature_get(float_t *tempCal);
 
 #endif /* LIS2MDL_HAL_LIS2MDL_H_ */

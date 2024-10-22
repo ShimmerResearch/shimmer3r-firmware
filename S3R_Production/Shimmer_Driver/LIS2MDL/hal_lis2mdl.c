@@ -164,18 +164,19 @@ void lis2mdl_driver_init(void)
   //lis2mdl_obj.IO.BusType = LIS2MDL_I2C_BUS;
 }
 
-uint8_t lis2mdl_self_test(void)
+self_test_result_t lis2mdl_self_test(void)
 {
   uint8_t tx_buffer[1000];
   int16_t data_raw[3];
   float val_st_off[3];
   float val_st_on[3];
   float test_val[3];
-  uint8_t st_result;
+//  uint8_t st_result;
   uint8_t whoamI;
   uint8_t drdy;
   uint8_t i;
   uint8_t j;
+  self_test_result_t self_test_result = SELF_TEST_PASS;
 
   lis2mdl_driver_init();
 #if !defined(SHIMMER3R)
@@ -195,7 +196,8 @@ uint8_t lis2mdl_self_test(void)
 
   if (whoamI != LIS2MDL_ID)
   {
-    st_result = ST_FAIL;
+//    st_result = ST_FAIL;
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
   {
@@ -276,7 +278,7 @@ uint8_t lis2mdl_self_test(void)
       val_st_on[i] /= SAMPLES;
     }
 
-    st_result = ST_PASS;
+//    st_result = ST_PASS;
 
     /* Calculate the mg values for self test */
     for (i = 0; i < 3; i++)
@@ -289,7 +291,8 @@ uint8_t lis2mdl_self_test(void)
     {
       if ((MIN_ST_LIMIT_mG > test_val[i]) || (test_val[i] > MAX_ST_LIMIT_mG))
       {
-        st_result = ST_FAIL;
+//        st_result = ST_FAIL;
+        self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
       }
     }
 
@@ -310,7 +313,8 @@ uint8_t lis2mdl_self_test(void)
   //}
   //
   //tx_com(tx_buffer, strlen((char const *) tx_buffer));
-  return st_result;
+//  return st_result;
+  return self_test_result;
 }
 
 void lis2mdl_configure(float shimmerSamplingFreq, lis2mdl_odr_t rate)
@@ -402,6 +406,14 @@ void lis2mdl_sleep(void)
   lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_POWER_DOWN);
 }
 #endif
+
+int32_t lis2mdl_temperature_get(float_t *tempCal)
+{
+  int16_t tempUncal = 0;
+  int32_t res = lis2mdl_temperature_raw_get(&lis2mdl_obj.Ctx, &tempUncal);
+  *tempCal = lis2mdl_from_lsb_to_celsius(tempUncal);
+  return res;
+}
 
 /*
  * @brief  Write generic device register (platform dependent)
