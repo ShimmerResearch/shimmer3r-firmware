@@ -200,7 +200,7 @@ self_test_result_t lsm6dsv_self_test(void)
 
   if (whoamI != LSM6DSV_ID)
   {
-//    st_result = ST_FAIL;
+    //st_result = ST_FAIL;
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
@@ -309,7 +309,7 @@ self_test_result_t lsm6dsv_self_test(void)
     {
       if ((SELF_TEST_MIN_ST_LIMIT_mg > test_val[i]) || (test_val[i] > SELF_TEST_MAX_ST_LIMIT_mg))
       {
-//        st_result = ST_FAIL;
+        //st_result = ST_FAIL;
         self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
       }
     }
@@ -403,7 +403,7 @@ self_test_result_t lsm6dsv_self_test(void)
     {
       if ((MIN_ST_LIMIT_mdps > test_val[i]) || (test_val[i] > MAX_ST_LIMIT_mdps))
       {
-//        st_result = ST_FAIL;
+        //st_result = ST_FAIL;
         self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
       }
     }
@@ -426,7 +426,7 @@ self_test_result_t lsm6dsv_self_test(void)
   //
   //tx_com(tx_buffer, strlen((char const *) tx_buffer));
 
-//  return st_result == ST_PASS ? 0 : 1;
+  //return st_result == ST_PASS ? 0 : 1;
   return self_test_result;
 }
 

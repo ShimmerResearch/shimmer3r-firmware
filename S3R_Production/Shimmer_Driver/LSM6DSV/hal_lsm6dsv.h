@@ -8,8 +8,8 @@
 #ifndef LSM6DSV_HAL_LSM6DSV_H_
 #define LSM6DSV_HAL_LSM6DSV_H_
 
-#include <lsm6dsv_reg.h>
 #include "hal_FactoryTest.h"
+#include <lsm6dsv_reg.h>
 
 void lsm6dsv_driver_init(void);
 void lsm6dsv_selectDevice(void);

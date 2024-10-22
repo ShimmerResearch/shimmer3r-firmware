@@ -10,8 +10,8 @@
 #include "i2c.h"
 #include "spi.h"
 
-#include "bmp3_defs.h"
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
+#include "bmp3_defs.h"
 
 factory_test_target_t factoryTestTarget = PRINT_TO_DEBUGGER;
 factory_test_t factoryTestToRun;
@@ -381,9 +381,9 @@ uint8_t I2C_test(void)
   self_test_result = lis2mdl_self_test();
   if (self_test_result == SELF_TEST_PASS)
   {
-    // Get last temperature value left over from self test
+    //Get last temperature value left over from self test
     ret_val = lis2mdl_temperature_get(&tempCal);
-    if(is_temperature_outside_of_range(tempCal))
+    if (is_temperature_outside_of_range(tempCal))
     {
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
@@ -425,9 +425,9 @@ uint8_t SPI_test(void)
   self_test_result = lsm6dsv_self_test();
   if (self_test_result == SELF_TEST_PASS)
   {
-    // Get last temperature value left over from self test
+    //Get last temperature value left over from self test
     ret_val = lsm6dsv_temperature_get(&tempCal);
-    if(is_temperature_outside_of_range(tempCal))
+    if (is_temperature_outside_of_range(tempCal))
     {
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
@@ -437,10 +437,11 @@ uint8_t SPI_test(void)
   int8_t bmp390_result = bmp3_self_test();
   if (bmp390_result == 0)
   {
-    struct bmp3_data *bmp3_data = (struct bmp3_data*) get_bmp3_selftest_data();
+    struct bmp3_data *bmp3_data = (struct bmp3_data *) get_bmp3_selftest_data();
     uint8_t testPass = (bmp3_data->temperature > TEST_THRESHOLD_IMU_TEMPERATURE_LOWER
         && bmp3_data->temperature < TEST_THRESHOLD_IMU_TEMPERATURE_UPPER);
-    sprintf(buffer, " - S3R_TEST_0019 - %s: BMP390 (%.2f\xB0 C)\r\n", bmp390_result ? "FAIL" : "PASS", bmp3_data->temperature);
+    sprintf(buffer, " - S3R_TEST_0019 - %s: BMP390 (%.2f\xB0 C)\r\n",
+        bmp390_result ? "FAIL" : "PASS", bmp3_data->temperature);
     send_test_report(buffer);
   }
   else
@@ -472,9 +473,9 @@ uint8_t SPI_test(void)
   self_test_result = lis3mdl_self_test();
   if (self_test_result == SELF_TEST_PASS)
   {
-    // Get new temperature value
+    //Get new temperature value
     ret_val = lis3mdl_temperature_get(&tempCal);
-    if(is_temperature_outside_of_range(tempCal))
+    if (is_temperature_outside_of_range(tempCal))
     {
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
@@ -485,9 +486,9 @@ uint8_t SPI_test(void)
   self_test_result = lis2dw12_self_test();
   if (self_test_result == SELF_TEST_PASS)
   {
-    // Get last temperature value left over from self test
+    //Get last temperature value left over from self test
     ret_val = lis2dw12_temperature_get(&tempCal);
-    if(is_temperature_outside_of_range(tempCal))
+    if (is_temperature_outside_of_range(tempCal))
     {
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
@@ -530,8 +531,7 @@ uint8_t is_temperature_outside_of_range(float_t temperature)
       || temperature > TEST_THRESHOLD_IMU_TEMPERATURE_UPPER);
 }
 
-void print_chip_test_result(char *testId, char *chipId,
-    self_test_result_t self_test_result, float_t tempCal)
+void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_test_result, float_t tempCal)
 {
   char *selfTestResultStr;
   char *selfTestDetailsStr;
@@ -558,8 +558,7 @@ void print_chip_test_result(char *testId, char *chipId,
 
   if (tempCal == TEST_THRESHOLD_IMU_TEMPERATURE_INVALID)
   {
-    sprintf(buffer, " - %s - %s: %s%s\r\n", testId,
-        selfTestResultStr, chipId, selfTestDetailsStr);
+    sprintf(buffer, " - %s - %s: %s%s\r\n", testId, selfTestResultStr, chipId, selfTestDetailsStr);
   }
   else
   {

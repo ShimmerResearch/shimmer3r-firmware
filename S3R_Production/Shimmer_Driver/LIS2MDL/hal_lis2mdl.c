@@ -171,7 +171,7 @@ self_test_result_t lis2mdl_self_test(void)
   float val_st_off[3];
   float val_st_on[3];
   float test_val[3];
-//  uint8_t st_result;
+  //uint8_t st_result;
   uint8_t whoamI;
   uint8_t drdy;
   uint8_t i;
@@ -196,7 +196,7 @@ self_test_result_t lis2mdl_self_test(void)
 
   if (whoamI != LIS2MDL_ID)
   {
-//    st_result = ST_FAIL;
+    //st_result = ST_FAIL;
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
@@ -278,7 +278,7 @@ self_test_result_t lis2mdl_self_test(void)
       val_st_on[i] /= SAMPLES;
     }
 
-//    st_result = ST_PASS;
+    //st_result = ST_PASS;
 
     /* Calculate the mg values for self test */
     for (i = 0; i < 3; i++)
@@ -291,7 +291,7 @@ self_test_result_t lis2mdl_self_test(void)
     {
       if ((MIN_ST_LIMIT_mG > test_val[i]) || (test_val[i] > MAX_ST_LIMIT_mG))
       {
-//        st_result = ST_FAIL;
+        //st_result = ST_FAIL;
         self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
       }
     }
@@ -313,7 +313,7 @@ self_test_result_t lis2mdl_self_test(void)
   //}
   //
   //tx_com(tx_buffer, strlen((char const *) tx_buffer));
-//  return st_result;
+  //return st_result;
   return self_test_result;
 }
 
