@@ -348,7 +348,7 @@ self_test_result_t lis2dw12_self_test(void)
 
   if (whoamI != LIS2DW12_ID)
   {
-//    st_result = ST_FAIL;
+    //st_result = ST_FAIL;
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
@@ -377,7 +377,7 @@ self_test_result_t lis2dw12_self_test(void)
   //}
   //
   //tx_com(tx_buffer, strlen((char const *) tx_buffer));
-//  return st_result;
+  //return st_result;
   return self_test_result;
 }
 

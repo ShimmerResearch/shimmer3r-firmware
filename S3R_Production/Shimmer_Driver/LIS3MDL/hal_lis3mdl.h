@@ -8,8 +8,8 @@
 #ifndef LIS3MDL_HAL_LIS3MDL_H_
 #define LIS3MDL_HAL_LIS3MDL_H_
 
-#include <lis3mdl_reg.h>
 #include "hal_FactoryTest.h"
+#include <lis3mdl_reg.h>
 
 void lis3mdl_driver_init(void);
 void lis3mdl_selectDevice(void);
