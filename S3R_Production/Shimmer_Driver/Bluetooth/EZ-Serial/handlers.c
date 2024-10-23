@@ -62,7 +62,7 @@ uint8_t rxBuf[512];
 uint16_t expectedByteCount;
 
 uint8_t waitingForBtBoot = 0;
-char btBootMsg[160] = { 0 }; // Measured to be 150 chars with v1.4.12.12
+char btBootMsg[160] = { 0 }; //Measured to be 150 chars with v1.4.12.12
 uint8_t btBootMsgIndex = 0;
 uint8_t btBootMsgLineCount = 0;
 
@@ -584,7 +584,7 @@ void resetBtRxBuff(void)
 void setWaitingForBtBoot(uint8_t state)
 {
   waitingForBtBoot = state;
-  if(state)
+  if (state)
   {
     memset(&btBootMsg[0], 0, sizeof(btBootMsg));
     btBootMsgIndex = 0;

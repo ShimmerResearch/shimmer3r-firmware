@@ -173,7 +173,7 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
 
-//  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+  //HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
 
   //Enable BT power
   setBtPower(1);
@@ -215,10 +215,10 @@ void btInitCommands(void)
   if (btInitCmdsStep == WAIT_FOR_BOOT)
   {
     btInitCmdsStep++;
-    // Only ASCII boot message currently working so had to implement our own approach
-//    setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
-      setWaitingForBtBoot(1);
-      return;
+    //Only ASCII boot message currently working so had to implement our own approach
+    //setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+    setWaitingForBtBoot(1);
+    return;
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)
@@ -1020,19 +1020,19 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     /* -------- Shimmer added end -------- */
 
   default:
-//#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    //#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: unhandled packet: ");
     printHex8(packet->header.group);
     printf("/");
     printHex8(packet->header.id);
     printf("\r\n");
-//#endif
+    //#endif
     break;
   }
 
   //printf("\r\n");
 
-  if(packet->tbl_index == expectedResponseIdx)
+  if (packet->tbl_index == expectedResponseIdx)
   {
     progressToNextBtInCmd();
   }
