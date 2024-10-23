@@ -583,7 +583,7 @@ void shimmerAdcGpioSetup(uint8_t init)
     else
     {
       //TODO manage GPIO CLK enable/disable properly
-//      __HAL_RCC_GPIOA_CLK_DISABLE();
+      //__HAL_RCC_GPIOA_CLK_DISABLE();
       HAL_GPIO_DeInit(GPIOA, adcPinsPortA);
     }
   }
