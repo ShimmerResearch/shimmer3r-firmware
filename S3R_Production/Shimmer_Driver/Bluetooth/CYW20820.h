@@ -82,6 +82,7 @@ void btInit(uint32_t baudRate, uint8_t factoryReset);
 void btDeinit(void);
 void btInitCommands(void);
 void btFactoryResetCommands(void);
+void progressToNextBtInCmd(void);
 void setExpectedResponse(uint16_t idx);
 bool isBtIsInitialised(void);
 bool isBtIsFactoryResetted(void);

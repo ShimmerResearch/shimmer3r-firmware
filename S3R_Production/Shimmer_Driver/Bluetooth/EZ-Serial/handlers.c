@@ -61,6 +61,11 @@ uint8_t bt_txBuf[512];
 uint8_t rxBuf[512];
 uint16_t expectedByteCount;
 
+uint8_t waitingForBtBoot = 0;
+char btBootMsg[160] = { 0 }; // Measured to be 150 chars with v1.4.12.12
+uint8_t btBootMsgIndex = 0;
+uint8_t btBootMsgLineCount = 0;
+
 /* Buffer read / write macros                                                 */
 #define RINGFIFO_RESET(ringFifo)         \
   {                                      \
@@ -269,16 +274,32 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
   uint8_t i = 0;
   while (i < expectedByteCount)
   {
+    if (waitingForBtBoot)
+    {
+      btBootMsg[btBootMsgIndex++] = rxBuf[i];
+      if (btBootMsgIndex > 0 && btBootMsg[btBootMsgIndex - 2] == 0x0D
+          && btBootMsg[btBootMsgIndex - 1] == 0x0A)
+      {
+        btBootMsgLineCount++;
+        if (btBootMsgLineCount == 2)
+        {
+          setWaitingForBtBoot(0);
+          //TODO fix architecture and function calling
+          progressToNextBtInCmd();
+        }
+      }
+      i += 1;
+    }
     /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
      * parse is ideal and the header byte is a Shimmer packet header byte,
      * parse as Shimmer packet */
-    if (isWaitingForArgs()
+    else if (isWaitingForArgs()
         || (getEzsPacketLength() == 0 && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
             && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
             && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
     {
       //Parse as Shimmer packet
-      SHIMMER_PRINTF("S1=0x%x\n", rxBuf[i]);
+      SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
       count = getBtRxShimmerCommsWaitByteCount();
       Dma2ConversionDone(&rxBuf[i]);
       i += count;
@@ -289,6 +310,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
       if (result != 0)
       {
+        //TODO fix architecture and function calling
         /* If complete EZ Serial packet parsed, send to handler */
         ezsHandlerShimmer(result);
       }
@@ -313,7 +335,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
            * Serial packet, send to Shimmer parser */
           if (getEzsPacketLength() == 0)
           {
-            SHIMMER_PRINTF("S2=0x%x\n", rxBuf[i]);
+            SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
           }
         }
       }
@@ -557,4 +579,20 @@ void resetEzsPendingResponse(void)
 void resetBtRxBuff(void)
 {
   memset(rxBuf, 0, sizeof(rxBuf));
+}
+
+void setWaitingForBtBoot(uint8_t state)
+{
+  waitingForBtBoot = state;
+  if(state)
+  {
+    memset(&btBootMsg[0], 0, sizeof(btBootMsg));
+    btBootMsgIndex = 0;
+    btBootMsgLineCount = 0;
+  }
+}
+
+char *getBtBootMsgPtr(void)
+{
+  return &btBootMsg[0];
 }

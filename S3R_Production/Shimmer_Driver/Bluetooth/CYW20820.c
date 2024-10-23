@@ -173,18 +173,23 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
 
-  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+//  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
 
   //Enable BT power
   setBtPower(1);
-  //TODO delay needed?
+  Board_BT_RST_N(1);
+  //TODO delay needed and what value?
   HAL_Delay(100);
   Board_BT_LP_MODE(1);
   Board_BT_CP_ROLE(1);
+
+  //TODO reset needed
+  Board_BT_RST_N(0);
+  //TODO value of delay needed for reset?
+  HAL_Delay(100);
   Board_BT_RST_N(1);
 
-  //TODO remove hard-coded long delay after BT is powered on and try to parse the boot message
-//  HAL_Delay(5000);
+  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
 
   if (factoryReset)
   {
@@ -210,17 +215,18 @@ void btInitCommands(void)
   if (btInitCmdsStep == WAIT_FOR_BOOT)
   {
     btInitCmdsStep++;
-    //TODO remove hard-coded long delay after BT is powered on and try to parse
-    //the boot message
-    #ifndef S3R_NUCLEO
-        setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
-        return;
-    #endif
+    // Only ASCII boot message currently working so had to implement our own approach
+//    setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+      setWaitingForBtBoot(1);
+      return;
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)
   {
     btInitCmdsStep++;
+
+    printf("Boot Msgs=\r\n%s", getBtBootMsgPtr());
+
     printf("Update UART Stage1\r\n");
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS);
     ezs_cmd_system_get_uart_parameters(UART_TYPE_PUART);
@@ -1014,19 +1020,27 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     /* -------- Shimmer added end -------- */
 
   default:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+//#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: unhandled packet: ");
     printHex8(packet->header.group);
     printf("/");
     printHex8(packet->header.id);
     printf("\r\n");
-#endif
+//#endif
     break;
   }
 
   //printf("\r\n");
 
-  if ((btInitCmdsRunning || btFactoryResetCmdsRunning) && packet->tbl_index == expectedResponseIdx)
+  if(packet->tbl_index == expectedResponseIdx)
+  {
+    progressToNextBtInCmd();
+  }
+}
+
+void progressToNextBtInCmd(void)
+{
+  if (btInitCmdsRunning || btFactoryResetCmdsRunning)
   {
     /* Set the expected response to be invalid */
     setExpectedResponse(EZS_IDX_EVT_MAX);

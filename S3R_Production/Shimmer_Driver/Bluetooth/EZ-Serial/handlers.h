@@ -94,10 +94,14 @@ void incrementBtInitCmdsStep(void);
 void incrementBtFactoryResetCmdsStep(void);
 
 extern void ezsHandler(ezs_packet_t *packet) __attribute__((weak));
+extern void ezsHandlerShimmer(ezs_packet_t *packet) __attribute__((weak));
 
 HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len);
 void resetEzsPendingResponse(void);
 void resetBtRxBuff(void);
+
+void setWaitingForBtBoot(uint8_t state);
+char *getBtBootMsgPtr(void);
 
 #endif /* HANDLERS_H */
 
