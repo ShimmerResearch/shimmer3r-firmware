@@ -22,36 +22,37 @@
 #define __USART_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-  /* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */
 
 #include "shimmer_definitions.h"
 #include <shimmer_include.h>
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart1;
 
-  extern UART_HandleTypeDef huart3;
+extern UART_HandleTypeDef huart3;
 
-  /* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
 
-  /* USER CODE END Private defines */
+/* USER CODE END Private defines */
 
-  void MX_USART1_UART_Init(void);
-  void MX_USART3_UART_Init(void);
+void MX_USART1_UART_Init(void);
+void MX_USART3_UART_Init(void);
 
-  /* USER CODE BEGIN Prototypes */
+/* USER CODE BEGIN Prototypes */
 
   void setUartPeripheralPointers(void);
 
+  void usartBtSetup(uint32_t baudRate, uint32_t hwFlowCtrl);
   void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
+  void BtUart_deint(void);
 
 #if defined(SHIMMER4_SDK)
   void BtUart_init(void);
@@ -87,10 +88,11 @@ extern "C"
   void DockUart_writeBlocking(uint8_t *buf, uint8_t len);
   void DockUart_writeText(char *str);
 
-  /* USER CODE END Prototypes */
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __USART_H__ */
+

@@ -20,15 +20,12 @@
 #include "main.h"
 #include "crc.h"
 #include "gpdma.h"
-#include "gpio.h"
 #include "icache.h"
 #include "memorymap.h"
 #include "rng.h"
 #include "rtc.h"
-#include "sdmmc.h"
 #include "tim.h"
-#include "usart.h"
-#include "usb_otg.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -87,7 +84,7 @@ void setBootStage(boot_stage_t bootStageNew);
 boot_stage_t getBootStage(void);
 void btInitialise(void);
 void btFactoryResetViaFw(void);
-void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt);
+void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
 void loadSensorConfigurationAndCalibration(void);
@@ -159,6 +156,7 @@ void Init()
   DockUart_interruptCheck();
   SD_insertedCheck();
   //GPIO_userButtonCheck();
+
 #if defined(SHIMMER3R)
   setBootStage(BOOT_STAGE_BLUETOOTH);
   setCrcHandleToUse(getCrcHandle());
@@ -214,9 +212,9 @@ void Init()
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
 
@@ -260,8 +258,6 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM6_Init();
-  MX_USART3_UART_Init();
-
   /* USER CODE BEGIN 2 */
 
   //#if USE_FATFS
@@ -280,7 +276,7 @@ int main(void)
 
   //S4_Task_set(TASK_STARTSENSING);
 
-  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
+//  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
   run_factory_test();
 
@@ -299,30 +295,31 @@ int main(void)
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-   */
+  */
   if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Configure LSE Drive Capability
-   */
+  */
   HAL_PWR_EnableBkUpAccess();
   __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_HSI
-      | RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI;
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI
+                              |RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE
+                              |RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -338,9 +335,10 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
-      | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3;
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
+                              |RCC_CLOCKTYPE_PCLK3;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -354,9 +352,9 @@ void SystemClock_Config(void)
 }
 
 /**
- * @brief Power Configuration
- * @retval None
- */
+  * @brief Power Configuration
+  * @retval None
+  */
 static void SystemPower_Config(void)
 {
   HAL_PWREx_EnableVddIO2();
@@ -373,8 +371,8 @@ static void SystemPower_Config(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN PWR */
-  /* USER CODE END PWR */
+/* USER CODE BEGIN PWR */
+/* USER CODE END PWR */
 }
 
 /* USER CODE BEGIN 4 */
@@ -425,10 +423,8 @@ void btInitialise(void)
 {
   SHIMMER_PRINTF("\r\nBT init start\r\n");
 
-  setBtPower(1);
-
   //20 * 100ms = 2s per baud rate attempt
-  btCommWithDiffBaudRates(true, 20U);
+  btCommWithDiffBaudRates(false, 20U);
 
   if (isBtIsInitialised())
   {
@@ -448,7 +444,7 @@ void btFactoryResetViaFw(void)
   SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
 
   //50 * 100ms = 5s per baud rate attempt
-  btCommWithDiffBaudRates(false, 50U);
+  btCommWithDiffBaudRates(true, 50U);
 
   //Abort transfer operations to release UART for subsequent requests.
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
@@ -456,24 +452,15 @@ void btFactoryResetViaFw(void)
   SHIMMER_PRINTF("BT factory reset end\r\n");
 }
 
-void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
+void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
 {
   uint8_t failCount = 0U;
+  uint8_t resetCntCurrent = resetCnt;
   uint32_t baudToTry = BAUD_TO_USE;
 
-  setBtLpMode(false);
-
   SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
-  usartBtUpdate(baudToTry, baudToTry == 115200 ? 0 : FLOW_CONTROL);
 
-  if (isInit)
-  {
-    btInit();
-  }
-  else
-  {
-    btFactoryResetInit();
-  }
+  btInit(baudToTry, factoryReset);
 
   while ((isBtInitCmdsRunning() && !isBtIsInitialised())
       || (isBtFactoryResetCmdsRunning() && !isBtIsFactoryResetted()))
@@ -497,9 +484,12 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
       btFactoryResetCommands();
     }
 
-    if (!(reset_cnt--))
+    if (!(resetCntCurrent--))
     {
       failCount++;
+
+      btDeinit();
+      HAL_Delay(100);
 
       if (failCount <= 4)
       {
@@ -521,7 +511,10 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
         }
 
         SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
-        usartBtUpdate(baudToTry, baudToTry == 115200 ? 0 : FLOW_CONTROL);
+
+        btInit(baudToTry, factoryReset);
+
+        resetCntCurrent = resetCnt;
       }
       else
       {
@@ -529,23 +522,13 @@ void btCommWithDiffBaudRates(bool isInit, uint8_t reset_cnt)
         ////software POR reset
         //NVIC_SystemReset();
         setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
-        setBtPower(0);
         break;
       }
-
-      if (isInit)
-      {
-        btInit();
-      }
-      else
-      {
-        btFactoryResetInit();
-      }
-
-      reset_cnt = 50U;
     }
   }
-  setBtLpMode(true);
+
+  // Allow LP Mode after configuring
+//  Board_BT_LP_MODE(0);
 }
 
 void setBtConnectionState(bool state)
@@ -749,9 +732,9 @@ void HAL_Delay(uint32_t Delay)
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -763,14 +746,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */

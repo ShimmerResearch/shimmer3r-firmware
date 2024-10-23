@@ -144,11 +144,24 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
   }
 }
 
-void btInit(void)
+void btInit(uint32_t baudRate, uint8_t factoryReset)
 {
-  btInitCmdsRunning = 1;
-  btInitCmdsStep = WAIT_FOR_BOOT;
-  btIsInitialised = false;
+  if (factoryReset)
+  {
+    btFactoryResetCmdsRunning = 1;
+    btFactoryResetCmdsStep = FR_WAIT_FOR_BOOT;
+    btIsFactoryResetted = false;
+  }
+  else
+  {
+    btInitCmdsRunning = 1;
+    btInitCmdsStep = WAIT_FOR_BOOT;
+    btIsInitialised = false;
+  }
+
+  initBtPins();
+
+  usartBtSetup(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
 
   /* packet pointer for working with response/event data */
   //ezs_packet_t *packet;
@@ -162,53 +175,28 @@ void btInit(void)
 
   HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
 
-  btInitCommands();
+  // Enable BT power
+  setBtPower(1);
 
-  //if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_query_firmware_version(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) == 0)
-  //{
-  //  /* "system_ping" response packet not received */
-  //  printf("FW request timed out, check communication settings and reset module\r\n");
-  //}
-  //else
-  //{
-  //  /* "system_ping" response packet received */
-  //  printf("FW request successful\r\n");
-  //}
-  //
-  //if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_get_bluetooth_address(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-  //{
-  //  /* "system_ping" response packet received */
-  //  printf("BT address request successful\r\n");
-  //}
-  //
-  //if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-  //{
-  // /*"system_ping" response packet received*/
-  //printf("Device name set successful\r\n");
-  //}
+  //TODO remove hard-coded long delay after BT is powered on and try to parse the boot message
+  HAL_Delay(2000);
 
-  /*
-    uint8_t nameAry[] = {14, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', '7', '4', '6', '2'};
-    if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-    {
-      printf("Device name set successful\r\n");
-    }
+  if (factoryReset)
+  {
+    btFactoryResetCommands();
+  }
+  else
+  {
+    btInitCommands();
+  }
+}
 
-    if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(0U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-    {
-      printf("Device name set successful\r\n");
-    }
-
-    if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_get_device_name(1U), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-    {
-      printf("Device name get successful\r\n");
-    }
-
-    if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_appearance(0x0540), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-    {
-      printf("Device Appearance set successful\r\n");
-    }
-  */
+void btDeinit(void)
+{
+  setBtPower(0);
+  Board_SW_BT(0);
+  BtUart_deint();
+  deinitBtPins();
 }
 
 //TODO set appropriate values for setDmaRx() calls
@@ -560,22 +548,6 @@ void btInitCommands(void)
     btIsInitialised = true;
     return;
   }
-}
-
-void btFactoryResetInit(void)
-{
-  btFactoryResetCmdsRunning = 1;
-  btFactoryResetCmdsStep = FR_WAIT_FOR_BOOT;
-  btIsFactoryResetted = false;
-
-  resetEzsPendingResponse();
-
-  /* initialize EZ-Serial interface and callbacks */
-  EZSerial_Init(appHandler, appOutput, appInput);
-
-  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
-
-  btFactoryResetCommands();
 }
 
 void btFactoryResetCommands(void)
@@ -1107,16 +1079,6 @@ void setBtCysppState(bool state)
 bool getBtCysppState(void)
 {
   return btCysppState;
-}
-
-void setBtLpMode(bool allowLowPower)
-{
-  //TODO get working and update default LP_MODE pin state appropriately in CubeMX
-  //TODO move out of this driver file
-  //HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, allowLowPower ? GPIO_PIN_RESET : GPIO_PIN_SET);
-
-  //TODO remove or update delay when value known
-  //HAL_Delay(100);
 }
 
 uint8_t *BT_getCyw20820MacAddressPtr(void)

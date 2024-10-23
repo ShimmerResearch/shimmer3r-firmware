@@ -240,8 +240,19 @@ void Board_enableSensingPower(uint8_t state);
   HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_SW_MIC(x) \
   HAL_GPIO_WritePin(SW_MIC_GPIO_Port, SW_MIC_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+
+/* 0/1 = power off/on */
 #define Board_SW_BT(x) \
   HAL_GPIO_WritePin(SW_BT_GPIO_Port, SW_BT_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+/* Active low. 0 = held in reset, 1 = normal operation */
+#define Board_BT_RST_N(x) \
+  HAL_GPIO_WritePin(BT_RST_GPIO_Port, BT_RST_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+/* 0/1 =  */
+#define Board_BT_CP_ROLE(x) \
+  HAL_GPIO_WritePin(BT_CP_ROLE_GPIO_Port, BT_CP_ROLE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+/* 0/1 = module allowed/disallowed to enter low-power mode */
+#define Board_BT_LP_MODE(x) \
+  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
 #define LIS2MDL_DRDY HAL_GPIO_ReadPin(LIS2MDL_DRDY_GPIO_Port, LIS2MDL_DRDY_Pin)
 #define LIS3MDL_DRDY HAL_GPIO_ReadPin(LIS3MDL_DRDY_GPIO_Port, LIS3MDL_DRDY_Pin)

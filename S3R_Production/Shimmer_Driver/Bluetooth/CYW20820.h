@@ -78,9 +78,9 @@ enum BLUETOOTH_UART_TYPE
   UART_TYPE_HCI_UART
 };
 
-void btInit(void);
+void btInit(uint32_t baudRate, uint8_t factoryReset);
+void btDeinit(void);
 void btInitCommands(void);
-void btFactoryResetInit(void);
 void btFactoryResetCommands(void);
 void setExpectedResponse(uint16_t idx);
 bool isBtIsInitialised(void);
@@ -89,7 +89,6 @@ bool isBtInitCmdsRunning(void);
 bool isBtFactoryResetCmdsRunning(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
-void setBtLpMode(bool allowLowPower);
 uint8_t *BT_getCyw20820MacAddressPtr(void);
 void BT_generateCyw20820FirmwareVersionStr(char *str);
 
