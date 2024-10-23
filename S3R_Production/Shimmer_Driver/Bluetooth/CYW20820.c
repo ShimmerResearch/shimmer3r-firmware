@@ -215,8 +215,8 @@ void btInitCommands(void)
   if (btInitCmdsStep == WAIT_FOR_BOOT)
   {
     btInitCmdsStep++;
-    //Only ASCII boot message currently working so had to implement our own approach
-    //setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+    //Only ASCII boot message currently working so had to implement our own
+    //approach setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
     setWaitingForBtBoot(1);
     return;
   }
@@ -567,8 +567,8 @@ void btFactoryResetCommands(void)
   if (btFactoryResetCmdsStep == FR_WAIT_FOR_BOOT)
   {
     btFactoryResetCmdsStep++;
-    //Only ASCII boot message currently working so had to implement our own approach
-    //setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+    //Only ASCII boot message currently working so had to implement our own
+    //approach setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
     setWaitingForBtBoot(1);
   }
 
