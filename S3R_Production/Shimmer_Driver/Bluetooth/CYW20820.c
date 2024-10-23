@@ -567,9 +567,9 @@ void btFactoryResetCommands(void)
   if (btFactoryResetCmdsStep == FR_WAIT_FOR_BOOT)
   {
     btFactoryResetCmdsStep++;
-    //// TODO will be needed once we can turn the module on/off
+    //Only ASCII boot message currently working so had to implement our own approach
     //setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
-    //return;
+    setWaitingForBtBoot(1);
   }
 
   if (btFactoryResetCmdsStep == FR_GET_BT_MAC_ID)
