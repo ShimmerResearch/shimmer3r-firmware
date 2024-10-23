@@ -88,6 +88,7 @@ void S4_NORM_ADC_initBatt(void);
 #endif
 void S4_NORM_ADC_configureChannels(void);
 void S4_NORM_ADC_startSensing(void);
+void shimmerAdcGpioSetup(uint8_t init);
 void initSensAdc(uint32_t numChannels);
 void S4_NORM_ADC_bufPoll(void);
 void S4_NORM_ADC_stopSensing(void);

@@ -357,6 +357,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle)
 
     /* USER CODE BEGIN ADC1_MspDeInit 1 */
 
+    shimmerAdcGpioSetup(0);
+
     /* USER CODE END ADC1_MspDeInit 1 */
   }
   else if (adcHandle->Instance == ADC2)

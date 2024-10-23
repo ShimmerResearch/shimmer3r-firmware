@@ -413,23 +413,66 @@ uint8_t isSdPowerOn(void)
   return HAL_GPIO_ReadPin(SW_FLASH_GPIO_Port, SW_FLASH_Pin);
 }
 
+/*
+ * The following pins are utilised differently in each expansion board:
+ * - GPIO_ADC_INT_EXP0_Pin
+ * - GPIO_ADC_INT_EXP1_Pin
+ * - GPIO_ADC_INT_EXP2_Pin
+ * - GPIO_ADC_INT_EXP3_Pin
+ * - GPIO_INTERNAL0_Pin
+ * - GPIO_INTERNAL1_Pin
+ * - GPIO_INTERNAL2_Pin
+ * */
 void gpioInitPerBoard(void)
 {
   shimmer_expansion_brd *daughtCardId = getDaughtCardId();
   if (daughtCardId->exp_brd_id == EXP_BRD_GSR_UNIFIED)
   {
-
     GPIO_InitTypeDef GPIO_InitStruct = { 0 };
 
-    //Enable ADCs on PPG connector and disable I2C4
-    HAL_GPIO_DeInit(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin);
+    /* GPIO_ADC_INT_EXP0_Pin:
+     * GPIO_ADC_INT_EXP1_Pin:
+     * PPG ADCs. Also connected to I2C4. Allow code ADC to manage. */
+
+    /* GPIO_ADC_INT_EXP2_Pin:
+     * Output low = I2C4 is connected to PPG connector
+     * Output high = I2C4 is disconnected from PPG connector */
+    HAL_GPIO_WritePin(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin, GPIO_PIN_SET);
     GPIO_InitStruct.Pin = GPIO_ADC_INT_EXP2_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIO_ADC_INT_EXP2_GPIO_Port, &GPIO_InitStruct);
 
-    HAL_GPIO_WritePin(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin, GPIO_PIN_SET);
+    /* GPIO_ADC_INT_EXP3_Pin:
+     * GSR ADC. Allow code ADC to manage. */
+
+    /* GPIO_INTERNAL0_Pin:
+     * GSR Range A0 */
+    HAL_GPIO_WritePin(GPIO_INTERNAL0_GPIO_Port, GPIO_INTERNAL0_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = GPIO_INTERNAL0_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIO_INTERNAL0_GPIO_Port, &GPIO_InitStruct);
+
+    /* GPIO_INTERNAL1_Pin:
+     * GSR Range A1 */
+    HAL_GPIO_WritePin(GPIO_INTERNAL1_GPIO_Port, GPIO_INTERNAL1_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = GPIO_INTERNAL1_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIO_INTERNAL1_GPIO_Port, &GPIO_InitStruct);
+
+    /* GPIO_INTERNAL2_Pin:
+     * PPG connector power. 0 = power off, 1 = power on */
+    HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = GPIO_INTERNAL2_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIO_INTERNAL2_GPIO_Port, &GPIO_InitStruct);
   }
 }
 
