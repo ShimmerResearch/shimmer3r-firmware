@@ -240,7 +240,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
   /* USER CODE BEGIN ADC1_MspInit 1 */
 
-//    HAL_GPIO_DeInit(VBAT_SENSE_GPIO_Port, VBAT_SENSE_Pin);
+    HAL_GPIO_DeInit(VBAT_SENSE_GPIO_Port, VBAT_SENSE_Pin);
 //    HAL_GPIO_DeInit(GPIOA,
 //        GPIO_ADC_EXT_EXP0_Pin | GPIO_ADC_INT_EXP0_Pin | GPIO_ADC_EXT_EXP1_Pin
 //            | GPIO_ADC_EXT_EXP2_Pin);
