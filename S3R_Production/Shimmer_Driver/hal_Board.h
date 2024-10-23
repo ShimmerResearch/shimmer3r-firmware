@@ -252,8 +252,8 @@ void Board_enableSensingPower(uint8_t state);
 #define Board_BT_CP_ROLE(x) \
   HAL_GPIO_WritePin(BT_CP_ROLE_GPIO_Port, BT_CP_ROLE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 /* Low-power mode control.
- * Assert (LOW) to allow sleep, de-assert (HIGH) to disable sleep or exit sleep mode.
- * Note:  The LP_MODE pin is internally pulled up. */
+ * Assert (LOW) to allow sleep, de-assert (HIGH) to disable sleep or exit sleep
+ * mode. Note:  The LP_MODE pin is internally pulled up. */
 #define Board_BT_LP_MODE(x) \
   HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 /* CYSPP mode control.
