@@ -175,7 +175,7 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
 
   HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
 
-  // Enable BT power
+  //Enable BT power
   setBtPower(1);
 
   //TODO remove hard-coded long delay after BT is powered on and try to parse the boot message
