@@ -244,15 +244,24 @@ void Board_enableSensingPower(uint8_t state);
 /* 0/1 = power off/on */
 #define Board_SW_BT(x) \
   HAL_GPIO_WritePin(SW_BT_GPIO_Port, SW_BT_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-/* Active low. 0 = held in reset, 1 = normal operation */
+/* Active low with internal pull-up. 0 = held in reset, 1 = normal operation */
 #define Board_BT_RST_N(x) \
   HAL_GPIO_WritePin(BT_RST_GPIO_Port, BT_RST_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-/* 0/1 =  */
+/* CYSPP role control.
+ * Assert (LOW) for central mode, de-assert (HIGH) for peripheral mode. */
 #define Board_BT_CP_ROLE(x) \
   HAL_GPIO_WritePin(BT_CP_ROLE_GPIO_Port, BT_CP_ROLE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-/* 0/1 = module allowed/disallowed to enter low-power mode */
+/* Low-power mode control.
+ * Assert (LOW) to allow sleep, de-assert (HIGH) to disable sleep or exit sleep mode.
+ * Note:  The LP_MODE pin is internally pulled up. */
 #define Board_BT_LP_MODE(x) \
   HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+/* CYSPP mode control.
+ * CYSPP pin externally de-asserted (HIGH): Command mode
+ * CYSPP pin externally asserted (LOW): CYSPP mode
+ * CYSPP pin left floating: Command mode until activating CYSPP data pipe, then CYSPP mode */
+#define Board_BT_CYSPP_MODE(x) \
+  HAL_GPIO_WritePin(BT_CYSPP_GPIO_Port, BT_CYSPP_MODE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
 #define LIS2MDL_DRDY HAL_GPIO_ReadPin(LIS2MDL_DRDY_GPIO_Port, LIS2MDL_DRDY_Pin)
 #define LIS3MDL_DRDY HAL_GPIO_ReadPin(LIS3MDL_DRDY_GPIO_Port, LIS3MDL_DRDY_Pin)

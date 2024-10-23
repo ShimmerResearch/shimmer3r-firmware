@@ -177,9 +177,14 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
 
   // Enable BT power
   setBtPower(1);
+  //TODO delay needed?
+  HAL_Delay(100);
+  Board_BT_LP_MODE(1);
+  Board_BT_CP_ROLE(1);
+  Board_BT_RST_N(1);
 
   //TODO remove hard-coded long delay after BT is powered on and try to parse the boot message
-  HAL_Delay(2000);
+//  HAL_Delay(5000);
 
   if (factoryReset)
   {
@@ -206,10 +211,11 @@ void btInitCommands(void)
   {
     btInitCmdsStep++;
     //TODO remove hard-coded long delay after BT is powered on and try to parse
-    //the boot message #ifndef S3R_NUCLEO
-    //    setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
-    //    return;
-    //#endif
+    //the boot message
+    #ifndef S3R_NUCLEO
+        setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+        return;
+    #endif
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)

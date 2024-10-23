@@ -474,9 +474,9 @@ void initBtPins(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
 
-  Board_BT_CP_ROLE(1);
-  Board_BT_RST_N(1);
-  Board_BT_LP_MODE(1);
+  Board_BT_LP_MODE(0);
+  Board_BT_CP_ROLE(0);
+  Board_BT_RST_N(0);
 
   GPIO_InitStruct.Pin = BT_CP_ROLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
