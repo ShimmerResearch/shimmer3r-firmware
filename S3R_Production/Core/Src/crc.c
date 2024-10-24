@@ -32,8 +32,8 @@ void MX_CRC_Init(void)
 
   /* USER CODE BEGIN CRC_Init 0 */
 
-  // Don't initialize CRC if it's already initialized
-  if(hcrc.State != HAL_CRC_STATE_RESET)
+  //Don't initialize CRC if it's already initialized
+  if (hcrc.State != HAL_CRC_STATE_RESET)
   {
     return;
   }
