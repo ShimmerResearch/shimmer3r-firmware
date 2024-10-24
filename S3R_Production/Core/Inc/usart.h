@@ -50,9 +50,10 @@ void MX_USART3_UART_Init(void);
 
   void setUartPeripheralPointers(void);
 
-  void usartBtSetup(uint32_t baudRate, uint32_t hwFlowCtrl);
+  void BtUart_Init(uint32_t baudRate, uint32_t hwFlowCtrl);
   void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
-  void BtUart_deint(void);
+  void btUart_Deint(void);
+  uint8_t BtUart_isInitialised(void);
 
 #if defined(SHIMMER4_SDK)
   void BtUart_init(void);
@@ -76,7 +77,7 @@ void MX_USART3_UART_Init(void);
   uint8_t ExpUart_TxIT(uint8_t *pData, uint16_t Size);
 #endif
 
-  uint8_t isDockUartInitialised(void);
+  uint8_t DockUart_isInitialised(void);
   uint8_t BtUart_connectIntCheck(void);
 #if defined(SHIMMER4_SDK)
 #define BtUart_rtsIntCheck() \

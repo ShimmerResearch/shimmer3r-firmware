@@ -161,7 +161,7 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
 
   initBtPins();
 
-  usartBtSetup(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
+  BtUart_Init(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
 
   /* packet pointer for working with response/event data */
   //ezs_packet_t *packet;
@@ -205,7 +205,7 @@ void btDeinit(void)
 {
   setBtPower(0);
   Board_SW_BT(0);
-  BtUart_deint();
+  btUart_Deint();
   deinitBtPins();
 }
 

@@ -546,20 +546,25 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
     selfTestResultStr = &SELF_TEST_STR_PASS[0];
     selfTestDetailsStr = &SELF_TEST_STR_EMPTY[0];
   }
-  else if (self_test_result == SELF_TEST_FAIL_CHIP_DETECTION)
+  else
   {
     selfTestResultStr = &SELF_TEST_STR_FAIL[0];
-    selfTestDetailsStr = &SELF_TEST_STR_CHIP_DETECTION[0];
-  }
-  else if (self_test_result == SELF_TEST_FAIL_SIGNAL_ISSUE)
-  {
-    selfTestResultStr = &SELF_TEST_STR_FAIL[0];
-    selfTestDetailsStr = &SELF_TEST_STR_SIGNAL_ISSUE[0];
-  }
-  else if (self_test_result == SELF_TEST_FAIL_TEMPERATURE_ISSUE)
-  {
-    selfTestResultStr = &SELF_TEST_STR_FAIL[0];
-    selfTestDetailsStr = &SELF_TEST_STR_TEMPERATURE_ISSUE[0];
+    if (self_test_result == SELF_TEST_FAIL_CHIP_DETECTION)
+    {
+      selfTestDetailsStr = &SELF_TEST_STR_CHIP_DETECTION[0];
+    }
+    else if (self_test_result == SELF_TEST_FAIL_SIGNAL_ISSUE)
+    {
+      selfTestDetailsStr = &SELF_TEST_STR_SIGNAL_ISSUE[0];
+    }
+    else if (self_test_result == SELF_TEST_FAIL_TEMPERATURE_ISSUE)
+    {
+      selfTestDetailsStr = &SELF_TEST_STR_TEMPERATURE_ISSUE[0];
+    }
+    else
+    {
+      selfTestDetailsStr = &SELF_TEST_STR_UNKNOWN[0];
+    }
   }
 
   if (tempCal == TEST_THRESHOLD_IMU_TEMPERATURE_INVALID)
@@ -586,7 +591,11 @@ void send_test_report(char *str)
     break;
   case PRINT_TO_BT_UART:
     BT_write((uint8_t *) str, strlen(str));
-    //TODO wait for msg to finish transmitting
+    // wait for msg to finish transmitting
+    while(getUsedSpaceInBtTxBuf()>0)
+    {
+      HAL_Delay(100);
+    }
     break;
   default:
     break;

@@ -159,7 +159,6 @@ void Init()
 
 #if defined(SHIMMER3R)
   setBootStage(BOOT_STAGE_BLUETOOTH);
-  setCrcHandleToUse(getCrcHandle());
   btCommsProtocolInit(setTaskNewBtCmdToProcess);
   //btFactoryResetViaFw();
   btInitialise();
@@ -251,7 +250,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
-  MX_CRC_Init();
   MX_ICACHE_Init();
   MX_RNG_Init();
   MX_RTC_Init();
@@ -267,8 +265,6 @@ int main(void)
   Init();
   shimmerStatus.isInitialising = 0;
   setBootStage(BOOT_STAGE_END);
-
-  //S4_Task_set(TASK_STARTSENSING);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
