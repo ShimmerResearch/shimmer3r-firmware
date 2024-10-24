@@ -537,60 +537,76 @@ void S4_NORM_ADC_startSensing()
 
 void shimmerAdcGpioSetup(uint8_t init)
 {
-  uint32_t adcGpioPinA = 0;
-  uint32_t adcGpioPinB = 0;
+  uint32_t adcPinsPortA = 0;
+  uint32_t adcPinsPortB = 0;
+  uint32_t adcPinsPortC = 0;
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
   if (configBytes->chEnExtADC0)
   {
-    adcGpioPinA |= GPIO_ADC_EXT_EXP0_Pin;
+    adcPinsPortA |= GPIO_ADC_EXT_EXP0_Pin;
   }
   if (configBytes->chEnExtADC1)
   {
-    adcGpioPinA |= GPIO_ADC_EXT_EXP1_Pin;
+    adcPinsPortC |= GPIO_ADC_EXT_EXP1_Pin;
   }
   if (configBytes->chEnExtADC2)
   {
-    adcGpioPinA |= GPIO_ADC_EXT_EXP2_Pin;
-  }
-  if (configBytes->chEnIntADC3)
-  {
-    adcGpioPinB |= GPIO_ADC_INT_EXP3_Pin;
+    adcPinsPortA |= GPIO_ADC_EXT_EXP2_Pin;
   }
   if (configBytes->chEnIntADC0)
   {
-    adcGpioPinA |= GPIO_ADC_INT_EXP0_Pin;
+    adcPinsPortA |= GPIO_ADC_INT_EXP0_Pin;
   }
   if (configBytes->chEnIntADC1)
   {
-    adcGpioPinB |= GPIO_ADC_INT_EXP1_Pin;
+    adcPinsPortB |= GPIO_ADC_INT_EXP1_Pin;
   }
   if (configBytes->chEnIntADC2)
   {
-    adcGpioPinB |= GPIO_ADC_INT_EXP2_Pin;
+    adcPinsPortB |= GPIO_ADC_INT_EXP2_Pin;
+  }
+  if (configBytes->chEnIntADC3)
+  {
+    adcPinsPortB |= GPIO_ADC_INT_EXP3_Pin;
   }
 
   /*GPIO init as per configuration*/
-  if (adcGpioPinA != 0)
+  if (adcPinsPortA != 0)
   {
     if (init)
     {
-      adcGpioInit(adcGpioPinA, GPIOA);
+      //TODO manage GPIO CLK enable/disable properly
+      __HAL_RCC_GPIOA_CLK_ENABLE();
+      adcGpioInit(adcPinsPortA, GPIOA);
     }
     else
     {
-      HAL_GPIO_DeInit(GPIOA, adcGpioPinA);
+      //TODO manage GPIO CLK enable/disable properly
+      //__HAL_RCC_GPIOA_CLK_DISABLE();
+      HAL_GPIO_DeInit(GPIOA, adcPinsPortA);
     }
   }
-  if (adcGpioPinB != 0)
+  if (adcPinsPortB != 0)
   {
     if (init)
     {
-      adcGpioInit(adcGpioPinB, GPIOB);
+      adcGpioInit(adcPinsPortB, GPIOB);
     }
     else
     {
-      HAL_GPIO_DeInit(GPIOB, adcGpioPinB);
+      HAL_GPIO_DeInit(GPIOB, adcPinsPortB);
+    }
+  }
+  if (adcPinsPortC != 0)
+  {
+    if (init)
+    {
+      adcGpioInit(adcPinsPortC, GPIOC);
+    }
+    else
+    {
+      HAL_GPIO_DeInit(GPIOC, adcPinsPortC);
     }
   }
 }

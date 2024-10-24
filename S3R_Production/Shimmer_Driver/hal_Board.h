@@ -40,8 +40,11 @@
  * @date May, 2016
  */
 
-#include <shimmer_include.h>
 #include <stdint.h>
+
+#include "shimmer_include.h"
+
+#include "stm32u5a5xx.h"
 
 #ifndef HAL_BOARD_H
 #define HAL_BOARD_H
@@ -135,15 +138,47 @@ void Board_enableSensingPower(uint8_t state);
 #define SW_PPG_EN_GPIO_Port       GPIO_INTERNAL1_GPIO_Port
 
 #if defined(SHIMMER3R)
-#define ADC_CHANNEL_VBATT  ADC_CHANNEL_4
+/* Interrupts */
+/* Either GPIO_ADC_INT_EXP1 or SD_DETECT_N can be used on line 0 */
+#define INT_LINE_GPIO_ADC_INT_EXP1 EXTI0_IRQn
+#define INT_LINE_SD_DETECT_N       EXTI0_IRQn
+#define INT_LINE_DOCK_DETECT       EXTI1_IRQn //Enabled by CubeMX
+#define INT_LINE_LIS3MDL_DRDY      EXTI2_IRQn
+#define INT_LINE_BOOT0_USER_BTN    EXTI3_IRQn //Enabled by CubeMX
+#define INT_LINE_GPIO_INTERNAL1    EXTI4_IRQn
+/* Either GPIO_ADC_INT_EXP0 or GPIO_INTERNAL2 can be used on line 5 */
+#define INT_LINE_GPIO_ADC_INT_EXP0 EXTI5_IRQn
+#define INT_LINE_GPIO_INTERNAL2    EXTI5_IRQn
+//#define INT_LINE_       EXTI6_IRQn // Unused
+#define INT_LINE_LSM6DSV_INT1      EXTI7_IRQn
+#define INT_LINE_BT_HOST_WAKE      EXTI8_IRQn
+#define INT_LINE_GPIO_EXTERNAL     EXTI9_IRQn
+#define INT_LINE_LIS2MDL_DRDY      EXTI10_IRQn
+#define INT_LINE_BMP390_INT        EXTI11_IRQn
+#define INT_LINE_LIS2DW12_INT1     EXTI12_IRQn
+#define INT_LINE_GPIO_INTERNAL0    EXTI13_IRQn
+#define INT_LINE_BT_CONNECTION     EXTI14_IRQn
+#define INT_LINE_BT_CYSPP          EXTI15_IRQn
 
-#define ADC_CHANNEL_EXT_A0 ADC_CHANNEL_9
-#define ADC_CHANNEL_EXT_A1 ADC_CHANNEL_11
-#define ADC_CHANNEL_EXT_A2 ADC_CHANNEL_12
-#define ADC_CHANNEL_INT_A0 ADC_CHANNEL_10
-#define ADC_CHANNEL_INT_A1 ADC_CHANNEL_15
-#define ADC_CHANNEL_INT_A2 ADC_CHANNEL_16
-#define ADC_CHANNEL_INT_A3 ADC_CHANNEL_17
+/* Power wake-up lines */
+#define PWR_WKUP_GPIO_INTERNAL0    PWR_WKUP2
+#define PWR_WKUP_DOCK_DETECT       PWR_WKUP3
+#define PWR_WKUP_LSM6DSV_INT1      PWR_WKUP6
+#define PWR_WKUP_BT_HOST_WAKE      PWR_WKUP7
+
+/* DAQ Channels */
+#define DAQ_CH_GPIO_ADC_EXT_EXP0   DAC1_CHANNEL_1
+#define DAQ_CH_GPIO_ADC_INT_EXP0   DAC1_CHANNEL_2
+
+/* ADC Channels */
+#define ADC_CHANNEL_VBATT          ADC_CHANNEL_4
+#define ADC_CHANNEL_EXT_A0         ADC_CHANNEL_9
+#define ADC_CHANNEL_EXT_A1         ADC_CHANNEL_11
+#define ADC_CHANNEL_EXT_A2         ADC_CHANNEL_12
+#define ADC_CHANNEL_INT_A0         ADC_CHANNEL_10
+#define ADC_CHANNEL_INT_A1         ADC_CHANNEL_15
+#define ADC_CHANNEL_INT_A2         ADC_CHANNEL_16
+#define ADC_CHANNEL_INT_A3         ADC_CHANNEL_17
 
 #elif defined(SHIMMER4_SDK)
 #define ADC_CHANNEL_ACCEL_X ADC_CHANNEL_0

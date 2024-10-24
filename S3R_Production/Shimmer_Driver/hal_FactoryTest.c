@@ -7,6 +7,8 @@
 
 #include "hal_FactoryTest.h"
 
+#include <inttypes.h>
+
 #include "i2c.h"
 #include "spi.h"
 
@@ -130,8 +132,10 @@ void print_mcu_details(void)
   //send_test_report(buffer);
   //sprintf(buffer, " - Unique ID w2 = 0x%08X\r\n", HAL_GetUIDw2());
   //send_test_report(buffer);
-  sprintf(buffer, " - Unique ID = 0x%08X%08X%08X\r\n", HAL_GetUIDw0(),
-      HAL_GetUIDw1(), HAL_GetUIDw2());
+  //sprintf(buffer, " - Unique ID = 0x%08X%08X%08X\r\n", HAL_GetUIDw0(),
+  //    HAL_GetUIDw1(), HAL_GetUIDw2());
+  sprintf(buffer, " - Unique ID = 0x%08" PRIX32 "%08" PRIX32 "%08" PRIX32 "\r\n",
+      HAL_GetUIDw0(), HAL_GetUIDw1(), HAL_GetUIDw2());
   send_test_report(buffer);
 
   ADCDebugInfo_t adcDebugInfo;
@@ -173,7 +177,7 @@ void print_battery_details(void)
 
   uint8_t testPass = (shimmerStatus.battValMV > TEST_THRESHOLD_VBATT_LOWER
       && shimmerStatus.battValMV < TEST_THRESHOLD_VBATT_UPPER);
-  sprintf(buffer, " - S3R_TEST_0011 - %s: VBatt = %ldmV (%d-%dmV)\r\n",
+  sprintf(buffer, " - S3R_TEST_0011 - %s: VBatt = %dmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", shimmerStatus.battValMV,
       TEST_THRESHOLD_VBATT_LOWER, TEST_THRESHOLD_VBATT_UPPER);
   send_test_report(buffer);
@@ -542,20 +546,25 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
     selfTestResultStr = &SELF_TEST_STR_PASS[0];
     selfTestDetailsStr = &SELF_TEST_STR_EMPTY[0];
   }
-  else if (self_test_result == SELF_TEST_FAIL_CHIP_DETECTION)
+  else
   {
     selfTestResultStr = &SELF_TEST_STR_FAIL[0];
-    selfTestDetailsStr = &SELF_TEST_STR_CHIP_DETECTION[0];
-  }
-  else if (self_test_result == SELF_TEST_FAIL_SIGNAL_ISSUE)
-  {
-    selfTestResultStr = &SELF_TEST_STR_FAIL[0];
-    selfTestDetailsStr = &SELF_TEST_STR_SIGNAL_ISSUE[0];
-  }
-  else if (self_test_result == SELF_TEST_FAIL_TEMPERATURE_ISSUE)
-  {
-    selfTestResultStr = &SELF_TEST_STR_FAIL[0];
-    selfTestDetailsStr = &SELF_TEST_STR_TEMPERATURE_ISSUE[0];
+    if (self_test_result == SELF_TEST_FAIL_CHIP_DETECTION)
+    {
+      selfTestDetailsStr = &SELF_TEST_STR_CHIP_DETECTION[0];
+    }
+    else if (self_test_result == SELF_TEST_FAIL_SIGNAL_ISSUE)
+    {
+      selfTestDetailsStr = &SELF_TEST_STR_SIGNAL_ISSUE[0];
+    }
+    else if (self_test_result == SELF_TEST_FAIL_TEMPERATURE_ISSUE)
+    {
+      selfTestDetailsStr = &SELF_TEST_STR_TEMPERATURE_ISSUE[0];
+    }
+    else
+    {
+      selfTestDetailsStr = &SELF_TEST_STR_UNKNOWN[0];
+    }
   }
 
   if (tempCal == TEST_THRESHOLD_IMU_TEMPERATURE_INVALID)
@@ -582,7 +591,11 @@ void send_test_report(char *str)
     break;
   case PRINT_TO_BT_UART:
     BT_write((uint8_t *) str, strlen(str));
-    //TODO wait for msg to finish transmitting
+    //wait for msg to finish transmitting
+    while (getUsedSpaceInBtTxBuf() > 0)
+    {
+      HAL_Delay(100);
+    }
     break;
   default:
     break;

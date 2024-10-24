@@ -141,8 +141,6 @@ extern "C"
 #define BT_RTS_GPIO_Port             GPIOD
 #define BSL_TX_LED_UPR_GR_Pin        GPIO_PIN_2
 #define BSL_TX_LED_UPR_GR_GPIO_Port  GPIOA
-#define GPIO_ADC_EXT_EXP2_Pin        GPIO_PIN_7
-#define GPIO_ADC_EXT_EXP2_GPIO_Port  GPIOA
 #define GPIO_ADC_INT_EXP3_Pin        GPIO_PIN_2
 #define GPIO_ADC_INT_EXP3_GPIO_Port  GPIOB
 #define LSM6DSV_INT1_Pin             GPIO_PIN_7
@@ -151,10 +149,6 @@ extern "C"
 #define CHG_STAT1_GPIO_Port          GPIOB
 #define BSL_RX_LED_UPR_BLU_Pin       GPIO_PIN_3
 #define BSL_RX_LED_UPR_BLU_GPIO_Port GPIOA
-#define GPIO_ADC_EXT_EXP1_Pin        GPIO_PIN_6
-#define GPIO_ADC_EXT_EXP1_GPIO_Port  GPIOA
-#define GPIO_ADC_EXT_EXP0_Pin        GPIO_PIN_4
-#define GPIO_ADC_EXT_EXP0_GPIO_Port  GPIOA
 #define GPIO_ADC_INT_EXP2_Pin        GPIO_PIN_1
 #define GPIO_ADC_INT_EXP2_GPIO_Port  GPIOB
 #define BMP390_INT_Pin               GPIO_PIN_11
@@ -165,19 +159,30 @@ extern "C"
 #define LIS2DW12_INT1_GPIO_Port      GPIOB
 #define BT_TXD_Pin                   GPIO_PIN_8
 #define BT_TXD_GPIO_Port             GPIOD
-#define GPIO_ADC_INT_EXP0_Pin        GPIO_PIN_5
-#define GPIO_ADC_INT_EXP0_GPIO_Port  GPIOA
 #define SW_SD_MCU_DOCK_Pin           GPIO_PIN_4
 #define SW_SD_MCU_DOCK_GPIO_Port     GPIOC
 #define GPIO_ADC_INT_EXP1_Pin        GPIO_PIN_0
 #define GPIO_ADC_INT_EXP1_GPIO_Port  GPIOB
 #define GPIO_EXTERNAL_Pin            GPIO_PIN_9
 #define GPIO_EXTERNAL_GPIO_Port      GPIOE
-#define GPIO_EXTERNAL_EXTI_IRQn      EXTI9_IRQn
 #define BT_LP_MODE_Pin               GPIO_PIN_10
 #define BT_LP_MODE_GPIO_Port         GPIOD
 
-  /* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
+
+/* TODO including these expansion board pin definitions here because CubeMX
+ * randomly stopped automatically generating them */
+#define GPIO_ADC_EXT_EXP0_Pin        GPIO_PIN_4
+#define GPIO_ADC_EXT_EXP0_GPIO_Port  GPIOA
+
+#define GPIO_ADC_EXT_EXP1_Pin        GPIO_PIN_1
+#define GPIO_ADC_EXT_EXP1_GPIO_Port  GPIOC
+
+#define GPIO_ADC_EXT_EXP2_Pin        GPIO_PIN_7
+#define GPIO_ADC_EXT_EXP2_GPIO_Port  GPIOA
+
+#define GPIO_ADC_INT_EXP0_Pin        GPIO_PIN_5
+#define GPIO_ADC_INT_EXP0_GPIO_Port  GPIOA
 
   /* USER CODE END Private defines */
 

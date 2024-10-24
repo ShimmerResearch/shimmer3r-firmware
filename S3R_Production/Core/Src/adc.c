@@ -22,6 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "gpdma.h"
+#include "s4_adc.h"
+
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -81,6 +84,8 @@ void MX_ADC1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN ADC1_Init 2 */
+
+  linkedListConfig(&hadc1); //configure linkedlist for ADC
 
   /* USER CODE END ADC1_Init 2 */
 }
@@ -227,34 +232,26 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle)
     }
 
     __HAL_RCC_GPIOC_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
     /**ADC1 GPIO Configuration
     PC3     ------> ADC1_IN4
-    PA7     ------> ADC1_IN12
-    PA6     ------> ADC1_IN11
-    PA4     ------> ADC1_IN9
-    PA5     ------> ADC1_IN10
     */
     GPIO_InitStruct.Pin = VBAT_SENSE_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(VBAT_SENSE_GPIO_Port, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_ADC_EXT_EXP2_Pin | GPIO_ADC_EXT_EXP1_Pin
-        | GPIO_ADC_EXT_EXP0_Pin | GPIO_ADC_INT_EXP0_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
     /* ADC1 interrupt Init */
     HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
     /* USER CODE BEGIN ADC1_MspInit 1 */
+
+    /* ADC1 is used as Shimmer's main ADC when logging/streaming data.
+     * VBAT_SENSE is enabled by default as a placeholder for setting up the ADC1
+     * in CubeMX but the channel is not necessarily enabled in the Shimmer
+     * configuration options. Disabling the pin here and it can be re-enabled
+     * later if configured to be on. */
     HAL_GPIO_DeInit(VBAT_SENSE_GPIO_Port, VBAT_SENSE_Pin);
-    HAL_GPIO_DeInit(GPIOA,
-        GPIO_ADC_EXT_EXP0_Pin | GPIO_ADC_INT_EXP0_Pin | GPIO_ADC_EXT_EXP1_Pin
-            | GPIO_ADC_EXT_EXP2_Pin);
-    HAL_GPIO_DeInit(GPIOB, GPIO_ADC_INT_EXP1_Pin | GPIO_ADC_INT_EXP2_Pin | GPIO_ADC_INT_EXP3_Pin);
+
     /* USER CODE END ADC1_MspInit 1 */
   }
   else if (adcHandle->Instance == ADC2)
@@ -335,16 +332,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle)
 
     /**ADC1 GPIO Configuration
     PC3     ------> ADC1_IN4
-    PA7     ------> ADC1_IN12
-    PA6     ------> ADC1_IN11
-    PA4     ------> ADC1_IN9
-    PA5     ------> ADC1_IN10
     */
     HAL_GPIO_DeInit(VBAT_SENSE_GPIO_Port, VBAT_SENSE_Pin);
-
-    HAL_GPIO_DeInit(GPIOA,
-        GPIO_ADC_EXT_EXP2_Pin | GPIO_ADC_EXT_EXP1_Pin | GPIO_ADC_EXT_EXP0_Pin
-            | GPIO_ADC_INT_EXP0_Pin);
 
     /* ADC1 interrupt Deinit */
     /* USER CODE BEGIN ADC1:ADC1_2_IRQn disable */

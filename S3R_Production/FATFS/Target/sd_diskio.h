@@ -38,4 +38,9 @@ extern const Diskio_drvTypeDef  SD_Driver;
 /* can be used to modify / undefine previous code or add new definitions */
 /* USER CODE END lastSection */
 
+DRESULT SD_read (BYTE, BYTE*, DWORD, UINT);
+#if _USE_WRITE == 1
+DRESULT SD_write (BYTE, const BYTE*, DWORD, UINT);
+#endif /* _USE_WRITE == 1 */
+
 #endif /* __SD_DISKIO_H */

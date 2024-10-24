@@ -45,7 +45,7 @@ void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 0 */
 
   //Control Return if peripheral is already initialised
-  if (!shimmerStatus.isDocked || isDockUartInitialised())
+  if (!shimmerStatus.isDocked || DockUart_isInitialised())
   {
     return;
   }
@@ -86,6 +86,9 @@ void MX_USART1_UART_Init(void)
 
   DockUart_resetVariables();
   DockUart_init(&huart1);
+
+  MX_CRC_Init();
+
   /* USER CODE END USART1_Init 2 */
 }
 
@@ -130,6 +133,8 @@ void MX_USART3_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART3_Init 2 */
+
+  MX_CRC_Init();
 
   /* USER CODE END USART3_Init 2 */
 }
@@ -344,7 +349,7 @@ void setUartPeripheralPointers(void)
  * @param None
  * @retval None
  */
-void usartBtSetup(uint32_t baudRate, uint32_t hwFlowCtrl)
+void BtUart_init(uint32_t baudRate, uint32_t hwFlowCtrl)
 {
   huartBt->Instance = USART3;
   huartBt->Init.BaudRate = baudRate;
@@ -376,20 +381,29 @@ void usartBtSetup(uint32_t baudRate, uint32_t hwFlowCtrl)
   }
 
   setBtUartInstance(huartBt);
+
+  MX_CRC_Init();
 }
 
-void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
+void BtUart_update(uint32_t baudRate, uint32_t hwFlowCtrl)
+{
+  btUart_deint();
+  BtUart_init(baudRate, hwFlowCtrl);
+}
+
+void btUart_deint(void)
 {
   HAL_StatusTypeDef status = HAL_UART_Abort(huartBt);
   status = HAL_UART_DeInit(huartBt);
-
-  usartBtSetup(baudRate, hwFlowCtrl);
+  if (!DockUart_isInitialised())
+  {
+    deinitCrc();
+  }
 }
 
-void BtUart_deint(void)
+uint8_t BtUart_isInitialised(void)
 {
-  HAL_StatusTypeDef status = HAL_UART_Abort(huartBt);
-  status = HAL_UART_DeInit(huartBt);
+  return (huartBt != 0 && ((HAL_UART_GetState(huartBt) & 0x20) == 0x20));
 }
 
 /*****************************************************
@@ -423,15 +437,19 @@ void DockUart_init(UART_HandleTypeDef *huart)
 
 void DockUart_deint(void)
 {
-  if (isDockUartInitialised())
+  if (DockUart_isInitialised())
   {
     HAL_UART_DeInit(huartDock);
+    if (!BtUart_isInitialised())
+    {
+      deinitCrc();
+    }
   }
 }
 
 void DockUart_disable(void)
 {
-  if (isDockUartInitialised())
+  if (DockUart_isInitialised())
   {
     __HAL_UART_DISABLE(huartDock);
   }
@@ -439,13 +457,13 @@ void DockUart_disable(void)
 
 void DockUart_enable(void)
 {
-  if (isDockUartInitialised())
+  if (DockUart_isInitialised())
   {
     __HAL_UART_ENABLE(huartDock);
   }
 }
 
-uint8_t isDockUartInitialised(void)
+uint8_t DockUart_isInitialised(void)
 {
   return (huartDock != 0 && ((HAL_UART_GetState(huartDock) & 0x20) == 0x20));
 }

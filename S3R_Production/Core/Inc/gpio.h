@@ -56,6 +56,7 @@ extern "C"
   void gpioInitPerBoard(void);
   void vbusPinStateCheck(void);
   void initBtPins(void);
+  void initBtInterrupts(void);
   void deinitBtPins(void);
   void setBtPower(uint8_t state);
 

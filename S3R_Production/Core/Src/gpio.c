@@ -98,22 +98,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PDPin PDPin */
-  GPIO_InitStruct.Pin = GPIO_INTERNAL2_Pin | GPIO_INTERNAL1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  /*Configure GPIO pins : PA15 PA6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15 | GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PEPin PEPin PEPin PEPin
-                           PEPin */
-  GPIO_InitStruct.Pin = LIS3MDL_DRDY_Pin | LIS2MDL_DRDY_Pin | LSM6DSV_INT1_Pin
-      | BMP390_INT_Pin | GPIO_EXTERNAL_Pin;
+  /*Configure GPIO pins : PEPin PEPin PEPin PEPin */
+  GPIO_InitStruct.Pin = LIS3MDL_DRDY_Pin | LIS2MDL_DRDY_Pin | LSM6DSV_INT1_Pin | BMP390_INT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
@@ -130,12 +122,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = GPIO_INTERNAL0_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIO_INTERNAL0_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = SD_DETECT_N_Pin;
@@ -189,11 +175,11 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin */
-  GPIO_InitStruct.Pin = LIS2DW12_INT1_Pin | GPIO_ADC_INT_EXP1_Pin;
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = LIS2DW12_INT1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(LIS2DW12_INT1_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
@@ -201,9 +187,6 @@ void MX_GPIO_Init(void)
 
   HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI9_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI9_IRQn);
 }
 
 /* USER CODE BEGIN 2 */
@@ -548,8 +531,24 @@ void initBtPins(void)
   HAL_GPIO_Init(BT_HOST_WAKE_GPIO_Port, &GPIO_InitStruct);
 }
 
+void initBtInterrupts(void)
+{
+  HAL_NVIC_SetPriority(INT_LINE_BT_CONNECTION, 15, 0);
+  HAL_NVIC_EnableIRQ(INT_LINE_BT_CONNECTION);
+
+  HAL_NVIC_SetPriority(INT_LINE_BT_HOST_WAKE, 15, 0);
+  HAL_NVIC_EnableIRQ(INT_LINE_BT_HOST_WAKE);
+
+  HAL_NVIC_SetPriority(INT_LINE_BT_CYSPP, 15, 0);
+  HAL_NVIC_EnableIRQ(INT_LINE_BT_CYSPP);
+}
+
 void deinitBtPins(void)
 {
+  HAL_NVIC_DisableIRQ(INT_LINE_BT_CONNECTION);
+  HAL_NVIC_DisableIRQ(INT_LINE_BT_HOST_WAKE);
+  HAL_NVIC_DisableIRQ(INT_LINE_BT_CYSPP);
+
   //Default state for all connected Vela IF820 pins when not in use is floating
   HAL_GPIO_DeInit(BT_CP_ROLE_GPIO_Port, BT_CP_ROLE_Pin);
   HAL_GPIO_DeInit(GPIOD, BT_CYSPP_Pin | BT_RST_Pin | BT_LP_MODE_Pin | BT_CONNECTION_Pin);

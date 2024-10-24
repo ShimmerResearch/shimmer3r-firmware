@@ -32,6 +32,12 @@ void MX_CRC_Init(void)
 
   /* USER CODE BEGIN CRC_Init 0 */
 
+  //Don't initialize CRC if it's already initialized
+  if (hcrc.State != HAL_CRC_STATE_RESET)
+  {
+    return;
+  }
+
   /* USER CODE END CRC_Init 0 */
 
   /* USER CODE BEGIN CRC_Init 1 */
@@ -51,6 +57,8 @@ void MX_CRC_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CRC_Init 2 */
+
+  setCrcHandleToUse(getCrcHandle());
 
   /* USER CODE END CRC_Init 2 */
 }
@@ -92,6 +100,11 @@ void HAL_CRC_MspDeInit(CRC_HandleTypeDef *crcHandle)
 CRC_HandleTypeDef *getCrcHandle(void)
 {
   return &hcrc;
+}
+
+void deinitCrc(void)
+{
+  HAL_CRC_DeInit(&hcrc);
 }
 
 /* USER CODE END 1 */

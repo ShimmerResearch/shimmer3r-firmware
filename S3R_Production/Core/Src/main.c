@@ -159,7 +159,6 @@ void Init()
 
 #if defined(SHIMMER3R)
   setBootStage(BOOT_STAGE_BLUETOOTH);
-  setCrcHandleToUse(getCrcHandle());
   btCommsProtocolInit(setTaskNewBtCmdToProcess);
   //btFactoryResetViaFw();
   btInitialise();
@@ -251,7 +250,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
-  MX_CRC_Init();
   MX_ICACHE_Init();
   MX_RNG_Init();
   MX_RTC_Init();
@@ -260,12 +258,6 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
-  //#if USE_FATFS
-  //  MX_FATFS_Init();
-  //#endif
-
-  linkedListConfig(&hadc1); //configure linkedlist for ADC
-
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();
 #endif
@@ -273,8 +265,6 @@ int main(void)
   Init();
   shimmerStatus.isInitialising = 0;
   setBootStage(BOOT_STAGE_END);
-
-  //S4_Task_set(TASK_STARTSENSING);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
@@ -525,8 +515,16 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
     }
   }
 
-  //Allow LP Mode after configuring
-  //Board_BT_LP_MODE(0);
+  if (isBtIsInitialised())
+  {
+    initBtInterrupts();
+
+    /* TODO LP_MODE feature provides a noticable drop in current consumption but
+     * Consensys is having difficulty communicating after connection is
+     * established (could be due to the lack of CTS/RTS in prototype boards?) */
+    //Allow LP Mode after configuring
+    //Board_BT_LP_MODE(0);
+  }
 }
 
 void setBtConnectionState(bool state)

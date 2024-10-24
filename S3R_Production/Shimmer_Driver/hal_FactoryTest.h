@@ -44,6 +44,7 @@ given above */
 #define SELF_TEST_STR_CHIP_DETECTION           " - Chip not detected"
 #define SELF_TEST_STR_SIGNAL_ISSUE             " - Signal issue"
 #define SELF_TEST_STR_TEMPERATURE_ISSUE        " - Temperature issue"
+#define SELF_TEST_STR_UNKNOWN                  " - Unknown"
 
 typedef enum
 {
