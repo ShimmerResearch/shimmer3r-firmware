@@ -568,7 +568,7 @@ void SPI3_IRQHandler(void)
 void EXTI0_IRQHandler(void)
 {
   HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP1_Pin);
-//  HAL_GPIO_EXTI_IRQHandler(SD_DETECT_N_Pin);
+  //HAL_GPIO_EXTI_IRQHandler(SD_DETECT_N_Pin);
 }
 
 /**
@@ -593,15 +593,15 @@ void EXTI4_IRQHandler(void)
 void EXTI5_IRQHandler(void)
 {
   HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP0_Pin);
-//  HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL2_Pin);
+  //HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL2_Pin);
 }
 
 ///**
-// * @brief This function handles EXTI Line6 interrupt.
-// */
+//* @brief This function handles EXTI Line6 interrupt.
+//*/
 //void EXTI6_IRQHandler(void)
 //{
-//  HAL_GPIO_EXTI_IRQHandler(_Pin);
+// HAL_GPIO_EXTI_IRQHandler(_Pin);
 //}
 
 /**
