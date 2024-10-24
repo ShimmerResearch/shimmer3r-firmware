@@ -40,8 +40,11 @@
  * @date May, 2016
  */
 
-#include <shimmer_include.h>
 #include <stdint.h>
+
+#include "shimmer_include.h"
+
+#include "stm32u5a5xx.h"
 
 #ifndef HAL_BOARD_H
 #define HAL_BOARD_H
