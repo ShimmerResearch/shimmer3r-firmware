@@ -591,8 +591,8 @@ void send_test_report(char *str)
     break;
   case PRINT_TO_BT_UART:
     BT_write((uint8_t *) str, strlen(str));
-    // wait for msg to finish transmitting
-    while(getUsedSpaceInBtTxBuf()>0)
+    //wait for msg to finish transmitting
+    while (getUsedSpaceInBtTxBuf() > 0)
     {
       HAL_Delay(100);
     }

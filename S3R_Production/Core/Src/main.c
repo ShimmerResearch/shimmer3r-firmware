@@ -517,8 +517,8 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
 
   if (isBtIsInitialised())
   {
-    //TODO trying to enable interrupts here causes the system to hang. Tried setting priority 0, 1 and 15.
-    //initBtInterrupts();
+    //TODO trying to enable interrupts here causes the system to hang. Tried
+    //setting priority 0, 1 and 15. initBtInterrupts();
 
     //Allow LP Mode after configuring
     //Board_BT_LP_MODE(0);
