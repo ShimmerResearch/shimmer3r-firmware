@@ -546,10 +546,23 @@ void initBtPins(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BT_HOST_WAKE_GPIO_Port, &GPIO_InitStruct);
+
+  HAL_NVIC_SetPriority(INT_LINE_BT_CONNECTION, 0, 0);
+  HAL_NVIC_EnableIRQ(INT_LINE_BT_CONNECTION);
+
+  HAL_NVIC_SetPriority(INT_LINE_BT_HOST_WAKE, 0, 0);
+  HAL_NVIC_EnableIRQ(INT_LINE_BT_HOST_WAKE);
+
+  HAL_NVIC_SetPriority(INT_LINE_BT_CYSPP, 0, 0);
+  HAL_NVIC_EnableIRQ(INT_LINE_BT_CYSPP);
 }
 
 void deinitBtPins(void)
 {
+  HAL_NVIC_DisableIRQ(INT_LINE_BT_CONNECTION);
+  HAL_NVIC_DisableIRQ(INT_LINE_BT_HOST_WAKE);
+  HAL_NVIC_DisableIRQ(INT_LINE_BT_CYSPP);
+
   //Default state for all connected Vela IF820 pins when not in use is floating
   HAL_GPIO_DeInit(BT_CP_ROLE_GPIO_Port, BT_CP_ROLE_Pin);
   HAL_GPIO_DeInit(GPIOD, BT_CYSPP_Pin | BT_RST_Pin | BT_LP_MODE_Pin | BT_CONNECTION_Pin);

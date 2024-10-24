@@ -242,11 +242,12 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle)
     HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
     /* USER CODE BEGIN ADC1_MspInit 1 */
 
+    /* ADC1 is used as Shimmer's main ADC when logging/streaming data.
+     * VBAT_SENSE is enabled by default as a placeholder for setting up the ADC1
+     * in CubeMX but the channel is not necessarily enabled in the Shimmer
+     * configuration options. Disabling the pin here and it can be re-enabled
+     * later if configured to be on. */
     HAL_GPIO_DeInit(VBAT_SENSE_GPIO_Port, VBAT_SENSE_Pin);
-    //HAL_GPIO_DeInit(GPIOA,
-    //    GPIO_ADC_EXT_EXP0_Pin | GPIO_ADC_INT_EXP0_Pin | GPIO_ADC_EXT_EXP1_Pin
-    //        | GPIO_ADC_EXT_EXP2_Pin);
-    //HAL_GPIO_DeInit(GPIOB, GPIO_ADC_INT_EXP1_Pin | GPIO_ADC_INT_EXP2_Pin | GPIO_ADC_INT_EXP3_Pin);
 
     /* USER CODE END ADC1_MspInit 1 */
   }
