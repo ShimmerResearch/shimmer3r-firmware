@@ -7,6 +7,8 @@
 
 #include "hal_FactoryTest.h"
 
+#include <inttypes.h>
+
 #include "i2c.h"
 #include "spi.h"
 
@@ -130,7 +132,9 @@ void print_mcu_details(void)
   //send_test_report(buffer);
   //sprintf(buffer, " - Unique ID w2 = 0x%08X\r\n", HAL_GetUIDw2());
   //send_test_report(buffer);
-  sprintf(buffer, " - Unique ID = 0x%08X%08X%08X\r\n", HAL_GetUIDw0(),
+//  sprintf(buffer, " - Unique ID = 0x%08X%08X%08X\r\n", HAL_GetUIDw0(),
+//      HAL_GetUIDw1(), HAL_GetUIDw2());
+  sprintf(buffer, " - Unique ID = 0x%08" PRIX32 "%08" PRIX32 "%08" PRIX32 "\r\n", HAL_GetUIDw0(),
       HAL_GetUIDw1(), HAL_GetUIDw2());
   send_test_report(buffer);
 
@@ -173,7 +177,7 @@ void print_battery_details(void)
 
   uint8_t testPass = (shimmerStatus.battValMV > TEST_THRESHOLD_VBATT_LOWER
       && shimmerStatus.battValMV < TEST_THRESHOLD_VBATT_UPPER);
-  sprintf(buffer, " - S3R_TEST_0011 - %s: VBatt = %ldmV (%d-%dmV)\r\n",
+  sprintf(buffer, " - S3R_TEST_0011 - %s: VBatt = %dmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", shimmerStatus.battValMV,
       TEST_THRESHOLD_VBATT_LOWER, TEST_THRESHOLD_VBATT_UPPER);
   send_test_report(buffer);

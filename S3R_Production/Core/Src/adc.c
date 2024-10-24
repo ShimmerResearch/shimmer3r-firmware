@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "s4_adc.h"
+
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;

@@ -171,6 +171,8 @@ extern "C"
 
   /* USER CODE BEGIN Private defines */
 
+/* TODO including these expansion board pin definitions here because CubeMX
+ * randomly stopped automatically generating them */
 #define GPIO_ADC_EXT_EXP0_Pin        GPIO_PIN_4
 #define GPIO_ADC_EXT_EXP0_GPIO_Port  GPIOA
 
