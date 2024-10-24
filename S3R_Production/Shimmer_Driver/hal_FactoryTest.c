@@ -132,10 +132,10 @@ void print_mcu_details(void)
   //send_test_report(buffer);
   //sprintf(buffer, " - Unique ID w2 = 0x%08X\r\n", HAL_GetUIDw2());
   //send_test_report(buffer);
-//  sprintf(buffer, " - Unique ID = 0x%08X%08X%08X\r\n", HAL_GetUIDw0(),
-//      HAL_GetUIDw1(), HAL_GetUIDw2());
-  sprintf(buffer, " - Unique ID = 0x%08" PRIX32 "%08" PRIX32 "%08" PRIX32 "\r\n", HAL_GetUIDw0(),
-      HAL_GetUIDw1(), HAL_GetUIDw2());
+  //sprintf(buffer, " - Unique ID = 0x%08X%08X%08X\r\n", HAL_GetUIDw0(),
+  //    HAL_GetUIDw1(), HAL_GetUIDw2());
+  sprintf(buffer, " - Unique ID = 0x%08" PRIX32 "%08" PRIX32 "%08" PRIX32 "\r\n",
+      HAL_GetUIDw0(), HAL_GetUIDw1(), HAL_GetUIDw2());
   send_test_report(buffer);
 
   ADCDebugInfo_t adcDebugInfo;
