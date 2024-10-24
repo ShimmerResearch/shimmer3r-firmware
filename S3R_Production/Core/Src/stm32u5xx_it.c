@@ -559,4 +559,121 @@ void SPI3_IRQHandler(void)
 
 /* USER CODE BEGIN 1 */
 
+/* Note the interrupts listed below are not enabled by default in CubeMX and
+ * instead are turned on/off when needed by firmware to save power. */
+
+/**
+ * @brief This function handles EXTI Line0 interrupt.
+ */
+void EXTI0_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP1_Pin);
+//  HAL_GPIO_EXTI_IRQHandler(SD_DETECT_N_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line2 interrupt.
+ */
+void EXTI2_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LIS3MDL_DRDY_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line4 interrupt.
+ */
+void EXTI4_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL1_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line5 interrupt.
+ */
+void EXTI5_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP0_Pin);
+//  HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL2_Pin);
+}
+
+///**
+// * @brief This function handles EXTI Line6 interrupt.
+// */
+//void EXTI6_IRQHandler(void)
+//{
+//  HAL_GPIO_EXTI_IRQHandler(_Pin);
+//}
+
+/**
+ * @brief This function handles EXTI Line7 interrupt.
+ */
+void EXTI7_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LSM6DSV_INT1_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line8 interrupt.
+ */
+void EXTI8_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BT_HOST_WAKE_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line9 interrupt.
+ */
+void EXTI9_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_EXTERNAL_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line10 interrupt.
+ */
+void EXTI10_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LIS2MDL_DRDY_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line11 interrupt.
+ */
+void EXTI11_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BMP390_INT_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line12 interrupt.
+ */
+void EXTI12_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LIS2DW12_INT1_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line13 interrupt.
+ */
+void EXTI13_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL0_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line14 interrupt.
+ */
+void EXTI14_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BT_CONNECTION_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line15 interrupt.
+ */
+void EXTI15_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BT_CYSPP_Pin);
+}
+
 /* USER CODE END 1 */

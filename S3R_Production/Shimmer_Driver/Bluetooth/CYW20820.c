@@ -161,7 +161,7 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
 
   initBtPins();
 
-  BtUart_Init(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
+  BtUart_init(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
 
   /* packet pointer for working with response/event data */
   //ezs_packet_t *packet;
@@ -205,7 +205,7 @@ void btDeinit(void)
 {
   setBtPower(0);
   Board_SW_BT(0);
-  btUart_Deint();
+  btUart_deint();
   deinitBtPins();
 }
 
@@ -265,7 +265,7 @@ void btInitCommands(void)
     {
       printf("Update UART Stage3\r\n");
       //TODO resolve reference
-      usartBtUpdate(rsp_system_get_uart_parameters_ref.baud,
+      BtUart_update(rsp_system_get_uart_parameters_ref.baud,
           rsp_system_get_uart_parameters_ref.flow);
     }
   }
@@ -600,7 +600,7 @@ void btFactoryResetCommands(void)
     btFactoryResetCmdsStep++;
     printf("Update UART to factory default\r\n");
     //TODO resolve reference
-    usartBtUpdate(115200, 0);
+    BtUart_update(115200, 0);
     HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
   }
 

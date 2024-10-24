@@ -517,11 +517,13 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
 
   if (isBtIsInitialised())
   {
-    //TODO trying to enable interrupts here causes the system to hang. Tried setting priority 0, 1 and 15.
-    //initBtInterrupts();
+    initBtInterrupts();
 
+    /* TODO LP_MODE feature provides a noticable drop in current consumption but
+     * Consensys is having difficulty communicating after connection is
+     * established (could be due to the lack of CTS/RTS in prototype boards?) */
     //Allow LP Mode after configuring
-    //Board_BT_LP_MODE(0);
+//    Board_BT_LP_MODE(0);
   }
 }
 

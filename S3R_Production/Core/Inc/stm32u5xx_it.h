@@ -82,6 +82,24 @@ extern "C"
   void SPI3_IRQHandler(void);
   /* USER CODE BEGIN EFP */
 
+  /* Note the interrupts listed below are not enabled by default in CubeMX and
+   * instead are turned on/off when needed by firmware to save power. */
+
+  void EXTI0_IRQHandler(void);
+  void EXTI2_IRQHandler(void);
+  void EXTI4_IRQHandler(void);
+  void EXTI5_IRQHandler(void);
+  void EXTI6_IRQHandler(void);
+  void EXTI7_IRQHandler(void);
+  void EXTI8_IRQHandler(void);
+  void EXTI9_IRQHandler(void);
+  void EXTI10_IRQHandler(void);
+  void EXTI11_IRQHandler(void);
+  void EXTI12_IRQHandler(void);
+  void EXTI13_IRQHandler(void);
+  void EXTI14_IRQHandler(void);
+  void EXTI15_IRQHandler(void);
+
   /* USER CODE END EFP */
 
 #ifdef __cplusplus

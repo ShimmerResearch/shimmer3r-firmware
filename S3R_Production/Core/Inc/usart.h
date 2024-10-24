@@ -51,9 +51,9 @@ extern "C"
 
   void setUartPeripheralPointers(void);
 
-  void BtUart_Init(uint32_t baudRate, uint32_t hwFlowCtrl);
-  void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl);
-  void btUart_Deint(void);
+  void BtUart_init(uint32_t baudRate, uint32_t hwFlowCtrl);
+  void BtUart_update(uint32_t baudRate, uint32_t hwFlowCtrl);
+  void btUart_deint(void);
   uint8_t BtUart_isInitialised(void);
 
 #if defined(SHIMMER4_SDK)

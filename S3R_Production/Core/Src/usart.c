@@ -349,7 +349,7 @@ void setUartPeripheralPointers(void)
  * @param None
  * @retval None
  */
-void BtUart_Init(uint32_t baudRate, uint32_t hwFlowCtrl)
+void BtUart_init(uint32_t baudRate, uint32_t hwFlowCtrl)
 {
   huartBt->Instance = USART3;
   huartBt->Init.BaudRate = baudRate;
@@ -385,13 +385,13 @@ void BtUart_Init(uint32_t baudRate, uint32_t hwFlowCtrl)
   MX_CRC_Init();
 }
 
-void usartBtUpdate(uint32_t baudRate, uint32_t hwFlowCtrl)
+void BtUart_update(uint32_t baudRate, uint32_t hwFlowCtrl)
 {
-  btUart_Deint();
-  BtUart_Init(baudRate, hwFlowCtrl);
+  btUart_deint();
+  BtUart_init(baudRate, hwFlowCtrl);
 }
 
-void btUart_Deint(void)
+void btUart_deint(void)
 {
   HAL_StatusTypeDef status = HAL_UART_Abort(huartBt);
   status = HAL_UART_DeInit(huartBt);
