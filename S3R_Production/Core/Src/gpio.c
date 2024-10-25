@@ -226,9 +226,9 @@ void GPIO_userButtonCheck()
       if (shimmerStatus.isSensing == 0)
       {
         shimmerStatus.sdlogCmd = 1;
-     //   S4_Task_set(TASK_STARTSENSING);
-            send_test_report(
-                "TODO: User Button logging stopped due to BOOT0 issue\r\n");
+        //S4_Task_set(TASK_STARTSENSING);
+        send_test_report(
+            "TODO: User Button logging stopped due to BOOT0 issue\r\n");
       }
       else
       {
