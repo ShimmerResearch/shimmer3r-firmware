@@ -127,9 +127,7 @@ void S4_NORM_Task_manage(void)
       break;
 #endif
     case TASK_STARTSENSING:
-      send_test_report(
-          "TODO: Blocking call to start sensing due to high current\r\n");
-      //S4Sens_startSensing();
+      S4Sens_startSensing();
       break;
     case TASK_STOPSENSING:
       S4Sens_stopSensing();
