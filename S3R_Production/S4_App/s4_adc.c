@@ -313,7 +313,7 @@ void S4_NORM_ADC_configureChannels(void)
   //Internal ADC 3
   if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
   {
-    if(configBytes->chEnGsr)
+    if (configBytes->chEnGsr)
     {
       *channel_contents_ptr++ = GSR_RAW;
       sensing.ptr.gsr = sensing.dataLen;
