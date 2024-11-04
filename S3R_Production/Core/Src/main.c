@@ -267,8 +267,8 @@ int main(void)
   setBootStage(BOOT_STAGE_END);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
-  run_factory_test();
+//  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+//  run_factory_test();
 
   /* USER CODE END 2 */
 
@@ -552,7 +552,7 @@ void loadSensorConfigurationAndCalibration(void)
     if (!isSdPowerOn())
     {
       //Hits here when undocked
-      Board_sdPower(1);
+      Board_setSdPower(1);
     }
     if (GetSdCfgFlag())
     { //info > sdcard
@@ -693,7 +693,7 @@ uint8_t CheckOnDefault(void)
 void ReadSdConfiguration(void)
 {
   S4_Task_clear(TASK_STREAMDATA); //this will skip one sample
-  Board_sdPower(1);
+  Board_setSdPower(1);
   ParseConfig();
 }
 

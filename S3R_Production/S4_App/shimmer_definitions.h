@@ -481,8 +481,7 @@ typedef volatile struct STATTypeDef_t
   uint8_t isConfiguring;
   uint8_t isButtonPressed;
   uint8_t isBtConnected;
-  uint8_t isBtPoweredOn;
-  uint8_t isSdInserted;
+  uint8_t btPowerOn;
   uint8_t isLedRed;
   uint8_t isDockUartStep;
   uint8_t battStat;
@@ -492,10 +491,14 @@ typedef volatile struct STATTypeDef_t
 #if defined(SHIMMER4_SDK)
   uint8_t battDigital[10];
 #endif
-  uint8_t sdlogReady;
   uint8_t btstreamReady;
-  uint8_t badFile;
+  uint8_t sdPeripheralInit;
+  uint8_t sdInserted;
+  uint8_t sdPowerOn;
+  uint8_t sdMcu0Pc1;
+  uint8_t sdlogReady;
   uint8_t sdlogCmd;
+  uint8_t badFile;
   uint8_t btstreamCmd;
   uint8_t toggleLedRedCmd;
   uint32_t testResult;
@@ -504,7 +507,6 @@ typedef volatile struct STATTypeDef_t
   uint8_t pinPvExt;
   uint8_t periStat;
   uint8_t syncEnabled;
-  uint8_t isSdPeripheralInit;
 } STATTypeDef;
 
 typedef enum

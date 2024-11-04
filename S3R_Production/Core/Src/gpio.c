@@ -213,27 +213,37 @@ void GPIO_userButtonCheck()
   if (HAL_GPIO_ReadPin(BOOT0_USER_BTN_GPIO_Port, BOOT0_USER_BTN_Pin) == GPIO_PIN_SET)
   { //pressed
     shimmerStatus.isButtonPressed = 1;
+#if defined(SHIMMER4_SDK)
     Board_ledOn(LED_YELLOW);
+#endif
     GPIO_tsPress = RTC_get64();
   }
   else
   {
     shimmerStatus.isButtonPressed = 0;
+#if defined(SHIMMER4_SDK)
     Board_ledOff(LED_YELLOW);
+#endif
     GPIO_tsRelease = RTC_get64();
     if (GPIO_tsRelease - GPIO_tsLastRelease > 3277)
     {
-      if (shimmerStatus.isSensing == 0)
+      if(shimmerStatus.sdMcu0Pc1)
       {
-        shimmerStatus.sdlogCmd = 1;
-        //S4_Task_set(TASK_STARTSENSING);
-        send_test_report(
-            "TODO: User Button logging stopped due to BOOT0 issue\r\n");
+        //TODO
+        send_test_report("TODO: False User Button trigger due to BOOT0 issue\r\n");
       }
       else
       {
-        shimmerStatus.sdlogCmd = 2;
-        S4_Task_set(TASK_STOPSENSING);
+          if (shimmerStatus.isSensing == 0)
+          {
+            shimmerStatus.sdlogCmd = 1;
+            S4_Task_set(TASK_STARTSENSING);
+          }
+          else
+          {
+            shimmerStatus.sdlogCmd = 2;
+            S4_Task_set(TASK_STOPSENSING);
+          }
       }
     }
     GPIO_tsLastRelease = GPIO_tsRelease;
@@ -384,13 +394,13 @@ uint8_t SD_insertedCheck()
 {
   if (HAL_GPIO_ReadPin(SD_DETECT_N_GPIO_Port, SD_DETECT_N_Pin) == GPIO_PIN_RESET)
   { //inserted
-    shimmerStatus.isSdInserted = 1;
+    shimmerStatus.sdInserted = 1;
   }
   else
   {
-    shimmerStatus.isSdInserted = 0;
+    shimmerStatus.sdInserted = 0;
   }
-  return shimmerStatus.isSdInserted;
+  return shimmerStatus.sdInserted;
 }
 
 uint8_t isSdPowerOn(void)
@@ -560,7 +570,7 @@ void deinitBtPins(void)
 void setBtPower(uint8_t state)
 {
   Board_SW_BT(state);
-  shimmerStatus.isBtPoweredOn = state;
+  shimmerStatus.btPowerOn = state;
 }
 
 void initSpi1CsOutputs(void)

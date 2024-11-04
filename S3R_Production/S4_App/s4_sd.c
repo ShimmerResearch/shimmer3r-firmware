@@ -570,7 +570,7 @@ void UpdateSdConfig(void)
     uint8_t sd_power_state;
     if (!isSdPowerOn())
     {
-      Board_sdPower(1);
+      Board_setSdPower(1);
       sd_power_state = 0;
     }
     else
@@ -845,7 +845,7 @@ void UpdateSdConfig(void)
     }
     if (!sd_power_state)
     {
-      Board_sdPower(0);
+      Board_setSdPower(0);
     }
   }
 }

@@ -110,10 +110,11 @@ extern void Board_ledOn(uint8_t ledMask);
 extern void Board_ledOff(uint8_t ledMask);
 extern void Board_ledToggle(uint8_t ledMask);
 
+extern void Board_sdPowerCycle(void);
 extern void Board_sd2Pc(void);
 extern void Board_sd2Arm(void);
-//extern void Board_sdPower(uint8_t on);
-extern void Board_sdPowerCycle(void);
+void Board_setSdPower(uint8_t state);
+void Board_setDockAccessToSd(uint8_t mcu0dock1);
 
 extern void Board_delayMicrosInit(void);
 extern void Board_delayMicros(uint32_t micros);
@@ -323,10 +324,10 @@ void Board_enableSensingPower(uint8_t state);
 #define Board_RESP_CS(x) \
   HAL_GPIO_WritePin(RESP_CS_GPIO, RESP_CS_PIN, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
-#define Board_sdArm0pc1(x)                                        \
+#define Board_sdMcu0Dock1(x)                                        \
   HAL_GPIO_WritePin(SW_SD_MCU_DOCK_GPIO_Port, SW_SD_MCU_DOCK_Pin, \
       x ? GPIO_PIN_RESET : GPIO_PIN_SET) //EXT_MEM: 0 for arm, 1 for pc
-#define Board_sdPower(x) \
+#define Board_SW_FLASH(x) \
   HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #if defined(SHIMMER4_SDK)
 #define Board_detectN(x) \

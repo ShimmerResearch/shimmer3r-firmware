@@ -145,7 +145,7 @@ uint8_t S4Sens_checkStartSensorConditions(void)
   {
     return 0;
   }
-  if (!((shimmerStatus.sdlogCmd == 1 && shimmerStatus.isSdInserted
+  if (!((shimmerStatus.sdlogCmd == 1 && shimmerStatus.sdInserted
             && !shimmerStatus.badFile)
           || (shimmerStatus.btstreamCmd == BT_STREAM_CMD_STATE_START
               && shimmerStatus.isBtConnected)))
@@ -157,7 +157,7 @@ uint8_t S4Sens_checkStartSensorConditions(void)
 
 uint8_t S4Sens_checkStartLoggingConditions(void)
 {
-  if (shimmerStatus.isSdInserted)
+  if (shimmerStatus.sdInserted)
   {
     if ((!shimmerStatus.isLogging) && (shimmerStatus.sdlogCmd == 1))
     {

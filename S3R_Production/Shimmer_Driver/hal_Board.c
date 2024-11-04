@@ -373,10 +373,10 @@ void Board_sdPowerCycle(void)
 #if defined(SHIMMER4_SDK)
   Board_detectN(1);
 #endif
-  Board_sdPower(0);
-  Board_sdArm0pc1(0);
+  Board_setSdPower(0);
+  Board_setDockAccessToSd(0);
   HAL_Delay(120);
-  Board_sdPower(1);
+  Board_setSdPower(1);
   HAL_Delay(50);
   SD_mount(0);
   SD_mount(1);
@@ -389,17 +389,15 @@ void Board_sdPowerCycle(void)
  */
 void Board_sd2Pc(void)
 {
-  send_test_report("SD to PC\r\n");
-
   //Board_sdPowerCycle();
 
   //Board_detectN(1);
   HAL_Delay(120);
-  Board_sdPower(0);
-  Board_sdArm0pc1(1);
+  Board_setSdPower(0);
+  Board_setDockAccessToSd(1);
   //Board_detectN(GPIO_PIN_RESET);
   HAL_Delay(120);
-  Board_sdPower(1);
+  Board_setSdPower(1);
   HAL_Delay(50);
 
 #if defined(SHIMMER4_SDK)
@@ -417,17 +415,15 @@ void Board_sd2Pc(void)
  */
 void Board_sd2Arm(void)
 {
-  send_test_report("SD to MCU\r\n");
-
 #if defined(SHIMMER4_SDK)
   Board_detectN(1);
 #endif
 
   HAL_Delay(120);
-  Board_sdPower(0);
-  Board_sdArm0pc1(0);
+  Board_setSdPower(0);
+  Board_setDockAccessToSd(0);
   HAL_Delay(120);
-  Board_sdPower(1);
+  Board_setSdPower(1);
   HAL_Delay(50);
 
   MX_SDMMC1_SD_Init();
@@ -439,18 +435,38 @@ void Board_sd2Arm(void)
   SD_mount(1);
 }
 
-///***************************************************************************//**
-//* @brief  SD power on/off, toggling pin SW_FLASH
-//* @param  power_on
-//* @return none
-//******************************************************************************/
-//void Board_sdPower(uint8_t on) {
+/***************************************************************************//**
+* @brief  SD power on/off, toggling pin SW_FLASH
+* @param  power_on
+* @return none
+******************************************************************************/
+void Board_setSdPower(uint8_t state)
+{
+  Board_SW_FLASH(state);
+  shimmerStatus.sdPowerOn = state;
 //  if(on){
 //     HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin,GPIO_PIN_SET);
 //  } else{
 //     HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin,GPIO_PIN_RESET);
 //  }
-//}
+}
+
+void Board_setDockAccessToSd(uint8_t mcu0dock1)
+{
+  Board_sdMcu0Dock1(mcu0dock1);
+  shimmerStatus.sdMcu0Pc1 = mcu0dock1;
+
+  //TODO remove below when functionality is working
+  if(mcu0dock1)
+  {
+    send_test_report("SD to Dock\r\n");
+  }
+  else
+  {
+    send_test_report("SD to MCU\r\n");
+  }
+}
+
 //void Board_detectN(uint8_t on) {
 //  if(on){
 //     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12,GPIO_PIN_SET);

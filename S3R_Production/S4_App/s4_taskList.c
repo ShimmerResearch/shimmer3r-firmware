@@ -138,7 +138,7 @@ void S4_NORM_Task_manage(void)
       break;
     case TASK_SDLOG_CFG_UPDATE:
       if (!shimmerStatus.isDocked && !shimmerStatus.isSensing
-          && shimmerStatus.isSdInserted && GetSdCfgFlag())
+          && shimmerStatus.sdInserted && GetSdCfgFlag())
       {
         shimmerStatus.isConfiguring = 1;
         IniReadInfoMem();

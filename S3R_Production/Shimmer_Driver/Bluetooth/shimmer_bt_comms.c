@@ -3270,7 +3270,7 @@ void BtUart_sendRsp(void)
       *(resPacket + packet_length++) = STATUS_RESPONSE;
       *(resPacket + packet_length++) = (shimmerStatus.toggleLedRedCmd << 7)
           + ((shimmerStatus.badFile & 0x01) << 6)
-          + ((shimmerStatus.isSdInserted & 0x01) << 5)
+          + ((shimmerStatus.sdInserted & 0x01) << 5)
           + ((shimmerStatus.isStreaming & 0x01) << 4)
           + ((shimmerStatus.isLogging & 0x01) << 3) + (isRwcTimeSet() << 2)
           + ((shimmerStatus.isSensing & 0x01) << 1) + (shimmerStatus.isDocked & 0x01);
@@ -3882,7 +3882,7 @@ void BtsdSelfcmd(void)
     selfcmd[i++] = INSTREAM_CMD_RESPONSE;
     selfcmd[i++] = STATUS_RESPONSE;
     selfcmd[i++] = (shimmerStatus.toggleLedRedCmd << 7) | (shimmerStatus.badFile << 6)
-        | (shimmerStatus.isSdInserted << 5) | (shimmerStatus.isStreaming << 4)
+        | (shimmerStatus.sdInserted << 5) | (shimmerStatus.isStreaming << 4)
         | (shimmerStatus.isLogging << 3) | (isRwcTimeSet() << 2)
         | (shimmerStatus.isSensing << 1) | shimmerStatus.isDocked;
 

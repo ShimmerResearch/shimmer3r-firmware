@@ -292,7 +292,7 @@ void led_test(void)
 void sd_card_test(void)
 {
   send_test_report("SD Card:\r\n");
-  if (!shimmerStatus.isSdInserted)
+  if (!shimmerStatus.sdInserted)
   {
     send_test_report(" - S3R_TEST_0013 - FAIL: not detected\r\n");
   }

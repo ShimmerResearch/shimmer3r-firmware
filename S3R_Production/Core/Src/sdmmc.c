@@ -44,7 +44,7 @@ void MX_SDMMC1_SD_Init(void)
   //Initialise will fail if an SD card is not detected
   SD_insertedCheck();
   shimmerStatus.badFile = 1;
-  if (shimmerStatus.isSdInserted)
+  if (shimmerStatus.sdInserted)
   {
     /* USER CODE END SDMMC1_Init 1 */
     hsd1.Instance = SDMMC1;
@@ -61,7 +61,7 @@ void MX_SDMMC1_SD_Init(void)
     else
     {
       shimmerStatus.badFile = 0;
-      shimmerStatus.isSdPeripheralInit = 1;
+      shimmerStatus.sdPeripheralInit = 1;
     }
   }
   /* USER CODE END SDMMC1_Init 2 */
@@ -161,10 +161,10 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef *sdHandle)
 
 void mmc1DeInit(void)
 {
-  if (shimmerStatus.isSdPeripheralInit)
+  if (shimmerStatus.sdPeripheralInit)
   {
     HAL_SD_DeInit(&hsd1);
-    shimmerStatus.isSdPeripheralInit = 0;
+    shimmerStatus.sdPeripheralInit = 0;
   }
 }
 
