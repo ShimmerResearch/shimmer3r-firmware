@@ -466,6 +466,7 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
     }
     else if (isEzsFactoryRebootDelayPending())
     {
+      //TODO move away from fixed delay now that we're able to parse the boot message
       /* Experimentally found to be ~ 2.75s. */
       HAL_Delay(3000);
       incrementBtFactoryResetCmdsStep();
@@ -477,7 +478,7 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
       failCount++;
 
       btDeinit();
-      HAL_Delay(100);
+      HAL_Delay(500);
 
       if (failCount <= 4)
       {

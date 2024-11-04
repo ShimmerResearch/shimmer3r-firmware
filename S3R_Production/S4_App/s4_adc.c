@@ -311,13 +311,22 @@ void S4_NORM_ADC_configureChannels(void)
   }
 
   //Internal ADC 3
-  if (configBytes->chEnIntADC3)
+  if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
   {
-    *channel_contents_ptr++ = INTERNAL_ADC_3;
+    if(configBytes->chEnGsr)
+    {
+      *channel_contents_ptr++ = GSR_RAW;
+      sensing.ptr.gsr = sensing.dataLen;
+      adc.sensorList[adc.sensorLen++] = GSR_RAW;
+    }
+    else
+    {
+      *channel_contents_ptr++ = INTERNAL_ADC_3;
+      sensing.ptr.intADC3 = sensing.dataLen;
+      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
+    }
     nbr_adc_chans += 1;
-    sensing.ptr.intADC3 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
   }
 
   sensing.nbrAdcChans += nbr_adc_chans;
@@ -479,16 +488,6 @@ void S4_NORM_ADC_startSensing()
     }
   }
 
-  if (configBytes->chEnIntADC3)
-  {
-    sConfig.Channel = ADC_CHANNEL_INT_A3;
-    sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-    if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
-    {
-      Error_Handler();
-    }
-  }
-
   if (configBytes->chEnIntADC0)
   {
     sConfig.Channel = ADC_CHANNEL_INT_A0;
@@ -512,6 +511,16 @@ void S4_NORM_ADC_startSensing()
   if (configBytes->chEnIntADC2)
   {
     sConfig.Channel = ADC_CHANNEL_INT_A2;
+    sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+    if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+    {
+      Error_Handler();
+    }
+  }
+
+  if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
+  {
+    sConfig.Channel = ADC_CHANNEL_INT_A3;
     sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
     if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
     {
@@ -566,7 +575,7 @@ void shimmerAdcGpioSetup(uint8_t init)
   {
     adcPinsPortB |= GPIO_ADC_INT_EXP2_Pin;
   }
-  if (configBytes->chEnIntADC3)
+  if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
   {
     adcPinsPortB |= GPIO_ADC_INT_EXP3_Pin;
   }
@@ -910,12 +919,12 @@ void S4_NORM_ADC_bufPoll()
       uint32_t u32;
     } gsr_buf;
 
-    gsr_buf.u8[0] = sensing.dataBuf[sensing.ptr.intADC3 + 0];
-    gsr_buf.u8[1] = sensing.dataBuf[sensing.ptr.intADC3 + 1];
+    gsr_buf.u8[0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    gsr_buf.u8[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
     GSR_output(&gsr_buf.u32);
 
-    sensing.dataBuf[sensing.ptr.intADC3 + 0] = gsr_buf.u8[0];
-    sensing.dataBuf[sensing.ptr.intADC3 + 1] = gsr_buf.u8[1];
+    sensing.dataBuf[sensing.ptr.gsr + 0] = gsr_buf.u8[0];
+    sensing.dataBuf[sensing.ptr.gsr + 1] = gsr_buf.u8[1];
   }
 }
 
