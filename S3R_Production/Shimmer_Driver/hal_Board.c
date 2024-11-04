@@ -435,20 +435,20 @@ void Board_sd2Arm(void)
   SD_mount(1);
 }
 
-/***************************************************************************//**
-* @brief  SD power on/off, toggling pin SW_FLASH
-* @param  power_on
-* @return none
-******************************************************************************/
+/***************************************************************************/ /**
+                                                                               * @brief  SD power on/off, toggling pin SW_FLASH
+                                                                               * @param  power_on
+                                                                               * @return none
+                                                                               ******************************************************************************/
 void Board_setSdPower(uint8_t state)
 {
   Board_SW_FLASH(state);
   shimmerStatus.sdPowerOn = state;
-//  if(on){
-//     HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin,GPIO_PIN_SET);
-//  } else{
-//     HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin,GPIO_PIN_RESET);
-//  }
+  //if(on){
+  //   HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin,GPIO_PIN_SET);
+  //} else{
+  //   HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin,GPIO_PIN_RESET);
+  //}
 }
 
 void Board_setDockAccessToSd(uint8_t mcu0dock1)
@@ -457,7 +457,7 @@ void Board_setDockAccessToSd(uint8_t mcu0dock1)
   shimmerStatus.sdMcu0Pc1 = mcu0dock1;
 
   //TODO remove below when functionality is working
-  if(mcu0dock1)
+  if (mcu0dock1)
   {
     send_test_report("SD to Dock\r\n");
   }
