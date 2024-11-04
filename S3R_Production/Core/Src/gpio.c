@@ -227,23 +227,24 @@ void GPIO_userButtonCheck()
     GPIO_tsRelease = RTC_get64();
     if (GPIO_tsRelease - GPIO_tsLastRelease > 3277)
     {
-      if(shimmerStatus.sdMcu0Pc1)
+      if (shimmerStatus.sdMcu0Pc1)
       {
         //TODO
-        send_test_report("TODO: False User Button trigger due to BOOT0 issue\r\n");
+        send_test_report(
+            "TODO: False User Button trigger due to BOOT0 issue\r\n");
       }
       else
       {
-          if (shimmerStatus.isSensing == 0)
-          {
-            shimmerStatus.sdlogCmd = 1;
-            S4_Task_set(TASK_STARTSENSING);
-          }
-          else
-          {
-            shimmerStatus.sdlogCmd = 2;
-            S4_Task_set(TASK_STOPSENSING);
-          }
+        if (shimmerStatus.isSensing == 0)
+        {
+          shimmerStatus.sdlogCmd = 1;
+          S4_Task_set(TASK_STARTSENSING);
+        }
+        else
+        {
+          shimmerStatus.sdlogCmd = 2;
+          S4_Task_set(TASK_STOPSENSING);
+        }
       }
     }
     GPIO_tsLastRelease = GPIO_tsRelease;
