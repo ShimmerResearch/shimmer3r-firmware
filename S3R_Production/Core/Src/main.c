@@ -563,7 +563,7 @@ void loadSensorConfigurationAndCalibration(void)
       if (!isFileStatusOk())
       {
         shimmerStatus.sdlogReady = 0;
-        shimmerStatus.badFile = 1;
+        shimmerStatus.sdBadFile = 1;
       }
     }
     else
@@ -677,7 +677,7 @@ void SdInfoSync(void)
 uint8_t CheckOnDefault(void)
 {
   if (!S4Ram_getStoredConfig()->singleTouchStart && !S4Ram_getStoredConfig()->userButtonEnable
-      && shimmerStatus.sdlogReady && !shimmerStatus.isSensing && !shimmerStatus.badFile)
+      && shimmerStatus.sdlogReady && !shimmerStatus.isSensing && !shimmerStatus.sdBadFile)
   { //state == BTSD_IDLESD
     //startSensing = 1;
     setStartSensing();

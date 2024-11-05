@@ -474,39 +474,50 @@ NV_SENSORS5
 typedef volatile struct STATTypeDef_t
 { //STATUS
   uint8_t isInitialising;
-  uint8_t isSensing;
   uint8_t isDocked;
-  uint8_t isLogging;
-  uint8_t isStreaming;
+  uint8_t isSensing;
   uint8_t isConfiguring;
   uint8_t isButtonPressed;
   uint8_t isBtConnected;
   uint8_t btPowerOn;
+  uint8_t isStreaming;
+  uint8_t btstreamReady;
+  uint8_t btstreamCmd;
+#if defined(SHIMMER3R)
   uint8_t isLedRed;
   uint8_t isDockUartStep;
+#endif
   uint8_t battStat;
+#if defined(SHIMMER3R)
   uint32_t battStatLed;
+#endif
   uint8_t battVal[3];
   uint16_t battValMV;
 #if defined(SHIMMER4_SDK)
   uint8_t battDigital[10];
 #endif
-  uint8_t btstreamReady;
+#if defined(SHIMMER3R)
   uint8_t sdPeripheralInit;
+#endif
   uint8_t sdInserted;
   uint8_t sdPowerOn;
+#if defined(SHIMMER3R)
   uint8_t sdMcu0Pc1;
+#endif
+  uint8_t isLogging;
   uint8_t sdlogReady;
   uint8_t sdlogCmd;
-  uint8_t badFile;
-  uint8_t btstreamCmd;
+  uint8_t sdBadFile;
+  uint8_t sdSyncEnabled;
+  uint8_t sdSyncCommTimerRunning:1;
   uint8_t toggleLedRedCmd;
+#if defined(SHIMMER3R)
   uint32_t testResult;
   uint8_t pinPvI2c;
   uint8_t pinPvSd;
   uint8_t pinPvExt;
   uint8_t periStat;
-  uint8_t syncEnabled;
+#endif
 } STATTypeDef;
 
 typedef enum

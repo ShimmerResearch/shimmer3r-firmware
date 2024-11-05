@@ -3192,7 +3192,7 @@ void BtUart_processCmd(void)
   {
     SetSdCfgFlag(1);
   }
-  if (update_calib_dump_file && CheckSdInslot() && !shimmerStatus.badFile)
+  if (update_calib_dump_file && CheckSdInslot() && !shimmerStatus.sdBadFile)
   {
     if (!shimmerStatus.isDocked)
     {
@@ -3269,7 +3269,7 @@ void BtUart_sendRsp(void)
       *(resPacket + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(resPacket + packet_length++) = STATUS_RESPONSE;
       *(resPacket + packet_length++) = (shimmerStatus.toggleLedRedCmd << 7)
-          + ((shimmerStatus.badFile & 0x01) << 6)
+          + ((shimmerStatus.sdBadFile & 0x01) << 6)
           + ((shimmerStatus.sdInserted & 0x01) << 5)
           + ((shimmerStatus.isStreaming & 0x01) << 4)
           + ((shimmerStatus.isLogging & 0x01) << 3) + (isRwcTimeSet() << 2)
@@ -3881,7 +3881,7 @@ void BtsdSelfcmd(void)
     }
     selfcmd[i++] = INSTREAM_CMD_RESPONSE;
     selfcmd[i++] = STATUS_RESPONSE;
-    selfcmd[i++] = (shimmerStatus.toggleLedRedCmd << 7) | (shimmerStatus.badFile << 6)
+    selfcmd[i++] = (shimmerStatus.toggleLedRedCmd << 7) | (shimmerStatus.sdBadFile << 6)
         | (shimmerStatus.sdInserted << 5) | (shimmerStatus.isStreaming << 4)
         | (shimmerStatus.isLogging << 3) | (isRwcTimeSet() << 2)
         | (shimmerStatus.isSensing << 1) | shimmerStatus.isDocked;
@@ -3907,7 +3907,7 @@ void HandleBtRfCommStateChange(uint8_t isConnected)
 
     if (!S4Ram_getStoredConfig()->syncEnable)
     {
-      if (shimmerStatus.syncEnabled)
+      if (shimmerStatus.sdSyncEnabled)
       {
         shimmerStatus.btstreamReady = 0;
       }

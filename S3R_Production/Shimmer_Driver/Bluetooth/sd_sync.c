@@ -894,6 +894,7 @@ void CommTimerStart(void)
 #elif defined(SHIMMER3R)
   //TODO
 #endif
+  shimmerStatus.sdSyncCommTimerRunning = 1;
 }
 
 inline void CommTimerStop(void)
@@ -905,6 +906,7 @@ inline void CommTimerStop(void)
 #elif defined(SHIMMER3R)
   //TODO
 #endif
+  shimmerStatus.sdSyncCommTimerRunning = 0;
 }
 
 #if defined(SHIMMER3)

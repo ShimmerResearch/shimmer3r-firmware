@@ -43,7 +43,7 @@ void MX_SDMMC1_SD_Init(void)
 
   //Initialise will fail if an SD card is not detected
   SD_insertedCheck();
-  shimmerStatus.badFile = 1;
+  shimmerStatus.sdBadFile = 1;
   if (shimmerStatus.sdInserted)
   {
     /* USER CODE END SDMMC1_Init 1 */
@@ -60,7 +60,7 @@ void MX_SDMMC1_SD_Init(void)
     /* USER CODE BEGIN SDMMC1_Init 2 */
     else
     {
-      shimmerStatus.badFile = 0;
+      shimmerStatus.sdBadFile = 0;
       shimmerStatus.sdPeripheralInit = 1;
     }
   }

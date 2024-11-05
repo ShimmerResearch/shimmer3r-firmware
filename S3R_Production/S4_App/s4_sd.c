@@ -74,20 +74,20 @@ uint8_t SD_test(void)
 #endif
 
 #if USE_FATFS
-  shimmerStatus.badFile += f_open(&test_file, file_name, FA_CREATE_ALWAYS | FA_WRITE);
-  shimmerStatus.badFile += f_write(&test_file, test_text1, TEST_TEXT_LEN - 1, &bw);
-  shimmerStatus.badFile += f_write(&test_file, test_text2, TEST_TEXT_LEN - 1, &bw);
-  shimmerStatus.badFile += f_close(&test_file);
+  shimmerStatus.sdBadFile += f_open(&test_file, file_name, FA_CREATE_ALWAYS | FA_WRITE);
+  shimmerStatus.sdBadFile += f_write(&test_file, test_text1, TEST_TEXT_LEN - 1, &bw);
+  shimmerStatus.sdBadFile += f_write(&test_file, test_text2, TEST_TEXT_LEN - 1, &bw);
+  shimmerStatus.sdBadFile += f_close(&test_file);
 
   memset(test_text3, 0, 40);
-  shimmerStatus.badFile += f_open(&test_file, file_name, FA_OPEN_EXISTING | FA_READ);
-  shimmerStatus.badFile += f_read(&test_file, test_text3, TEST_TEXT_LEN - 1, &bw);
-  shimmerStatus.badFile += f_close(&test_file);
+  shimmerStatus.sdBadFile += f_open(&test_file, file_name, FA_OPEN_EXISTING | FA_READ);
+  shimmerStatus.sdBadFile += f_read(&test_file, test_text3, TEST_TEXT_LEN - 1, &bw);
+  shimmerStatus.sdBadFile += f_close(&test_file);
 #endif
 
-  shimmerStatus.badFile += strcmp(test_text1, test_text3);
+  shimmerStatus.sdBadFile += strcmp(test_text1, test_text3);
 
-  return shimmerStatus.badFile;
+  return shimmerStatus.sdBadFile;
 }
 
 uint8_t SD_test_alternative(void)
@@ -402,7 +402,7 @@ void SD_close(void)
   file_status = FR_OK;
 #endif
   //Board_sdPower(0);
-  shimmerStatus.badFile = 0;
+  shimmerStatus.sdBadFile = 0;
   sensing.isFileCreated = 0;
 #endif //USE_SD
 }
@@ -534,11 +534,11 @@ void SD_writeToCard(void)
 #if USE_FATFS
   if (file_status != 0)
   {
-    shimmerStatus.badFile = 1;
+    shimmerStatus.sdBadFile = 1;
   }
   else
   {
-    shimmerStatus.badFile = 0;
+    shimmerStatus.sdBadFile = 0;
   }
 #endif
 
@@ -565,7 +565,7 @@ void UpdateSdConfig(void)
 {
   FIL cfgFile;
 
-  if (!shimmerStatus.isDocked && CheckSdInslot() && !shimmerStatus.badFile)
+  if (!shimmerStatus.isDocked && CheckSdInslot() && !shimmerStatus.sdBadFile)
   {
     uint8_t sd_power_state;
     if (!isSdPowerOn())
@@ -876,7 +876,7 @@ void ParseConfig(void)
   }
   else if (file_status != FR_OK)
   {
-    shimmerStatus.badFile = 0;
+    shimmerStatus.sdBadFile = 0;
     //fileBad = (initializing) ? 0 : 1;
     return;
   }
