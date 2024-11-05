@@ -201,6 +201,9 @@ void GPIO_usbVbusIntInit(uint8_t state)
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     HAL_GPIO_Init(USB_VBUS_GPIO_Port, &GPIO_InitStruct);
+
+    HAL_NVIC_SetPriority(INT_LINE_USB_VBUS, 0, 0);
+    HAL_NVIC_EnableIRQ(INT_LINE_USB_VBUS);
   }
   else
   {

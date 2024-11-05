@@ -142,18 +142,19 @@ void Board_enableSensingPower(uint8_t state);
 /* Interrupts */
 /* Either GPIO_ADC_INT_EXP1 or SD_DETECT_N can be used on line 0 */
 #define INT_LINE_GPIO_ADC_INT_EXP1 EXTI0_IRQn
-#define INT_LINE_SD_DETECT_N       EXTI0_IRQn
+//#define INT_LINE_SD_DETECT_N       EXTI0_IRQn
 #define INT_LINE_DOCK_DETECT       EXTI1_IRQn //Enabled by CubeMX
 #define INT_LINE_LIS3MDL_DRDY      EXTI2_IRQn
 #define INT_LINE_BOOT0_USER_BTN    EXTI3_IRQn //Enabled by CubeMX
 #define INT_LINE_GPIO_INTERNAL1    EXTI4_IRQn
 /* Either GPIO_ADC_INT_EXP0 or GPIO_INTERNAL2 can be used on line 5 */
 #define INT_LINE_GPIO_ADC_INT_EXP0 EXTI5_IRQn
-#define INT_LINE_GPIO_INTERNAL2    EXTI5_IRQn
+//#define INT_LINE_GPIO_INTERNAL2    EXTI5_IRQn
 //#define INT_LINE_       EXTI6_IRQn // Unused
 #define INT_LINE_LSM6DSV_INT1      EXTI7_IRQn
 #define INT_LINE_BT_HOST_WAKE      EXTI8_IRQn
-#define INT_LINE_GPIO_EXTERNAL     EXTI9_IRQn
+//#define INT_LINE_GPIO_EXTERNAL     EXTI9_IRQn
+#define INT_LINE_USB_VBUS          EXTI9_IRQn
 #define INT_LINE_LIS2MDL_DRDY      EXTI10_IRQn
 #define INT_LINE_BMP390_INT        EXTI11_IRQn
 #define INT_LINE_LIS2DW12_INT1     EXTI12_IRQn

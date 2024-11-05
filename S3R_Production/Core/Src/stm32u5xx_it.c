@@ -602,6 +602,7 @@ void EXTI4_IRQHandler(void)
 void EXTI5_IRQHandler(void)
 {
   HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP0_Pin);
+  //No plans to use GPIO_INTERNAL2_Pin as interrupt
   //HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL2_Pin);
 }
 
@@ -634,7 +635,8 @@ void EXTI8_IRQHandler(void)
  */
 void EXTI9_IRQHandler(void)
 {
-  HAL_GPIO_EXTI_IRQHandler(GPIO_EXTERNAL_Pin);
+//  HAL_GPIO_EXTI_IRQHandler(GPIO_EXTERNAL_Pin);
+  HAL_GPIO_EXTI_IRQHandler(USB_VBUS_Pin);
 }
 
 /**
