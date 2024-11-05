@@ -3881,10 +3881,10 @@ void BtsdSelfcmd(void)
     }
     selfcmd[i++] = INSTREAM_CMD_RESPONSE;
     selfcmd[i++] = STATUS_RESPONSE;
-    selfcmd[i++] = (shimmerStatus.toggleLedRedCmd << 7) | (shimmerStatus.sdBadFile << 6)
-        | (shimmerStatus.sdInserted << 5) | (shimmerStatus.isStreaming << 4)
-        | (shimmerStatus.isLogging << 3) | (isRwcTimeSet() << 2)
-        | (shimmerStatus.isSensing << 1) | shimmerStatus.isDocked;
+    selfcmd[i++] = (shimmerStatus.toggleLedRedCmd << 7)
+        | (shimmerStatus.sdBadFile << 6) | (shimmerStatus.sdInserted << 5)
+        | (shimmerStatus.isStreaming << 4) | (shimmerStatus.isLogging << 3)
+        | (isRwcTimeSet() << 2) | (shimmerStatus.isSensing << 1) | shimmerStatus.isDocked;
 
     uint8_t crcMode = getBtCrcMode();
     if (crcMode != CRC_OFF)
