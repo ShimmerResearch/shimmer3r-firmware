@@ -51,14 +51,14 @@
 
 //7 bit address I2C address
 //lower 3 bits are highest order bits of memory address
-#define CAT24C16_ADDR        0x50
+#define CAT24C16_ADDR                0x50
 
-#define CAT24C16_PAGE_SIZE   16
-#define CAT24C16_BLOCK_SIZE  256
-#define CAT24C16_READ_SIZE   128
-#define CAT24C16_TOTAL_SIZE  2048
-#define CAT24C16_TEST_OFFSET 16
-#define CAT24C16_TEST_SIZE   (8 * CAT24C16_PAGE_SIZE)
+#define CAT24C16_PAGE_SIZE           16
+#define CAT24C16_BLOCK_SIZE          256
+#define CAT24C16_READ_SIZE           128
+#define CAT24C16_TOTAL_SIZE          2048
+#define CAT24C16_TEST_OFFSET         16
+#define CAT24C16_TEST_SIZE           (8 * CAT24C16_PAGE_SIZE)
 
 #define CAT24C16_OUT_OF_BOUNDS_ERROR 1000
 
@@ -80,13 +80,13 @@ typedef uint32_t (*cat24c16dev_sys_tick_ptr)(void);
 typedef struct
 {
   /** Component mandatory fields **/
-  cat24c16dev_write_ptr  write_reg;
-  cat24c16dev_read_ptr   read_reg;
+  cat24c16dev_write_ptr write_reg;
+  cat24c16dev_read_ptr read_reg;
   /** Component optional fields **/
-  cat24c16dev_mdelay_ptr   mdelay;
+  cat24c16dev_mdelay_ptr mdelay;
   /** Customizable optional pointer **/
   void *handle;
-  cat24c16dev_sys_tick_ptr   sys_tick;
+  cat24c16dev_sys_tick_ptr sys_tick;
 } cat24c16dev_ctx_t;
 
 //Read from the CAT24C16 EEPROM

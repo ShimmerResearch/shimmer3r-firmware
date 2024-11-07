@@ -50,8 +50,7 @@
 
 int32_t CAT24C16_read(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length, uint8_t *outBuffer)
 {
-  if ((!length) || (length > CAT24C16_TOTAL_SIZE)
-      || (address + length > CAT24C16_TOTAL_SIZE))
+  if ((!length) || (length > CAT24C16_TOTAL_SIZE) || (address + length > CAT24C16_TOTAL_SIZE))
   {
     return CAT24C16_OUT_OF_BOUNDS_ERROR;
   }
@@ -60,8 +59,7 @@ int32_t CAT24C16_read(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length,
 
 int32_t CAT24C16_write(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length, uint8_t *data)
 {
-  if ((!length) || (length > CAT24C16_TOTAL_SIZE)
-      || (address + length > CAT24C16_TOTAL_SIZE))
+  if ((!length) || (length > CAT24C16_TOTAL_SIZE) || (address + length > CAT24C16_TOTAL_SIZE))
   {
     return CAT24C16_OUT_OF_BOUNDS_ERROR;
   }
