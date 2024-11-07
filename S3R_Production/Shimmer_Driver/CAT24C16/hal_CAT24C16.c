@@ -17,7 +17,8 @@ cat24c16dev_ctx_t cat24c16_ctx;
 cat24c16dev_ctx_t cat24c16_alt_ctx;
 
 static int32_t platform_write(void *handle, uint16_t address, uint16_t length, uint8_t *data);
-static int32_t platform_read(void *handle, uint16_t address, uint16_t length, uint8_t *outBuffer);
+static int32_t
+platform_read(void *handle, uint16_t address, uint16_t length, uint8_t *outBuffer);
 static void platform_delay(uint32_t ms);
 static uint32_t get_sys_tick(void);
 
@@ -145,8 +146,8 @@ static int32_t platform_read(void *handle, uint16_t address, uint16_t length, ui
   {
     return cat24c16_result;
   }
-  cat24c16_result
-      = HAL_I2C_Master_Receive(handle, addr_hi << 1, outBuffer, length, CAT24C16_TIMEOUT);
+  cat24c16_result = HAL_I2C_Master_Receive(
+      handle, addr_hi << 1, outBuffer, length, CAT24C16_TIMEOUT);
   return cat24c16_result;
 }
 

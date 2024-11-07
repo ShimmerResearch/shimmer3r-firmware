@@ -281,8 +281,9 @@ void Board_enableSensingPower(uint8_t state);
 /* Specific to Shimmer3R GSR+ model:
  * Output low = I2C4 is connected to PPG connector
  * Output high = I2C4 is disconnected from PPG connector */
-#define Board_SW_I2C4_ON_PPG(x) \
-  HAL_GPIO_WritePin(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin, x ? GPIO_PIN_RESET : GPIO_PIN_SET)
+#define Board_SW_I2C4_ON_PPG(x)                                         \
+  HAL_GPIO_WritePin(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin, \
+      x ? GPIO_PIN_RESET : GPIO_PIN_SET)
 
 /* 0/1 = power off/on */
 #define Board_SW_BT(x) \
