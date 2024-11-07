@@ -110,7 +110,7 @@ void MX_I2C1_Init(void)
 
   hi2cMainBus = &hi2c1;
 
-  CAT24C16_init(I2C_getHandlerSensor());
+  eepromInit(I2C_getHandlerSensor());
   lis2mdl_driver_init();
 
   HAL_Delay(BOOT_TIME);
@@ -157,6 +157,8 @@ void MX_I2C4_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN I2C4_Init 2 */
+
+  altEepromInit(&hi2c4);
 
   /* USER CODE END I2C4_Init 2 */
 }
@@ -325,6 +327,11 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef *i2cHandle)
 void I2C1_DeInit(void)
 {
   HAL_I2C_DeInit(hi2cMainBus);
+}
+
+void I2C4_DeInit(void)
+{
+  HAL_I2C_DeInit(&hi2c4);
 }
 
 void I2C_scan_busses(void)

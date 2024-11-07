@@ -222,4 +222,13 @@ uint8_t isAdxl371Present(void)
           && daughterCardIdPage.expansion_brd.exp_brd_rev == 6
           && daughterCardIdPage.expansion_brd.exp_brd_special_rev == 0));
 }
+
+uint8_t isI2c4Supported(void)
+{
+  return (isDaughterCardIdSet() //&& hwId == HW_ID_SHIMMER3R
+      && (daughterCardIdPage.expansion_brd.exp_brd_id == EXP_BRD_GSR_UNIFIED
+          && daughterCardIdPage.expansion_brd.exp_brd_rev == 6
+          && daughterCardIdPage.expansion_brd.exp_brd_special_rev == 0));
+}
+
 #endif

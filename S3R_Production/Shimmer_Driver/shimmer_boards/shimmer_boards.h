@@ -107,6 +107,7 @@ uint8_t isBmp280InUse(void);
 
 #if defined(SHIMMER3R)
 uint8_t isAdxl371Present(void);
+uint8_t isI2c4Supported(void);
 #endif
 
 #endif /* SHIMMER3_COMMON_SOURCE_SHIMMER_BOARDS_SHIMMER_BOARDS_H_ */

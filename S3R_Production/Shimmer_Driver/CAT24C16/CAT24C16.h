@@ -43,9 +43,7 @@
 #ifndef CAT24C16_H
 #define CAT24C16_H
 
-#include "stm32u5xx_hal.h"
 #include <stdint.h>
-#include <string.h>
 
 #ifndef min
 #define min(a, b) ((a < b) ? a : b)
@@ -62,20 +60,34 @@
 #define CAT24C16_TEST_OFFSET 16
 #define CAT24C16_TEST_SIZE   (8 * CAT24C16_PAGE_SIZE)
 
-enum EEPROM_RW
+#define CAT24C16_OUT_OF_BOUNDS_ERROR 1000
+
+enum CAT24C16_TEST
 {
-  EEPROM_READ = 0,
-  EEPROM_WRITE = 1,
+  EEPROM_TEST_PASS = 0,
+  EEPROM_TEST_FAIL_INITIAL_BACKUP,
+  EEPROM_TEST_FAIL_WRITING_BUF,
+  EEPROM_TEST_FAIL_READING_BUF,
+  EEPROM_TEST_FAIL_BUF_COMPARISON,
+  EEPROM_TEST_FAIL_RESTORING_BACKUP,
 };
 
-//pass over the i2c handler pointer
-void CAT24C16_init(I2C_HandleTypeDef *hi2c);
+typedef int32_t (*cat24c16dev_write_ptr)(void *, uint16_t, uint16_t, uint8_t *);
+typedef int32_t (*cat24c16dev_read_ptr)(void *, uint16_t, uint16_t, uint8_t *);
+typedef void (*cat24c16dev_mdelay_ptr)(uint32_t millisec);
+typedef uint32_t (*cat24c16dev_sys_tick_ptr)(void);
 
-//power on the CAT24C16 chip
-void CAT24C16_powerOn(void);
-
-//power off the CAT24C16 chip
-void CAT24C16_powerOff(void);
+typedef struct
+{
+  /** Component mandatory fields **/
+  cat24c16dev_write_ptr  write_reg;
+  cat24c16dev_read_ptr   read_reg;
+  /** Component optional fields **/
+  cat24c16dev_mdelay_ptr   mdelay;
+  /** Customizable optional pointer **/
+  void *handle;
+  cat24c16dev_sys_tick_ptr   sys_tick;
+} cat24c16dev_ctx_t;
 
 //Read from the CAT24C16 EEPROM
 //address = starting address to read from
@@ -83,7 +95,7 @@ void CAT24C16_powerOff(void);
 //outBuffer = location to put read bytes
 //Note the CAT24C16 had 2048 bytes of storage
 //So address + length must be <= 2048
-void CAT24C16_read(uint16_t address, uint16_t length, uint8_t *outBuffer);
+int32_t CAT24C16_read(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length, uint8_t *outBuffer);
 
 //Write to the CAT24C16 EEPROM
 //address = starting address to write to
@@ -95,16 +107,8 @@ void CAT24C16_read(uint16_t address, uint16_t length, uint8_t *outBuffer);
 //Each write cycle can write up to 16bytes of data
 //but only within a 16-byte page (of which there are
 //128 in the CAT24C16)
-void CAT24C16_write(uint16_t address, uint16_t length, uint8_t *data);
+int32_t CAT24C16_write(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length, uint8_t *data);
 
-uint8_t CAT24C16_test(void);
-
-void eepromRead(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
-void eepromWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);
-void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enum EEPROM_RW eepromRW);
-
-#if !IS_CONNECTED_EEPROM
-void setMockExpansionBrdDetails(void);
-#endif
+uint8_t CAT24C16_test(cat24c16dev_ctx_t *ctx);
 
 #endif

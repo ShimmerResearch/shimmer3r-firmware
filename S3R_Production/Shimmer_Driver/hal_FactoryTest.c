@@ -394,13 +394,9 @@ uint8_t I2C_test(void)
   }
   print_chip_test_result("S3R_TEST_0015", "LIS2MDL", self_test_result, tempCal);
 
-  uint8_t eeprom_result = CAT24C16_test();
+  uint8_t eeprom_result = eepromTest();
   sprintf(buffer, " - S3R_TEST_0016 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
   send_test_report(buffer);
-
-  send_test_report("I2C4:\r\n");
-  send_test_report(" - S3R_TEST_0017 - WARNING: Test not implemented yet\r\n");
-
 #endif
 
 #if defined(SHIMMER4_SDK)
@@ -411,6 +407,23 @@ uint8_t I2C_test(void)
 #endif
 
   I2C1_DeInit();
+
+#if defined(SHIMMER3R)
+  send_test_report("I2C4:\r\n");
+  if (isI2c4Supported())
+  {
+    altEepromPowerOn();
+    uint8_t eeprom_result = altEepromTest();
+    altEepromPowerOff();
+
+    sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n", eeprom_result ? "FAIL" : "PASS");
+    send_test_report(buffer);
+  }
+  else
+  {
+    send_test_report(" - S3R_TEST_0017 - I2C4 not supported on this model\r\n");
+  }
+#endif
 
   return ret_val;
 }

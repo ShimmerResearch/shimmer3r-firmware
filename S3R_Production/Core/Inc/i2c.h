@@ -191,6 +191,7 @@ extern "C"
   /* USER CODE BEGIN Prototypes */
 
   void I2C1_DeInit(void);
+  void I2C4_DeInit(void);
   void I2C_scan_busses(void);
   void I2C_scan(I2C_HandleTypeDef *hi2c);
   I2C_HandleTypeDef *I2C_getHandlerSensor(void);

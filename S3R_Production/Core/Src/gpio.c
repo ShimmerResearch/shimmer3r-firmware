@@ -433,10 +433,9 @@ void gpioInitPerBoard(void)
      * GPIO_ADC_INT_EXP1_Pin:
      * PPG ADCs. Also connected to I2C4. Allow code ADC to manage. */
 
-    /* GPIO_ADC_INT_EXP2_Pin:
-     * Output low = I2C4 is connected to PPG connector
-     * Output high = I2C4 is disconnected from PPG connector */
-    HAL_GPIO_WritePin(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin, GPIO_PIN_SET);
+    /* GPIO_ADC_INT_EXP2_Pin
+     * Controls whether I2C4 connected to PPG connector */
+    Board_SW_I2C4_ON_PPG(0);
     GPIO_InitStruct.Pin = GPIO_ADC_INT_EXP2_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
