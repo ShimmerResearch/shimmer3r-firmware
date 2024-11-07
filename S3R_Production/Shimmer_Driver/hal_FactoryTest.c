@@ -421,7 +421,8 @@ uint8_t I2C_test(void)
   }
   else
   {
-    send_test_report(" - S3R_TEST_0017 - I2C4 test not applicable for this model\r\n");
+    send_test_report(
+        " - S3R_TEST_0017 - I2C4 test not applicable for this model\r\n");
   }
 #endif
 
