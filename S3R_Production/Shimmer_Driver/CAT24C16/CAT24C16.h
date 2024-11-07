@@ -80,8 +80,8 @@ typedef uint32_t (*cat24c16dev_sys_tick_ptr)(void);
 typedef struct
 {
   /** Component mandatory fields **/
-  cat24c16dev_write_ptr write_reg;
-  cat24c16dev_read_ptr read_reg;
+  cat24c16dev_write_ptr write;
+  cat24c16dev_read_ptr read;
   /** Component optional fields **/
   cat24c16dev_mdelay_ptr mdelay;
   /** Customizable optional pointer **/

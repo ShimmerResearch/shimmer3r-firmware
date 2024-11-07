@@ -28,8 +28,8 @@ uint8_t eepromContents[512] = { 0 };
 
 void eepromInit(I2C_HandleTypeDef *hi2c)
 {
-  cat24c16_ctx.write_reg = platform_write;
-  cat24c16_ctx.read_reg = platform_read;
+  cat24c16_ctx.write = platform_write;
+  cat24c16_ctx.read = platform_read;
   cat24c16_ctx.mdelay = platform_delay;
   cat24c16_ctx.sys_tick = get_sys_tick;
   cat24c16_ctx.handle = hi2c;
@@ -37,8 +37,8 @@ void eepromInit(I2C_HandleTypeDef *hi2c)
 
 void altEepromInit(I2C_HandleTypeDef *hi2c)
 {
-  cat24c16_alt_ctx.write_reg = platform_write;
-  cat24c16_alt_ctx.read_reg = platform_read;
+  cat24c16_alt_ctx.write = platform_write;
+  cat24c16_alt_ctx.read = platform_read;
   cat24c16_alt_ctx.mdelay = platform_delay;
   cat24c16_alt_ctx.sys_tick = get_sys_tick;
   cat24c16_alt_ctx.handle = hi2c;

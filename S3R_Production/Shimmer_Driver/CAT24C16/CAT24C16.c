@@ -54,7 +54,7 @@ int32_t CAT24C16_read(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length,
   {
     return CAT24C16_OUT_OF_BOUNDS_ERROR;
   }
-  return ctx->read_reg(ctx->handle, address, length, outBuffer);
+  return ctx->read(ctx->handle, address, length, outBuffer);
 }
 
 int32_t CAT24C16_write(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length, uint8_t *data)
@@ -98,7 +98,7 @@ int32_t CAT24C16_write(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length
     memcpy(buf + 1, data + buf_offset, this_write);
 
     //Write to EEPROM:
-    result = ctx->write_reg(ctx->handle, addr_hi << 1, this_write + 1, buf);
+    result = ctx->write(ctx->handle, addr_hi << 1, this_write + 1, buf);
     if (result)
     {
       break;
