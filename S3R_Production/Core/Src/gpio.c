@@ -215,7 +215,7 @@ void GPIO_userButtonCheck()
 {
   if (HAL_GPIO_ReadPin(BOOT0_USER_BTN_GPIO_Port, BOOT0_USER_BTN_Pin) == GPIO_PIN_SET)
   { //pressed
-    shimmerStatus.isButtonPressed = 1;
+    shimmerStatus.buttonPressed = 1;
 #if defined(SHIMMER4_SDK)
     Board_ledOn(LED_YELLOW);
 #endif
@@ -223,7 +223,7 @@ void GPIO_userButtonCheck()
   }
   else
   {
-    shimmerStatus.isButtonPressed = 0;
+    shimmerStatus.buttonPressed = 0;
 #if defined(SHIMMER4_SDK)
     Board_ledOff(LED_YELLOW);
 #endif
@@ -238,14 +238,14 @@ void GPIO_userButtonCheck()
       }
       else
       {
-        if (shimmerStatus.isSensing == 0)
+        if (shimmerStatus.sensing == 0)
         {
-          shimmerStatus.sdlogCmd = 1;
+          shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
           S4_Task_set(TASK_STARTSENSING);
         }
         else
         {
-          shimmerStatus.sdlogCmd = 2;
+          shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_STOP;
           S4_Task_set(TASK_STOPSENSING);
         }
       }
@@ -286,7 +286,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   case GPIO_INTERNAL1_Pin:
     //TODO check if product is ExG unit
     //EXG1 DRDY active low
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       //EXG_dataReadyChip1();
       ext_cnt1++;
@@ -302,7 +302,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   case GPIO_INTERNAL0_Pin:
     //TODO check if product is ExG unit
     //EXG2 DRDY active low
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       //EXG_gatherDataStart();
       __NOP();

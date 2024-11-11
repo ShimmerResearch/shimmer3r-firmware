@@ -96,7 +96,7 @@ uint8_t DockUart_rxCallback(uint8_t data)
 #if defined(SHIMMER3)
   if (initializing)
 #else
-  if (shimmerStatus.isInitialising)
+  if (shimmerStatus.initialising)
 #endif
   {
     return 0;
@@ -197,13 +197,6 @@ uint8_t DockUart_rxCallback(uint8_t data)
 
 void DockUart_processCmd(void)
 {
-#if defined(SHIMMER4_SDK)
-  HAL_GPIO_TogglePin(GPIOG, GPIO_PIN_6); //green
-#elif defined(SHIMMER3R)
-  Board_ledLwrToggleColourRgb(LED_RGB_GREEN);
-#else
-#endif
-
   if (uartAction)
   {
 #if defined(SHIMMER3)
@@ -711,7 +704,7 @@ void DockUart_sendRsp(void)
 #if defined(SHIMMER3)
       if (!sensing)
 #else
-      if (!shimmerStatus.isSensing)
+      if (!shimmerStatus.sensing)
 #endif
       {
         eepromRead(uartDcMemOffset + 16U, (uint16_t) uartDcMemLength,

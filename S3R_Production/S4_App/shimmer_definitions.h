@@ -5,9 +5,14 @@
 
 #include <stdint.h>
 
+#define OLD_CONSENSYS_SUPPORT  1
+
 #if defined(SHIMMER3R)
+#if OLD_CONSENSYS_SUPPORT
 #define DEVICE_VER    3 //For older Consensys support
-//#define DEVICE_VER    10
+#else
+#define DEVICE_VER    10
+#endif
 #define FW_IDENTIFIER 3 //12 is the firmware for shimmer4sdk
 #define FW_VER_MAJOR  1 //Major version number: 0-65535
 #define FW_VER_MINOR  0 //Minor version number: 0-255
@@ -452,6 +457,28 @@ NV_SENSORS5
 #define BATT_INTERVAL                   600 //600 seconds = 10min interval
 #define BATT_INTERVAL_D                 30  //30 seconds
 
+#define BATTERY_ERROR_VOLTAGE           4500 // mV
+
+enum
+{
+  CHRG_CHIP_STATUS_SUSPENDED = 0x00,
+  CHRG_CHIP_STATUS_FULLY_CHARGED = 0x40,
+  CHRG_CHIP_STATUS_PRECONDITIONING = 0x80,
+  CHRG_CHIP_STATUS_BAD_BATTERY = 0xC0,
+  CHRG_CHIP_STATUS_UNKNOWN = 0xFF,
+};
+
+typedef enum
+{
+  CHARGING_STATUS_UNKNOWN,
+  CHARGING_STATUS_CHECKING,
+  CHARGING_STATUS_SUSPENDED,
+  CHARGING_STATUS_FULLY_CHARGED,
+  CHARGING_STATUS_CHARGING,
+  CHARGING_STATUS_BAD_BATTERY,
+  CHARGING_STATUS_ERROR
+} chargingStatus_t;
+
 #define STAT_PERI_ADC                   0x01
 #define STAT_PERI_I2C_SENS              0x02
 #if defined(SHIMMER4_SDK)
@@ -473,49 +500,50 @@ NV_SENSORS5
 
 typedef volatile struct STATTypeDef_t
 { //STATUS
-  uint8_t isInitialising;
-  uint8_t isDocked;
-  uint8_t isSensing;
-  uint8_t isConfiguring;
-  uint8_t isButtonPressed;
-  uint8_t isBtConnected;
-  uint8_t btPowerOn;
-  uint8_t isStreaming;
-  uint8_t btstreamReady;
-  uint8_t btstreamCmd;
-#if defined(SHIMMER3R)
-  uint8_t isLedRed;
-  uint8_t isDockUartStep;
-#endif
+  uint8_t initialising :1;
+  uint8_t docked :1;
+  uint8_t sensing :1;
+  uint8_t configuring :1;
+  uint8_t buttonPressed :1;
+
+  uint8_t btConnected :1;
+  uint8_t btPowerOn :1;
+  uint8_t btStreaming :1;
+  uint8_t btstreamReady :1;
+  uint8_t btstreamCmd :2;
+
   uint8_t battStat;
 #if defined(SHIMMER3R)
   uint32_t battStatLed;
 #endif
   uint8_t battVal[3];
   uint16_t battValMV;
+  chargingStatus_t battChargingStatus;
 #if defined(SHIMMER4_SDK)
   uint8_t battDigital[10];
 #endif
-#if defined(SHIMMER3R)
-  uint8_t sdPeripheralInit;
+
+  #if defined(SHIMMER3R)
+  uint8_t sdPeripheralInit :1;
 #endif
-  uint8_t sdInserted;
-  uint8_t sdPowerOn;
+  uint8_t sdInserted :1;
+  uint8_t sdPowerOn :1;
 #if defined(SHIMMER3R)
-  uint8_t sdMcu0Pc1;
+  uint8_t sdMcu0Pc1 :1;
 #endif
-  uint8_t isLogging;
-  uint8_t sdlogReady;
-  uint8_t sdlogCmd;
-  uint8_t sdBadFile;
-  uint8_t sdSyncEnabled;
-  uint8_t sdSyncCommTimerRunning : 1;
-  uint8_t toggleLedRedCmd;
-#if defined(SHIMMER3R)
+  uint8_t sdLogging :1;
+  uint8_t sdlogReady :1;
+  uint8_t sdlogCmd :2;
+  uint8_t sdBadFile :1;
+  uint8_t sdSyncEnabled :1;
+  uint8_t sdSyncCommTimerRunning :1;
+
+  uint8_t toggleLedRedCmd :1;
+  #if defined(SHIMMER3R)
   uint32_t testResult;
-  uint8_t pinPvI2c;
-  uint8_t pinPvSd;
-  uint8_t pinPvExt;
+  uint8_t pinPvI2c :1;
+  uint8_t pinPvSd :1;
+  uint8_t pinPvExt :1;
   uint8_t periStat;
 #endif
 } STATTypeDef;
@@ -535,6 +563,14 @@ typedef enum
   BOOT_STAGE_CONFIGURATION,
   BOOT_STAGE_END
 } boot_stage_t;
+
+enum
+{
+  SD_LOG_CMD_STATE_IDLE = 0,
+  SD_LOG_CMD_STATE_START = 1,
+  SD_LOG_CMD_STATE_STOP = 2
+};
+
 
 //typedef enum{//bt
 //   UART_BT_STAT_IDLE = 0,

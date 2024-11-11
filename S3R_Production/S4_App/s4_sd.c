@@ -565,7 +565,7 @@ void UpdateSdConfig(void)
 {
   FIL cfgFile;
 
-  if (!shimmerStatus.isDocked && CheckSdInslot() && !shimmerStatus.sdBadFile)
+  if (!shimmerStatus.docked && CheckSdInslot() && !shimmerStatus.sdBadFile)
   {
     uint8_t sd_power_state;
     if (!isSdPowerOn())

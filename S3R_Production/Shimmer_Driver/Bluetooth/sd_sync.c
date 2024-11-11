@@ -423,7 +423,7 @@ void SyncCenterT10(void)
 #else
   *(resPacket + packet_length++) = SET_SD_SYNC_COMMAND;
 #endif
-  *(resPacket + packet_length++) = shimmerStatus.isSensing;
+  *(resPacket + packet_length++) = shimmerStatus.sensing;
   myLocalTimeLong = RTC_get64();
   *(uint64_t *) (resPacket + packet_length) = myLocalTimeLong;
   packet_length += 8;
@@ -521,7 +521,7 @@ void SyncNodeR10(void)
     }
     else
     {
-      if (S4Ram_getStoredConfig()->singleTouchStart && !shimmerStatus.isSensing && sd_tolog)
+      if (S4Ram_getStoredConfig()->singleTouchStart && !shimmerStatus.sensing && sd_tolog)
       {
         taskSetCb(TASK_STARTSENSING);
       }
@@ -689,16 +689,16 @@ void handleSyncTimerTrigger(void)
   }
   else //idle: no_RC mode
   {
-    if (shimmerStatus.isDocked)
+    if (shimmerStatus.docked)
     {
-      if (shimmerStatus.isSensing)
+      if (shimmerStatus.sensing)
       {
         /* Note SDLog calls TASK_STOPSENSING here whereas
          * LogAndStream could be in the middle of streaming over
          * Bluetooth */
         //stopLogging = 1;
         //TODO temp putting this in for Shimmer3r
-        shimmerStatus.sdlogCmd = 2;
+        shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_STOP;
         taskSetCb(TASK_STOPSENSING);
       }
       if (isBtIsInitialised())
@@ -711,7 +711,7 @@ void handleSyncTimerTrigger(void)
 
 void handleSyncTimerTriggerCenter(void)
 {
-  if (shimmerStatus.isSensing && (syncNodeNum > 0))
+  if (shimmerStatus.sensing && (syncNodeNum > 0))
   {
     if (syncCnt == 1)
     {

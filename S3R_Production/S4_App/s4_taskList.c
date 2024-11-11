@@ -137,14 +137,14 @@ void S4_NORM_Task_manage(void)
       SD_writeToCard();
       break;
     case TASK_SDLOG_CFG_UPDATE:
-      if (!shimmerStatus.isDocked && !shimmerStatus.isSensing
+      if (!shimmerStatus.docked && !shimmerStatus.sensing
           && shimmerStatus.sdInserted && GetSdCfgFlag())
       {
-        shimmerStatus.isConfiguring = 1;
+        shimmerStatus.configuring = 1;
         IniReadInfoMem();
         UpdateSdConfig();
         SetSdCfgFlag(0);
-        shimmerStatus.isConfiguring = 0;
+        shimmerStatus.configuring = 0;
       }
       break;
     case TASK_BATT_READ_FROM_ALARM:

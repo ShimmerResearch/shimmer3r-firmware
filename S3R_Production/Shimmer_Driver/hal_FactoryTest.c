@@ -182,8 +182,8 @@ void print_battery_details(void)
       TEST_THRESHOLD_VBATT_LOWER, TEST_THRESHOLD_VBATT_UPPER);
   send_test_report(buffer);
 
-  testPass = shimmerStatus.battVal[2] == 0xC0 ? 0 : 1;
-  sprintf(buffer, " - S3R_TEST_0012 - %s: Charging status = ", testPass ? "PASS" : "FAIL");
+  testPass = shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_BAD_BATTERY ? 0 : 1;
+  sprintf(buffer, " - S3R_TEST_0012 - %s: Charger chip status = ", testPass ? "PASS" : "FAIL");
   send_test_report(buffer);
 
   switch (shimmerStatus.battVal[2])
@@ -199,6 +199,34 @@ void print_battery_details(void)
     break;
   case 0xC0:
     sprintf(buffer, "Bad Battery\r\n");
+    break;
+  default:
+    //Shouldn't reach here unless fault with FW
+    sprintf(buffer, "Unknown\r\n");
+    break;
+  }
+  send_test_report(buffer);
+
+  send_test_report(" - Overall charging status = ");
+  switch (shimmerStatus.battChargingStatus)
+  {
+  case CHARGING_STATUS_CHECKING:
+    sprintf(buffer, "Checking\r\n");
+    break;
+  case CHARGING_STATUS_SUSPENDED:
+    sprintf(buffer, "Suspended\r\n");
+    break;
+  case CHARGING_STATUS_FULLY_CHARGED:
+    sprintf(buffer, "Fully Charged\r\n");
+    break;
+  case CHARGING_STATUS_CHARGING:
+    sprintf(buffer, "Charging\r\n");
+    break;
+  case CHARGING_STATUS_BAD_BATTERY:
+    sprintf(buffer, "Bad Battery\r\n");
+    break;
+  case CHARGING_STATUS_ERROR:
+    sprintf(buffer, "Error\r\n");
     break;
   default:
     //Shouldn't reach here unless fault with FW
@@ -298,7 +326,7 @@ void sd_card_test(void)
   }
   else
   {
-    if (shimmerStatus.isDocked)
+    if (shimmerStatus.docked)
     {
       Board_sd2Arm();
       HAL_Delay(120); //120ms
@@ -314,7 +342,7 @@ void sd_card_test(void)
         shimmerStatus.sdBadFile ? "FAIL" : "PASS");
     send_test_report(buffer);
 
-    if (shimmerStatus.isDocked)
+    if (shimmerStatus.docked)
     {
       Board_sd2Pc();
     }

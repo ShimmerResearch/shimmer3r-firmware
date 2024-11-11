@@ -1052,35 +1052,47 @@ void S4_NORM_ADC_rankBatt(void)
       shimmerStatus.battStat = BATT_HIGH;
     }
   }
-  switch (shimmerStatus.battStat)
+
+  if(shimmerStatus.docked)
   {
-#if defined(SHIMMER3R)
-  case BATT_LOW:
-    shimmerStatus.battStatLed = LED_RGB_RED;
-    break;
-  case BATT_MID:
-    shimmerStatus.battStatLed = LED_RGB_YELLOW;
-    break;
-  case BATT_HIGH:
-    shimmerStatus.battStatLed = LED_RGB_GREEN;
-    break;
-  default:
-    shimmerStatus.battStatLed = LED_RED;
-    break;
-#elif defined(SHIMMER4_SDK)
-  case BATT_LOW:
-    shimmerStatus.battStatLed = LED_RED;
-    break;
-  case BATT_MID:
-    shimmerStatus.battStatLed = LED_YELLOW;
-    break;
-  case BATT_HIGH:
-    shimmerStatus.battStatLed = LED_GREEN;
-    break;
-  default:
-    shimmerStatus.battStatLed = LED_RED_LWR;
-    break;
-#endif
+    if (shimmerStatus.battChargingStatus == CHARGING_STATUS_UNKNOWN
+        || shimmerStatus.battChargingStatus == CHARGING_STATUS_SUSPENDED
+        || shimmerStatus.battChargingStatus == CHARGING_STATUS_BAD_BATTERY
+        || shimmerStatus.battChargingStatus == CHARGING_STATUS_ERROR)
+    {
+      shimmerStatus.battStatLed = LED_RGB_RED;
+    }
+    else if (shimmerStatus.battChargingStatus == CHARGING_STATUS_CHECKING
+        || shimmerStatus.battChargingStatus == CHARGING_STATUS_CHARGING)
+    {
+      shimmerStatus.battStatLed = LED_RGB_YELLOW;
+    }
+    else if (shimmerStatus.battChargingStatus == CHARGING_STATUS_FULLY_CHARGED)
+    {
+      shimmerStatus.battStatLed = LED_RGB_GREEN;
+    }
+    else
+    {
+      shimmerStatus.battStatLed = LED_RGB_ALL_OFF;
+    }
+  }
+  else
+  {
+    switch (shimmerStatus.battStat)
+    {
+    case BATT_LOW:
+      shimmerStatus.battStatLed = LED_RGB_RED;
+      break;
+    case BATT_MID:
+      shimmerStatus.battStatLed = LED_RGB_YELLOW;
+      break;
+    case BATT_HIGH:
+      shimmerStatus.battStatLed = LED_RGB_GREEN;
+      break;
+    default:
+      shimmerStatus.battStatLed = LED_RGB_RED;
+      break;
+    }
   }
 }
 
@@ -1163,7 +1175,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 #if defined(SHIMMER3R)
   if (hadc->Instance == hadcSensPtr->Instance)
   {
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
@@ -1215,7 +1227,7 @@ void manageReadBatt(uint8_t isBlockingRead)
   }
 
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  if (shimmerStatus.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
+  if (shimmerStatus.sensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
     updateBatteryStatus(*(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog], hadcSensPtr);
   }
@@ -1238,11 +1250,41 @@ void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
   shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
   shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
 
+  // Multipled by 2 due to voltage divider
   shimmerStatus.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
                                 adc_battVal, hadcPtr->Init.Resolution)
       * 2;
 
   S4_ADC_rankBatt();
+
+  if (shimmerStatus.battValMV > BATTERY_ERROR_VOLTAGE)
+  {
+    shimmerStatus.battChargingStatus = CHARGING_STATUS_CHECKING;
+  }
+  else if(shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_SUSPENDED)
+  {
+    shimmerStatus.battChargingStatus = CHARGING_STATUS_SUSPENDED;
+  }
+  else if (shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_FULLY_CHARGED)
+  {
+    shimmerStatus.battChargingStatus = CHARGING_STATUS_FULLY_CHARGED;
+  }
+  else if (shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_PRECONDITIONING)
+  {
+    shimmerStatus.battChargingStatus = CHARGING_STATUS_CHARGING;
+  }
+  else if (shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_BAD_BATTERY)
+  {
+    shimmerStatus.battChargingStatus = CHARGING_STATUS_BAD_BATTERY;
+  }
+  else if(shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_UNKNOWN)
+  {
+    shimmerStatus.battChargingStatus = CHARGING_STATUS_UNKNOWN;
+  }
+  else
+  {
+    shimmerStatus.battChargingStatus = CHARGING_STATUS_ERROR;
+  }
 }
 
 //void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)

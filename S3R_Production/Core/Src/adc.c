@@ -49,7 +49,11 @@ void MX_ADC1_Init(void)
    */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+#if OLD_CONSENSYS_SUPPORT
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+#else
   hadc1.Init.Resolution = ADC_RESOLUTION_14B;
+#endif
   hadc1.Init.GainCompensation = 0;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
@@ -108,7 +112,11 @@ void MX_ADC2_Init(void)
    */
   hadc2.Instance = ADC2;
   hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+#if OLD_CONSENSYS_SUPPORT
+  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
+#else
   hadc2.Init.Resolution = ADC_RESOLUTION_14B;
+#endif
   hadc2.Init.GainCompensation = 0;
   hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
@@ -165,7 +173,11 @@ void MX_ADC4_Init(void)
    */
   hadc4.Instance = ADC4;
   hadc4.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+#if OLD_CONSENSYS_SUPPORT
   hadc4.Init.Resolution = ADC_RESOLUTION_12B;
+#else
+  hadc4.Init.Resolution = ADC_RESOLUTION_14B;
+#endif
   hadc4.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc4.Init.ScanConvMode = ADC4_SCAN_DISABLE;
   hadc4.Init.EOCSelection = ADC_EOC_SINGLE_CONV;

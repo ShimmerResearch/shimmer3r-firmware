@@ -45,7 +45,7 @@ void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 0 */
 
   //Control Return if peripheral is already initialised
-  if (!shimmerStatus.isDocked || DockUart_isInitialised())
+  if (!shimmerStatus.docked || DockUart_isInitialised())
   {
     return;
   }
@@ -423,7 +423,7 @@ void DockUart_init(UART_HandleTypeDef *huart)
 
   HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
 
-  if (shimmerStatus.isSensing)
+  if (shimmerStatus.sensing)
   {
     DockUart_disable();
   }
@@ -503,18 +503,18 @@ uint8_t BtUart_connectIntCheck(void)
   { //connected
     //HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_RESET);//blue
     BT_connectionInterrupt(1);
-    shimmerStatus.isBtConnected = 1;
+    shimmerStatus.btConnected = 1;
     Board_ledOn(LED_BLUE);
   }
   else
   {
     //HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_SET);//blue
     BT_connectionInterrupt(0);
-    shimmerStatus.isBtConnected = 0;
+    shimmerStatus.btConnected = 0;
     S4_Task_set(TASK_STOPSENSING);
     Board_ledOff(LED_BLUE);
   }
-  return shimmerStatus.isBtConnected;
+  return shimmerStatus.btConnected;
 }
 
 //void BtUart_rtsIntCheck(void) {
@@ -545,11 +545,11 @@ uint8_t DockUart_interruptCheck(void)
 #if TEST_UNDOCKED
   shimmerStatus.isDocked = 1;
 #else
-  shimmerStatus.isDocked
+  shimmerStatus.docked
       = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
 #endif
 
-  return shimmerStatus.isDocked;
+  return shimmerStatus.docked;
 }
 
 //HAL_StatusTypeDef BtUart_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)

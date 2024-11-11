@@ -71,82 +71,13 @@ void S4Led_Blink(void)
 #if USE_DEFAULT_LED
   //batt leds:
   uint32_t batt_led = 0;
-  if (!shimmerStatus.isDocked)
+  if (cntBlink == 0 || shimmerStatus.docked)
   {
-    if (cntBlink == 0)
-    {
-      batt_led = shimmerStatus.battStatLed;
-    }
+    batt_led = shimmerStatus.battStatLed;
   }
-  else
-  {
-    if (((shimmerStatus.battVal[2] & 0x80) == 0) && ((shimmerStatus.battVal[2] & 0x40) != 0))
-    { //charge done
-#if defined(SHIMMER3R)
-      batt_led = LED_RGB_GREEN;
-#elif defined(SHIMMER4_SDK)
-      batt_led = LED_GREEN_LWR;
-#endif
-    }
-    else if (((shimmerStatus.battVal[2] & 0x80) != 0)
-        && ((shimmerStatus.battVal[2] & 0x40) == 0))
-    { //charge in progress
-#if defined(SHIMMER3R)
-      batt_led = LED_RGB_YELLOW;
-#elif defined(SHIMMER4_SDK)
-      batt_led = LED_YELLOW_LWR;
-#endif
-    }
-    else if (((shimmerStatus.battVal[2] & 0x80) != 0)
-        && ((shimmerStatus.battVal[2] & 0x40) != 0))
-    { //stand by
-#if defined(SHIMMER3R)
-      batt_led = LED_RGB_ALL_OFF;
-#elif defined(SHIMMER4_SDK)
-      batt_led = LED_ALL_BATT;
-#endif
-    }
-    else
-    { //bad battery
-#if defined(SHIMMER3R)
-      batt_led = LED_RGB_RED;
-#elif defined(SHIMMER4_SDK)
-      batt_led = LED_RED_LWR;
-#endif
-    }
-  }
-#if defined(SHIMMER3R)
   Board_ledLwrSetColour(batt_led);
-#elif defined(SHIMMER4_SDK)
-  Board_ledOn(batt_led);
-  Board_ledOff(LED_ALL_BATT - batt_led);
-#endif
-  ////yellow = stat1
-  ////green0 = stat2
-  //Board_ledOff(LED_RED + LED_YELLOW + LED_GREEN0);
-  //if((shimmerStatus.battVal[2]&0x80) == 0){
-  //   Board_ledOn(LED_GREEN0);
-  //}
-  //if((shimmerStatus.battVal[2]&0x40) == 0){
-  //   Board_ledOn(LED_YELLOW);
-  //}
 
-  if (shimmerStatus.testResult)
-  {
-#if defined(SHIMMER3R)
-    Board_ledLwrSetColourRgb((cntBlink % 2) ? LED_PWM_OFF : LED_PWM_ON, -1, -1);
-#elif defined(SHIMMER4_SDK)
-    if (cntBlink % 2)
-    {
-      Board_ledOff(LED_RED_LWR);
-    }
-    else
-    {
-      Board_ledOn(LED_RED_LWR);
-    }
-#endif
-  }
-  if (shimmerStatus.isButtonPressed)
+  if (shimmerStatus.buttonPressed)
   {
 #if defined(SHIMMER3R)
     Board_ledLwrSetColourRgb(-1, LED_PWM_ON, -1);
@@ -155,7 +86,7 @@ void S4Led_Blink(void)
 #endif
   }
 
-  if (!shimmerStatus.isDocked && (shimmerStatus.sdBadFile || !shimmerStatus.sdInserted)
+  if (!shimmerStatus.docked && (shimmerStatus.sdBadFile || !shimmerStatus.sdInserted)
       && S4Ram_getStoredConfig()->sdErrorEnable)
   {
     //Alternate Red/Yellow for SD error
@@ -182,11 +113,11 @@ void S4Led_Blink(void)
   {
     //green1
     uint8_t greenUprStateToSet = 0;
-    if (shimmerStatus.isConfiguring)
+    if (shimmerStatus.configuring)
     {
       greenUprStateToSet = (cntBlink % 2) ? 0 : 1;
     }
-    else if (shimmerStatus.isLogging)
+    else if (shimmerStatus.sdLogging)
     {
       greenUprStateToSet = (cntBlink >= 10) ? 0 : 1;
     }
@@ -216,11 +147,11 @@ void S4Led_Blink(void)
     uint8_t blueUprStateToSet = 0;
     if (isBtIsInitialised())
     {
-      if (!shimmerStatus.isBtConnected)
+      if (!shimmerStatus.btConnected)
       {
         blueUprStateToSet = (cntBlink == 0) ? 1 : 0;
       }
-      else if (shimmerStatus.isStreaming)
+      else if (shimmerStatus.btStreaming)
       {
         if (!(cntBlink % 10))
         {
@@ -273,7 +204,7 @@ void S4Led_Blink(void)
     //  }
     //}
 
-    Board_ledUprSetColourRgb(-1, greenUprStateToSet ? LED_PWM_ON : LED_PWM_OFF,
+    Board_ledUprSetColourRgb(LED_PWM_OFF, greenUprStateToSet ? LED_PWM_ON : LED_PWM_OFF,
         blueUprStateToSet ? LED_PWM_ON : LED_PWM_OFF);
 #endif
   }

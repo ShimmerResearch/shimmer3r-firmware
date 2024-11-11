@@ -2393,11 +2393,11 @@ void BtUart_processCmd(void)
     break;
   case START_SDBT_COMMAND:
     shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_START;
-    shimmerStatus.sdlogCmd = 1;
+    shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
     S4_Task_set(TASK_STARTSENSING);
     break;
   case START_LOGGING_COMMAND:
-    shimmerStatus.sdlogCmd = 1;
+    shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
     S4_Task_set(TASK_STARTSENSING);
     break;
   case SET_CRC_COMMAND:
@@ -2412,11 +2412,11 @@ void BtUart_processCmd(void)
     break;
   case STOP_SDBT_COMMAND:
     shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_STOP;
-    shimmerStatus.sdlogCmd = 2;
+    shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_STOP;
     S4_Task_set(TASK_STOPSENSING);
     break;
   case STOP_LOGGING_COMMAND:
-    shimmerStatus.sdlogCmd = 2;
+    shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_STOP;
     S4_Task_set(TASK_STOPSENSING);
     break;
   case SET_SENSORS_COMMAND:
@@ -2430,7 +2430,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSet(&storedConfig->rawBytes[NV_SENSORS0], NV_SENSORS0, 3);
     InfoMem_write(NV_SENSORS0, &storedConfig->rawBytes[NV_SENSORS0], 3);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2568,7 +2568,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2635,7 +2635,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2651,7 +2651,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE2, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2]);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2667,7 +2667,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE2, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2]);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2679,7 +2679,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2691,7 +2691,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE0, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0]);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2703,7 +2703,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE2, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2]);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2715,7 +2715,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE1, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE1]);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2732,7 +2732,7 @@ void BtUart_processCmd(void)
         SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
 
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2751,7 +2751,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2766,7 +2766,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSet(&storedConfig->rawBytes[0], NV_CONFIG_SETUP_BYTE0, 4);
     S4Ram_config2SdHead();
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2777,7 +2777,7 @@ void BtUart_processCmd(void)
     InfoMem_write(NV_SAMPLING_RATE, &storedConfig->rawBytes[NV_SAMPLING_RATE], 2);
     S4Ram_sdHeadTextSet(&args[0], SDH_SAMPLE_RATE_0, 2);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       //restart sampling timer to use new sampling rate
       setStopSensing();
@@ -2893,7 +2893,7 @@ void BtUart_processCmd(void)
     S4Ram_sdHeadTextSetByte(
         SDH_CONFIG_SETUP_BYTE3, storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3]);
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -2960,7 +2960,7 @@ void BtUart_processCmd(void)
     S4Ram_SetDefaultInfomem();
     S4Ram_config2SdHead();
     update_sdconfig = 1;
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       setStopSensing();
       setStartSensing();
@@ -3194,7 +3194,7 @@ void BtUart_processCmd(void)
   }
   if (update_calib_dump_file && CheckSdInslot() && !shimmerStatus.sdBadFile)
   {
-    if (!shimmerStatus.isDocked)
+    if (!shimmerStatus.docked)
     {
       ShimmerCalib_ram2File();
     }
@@ -3215,7 +3215,7 @@ void BtUart_sendRsp(void)
 
   gConfigBytes *storedConfig = S4Ram_getStoredConfig();
 
-  if (shimmerStatus.isBtConnected)
+  if (shimmerStatus.btConnected)
   {
     if (sendAck)
     {
@@ -3271,9 +3271,9 @@ void BtUart_sendRsp(void)
       *(resPacket + packet_length++) = (shimmerStatus.toggleLedRedCmd << 7)
           + ((shimmerStatus.sdBadFile & 0x01) << 6)
           + ((shimmerStatus.sdInserted & 0x01) << 5)
-          + ((shimmerStatus.isStreaming & 0x01) << 4)
-          + ((shimmerStatus.isLogging & 0x01) << 3) + (isRwcTimeSet() << 2)
-          + ((shimmerStatus.isSensing & 0x01) << 1) + (shimmerStatus.isDocked & 0x01);
+          + ((shimmerStatus.btStreaming & 0x01) << 4)
+          + ((shimmerStatus.sdLogging & 0x01) << 3) + (isRwcTimeSet() << 2)
+          + ((shimmerStatus.sensing & 0x01) << 1) + (shimmerStatus.docked & 0x01);
       dockedResponse = 0;
 #if defined(SHIMMER4_SDK)
     }
@@ -3712,7 +3712,7 @@ void BtUart_sendRsp(void)
     {
       *(resPacket + packet_length++) = DAUGHTER_CARD_MEM_RESPONSE;
       *(resPacket + packet_length++) = dcMemLength;
-      if (!shimmerStatus.isSensing)
+      if (!shimmerStatus.sensing)
       {
         eepromRead(dcMemOffset + 16U, dcMemLength, resPacket + packet_length);
       }
@@ -3870,7 +3870,7 @@ uint8_t BT_getMacAddressHex(uint8_t *macHex)
 
 void BtsdSelfcmd(void)
 {
-  if (shimmerStatus.isBtConnected)
+  if (shimmerStatus.btConnected)
   {
     uint8_t i = 0;
     uint8_t selfcmd[6]; /* max is 6 bytes */
@@ -3883,8 +3883,8 @@ void BtsdSelfcmd(void)
     selfcmd[i++] = STATUS_RESPONSE;
     selfcmd[i++] = (shimmerStatus.toggleLedRedCmd << 7)
         | (shimmerStatus.sdBadFile << 6) | (shimmerStatus.sdInserted << 5)
-        | (shimmerStatus.isStreaming << 4) | (shimmerStatus.isLogging << 3)
-        | (isRwcTimeSet() << 2) | (shimmerStatus.isSensing << 1) | shimmerStatus.isDocked;
+        | (shimmerStatus.btStreaming << 4) | (shimmerStatus.sdLogging << 3)
+        | (isRwcTimeSet() << 2) | (shimmerStatus.sensing << 1) | shimmerStatus.docked;
 
     uint8_t crcMode = getBtCrcMode();
     if (crcMode != CRC_OFF)

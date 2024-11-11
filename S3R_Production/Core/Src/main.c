@@ -127,7 +127,7 @@ void Init()
 
   setBootStage(BOOT_STAGE_START);
   shimmerStatus.battStatLed = LED_YELLOW;
-  shimmerStatus.isConfiguring = 1;
+  shimmerStatus.configuring = 1;
 
   setHwId(DEVICE_VER);
 
@@ -161,7 +161,7 @@ void Init()
   setBootStage(BOOT_STAGE_BLUETOOTH);
   btCommsProtocolInit(setTaskNewBtCmdToProcess);
   //btFactoryResetViaFw();
-  btInitialise();
+//  btInitialise();
   updateBtVer();
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
@@ -189,14 +189,14 @@ void Init()
   S4_RTC_WakeUpSetSlow();
 #endif
 
-  /* Take initial measurement to update LED state */
-  S4_ADC_readBatt(1);
-
   //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
   GPIO_usbVbusIntInit(1);
   vbusPinStateCheck();
 
-  shimmerStatus.isConfiguring = 0;
+  /* Take initial measurement to update LED state */
+  manageReadBatt(1);
+
+  shimmerStatus.configuring = 0;
   //Enable dock comms now that sensor is ready to communicate
   DockUart_enable();
 
@@ -224,7 +224,7 @@ int main(void)
     ;
 
   memset((uint8_t *) &shimmerStatus, 0, sizeof(STATTypeDef));
-  shimmerStatus.isInitialising = 1;
+  shimmerStatus.initialising = 1;
 
   /* USER CODE END 1 */
 
@@ -263,12 +263,12 @@ int main(void)
 #endif
 
   Init();
-  shimmerStatus.isInitialising = 0;
+  shimmerStatus.initialising = 0;
   setBootStage(BOOT_STAGE_END);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
-  //run_factory_test();
+  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+  run_factory_test();
 
   /* USER CODE END 2 */
 
@@ -530,15 +530,15 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
 
 void setBtConnectionState(bool state)
 {
-  shimmerStatus.isBtConnected = state;
+  shimmerStatus.btConnected = state;
   //HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
 
-  HandleBtRfCommStateChange(shimmerStatus.isBtConnected);
+  HandleBtRfCommStateChange(shimmerStatus.btConnected);
 }
 
 bool isBtConnected(void)
 {
-  return shimmerStatus.isBtConnected;
+  return shimmerStatus.btConnected;
 }
 
 #endif
@@ -548,7 +548,7 @@ void loadSensorConfigurationAndCalibration(void)
   ShimmerCalib_init();
   ShimmerCalibInitFromInfoAll();
 
-  if (!shimmerStatus.isDocked && CheckSdInslot())
+  if (!shimmerStatus.docked && CheckSdInslot())
   { //sd card ready to access
     if (!isSdPowerOn())
     {
@@ -590,13 +590,20 @@ void loadSensorConfigurationAndCalibration(void)
 
 void SetupDock(void)
 {
-  shimmerStatus.isConfiguring = 1;
+  shimmerStatus.configuring = 1;
 
-  if (shimmerStatus.isDocked)
+  if (shimmerStatus.docked)
   {
     setBatteryInterval(BATT_INTERVAL_DOCKED);
     resetBatteryCriticalCount();
-    shimmerStatus.sdlogCmd = 0;
+
+    /* Can't read battery charger status straight away as it takes time to
+     * stabilise and reports "bad battery" if read too soon */
+    shimmerStatus.battStat = CHRG_CHIP_STATUS_PRECONDITIONING;
+    shimmerStatus.battChargingStatus = CHARGING_STATUS_CHECKING;
+    shimmerStatus.battStatLed = LED_RGB_YELLOW;
+
+    shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
     shimmerStatus.sdlogReady = 0;
     if (CheckSdInslot())
     {
@@ -617,7 +624,7 @@ void SetupDock(void)
     BtsdSelfcmd();
     //Board_sdPower(0);
     //if (CheckSdInslot() && !shimmerStatus.isSensing && !shimmerStatus.badFile)
-    if (CheckSdInslot() && !shimmerStatus.isSensing)
+    if (CheckSdInslot() && !shimmerStatus.sensing)
     {
       Board_sd2Arm();
 
@@ -632,7 +639,7 @@ void SetupDock(void)
     }
   }
   setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
-  shimmerStatus.isConfiguring = 0;
+  shimmerStatus.configuring = 0;
 }
 
 void SdInfoSync(void)
@@ -677,15 +684,15 @@ void SdInfoSync(void)
 uint8_t CheckOnDefault(void)
 {
   if (!S4Ram_getStoredConfig()->singleTouchStart && !S4Ram_getStoredConfig()->userButtonEnable
-      && shimmerStatus.sdlogReady && !shimmerStatus.isSensing && !shimmerStatus.sdBadFile)
+      && shimmerStatus.sdlogReady && !shimmerStatus.sensing && !shimmerStatus.sdBadFile)
   { //state == BTSD_IDLESD
     //startSensing = 1;
     setStartSensing();
     //sdlogCmd = (SD_ERROR) ? 0 : 1;
-    shimmerStatus.sdlogCmd = 1;
-    shimmerStatus.isSensing = 1;
+    shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
+    shimmerStatus.sensing = 1;
     BtsdSelfcmd();
-    shimmerStatus.isSensing = 0;
+    shimmerStatus.sensing = 0;
     return 1;
   }
   return 0;

@@ -352,7 +352,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if (shimmerStatus.isBtConnected)
+  if (shimmerStatus.btConnected)
   {
     if (dataRateTestState)
     {
