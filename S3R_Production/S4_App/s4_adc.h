@@ -35,15 +35,15 @@ typedef struct
 #define ADC_CONFIG_BATT 2
 
 #if OLD_CONSENSYS_SUPPORT
-#define BATT_LOW_MAX    2618
-#define BATT_MID_MIN    2568
-#define BATT_MID_MAX    2767
-#define BATT_HIGH_MIN   2717
+#define BATT_LOW_MAX  2618
+#define BATT_MID_MIN  2568
+#define BATT_MID_MAX  2767
+#define BATT_HIGH_MIN 2717
 #else
-#define BATT_LOW_MAX    (2618<<2)
-#define BATT_MID_MIN    (2568<<2)
-#define BATT_MID_MAX    (2767<<2)
-#define BATT_HIGH_MIN   (2717<<2)
+#define BATT_LOW_MAX  (2618 << 2)
+#define BATT_MID_MIN  (2568 << 2)
+#define BATT_MID_MAX  (2767 << 2)
+#define BATT_HIGH_MIN (2717 << 2)
 #endif
 
 #if USE_FREERTOS

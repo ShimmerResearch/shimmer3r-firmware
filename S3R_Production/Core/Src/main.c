@@ -161,7 +161,7 @@ void Init()
   setBootStage(BOOT_STAGE_BLUETOOTH);
   btCommsProtocolInit(setTaskNewBtCmdToProcess);
   //btFactoryResetViaFw();
-//  btInitialise();
+  //btInitialise();
   updateBtVer();
 #elif defined(SHIMMER4_SDK)
   BtUart_init();

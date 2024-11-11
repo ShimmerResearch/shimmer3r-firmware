@@ -1053,7 +1053,7 @@ void S4_NORM_ADC_rankBatt(void)
     }
   }
 
-  if(shimmerStatus.docked)
+  if (shimmerStatus.docked)
   {
     if (shimmerStatus.battChargingStatus == CHARGING_STATUS_UNKNOWN
         || shimmerStatus.battChargingStatus == CHARGING_STATUS_SUSPENDED
@@ -1250,7 +1250,7 @@ void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
   shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
   shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
 
-  // Multipled by 2 due to voltage divider
+  //Multipled by 2 due to voltage divider
   shimmerStatus.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
                                 adc_battVal, hadcPtr->Init.Resolution)
       * 2;
@@ -1261,7 +1261,7 @@ void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
   {
     shimmerStatus.battChargingStatus = CHARGING_STATUS_CHECKING;
   }
-  else if(shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_SUSPENDED)
+  else if (shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_SUSPENDED)
   {
     shimmerStatus.battChargingStatus = CHARGING_STATUS_SUSPENDED;
   }
@@ -1277,7 +1277,7 @@ void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
   {
     shimmerStatus.battChargingStatus = CHARGING_STATUS_BAD_BATTERY;
   }
-  else if(shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_UNKNOWN)
+  else if (shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_UNKNOWN)
   {
     shimmerStatus.battChargingStatus = CHARGING_STATUS_UNKNOWN;
   }

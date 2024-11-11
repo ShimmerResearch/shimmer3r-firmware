@@ -146,9 +146,9 @@ uint8_t S4Sens_checkStartSensorConditions(void)
     return 0;
   }
   if (!((shimmerStatus.sdlogCmd == SD_LOG_CMD_STATE_START
-      && shimmerStatus.sdInserted && !shimmerStatus.sdBadFile)
-      || (shimmerStatus.btstreamCmd == BT_STREAM_CMD_STATE_START
-          && shimmerStatus.btConnected)))
+            && shimmerStatus.sdInserted && !shimmerStatus.sdBadFile)
+          || (shimmerStatus.btstreamCmd == BT_STREAM_CMD_STATE_START
+              && shimmerStatus.btConnected)))
   {
     return 0;
   }
@@ -159,15 +159,13 @@ uint8_t S4Sens_checkStartLoggingConditions(void)
 {
   if (shimmerStatus.sdInserted)
   {
-    if (!shimmerStatus.sdLogging
-        && (shimmerStatus.sdlogCmd == SD_LOG_CMD_STATE_START))
+    if (!shimmerStatus.sdLogging && (shimmerStatus.sdlogCmd == SD_LOG_CMD_STATE_START))
     {
       shimmerStatus.sdLogging = 1;
       shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
       return 1; //good to go
     }
-    if (shimmerStatus.sdLogging
-        && (shimmerStatus.sdlogCmd == SD_LOG_CMD_STATE_STOP))
+    if (shimmerStatus.sdLogging && (shimmerStatus.sdlogCmd == SD_LOG_CMD_STATE_STOP))
     {
       shimmerStatus.sdLogging = 0;
       shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
