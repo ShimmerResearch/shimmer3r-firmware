@@ -126,7 +126,7 @@ void Init()
 #endif
 
   setBootStage(BOOT_STAGE_START);
-  shimmerStatus.battStatLed = LED_YELLOW;
+  shimmerStatus.battStatLed = LED_RGB_YELLOW;
   shimmerStatus.configuring = 1;
 
   setHwId(DEVICE_VER);
@@ -161,7 +161,7 @@ void Init()
   setBootStage(BOOT_STAGE_BLUETOOTH);
   btCommsProtocolInit(setTaskNewBtCmdToProcess);
   //btFactoryResetViaFw();
-  //btInitialise();
+  btInitialise();
   updateBtVer();
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
@@ -599,9 +599,10 @@ void SetupDock(void)
 
     /* Can't read battery charger status straight away as it takes time to
      * stabilise and reports "bad battery" if read too soon */
-    shimmerStatus.battStat = CHRG_CHIP_STATUS_PRECONDITIONING;
     shimmerStatus.battChargingStatus = CHARGING_STATUS_CHECKING;
-    shimmerStatus.battStatLed = LED_RGB_YELLOW;
+    shimmerStatus.battStatLedCharging = LED_RGB_YELLOW;
+    shimmerStatus.battVal[2] = CHRG_CHIP_STATUS_PRECONDITIONING;
+    shimmerStatus.battStatLedFlash = 0;
 
     shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
     shimmerStatus.sdlogReady = 0;

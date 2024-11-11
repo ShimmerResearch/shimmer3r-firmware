@@ -876,7 +876,7 @@ void ParseConfig(void)
   }
   else if (file_status != FR_OK)
   {
-    shimmerStatus.sdBadFile = 0;
+    shimmerStatus.sdBadFile = 1;
     //fileBad = (initializing) ? 0 : 1;
     return;
   }

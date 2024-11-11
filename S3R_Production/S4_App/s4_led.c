@@ -71,9 +71,20 @@ void S4Led_Blink(void)
 #if USE_DEFAULT_LED
   //batt leds:
   uint32_t batt_led = 0;
-  if (cntBlink == 0 || shimmerStatus.docked)
+  if (shimmerStatus.battStatLedFlash)
   {
-    batt_led = shimmerStatus.battStatLed;
+    batt_led = cntBlink % 2? shimmerStatus.battStatLedCharging : LED_RGB_ALL_OFF;
+  }
+  else
+  {
+    if(shimmerStatus.docked)
+    {
+      batt_led = shimmerStatus.battStatLedCharging;
+    }
+    else if (cntBlink == 0)
+    {
+      batt_led = shimmerStatus.battStatLed;
+    }
   }
   Board_ledLwrSetColour(batt_led);
 

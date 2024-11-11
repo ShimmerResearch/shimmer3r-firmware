@@ -1053,46 +1053,49 @@ void S4_NORM_ADC_rankBatt(void)
     }
   }
 
-  if (shimmerStatus.docked)
+  shimmerStatus.battStatLedFlash = 0;
+  if(shimmerStatus.docked)
   {
-    if (shimmerStatus.battChargingStatus == CHARGING_STATUS_UNKNOWN
-        || shimmerStatus.battChargingStatus == CHARGING_STATUS_SUSPENDED
+    if (shimmerStatus.battChargingStatus == CHARGING_STATUS_SUSPENDED)
+    {
+      shimmerStatus.battStatLedCharging = LED_RGB_RED;
+    }
+    else if (shimmerStatus.battChargingStatus == CHARGING_STATUS_UNKNOWN
         || shimmerStatus.battChargingStatus == CHARGING_STATUS_BAD_BATTERY
         || shimmerStatus.battChargingStatus == CHARGING_STATUS_ERROR)
     {
-      shimmerStatus.battStatLed = LED_RGB_RED;
+      shimmerStatus.battStatLedCharging = LED_RGB_RED;
+      shimmerStatus.battStatLedFlash = 1;
     }
     else if (shimmerStatus.battChargingStatus == CHARGING_STATUS_CHECKING
         || shimmerStatus.battChargingStatus == CHARGING_STATUS_CHARGING)
     {
-      shimmerStatus.battStatLed = LED_RGB_YELLOW;
+      shimmerStatus.battStatLedCharging = LED_RGB_YELLOW;
     }
     else if (shimmerStatus.battChargingStatus == CHARGING_STATUS_FULLY_CHARGED)
     {
-      shimmerStatus.battStatLed = LED_RGB_GREEN;
+      shimmerStatus.battStatLedCharging = LED_RGB_GREEN;
     }
     else
     {
-      shimmerStatus.battStatLed = LED_RGB_ALL_OFF;
+      shimmerStatus.battStatLedCharging = LED_RGB_ALL_OFF;
     }
   }
-  else
+
+  switch (shimmerStatus.battStat)
   {
-    switch (shimmerStatus.battStat)
-    {
-    case BATT_LOW:
-      shimmerStatus.battStatLed = LED_RGB_RED;
-      break;
-    case BATT_MID:
-      shimmerStatus.battStatLed = LED_RGB_YELLOW;
-      break;
-    case BATT_HIGH:
-      shimmerStatus.battStatLed = LED_RGB_GREEN;
-      break;
-    default:
-      shimmerStatus.battStatLed = LED_RGB_RED;
-      break;
-    }
+  case BATT_LOW:
+    shimmerStatus.battStatLed = LED_RGB_RED;
+    break;
+  case BATT_MID:
+    shimmerStatus.battStatLed = LED_RGB_YELLOW;
+    break;
+  case BATT_HIGH:
+    shimmerStatus.battStatLed = LED_RGB_GREEN;
+    break;
+  default:
+    shimmerStatus.battStatLed = LED_RGB_RED;
+    break;
   }
 }
 

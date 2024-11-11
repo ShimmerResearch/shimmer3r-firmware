@@ -213,6 +213,10 @@ void GPIO_usbVbusIntInit(uint8_t state)
 
 void GPIO_userButtonCheck()
 {
+  //TODO
+  send_test_report("TODO: False User Button trigger due to BOOT0 issue\r\n");
+  return;
+
   if (HAL_GPIO_ReadPin(BOOT0_USER_BTN_GPIO_Port, BOOT0_USER_BTN_Pin) == GPIO_PIN_SET)
   { //pressed
     shimmerStatus.buttonPressed = 1;
@@ -230,24 +234,15 @@ void GPIO_userButtonCheck()
     GPIO_tsRelease = RTC_get64();
     if (GPIO_tsRelease - GPIO_tsLastRelease > 3277)
     {
-      if (shimmerStatus.sdMcu0Pc1)
+      if (shimmerStatus.sensing == 0)
       {
-        //TODO
-        send_test_report(
-            "TODO: False User Button trigger due to BOOT0 issue\r\n");
+        shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
+        S4_Task_set(TASK_STARTSENSING);
       }
       else
       {
-        if (shimmerStatus.sensing == 0)
-        {
-          shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
-          S4_Task_set(TASK_STARTSENSING);
-        }
-        else
-        {
-          shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_STOP;
-          S4_Task_set(TASK_STOPSENSING);
-        }
+        shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_STOP;
+        S4_Task_set(TASK_STOPSENSING);
       }
     }
     GPIO_tsLastRelease = GPIO_tsRelease;
