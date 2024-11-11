@@ -1054,7 +1054,7 @@ void S4_NORM_ADC_rankBatt(void)
   }
 
   shimmerStatus.battStatLedFlash = 0;
-  if(shimmerStatus.docked)
+  if (shimmerStatus.docked)
   {
     if (shimmerStatus.battChargingStatus == CHARGING_STATUS_SUSPENDED)
     {

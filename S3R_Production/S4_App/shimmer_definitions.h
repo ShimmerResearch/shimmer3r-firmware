@@ -516,7 +516,7 @@ typedef volatile struct STATTypeDef_t
 #if defined(SHIMMER3R)
   uint32_t battStatLed;
   uint32_t battStatLedCharging;
-  uint8_t battStatLedFlash :1;
+  uint8_t battStatLedFlash : 1;
 #endif
   uint8_t battVal[3];
   uint16_t battValMV;

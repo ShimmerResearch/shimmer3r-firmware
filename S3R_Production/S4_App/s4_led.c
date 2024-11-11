@@ -73,11 +73,11 @@ void S4Led_Blink(void)
   uint32_t batt_led = 0;
   if (shimmerStatus.battStatLedFlash)
   {
-    batt_led = cntBlink % 2? shimmerStatus.battStatLedCharging : LED_RGB_ALL_OFF;
+    batt_led = cntBlink % 2 ? shimmerStatus.battStatLedCharging : LED_RGB_ALL_OFF;
   }
   else
   {
-    if(shimmerStatus.docked)
+    if (shimmerStatus.docked)
     {
       batt_led = shimmerStatus.battStatLedCharging;
     }
