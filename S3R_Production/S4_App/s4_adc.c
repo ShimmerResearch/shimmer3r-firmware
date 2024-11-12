@@ -1015,7 +1015,7 @@ void S4_NORM_ADC_rankBatt(void)
     {
       batteryStatus.battStat = BATT_LOW;
     }
-    else if (batteryStatus.battStatusRaw.adcBattVal  < BATT_MID_MAX)
+    else if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MAX)
     {
       batteryStatus.battStat = BATT_MID;
     }
@@ -1026,11 +1026,11 @@ void S4_NORM_ADC_rankBatt(void)
   }
   else if (batteryStatus.battStat == BATT_LOW)
   {
-    if (batteryStatus.battStatusRaw.adcBattVal  < BATT_LOW_MAX)
+    if (batteryStatus.battStatusRaw.adcBattVal < BATT_LOW_MAX)
     {
       batteryStatus.battStat = BATT_LOW;
     }
-    else if (batteryStatus.battStatusRaw.adcBattVal  < BATT_MID_MAX)
+    else if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MAX)
     {
       batteryStatus.battStat = BATT_MID;
     }
@@ -1041,11 +1041,11 @@ void S4_NORM_ADC_rankBatt(void)
   }
   else
   { //high
-    if (batteryStatus.battStatusRaw.adcBattVal  < BATT_MID_MIN)
+    if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MIN)
     {
       batteryStatus.battStat = BATT_LOW;
     }
-    else if (batteryStatus.battStatusRaw.adcBattVal  < BATT_HIGH_MIN)
+    else if (batteryStatus.battStatusRaw.adcBattVal < BATT_HIGH_MIN)
     {
       batteryStatus.battStat = BATT_MID;
     }
@@ -1070,7 +1070,6 @@ void S4_NORM_ADC_rankBatt(void)
     batteryStatus.battStatLed = LED_RGB_RED;
     break;
   }
-
 }
 
 void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
@@ -1246,7 +1245,7 @@ void rankBattChargingStatus(void)
     switch (batteryStatus.battStatusRaw.rawBytes[2])
     {
     case CHRG_CHIP_STATUS_SUSPENDED:
-      if(batteryStatus.battValMV <= BATTERY_ERROR_VOLTAGE_MIN)
+      if (batteryStatus.battValMV <= BATTERY_ERROR_VOLTAGE_MIN)
       {
         batteryStatus.battChargingStatus = CHARGING_STATUS_BAD_BATTERY;
       }
@@ -1274,7 +1273,7 @@ void rankBattChargingStatus(void)
   }
 
   batteryStatus.battStatLedFlash = 0;
-  if(shimmerStatus.docked)
+  if (shimmerStatus.docked)
   {
     if (batteryStatus.battChargingStatus == CHARGING_STATUS_SUSPENDED)
     {

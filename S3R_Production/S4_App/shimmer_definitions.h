@@ -455,20 +455,20 @@ NV_SENSORS5
 #define BATT_MID                        0x02
 #define BATT_HIGH                       0x04
 #if defined(SHIMMER4_SDK)
-#define BATT_INTERVAL                   600 //600 seconds = 10min interval
-#define BATT_INTERVAL_D                 30  //30 seconds
+#define BATT_INTERVAL   600 //600 seconds = 10min interval
+#define BATT_INTERVAL_D 30  //30 seconds
 #endif
 
-#define BATTERY_ERROR_VOLTAGE_MAX       4500 //mV
-#define BATTERY_ERROR_VOLTAGE_MIN       3200 //mV
+#define BATTERY_ERROR_VOLTAGE_MAX 4500 //mV
+#define BATTERY_ERROR_VOLTAGE_MIN 3200 //mV
 
 enum
 {
-  // STAT2 = bit7, STAT1 = bit 6
-  CHRG_CHIP_STATUS_SUSPENDED = 0xC0,        // STAT2 high (off), STAT1 high (off)
-  CHRG_CHIP_STATUS_PRECONDITIONING = 0x80,  // STAT2 high (off), STAT1 low (on)
-  CHRG_CHIP_STATUS_FULLY_CHARGED = 0x40,    // STAT2 low (on), STAT1 high (off)
-  CHRG_CHIP_STATUS_BAD_BATTERY = 0x00,      // STAT2 low (on), STAT1 low (on)
+  //STAT2 = bit7, STAT1 = bit 6
+  CHRG_CHIP_STATUS_SUSPENDED = 0xC0,       //STAT2 high (off), STAT1 high (off)
+  CHRG_CHIP_STATUS_PRECONDITIONING = 0x80, //STAT2 high (off), STAT1 low (on)
+  CHRG_CHIP_STATUS_FULLY_CHARGED = 0x40,   //STAT2 low (on), STAT1 high (off)
+  CHRG_CHIP_STATUS_BAD_BATTERY = 0x00,     //STAT2 low (on), STAT1 low (on)
   CHRG_CHIP_STATUS_UNKNOWN = 0xFF,
 };
 
@@ -549,10 +549,10 @@ typedef union
   {
     uint16_t adcBattVal;
 
-    // STAT2 sits in Bit7 and STAT1 in Bit6
+    //STAT2 sits in Bit7 and STAT1 in Bit6
     uint8_t unusedBits : 6;
-    uint8_t STAT1 : 1;
-    uint8_t STAT2 : 1;
+    uint8_t STAT1      : 1;
+    uint8_t STAT2      : 1;
   };
 } BattStatusRaw;
 
@@ -566,7 +566,7 @@ typedef volatile struct batt_status_t
   /* LED colour to show when docked */
   uint32_t battStatLedCharging;
   /* Lets the LED timer know whether the LED should flash or stay solid */
-  uint8_t battStatLedFlash :1;
+  uint8_t battStatLedFlash : 1;
 #endif
   /* The ADC value and charger status bytes which are sent via dock/BT */
   BattStatusRaw battStatusRaw;
