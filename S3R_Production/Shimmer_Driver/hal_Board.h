@@ -72,6 +72,7 @@ typedef enum
   LED_RGB_GREEN = 0x00FF00,
   LED_RGB_BLUE = 0x0000FF,
   LED_RGB_YELLOW = 0xFFFF00,
+  LED_RGB_PURPLE = 0x800080,
   LED_RGB_ALL_ON = 0xFFFFFF,
 } led_rgb_t;
 

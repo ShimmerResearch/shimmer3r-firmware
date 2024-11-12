@@ -126,7 +126,7 @@ void Init()
 #endif
 
   setBootStage(BOOT_STAGE_START);
-  shimmerStatus.battStatLed = LED_RGB_YELLOW;
+  batteryStatus.battStatLed = LED_RGB_YELLOW;
   shimmerStatus.configuring = 1;
 
   setHwId(DEVICE_VER);
@@ -223,6 +223,7 @@ int main(void)
   while (i++ < 1000000)
     ;
 
+  memset((uint8_t *) &batteryStatus, 0, sizeof(BattStatus));
   memset((uint8_t *) &shimmerStatus, 0, sizeof(STATTypeDef));
   shimmerStatus.initialising = 1;
 
@@ -267,8 +268,8 @@ int main(void)
   setBootStage(BOOT_STAGE_END);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
-  run_factory_test();
+//  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+//  run_factory_test();
 
   /* USER CODE END 2 */
 
@@ -597,12 +598,7 @@ void SetupDock(void)
     setBatteryInterval(BATT_INTERVAL_DOCKED);
     resetBatteryCriticalCount();
 
-    /* Can't read battery charger status straight away as it takes time to
-     * stabilise and reports "bad battery" if read too soon */
-    shimmerStatus.battChargingStatus = CHARGING_STATUS_CHECKING;
-    shimmerStatus.battStatLedCharging = LED_RGB_YELLOW;
-    shimmerStatus.battVal[2] = CHRG_CHIP_STATUS_PRECONDITIONING;
-    shimmerStatus.battStatLedFlash = 0;
+    manageReadBatt(1);
 
     shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
     shimmerStatus.sdlogReady = 0;

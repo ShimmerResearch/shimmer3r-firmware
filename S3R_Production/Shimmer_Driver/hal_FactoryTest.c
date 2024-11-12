@@ -175,30 +175,30 @@ void print_battery_details(void)
   send_test_report("Battery:\r\n");
   manageReadBatt(1);
 
-  uint8_t testPass = (shimmerStatus.battValMV > TEST_THRESHOLD_VBATT_LOWER
-      && shimmerStatus.battValMV < TEST_THRESHOLD_VBATT_UPPER);
+  uint8_t testPass = (batteryStatus.battValMV > TEST_THRESHOLD_VBATT_LOWER
+      && batteryStatus.battValMV < TEST_THRESHOLD_VBATT_UPPER);
   sprintf(buffer, " - S3R_TEST_0011 - %s: VBatt = %dmV (%d-%dmV)\r\n",
-      testPass ? "PASS" : "FAIL", shimmerStatus.battValMV,
+      testPass ? "PASS" : "FAIL", batteryStatus.battValMV,
       TEST_THRESHOLD_VBATT_LOWER, TEST_THRESHOLD_VBATT_UPPER);
   send_test_report(buffer);
 
-  testPass = shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_BAD_BATTERY ? 0 : 1;
+  testPass = batteryStatus.battStatusRaw.rawBytes[2] == CHRG_CHIP_STATUS_BAD_BATTERY ? 0 : 1;
   sprintf(buffer, " - S3R_TEST_0012 - %s: Charger chip status = ", testPass ? "PASS" : "FAIL");
   send_test_report(buffer);
 
-  switch (shimmerStatus.battVal[2])
+  switch (batteryStatus.battStatusRaw.rawBytes[2])
   {
-  case 0x00:
-    sprintf(buffer, "Suspended\r\n");
+  case CHRG_CHIP_STATUS_SUSPENDED:
+    sprintf(buffer, "Power-Down, charging is suspended or interrupted\r\n");
     break;
-  case 0x40:
-    sprintf(buffer, "Fully Charged\r\n");
+  case CHRG_CHIP_STATUS_FULLY_CHARGED:
+    sprintf(buffer, "Charge is completed\r\n");
     break;
-  case 0x80:
-    sprintf(buffer, "Preconditioning\r\n");
+  case CHRG_CHIP_STATUS_PRECONDITIONING:
+    sprintf(buffer, "Pre-qualification mode, CC and CV charging, Top-off mode\r\n");
     break;
-  case 0xC0:
-    sprintf(buffer, "Bad Battery\r\n");
+  case CHRG_CHIP_STATUS_BAD_BATTERY:
+    sprintf(buffer, "Bad battery (Safety timer expired), or LDO mode\r\n");
     break;
   default:
     //Shouldn't reach here unless fault with FW
@@ -208,7 +208,7 @@ void print_battery_details(void)
   send_test_report(buffer);
 
   send_test_report(" - Overall charging status = ");
-  switch (shimmerStatus.battChargingStatus)
+  switch (batteryStatus.battChargingStatus)
   {
   case CHARGING_STATUS_CHECKING:
     sprintf(buffer, "Checking\r\n");

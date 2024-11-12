@@ -113,6 +113,7 @@ battAlarmInterval_t getBatteryInterval(void);
 bool areAdcChannelsEnabled(void);
 #endif
 
+void rankBattChargingStatus(void);
 void setBatteryInterval(battAlarmInterval_t value);
 void resetBatteryCriticalCount(void);
 

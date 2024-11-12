@@ -3291,7 +3291,7 @@ void BtUart_sendRsp(void)
       manageReadBatt(1);
       *(resPacket + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(resPacket + packet_length++) = VBATT_RESPONSE;
-      memcpy((uint8_t *) (resPacket + packet_length), (uint8_t *) shimmerStatus.battVal, 3);
+      memcpy(&resPacket[packet_length], &batteryStatus.battStatusRaw.rawBytes[0], 3);
       packet_length += 3;
       btVbattResponse = 0;
     }
@@ -3664,7 +3664,7 @@ void BtUart_sendRsp(void)
     else if (blinkLedResponse)
     {
       *(resPacket + packet_length++) = CHARGE_STATUS_LED_RESPONSE;
-      *(resPacket + packet_length++) = shimmerStatus.battStat;
+      *(resPacket + packet_length++) = batteryStatus.battStat;
       blinkLedResponse = 0;
     }
     else if (bufferSizeResponse)

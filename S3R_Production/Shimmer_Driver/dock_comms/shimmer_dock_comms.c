@@ -636,7 +636,7 @@ void DockUart_sendRsp(void)
 #if defined(SHIMMER3)
     memcpy(uartRespBuf + uart_resp_len, battVal, 3);
 #else
-    memcpy(uartRespBuf + uart_resp_len, (uint8_t *) shimmerStatus.battVal, 3);
+    memcpy(&uartRespBuf[uart_resp_len], &batteryStatus.battStatusRaw.rawBytes[0], 3);
 #endif
     uart_resp_len += 3;
   }

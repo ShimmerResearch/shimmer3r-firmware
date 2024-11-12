@@ -72,7 +72,9 @@ uint32_t adc_battVal, adcBufSens[12], adcBufResv[12]; //max 12 channels, each of
 uint8_t gsrActiveResistor;
 uint8_t adcConfig;
 
+#if defined(SHIMMER4_SDK)
 uint32_t battInterval = BATT_INTERVAL_D;
+#endif
 uint8_t battCriticalCount = 0;
 battAlarmInterval_t battAlarmInterval;
 
@@ -1007,96 +1009,68 @@ void S4_NORM_ADC_stopSensing()
 
 void S4_NORM_ADC_rankBatt(void)
 {
-  if (shimmerStatus.battStat == BATT_MID)
+  if (batteryStatus.battStat == BATT_MID)
   {
-    if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MIN)
+    if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MIN)
     {
-      shimmerStatus.battStat = BATT_LOW;
+      batteryStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MAX)
+    else if (batteryStatus.battStatusRaw.adcBattVal  < BATT_MID_MAX)
     {
-      shimmerStatus.battStat = BATT_MID;
+      batteryStatus.battStat = BATT_MID;
     }
     else
     {
-      shimmerStatus.battStat = BATT_HIGH;
+      batteryStatus.battStat = BATT_HIGH;
     }
   }
-  else if (shimmerStatus.battStat == BATT_LOW)
+  else if (batteryStatus.battStat == BATT_LOW)
   {
-    if (*(uint16_t *) shimmerStatus.battVal < BATT_LOW_MAX)
+    if (batteryStatus.battStatusRaw.adcBattVal  < BATT_LOW_MAX)
     {
-      shimmerStatus.battStat = BATT_LOW;
+      batteryStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MAX)
+    else if (batteryStatus.battStatusRaw.adcBattVal  < BATT_MID_MAX)
     {
-      shimmerStatus.battStat = BATT_MID;
+      batteryStatus.battStat = BATT_MID;
     }
     else
     {
-      shimmerStatus.battStat = BATT_HIGH;
+      batteryStatus.battStat = BATT_HIGH;
     }
   }
   else
   { //high
-    if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MIN)
+    if (batteryStatus.battStatusRaw.adcBattVal  < BATT_MID_MIN)
     {
-      shimmerStatus.battStat = BATT_LOW;
+      batteryStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) shimmerStatus.battVal < BATT_HIGH_MIN)
+    else if (batteryStatus.battStatusRaw.adcBattVal  < BATT_HIGH_MIN)
     {
-      shimmerStatus.battStat = BATT_MID;
-    }
-    else
-    {
-      shimmerStatus.battStat = BATT_HIGH;
-    }
-  }
-
-  shimmerStatus.battStatLedFlash = 0;
-  if(shimmerStatus.docked)
-  {
-    if (shimmerStatus.battChargingStatus == CHARGING_STATUS_SUSPENDED)
-    {
-      shimmerStatus.battStatLedCharging = LED_RGB_RED;
-    }
-    else if (shimmerStatus.battChargingStatus == CHARGING_STATUS_UNKNOWN
-        || shimmerStatus.battChargingStatus == CHARGING_STATUS_BAD_BATTERY
-        || shimmerStatus.battChargingStatus == CHARGING_STATUS_ERROR)
-    {
-      shimmerStatus.battStatLedCharging = LED_RGB_RED;
-      shimmerStatus.battStatLedFlash = 1;
-    }
-    else if (shimmerStatus.battChargingStatus == CHARGING_STATUS_CHECKING
-        || shimmerStatus.battChargingStatus == CHARGING_STATUS_CHARGING)
-    {
-      shimmerStatus.battStatLedCharging = LED_RGB_YELLOW;
-    }
-    else if (shimmerStatus.battChargingStatus == CHARGING_STATUS_FULLY_CHARGED)
-    {
-      shimmerStatus.battStatLedCharging = LED_RGB_GREEN;
+      batteryStatus.battStat = BATT_MID;
     }
     else
     {
-      shimmerStatus.battStatLedCharging = LED_RGB_ALL_OFF;
+      batteryStatus.battStat = BATT_HIGH;
     }
   }
 
-  switch (shimmerStatus.battStat)
+  switch (batteryStatus.battStat)
   {
   case BATT_LOW:
-    shimmerStatus.battStatLed = LED_RGB_RED;
+    batteryStatus.battStatLed = LED_RGB_RED;
     break;
   case BATT_MID:
-    shimmerStatus.battStatLed = LED_RGB_YELLOW;
+    batteryStatus.battStatLed = LED_RGB_YELLOW;
     break;
   case BATT_HIGH:
-    shimmerStatus.battStatLed = LED_RGB_GREEN;
+    batteryStatus.battStatLed = LED_RGB_GREEN;
     break;
   default:
-    shimmerStatus.battStatLed = LED_RGB_RED;
+    batteryStatus.battStatLed = LED_RGB_RED;
     break;
   }
+
 }
 
 void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
@@ -1247,46 +1221,85 @@ void manageReadBatt(uint8_t isBlockingRead)
 
 void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
 {
-  shimmerStatus.battVal[0] = adc_battVal & 0xff;
-  shimmerStatus.battVal[1] = (adc_battVal >> 8) & 0xff;
-  shimmerStatus.battVal[2] = 0;
-  shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
-  shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
+  batteryStatus.battStatusRaw.adcBattVal = adc_battVal;
+  batteryStatus.battStatusRaw.rawBytes[2] = 0;
+  batteryStatus.battStatusRaw.STAT2 = HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin);
+  batteryStatus.battStatusRaw.STAT1 = HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin);
 
   //Multipled by 2 due to voltage divider
-  shimmerStatus.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
+  batteryStatus.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
                                 adc_battVal, hadcPtr->Init.Resolution)
       * 2;
 
   S4_ADC_rankBatt();
+  rankBattChargingStatus();
+}
 
-  if (shimmerStatus.battValMV > BATTERY_ERROR_VOLTAGE)
+void rankBattChargingStatus(void)
+{
+  if (batteryStatus.battValMV > BATTERY_ERROR_VOLTAGE_MAX)
   {
-    shimmerStatus.battChargingStatus = CHARGING_STATUS_CHECKING;
-  }
-  else if (shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_SUSPENDED)
-  {
-    shimmerStatus.battChargingStatus = CHARGING_STATUS_SUSPENDED;
-  }
-  else if (shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_FULLY_CHARGED)
-  {
-    shimmerStatus.battChargingStatus = CHARGING_STATUS_FULLY_CHARGED;
-  }
-  else if (shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_PRECONDITIONING)
-  {
-    shimmerStatus.battChargingStatus = CHARGING_STATUS_CHARGING;
-  }
-  else if (shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_BAD_BATTERY)
-  {
-    shimmerStatus.battChargingStatus = CHARGING_STATUS_BAD_BATTERY;
-  }
-  else if (shimmerStatus.battVal[2] == CHRG_CHIP_STATUS_UNKNOWN)
-  {
-    shimmerStatus.battChargingStatus = CHARGING_STATUS_UNKNOWN;
+    batteryStatus.battChargingStatus = CHARGING_STATUS_CHECKING;
   }
   else
   {
-    shimmerStatus.battChargingStatus = CHARGING_STATUS_ERROR;
+    switch (batteryStatus.battStatusRaw.rawBytes[2])
+    {
+    case CHRG_CHIP_STATUS_SUSPENDED:
+      if(batteryStatus.battValMV <= BATTERY_ERROR_VOLTAGE_MIN)
+      {
+        batteryStatus.battChargingStatus = CHARGING_STATUS_BAD_BATTERY;
+      }
+      else
+      {
+        batteryStatus.battChargingStatus = CHARGING_STATUS_SUSPENDED;
+      }
+      break;
+    case CHRG_CHIP_STATUS_FULLY_CHARGED:
+      batteryStatus.battChargingStatus = CHARGING_STATUS_FULLY_CHARGED;
+      break;
+    case CHRG_CHIP_STATUS_PRECONDITIONING:
+      batteryStatus.battChargingStatus = CHARGING_STATUS_CHARGING;
+      break;
+    case CHRG_CHIP_STATUS_BAD_BATTERY:
+      batteryStatus.battChargingStatus = CHARGING_STATUS_BAD_BATTERY;
+      break;
+    case CHRG_CHIP_STATUS_UNKNOWN:
+      batteryStatus.battChargingStatus = CHARGING_STATUS_UNKNOWN;
+      break;
+    default:
+      batteryStatus.battChargingStatus = CHARGING_STATUS_ERROR;
+      break;
+    }
+  }
+
+  batteryStatus.battStatLedFlash = 0;
+  if(shimmerStatus.docked)
+  {
+    if (batteryStatus.battChargingStatus == CHARGING_STATUS_SUSPENDED)
+    {
+      batteryStatus.battStatLedCharging = LED_RGB_YELLOW;
+    }
+    else if (batteryStatus.battChargingStatus == CHARGING_STATUS_UNKNOWN
+        || batteryStatus.battChargingStatus == CHARGING_STATUS_BAD_BATTERY
+        || batteryStatus.battChargingStatus == CHARGING_STATUS_ERROR)
+    {
+      batteryStatus.battStatLedCharging = LED_RGB_RED;
+      batteryStatus.battStatLedFlash = 1;
+    }
+    else if (batteryStatus.battChargingStatus == CHARGING_STATUS_CHECKING
+        || batteryStatus.battChargingStatus == CHARGING_STATUS_CHARGING)
+    {
+      batteryStatus.battStatLedCharging = LED_RGB_RED;
+    }
+    else if (batteryStatus.battChargingStatus == CHARGING_STATUS_FULLY_CHARGED)
+    {
+      batteryStatus.battStatLedCharging = LED_RGB_GREEN;
+    }
+    else
+    {
+      batteryStatus.battStatLedCharging = LED_RGB_ALL_OFF;
+    }
   }
 }
 
