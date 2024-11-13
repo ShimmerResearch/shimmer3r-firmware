@@ -193,25 +193,24 @@ void MX_USB_OTG_HS_PCD_Init_NoVbusSense(void)
   /* USER CODE BEGIN USB_OTG_HS_Init 2 */
 
   /* USER CODE END USB_OTG_HS_Init 2 */
-
 }
 
-void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef* pcdHandle)
+void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
 {
 
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  if(pcdHandle->Instance==USB_OTG_HS)
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
+  if (pcdHandle->Instance == USB_OTG_HS)
   {
-  /* USER CODE BEGIN USB_OTG_HS_MspInit 0 */
+    /* USER CODE BEGIN USB_OTG_HS_MspInit 0 */
 
     //https://community.st.com/t5/stm32-mcus-products/stm32u595-timeout-in-usb-corereset/td-p/618743
     /* Enable SYSCFG Clock */
     __HAL_RCC_SYSCFG_CLK_ENABLE();
 
-  /* USER CODE END USB_OTG_HS_MspInit 0 */
+    /* USER CODE END USB_OTG_HS_MspInit 0 */
 
-  /** Initializes the peripherals clock
-  */
+    /** Initializes the peripherals clock
+     */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USBPHY;
     PeriphClkInit.UsbPhyClockSelection = RCC_USBPHYCLKSOURCE_HSE;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -219,8 +218,8 @@ void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef* pcdHandle)
       Error_Handler();
     }
 
-  /** Set the OTG PHY reference clock selection
-  */
+    /** Set the OTG PHY reference clock selection
+     */
     HAL_SYSCFG_SetOTGPHYReferenceClockSelection(SYSCFG_OTG_HS_PHY_CLK_SELECT_1);
 
     /* USB_OTG_HS clock enable */
@@ -228,7 +227,7 @@ void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef* pcdHandle)
     __HAL_RCC_USBPHYC_CLK_ENABLE();
 
     /* Enable VDDUSB */
-    if(__HAL_RCC_PWR_IS_CLK_DISABLED())
+    if (__HAL_RCC_PWR_IS_CLK_DISABLED())
     {
       __HAL_RCC_PWR_CLK_ENABLE();
       HAL_PWREx_EnableVddUSB();
@@ -247,38 +246,38 @@ void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef* pcdHandle)
 
     /*Configuring the SYSCFG registers OTG_HS PHY*/
     /*OTG_HS PHY enable*/
-      HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
+    HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
 
     /* USB_OTG_HS interrupt Init */
     HAL_NVIC_SetPriority(OTG_HS_IRQn, 7, 0);
     HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
-  /* USER CODE BEGIN USB_OTG_HS_MspInit 1 */
+    /* USER CODE BEGIN USB_OTG_HS_MspInit 1 */
 
-  /* USER CODE END USB_OTG_HS_MspInit 1 */
+    /* USER CODE END USB_OTG_HS_MspInit 1 */
   }
 }
 
-void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef* pcdHandle)
+void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
 {
 
-  if(pcdHandle->Instance==USB_OTG_HS)
+  if (pcdHandle->Instance == USB_OTG_HS)
   {
-  /* USER CODE BEGIN USB_OTG_HS_MspDeInit 0 */
+    /* USER CODE BEGIN USB_OTG_HS_MspDeInit 0 */
 
-  /* USER CODE END USB_OTG_HS_MspDeInit 0 */
+    /* USER CODE END USB_OTG_HS_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_USB_OTG_HS_CLK_DISABLE();
     __HAL_RCC_USBPHYC_CLK_DISABLE();
 
     /* USB_OTG_HS interrupt Deinit */
     HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
-  /* USER CODE BEGIN USB_OTG_HS_MspDeInit 1 */
+    /* USER CODE BEGIN USB_OTG_HS_MspDeInit 1 */
 
     //https://community.st.com/t5/stm32-mcus-products/stm32u595-timeout-in-usb-corereset/td-p/618743
     /* Enable SYSCFG Clock */
     __HAL_RCC_SYSCFG_CLK_DISABLE();
 
-  /* USER CODE END USB_OTG_HS_MspDeInit 1 */
+    /* USER CODE END USB_OTG_HS_MspDeInit 1 */
   }
 }
 
