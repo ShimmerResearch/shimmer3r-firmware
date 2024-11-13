@@ -218,17 +218,29 @@ uint8_t isBmp280InUse(void)
 uint8_t isAdxl371Present(void)
 {
   return (isDaughterCardIdSet() //&& hwId == HW_ID_SHIMMER3R
-      && (daughterCardIdPage.expansion_brd.exp_brd_id == EXP_BRD_GSR_UNIFIED
-          && daughterCardIdPage.expansion_brd.exp_brd_rev == 6
-          && daughterCardIdPage.expansion_brd.exp_brd_special_rev == 0));
+      && (daughterCardIdPage.expansion_brd.exp_brd_id == SHIMMER3_IMU
+          || (daughterCardIdPage.expansion_brd.exp_brd_id == EXP_BRD_GSR_UNIFIED
+              && daughterCardIdPage.expansion_brd.exp_brd_rev == 6
+              && daughterCardIdPage.expansion_brd.exp_brd_special_rev == 0)));
 }
 
 uint8_t isI2c4Supported(void)
 {
   return (isDaughterCardIdSet() //&& hwId == HW_ID_SHIMMER3R
-      && (daughterCardIdPage.expansion_brd.exp_brd_id == EXP_BRD_GSR_UNIFIED
-          && daughterCardIdPage.expansion_brd.exp_brd_rev == 6
-          && daughterCardIdPage.expansion_brd.exp_brd_special_rev == 0));
+      && daughterCardIdPage.expansion_brd.exp_brd_id == EXP_BRD_GSR_UNIFIED);
+}
+
+uint8_t isBoardSr48_6_0(void)
+{
+  return isBoardSrNumber(EXP_BRD_GSR_UNIFIED, 6, 0);
+}
+
+uint8_t isBoardSrNumber(uint8_t exp_brd_id, uint8_t exp_brd_rev, uint8_t exp_brd_special_rev)
+{
+  return (isDaughterCardIdSet() //&& hwId == HW_ID_SHIMMER3R
+      && (daughterCardIdPage.expansion_brd.exp_brd_id == exp_brd_id
+          && daughterCardIdPage.expansion_brd.exp_brd_rev == exp_brd_rev
+          && daughterCardIdPage.expansion_brd.exp_brd_special_rev == exp_brd_special_rev));
 }
 
 #endif

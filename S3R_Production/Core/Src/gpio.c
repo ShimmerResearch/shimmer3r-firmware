@@ -198,7 +198,14 @@ void GPIO_usbVbusIntInit(uint8_t state)
     GPIO_InitTypeDef GPIO_InitStruct = { 0 };
     __HAL_RCC_GPIOA_CLK_ENABLE();
     GPIO_InitStruct.Pin = USB_VBUS_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+    if (isBoardSr48_6_0())
+    {
+      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+    }
+    else
+    {
+      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+    }
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(USB_VBUS_GPIO_Port, &GPIO_InitStruct);
 
@@ -262,12 +269,12 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin)
   {
-  case USB_VBUS_Pin:
-    if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
-    {
-      S4_Task_set(TASK_USB_SETUP);
-    }
-    break;
+//  case USB_VBUS_Pin:
+//    if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
+//    {
+//      S4_Task_set(TASK_USB_SETUP);
+//    }
+//    break;
   default:
     gpioExtiCommon(GPIO_Pin, 1);
     break;
@@ -331,6 +338,12 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
   case SD_DETECT_N_Pin:
     SD_insertedCheck();
+    break;
+  case USB_VBUS_Pin:
+    if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
+    {
+      S4_Task_set(TASK_USB_SETUP);
+    }
     break;
   default:
     break;
@@ -476,13 +489,20 @@ void vbusPinStateCheck(void)
   {
     if (hUsbDevice.pDesc == NULL)
     {
-      //Disable GPIO interrupt on pin so that USB peripheral can take control
-      GPIO_usbVbusIntInit(0);
-      //Clear interrupt flag else it triggers multiple times.
-      __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
-
       //Enable USB peripheral
-      MX_USB_OTG_HS_PCD_Init();
+      if (isBoardSr48_6_0())
+      {
+        MX_USB_OTG_HS_PCD_Init_NoVbusSense();
+      }
+      else
+      {
+        //Disable GPIO interrupt on pin so that USB peripheral can take control
+        GPIO_usbVbusIntInit(0);
+        //Clear interrupt flag else it triggers multiple times.
+        __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
+
+        MX_USB_OTG_HS_PCD_Init();
+      }
 #if !USE_USBX
       MX_USB_DEVICE_Init();
 #endif
@@ -490,17 +510,31 @@ void vbusPinStateCheck(void)
   }
   else if (pin == GPIO_PIN_RESET)
   {
-    USB_STATE state = usbPlugInState();
-    if (state == USB_CABLE_UNPLUGGED)
+    if (isBoardSr48_6_0())
     {
-      //Disable USB peripheral
+      if (hUsbDevice.pDesc != NULL)
+      {
 #if !USE_USBX
-      USBD_DeInit(&hUsbDevice);
+        USBD_DeInit(&hUsbDevice);
 #endif
-      HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS);
+        HAL_PCD_MspDeInit_NoVbusSense(&hpcd_USB_OTG_HS);
+      }
+    }
+    else
+    {
+      USB_STATE state = usbPlugInState();
+      if (state == USB_CABLE_UNPLUGGED)
+      {
+        //Disable USB peripheral
+#if !USE_USBX
+        USBD_DeInit(&hUsbDevice);
+#endif
+        HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS);
 
-      //Re-enable GPIO interrupt on pin
-      GPIO_usbVbusIntInit(1);
+        //Re-enable GPIO interrupt on pin
+        GPIO_usbVbusIntInit(1);
+      }
+
     }
   }
 }
