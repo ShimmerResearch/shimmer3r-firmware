@@ -389,9 +389,9 @@ void Board_sd2Pc(void)
 {
   //Board_sdPowerCycle();
 
-//  /* ADC pins are shared with two dat pins, ensure both are inputs */
-//  HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP0_GPIO_Port, GPIO_ADC_EXT_EXP0_Pin);
-//  HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP1_GPIO_Port, GPIO_ADC_EXT_EXP1_Pin);
+  ///* ADC pins are shared with two dat pins, ensure both are inputs */
+  //HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP0_GPIO_Port, GPIO_ADC_EXT_EXP0_Pin);
+  //HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP1_GPIO_Port, GPIO_ADC_EXT_EXP1_Pin);
 
   //Board_detectN(1);
   HAL_Delay(120);
@@ -434,9 +434,9 @@ void Board_sd2Arm(void)
 /***************************************************************************/
 /**
  * @brief  SD power on/off, toggling pin SW_FLASH
-* @param  power_on
-* @return none
-******************************************************************************/
+ * @param  power_on
+ * @return none
+ ******************************************************************************/
 void Board_setSdPower(uint8_t state)
 {
   Board_SW_FLASH(state);

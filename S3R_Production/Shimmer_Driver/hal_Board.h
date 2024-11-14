@@ -342,9 +342,8 @@ void Board_enableSensingPower(uint8_t state);
 #define Board_detectN(x) \
   HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #elif defined(SHIMMER4_SDK)
-#define Board_sdMcu0Dock1(x)                                      \
-  HAL_GPIO_WritePin(GPIOG, EXT_MEM_Pin, \
-      x ? GPIO_PIN_SET : GPIO_PIN_RESET) //EXT_MEM: 0 for arm, 1 for pc
+#define Board_sdMcu0Dock1(x) \
+  HAL_GPIO_WritePin(GPIOG, EXT_MEM_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET) //EXT_MEM: 0 for arm, 1 for pc
 #define Board_SW_FLASH(x) \
   HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_detectN(x) \
