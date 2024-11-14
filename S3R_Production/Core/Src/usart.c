@@ -545,8 +545,17 @@ uint8_t DockUart_interruptCheck(void)
 #if TEST_UNDOCKED
   shimmerStatus.isDocked = 1;
 #else
-  shimmerStatus.docked
-      = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
+  if (isBoardSr48_6_0())
+  {
+    /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
+    shimmerStatus.docked
+        = HAL_GPIO_ReadPin(BOOT0_USER_BTN_GPIO_Port, BOOT0_USER_BTN_Pin) == GPIO_PIN_SET;
+  }
+  else
+  {
+    shimmerStatus.docked
+        = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
+  }
 #endif
 
   return shimmerStatus.docked;

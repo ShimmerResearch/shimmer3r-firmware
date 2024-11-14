@@ -333,12 +333,19 @@ void Board_enableSensingPower(uint8_t state);
 #define Board_RESP_CS(x) \
   HAL_GPIO_WritePin(RESP_CS_GPIO, RESP_CS_PIN, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
+#if defined(SHIMMER3R)
 #define Board_sdMcu0Dock1(x)                                      \
   HAL_GPIO_WritePin(SW_SD_MCU_DOCK_GPIO_Port, SW_SD_MCU_DOCK_Pin, \
       x ? GPIO_PIN_RESET : GPIO_PIN_SET) //EXT_MEM: 0 for arm, 1 for pc
 #define Board_SW_FLASH(x) \
   HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#if defined(SHIMMER4_SDK)
+#define Board_detectN(x) \
+  HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#elif defined(SHIMMER4_SDK)
+#define Board_sdMcu0Dock1(x) \
+  HAL_GPIO_WritePin(GPIOG, EXT_MEM_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET) //EXT_MEM: 0 for arm, 1 for pc
+#define Board_SW_FLASH(x) \
+  HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_detectN(x) \
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #endif

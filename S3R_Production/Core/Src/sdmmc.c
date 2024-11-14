@@ -103,15 +103,21 @@ void HAL_SD_MspInit(SD_HandleTypeDef *sdHandle)
     */
     GPIO_InitStruct.Pin = SDMMC1_CMD_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
     HAL_GPIO_Init(SDMMC1_CMD_GPIO_Port, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = SDMMC1_D3_Pin | SDMMC1_CK_Pin | SDMMC1_D2_Pin
-        | SDMMC1_D1_Pin | SDMMC1_D0_Pin;
+    GPIO_InitStruct.Pin = SDMMC1_D3_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
+    HAL_GPIO_Init(SDMMC1_D3_GPIO_Port, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = SDMMC1_CK_Pin | SDMMC1_D2_Pin | SDMMC1_D1_Pin | SDMMC1_D0_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
