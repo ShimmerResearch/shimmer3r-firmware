@@ -213,11 +213,8 @@ void GPIO_usbVbusIntInit(uint8_t state)
 
 void GPIO_userButtonCheck()
 {
-  //TODO
-  send_test_report("TODO: False User Button trigger due to BOOT0 issue\r\n");
-  return;
-
-  if (HAL_GPIO_ReadPin(BOOT0_USER_BTN_GPIO_Port, BOOT0_USER_BTN_Pin) == GPIO_PIN_SET)
+  uint8_t pinState = HAL_GPIO_ReadPin(BOOT0_USER_BTN_GPIO_Port, BOOT0_USER_BTN_Pin);
+  if (pinState == GPIO_PIN_SET)
   { //pressed
     shimmerStatus.buttonPressed = 1;
 #if defined(SHIMMER4_SDK)
@@ -327,7 +324,16 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     S4_Task_set(TASK_DOCKSETUP);
     break;
   case BOOT0_USER_BTN_Pin:
-    GPIO_userButtonCheck();
+    if (isBoardSr48_6_0())
+    {
+      /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
+      DockUart_interruptCheck();
+      S4_Task_set(TASK_DOCKSETUP);
+    }
+    else
+    {
+      GPIO_userButtonCheck();
+    }
     break;
   case SD_DETECT_N_Pin:
     SD_insertedCheck();
@@ -466,6 +472,22 @@ void gpioInitPerBoard(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIO_INTERNAL2_GPIO_Port, &GPIO_InitStruct);
+
+    if (isBoardSr48_6_0())
+    {
+      /* SR48-6-0 S3R prototype has incorrect dock pin handling so we need to
+       * re-purpose the dock detect pin as an output to let the dock know when a
+       * Shimmer is docked. */
+      HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+      HAL_GPIO_DeInit(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin);
+
+      HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, GPIO_PIN_SET);
+      GPIO_InitStruct.Pin = DOCK_DETECT_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      HAL_GPIO_Init(DOCK_DETECT_GPIO_Port, &GPIO_InitStruct);
+    }
   }
 }
 

@@ -370,9 +370,7 @@ void Board_ledToggle(uint8_t ledMask)
  */
 void Board_sdPowerCycle(void)
 {
-#if defined(SHIMMER4_SDK)
   Board_detectN(1);
-#endif
   Board_setSdPower(0);
   Board_setDockAccessToSd(0);
   HAL_Delay(120);
@@ -391,6 +389,10 @@ void Board_sd2Pc(void)
 {
   //Board_sdPowerCycle();
 
+//  /* ADC pins are shared with two dat pins, ensure both are inputs */
+//  HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP0_GPIO_Port, GPIO_ADC_EXT_EXP0_Pin);
+//  HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP1_GPIO_Port, GPIO_ADC_EXT_EXP1_Pin);
+
   //Board_detectN(1);
   HAL_Delay(120);
   Board_setSdPower(0);
@@ -399,10 +401,7 @@ void Board_sd2Pc(void)
   HAL_Delay(120);
   Board_setSdPower(1);
   HAL_Delay(50);
-
-#if defined(SHIMMER4_SDK)
   Board_detectN(0);
-#endif
   SD_mount(0);
 
   mmc1DeInit();
@@ -415,10 +414,7 @@ void Board_sd2Pc(void)
  */
 void Board_sd2Arm(void)
 {
-#if defined(SHIMMER4_SDK)
   Board_detectN(1);
-#endif
-
   HAL_Delay(120);
   Board_setSdPower(0);
   Board_setDockAccessToSd(0);
@@ -435,20 +431,16 @@ void Board_sd2Arm(void)
   SD_mount(1);
 }
 
-/***************************************************************************/ /**
-                                                                               * @brief  SD power on/off, toggling pin SW_FLASH
-                                                                               * @param  power_on
-                                                                               * @return none
-                                                                               ******************************************************************************/
+/***************************************************************************/
+/**
+ * @brief  SD power on/off, toggling pin SW_FLASH
+* @param  power_on
+* @return none
+******************************************************************************/
 void Board_setSdPower(uint8_t state)
 {
   Board_SW_FLASH(state);
   shimmerStatus.sdPowerOn = state;
-  //if(on){
-  //   HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin,GPIO_PIN_SET);
-  //} else{
-  //   HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin,GPIO_PIN_RESET);
-  //}
 }
 
 void Board_setDockAccessToSd(uint8_t mcu0dock1)
