@@ -218,7 +218,7 @@ void S4Sens_startSensing(void)
 
     if (areAnyChannelsEnabled())
     {
-      Board_enableSensingPower(1);
+      Board_enableSensingPower(SENSE_PWR_SENSING, 1);
     }
     else
     {
@@ -388,7 +388,7 @@ void S4Sens_stopPeripherals(void)
   I2C_stopSensing();
   SPI_stopSensing();
 
-  Board_enableSensingPower(0);
+  Board_enableSensingPower(SENSE_PWR_SENSING, 0);
 
   if (S4Ram_getStoredConfig()->chEnMicrophone)
   {

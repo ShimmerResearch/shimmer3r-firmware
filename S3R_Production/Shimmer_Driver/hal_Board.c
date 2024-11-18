@@ -53,6 +53,8 @@ TIM_HandleTypeDef *htimLwrLedsPtr;
 TIM_HandleTypeDef *htimUprLedsPtr;
 TIM_HandleTypeDef *htimLedBlinkPtr;
 
+volatile uint8_t sensePwrFlags = 0;
+
 static void updateLedState(led_mode updateMode, uint8_t ledMask);
 
 //https://www.youtube.com/watch?v=GBr6bQ-PzV8
@@ -490,15 +492,30 @@ void Board_delayMicros(uint32_t micros)
 }
 
 #if defined(SHIMMER3R)
-void Board_enableSensingPower(uint8_t state)
+void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state)
 {
-  Board_SW_PV_SENSE(state);
-  Board_SW_PV_SENSE_IO(state);
-
-  //delay to allow voltage to settle after turning on ADC & IMUs etc.
+  uint8_t originalState = sensePwrFlags;
   if (state)
   {
-    HAL_Delay(50); //Arbitrary delay to allow chips to power up
+    sensePwrFlags |= flag;
+  }
+  else
+  {
+    sensePwrFlags &= ~flag;
+  }
+
+  /* take action if state has changed */
+  if ((originalState == 0 && sensePwrFlags != 0)
+      || (originalState != 0 && sensePwrFlags == 0))
+  {
+    Board_SW_PV_SENSE(state);
+    Board_SW_PV_SENSE_IO(state);
+
+    //delay to allow voltage to settle after turning on ADC & IMUs etc.
+    if (state)
+    {
+      HAL_Delay(50); //Arbitrary delay to allow chips to power up
+    }
   }
 }
 #endif

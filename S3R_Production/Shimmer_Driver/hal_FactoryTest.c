@@ -52,13 +52,13 @@ uint32_t run_factory_test(void)
 
     shimmerStatus.testResult += InfoMem_test() << 8;
 
-    Board_enableSensingPower(1);
+    Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
 
     shimmerStatus.testResult += I2C_test();
 
     shimmerStatus.testResult += SPI_test() << 16;
 
-    Board_enableSensingPower(0);
+    Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
   }
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)

@@ -647,7 +647,7 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   uint8_t adc_counter_sens = 0; //adc channel rank counter
   uint8_t numChannels = 3;
 
-  Board_enableSensingPower(1);
+  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
 
   //FIXME: reusing ADC1 here because I haven't been able to get DMA LL working with ADC4
   initSensAdc(numChannels);
@@ -730,7 +730,7 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
 
-  Board_enableSensingPower(0);
+  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
 }
 
 void initSensAdc(uint32_t numChannels)
@@ -1074,6 +1074,7 @@ void S4_NORM_ADC_rankBatt(void)
 
 void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
 {
+  Board_enableSensingPower(SENSE_PWR_VBATT, 1);
 #if defined(SHIMMER3R)
   MX_ADC2_Init();
 #elif defined(SHIMMER4_SDK)
@@ -1124,7 +1125,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
     }
     HAL_ADC_Stop(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
-    Board_enableSensingPower(0);
+    Board_enableSensingPower(SENSE_PWR_VBATT, 0);
   }
   else
   {
@@ -1168,7 +1169,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
     updateBatteryStatus(adc_battVal, hadcBattPtr);
     HAL_ADC_Stop_IT(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
-    Board_enableSensingPower(0);
+    Board_enableSensingPower(SENSE_PWR_VBATT, 0);
   }
 #elif defined(SHIMMER4_SDK)
   if (hadc->Instance == hadcResv.Instance)
@@ -1212,7 +1213,6 @@ void manageReadBatt(uint8_t isBlockingRead)
     //Don't start a new measurement if one is already underway
     if (hadcBattPtr->Instance == NULL || hadcBattPtr->State == HAL_ADC_STATE_RESET)
     {
-      Board_enableSensingPower(1);
       S4_ADC_readBatt(isBlockingRead);
     }
   }
