@@ -44,6 +44,7 @@ extern "C"
   /* USER CODE BEGIN Prototypes */
 
   CRC_HandleTypeDef *getCrcHandle(void);
+  void deinitCrc(void);
 
   /* USER CODE END Prototypes */
 

@@ -55,6 +55,14 @@
 #define VREF_EXTERNAL_SUPPLY_MV 3000
 #endif
 
+typedef enum
+{
+  SENSE_PWR_VBATT = (0x01 << 0),
+  SENSE_PWR_SENSING = (0x01 << 1),
+  SENSE_PWR_EEPROM = (0x01 << 2),
+  SENSE_PWR_FACTORY_TEST = (0x01 << 3)
+} sense_pwr_flg_t;
+
 //Legacy approach for 5 individual LEDs before two RGB LEDs were introduced
 #define LED_RED      0x01 //== BATT_LOW
 #define LED_YELLOW   0x02 //== BATT_MID
@@ -120,7 +128,7 @@ void Board_setDockAccessToSd(uint8_t mcu0dock1);
 extern void Board_delayMicrosInit(void);
 extern void Board_delayMicros(uint32_t micros);
 #if defined(SHIMMER3R)
-void Board_enableSensingPower(uint8_t state);
+void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #endif
 
 #if defined(SHIMMER3R)

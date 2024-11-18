@@ -46,7 +46,7 @@ void altEepromInit(I2C_HandleTypeDef *hi2c)
 
 void eepromPowerOn(void)
 {
-  Board_enableSensingPower(1);
+  Board_enableSensingPower(SENSE_PWR_EEPROM, 1);
   MX_I2C1_Init();
 }
 
@@ -54,7 +54,7 @@ void eepromPowerOff(void)
 {
   HAL_Delay(5); //5ms to ensure no writes pending
   I2C1_DeInit();
-  Board_enableSensingPower(0);
+  Board_enableSensingPower(SENSE_PWR_EEPROM, 0);
 }
 
 uint8_t eepromTest(void)

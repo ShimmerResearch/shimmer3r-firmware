@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "crc.h"
+
 #include "shimmer_definitions.h"
 #include "shimmer_externs.h"
 
