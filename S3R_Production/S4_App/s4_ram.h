@@ -415,7 +415,7 @@ typedef union
     uint8_t sdErrorEnable    : 1;
     uint8_t masterEnable     : 1;
     uint8_t syncEnable       : 1;
-    uint8_t bluetoothEnable  : 1;
+    uint8_t bluetoothDisable  : 1;
     uint8_t rtcErrorEnable   : 1;
     uint8_t userButtonEnable : 1;
     uint8_t btPinSetup       : 1;

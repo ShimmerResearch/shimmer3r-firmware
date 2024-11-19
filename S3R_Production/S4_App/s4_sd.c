@@ -716,7 +716,7 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "interval=%d\r\n", storedConfig->btInterval);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "bluetooth=%d\r\n", storedConfig->bluetoothEnable);
+      sprintf(buffer, "bluetoothDisabled=%d\r\n", storedConfig->bluetoothDisable);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
       sprintf(buffer, "max_exp_len=%d\r\n", storedConfig->experimentLengthMaxInMinutes);
@@ -1072,9 +1072,9 @@ void ParseConfig(void)
       {
         broadcast_interval = atoi(equals) > 255 ? 255 : atoi(equals);
       }
-      else if (strstr(buffer, "bluetooth="))
+      else if (strstr(buffer, "bluetoothDisabled="))
       {
-        stored_config_temp.bluetoothEnable = atoi(equals);
+        stored_config_temp.bluetoothDisable = atoi(equals);
       }
       else if (strstr(buffer, "exp_power="))
       {
