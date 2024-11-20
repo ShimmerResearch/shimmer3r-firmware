@@ -189,16 +189,16 @@ void print_battery_details(void)
   switch (batteryStatus.battStatusRaw.rawBytes[2])
   {
   case CHRG_CHIP_STATUS_SUSPENDED:
-    sprintf(buffer, "Power-Down, charging is suspended or interrupted\r\n");
+    sprintf(buffer, "'Power-Down, or charging is suspended or interrupted'\r\n");
     break;
   case CHRG_CHIP_STATUS_FULLY_CHARGED:
     sprintf(buffer, "Charge is completed\r\n");
     break;
   case CHRG_CHIP_STATUS_PRECONDITIONING:
-    sprintf(buffer, "Pre-qualification mode, CC and CV charging, Top-off mode\r\n");
+    sprintf(buffer, "'Pre-qualification mode, CC and CV charging, or Top-off mode'\r\n");
     break;
   case CHRG_CHIP_STATUS_BAD_BATTERY:
-    sprintf(buffer, "Bad battery (Safety timer expired), or LDO mode\r\n");
+    sprintf(buffer, "'Bad battery (Safety timer expired), or LDO mode'\r\n");
     break;
   default:
     //Shouldn't reach here unless fault with FW
@@ -207,7 +207,7 @@ void print_battery_details(void)
   }
   send_test_report(buffer);
 
-  send_test_report(" - Overall charging status = ");
+  send_test_report(" - Determined charging status = ");
   switch (batteryStatus.battChargingStatus)
   {
   case CHARGING_STATUS_CHECKING:
