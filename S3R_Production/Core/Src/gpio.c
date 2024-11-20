@@ -324,16 +324,13 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     S4_Task_set(TASK_DOCKSETUP);
     break;
   case BOOT0_USER_BTN_Pin:
-    if (isBoardSr48_6_0())
-    {
-      /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
-      DockUart_interruptCheck();
-      S4_Task_set(TASK_DOCKSETUP);
-    }
-    else
-    {
-      GPIO_userButtonCheck();
-    }
+#if SR48_6_0_PATCH_DOCK_DETECT
+    /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
+    DockUart_interruptCheck();
+    S4_Task_set(TASK_DOCKSETUP);
+#else
+    GPIO_userButtonCheck();
+#endif
     break;
   case SD_DETECT_N_Pin:
     SD_insertedCheck();
@@ -473,21 +470,20 @@ void gpioInitPerBoard(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIO_INTERNAL2_GPIO_Port, &GPIO_InitStruct);
 
-    if (isBoardSr48_6_0())
-    {
-      /* SR48-6-0 S3R prototype has incorrect dock pin handling so we need to
-       * re-purpose the dock detect pin as an output to let the dock know when a
-       * Shimmer is docked. */
-      HAL_NVIC_DisableIRQ(EXTI1_IRQn);
-      HAL_GPIO_DeInit(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin);
+#if SR48_6_0_PATCH_DOCK_DETECT
+    /* SR48-6-0 S3R prototype has incorrect dock pin handling so we need to
+     * re-purpose the dock detect pin as an output to let the dock know when a
+     * Shimmer is docked. */
+    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+    HAL_GPIO_DeInit(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin);
 
-      HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, GPIO_PIN_SET);
-      GPIO_InitStruct.Pin = DOCK_DETECT_Pin;
-      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-      GPIO_InitStruct.Pull = GPIO_NOPULL;
-      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-      HAL_GPIO_Init(DOCK_DETECT_GPIO_Port, &GPIO_InitStruct);
-    }
+    HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, GPIO_PIN_SET);
+    GPIO_InitStruct.Pin = DOCK_DETECT_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(DOCK_DETECT_GPIO_Port, &GPIO_InitStruct);
+#endif
   }
 }
 
