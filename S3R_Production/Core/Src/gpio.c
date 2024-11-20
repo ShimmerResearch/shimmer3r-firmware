@@ -263,12 +263,14 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin)
   {
-    //case USB_VBUS_Pin:
-    //  if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
-    //  {
-    //    S4_Task_set(TASK_USB_SETUP);
-    //  }
-    //  break;
+#if !SR48_6_0_PATCH_VBUS_SENSE
+  case USB_VBUS_Pin:
+    if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
+    {
+      S4_Task_set(TASK_USB_SETUP);
+    }
+    break;
+#endif
   default:
     gpioExtiCommon(GPIO_Pin, 1);
     break;
@@ -339,12 +341,14 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
   case SD_DETECT_N_Pin:
     SD_insertedCheck();
     break;
+#if SR48_6_0_PATCH_VBUS_SENSE
   case USB_VBUS_Pin:
     if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
     {
       S4_Task_set(TASK_USB_SETUP);
     }
     break;
+#endif
   default:
     break;
   }
