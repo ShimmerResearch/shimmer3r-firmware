@@ -162,6 +162,7 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef *pcdHandle)
 
 /* USER CODE BEGIN 1 */
 
+#ifdef SR48_6_0
 void MX_USB_OTG_HS_PCD_Init_NoVbusSense(void)
 {
 
@@ -280,6 +281,7 @@ void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
     /* USER CODE END USB_OTG_HS_MspDeInit 1 */
   }
 }
+#endif
 
 USB_STATE usbPlugInState(void)
 {

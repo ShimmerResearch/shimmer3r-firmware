@@ -52,8 +52,13 @@
 #define USE_USBX                   0
 #define SHIMMER_ENABLE_PRINTF      1
 
-#define SR48_6_0                   1
-#define SR48_6_0_PATCH_DOCK_DETECT SR48_6_0
+#ifdef SR48_6_0
+#define SR48_6_0_PATCH_DOCK_DETECT 1
+#define SR48_6_0_PATCH_VBUS_SENSE  1
+#else
+#define SR48_6_0_PATCH_DOCK_DETECT 0
+#define SR48_6_0_PATCH_VBUS_SENSE  0
+#endif
 
 #ifdef SHIMMER_ENABLE_PRINTF
 #define SHIMMER_PRINTF(...) printf(__VA_ARGS__)
