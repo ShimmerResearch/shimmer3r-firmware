@@ -33,27 +33,32 @@
 #define USE_DEFAULT_SENSOR  0
 #define RTC_FAST \
   0 //need to increase rtc alarm interrupt priority before enabling this option
-#define USE_8BYTES_INIT_TS         0
-#define TEST_UNDOCKED              0
-#define FULL_TEST_MODE             0
-#define USE_FREERTOS               0
-#define SENS_CLK_RTC0TIM1          0
+#define USE_8BYTES_INIT_TS    0
+#define TEST_UNDOCKED         0
+#define FULL_TEST_MODE        0
+#define USE_FREERTOS          0
+#define SENS_CLK_RTC0TIM1     0
 
-#define USE_DEFAULT_LED            1
-#define USE_I2C_VBATT_REPORT       1
-#define SKIP_50MS                  1
-#define USE_VBATT_ALWAYS           0
-#define HAL_TEST_INFOMEM           0
-#define USE_BT                     1
-#define USE_SD                     1
-#define USE_BMPX80                 2 //x=1 for 180, x=2 for 280
-#define NUM_SDWRBUF                64
-#define USE_FATFS                  1
-#define USE_USBX                   0
-#define SHIMMER_ENABLE_PRINTF      1
+#define USE_DEFAULT_LED       1
+#define USE_I2C_VBATT_REPORT  1
+#define SKIP_50MS             1
+#define USE_VBATT_ALWAYS      0
+#define HAL_TEST_INFOMEM      0
+#define USE_BT                1
+#define USE_SD                1
+#define USE_BMPX80            2 //x=1 for 180, x=2 for 280
+#define NUM_SDWRBUF           64
+#define USE_FATFS             1
+#define USE_USBX              0
+#define SHIMMER_ENABLE_PRINTF 1
 
-#define SR48_6_0                   1
-#define SR48_6_0_PATCH_DOCK_DETECT SR48_6_0
+#ifdef SR48_6_0
+#define SR48_6_0_PATCH_DOCK_DETECT 1
+#define SR48_6_0_PATCH_VBUS_SENSE  1
+#else
+#define SR48_6_0_PATCH_DOCK_DETECT 0
+#define SR48_6_0_PATCH_VBUS_SENSE  0
+#endif
 
 #ifdef SHIMMER_ENABLE_PRINTF
 #define SHIMMER_PRINTF(...) printf(__VA_ARGS__)
