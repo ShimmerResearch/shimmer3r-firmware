@@ -12,10 +12,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BMP_LEN_CALIB_DATA BMP3_LEN_CALIB_DATA
+#define BMP_LEN_CALIB_DATA   BMP3_LEN_CALIB_DATA
 
-#define BMP390_TEMP_SKIPPED    0x800000
-#define BMP390_PRESS_SKIPPED   0x800000
+#define BMP390_TEMP_SKIPPED  0x800000
+#define BMP390_PRESS_SKIPPED 0x800000
 
 void bmp3_driver_init(void);
 void bmp3_selectDevice(void);
