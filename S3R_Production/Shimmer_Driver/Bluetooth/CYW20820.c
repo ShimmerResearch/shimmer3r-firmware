@@ -204,7 +204,6 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
 void btDeinit(void)
 {
   setBtPower(0);
-  Board_SW_BT(0);
   btUart_deint();
   deinitBtPins();
 }

@@ -714,13 +714,22 @@ void SPI_configureChannels()
 
   if (configBytes->chEnPressureAndTemperature)
   {
+    nbr_spi_chans += 2; //TEMP & PRES, ON/OFF together
+#if defined(SHIMMER3R)
+    *channel_contents_ptr++ = BMP_PRESSURE;
+    *channel_contents_ptr++ = BMP_TEMPERATURE;
+    sensing.ptr.pressure = sensing.dataLen;
+    sensing.dataLen += 3;
+    sensing.ptr.temperature = sensing.dataLen;
+    sensing.dataLen += 3;
+#else
     *channel_contents_ptr++ = BMP_TEMPERATURE;
     *channel_contents_ptr++ = BMP_PRESSURE;
-    nbr_spi_chans += 2; //TEMP & PRES, ON/OFF together
     sensing.ptr.temperature = sensing.dataLen;
     sensing.dataLen += 3;
     sensing.ptr.pressure = sensing.dataLen;
     sensing.dataLen += 3;
+#endif
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_BMP390_PRESSURE_TEMP;
   }
 
@@ -872,7 +881,7 @@ void SPI_startSensing()
 
   if (configBytes->chEnPressureAndTemperature)
   {
-    bmp3_configure(shimmerSamplingFreq, configBytes->pressureRate,
+    int8_t rslt = bmp3_configure(shimmerSamplingFreq, configBytes->pressureRate,
         get_config_byte_pressure_oversampling_ratio());
   }
 
@@ -1216,7 +1225,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
     bmp3_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.temperature,
+    memcpy(sensing.dataBuf + sensing.ptr.pressure,
         &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;

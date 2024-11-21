@@ -134,7 +134,8 @@ void overWriteDefaultConfig(void)
   }
   if (storedConfigPtr->chEnPressureAndTemperature)
   {
-    set_config_byte_pressure_oversampling_ratio(storedConfigPtr, BMP3_OVERSAMPLING_32X);
+    set_config_byte_pressure_oversampling_ratio(storedConfigPtr, BMP3_NO_OVERSAMPLING);
+//    set_config_byte_pressure_oversampling_ratio(storedConfigPtr, BMP3_OVERSAMPLING_32X);
     storedConfigPtr->pressureRate = BMP3_ODR_200_HZ;
   }
 }
