@@ -354,7 +354,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     S4_Task_set(TASK_DOCKSETUP);
     break;
 #if SR48_6_0_PATCH_DOCK_DETECT
-  case BOOT0_USER_BTN_Pin:
+  case SR48_6_0_BOOT0_USER_BTN_Pin:
     /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
     DockUart_interruptCheck();
     S4_Task_set(TASK_DOCKSETUP);
@@ -532,13 +532,13 @@ void gpioInitPerBoard(void)
     HAL_NVIC_DisableIRQ(INT_LINE_USER_BTN);
     HAL_GPIO_DeInit(USER_BTN_GPIO_Port, USER_BTN_Pin);
 
-    GPIO_InitStruct.Pin = BOOT0_USER_BTN_Pin;
+    GPIO_InitStruct.Pin = SR48_6_0_BOOT0_USER_BTN_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(BOOT0_USER_BTN_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, &GPIO_InitStruct);
 
-    HAL_NVIC_SetPriority(INT_LINE_BOOT0_USER_BTN, 0, 0);
-    HAL_NVIC_EnableIRQ(INT_LINE_BOOT0_USER_BTN);
+    HAL_NVIC_SetPriority(INT_LINE_SR48_6_0_BOOT0_USER_BTN, 0, 0);
+    HAL_NVIC_EnableIRQ(INT_LINE_SR48_6_0_BOOT0_USER_BTN);
 #endif
 
 #ifdef SR48_6_0

@@ -595,7 +595,7 @@ void EXTI2_IRQHandler(void)
 void EXTI3_IRQHandler(void)
 {
 #if SR48_6_0_PATCH_DOCK_DETECT
-  HAL_GPIO_EXTI_IRQHandler(BOOT0_USER_BTN_Pin);
+  HAL_GPIO_EXTI_IRQHandler(SR48_6_0_BOOT0_USER_BTN_Pin);
 #endif
 }
 
