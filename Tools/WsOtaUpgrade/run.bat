@@ -1,0 +1,1 @@
+.\WsOtaUpgrade.exe .\v1.4.16.16_int-ant\20240328_ezserial_app_VELA-IF820-INT-ANT-EVK_141616_v1.4.16.16.ota.bin

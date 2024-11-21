@@ -64,7 +64,12 @@ void S4_NORM_Task_manage(void)
 
   if (!taskCurrent)
   {
+    /* Only wake MCU when new Task is set. See corresponding
+     * HAL_PWR_DisableSleepOnExit() in S4_NORM_Task_set() */
+    HAL_PWR_EnableSleepOnExit();
+
     Power_SleepUntilInterrupt();
+
     //if(shimmerStatus.isBtConnected && !shimmerStatus.isSensing){
     //   Power_SleepUntilInterrupt();
     //
@@ -199,6 +204,7 @@ uint8_t S4_NORM_Task_set(uint32_t task_id)
   if (!taskList && !taskCurrent)
     is_sleeping = 1;
   taskList |= task_id;
+  HAL_PWR_DisableSleepOnExit();
   return is_sleeping;
 }
 

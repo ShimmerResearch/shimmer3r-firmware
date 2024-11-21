@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "crc.h"
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
@@ -163,6 +162,7 @@ void Init()
   //btFactoryResetViaFw();
   btInitialise();
   updateBtVer();
+//  btDeinit();
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
 #endif
@@ -199,13 +199,6 @@ void Init()
   shimmerStatus.configuring = 0;
   //Enable dock comms now that sensor is ready to communicate
   DockUart_enable();
-
-  //while(1){
-  //   //__NOP();
-  //   Power_StopUntilInterrupt();
-  //   //Power_SleepUntilInterrupt();
-  //}
-  //Power_StopUntilInterrupt();
 }
 
 /* USER CODE END 0 */
@@ -268,8 +261,8 @@ int main(void)
   setBootStage(BOOT_STAGE_END);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
-  //run_factory_test();
+//  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+//  run_factory_test();
 
   /* USER CODE END 2 */
 
