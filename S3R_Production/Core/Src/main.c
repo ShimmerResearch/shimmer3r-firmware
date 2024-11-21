@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "crc.h"
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
@@ -163,6 +162,7 @@ void Init()
   //btFactoryResetViaFw();
   btInitialise();
   updateBtVer();
+//btDeinit();
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
 #endif
@@ -199,13 +199,6 @@ void Init()
   shimmerStatus.configuring = 0;
   //Enable dock comms now that sensor is ready to communicate
   DockUart_enable();
-
-  //while(1){
-  //   //__NOP();
-  //   Power_StopUntilInterrupt();
-  //   //Power_SleepUntilInterrupt();
-  //}
-  //Power_StopUntilInterrupt();
 }
 
 /* USER CODE END 0 */

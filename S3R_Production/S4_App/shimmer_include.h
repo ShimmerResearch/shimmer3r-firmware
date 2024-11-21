@@ -17,6 +17,7 @@
 #include "s4_ram.h"
 #include "s4_sd.h"
 #include "s4_sensing.h"
+#include "shimmer_definitions.h"
 #include "shimmer_externs.h"
 #if defined(SHIMMER4_SDK)
 #include "STC3100.h"
