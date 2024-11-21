@@ -1224,9 +1224,9 @@ void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
   batteryStatus.battStatusRaw.rawBytes[2] = 0;
 #ifdef SR48_6_0
   batteryStatus.battStatusRaw.STAT2
-      = HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, SR48_6_0_CHG_STAT2_Pin);
+      = HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT2_GPIO_Port, SR48_6_0_CHG_STAT2_Pin);
   batteryStatus.battStatusRaw.STAT1
-      = HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, SR48_6_0_CHG_STAT1_Pin);
+      = HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT1_GPIO_Port, SR48_6_0_CHG_STAT1_Pin);
 #else
   batteryStatus.battStatusRaw.STAT2 = HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin);
   batteryStatus.battStatusRaw.STAT1 = HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin);
