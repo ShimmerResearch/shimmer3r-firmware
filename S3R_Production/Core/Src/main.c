@@ -162,7 +162,7 @@ void Init()
   //btFactoryResetViaFw();
   btInitialise();
   updateBtVer();
-//  btDeinit();
+//btDeinit();
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
 #endif
@@ -261,8 +261,8 @@ int main(void)
   setBootStage(BOOT_STAGE_END);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-//  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
-//  run_factory_test();
+  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+  //run_factory_test();
 
   /* USER CODE END 2 */
 

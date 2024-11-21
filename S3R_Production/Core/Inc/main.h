@@ -195,21 +195,21 @@ extern "C"
 #define GPIO_ADC_INT_EXP0_GPIO_Port GPIOA
 
 #if SR48_6_0_PATCH_DOCK_DETECT
-#define BOOT0_USER_BTN_Pin                   GPIO_PIN_3
-#define BOOT0_USER_BTN_GPIO_Port             GPIOH
-#define BOOT0_USER_BTN_EXTI_IRQn             EXTI3_IRQn
+#define BOOT0_USER_BTN_Pin       GPIO_PIN_3
+#define BOOT0_USER_BTN_GPIO_Port GPIOH
+#define BOOT0_USER_BTN_EXTI_IRQn EXTI3_IRQn
 #endif
 
 #ifdef SR48_6_0
-#define SR48_6_0_LED_UPR_GR_Pin              GPIO_PIN_2
-#define SR48_6_0_LED_UPR_GR_GPIO_Port        GPIOA
-#define SR48_6_0_LED_UPR_BLU_Pin             GPIO_PIN_3
-#define SR48_6_0_LED_UPR_BLU_GPIO_Port       GPIOA
+#define SR48_6_0_LED_UPR_GR_Pin        GPIO_PIN_2
+#define SR48_6_0_LED_UPR_GR_GPIO_Port  GPIOA
+#define SR48_6_0_LED_UPR_BLU_Pin       GPIO_PIN_3
+#define SR48_6_0_LED_UPR_BLU_GPIO_Port GPIOA
 
-#define SR48_6_0_CHG_STAT1_Pin               GPIO_PIN_10
-#define SR48_6_0_CHG_STAT1_GPIO_Port         GPIOB
-#define SR48_6_0_CHG_STAT2_Pin               GPIO_PIN_11
-#define SR48_6_0_CHG_STAT2_GPIO_Port         GPIOB
+#define SR48_6_0_CHG_STAT1_Pin         GPIO_PIN_10
+#define SR48_6_0_CHG_STAT1_GPIO_Port   GPIOB
+#define SR48_6_0_CHG_STAT2_Pin         GPIO_PIN_11
+#define SR48_6_0_CHG_STAT2_GPIO_Port   GPIOB
 #endif
 
   /* USER CODE END Private defines */

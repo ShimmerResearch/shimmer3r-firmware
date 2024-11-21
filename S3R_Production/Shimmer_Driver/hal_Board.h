@@ -155,7 +155,7 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define INT_LINE_DOCK_DETECT       EXTI1_IRQn //Enabled by CubeMX
 #define INT_LINE_LIS3MDL_DRDY      EXTI2_IRQn
 #ifdef SR48_6_0
-#define INT_LINE_BOOT0_USER_BTN    EXTI3_IRQn // Only used on SR48-6-0
+#define INT_LINE_BOOT0_USER_BTN EXTI3_IRQn //Only used on SR48-6-0
 #endif
 #define INT_LINE_GPIO_INTERNAL1    EXTI4_IRQn
 /* Either GPIO_ADC_INT_EXP0 or GPIO_INTERNAL2 can be used on line 5 */
