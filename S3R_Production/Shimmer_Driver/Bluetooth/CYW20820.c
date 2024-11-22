@@ -162,6 +162,10 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
   initBtPins();
   //Enable BT power
   setBtPower(1);
+  //TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
+  HAL_Delay(10);
+  Board_BT_LP_MODE(1);
+  Board_BT_CP_ROLE(1);
 
   BtUart_init(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
 
@@ -175,21 +179,12 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
 
-  //HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
-
-  Board_BT_RST_N(1);
-  //TODO delay needed and what value?
-  HAL_Delay(100);
-  Board_BT_LP_MODE(1);
-  Board_BT_CP_ROLE(1);
-
-  //TODO reset needed
-  Board_BT_RST_N(0);
-  //TODO value of delay needed for reset?
-  HAL_Delay(100);
-  Board_BT_RST_N(1);
-
+  //TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
+  HAL_Delay(10);
+  /* Setting DMA waiting for first char from BT module */
   HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+  /* Allow BT module to boot */
+  Board_BT_RST_N(1);
 
   if (factoryReset)
   {
