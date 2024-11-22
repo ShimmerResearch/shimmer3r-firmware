@@ -1362,17 +1362,17 @@ FRESULT set_file_timestamp(char *obj)
   FILINFO fno;
   RTC_TimeTypeDef RTC_TimeStructure;
   RTC_DateTypeDef RTC_DateStructure;
-//  HAL_RTC_GetTime(&hrtc, &RTC_TimeStructure, RTC_Format_BIN);
-//  HAL_RTC_GetDate(&hrtc, &RTC_DateStructure, RTC_Format_BIN);
-//  int hour = RTC_TimeStructure.RTC_Hours;
-//  int min = RTC_TimeStructure.RTC_Minutes;
-//  int sec = RTC_TimeStructure.RTC_Seconds;
-//  int month = RTC_DateStructure.RTC_Month;
-//  int mday = RTC_DateStructure.RTC_Date;
-//  int year = RTC_DateStructure.RTC_Year;
-//  year += 2000;
-//  fno.fdate = (WORD) (((year - 1980) << 9) | month << 5 | mday);
-//  fno.ftime = (WORD) (hour << 11 | min << 5 | sec / 2);
+  //HAL_RTC_GetTime(&hrtc, &RTC_TimeStructure, RTC_Format_BIN);
+  //HAL_RTC_GetDate(&hrtc, &RTC_DateStructure, RTC_Format_BIN);
+  //int hour = RTC_TimeStructure.RTC_Hours;
+  //int min = RTC_TimeStructure.RTC_Minutes;
+  //int sec = RTC_TimeStructure.RTC_Seconds;
+  //int month = RTC_DateStructure.RTC_Month;
+  //int mday = RTC_DateStructure.RTC_Date;
+  //int year = RTC_DateStructure.RTC_Year;
+  //year += 2000;
+  //fno.fdate = (WORD) (((year - 1980) << 9) | month << 5 | mday);
+  //fno.ftime = (WORD) (hour << 11 | min << 5 | sec / 2);
 
   S4_RTC_t data;
   S4_RTC_GetDateTime(&data);
