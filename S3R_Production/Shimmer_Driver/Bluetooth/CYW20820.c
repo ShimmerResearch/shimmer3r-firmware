@@ -160,6 +160,8 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
   }
 
   initBtPins();
+  //Enable BT power
+  setBtPower(1);
 
   BtUart_init(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
 
@@ -175,8 +177,6 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
 
   //HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
 
-  //Enable BT power
-  setBtPower(1);
   Board_BT_RST_N(1);
   //TODO delay needed and what value?
   HAL_Delay(100);
