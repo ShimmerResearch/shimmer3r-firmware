@@ -167,8 +167,9 @@ void SD_setExpIdName(void)
   if (i == 0)
   {
     setDefaultTrialId();
+    i = 12;
   }
-  memcpy((char *) expIdName, &(configBytes->expIdName[0]), sizeof(configBytes->expIdName));
+  memcpy((char *) expIdName, &(configBytes->expIdName[0]), i);
   //strcpy((char*)expIdName,"DefaultTrial");
 }
 
