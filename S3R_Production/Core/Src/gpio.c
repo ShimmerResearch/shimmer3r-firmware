@@ -610,6 +610,7 @@ void initBtPins(void)
 
   Board_BT_LP_MODE(0);
   Board_BT_CP_ROLE(0);
+  /* Hold BT module in reset until we're ready */
   Board_BT_RST_N(0);
 
   GPIO_InitStruct.Pin = BT_CP_ROLE_Pin;
