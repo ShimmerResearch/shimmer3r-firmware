@@ -44,6 +44,6 @@ uint8_t *getConfigTimeTextPtr(void);
 uint8_t *getFileNamePtr(void);
 uint8_t *getShimmerNamePtr(void);
 uint8_t *getExpIdPtr(void);
-FRESULT set_file_timestamp(char *obj);
+FRESULT set_file_timestamp(char *path);
 
 #endif /* S4_SD_H_ */

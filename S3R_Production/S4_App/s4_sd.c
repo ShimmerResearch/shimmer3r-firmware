@@ -37,6 +37,7 @@ FATFS fatfs;
 DIR dir;
 FIL dataFile;
 FILINFO dataFileInfo;
+char dataFileName[256];
 
 extern uint8_t retSD;  /* Return value for SD */
 extern char SDPath[4]; /* SD logical drive path */
@@ -229,7 +230,9 @@ uint8_t SD_setBasedir(void)
   if (file_status)
   {
     if (file_status == FR_NO_PATH) //we'll have to make /data first
+    {
       file_status = f_mkdir("/data");
+    }
     if (file_status) //in every case, we're toast
       return 0;      //FAIL;
 
@@ -239,6 +242,7 @@ uint8_t SD_setBasedir(void)
       return 0; //FAIL;
   }
   file_status = f_closedir(&dir);
+  set_file_timestamp("/data");
 
   strcpy((char *) expDirName, "data/");
   strcat((char *) expDirName, (char *) expIdName);
@@ -249,7 +253,9 @@ uint8_t SD_setBasedir(void)
   if (file_status)
   {
     if (file_status == FR_NO_PATH) //we'll have to make the experiment folder first
+    {
       file_status = f_mkdir((char *) expDirName);
+    }
     if (file_status) //in every case, we're toast
       return 0;      //FAIL;
 
@@ -302,6 +308,7 @@ uint8_t SD_setBasedir(void)
     }
   }
   file_status = f_closedir(&dir);
+  set_file_timestamp((char *) expDirName);
 
   //at this point, we have the id string and the counter, so we can make a directory name
   return 1; //SUCCESS;
@@ -328,6 +335,7 @@ uint8_t SD_makeBasedir(void)
     //FindError(fileBad, dirName);
     return 0; //FAIL;
   }
+
 #endif
 
   memset(fileName, 0, 64);
@@ -336,6 +344,8 @@ uint8_t SD_makeBasedir(void)
   strcat((char *) fileName, "/000");
   fileNum = 0;
   //sprintf((char*)fileName, "/%03d", fileNum++);
+
+  set_file_timestamp((char *) dirName);
 
   return 1; //SUCCESS;
 }
@@ -353,8 +363,6 @@ void SD_makeFileName(char *name_buf)
 void SD_fileInit(void)
 {
 #if USE_SD
-  char file_name[128];
-  //char file_name[128];
 #if USE_FATFS
   UINT bw;
 #endif
@@ -369,13 +377,13 @@ void SD_fileInit(void)
   //SD_mount(1);
   SD_setBasedir();
   SD_makeBasedir();
-  SD_makeFileName(file_name);
+  SD_makeFileName(dataFileName);
 
   S4Ram_sdHeadTextGet(temp_sdHeadText, 0, SD_HEAD_SIZE);
 
 #if USE_FATFS
-  file_status = f_open(&dataFile, file_name, FA_CREATE_ALWAYS | FA_WRITE);
-  f_stat(file_name, &dataFileInfo);
+  file_status = f_open(&dataFile, dataFileName, FA_CREATE_ALWAYS | FA_WRITE);
+  f_stat(dataFileName, &dataFileInfo);
 #endif
   sdFileSyncTs = sdFileCrTs = RTC_get64();
 #if USE_8BYTES_INIT_TS
@@ -401,6 +409,7 @@ void SD_close(void)
 #if USE_FATFS
   f_sync(&dataFile);
   f_close(&dataFile);
+  set_file_timestamp(dataFileName);
   file_status = FR_OK;
 #endif
   //Board_sdPower(0);
@@ -476,16 +485,16 @@ void SD_writeToCard(void)
   { //(&& (test_cnt < 15))
     //sdFileCrTs = sensing.latestTs;
     sdFileSyncTs = sdFileCrTs = RTC_get64();
-    char file_name[256];
 #if USE_FATFS
     file_status = f_sync(&dataFile);
     assert_param(file_status == FR_OK);
     file_status = f_close(&dataFile);
     assert_param(file_status == FR_OK);
+    set_file_timestamp(dataFileName);
 #endif
-    SD_makeFileName(file_name);
+    SD_makeFileName(dataFileName);
 #if USE_FATFS
-    file_status = f_open(&dataFile, file_name, FA_CREATE_ALWAYS | FA_WRITE);
+    file_status = f_open(&dataFile, dataFileName, FA_CREATE_ALWAYS | FA_WRITE);
     assert_param(file_status == FR_OK);
 #endif
     //S4_RTC_GetDateTime(&hrtc, &rtc_data);
@@ -838,6 +847,7 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
       file_status = f_close(&cfgFile);
+      set_file_timestamp(cfgname);
 
       HAL_Delay(100); //100ms @ 24MHz
     }
@@ -1224,6 +1234,8 @@ void ParseConfig(void)
       }
     }
     file_status = f_close(&cfgFile);
+    set_file_timestamp(cfgname);
+
     HAL_Delay(50); //50ms
 
     sample_period = (uint16_t) round(((float) 32768.0) / sample_rate);
@@ -1357,7 +1369,7 @@ uint8_t *getFileNamePtr(void)
   return &fileName[0];
 }
 
-FRESULT set_file_timestamp(char *obj)
+FRESULT set_file_timestamp(char *path)
 {
   FILINFO fno;
   RTC_TimeTypeDef RTC_TimeStructure;
@@ -1380,5 +1392,5 @@ FRESULT set_file_timestamp(char *obj)
   fno.fdate = (WORD) (((data.year - 1980) << 9) | data.month << 5 | data.date);
   fno.ftime = (WORD) (data.hours << 11 | data.minutes << 5 | data.seconds / 2);
 
-  return f_utime(obj, &fno);
+  return f_utime(path, &fno);
 }
