@@ -78,6 +78,7 @@ uint8_t SD_test(void)
   shimmerStatus.sdBadFile += f_write(&test_file, test_text1, TEST_TEXT_LEN - 1, &bw);
   shimmerStatus.sdBadFile += f_write(&test_file, test_text2, TEST_TEXT_LEN - 1, &bw);
   shimmerStatus.sdBadFile += f_close(&test_file);
+  set_file_timestamp(file_name);
 
   memset(test_text3, 0, 40);
   shimmerStatus.sdBadFile += f_open(&test_file, file_name, FA_OPEN_EXISTING | FA_READ);
@@ -1354,4 +1355,30 @@ uint8_t *getConfigTimeTextPtr(void)
 uint8_t *getFileNamePtr(void)
 {
   return &fileName[0];
+}
+
+FRESULT set_file_timestamp(char *obj)
+{
+  FILINFO fno;
+  RTC_TimeTypeDef RTC_TimeStructure;
+  RTC_DateTypeDef RTC_DateStructure;
+//  HAL_RTC_GetTime(&hrtc, &RTC_TimeStructure, RTC_Format_BIN);
+//  HAL_RTC_GetDate(&hrtc, &RTC_DateStructure, RTC_Format_BIN);
+//  int hour = RTC_TimeStructure.RTC_Hours;
+//  int min = RTC_TimeStructure.RTC_Minutes;
+//  int sec = RTC_TimeStructure.RTC_Seconds;
+//  int month = RTC_DateStructure.RTC_Month;
+//  int mday = RTC_DateStructure.RTC_Date;
+//  int year = RTC_DateStructure.RTC_Year;
+//  year += 2000;
+//  fno.fdate = (WORD) (((year - 1980) << 9) | month << 5 | mday);
+//  fno.ftime = (WORD) (hour << 11 | min << 5 | sec / 2);
+
+  S4_RTC_t data;
+  S4_RTC_GetDateTime(&data);
+  data.year += 2000;
+  fno.fdate = (WORD) (((data.year - 1980) << 9) | data.month << 5 | data.date);
+  fno.ftime = (WORD) (data.hours << 11 | data.minutes << 5 | data.seconds / 2);
+
+  return f_utime(obj, &fno);
 }
