@@ -163,6 +163,7 @@ void ShimmerCalib_ram2File(void)
 
     f_close(&gfc);
     HAL_Delay(50); //50ms
+    set_file_timestamp(cal_file_name);
   }
 }
 
@@ -217,6 +218,7 @@ uint8_t ShimmerCalib_file2Ram()
   shimmerCalib_ramLen = min(*(uint16_t *) shimmerCalib_ram, SHIMMER_CALIB_RAM_MAX - 2);
   f_close(&gfc);
   HAL_Delay(50);
+  set_file_timestamp(cal_file_name);
 #endif
 
   return 0;
