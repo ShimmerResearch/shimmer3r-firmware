@@ -3,7 +3,7 @@
  *   @file   adxl371.c
  *   @brief  Implementation of adxl371 Core Driver based on adxl372 driver
  *   @author SPopa (stefan.popa@analog.com)
- *   https://github.com/analogdevicesinc/no-OS/tree/main/drivers/accel/adxl37
+ *   https://github.com/analogdevicesinc/no-OS/tree/main/drivers/accel/adxl372
  *******************************************************************************
  * Copyright 2018(c) Analog Devices, Inc.
  *
