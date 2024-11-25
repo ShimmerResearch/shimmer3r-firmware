@@ -3010,7 +3010,9 @@ void BtUart_processCmd(void)
     dcMemLength = args[0];
     dcMemOffset = args[1];
     if ((dcMemLength <= 16) && (dcMemOffset <= 15) && (dcMemLength + dcMemOffset <= 16))
+    {
       dcIdResponse = 1;
+    }
     break;
   case SET_DAUGHTER_CARD_ID_COMMAND:
     dcMemLength = args[0];
@@ -3024,7 +3026,9 @@ void BtUart_processCmd(void)
     dcMemLength = args[0];
     dcMemOffset = args[1] + (args[2] << 8);
     if ((dcMemLength <= 128) && (dcMemOffset <= 2031) && (dcMemLength + dcMemOffset <= 2032))
+    {
       dcMemResponse = 1;
+    }
     break;
   case SET_DAUGHTER_CARD_MEM_COMMAND:
     dcMemLength = args[0];
@@ -3066,7 +3070,9 @@ void BtUart_processCmd(void)
     infomemOffset = args[1] + (args[2] << 8);
     if ((infomemLength <= 128) && (infomemOffset <= (NV_NUM_RWMEM_BYTES - 1))
         && (infomemLength + infomemOffset <= NV_NUM_RWMEM_BYTES))
+    {
       infomemResponse = 1;
+    }
     break;
   case SET_INFOMEM_COMMAND:
     uint8_t temp_btMacHex[6];
@@ -3691,11 +3697,15 @@ void BtUart_sendRsp(void)
       if (exgLength)
       {
         if (exgChip)
+        {
           memcpy((resPacket + packet_length),
               &storedConfig->exgADS1292rRegsCh2.rawBytes[0], exgLength);
+        }
         else
+        {
           memcpy((resPacket + packet_length),
               &storedConfig->exgADS1292rRegsCh1.rawBytes[0], exgLength);
+        }
         packet_length += exgLength;
       }
       exgRegsResponse = 0;

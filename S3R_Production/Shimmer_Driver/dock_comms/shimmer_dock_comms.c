@@ -474,7 +474,9 @@ void DockUart_processCmd(void)
               uartSendRspAck = 1;
             }
             else
+            {
               uartSendRspBadArg = 1;
+            }
             break;
 #endif
           default:
@@ -782,7 +784,9 @@ void DockUart_sendRsp(void)
 uint8_t UartCheckCrc(uint8_t len)
 {
   if (len > UART_DATA_LEN_MAX)
+  {
     return 0;
+  }
   uint16_t uart_rx_crc, uart_calc_crc;
   uart_calc_crc = CRC_data(dockRxBuf, len);
   uart_rx_crc = (uint16_t) dockRxBuf[len];

@@ -201,31 +201,47 @@ void EXG_offsetCal(uint8_t chip)
 void EXG_readRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *rdata)
 {
   if (chip)
+  {
     ADS1292_chip2CsEnable(1);
+  }
   else
+  {
     ADS1292_chip1CsEnable(1);
+  }
 
   ADS1292_regRead(startaddress, size, rdata);
 
   if (chip)
+  {
     ADS1292_chip2CsEnable(0);
+  }
   else
+  {
     ADS1292_chip1CsEnable(0);
+  }
 }
 
 void EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wdata)
 {
   if (chip)
+  {
     ADS1292_chip2CsEnable(1);
+  }
   else
+  {
     ADS1292_chip1CsEnable(1);
+  }
 
   ADS1292_regWrite(startaddress, size, wdata);
 
   if (chip)
+  {
     ADS1292_chip2CsEnable(0);
+  }
   else
+  {
     ADS1292_chip1CsEnable(0);
+  }
 }
 
 void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf)

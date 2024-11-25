@@ -487,7 +487,9 @@ volatile void *memcpy_vout(volatile void *dest, const void *src, size_t n)
   volatile uint8_t *dest_c = (volatile uint8_t *) dest;
 
   for (size_t i = 0; i < n; i++)
+  {
     dest_c[i] = src_c[i];
+  }
 
   return dest;
 }

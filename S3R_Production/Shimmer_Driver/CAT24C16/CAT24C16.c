@@ -110,7 +110,9 @@ int32_t CAT24C16_write(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length
 
     //if reaches edge of flash mem, reassign the slave address
     if (!(mem_ptr % CAT24C16_BLOCK_SIZE))
+    {
       inc_addr = 1;
+    }
   }
 
   return result;

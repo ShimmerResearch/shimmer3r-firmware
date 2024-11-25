@@ -264,8 +264,10 @@ static uint8_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
       lis2dw12_acceleration_raw_get(dev_ctx, data_raw_acceleration[i].i16bit);
 
       for (axis = 0; axis < 3; axis++)
+      {
         acceleration_mg[i][axis]
             = lis2dw12_from_fs4_to_mg(data_raw_acceleration[i].i16bit[axis]);
+      }
 
       i++;
     }
