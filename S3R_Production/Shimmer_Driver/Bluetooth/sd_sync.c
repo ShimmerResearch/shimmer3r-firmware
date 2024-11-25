@@ -469,9 +469,13 @@ void SyncCenterR1(void)
   {
     currNodeSucc = 1;
     if (firstOutlier & SyncNodeShift(syncNodeCnt))
+    {
       firstOutlier &= ~SyncNodeShift(syncNodeCnt);
+    }
     else
+    {
       nodeSucc |= SyncNodeShift(syncNodeCnt);
+    }
   }
 }
 
@@ -593,11 +597,17 @@ uint8_t RcFindSmallest(void)
     {
       to_compare_val = myTimeDiffArr[(i + j) % SYNC_TRANS_IN_ONE_COMM];
       if (myTimeDiffArr[i] > to_compare_val)
+      {
         diff_val = myTimeDiffArr[i] - to_compare_val;
+      }
       else
+      {
         diff_val = to_compare_val - myTimeDiffArr[i];
+      }
       if (diff_val > 3277) //0.1*32768
+      {
         far_cnt++;
+      }
     }
     if ((far_cnt >= 4) && (black_list_cnt < 20))
     {
@@ -671,7 +681,9 @@ void handleSyncTimerTrigger(void)
         //can stop syncing after certain #
       }
       else
+      {
         syncThis++;
+      }
     }
     else
     {
@@ -735,7 +747,9 @@ void handleSyncTimerTriggerCenter(void)
               while (nodeSucc & SyncNodeShift(syncNodeCnt))
               {
                 if (++syncNodeCnt >= syncNodeNum)
+                {
                   syncNodeCnt = 0;
+                }
               }
               BT_connect(nodeName[syncNodeCnt]);
               currNodeSucc = 0;
@@ -752,7 +766,9 @@ void handleSyncTimerTriggerCenter(void)
               btStopCb(0);
               cReboot = 1;
               if (shortExpFlag)
+              {
                 nodeSucc |= 1 << syncNodeCnt;
+              }
 
               syncNodeCnt++;
             }
@@ -777,7 +793,9 @@ void handleSyncTimerTriggerCenter(void)
                 cReboot = 0;
               }
               else
+              {
                 cReboot++;
+              }
             }
             else
             {
@@ -796,7 +814,9 @@ void handleSyncTimerTriggerCenter(void)
         btStopCb(0);
         syncSuccC = 1;
         if (shortExpFlag)
+        {
           syncCnt = estLen3 * SYNC_FACTOR;
+        }
       }
     }
     else if (syncCnt == SYNC_WINDOW_C * SYNC_FACTOR)
@@ -804,11 +824,17 @@ void handleSyncTimerTriggerCenter(void)
       //power off
       btStopCb(0);
       if (nodeSucc == nodeSuccFull)
+      {
         syncSuccC = 1;
+      }
       else
+      {
         syncSuccC = 0;
+      }
       if (shortExpFlag)
+      {
         syncCnt = estLen3 * SYNC_FACTOR;
+      }
     }
   }
 }
@@ -839,9 +865,13 @@ void handleSyncTimerTriggerNode(void)
         {
           syncSuccN = 1;
           if (shortExpFlag)
+          {
             syncCnt = estLen3 * SYNC_FACTOR;
+          }
           else
+          {
             syncCnt = (SYNC_CD * rcNodeReboot + SYNC_WINDOW_N * (SYNC_NEXT2MATCH - 1)) * SYNC_FACTOR;
+          }
         }
       }
     }
@@ -856,9 +886,13 @@ void handleSyncTimerTriggerNode(void)
       else
       {
         if (nReboot < rcNodeReboot)
+        {
           nReboot++;
+        }
         else
+        {
           nReboot = 0;
+        }
       }
       syncSuccN = 0;
     }
@@ -915,7 +949,9 @@ inline uint16_t GetTA0(void)
   register uint16_t t0, t1;
   uint8_t ie;
   if (ie = (__get_SR_register() & GIE)) //interrupts enabled? // @suppress("Assignment in condition")
+  {
     __disable_interrupt();
+  }
   t1 = TA0R;
   do
   {
@@ -923,7 +959,9 @@ inline uint16_t GetTA0(void)
     t1 = TA0R;
   } while (t0 != t1);
   if (ie)
+  {
     __enable_interrupt();
+  }
   return t1;
 }
 

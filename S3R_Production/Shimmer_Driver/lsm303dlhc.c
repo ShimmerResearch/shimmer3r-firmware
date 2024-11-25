@@ -56,13 +56,21 @@ uint8_t LSM303DLHC_accelInit(uint8_t samplingrate, uint8_t range, uint8_t lowpow
   HAL_StatusTypeDef i2c_status;
 
   if (samplingrate > 9)
+  {
     samplingrate = 5;
+  }
   if (range > 3)
+  {
     range = 0;
+  }
   if (lowpower > 1)
+  {
     lowpower = 0;
+  }
   if (highresolution > 1)
+  {
     highresolution = 0;
+  }
 
   //Configure Accel
   i2c_buffer[0] = CTRL_REG1_A;
@@ -96,9 +104,13 @@ uint8_t LSM303DLHC_magInit(uint8_t samplingrate, uint8_t gain)
   HAL_StatusTypeDef i2c_status;
 
   if (samplingrate > 7)
+  {
     samplingrate = 6;
+  }
   if (gain < 1 || gain > 7)
+  {
     gain = 1;
+  }
 
   //write CRA_REG_M register
   i2c_buffer[0] = CRA_REG_M;

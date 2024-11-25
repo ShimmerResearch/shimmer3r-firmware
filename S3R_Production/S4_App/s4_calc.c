@@ -76,9 +76,13 @@ uint8_t S4Calc_crcCheck(uint8_t *msg, uint8_t len)
   crc = S4Calc_crcCalc(msg, len - 2);
 
   if (((crc & 0xFF) == msg[len - 2]) && (((crc & 0xFF00) >> 8) == msg[len - 1]))
+  {
     return 1; //TRUE
+  }
   else
+  {
     return 0; //FALSE
+  }
 }
 
 void S4Calc_itoaWith0(uint64_t num, uint8_t *buf, uint8_t len)
@@ -102,7 +106,9 @@ void S4Calc_itoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len)
   for (idx = 0; (idx < max_len - 1) && (num > 0); idx++)
   {
     for (i_move = idx; i_move > 0; i_move--)
+    {
       buf[i_move] = buf[i_move - 1];
+    }
     buf[0] = '0' + num % 10;
     num /= 10;
   }

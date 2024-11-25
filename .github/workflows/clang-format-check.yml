@@ -17,7 +17,7 @@ jobs:
     - uses: DoozyX/clang-format-lint-action@v0.17
       with:
         source: './S3R_Production'
-        exclude: '*/Drivers */Middlewares */BMP3_SensorAPI */lis2dw12-pid */lis2mdl-pid */lis3mdl-pid */lis303ah-pid */lsm6dsv-pid */SR7 */BMP280_driver ezsapi.* */FATFS no_os_alloc.* no_os_util.h* AL94.I-CUBE-USBD-COMPOSITE_conf.h'
+        exclude: '*/Drivers */Middlewares */BMP3_SensorAPI */lis2dw12-pid */lis2mdl-pid */lis3mdl-pid */lis303ah-pid */lsm6dsv-pid */SR7 */BMP280_driver ezsapi.* */FATFS no_os_alloc.* no_os_util.h* adxl371.c adxl371.h AL94.I-CUBE-USBD-COMPOSITE_conf.h'
         extensions: 'h,c'
         clangFormatVersion: 17
         inplace: True

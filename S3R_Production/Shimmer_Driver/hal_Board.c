@@ -297,15 +297,25 @@ void Board_ledOn(uint8_t ledMask)
 void Board_ledOn(uint8_t ledMask)
 {
   if (ledMask & LED_RED)
+  {
     HAL_GPIO_WritePin(LED_RED_GPIO, LED_RED_PIN, GPIO_PIN_RESET); //red
+  }
   if (ledMask & LED_GREEN0)
+  {
     HAL_GPIO_WritePin(LED_GR0_GPIO, LED_GR0_PIN, GPIO_PIN_RESET); //green0
+  }
   if (ledMask & LED_YELLOW)
+  {
     HAL_GPIO_WritePin(LED_YEL_GPIO, LED_YEL_PIN, GPIO_PIN_RESET); //orange
+  }
   if (ledMask & LED_GREEN1)
+  {
     HAL_GPIO_WritePin(LED_GR1_GPIO, LED_GR1_PIN, GPIO_PIN_RESET); //green1
+  }
   if (ledMask & LED_BLUE)
+  {
     HAL_GPIO_WritePin(LED_BLU_GPIO, LED_BLU_PIN, GPIO_PIN_RESET); //blue
+  }
 }
 #endif
 
@@ -325,15 +335,25 @@ void Board_ledOff(uint8_t ledMask)
 void Board_ledOff(uint8_t ledMask)
 {
   if (ledMask & LED_RED)
+  {
     HAL_GPIO_WritePin(LED_RED_GPIO, LED_RED_PIN, GPIO_PIN_SET); //red
+  }
   if (ledMask & LED_GREEN0)
+  {
     HAL_GPIO_WritePin(LED_GR0_GPIO, LED_GR0_PIN, GPIO_PIN_SET); //green0
+  }
   if (ledMask & LED_YELLOW)
+  {
     HAL_GPIO_WritePin(LED_YEL_GPIO, LED_YEL_PIN, GPIO_PIN_SET); //orange
+  }
   if (ledMask & LED_GREEN1)
+  {
     HAL_GPIO_WritePin(LED_GR1_GPIO, LED_GR1_PIN, GPIO_PIN_SET); //green1
+  }
   if (ledMask & LED_BLUE)
+  {
     HAL_GPIO_WritePin(LED_BLU_GPIO, LED_BLU_PIN, GPIO_PIN_SET); //blue
+  }
 }
 #endif
 
@@ -353,15 +373,25 @@ void Board_ledToggle(uint8_t ledMask)
 void Board_ledToggle(uint8_t ledMask)
 {
   if (ledMask & LED_RED)
+  {
     HAL_GPIO_TogglePin(LED_RED_GPIO, LED_RED_PIN); //red
+  }
   if (ledMask & LED_GREEN0)
+  {
     HAL_GPIO_TogglePin(LED_GR0_GPIO, LED_GR0_PIN); //green0
+  }
   if (ledMask & LED_YELLOW)
+  {
     HAL_GPIO_TogglePin(LED_YEL_GPIO, LED_YEL_PIN); //orange
+  }
   if (ledMask & LED_GREEN1)
+  {
     HAL_GPIO_TogglePin(LED_GR1_GPIO, LED_GR1_PIN); //green1
+  }
   if (ledMask & LED_BLUE)
+  {
     HAL_GPIO_TogglePin(LED_BLU_GPIO, LED_BLU_PIN); //blue
+  }
 }
 #endif
 

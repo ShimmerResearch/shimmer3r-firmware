@@ -195,7 +195,9 @@ int32_t adxl371_is_data_rdy(void)
 
   ret = adxl371_spi_reg_read(&adxl371, ADXL371_STATUS_1, &status1);
   if (ret < 0)
+  {
     return ret;
+  }
 
   return ADXL371_STATUS_1_DATA_RDY(status1);
 }
