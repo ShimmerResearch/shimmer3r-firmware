@@ -33,3 +33,7 @@ jobs:
         message: 'Committing clang-format changes'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build STM32CubeIde project
+      uses: xanderhendriks/action-build-stm32cubeide@v13.0
+      with:
+        project-path: 'S3R_Production'
