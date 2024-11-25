@@ -194,7 +194,9 @@ void InfoMem_updateFrom(uint8_t *buf)
 uint8_t InfoMem_readRam(uint8_t *buf, uint16_t addr, uint16_t size)
 {
   if (addr + size > INFOMEM_CONFIG_SIZE)
+  {
     return 1;
+  }
   //reading 512 bytes takes 0x4ed clk cpu cycles
   memcpy(buf, (uint8_t *) INFOMEM_CONFIG_OFFSET + addr, size);
 
@@ -204,7 +206,9 @@ uint8_t InfoMem_readRam(uint8_t *buf, uint16_t addr, uint16_t size)
 uint8_t InfoMem_readCalib(uint8_t *buf, uint16_t addr, uint16_t size)
 {
   if (addr + size > INFOMEM_CALIB_SIZE)
+  {
     return 1;
+  }
   //reading 512 bytes takes 0x4ed clk cpu cycles
   memcpy(buf, (uint8_t *) INFOMEM_CALIB_OFFSET + addr, size);
 
@@ -217,7 +221,9 @@ uint8_t InfoMem_readCalib(uint8_t *buf, uint16_t addr, uint16_t size)
 uint8_t InfoMem_readTest(uint8_t *buf, uint16_t addr, uint16_t size)
 {
   if (addr + size > INFOMEM_TEST_SIZE)
+  {
     return 1;
+  }
   //reading 512 bytes takes 0x4ed clk cpu cycles
   memcpy(buf, (uint8_t *) INFOMEM_TEST_OFFSET + addr, size);
 

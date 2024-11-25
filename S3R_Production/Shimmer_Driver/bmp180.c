@@ -107,7 +107,9 @@ HAL_StatusTypeDef BMP180_getCalib(uint8_t *rx_buf)
 float BMP180_calcTemp(uint16_t temp_val_16)
 {
   if (!BMP180_lib_initialized)
+  {
     return 0;
+  }
   UT = temp_val_16;
   X1 = (UT - AC6) * AC5 * BMP180_1_32768;
   X2 = MC * 2048 / (X1 + MD);
@@ -119,7 +121,9 @@ float BMP180_calcTemp(uint16_t temp_val_16)
 uint32_t BMP180_calcPres(uint32_t pres_val_32, uint8_t oss, float *altitude)
 {
   if (!BMP180_lib_initialized)
+  {
     return 0;
+  }
 
   /* Calculate true pressure */
   UP = pres_val_32 >> (8 - oss);
@@ -149,8 +153,10 @@ uint32_t BMP180_calcPres(uint32_t pres_val_32, uint8_t oss, float *altitude)
 
   /* Calculate altitude */
   if (altitude)
+  {
     *altitude = (float) 44330.0
         * (float) ((float) 1.0 - (float) pow((float) p * BMP180_1_101325, 0.19029495));
+  }
 
   return p;
 }

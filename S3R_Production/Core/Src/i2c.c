@@ -980,7 +980,9 @@ void BMP180RxDoneHandler(void)
       BMP180_presStartMeasurement(sensorBmp180.oss);
     }
     else
+    {
       i2c1Sens.status = I2C_STAT_IDLE;
+    }
   }
   else if (i2c1Sens.status == I2C_STAT_BMP180_PRES_GET_R)
   {
@@ -998,7 +1000,9 @@ void BMP180RxDoneHandler(void)
       }
     }
     else
+    {
       i2c1Sens.status = I2C_STAT_IDLE;
+    }
   }
   else
   {

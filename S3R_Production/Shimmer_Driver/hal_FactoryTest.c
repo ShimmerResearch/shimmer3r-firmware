@@ -386,7 +386,9 @@ uint8_t I2C_test(void)
 #if defined(SHIMMER4_SDK)
   MPU9250_init(hi2cMainBus);
   if (MPU9250_test())
+  {
     ret_val |= 0x01;
+  }
 
   LSM303DLHC_init(hi2cMainBus);
   if (LSM303DLHC_accelTest())

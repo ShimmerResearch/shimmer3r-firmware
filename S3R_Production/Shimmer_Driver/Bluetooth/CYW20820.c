@@ -104,30 +104,48 @@ bool btIsInitialised, btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 static char hexdigit2int(uint8_t xd)
 {
   if (xd <= 9)
+  {
     return xd + '0';
+  }
   if (xd == 10)
+  {
     return 'A';
+  }
   if (xd == 11)
+  {
     return 'B';
+  }
   if (xd == 12)
+  {
     return 'C';
+  }
   if (xd == 13)
+  {
     return 'D';
+  }
   if (xd == 14)
+  {
     return 'E';
+  }
   if (xd == 15)
+  {
     return 'F';
+  }
   return '0';
 }
 
 static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator)
 {
   if (reverse)
+  {
     data += bytes;
+  }
   while (bytes)
   {
     if (reverse)
+    {
       data--;
+    }
     //printf(((*data >> 4) & 0xF) < 10 ? ('0' + ((*data >> 4) & 0xF)) : ('A' - 10 + ((*data >> 4) & 0xF)));
     //printf(( *data       & 0xF) < 10 ? ('0' + ( *data       & 0xF)) : ('A' - 10 + ( *data       & 0xF)));
 
@@ -137,10 +155,14 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
     printf("%c", (*data & 0xF) < 10 ? ('0' + (*data & 0xF)) : ('A' - 10 + (*data & 0xF)));
 
     if (!reverse)
+    {
       data++;
+    }
     bytes--;
     if (bytes && separator)
+    {
       printf("%c", separator);
+    }
   }
 }
 

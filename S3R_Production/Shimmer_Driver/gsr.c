@@ -167,11 +167,17 @@ void GSR_setRange(uint8_t range)
 uint64_t multiply(uint64_t no1, uint64_t no2)
 {
   if (no1 == 0 || no2 == 0)
+  {
     return 0;
+  }
   if (no1 == 1)
+  {
     return no2;
+  }
   if (no2 == 1)
+  {
     return no1;
+  }
   return no1 * no2;
 }
 
@@ -321,15 +327,21 @@ uint32_t GSR_smoothSample(uint32_t resistance, uint8_t active_resistor)
     transient_smoothing_samples--;
     //if we are finished smoothing then go back to a larger resistance step
     if (!transient_smoothing_samples)
+    {
       max_resistance_step = MAX_RESISTANCE_STEP;
+    }
   }
   //only prevent a large step from last resistance if we actually have a last resistance
   if ((got_first_sample) && (last_resistance > max_resistance_step))
   {
     if (resistance > (last_resistance + max_resistance_step))
+    {
       resistance = (last_resistance + max_resistance_step);
+    }
     else if (resistance < (last_resistance - max_resistance_step))
+    {
       resistance = (last_resistance - max_resistance_step);
+    }
     else
       ;
   }

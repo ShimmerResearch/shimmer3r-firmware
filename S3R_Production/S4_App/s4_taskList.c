@@ -202,7 +202,9 @@ uint8_t S4_NORM_Task_set(uint32_t task_id)
   uint8_t is_sleeping = 0;
   //if(!taskList && !TaskCurrentGet())
   if (!taskList && !taskCurrent)
+  {
     is_sleeping = 1;
+  }
   taskList |= task_id;
   HAL_PWR_DisableSleepOnExit();
   return is_sleeping;

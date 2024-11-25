@@ -192,7 +192,9 @@ uint8_t ShimmerCalib_file2Ram()
       return 1;
     }
     else
+    {
       strcpy(cal_file_name, "/calibration");
+    }
   }
   strcat(cal_file_name, "/calib_");
   strcat(cal_file_name, (char *) shimmerCalib_macId);

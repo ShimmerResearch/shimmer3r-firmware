@@ -129,7 +129,6 @@ uint8_t SD_test_alternative(void)
         }
         else
         {
-
           f_close(&SDFile);
         }
       }
@@ -203,9 +202,10 @@ void SetName(void)
   {
     strcpy((char *) configTimeText, "0");
   }
-
   if (strlen((char *) fileName) == 0)
+  {
     strcpy((char *) fileName, "no_file   ");
+  }
 }
 
 void SD_infomem2Names(void)
@@ -234,12 +234,16 @@ uint8_t SD_setBasedir(void)
       file_status = f_mkdir("/data");
     }
     if (file_status) //in every case, we're toast
-      return 0;      //FAIL;
+    {
+      return 0; //FAIL;
+    }
 
     //try one more time
     file_status = f_opendir(&dir, "/data");
     if (file_status)
+    {
       return 0; //FAIL;
+    }
   }
   file_status = f_closedir(&dir);
   set_file_timestamp("/data");
@@ -257,12 +261,16 @@ uint8_t SD_setBasedir(void)
       file_status = f_mkdir((char *) expDirName);
     }
     if (file_status) //in every case, we're toast
-      return 0;      //FAIL;
+    {
+      return 0; //FAIL;
+    }
 
     //try one more time
     file_status = f_opendir(&dir, (char *) expDirName);
     if (file_status)
+    {
       return 0; //FAIL;
+    }
   }
 
   dirCounter = 0; //this might be the first log for this shimmer
@@ -275,7 +283,9 @@ uint8_t SD_setBasedir(void)
   while (f_readdir(&dir, &fno) == FR_OK)
   {
     if (*fno.fname == 0)
+    {
       break;
+    }
     else if (fno.fattrib & AM_DIR)
     {
       fname = (*lfn) ? lfn : fno.fname;
@@ -303,7 +313,9 @@ uint8_t SD_setBasedir(void)
           }
         }
         else
+        {
           return 0; //FAIL;
+        }
       }
     }
   }
@@ -932,50 +944,94 @@ void ParseConfig(void)
     while (f_gets(buffer, 64, &cfgFile))
     {
       if (!(equals = strchr(buffer, '=')))
+      {
         continue;
+      }
       equals++; //this is the value
       if (strstr(buffer, "accel="))
+      {
         stored_config_temp.chEnLnAccel = atoi(equals);
+      }
       else if (strstr(buffer, "gyro="))
+      {
         stored_config_temp.chEnGyro = atoi(equals);
+      }
       else if (strstr(buffer, "mag="))
+      {
         stored_config_temp.chEnMag = atoi(equals);
+      }
       else if (strstr(buffer, "exg1_24bit="))
+      {
         stored_config_temp.chEnExg1_24Bit = atoi(equals);
+      }
       else if (strstr(buffer, "exg2_24bit="))
+      {
         stored_config_temp.chEnExg2_24Bit = atoi(equals);
+      }
       else if (strstr(buffer, "gsr="))
+      {
         stored_config_temp.chEnGsr = atoi(equals);
+      }
       else if (strstr(buffer, "extch7="))
+      {
         stored_config_temp.chEnExtADC0 = atoi(equals);
+      }
       else if (strstr(buffer, "extch6="))
+      {
         stored_config_temp.chEnExtADC1 = atoi(equals);
+      }
       else if (strstr(buffer, "str=") || strstr(buffer, "br_amp="))
+      {
         stored_config_temp.chEnBridgeAmp = atoi(equals);
+      }
       else if (strstr(buffer, "vbat="))
+      {
         stored_config_temp.chEnVBattery = atoi(equals);
+      }
       else if (strstr(buffer, "accel_d="))
+      {
         stored_config_temp.chEnWrAccel = atoi(equals);
+      }
       else if (strstr(buffer, "extch15="))
+      {
         stored_config_temp.chEnExtADC2 = atoi(equals);
+      }
       else if (strstr(buffer, "intch1="))
+      {
         stored_config_temp.chEnIntADC3 = atoi(equals);
+      }
       else if (strstr(buffer, "intch12="))
+      {
         stored_config_temp.chEnIntADC0 = atoi(equals);
+      }
       else if (strstr(buffer, "intch13="))
+      {
         stored_config_temp.chEnIntADC1 = atoi(equals);
+      }
       else if (strstr(buffer, "intch14="))
+      {
         stored_config_temp.chEnIntADC2 = atoi(equals);
+      }
       else if (strstr(buffer, "accel_mpu="))
+      {
         stored_config_temp.chEnAltAccel = atoi(equals);
+      }
       else if (strstr(buffer, "mag_mpu="))
+      {
         stored_config_temp.chEnAltMag = atoi(equals);
+      }
       else if (strstr(buffer, "exg1_16bit="))
+      {
         stored_config_temp.chEnExg1_16Bit = atoi(equals);
+      }
       else if (strstr(buffer, "exg2_16bit="))
+      {
         stored_config_temp.chEnExg2_16Bit = atoi(equals);
+      }
       else if (strstr(buffer, "pres="))
+      {
         stored_config_temp.chEnPressureAndTemperature = atoi(equals);
+      }
       else if (strstr(buffer, "sample_rate="))
       {
         sample_rate = atof(equals);
@@ -1012,7 +1068,9 @@ void ParseConfig(void)
       { //or "gsr_range="?
         gsr_range = atoi(equals);
         if (gsr_range > 4)
+        {
           gsr_range = 4;
+        }
 
         stored_config_temp.gsrRange = gsr_range;
       }
@@ -1120,14 +1178,22 @@ void ParseConfig(void)
       {
         string_length = strlen(equals);
         if (string_length > MAX_CHARS)
+        {
           string_length = MAX_CHARS - 1;
+        }
         else if (string_length >= 2)
+        {
           string_length -= 2;
+        }
         else
+        {
           string_length = 0;
+        }
         memcpy(&stored_config_temp.shimmerName[0], equals, string_length);
         if (!memcmp(&stored_config_temp.shimmerName[0], "ID", 2))
+        {
           memcpy(&stored_config_temp.shimmerName[0], "id", 2);
+        }
         memcpy((char *) shimmerName, &stored_config_temp.shimmerName[0], MAX_CHARS - 1);
         shimmerName[string_length] = 0;
       }
@@ -1135,11 +1201,17 @@ void ParseConfig(void)
       {
         string_length = strlen(equals);
         if (string_length > MAX_CHARS)
+        {
           string_length = MAX_CHARS - 1;
+        }
         else if (string_length >= 2)
+        {
           string_length -= 2;
+        }
         else
+        {
           string_length = 0;
+        }
         memcpy(&stored_config_temp.expIdName[0], equals, string_length);
         memcpy((char *) expIdName, &stored_config_temp.expIdName[0], MAX_CHARS - 1);
         expIdName[string_length] = 0;
@@ -1152,45 +1224,85 @@ void ParseConfig(void)
         *(configTimeText + string_length - 1) = 0;
       }
       else if (strstr(buffer, "EXG_ADS1292R_1_CONFIG1="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CONFIG1] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_CONFIG2="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CONFIG2] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_LOFF="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_CH1SET="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CH1SET] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_CH2SET="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CH2SET] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_RLD_SENS="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RLD_SENS] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_LOFF_SENS="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF_SENS] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_LOFF_STAT="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF_STAT] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_RESP1="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RESP1] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_RESP2="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RESP2] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_CONFIG1="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CONFIG1] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_CONFIG2="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CONFIG2] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_LOFF="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_CH1SET="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CH1SET] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_CH2SET="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CH2SET] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_RLD_SENS="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RLD_SENS] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_LOFF_SENS="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF_SENS] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_LOFF_STAT="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF_STAT] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_RESP1="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP1] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_RESP2="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP2] = atoi(equals);
+      }
       //#if defined(SHIMMER3)
       //      else if (strstr(buffer, "baud_rate="))
       //      {
@@ -1334,11 +1446,15 @@ void ItoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len)
   uint8_t idx, i_move;
   memset(buf, 0, max_len);
   if (!num)
+  {
     buf[0] = '0';
+  }
   for (idx = 0; (idx < max_len - 1) && (num > 0); idx++)
   {
     for (i_move = idx; i_move > 0; i_move--)
+    {
       buf[i_move] = buf[i_move - 1];
+    }
     buf[0] = '0' + num % 10;
     num /= 10;
   }
