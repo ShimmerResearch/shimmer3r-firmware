@@ -72,6 +72,12 @@ uint32_t run_factory_test(void)
     led_test();
   }
 
+  if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
+  {
+    sprintf(buffer, "\r\nOverall Result = %s\r\n", shimmerStatus.testResult ? "FAIL" : "PASS");
+    send_test_report(buffer);
+  }
+
   send_test_report("//***************************** TEST END "
                    "*************************************//\r\n");
 
