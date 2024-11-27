@@ -150,7 +150,7 @@ void print_mcu_details(void)
       testPass ? "PASS" : "FAIL", adcDebugInfo.vRefMV,
       TEST_THRESHOLD_VREF_LOWER, TEST_THRESHOLD_VREF_UPPER);
   send_test_report(buffer);
-  if(!testPass)
+  if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0007;
   }
@@ -161,7 +161,7 @@ void print_mcu_details(void)
       testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV,
       TEST_THRESHOLD_VCORE_LOWER, TEST_THRESHOLD_VCORE_UPPER);
   send_test_report(buffer);
-  if(!testPass)
+  if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0008;
   }
@@ -173,7 +173,7 @@ void print_mcu_details(void)
       testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
       TEST_THRESHOLD_VBATT_PIN_LOWER, TEST_THRESHOLD_VBATT_PIN_UPPER);
   send_test_report(buffer);
-  if(!testPass)
+  if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0009;
   }
@@ -183,7 +183,7 @@ void print_mcu_details(void)
   sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xB0 C\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   send_test_report(buffer);
-  if(!testPass)
+  if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0010;
   }
@@ -200,7 +200,7 @@ void print_battery_details(void)
       testPass ? "PASS" : "FAIL", batteryStatus.battValMV,
       TEST_THRESHOLD_VBATT_LOWER, TEST_THRESHOLD_VBATT_UPPER);
   send_test_report(buffer);
-  if(!testPass)
+  if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0011;
   }
@@ -208,7 +208,7 @@ void print_battery_details(void)
   testPass = batteryStatus.battStatusRaw.rawBytes[2] == CHRG_CHIP_STATUS_BAD_BATTERY ? 0 : 1;
   sprintf(buffer, " - S3R_TEST_0012 - %s: Charger chip status = ", testPass ? "PASS" : "FAIL");
   send_test_report(buffer);
-  if(!testPass)
+  if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0012;
   }
@@ -521,7 +521,7 @@ void SPI_test(void)
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
   }
-  if(self_test_result)
+  if (self_test_result)
   {
     shimmerStatus.testResult |= S3R_TEST_0018;
   }
@@ -619,10 +619,10 @@ void SPI_test(void)
 
     send_test_report(
         " - S3R_TEST_0023 - WARNING: ADS1292R test not implemented yet\r\n");
-//    if (self_test_result)
-//    {
-//      shimmerStatus.testResult |= S3R_TEST_0023;
-//    }
+    //if (self_test_result)
+    //{
+    //  shimmerStatus.testResult |= S3R_TEST_0023;
+    //}
 
     SPI3_DeInit();
   }
