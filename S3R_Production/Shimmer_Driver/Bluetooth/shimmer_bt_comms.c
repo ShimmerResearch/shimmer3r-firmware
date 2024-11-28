@@ -77,17 +77,17 @@ uint16_t numBytesInBtRxBufWhenLastProcessed = 0;
 uint16_t indexOfFirstEol;
 uint32_t firstProcessFailTicks = 0;
 
-uint8_t sendAck, inquiryResponse, samplingRateResponse,
-    deviceVersionResponse, fwVersionResponse,
-    bufferSizeResponse, uniqueSerialResponse, configSetupBytesResponse,
-    wrAccelRangeResponse, magGainResponse, magSamplingRateResponse,
-    wrAccelSamplingRateResponse, wrAccelLpModeResponse, wrAccelHrModeResponse,
-    gyroRangeResponse, gyroSamplingRateResponse, altAccelRangeResponse,
-    mpu9150MagSensAdjValsResponse, bmpOversamplingRatioResponse, blinkLedResponse,
-    gsrRangeResponse, internalExpPowerEnableResponse, exgRegsResponse,
-    dcIdResponse, dcMemResponse, dockedResponse, trialConfigResponse,
-    centerResponse, shimmerNameResponse, expIDResponse, nshimmerResponse,
-    myIDResponse, configTimeResponse, dirResponse, btCommsBaudRateResponse,
+uint8_t sendAck, inquiryResponse, samplingRateResponse, deviceVersionResponse,
+    fwVersionResponse, bufferSizeResponse, uniqueSerialResponse,
+    configSetupBytesResponse, wrAccelRangeResponse, magGainResponse,
+    magSamplingRateResponse, wrAccelSamplingRateResponse, wrAccelLpModeResponse,
+    wrAccelHrModeResponse, gyroRangeResponse, gyroSamplingRateResponse,
+    altAccelRangeResponse, mpu9150MagSensAdjValsResponse,
+    bmpOversamplingRatioResponse, blinkLedResponse, gsrRangeResponse,
+    internalExpPowerEnableResponse, exgRegsResponse, dcIdResponse,
+    dcMemResponse, dockedResponse, trialConfigResponse, centerResponse,
+    shimmerNameResponse, expIDResponse, nshimmerResponse, myIDResponse,
+    configTimeResponse, dirResponse, btCommsBaudRateResponse,
     derivedChannelResponse, infomemResponse, rwcResponse, btVbattResponse,
     calibRamResponse, btVerResponse, useAckPrefixForInstreamResponses,
     btDataRateTestResponse, bmpGenericCalibrationCoefficientsResponse;
@@ -3138,7 +3138,7 @@ void BtUart_processCmd(void)
 
     setupNextRtcMinuteAlarm(); //configure RTC alarm after time set from BT.
     break;
-/**************************************************************/
+    /**************************************************************/
   case SET_ALT_ACCEL_CALIBRATION_COMMAND:
 #if defined(SHIMMER3)
     sensorCalibId = SC_SENSOR_MPU9X50_ICM20948_ACCEL;
@@ -3181,7 +3181,7 @@ void BtUart_processCmd(void)
   case GET_PRESSURE_SAMPLING_RATE_COMMAND:
     getCmdWaitingResponse = gAction;
     break;
-/**************************************************************/
+    /**************************************************************/
 
 #if USE_OLD_SD_SYNC_APPROACH
   case ACK_COMMAND_PROCESSED:
@@ -3219,7 +3219,7 @@ void BtUart_processCmd(void)
   {
     SetSdCfgFlag(1);
   }
-  if(update_calib_dump_file)
+  if (update_calib_dump_file)
   {
     BtUart_updateCalibDumpFile();
   }
@@ -3240,8 +3240,11 @@ void BtUart_settingChangeCommon(uint8_t configByteIdx, uint8_t sdHeaderIdx, uint
   SetSdCfgFlag(1);
 }
 
-void BtUart_calibrationChangeCommon(uint8_t configByteIdx, uint8_t sdHeaderIdx,
-    uint8_t *configBytePtr, uint8_t *newCalibPtr, uint8_t sensorCalibId)
+void BtUart_calibrationChangeCommon(uint8_t configByteIdx,
+    uint8_t sdHeaderIdx,
+    uint8_t *configBytePtr,
+    uint8_t *newCalibPtr,
+    uint8_t sensorCalibId)
 {
   memcpy(configBytePtr, newCalibPtr, SC_DATA_LEN_STD_IMU_CALIB);
   InfoMem_write(configByteIdx, configBytePtr, SC_DATA_LEN_STD_IMU_CALIB);
@@ -3785,7 +3788,7 @@ void BtUart_sendRsp(void)
         *(resPacket + packet_length++) = ALL_CALIBRATION_RESPONSE;
 
         packet_length += BtUart_replySingleSensorCalibCmd(
-        GET_LN_ACCEL_CALIBRATION_COMMAND, &resPacket[packet_length]);
+            GET_LN_ACCEL_CALIBRATION_COMMAND, &resPacket[packet_length]);
 
         packet_length += BtUart_replySingleSensorCalibCmd(
             GET_GYRO_CALIBRATION_COMMAND, &resPacket[packet_length]);
@@ -3794,14 +3797,14 @@ void BtUart_sendRsp(void)
             GET_MAG_CALIBRATION_COMMAND, &resPacket[packet_length]);
 
         packet_length += BtUart_replySingleSensorCalibCmd(
-        GET_WR_ACCEL_CALIBRATION_COMMAND, &resPacket[packet_length]);
+            GET_WR_ACCEL_CALIBRATION_COMMAND, &resPacket[packet_length]);
 
 #if defined(SHIMMER3R)
         packet_length += BtUart_replySingleSensorCalibCmd(
-        GET_ALT_ACCEL_CALIBRATION_COMMAND, &resPacket[packet_length]);
+            GET_ALT_ACCEL_CALIBRATION_COMMAND, &resPacket[packet_length]);
 
         packet_length += BtUart_replySingleSensorCalibCmd(
-        GET_ALT_MAG_CALIBRATION_COMMAND, &resPacket[packet_length]);
+            GET_ALT_MAG_CALIBRATION_COMMAND, &resPacket[packet_length]);
 #endif
         break;
 
@@ -3811,8 +3814,10 @@ void BtUart_sendRsp(void)
       case GET_WR_ACCEL_CALIBRATION_COMMAND:
       case GET_ALT_ACCEL_CALIBRATION_COMMAND:
       case GET_ALT_MAG_CALIBRATION_COMMAND:
-        *(resPacket + packet_length++) = BtUart_getExpectedRspForGetCmd(getCmdWaitingResponse);
-        packet_length += BtUart_replySingleSensorCalibCmd(getCmdWaitingResponse, &resPacket[packet_length]);
+        *(resPacket + packet_length++)
+            = BtUart_getExpectedRspForGetCmd(getCmdWaitingResponse);
+        packet_length += BtUart_replySingleSensorCalibCmd(
+            getCmdWaitingResponse, &resPacket[packet_length]);
         break;
       case GET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
         *(resPacket + packet_length++) = ALT_ACCEL_SAMPLING_RATE_RESPONSE;
