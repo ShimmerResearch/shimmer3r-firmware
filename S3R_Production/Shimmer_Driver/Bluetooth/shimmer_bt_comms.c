@@ -77,9 +77,8 @@ uint16_t numBytesInBtRxBufWhenLastProcessed = 0;
 uint16_t indexOfFirstEol;
 uint32_t firstProcessFailTicks = 0;
 
-uint8_t sendAck, inquiryResponse, samplingRateResponse, lnAccelCalibrationResponse,
-    gyroCalibrationResponse, magCalibrationResponse, wrAccelCalibrationResponse,
-    allCalibrationResponse, deviceVersionResponse, fwVersionResponse,
+uint8_t sendAck, inquiryResponse, samplingRateResponse,
+    deviceVersionResponse, fwVersionResponse,
     bufferSizeResponse, uniqueSerialResponse, configSetupBytesResponse,
     wrAccelRangeResponse, magGainResponse, magSamplingRateResponse,
     wrAccelSamplingRateResponse, wrAccelLpModeResponse, wrAccelHrModeResponse,
@@ -93,6 +92,7 @@ uint8_t sendAck, inquiryResponse, samplingRateResponse, lnAccelCalibrationRespon
     calibRamResponse, btVerResponse, useAckPrefixForInstreamResponses,
     btDataRateTestResponse, bmpGenericCalibrationCoefficientsResponse;
 uint8_t bmp180CalibrationCoefficientsResponse, bmp280CalibrationCoefficientsResponse;
+uint8_t getCmdWaitingResponse;
 #if defined(SHIMMER4_SDK)
 uint8_t i2cvBattBtRsp;
 #endif
@@ -503,6 +503,11 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
         case UPD_CALIB_DUMP_COMMAND:
           //case UPD_FLASH_COMMAND:
         case GET_BT_VERSION_STR_COMMAND:
+        case GET_ALT_ACCEL_CALIBRATION_COMMAND:
+        case GET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
+        case GET_ALT_MAG_CALIBRATION_COMMAND:
+        case GET_ALT_MAG_SAMPLING_RATE_COMMAND:
+        case GET_PRESSURE_SAMPLING_RATE_COMMAND:
           *(gActionPtr) = data;
           if (newBtCmdToProcess_cb)
           {
@@ -536,6 +541,9 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
         case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
         case SET_DATA_RATE_TEST:
         case SET_FACTORY_TEST:
+        case SET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
+        case SET_ALT_MAG_SAMPLING_RATE_COMMAND:
+        case SET_PRESSURE_SAMPLING_RATE_COMMAND:
           *(gActionPtr) = data;
           waitingForArgs = 1U;
           break;
@@ -571,8 +579,10 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
         case SET_GYRO_CALIBRATION_COMMAND:
         case SET_MAG_CALIBRATION_COMMAND:
         case SET_WR_ACCEL_CALIBRATION_COMMAND:
+        case SET_ALT_ACCEL_CALIBRATION_COMMAND:
+        case SET_ALT_MAG_CALIBRATION_COMMAND:
           *(gActionPtr) = data;
-          waitingForArgs = 21U;
+          waitingForArgs = SC_DATA_LEN_STD_IMU_CALIB;
           break;
 #endif
 #if defined(SHIMMER3)
@@ -1865,6 +1875,9 @@ uint8_t processShimmerBtCmd(void)
   case SET_INSTREAM_RESPONSE_ACK_PREFIX_STATE:
   case SET_DATA_RATE_TEST:
   case SET_FACTORY_TEST:
+  case SET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
+  case SET_ALT_MAG_SAMPLING_RATE_COMMAND:
+  case SET_PRESSURE_SAMPLING_RATE_COMMAND:
     if (numBytesInBtRxBufWhenLastProcessed >= (1U + 1U))
     {
       readActionAndArgBytes(1U);
@@ -1932,9 +1945,9 @@ uint8_t processShimmerBtCmd(void)
   case SET_GYRO_CALIBRATION_COMMAND:
   case SET_MAG_CALIBRATION_COMMAND:
   case SET_WR_ACCEL_CALIBRATION_COMMAND:
-    if (numBytesInBtRxBufWhenLastProcessed >= (1U + 21U))
+    if (numBytesInBtRxBufWhenLastProcessed >= (1U + SC_DATA_LEN_STD_IMU_CALIB))
     {
-      readActionAndArgBytes(21U);
+      readActionAndArgBytes(SC_DATA_LEN_STD_IMU_CALIB);
       responseParsed = 1U;
     }
     break;
@@ -2158,6 +2171,16 @@ uint8_t isShimmerBtCmd(uint8_t data)
   case SET_GYRO_CALIBRATION_COMMAND:
   case SET_MAG_CALIBRATION_COMMAND:
   case SET_WR_ACCEL_CALIBRATION_COMMAND:
+  case SET_ALT_ACCEL_CALIBRATION_COMMAND:
+  case GET_ALT_ACCEL_CALIBRATION_COMMAND:
+  case SET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
+  case GET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
+  case SET_ALT_MAG_CALIBRATION_COMMAND:
+  case GET_ALT_MAG_CALIBRATION_COMMAND:
+  case SET_ALT_MAG_SAMPLING_RATE_COMMAND:
+  case GET_ALT_MAG_SAMPLING_RATE_COMMAND:
+  case SET_PRESSURE_SAMPLING_RATE_COMMAND:
+  case GET_PRESSURE_SAMPLING_RATE_COMMAND:
 #if !USE_OLD_SD_SYNC_APPROACH
   case SET_SD_SYNC_COMMAND:
 #endif
@@ -2284,7 +2307,6 @@ void resetBtResponseBools(void)
   sendAck = 0;
   inquiryResponse = 0;
   samplingRateResponse = 0;
-  lnAccelCalibrationResponse = 0;
   wrAccelRangeResponse = 0;
   magGainResponse = 0;
   magSamplingRateResponse = 0;
@@ -2309,10 +2331,6 @@ void resetBtResponseBools(void)
   bmpOversamplingRatioResponse = 0;
   internalExpPowerEnableResponse = 0;
   configSetupBytesResponse = 0;
-  gyroCalibrationResponse = 0;
-  magCalibrationResponse = 0;
-  wrAccelCalibrationResponse = 0;
-  allCalibrationResponse = 0;
   deviceVersionResponse = 0;
   fwVersionResponse = 0;
   bufferSizeResponse = 0;
@@ -2332,6 +2350,7 @@ void resetBtResponseBools(void)
   derivedChannelResponse = 0;
   btDataRateTestResponse = 0;
   bmpGenericCalibrationCoefficientsResponse = 0;
+  getCmdWaitingResponse = 0;
 
   useAckPrefixForInstreamResponses = 1U;
 
@@ -2373,6 +2392,7 @@ void BtUart_processCmd(void)
 
   uint8_t update_sdconfig = 0, update_calib_dump_file = 0;
   uint8_t fullSyncResp[SYNC_PACKET_MAX_SIZE] = { 0 };
+  uint8_t sensorCalibId;
 
   switch (gAction)
   {
@@ -2725,7 +2745,7 @@ void BtUart_processCmd(void)
 #if defined(SHIMMER3)
     storedConfig->altAccelRange = (args[0] < 4) ? (args[0] & 0x03) : ACCEL_2G;
 #elif defined(SHIMMER3R)
-    storedConfig->altAccelRange = (args[0] < LSM6DSV_16g) ? (args[0] & 0x03) : LSM6DSV_2g;
+    storedConfig->altAccelRange = (args[0] <= LSM6DSV_16g) ? (args[0] & 0x03) : LSM6DSV_2g;
 #endif
     InfoMem_write(NV_CONFIG_SETUP_BYTE3, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3], 1);
     S4Ram_sdHeadTextSetByte(
@@ -2813,78 +2833,40 @@ void BtUart_processCmd(void)
     //   //update_calib_dump_file = 1;
     //   break;
   case SET_LN_ACCEL_CALIBRATION_COMMAND:
-    memcpy(&storedConfig->lnAccelCalib.rawBytes[0], &args[0], 21);
-    InfoMem_write(NV_LN_ACCEL_CALIBRATION, &storedConfig->lnAccelCalib.rawBytes[0], 21);
-    S4Ram_sdHeadTextSet(
-        &storedConfig->lnAccelCalib.rawBytes[0], SDH_LN_ACCEL_CALIBRATION, 21);
-
 #if defined(SHIMMER3)
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_ANALOG_ACCEL);
+    sensorCalibId = SC_SENSOR_ANALOG_ACCEL;
 #elif defined(SHIMMER3R)
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM6DSV_ACCEL);
+    sensorCalibId = SC_SENSOR_LSM6DSV_ACCEL;
 #endif
-
-    update_calib_dump_file = 1;
-    //calib_update = 1;
-    //calib_sensor = S_ACCEL_A;
-    break;
-  case GET_LN_ACCEL_CALIBRATION_COMMAND:
-    lnAccelCalibrationResponse = 1;
+    BtUart_calibrationChangeCommon(NV_LN_ACCEL_CALIBRATION, SDH_LN_ACCEL_CALIBRATION,
+        &storedConfig->lnAccelCalib.rawBytes[0], &args[0], sensorCalibId);
     break;
   case SET_GYRO_CALIBRATION_COMMAND:
-    memcpy(&storedConfig->gyroCalib.rawBytes[0], &args[0], 21);
-    InfoMem_write(NV_GYRO_CALIBRATION, &storedConfig->gyroCalib.rawBytes[0], 21);
-    S4Ram_sdHeadTextSet(&storedConfig->gyroCalib.rawBytes[0], SDH_GYRO_CALIBRATION, 21);
-
 #if defined(SHIMMER3)
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_MPU9X50_ICM20948_GYRO);
+    sensorCalibId = SC_SENSOR_MPU9X50_ICM20948_GYRO;
 #elif defined(SHIMMER3R)
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM6DSV_GYRO);
+    sensorCalibId = SC_SENSOR_LSM6DSV_GYRO;
 #endif
-
-    update_calib_dump_file = 1;
-    //calib_update = 1;
-    //calib_sensor = S_GYRO;
-    //calib_range = storedConfig[NV_CONFIG_SETUP_BYTE2] & 0x03;
-    break;
-  case GET_GYRO_CALIBRATION_COMMAND:
-    gyroCalibrationResponse = 1;
+    BtUart_calibrationChangeCommon(NV_GYRO_CALIBRATION, SDH_GYRO_CALIBRATION,
+        &storedConfig->gyroCalib.rawBytes[0], &args[0], sensorCalibId);
     break;
   case SET_MAG_CALIBRATION_COMMAND:
-    memcpy(&storedConfig->magCalib.rawBytes[0], &args[0], 21);
-    InfoMem_write(NV_MAG_CALIBRATION, &storedConfig->magCalib.rawBytes[0], 21);
-    S4Ram_sdHeadTextSet(&storedConfig->magCalib.rawBytes[0], SDH_MAG_CALIBRATION, 21);
-
 #if defined(SHIMMER3)
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM303_MAG);
+    sensorCalibId = SC_SENSOR_LSM303_MAG;
 #elif defined(SHIMMER3R)
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LIS3MDL_MAG);
+    sensorCalibId = SC_SENSOR_LIS3MDL_MAG;
 #endif
-
-    update_calib_dump_file = 1;
-    //calib_update = 1;
-    //calib_sensor = S_MAG;
-    //calib_range = (storedConfig[NV_CONFIG_SETUP_BYTE2] >> 5) & 0x07;
-    break;
-  case GET_MAG_CALIBRATION_COMMAND:
-    magCalibrationResponse = 1;
+    BtUart_calibrationChangeCommon(NV_MAG_CALIBRATION, SDH_MAG_CALIBRATION,
+        &storedConfig->magCalib.rawBytes[0], &args[0], sensorCalibId);
     break;
   case SET_WR_ACCEL_CALIBRATION_COMMAND:
-    memcpy(&storedConfig->wrAccelCalib.rawBytes[0], &args[0], 21);
-    InfoMem_write(NV_WR_ACCEL_CALIBRATION, &storedConfig->wrAccelCalib.rawBytes[0], 21);
-    S4Ram_sdHeadTextSet(
-        &storedConfig->wrAccelCalib.rawBytes[0], SDH_WR_ACCEL_CALIBRATION, 21);
-
 #if defined(SHIMMER3)
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LSM303_ACCEL);
+    sensorCalibId = SC_SENSOR_LSM303_ACCEL;
 #elif defined(SHIMMER3R)
-    CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LIS2DW12_ACCEL);
+    sensorCalibId = SC_SENSOR_LIS2DW12_ACCEL;
 #endif
-
-    update_calib_dump_file = 1;
-    //calib_update = 1;
-    //calib_sensor = S_ACCEL_D;
-    //calib_range = (storedConfig[NV_CONFIG_SETUP_BYTE0] >> 2) & 0x03;
+    BtUart_calibrationChangeCommon(NV_WR_ACCEL_CALIBRATION, SDH_WR_ACCEL_CALIBRATION,
+        &storedConfig->wrAccelCalib.rawBytes[0], &args[0], sensorCalibId);
     break;
   case SET_GSR_RANGE_COMMAND:
     storedConfig->gsrRange = (args[0] <= 4) ? (args[0] & 0x07) : GSR_AUTORANGE;
@@ -2980,14 +2962,8 @@ void BtUart_processCmd(void)
     update_calib_dump_file = 1;
     break;
 
-  case GET_WR_ACCEL_CALIBRATION_COMMAND:
-    wrAccelCalibrationResponse = 1;
-    break;
   case GET_GSR_RANGE_COMMAND:
     gsrRangeResponse = 1;
-    break;
-  case GET_ALL_CALIBRATION_COMMAND:
-    allCalibrationResponse = 1;
     break;
 
   case DEPRECATED_GET_DEVICE_VERSION_COMMAND:
@@ -3162,6 +3138,51 @@ void BtUart_processCmd(void)
 
     setupNextRtcMinuteAlarm(); //configure RTC alarm after time set from BT.
     break;
+/**************************************************************/
+  case SET_ALT_ACCEL_CALIBRATION_COMMAND:
+#if defined(SHIMMER3)
+    sensorCalibId = SC_SENSOR_MPU9X50_ICM20948_ACCEL;
+#elif defined(SHIMMER3R)
+    sensorCalibId = SC_SENSOR_ADXL371_ACCEL;
+#endif
+    BtUart_calibrationChangeCommon(NV_ALT_ACCEL_CALIBRATION, SDH_ALT_ACCEL_CALIBRATION,
+        &storedConfig->altAccelCalib.rawBytes[0], &args[0], sensorCalibId);
+    break;
+  case SET_ALT_MAG_CALIBRATION_COMMAND:
+#if defined(SHIMMER3)
+    sensorCalibId = SC_SENSOR_MPU9X50_ICM20948_MAG;
+#elif defined(SHIMMER3R)
+    sensorCalibId = SC_SENSOR_LIS2MDL_MAG;
+#endif
+    BtUart_calibrationChangeCommon(NV_ALT_MAG_CALIBRATION, SDH_ALT_MAG_CALIBRATION,
+        &storedConfig->altMagCalib.rawBytes[0], &args[0], sensorCalibId);
+    break;
+  case SET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
+    storedConfig->altAccelRate = args[0] & 0x03;
+    BtUart_settingChangeCommon(NV_CONFIG_SETUP_BYTE4, SDH_CONFIG_SETUP_BYTE4, 1);
+    break;
+  case SET_ALT_MAG_SAMPLING_RATE_COMMAND:
+    storedConfig->altMagRate = args[0] & 0x03;
+    BtUart_settingChangeCommon(NV_CONFIG_SETUP_BYTE4, SDH_CONFIG_SETUP_BYTE4, 1);
+    break;
+  case SET_PRESSURE_SAMPLING_RATE_COMMAND:
+    storedConfig->pressureRate = args[0] & 0x07;
+    BtUart_settingChangeCommon(NV_CONFIG_SETUP_BYTE5, SDH_CONFIG_SETUP_BYTE5, 1);
+    break;
+  case GET_ALL_CALIBRATION_COMMAND:
+  case GET_LN_ACCEL_CALIBRATION_COMMAND:
+  case GET_GYRO_CALIBRATION_COMMAND:
+  case GET_MAG_CALIBRATION_COMMAND:
+  case GET_WR_ACCEL_CALIBRATION_COMMAND:
+  case GET_ALT_ACCEL_CALIBRATION_COMMAND:
+  case GET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
+  case GET_ALT_MAG_CALIBRATION_COMMAND:
+  case GET_ALT_MAG_SAMPLING_RATE_COMMAND:
+  case GET_PRESSURE_SAMPLING_RATE_COMMAND:
+    getCmdWaitingResponse = gAction;
+    break;
+/**************************************************************/
+
 #if USE_OLD_SD_SYNC_APPROACH
   case ACK_COMMAND_PROCESSED:
 #else
@@ -3198,7 +3219,42 @@ void BtUart_processCmd(void)
   {
     SetSdCfgFlag(1);
   }
-  if (update_calib_dump_file && CheckSdInslot() && !shimmerStatus.sdBadFile)
+  if(update_calib_dump_file)
+  {
+    BtUart_updateCalibDumpFile();
+  }
+}
+
+void BtUart_settingChangeCommon(uint8_t configByteIdx, uint8_t sdHeaderIdx, uint8_t len)
+{
+  gConfigBytes *storedConfig = S4Ram_getStoredConfig();
+  InfoMem_write(configByteIdx, &storedConfig->rawBytes[configByteIdx], len);
+  S4Ram_sdHeadTextSetByte(sdHeaderIdx, storedConfig->rawBytes[configByteIdx]);
+
+  if (shimmerStatus.sensing)
+  {
+    setStopSensing();
+    setStartSensing();
+  }
+
+  SetSdCfgFlag(1);
+}
+
+void BtUart_calibrationChangeCommon(uint8_t configByteIdx, uint8_t sdHeaderIdx,
+    uint8_t *configBytePtr, uint8_t *newCalibPtr, uint8_t sensorCalibId)
+{
+  memcpy(configBytePtr, newCalibPtr, SC_DATA_LEN_STD_IMU_CALIB);
+  InfoMem_write(configByteIdx, configBytePtr, SC_DATA_LEN_STD_IMU_CALIB);
+  S4Ram_sdHeadTextSet(configBytePtr, sdHeaderIdx, SC_DATA_LEN_STD_IMU_CALIB);
+
+  CalibSaveFromInfoMemToCalibDump(sensorCalibId);
+
+  BtUart_updateCalibDumpFile();
+}
+
+void BtUart_updateCalibDumpFile(void)
+{
+  if (CheckSdInslot() && !shimmerStatus.sdBadFile)
   {
     if (!shimmerStatus.docked)
     {
@@ -3211,9 +3267,80 @@ void BtUart_processCmd(void)
   }
 }
 
-void BtUart_sendRsp(void)
+uint8_t BtUart_replySingleSensorCalibCmd(uint8_t cmdWaitingResponse, uint8_t *resPacketPtr)
 {
   sc_t sc1;
+  gConfigBytes *storedConfig = S4Ram_getStoredConfig();
+
+  if (cmdWaitingResponse == GET_LN_ACCEL_CALIBRATION_COMMAND)
+  {
+#if defined(SHIMMER3)
+    sc1.id = SC_SENSOR_ANALOG_ACCEL;
+    sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
+#elif defined(SHIMMER3R)
+    sc1.id = SC_SENSOR_LSM6DSV_ACCEL;
+    sc1.range = storedConfig->altAccelRange;
+#endif
+  }
+  else if (cmdWaitingResponse == GET_GYRO_CALIBRATION_COMMAND)
+  {
+#if defined(SHIMMER3)
+    sc1.id = SC_SENSOR_MPU9X50_ICM20948_GYRO;
+#elif defined(SHIMMER3R)
+    sc1.id = SC_SENSOR_LSM6DSV_GYRO;
+#endif
+    sc1.range = get_config_byte_gyro_range();
+  }
+  else if (cmdWaitingResponse == GET_MAG_CALIBRATION_COMMAND)
+  {
+#if defined(SHIMMER3)
+    sc1.id = SC_SENSOR_LSM303_MAG;
+#elif defined(SHIMMER3R)
+    sc1.id = SC_SENSOR_LIS3MDL_MAG;
+#endif
+    sc1.range = storedConfig->magRange;
+  }
+  else if (cmdWaitingResponse == GET_WR_ACCEL_CALIBRATION_COMMAND)
+  {
+#if defined(SHIMMER3)
+    sc1.id = SC_SENSOR_LSM303_ACCEL;
+#elif defined(SHIMMER3R)
+    sc1.id = SC_SENSOR_LIS2DW12_ACCEL;
+#endif
+    sc1.range = storedConfig->wrAccelRange;
+  }
+  else if (cmdWaitingResponse == GET_ALT_ACCEL_CALIBRATION_COMMAND)
+  {
+#if defined(SHIMMER3)
+    sc1.id = SC_SENSOR_MPU9X50_ICM20948_ACCEL;
+#elif defined(SHIMMER3R)
+    sc1.id = SC_SENSOR_ADXL371_ACCEL;
+#endif
+    sc1.range = storedConfig->altAccelRange;
+  }
+  else if (cmdWaitingResponse == GET_ALT_MAG_CALIBRATION_COMMAND)
+  {
+#if defined(SHIMMER3)
+    sc1.id = SC_SENSOR_MPU9X50_ICM20948_MAG;
+#elif defined(SHIMMER3R)
+    sc1.id = SC_SENSOR_LIS2MDL_MAG;
+    sc1.range = SC_SENSOR_RANGE_LIS2MDL_RANGE;
+#endif
+  }
+  else
+  {
+    return 0;
+  }
+
+  sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
+  ShimmerCalib_singleSensorRead(&sc1);
+
+  memcpy(resPacketPtr, sc1.data.raw, sc1.data_len);
+  return sc1.data_len;
+}
+
+void BtUart_sendRsp(void)
+{
   uint16_t packet_length = 0;
   //STATTypeDef * stat = GetStatus();
   uint8_t resPacket[RESPONSE_PACKET_SIZE];
@@ -3487,146 +3614,11 @@ void BtUart_sendRsp(void)
       packet_length += calibRamLength;
       calibRamResponse = 0;
     }
-    else if (lnAccelCalibrationResponse)
-    {
-      *(resPacket + packet_length++) = LN_ACCEL_CALIBRATION_RESPONSE;
-      //memcpy((resPacket + packet_length),
-      //&storedConfig->lnAccelCalib.rawBytes[0], 21); packet_length += 21;
-
-#if defined(SHIMMER3)
-      sc1.id = SC_SENSOR_ANALOG_ACCEL;
-      sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
-#elif defined(SHIMMER3R)
-      sc1.id = SC_SENSOR_LSM6DSV_ACCEL;
-      sc1.range = storedConfig->altAccelRange;
-#endif
-      sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-      ShimmerCalib_singleSensorRead(&sc1);
-      memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
-      packet_length += sc1.data_len;
-
-      lnAccelCalibrationResponse = 0;
-    }
-    else if (gyroCalibrationResponse)
-    {
-      *(resPacket + packet_length++) = GYRO_CALIBRATION_RESPONSE;
-      //memcpy((resPacket + packet_length),
-      //&storedConfig->gyroCalib.rawBytes[0], 21); packet_length += 21;
-
-#if defined(SHIMMER3)
-      sc1.id = SC_SENSOR_MPU9X50_ICM20948_GYRO;
-#elif defined(SHIMMER3R)
-      sc1.id = SC_SENSOR_LSM6DSV_GYRO;
-#endif
-      sc1.range = get_config_byte_gyro_range();
-      sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-      ShimmerCalib_singleSensorRead(&sc1);
-      memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
-      packet_length += sc1.data_len;
-
-      gyroCalibrationResponse = 0;
-    }
-    else if (magCalibrationResponse)
-    {
-      *(resPacket + packet_length++) = MAG_CALIBRATION_RESPONSE;
-      //memcpy((resPacket + packet_length), &storedConfig->magCalib.rawBytes[0],
-      //21); packet_length += 21;
-
-#if defined(SHIMMER3)
-      sc1.id = SC_SENSOR_LSM303_MAG;
-#elif defined(SHIMMER3R)
-      sc1.id = SC_SENSOR_LIS3MDL_MAG;
-#endif
-      sc1.range = storedConfig->magRange;
-      sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-      ShimmerCalib_singleSensorRead(&sc1);
-      memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
-      packet_length += sc1.data_len;
-
-      magCalibrationResponse = 0;
-    }
-    else if (wrAccelCalibrationResponse)
-    {
-      *(resPacket + packet_length++) = WR_ACCEL_CALIBRATION_RESPONSE;
-      //memcpy((resPacket + packet_length),
-      //&storedConfig->wrAccelCalib.rawBytes[0], 21); packet_length += 21;
-
-#if defined(SHIMMER3)
-      sc1.id = SC_SENSOR_LSM303_ACCEL;
-#elif defined(SHIMMER3R)
-      sc1.id = SC_SENSOR_LIS2DW12_ACCEL;
-#endif
-      sc1.range = storedConfig->wrAccelRange;
-      sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-      ShimmerCalib_singleSensorRead(&sc1);
-      memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
-      packet_length += sc1.data_len;
-
-      wrAccelCalibrationResponse = 0;
-    }
     else if (gsrRangeResponse)
     {
       *(resPacket + packet_length++) = GSR_RANGE_RESPONSE;
       *(resPacket + packet_length++) = storedConfig->gsrRange;
       gsrRangeResponse = 0;
-    }
-    else if (allCalibrationResponse)
-    {
-      *(resPacket + packet_length++) = ALL_CALIBRATION_RESPONSE;
-      //S4Ram_storedConfigGet(&resPacket[packet_length], NV_A_ACCEL_CALIBRATION,
-      //    NV_NUM_CALIBRATION_BYTES);
-      //packet_length += NV_NUM_CALIBRATION_BYTES;
-
-      uint8_t i;
-      for (i = 0; i < 4; i++)
-      {
-        if (i == 0)
-        {
-#if defined(SHIMMER3)
-          sc1.id = SC_SENSOR_ANALOG_ACCEL;
-          sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
-#elif defined(SHIMMER3R)
-          sc1.id = SC_SENSOR_LSM6DSV_ACCEL;
-          sc1.range = storedConfig->altAccelRange;
-#endif
-          sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-        }
-        else if (i == 1)
-        {
-#if defined(SHIMMER3)
-          sc1.id = SC_SENSOR_MPU9X50_ICM20948_GYRO;
-#elif defined(SHIMMER3R)
-          sc1.id = SC_SENSOR_LSM6DSV_GYRO;
-#endif
-          sc1.range = get_config_byte_gyro_range();
-          sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-        }
-        else if (i == 2)
-        {
-#if defined(SHIMMER3)
-          sc1.id = SC_SENSOR_LSM303_MAG;
-#elif defined(SHIMMER3R)
-          sc1.id = SC_SENSOR_LIS3MDL_MAG;
-#endif
-          sc1.range = storedConfig->magRange;
-          sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-        }
-        else if (i == 3)
-        {
-#if defined(SHIMMER3)
-          sc1.id = SC_SENSOR_LSM303_ACCEL;
-#elif defined(SHIMMER3R)
-          sc1.id = SC_SENSOR_LIS2DW12_ACCEL;
-#endif
-          sc1.range = storedConfig->wrAccelRange;
-          sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-        }
-        ShimmerCalib_singleSensorRead(&sc1);
-        memcpy((resPacket + packet_length), sc1.data.raw, sc1.data_len);
-        packet_length += sc1.data_len;
-      }
-
-      allCalibrationResponse = 0;
     }
     else if (deviceVersionResponse)
     {
@@ -3785,6 +3777,60 @@ void BtUart_sendRsp(void)
       }
       btDataRateTestResponse = 0;
     }
+    else if (getCmdWaitingResponse)
+    {
+      switch (getCmdWaitingResponse)
+      {
+      case GET_ALL_CALIBRATION_COMMAND:
+        *(resPacket + packet_length++) = ALL_CALIBRATION_RESPONSE;
+
+        packet_length += BtUart_replySingleSensorCalibCmd(
+        GET_LN_ACCEL_CALIBRATION_COMMAND, &resPacket[packet_length]);
+
+        packet_length += BtUart_replySingleSensorCalibCmd(
+            GET_GYRO_CALIBRATION_COMMAND, &resPacket[packet_length]);
+
+        packet_length += BtUart_replySingleSensorCalibCmd(
+            GET_MAG_CALIBRATION_COMMAND, &resPacket[packet_length]);
+
+        packet_length += BtUart_replySingleSensorCalibCmd(
+        GET_WR_ACCEL_CALIBRATION_COMMAND, &resPacket[packet_length]);
+
+#if defined(SHIMMER3R)
+        packet_length += BtUart_replySingleSensorCalibCmd(
+        GET_ALT_ACCEL_CALIBRATION_COMMAND, &resPacket[packet_length]);
+
+        packet_length += BtUart_replySingleSensorCalibCmd(
+        GET_ALT_MAG_CALIBRATION_COMMAND, &resPacket[packet_length]);
+#endif
+        break;
+
+      case GET_LN_ACCEL_CALIBRATION_COMMAND:
+      case GET_GYRO_CALIBRATION_COMMAND:
+      case GET_MAG_CALIBRATION_COMMAND:
+      case GET_WR_ACCEL_CALIBRATION_COMMAND:
+      case GET_ALT_ACCEL_CALIBRATION_COMMAND:
+      case GET_ALT_MAG_CALIBRATION_COMMAND:
+        *(resPacket + packet_length++) = BtUart_getExpectedRspForGetCmd(getCmdWaitingResponse);
+        packet_length += BtUart_replySingleSensorCalibCmd(getCmdWaitingResponse, &resPacket[packet_length]);
+        break;
+      case GET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
+        *(resPacket + packet_length++) = ALT_ACCEL_SAMPLING_RATE_RESPONSE;
+        *(resPacket + packet_length++) = storedConfig->altAccelRate;
+        break;
+      case GET_ALT_MAG_SAMPLING_RATE_COMMAND:
+        *(resPacket + packet_length++) = ALT_MAG_SAMPLING_RATE_RESPONSE;
+        *(resPacket + packet_length++) = storedConfig->altMagRate;
+        break;
+      case GET_PRESSURE_SAMPLING_RATE_COMMAND:
+        *(resPacket + packet_length++) = PRESSURE_SAMPLING_RATE_RESPONSE;
+        *(resPacket + packet_length++) = storedConfig->pressureRate;
+        break;
+      default:
+        break;
+      }
+      getCmdWaitingResponse = 0;
+    }
 
     uint8_t crcMode = getBtCrcMode();
     if (crcMode != CRC_OFF)
@@ -3793,6 +3839,27 @@ void BtUart_sendRsp(void)
       packet_length += crcMode;
     }
     BT_write(resPacket, packet_length);
+  }
+}
+
+uint8_t BtUart_getExpectedRspForGetCmd(uint8_t getCmd)
+{
+  switch (getCmd)
+  {
+  case GET_LN_ACCEL_CALIBRATION_COMMAND:
+    return LN_ACCEL_CALIBRATION_RESPONSE;
+  case GET_GYRO_CALIBRATION_COMMAND:
+    return GYRO_CALIBRATION_RESPONSE;
+  case GET_MAG_CALIBRATION_COMMAND:
+    return MAG_CALIBRATION_RESPONSE;
+  case GET_WR_ACCEL_CALIBRATION_COMMAND:
+    return WR_ACCEL_CALIBRATION_RESPONSE;
+  case GET_ALT_ACCEL_CALIBRATION_COMMAND:
+    return ALT_ACCEL_CALIBRATION_RESPONSE;
+  case GET_ALT_MAG_CALIBRATION_COMMAND:
+    return ALT_MAG_CALIBRATION_RESPONSE;
+  default:
+    return 0;
   }
 }
 

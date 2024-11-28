@@ -166,9 +166,9 @@
 //#define UPD_FLASH_COMMAND                             0x9B
 #define UPD_SDLOG_CFG_COMMAND                       0x9C
 #if defined(SHIMMER4_SDK)
-#define SET_I2C_BATT_STATUS_FREQ_COMMAND 0x9C
-#define RSP_I2C_BATT_STATUS_COMMAND      0x9D
-#define GET_I2C_BATT_STATUS_COMMAND      0x9E
+#define SET_I2C_BATT_STATUS_FREQ_COMMAND              0x9C
+#define RSP_I2C_BATT_STATUS_COMMAND                   0x9D
+#define GET_I2C_BATT_STATUS_COMMAND                   0x9E
 #endif
 #define BMP280_CALIBRATION_COEFFICIENTS_RESPONSE      0x9F
 #define GET_BMP280_CALIBRATION_COEFFICIENTS_COMMAND   0xA0
@@ -180,6 +180,23 @@
 #define PRESSURE_CALIBRATION_COEFFICIENTS_RESPONSE    0xA6
 #define GET_PRESSURE_CALIBRATION_COEFFICIENTS_COMMAND 0xA7
 #define SET_FACTORY_TEST                              0xA8
+#if defined(SHIMMER3R)
+#define SET_ALT_ACCEL_CALIBRATION_COMMAND             0xA9
+#define ALT_ACCEL_CALIBRATION_RESPONSE                0xAA
+#define GET_ALT_ACCEL_CALIBRATION_COMMAND             0xAB
+#define SET_ALT_ACCEL_SAMPLING_RATE_COMMAND           0xAC
+#define ALT_ACCEL_SAMPLING_RATE_RESPONSE              0xAD
+#define GET_ALT_ACCEL_SAMPLING_RATE_COMMAND           0xAE
+#define SET_ALT_MAG_CALIBRATION_COMMAND               0xAF
+#define ALT_MAG_CALIBRATION_RESPONSE                  0xB0
+#define GET_ALT_MAG_CALIBRATION_COMMAND               0xB1
+#define SET_ALT_MAG_SAMPLING_RATE_COMMAND             0xB2
+#define ALT_MAG_SAMPLING_RATE_RESPONSE                0xB3
+#define GET_ALT_MAG_SAMPLING_RATE_COMMAND             0xB4
+#define SET_PRESSURE_SAMPLING_RATE_COMMAND            0xB5
+#define PRESSURE_SAMPLING_RATE_RESPONSE               0xB6
+#define GET_PRESSURE_SAMPLING_RATE_COMMAND            0xB7
+#endif
 #if !USE_OLD_SD_SYNC_APPROACH
 #define SET_SD_SYNC_COMMAND 0xE0
 #define SD_SYNC_RESPONSE    0xE1
@@ -257,7 +274,12 @@ void updateBtVer(void);
 uint8_t isWaitingForArgs(void);
 
 void BtUart_processCmd(void);
+void BtUart_settingChangeCommon(uint8_t configByteIdx, uint8_t sdHeaderIdx, uint8_t len);
+void BtUart_calibrationChangeCommon(uint8_t configByteIdx, uint8_t sdHeaderIdx, uint8_t *configBytePtr, uint8_t *newCalibPtr, uint8_t sensorCalibId);
+void BtUart_updateCalibDumpFile(void);
+uint8_t BtUart_replySingleSensorCalibCmd(uint8_t cmdWaitingResponse, uint8_t *resPacketPtr);
 void BtUart_sendRsp(void);
+uint8_t BtUart_getExpectedRspForGetCmd(uint8_t getCmd);
 
 void setDmaWaitingForResponse(uint16_t count);
 uint16_t getBtRxShimmerCommsWaitByteCount(void);
