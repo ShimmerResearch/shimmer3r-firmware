@@ -1,4 +1,3 @@
-
 /* USER CODE BEGIN Header */
 /**
  ******************************************************************************
@@ -70,12 +69,13 @@ void HAL_MspInit(void)
   /* USER CODE END MspInit 0 */
 
   __HAL_RCC_PWR_CLK_ENABLE();
+  HAL_PWREx_EnableVddUSB();
+  HAL_PWREx_EnableVddIO2();
+  HAL_PWREx_EnableVddA();
 
   /* System interrupt init*/
 
   /* USER CODE BEGIN MspInit 1 */
-
-  HAL_PWREx_EnableVddA();
 
   /* USER CODE END MspInit 1 */
 }
