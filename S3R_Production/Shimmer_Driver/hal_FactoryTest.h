@@ -69,6 +69,29 @@ typedef enum
   SELF_TEST_FAIL_TEMPERATURE_ISSUE,
 } self_test_result_t;
 
+enum
+{
+  //Test index starts at 1
+  S3R_TEST_0003 = (1 << (3 - 1)),  //Shimmer model set in EEPROM
+  S3R_TEST_0007 = (1 << (7 - 1)),  //MCU Vref
+  S3R_TEST_0008 = (1 << (8 - 1)),  //MCU Vcore
+  S3R_TEST_0009 = (1 << (9 - 1)),  //MCU VBatt
+  S3R_TEST_0010 = (1 << (10 - 1)), //MCU Temperature
+  S3R_TEST_0011 = (1 << (11 - 1)), //Battery voltage
+  S3R_TEST_0012 = (1 << (12 - 1)), //Battery charger chip
+  S3R_TEST_0013 = (1 << (13 - 1)), //SD test
+  S3R_TEST_0014 = (1 << (14 - 1)), //BT Module
+  S3R_TEST_0015 = (1 << (15 - 1)), //I2C1 - LIS2MDL
+  S3R_TEST_0016 = (1 << (16 - 1)), //I2C1 - CAT24C16
+  S3R_TEST_0017 = (1 << (17 - 1)), //I2C4 - CAT24C16 (GSR+)
+  S3R_TEST_0018 = (1 << (18 - 1)), //SPI1 - LSM6DSV
+  S3R_TEST_0019 = (1 << (19 - 1)), //SPI1 - BMP390
+  S3R_TEST_0020 = (1 << (20 - 1)), //SPI1 - ADXL371
+  S3R_TEST_0021 = (1 << (21 - 1)), //SPI2 - LIS3MDL
+  S3R_TEST_0022 = (1 << (22 - 1)), //SPI2 - LIS2DW12
+  S3R_TEST_0023 = (1 << (23 - 1)), //SPI3 - ADS1292R (ExG)
+};
+
 uint32_t run_factory_test(void);
 void print_date_and_time(void);
 void print_shimmer_model(void);
@@ -76,9 +99,9 @@ void print_mcu_details(void);
 void print_battery_details(void);
 void led_test(void);
 void sd_card_test(void);
-uint8_t bt_module_test(void);
-uint8_t I2C_test(void);
-uint8_t SPI_test(void);
+void bt_module_test(void);
+void I2C_test(void);
+void SPI_test(void);
 void setup_factory_test(factory_test_target_t target, factory_test_t testToRun);
 uint8_t is_temperature_outside_of_range(float_t temperature);
 void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_test_result, float_t tempCal);
