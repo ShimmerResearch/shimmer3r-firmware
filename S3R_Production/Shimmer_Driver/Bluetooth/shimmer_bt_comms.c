@@ -1279,12 +1279,6 @@ void BtUart_processCmd(void)
     break;
   case SET_SENSORS_COMMAND:
     S4Ram_storedConfigSet(&args[0], NV_SENSORS0, 3);
-    //TODO move to general config correction function
-    if (storedConfig->chEnGsr)
-    {
-      //they are sharing Shimmer3 adc1, so ban intch1 when gsr is on
-      storedConfig->chEnIntADC3 = 0;
-    }
     BtUart_settingChangeCommon(NV_SENSORS0, SDH_SENSORS0, 3);
     break;
 #if defined(SHIMMER4_SDK)
@@ -1301,30 +1295,8 @@ void BtUart_processCmd(void)
     storedConfig->rawBytes[NV_SD_TRIAL_CONFIG1] = args[1];
     storedConfig->rawBytes[NV_SD_BT_INTERVAL] = args[2];
 
-    //TODO move to common setting correction function
-#if !IS_SUPPORTED_TCXO
-    storedConfig->tcxo = 0; /* Disable TCXO */
-#endif
-
-    if (storedConfig->singleTouchStart)
-    {
-      storedConfig->userButtonEnable = 1;
-      storedConfig->syncEnable = 1;
-    }
-
-    if (storedConfig->btInterval < SYNC_INT_C)
-    {
-      storedConfig->btInterval = SYNC_INT_C;
-    }
-
-    InfoMem_write(NV_SAMPLING_RATE, &storedConfig->rawBytes[NV_SD_TRIAL_CONFIG0], 3);
-
-    S4Ram_sdHeadTextSetByte(SDH_TRIAL_CONFIG0, storedConfig->rawBytes[NV_SD_TRIAL_CONFIG0]);
-    S4Ram_sdHeadTextSetByte(SDH_TRIAL_CONFIG1, storedConfig->rawBytes[NV_SD_TRIAL_CONFIG1]);
-    S4Ram_sdHeadTextSetByte(SDH_BROADCAST_INTERVAL, storedConfig->rawBytes[NV_SD_BT_INTERVAL]);
-    //S4Ram_sdHeadTextSet(&storedConfig->rawBytes, NV_SD_TRIAL_CONFIG0, 3);
-
-    update_sdconfig = 1;
+    // Save TRIAL_CONFIG0, TRIAL_CONFIG1 and BT_INTERVAL
+    BtUart_settingChangeCommon(NV_SD_TRIAL_CONFIG0, SDH_TRIAL_CONFIG0, 3);
     break;
   case SET_CENTER_COMMAND:
     storedConfig->masterEnable = args[0] & 0x01;
@@ -1366,15 +1338,11 @@ void BtUart_processCmd(void)
     break;
   case SET_NSHIMMER_COMMAND:
     storedConfig->numberOfShimmers = args[0];
-    S4Ram_sdHeadTextSetByte(SDH_NSHIMMER, args[0]);
-    InfoMem_write(NV_SD_NSHIMMER, &storedConfig->rawBytes[NV_SD_NSHIMMER], 1);
-    update_sdconfig = 1;
+    BtUart_settingChangeCommon(NV_SD_NSHIMMER, SDH_NSHIMMER, 1);
     break;
   case SET_MYID_COMMAND:
     storedConfig->myTrialID = args[0];
-    S4Ram_sdHeadTextSetByte(SDH_MYTRIAL_ID, args[0]);
-    InfoMem_write(NV_SD_MYTRIAL_ID, &storedConfig->rawBytes[NV_SD_MYTRIAL_ID], 1);
-    update_sdconfig = 1;
+    BtUart_settingChangeCommon(NV_SD_MYTRIAL_ID, SDH_MYTRIAL_ID, 1);
     break;
   case SET_WR_ACCEL_RANGE_COMMAND:
     storedConfig->wrAccelRange = args[0] < 4 ? (args[0] & 0x03) : 0;
@@ -1807,7 +1775,8 @@ void BtUart_processCmd(void)
     }
     break;
 #endif
-  default:;
+  default:
+    break;
   }
   /* Send ACK back for all commands except when FW has received an ACK */
   if (gAction != ACK_COMMAND_PROCESSED
@@ -1831,8 +1800,11 @@ void BtUart_processCmd(void)
 void BtUart_settingChangeCommon(uint16_t configByteIdx, uint16_t sdHeaderIdx, uint16_t len)
 {
   gConfigBytes *storedConfig = S4Ram_getStoredConfig();
+
+  checkAndCorrectConfig(storedConfig);
+
   InfoMem_write(configByteIdx, &storedConfig->rawBytes[configByteIdx], len);
-  S4Ram_sdHeadTextSetByte(sdHeaderIdx, storedConfig->rawBytes[configByteIdx]);
+  S4Ram_sdHeadTextSet(&storedConfig->rawBytes[configByteIdx], sdHeaderIdx, len);
 //  S4Ram_config2SdHead();
 
   //restart sensing to use settings

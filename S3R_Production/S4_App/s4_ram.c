@@ -454,24 +454,12 @@ uint8_t GetSdCfgFlag(void)
 
 void SetSdCfgFlag(uint8_t flag)
 {
-  gConfigBytes temp_storedConfig;
-  InfoMem_readRam(temp_storedConfig.rawBytes, 0, STOREDCONFIG_SIZE);
   if (flag)
   {
-    if (!temp_storedConfig.sdCfgFlag)
-    {
-      temp_storedConfig.infoSdcfg |= 0x01;
-    }
-    else
-    {
-      temp_storedConfig.infoSdcfg = 0x01;
-    }
+    storedConfig.sdCfgFlag = 0;
   }
-  else
-  {
-    temp_storedConfig.infoSdcfg &= ~0x01;
-  }
-  InfoMem_updateFrom(temp_storedConfig.rawBytes);
+  storedConfig.infoSdcfg = flag;
+  InfoMem_write(NV_SD_CONFIG_DELAY_FLAG, &storedConfig->rawBytes[NV_SD_CONFIG_DELAY_FLAG], 1);
 }
 
 uint8_t GetRamCalibFlag(void)
@@ -577,3 +565,28 @@ uint8_t get_config_byte_mag_rate(void)
 {
   return (storedConfig.magRateMsb << 3) | storedConfig.magRateLsb;
 }
+
+void checkAndCorrectConfig(gConfigBytes *storedConfig)
+{
+  if (storedConfig->chEnGsr)
+  {
+    //they are sharing Shimmer3 adc1, so ban intch1 when gsr is on
+    storedConfig->chEnIntADC3 = 0;
+  }
+
+#if !IS_SUPPORTED_TCXO
+  storedConfig->tcxo = 0; /* Disable TCXO */
+#endif
+
+  if (storedConfig->singleTouchStart)
+  {
+    storedConfig->userButtonEnable = 1;
+    storedConfig->syncEnable = 1;
+  }
+
+  if (storedConfig->btInterval < SYNC_INT_C)
+  {
+    storedConfig->btInterval = SYNC_INT_C;
+  }
+}
+

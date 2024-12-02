@@ -448,6 +448,7 @@ void DockUart_processCmd(void)
               S4Ram_storedConfigSet(dockRxBuf + UART_RXBUF_DATA + 3,
                   uartInfoMemOffset, uartInfoMemLength);
               S4Ram_storedConfigSet(temp_btMacHex, NV_MAC_ADDRESS, 6);
+              checkAndCorrectConfig(storedConfig);
               InfoMem_update();
 #endif
               uartSendRspAck = 1;

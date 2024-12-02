@@ -660,9 +660,9 @@ void UpdateSdConfig(void)
       //sensor2
       sprintf(buffer, "intch14=%d\r\n", storedConfig->chEnIntADC2);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "accel_mpu=%d\r\n", storedConfig->chEnAltAccel);
+      sprintf(buffer, "accel_alt=%d\r\n", storedConfig->chEnAltAccel);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "mag_mpu=%d\r\n", storedConfig->chEnAltMag);
+      sprintf(buffer, "mag_alt=%d\r\n", storedConfig->chEnAltMag);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "exg1_16bit=%d\r\n", storedConfig->chEnExg1_16Bit);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
@@ -1012,11 +1012,11 @@ void ParseConfig(void)
       {
         stored_config_temp.chEnIntADC2 = atoi(equals);
       }
-      else if (strstr(buffer, "accel_mpu="))
+      else if (strstr(buffer, "accel_alt="))
       {
         stored_config_temp.chEnAltAccel = atoi(equals);
       }
-      else if (strstr(buffer, "mag_mpu="))
+      else if (strstr(buffer, "mag_alt="))
       {
         stored_config_temp.chEnAltMag = atoi(equals);
       }
