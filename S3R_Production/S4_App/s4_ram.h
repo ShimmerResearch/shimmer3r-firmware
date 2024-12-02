@@ -437,7 +437,7 @@ typedef union
     uint8_t macAddr[6];
 
     //SDConfigDelayFlag;
-    uint8_t infoSdcfg        : 1;
+    uint8_t infoSdcfg : 1;
     /* Used to be used by older, individual calibration files. Replaced by calib
      * dump file*/
     uint8_t infoCalib        : 1;
