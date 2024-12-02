@@ -82,7 +82,7 @@ void S4Sens_configureChannels(void)
   sensing.dataLen = 1 + 3; //0x00 + timestamp
 
 #if OLD_CONSENSYS_SUPPORT
-  overWriteDefaultConfig();
+  overwriteDefaultConfig();
 #endif
 
   S4_ADC_configureChannels();
@@ -106,8 +106,9 @@ void S4Sens_configureChannels(void)
 #endif
 }
 
-//TODO Remove below. Overriding settings here as these are supported yet in Consensys.
-void overWriteDefaultConfig(void)
+#if OLD_CONSENSYS_SUPPORT
+//TODO Remove below. Overwriting settings here as these are supported yet in Consensys.
+void overwriteDefaultConfig(void)
 {
   gConfigBytes *storedConfigPtr = S4Ram_getStoredConfig();
 
@@ -141,6 +142,7 @@ void overWriteDefaultConfig(void)
     storedConfigPtr->pressureRate = BMP3_ODR_200_HZ;
   }
 }
+#endif
 
 uint8_t S4Sens_checkStartSensorConditions(void)
 {
