@@ -660,9 +660,9 @@ void UpdateSdConfig(void)
       //sensor2
       sprintf(buffer, "intch14=%d\r\n", storedConfig->chEnIntADC2);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "accel_mpu=%d\r\n", storedConfig->chEnAltAccel);
+      sprintf(buffer, "accel_alt=%d\r\n", storedConfig->chEnAltAccel);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "mag_mpu=%d\r\n", storedConfig->chEnAltMag);
+      sprintf(buffer, "mag_alt=%d\r\n", storedConfig->chEnAltMag);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "exg1_16bit=%d\r\n", storedConfig->chEnExg1_16Bit);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
@@ -883,7 +883,6 @@ void ParseConfig(void)
   float sample_rate = 51.2;
   uint16_t sample_period = 0;
   uint64_t derived_channels_val = 0;
-  uint8_t broadcast_interval;
   uint8_t gsr_range = 0;
 
   uint8_t triggerSdCardUpdate = 0;
@@ -911,8 +910,6 @@ void ParseConfig(void)
     resetSyncVariablesBeforeParseConfig();
     resetSyncNodeArray();
 
-    broadcast_interval = SYNC_INT_C;
-
     memset((uint8_t *) (stored_config_temp.rawBytes), 0, NV_LN_ACCEL_CALIBRATION); //0
     memset((uint8_t *) (stored_config_temp.rawBytes + NV_LN_ACCEL_CALIBRATION), 0xff, 84);
     memset((uint8_t *) (stored_config_temp.rawBytes + NV_DERIVED_CHANNELS_3), 0, 5); //0
@@ -931,6 +928,7 @@ void ParseConfig(void)
     stored_config_temp.bufferSize = 1;
     stored_config_temp.btCommsBaudRate = 0xFF;
     //changeBtBaudRate = BAUD_NO_CHANGE_NEEDED; // set this flag to no_event as every sdlog.cfg read is followed by a baudrate setting
+    stored_config_temp.btInterval = SYNC_INT_C;
 
     memset(shimmerName, 0, sizeof(shimmerName));
     memset(expIdName, 0, sizeof(expIdName));
@@ -1012,11 +1010,11 @@ void ParseConfig(void)
       {
         stored_config_temp.chEnIntADC2 = atoi(equals);
       }
-      else if (strstr(buffer, "accel_mpu="))
+      else if (strstr(buffer, "accel_alt="))
       {
         stored_config_temp.chEnAltAccel = atoi(equals);
       }
-      else if (strstr(buffer, "mag_mpu="))
+      else if (strstr(buffer, "mag_alt="))
       {
         stored_config_temp.chEnAltMag = atoi(equals);
       }
@@ -1140,7 +1138,7 @@ void ParseConfig(void)
 #endif
       else if (strstr(buffer, "interval="))
       {
-        broadcast_interval = atoi(equals) > 255 ? 255 : atoi(equals);
+        stored_config_temp.btInterval = atoi(equals) > 255 ? 255 : atoi(equals);
       }
       else if (strstr(buffer, "bluetoothDisabled="))
       {
@@ -1353,59 +1351,8 @@ void ParseConfig(void)
     sample_period = (uint16_t) round(((float) 32768.0) / sample_rate);
     stored_config_temp.samplingRateTicks = sample_period;
 
-    if (stored_config_temp.chEnGsr)
-    { //they are sharing adc1, so ban intch1 when gsr is on
-      stored_config_temp.chEnIntADC3 = 0;
-      triggerSdCardUpdate = 1;
-    }
-    if (stored_config_temp.chEnBridgeAmp)
-    { //they are sharing adc13 and adc14
-      stored_config_temp.chEnIntADC1 = 0;
-      stored_config_temp.chEnIntADC2 = 0;
-      triggerSdCardUpdate = 1;
-    }
-    if (stored_config_temp.chEnExg1_24Bit)
-    {
-      stored_config_temp.chEnExg1_16Bit = 0;
-      triggerSdCardUpdate = 1;
-    }
-    if (stored_config_temp.chEnExg2_24Bit)
-    {
-      stored_config_temp.chEnExg2_16Bit = 0;
-      triggerSdCardUpdate = 1;
-    }
-    if (stored_config_temp.chEnExg1_24Bit || stored_config_temp.chEnExg2_24Bit
-        || stored_config_temp.chEnExg1_16Bit || stored_config_temp.chEnExg2_16Bit)
-    {
-      stored_config_temp.chEnIntADC3 = 0;
-      stored_config_temp.chEnIntADC2 = 0;
-      triggerSdCardUpdate = 1;
-    }
+    triggerSdCardUpdate = checkAndCorrectConfig(stored_config_temp);
 
-    if (stored_config_temp.gsrRange > 4)
-    { //never larger than 4
-      stored_config_temp.gsrRange = GSR_AUTORANGE;
-      triggerSdCardUpdate = 1;
-    }
-
-    //minimum sync broadcast interval is 54 seconds
-    if (broadcast_interval < SYNC_INT_C)
-    {
-      broadcast_interval = SYNC_INT_C;
-      triggerSdCardUpdate = 1;
-    }
-    stored_config_temp.btInterval = broadcast_interval;
-
-    //the button always works for singletouch mode
-    //sync always works for singletouch mode
-    if (stored_config_temp.singleTouchStart)
-    {
-      stored_config_temp.userButtonEnable = 1;
-      stored_config_temp.syncEnable = 1;
-      triggerSdCardUpdate = 1;
-    }
-
-    checkSyncCenterName();
     setSyncEstExpLen(stored_config_temp.experimentLengthEstimatedInSec);
 
     /* Calibration bytes are not copied over from the infomem */

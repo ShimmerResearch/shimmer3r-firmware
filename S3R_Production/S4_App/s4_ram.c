@@ -454,24 +454,13 @@ uint8_t GetSdCfgFlag(void)
 
 void SetSdCfgFlag(uint8_t flag)
 {
-  gConfigBytes temp_storedConfig;
-  InfoMem_readRam(temp_storedConfig.rawBytes, 0, STOREDCONFIG_SIZE);
   if (flag)
   {
-    if (!temp_storedConfig.sdCfgFlag)
-    {
-      temp_storedConfig.infoSdcfg |= 0x01;
-    }
-    else
-    {
-      temp_storedConfig.infoSdcfg = 0x01;
-    }
+    storedConfig.sdCfgFlag = 0;
   }
-  else
-  {
-    temp_storedConfig.infoSdcfg &= ~0x01;
-  }
-  InfoMem_updateFrom(temp_storedConfig.rawBytes);
+  storedConfig.infoSdcfg = flag;
+  InfoMem_write(NV_SD_CONFIG_DELAY_FLAG,
+      &storedConfig->rawBytes[NV_SD_CONFIG_DELAY_FLAG], 1);
 }
 
 uint8_t GetRamCalibFlag(void)
@@ -576,4 +565,73 @@ void set_config_byte_mag_rate(gConfigBytes *storedConfigPtr, uint8_t value)
 uint8_t get_config_byte_mag_rate(void)
 {
   return (storedConfig.magRateMsb << 3) | storedConfig.magRateLsb;
+}
+
+uint8_t checkAndCorrectConfig(gConfigBytes *storedConfigPtr)
+{
+  uint8_t settingCorrected = 0;
+
+  if (storedConfigPtr->chEnGsr)
+  {
+    //they are sharing Shimmer3 adc1, so ban intch1 when gsr is on
+    storedConfigPtr->chEnIntADC3 = 0;
+    settingCorrected = 1;
+  }
+  if (storedConfigPtr->chEnBridgeAmp)
+  { //they are sharing adc13 and adc14
+    storedConfigPtr->chEnIntADC1 = 0;
+    storedConfigPtr->chEnIntADC2 = 0;
+    settingCorrected = 1;
+  }
+  if (storedConfigPtr->chEnExg1_24Bit)
+  {
+    storedConfigPtr->chEnExg1_16Bit = 0;
+    settingCorrected = 1;
+  }
+  if (storedConfigPtr->chEnExg2_24Bit)
+  {
+    storedConfigPtr->chEnExg2_16Bit = 0;
+    settingCorrected = 1;
+  }
+  if (storedConfigPtr->chEnExg1_24Bit || storedConfigPtr->chEnExg2_24Bit
+      || storedConfigPtr->chEnExg1_16Bit || storedConfigPtr->chEnExg2_16Bit)
+  {
+    storedConfigPtr->chEnIntADC3 = 0;
+    storedConfigPtr->chEnIntADC2 = 0;
+    settingCorrected = 1;
+  }
+
+  if (storedConfigPtr->gsrRange > 4)
+  { //never larger than 4
+    storedConfigPtr->gsrRange = GSR_AUTORANGE;
+    settingCorrected = 1;
+  }
+
+  //minimum sync broadcast interval is 54 seconds
+  if (storedConfigPtr->btInterval < SYNC_INT_C)
+  {
+    storedConfigPtr->btInterval = SYNC_INT_C;
+    settingCorrected = 1;
+  }
+
+  if (storedConfigPtr->tcxo)
+  {
+#if !IS_SUPPORTED_TCXO
+    storedConfigPtr->tcxo = 0; /* Disable TCXO */
+    settingCorrected = 1;
+#endif
+  }
+
+  //the button always works for singletouch mode
+  //sync always works for singletouch mode
+  if (storedConfigPtr->singleTouchStart)
+  {
+    storedConfigPtr->userButtonEnable = 1;
+    storedConfigPtr->syncEnable = 1;
+    settingCorrected = 1;
+  }
+
+  checkSyncCenterName();
+
+  return settingCorrected;
 }
