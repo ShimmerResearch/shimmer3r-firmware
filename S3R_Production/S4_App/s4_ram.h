@@ -543,6 +543,6 @@ void set_config_byte_pressure_oversampling_ratio(gConfigBytes *storedConfigPtr, 
 uint8_t get_config_byte_pressure_oversampling_ratio(void);
 void set_config_byte_mag_rate(gConfigBytes *storedConfigPtr, uint8_t value);
 uint8_t get_config_byte_mag_rate(void);
-void checkAndCorrectConfig(gConfigBytes *storedConfig);
+uint8_t checkAndCorrectConfig(gConfigBytes *storedConfig);
 
 #endif //S4Ram_H

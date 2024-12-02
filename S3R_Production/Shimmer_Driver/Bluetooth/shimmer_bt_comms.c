@@ -1804,13 +1804,8 @@ void BtUart_settingChangeCommon(uint16_t configByteIdx, uint16_t sdHeaderIdx, ui
   checkAndCorrectConfig(storedConfig);
 
   InfoMem_write(configByteIdx, &storedConfig->rawBytes[configByteIdx], len);
-<<<<<<< HEAD
   S4Ram_sdHeadTextSet(&storedConfig->rawBytes[configByteIdx], sdHeaderIdx, len);
   //S4Ram_config2SdHead();
-=======
-  S4Ram_sdHeadTextSetByte(sdHeaderIdx, storedConfig->rawBytes[configByteIdx]);
-  //S4Ram_config2SdHead();
->>>>>>> branch 'SHIM3-377' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 
   //restart sensing to use settings
   if (shimmerStatus.sensing)
