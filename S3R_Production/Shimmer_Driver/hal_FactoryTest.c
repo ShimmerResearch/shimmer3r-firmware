@@ -40,7 +40,7 @@ uint32_t run_factory_test(void)
     print_shimmer_model();
     send_test_report("\r\n");
 
-    // Sensing power is needed for ADC peripheral and I2C/SPI tests
+    //Sensing power is needed for ADC peripheral and I2C/SPI tests
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
 
     print_mcu_details();

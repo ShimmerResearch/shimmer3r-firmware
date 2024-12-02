@@ -548,7 +548,7 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state)
     }
     else
     {
-      HAL_Delay(210); // ADXL371 needs 200ms to power down. No harm for other chips.
+      HAL_Delay(210); //ADXL371 needs 200ms to power down. No harm for other chips.
     }
   }
 }
