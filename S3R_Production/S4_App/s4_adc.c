@@ -647,8 +647,6 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   uint8_t adc_counter_sens = 0; //adc channel rank counter
   uint8_t numChannels = 3;
 
-  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
-
   //FIXME: reusing ADC1 here because I haven't been able to get DMA LL working with ADC4
   initSensAdc(numChannels);
 
@@ -729,8 +727,6 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   }
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
-
-  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
 }
 
 void initSensAdc(uint32_t numChannels)
