@@ -459,7 +459,8 @@ void SetSdCfgFlag(uint8_t flag)
     storedConfig.sdCfgFlag = 0;
   }
   storedConfig.infoSdcfg = flag;
-  InfoMem_write(NV_SD_CONFIG_DELAY_FLAG, &storedConfig->rawBytes[NV_SD_CONFIG_DELAY_FLAG], 1);
+  InfoMem_write(NV_SD_CONFIG_DELAY_FLAG,
+      &storedConfig->rawBytes[NV_SD_CONFIG_DELAY_FLAG], 1);
 }
 
 uint8_t GetRamCalibFlag(void)
@@ -589,4 +590,3 @@ void checkAndCorrectConfig(gConfigBytes *storedConfig)
     storedConfig->btInterval = SYNC_INT_C;
   }
 }
-

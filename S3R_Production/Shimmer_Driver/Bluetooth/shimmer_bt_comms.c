@@ -1295,7 +1295,7 @@ void BtUart_processCmd(void)
     storedConfig->rawBytes[NV_SD_TRIAL_CONFIG1] = args[1];
     storedConfig->rawBytes[NV_SD_BT_INTERVAL] = args[2];
 
-    // Save TRIAL_CONFIG0, TRIAL_CONFIG1 and BT_INTERVAL
+    //Save TRIAL_CONFIG0, TRIAL_CONFIG1 and BT_INTERVAL
     BtUart_settingChangeCommon(NV_SD_TRIAL_CONFIG0, SDH_TRIAL_CONFIG0, 3);
     break;
   case SET_CENTER_COMMAND:
@@ -1806,7 +1806,7 @@ void BtUart_settingChangeCommon(uint16_t configByteIdx, uint16_t sdHeaderIdx, ui
   InfoMem_write(configByteIdx, &storedConfig->rawBytes[configByteIdx], len);
 <<<<<<< HEAD
   S4Ram_sdHeadTextSet(&storedConfig->rawBytes[configByteIdx], sdHeaderIdx, len);
-//  S4Ram_config2SdHead();
+  //S4Ram_config2SdHead();
 =======
   S4Ram_sdHeadTextSetByte(sdHeaderIdx, storedConfig->rawBytes[configByteIdx]);
   //S4Ram_config2SdHead();
