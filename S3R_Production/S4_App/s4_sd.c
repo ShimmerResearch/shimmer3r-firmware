@@ -1101,12 +1101,10 @@ void ParseConfig(void)
       {
         set_config_byte_mag_rate(&stored_config_temp, atoi(equals));
       }
-#if !RTC_OFF
       else if (strstr(buffer, "rtc_error_enable="))
       {
         stored_config_temp.rtcErrorEnable = atoi(equals);
       }
-#endif
       else if (strstr(buffer, "sd_error_enable="))
       {
         stored_config_temp.sdErrorEnable = atoi(equals);

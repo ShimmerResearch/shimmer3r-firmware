@@ -438,6 +438,8 @@ typedef union
 
     //SDConfigDelayFlag;
     uint8_t infoSdcfg        : 1;
+    /* Used to be used by older, individual calibration files. Replaced by calib
+     * dump file*/
     uint8_t infoCalib        : 1;
     uint8_t unusedIdx230Bit2 : 1;
     uint8_t unusedIdx230Bit3 : 1;

@@ -440,16 +440,14 @@ void setDefaultTrialId(void)
 
 uint8_t GetSdCfgFlag(void)
 {
-  uint8_t sd_config_delay_flag = 0;
-  InfoMem_readRam(&sd_config_delay_flag, NV_SD_CONFIG_DELAY_FLAG, 1);
-  if (!(sd_config_delay_flag & 0x80))
+  if (storedConfig.sdCfgFlag)
   {
-    if (sd_config_delay_flag & 0x01)
-    {
-      return 1;
-    }
+    return 0;
   }
-  return 0;
+  else
+  {
+    return storedConfig.infoSdcfg;
+  }
 }
 
 void SetSdCfgFlag(uint8_t flag)

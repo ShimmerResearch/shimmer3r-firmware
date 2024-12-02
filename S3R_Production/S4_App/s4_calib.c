@@ -1131,7 +1131,7 @@ void ShimmerCalibSyncFromDumpRamSingleSensor(uint8_t sensor)
     scs_infomem_offset = NV_ALT_ACCEL_CALIBRATION;
     scs_sdhead_offset = SDH_ALT_ACCEL_CALIBRATION;
     scs_sdhead_ts = SDH_ALT_ACCEL_CALIB_TS;
-    sc1.range = 0;
+    sc1.range = SC_SENSOR_RANGE_ADXL371_RANGE;
     break;
   case SC_SENSOR_LIS3MDL_MAG:
     scs_infomem_offset = NV_MAG_CALIBRATION;
@@ -1143,7 +1143,7 @@ void ShimmerCalibSyncFromDumpRamSingleSensor(uint8_t sensor)
     scs_infomem_offset = NV_ALT_MAG_CALIBRATION;
     scs_sdhead_offset = SDH_ALT_MAG_CALIBRATION;
     scs_sdhead_ts = SDH_ALT_MAG_CALIB_TS;
-    sc1.range = 0;
+    sc1.range = SC_SENSOR_RANGE_LIS2MDL_RANGE;
     break;
   default:
     break;
