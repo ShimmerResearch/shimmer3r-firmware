@@ -1804,8 +1804,13 @@ void BtUart_settingChangeCommon(uint16_t configByteIdx, uint16_t sdHeaderIdx, ui
   checkAndCorrectConfig(storedConfig);
 
   InfoMem_write(configByteIdx, &storedConfig->rawBytes[configByteIdx], len);
+<<<<<<< HEAD
   S4Ram_sdHeadTextSet(&storedConfig->rawBytes[configByteIdx], sdHeaderIdx, len);
 //  S4Ram_config2SdHead();
+=======
+  S4Ram_sdHeadTextSetByte(sdHeaderIdx, storedConfig->rawBytes[configByteIdx]);
+  //S4Ram_config2SdHead();
+>>>>>>> branch 'SHIM3-377' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 
   //restart sensing to use settings
   if (shimmerStatus.sensing)
@@ -1814,7 +1819,7 @@ void BtUart_settingChangeCommon(uint16_t configByteIdx, uint16_t sdHeaderIdx, ui
     setStartSensing();
   }
 
-  // update sdconfig
+  //update sdconfig
   SetSdCfgFlag(1);
 }
 
@@ -1948,7 +1953,8 @@ void BtUart_sendRsp(void)
         *(resPacket + packet_length++) = INQUIRY_RESPONSE;
         *(uint16_t *) (resPacket + packet_length) = storedConfig->samplingRateTicks; //ADC sampling rate
         packet_length += 2;
-        memcpy(resPacket + packet_length, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
+        memcpy(resPacket + packet_length,
+            &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
         packet_length += 4;
         *(resPacket + packet_length++) = sensing.nbrAdcChans + sensing.nbrDigiChans; //number of data channels
         *(resPacket + packet_length++) = storedConfig->bufferSize; //buffer size
@@ -2123,27 +2129,28 @@ void BtUart_sendRsp(void)
         break;
       case GET_MPU9150_MAG_SENS_ADJ_VALS_COMMAND:
 #if defined(SHIMMER3) || defined(SHIMMER4_SDK)
-      //Mag sensitivity adj feature is not present in ICM-20948
-      if (isGyroInUseMpu9x50())
-      {
-        MPU9150_init();
-        MPU9150_wake(1);
-        MPU9150_wake(0);
-        *(resPacket + packet_length++) = MPU9150_MAG_SENS_ADJ_VALS_RESPONSE;
-        MPU9150_getMagSensitivityAdj(resPacket + packet_length);
-        packet_length += 3;
-      }
-      else
-      {
+        //Mag sensitivity adj feature is not present in ICM-20948
+        if (isGyroInUseMpu9x50())
+        {
+          MPU9150_init();
+          MPU9150_wake(1);
+          MPU9150_wake(0);
+          *(resPacket + packet_length++) = MPU9150_MAG_SENS_ADJ_VALS_RESPONSE;
+          MPU9150_getMagSensitivityAdj(resPacket + packet_length);
+          packet_length += 3;
+        }
+        else
+        {
 #endif
-        *(resPacket + packet_length++) = ACK_COMMAND_PROCESSED;
+          *(resPacket + packet_length++) = ACK_COMMAND_PROCESSED;
 #if defined(SHIMMER3) || defined(SHIMMER4_SDK)
-      }
+        }
 #endif
         break;
       case GET_CONFIG_SETUP_BYTES_COMMAND:
         *(resPacket + packet_length++) = CONFIG_SETUP_BYTES_RESPONSE;
-        memcpy(resPacket + packet_length, &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
+        memcpy(resPacket + packet_length,
+            &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
         packet_length += 4;
         break;
       case GET_BT_VERSION_STR_COMMAND:
@@ -2321,13 +2328,13 @@ void BtUart_sendRsp(void)
       case GET_I2C_BATT_STATUS_COMMAND:
         *(resPacket + packet_length++) = INSTREAM_CMD_RESPONSE;
         *(resPacket + packet_length++) = RSP_I2C_BATT_STATUS_COMMAND;
-        memcpy((resPacket + packet_length), (uint8_t *) shimmerStatus.battDigital, STC3100_DATA_LEN);
+        memcpy((resPacket + packet_length),
+            (uint8_t *) shimmerStatus.battDigital, STC3100_DATA_LEN);
         packet_length += STC3100_DATA_LEN;
         break
 #endif
 
-      default:
-        break;
+            default: break;
       }
       getCmdWaitingResponse = 0;
     }
