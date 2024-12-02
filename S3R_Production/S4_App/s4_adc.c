@@ -76,6 +76,8 @@ uint32_t battInterval = BATT_INTERVAL_D;
 uint8_t battCriticalCount = 0;
 battAlarmInterval_t battAlarmInterval;
 
+uint8_t waitingForDebugData = 0;
+
 #if defined(SHIMMER3R)
 static uint16_t ADC_RANK_ARRAY[] = { ADC_REGULAR_RANK_1, ADC_REGULAR_RANK_2,
   ADC_REGULAR_RANK_3, ADC_REGULAR_RANK_4, ADC_REGULAR_RANK_5, ADC_REGULAR_RANK_6,
@@ -335,58 +337,9 @@ void S4_NORM_ADC_startSensing()
   uint32_t adcGpioPinA = 0;
   uint32_t adcGpioPinB = 0;
 
-  //memcpy((uint8_t*)hadcSensPtr.Init, (uint8_t*)&hadcBattPtr->Init,
-  //sizeof(ADC_InitTypeDef)); hadcSens.Instance = ADC2;
+  initSensAdc(adc.sensorLen);
+
 #if defined(SHIMMER3R)
-  hadcSensPtr->Instance = ADC1;
-  hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-  hadcSensPtr->Init.Resolution = ADC_RESOLUTION_14B;
-  hadcSensPtr->Init.GainCompensation = 0;
-  hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadcSensPtr->Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  hadcSensPtr->Init.LowPowerAutoWait = DISABLE;
-  hadcSensPtr->Init.ContinuousConvMode = ENABLE;
-  hadcSensPtr->Init.NbrOfConversion = adc.sensorLen;
-  hadcSensPtr->Init.DiscontinuousConvMode = DISABLE;
-  hadcSensPtr->Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadcSensPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadcSensPtr->Init.DMAContinuousRequests = DISABLE;
-  hadcSensPtr->Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_LOW;
-  hadcSensPtr->Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadcSensPtr->Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
-  hadcSensPtr->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT;
-  hadcSensPtr->Init.OversamplingMode = DISABLE;
-
-#elif defined(SHIMMER4_SDK)
-  hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
-  hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
-  hadcSensPtr->Init.ScanConvMode = DISABLE;
-  hadcSensPtr->Init.ContinuousConvMode = DISABLE;
-  hadcSensPtr->Init.DiscontinuousConvMode = DISABLE;
-  hadcSensPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadcSensPtr->Init.NbrOfConversion = adc.sensorLen;
-  hadcSensPtr->Init.DMAContinuousRequests = ENABLE;
-  //hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
-#endif
-
-  //Override EOCSelection depending on number of enabled channels
-  if (adc.sensorLen > 1)
-  {
-    hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
-  }
-  else
-  {
-    hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  }
-  if (HAL_ADC_Init(hadcSensPtr) != HAL_OK)
-  {
-    Error_Handler();
-  }
-#if defined(SHIMMER3R)
-  linkedListConfig(hadcSensPtr);
-
   sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
@@ -615,6 +568,154 @@ void S4_NORM_ADC_gatherDataStart(void)
 #endif
 
   HAL_ADC_Start_DMA(hadcSensPtr, (uint32_t *) adcBufSens, (uint32_t) adc.sensorLen);
+}
+
+void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
+{
+  ADC_ChannelConfTypeDef sConfig = { 0 };
+  uint8_t adc_counter_sens = 0; //adc channel rank counter
+  uint8_t numChannels = 3;
+
+  Board_enableSensingPower(1);
+
+  //FIXME: reusing ADC1 here because I haven't been able to get DMA LL working with ADC4
+  initSensAdc(numChannels);
+
+  sConfig.SamplingTime = ADC_SAMPLETIME_814CYCLES;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+
+  sConfig.Channel = ADC_CHANNEL_VREFINT;
+  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfig.Channel = ADC_CHANNEL_VBAT;
+  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+  sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+  if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  HAL_ADCEx_Calibration_Start(hadcSensPtr, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED); //can be removed later
+
+  waitingForDebugData = 1;
+  HAL_ADC_Start_DMA(hadcSensPtr, (uint32_t *) adcBufSens, (uint32_t) numChannels);
+  while (waitingForDebugData)
+  {
+    Power_SleepUntilInterrupt();
+  }
+
+  HAL_ADC_Stop_DMA(hadcSensPtr);
+  HAL_ADC_DeInit(hadcSensPtr);
+
+  adc_counter_sens = 0;
+
+  adcDebugInfo->vRefMV = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(
+      hadcSensPtr, adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution);
+
+  //5us sampling time. +-5% error. Vbatt channel is internally divided by 4
+  adcDebugInfo->vBattPinMV
+      = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, adcDebugInfo->vRefMV,
+            adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution)
+      * 4;
+
+  /* STM32U5Axxx:
+   * Average slope (mv/C) = 2.5.
+   * V30 = 0.752V.
+   * Vtemp = 30 + (Vsense - V30) / Avg_slope
+   */
+  //float temperatureV = (float) adcBufSens[2] * referenceVoltageFloat /
+  //16383.0; float temperatureFloat = (temperatureV - 0.752)/0.0025 + 30.0;
+  //13us sampling time
+  adcDebugInfo->temperature = __HAL_ADC_CALC_TEMPERATURE(hadcSensPtr,
+      adcDebugInfo->vRefMV, adcBufSens[adc_counter_sens++], hadcSensPtr->Init.Resolution);
+
+  //Using ADC4 here to get Vcore
+
+  MX_ADC4_Init();
+  ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc4();
+
+  uint32_t vCoreCounts = 0;
+  HAL_StatusTypeDef status = HAL_ADC_Start(hadcFactoryTestPtr);
+  status = HAL_ADC_PollForConversion(hadcFactoryTestPtr, 100);
+  if (status == HAL_OK)
+  {
+    vCoreCounts = HAL_ADC_GetValue(hadcFactoryTestPtr);
+    //1us sampling time
+    adcDebugInfo->vCoreMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr,
+        3300, vCoreCounts, hadcFactoryTestPtr->Init.Resolution);
+  }
+  HAL_ADC_Stop(hadcFactoryTestPtr);
+  HAL_ADC_DeInit(hadcFactoryTestPtr);
+
+  Board_enableSensingPower(0);
+}
+
+void initSensAdc(uint32_t numChannels)
+{
+  //memcpy((uint8_t*)hadcSensPtr.Init, (uint8_t*)&hadcBattPtr->Init,
+  //sizeof(ADC_InitTypeDef)); hadcSens.Instance = ADC2;
+#if defined(SHIMMER3R)
+  hadcSensPtr->Instance = ADC1;
+  hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+  hadcSensPtr->Init.Resolution = ADC_RESOLUTION_14B;
+  hadcSensPtr->Init.GainCompensation = 0;
+  hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadcSensPtr->Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadcSensPtr->Init.LowPowerAutoWait = DISABLE;
+  hadcSensPtr->Init.ContinuousConvMode = ENABLE;
+  hadcSensPtr->Init.NbrOfConversion = numChannels;
+  hadcSensPtr->Init.DiscontinuousConvMode = DISABLE;
+  hadcSensPtr->Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadcSensPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadcSensPtr->Init.DMAContinuousRequests = DISABLE;
+  hadcSensPtr->Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_LOW;
+  hadcSensPtr->Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadcSensPtr->Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
+  hadcSensPtr->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT;
+  hadcSensPtr->Init.OversamplingMode = DISABLE;
+
+#elif defined(SHIMMER4_SDK)
+  hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+  hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
+  hadcSensPtr->Init.ScanConvMode = DISABLE;
+  hadcSensPtr->Init.ContinuousConvMode = DISABLE;
+  hadcSensPtr->Init.DiscontinuousConvMode = DISABLE;
+  hadcSensPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadcSensPtr->Init.NbrOfConversion = adc.sensorLen;
+  hadcSensPtr->Init.DMAContinuousRequests = ENABLE;
+  //hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
+#endif
+
+  //Override EOCSelection depending on number of enabled channels
+  if (numChannels > 1)
+  {
+    hadcSensPtr->Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  }
+  else
+  {
+    hadcSensPtr->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  }
+  if (HAL_ADC_Init(hadcSensPtr) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#if defined(SHIMMER3R)
+  linkedListConfig(hadcSensPtr);
+#endif
 }
 
 void S4_NORM_ADC_bufPoll()
@@ -962,7 +1063,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
     if (status == HAL_OK)
     {
       adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
-      updateBatteryStatus(adc_battVal);
+      updateBatteryStatus(adc_battVal, hadcBattPtr);
     }
     HAL_ADC_Stop(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
@@ -993,14 +1094,21 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 #if defined(SHIMMER3R)
   if (hadc->Instance == hadcSensPtr->Instance)
   {
-    S4_ADC_bufPoll();
-    ADC_gatherDataDone_cb();
+    if (shimmerStatus.isSensing)
+    {
+      S4_ADC_bufPoll();
+      ADC_gatherDataDone_cb();
+    }
+    else
+    {
+      waitingForDebugData = 0;
+    }
     HAL_ADC_Stop_DMA(hadcSensPtr);
   }
-  if (hadc->Instance == hadcBattPtr->Instance)
+  else if (hadc->Instance == hadcBattPtr->Instance)
   {
     adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
-    updateBatteryStatus(adc_battVal);
+    updateBatteryStatus(adc_battVal, hadcBattPtr);
     HAL_ADC_Stop_IT(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
     Board_enableSensingPower(0);
@@ -1057,7 +1165,7 @@ void manageReadBatt(uint8_t isBlockingRead)
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
   if (shimmerStatus.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
-    updateBatteryStatus(*(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog]);
+    updateBatteryStatus(*(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog], hadcSensPtr);
   }
   else
   {
@@ -1070,13 +1178,18 @@ void manageReadBatt(uint8_t isBlockingRead)
   }
 }
 
-void updateBatteryStatus(uint16_t adc_battVal)
+void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
 {
   shimmerStatus.battVal[0] = adc_battVal & 0xff;
   shimmerStatus.battVal[1] = (adc_battVal >> 8) & 0xff;
   shimmerStatus.battVal[2] = 0;
   shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
   shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
+
+  shimmerStatus.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
+                                adc_battVal, hadcPtr->Init.Resolution)
+      * 2;
+
   S4_ADC_rankBatt();
 }
 

@@ -37,17 +37,21 @@ extern "C"
 
   extern ADC_HandleTypeDef hadc2;
 
+  extern ADC_HandleTypeDef hadc4;
+
   /* USER CODE BEGIN Private defines */
 
   /* USER CODE END Private defines */
 
   void MX_ADC1_Init(void);
   void MX_ADC2_Init(void);
+  void MX_ADC4_Init(void);
 
   /* USER CODE BEGIN Prototypes */
 
   ADC_HandleTypeDef *getHadc1(void);
   ADC_HandleTypeDef *getHadc2(void);
+  ADC_HandleTypeDef *getHadc4(void);
 
   /* USER CODE END Prototypes */
 

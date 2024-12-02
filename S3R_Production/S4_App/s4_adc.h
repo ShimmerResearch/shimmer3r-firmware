@@ -22,6 +22,14 @@ typedef struct
   uint8_t chanCntBatt;
 } ADCTypeDef;
 
+typedef struct
+{
+  int32_t vRefMV;
+  int32_t temperature;
+  int32_t vBattPinMV;
+  int32_t vCoreMV;
+} ADCDebugInfo_t;
+
 #define ADC_CONFIG_NONE 0
 #define ADC_CONFIG_SENS 1
 #define ADC_CONFIG_BATT 2
@@ -80,15 +88,17 @@ void S4_NORM_ADC_initBatt(void);
 #endif
 void S4_NORM_ADC_configureChannels(void);
 void S4_NORM_ADC_startSensing(void);
+void initSensAdc(uint32_t numChannels);
 void S4_NORM_ADC_bufPoll(void);
 void S4_NORM_ADC_stopSensing(void);
 void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void));
 void S4_NORM_ADC_gatherDataStart(void);
+void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo);
 void S4_NORM_ADC_readBatt(uint8_t isBlockingRead);
 void S4_NORM_ADC_rankBatt(void);
 void adcGpioInit(uint32_t pin, GPIO_TypeDef *port);
 void manageReadBatt(uint8_t isBlockingRead);
-void updateBatteryStatus(uint16_t adc_battVal);
+void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr);
 battAlarmInterval_t getBatteryInterval(void);
 
 #if defined(SHIMMER3R)

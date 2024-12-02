@@ -10,7 +10,22 @@
 
 #include <stdint.h>
 
-#define DELAY_BETWEEN_LED_CHANGES_MS 2000
+#define DELAY_BETWEEN_LED_CHANGES_MS         2000
+
+#define TEST_THRESHOLD_VREF_LOWER            (VREF_EXTERNAL_SUPPLY_MV - 80)
+#define TEST_THRESHOLD_VREF_UPPER            (VREF_EXTERNAL_SUPPLY_MV + 80)
+#define TEST_THRESHOLD_VCORE_LOWER           1120
+#define TEST_THRESHOLD_VCORE_UPPER           1280
+#define TEST_THRESHOLD_VBATT_PIN_LOWER       1850
+#define TEST_THRESHOLD_VBATT_PIN_UPPER       1950
+#define TEST_THRESHOLD_MCU_TEMPERATURE_LOWER 10
+#define TEST_THRESHOLD_MCU_TEMPERATURE_UPPER 35
+#define TEST_THRESHOLD_VBATT_LOWER           2980
+#define TEST_THRESHOLD_VBATT_UPPER           4750
+#define TEST_THRESHOLD_BMP_TEMPERATURE_LOWER 10
+#define TEST_THRESHOLD_BMP_TEMPERATURE_UPPER 35
+
+#define TEST_BT_MODULE_FW                    "v01.04.16.16"
 
 typedef enum
 {
@@ -30,6 +45,8 @@ typedef enum
 uint32_t run_factory_test(void);
 void print_date_and_time(void);
 void print_shimmer_model(void);
+void print_mcu_details(void);
+void print_battery_details(void);
 void led_test(void);
 void sd_card_test(void);
 uint8_t bt_module_test(void);
