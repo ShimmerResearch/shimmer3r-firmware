@@ -81,7 +81,9 @@ void S4Sens_configureChannels(void)
   sensing.ptr.ts = 1;
   sensing.dataLen = 1 + 3; //0x00 + timestamp
 
+#if OLD_CONSENSYS_SUPPORT
   overWriteDefaultConfig();
+#endif
 
   S4_ADC_configureChannels();
   I2C_configureChannels();
