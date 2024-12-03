@@ -22,9 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
-#include "hal_Board.h"
 #include "gpdma.h"
-int16_t  micDataBuffer[100];
+#include "hal_Board.h"
+int16_t micDataBuffer[100];
 /* USER CODE END 0 */
 
 MDF_HandleTypeDef AdfHandle0;
@@ -84,22 +84,21 @@ void MX_ADF1_Init(void)
   /* USER CODE BEGIN ADF1_Init 2 */
   micLinkedListConfig(&AdfHandle0);
   /* USER CODE END ADF1_Init 2 */
-
 }
 
-void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
+void HAL_MDF_MspInit(MDF_HandleTypeDef *mdfHandle)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  if(IS_ADF_INSTANCE(mdfHandle->Instance))
+  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
+  if (IS_ADF_INSTANCE(mdfHandle->Instance))
   {
-  /* USER CODE BEGIN ADF1_MspInit 0 */
+    /* USER CODE BEGIN ADF1_MspInit 0 */
 
-  /* USER CODE END ADF1_MspInit 0 */
+    /* USER CODE END ADF1_MspInit 0 */
 
-  /** Initializes the peripherals clock
-  */
+    /** Initializes the peripherals clock
+     */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADF1;
     PeriphClkInit.Adf1ClockSelection = RCC_ADF1CLKSOURCE_PLL3;
     PeriphClkInit.PLL3.PLL3Source = RCC_PLLSOURCE_HSE;
@@ -124,7 +123,7 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
     PF3     ------> ADF1_CCK0
     PF4     ------> ADF1_SDI0
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4;
+    GPIO_InitStruct.Pin = GPIO_PIN_3 | GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -134,20 +133,20 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
     /* ADF1 interrupt Init */
     HAL_NVIC_SetPriority(ADF1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(ADF1_IRQn);
-  /* USER CODE BEGIN ADF1_MspInit 1 */
+    /* USER CODE BEGIN ADF1_MspInit 1 */
 
-  /* USER CODE END ADF1_MspInit 1 */
+    /* USER CODE END ADF1_MspInit 1 */
   }
 }
 
-void HAL_MDF_MspDeInit(MDF_HandleTypeDef* mdfHandle)
+void HAL_MDF_MspDeInit(MDF_HandleTypeDef *mdfHandle)
 {
 
-  if(IS_ADF_INSTANCE(mdfHandle->Instance))
+  if (IS_ADF_INSTANCE(mdfHandle->Instance))
   {
-  /* USER CODE BEGIN ADF1_MspDeInit 0 */
+    /* USER CODE BEGIN ADF1_MspDeInit 0 */
 
-  /* USER CODE END ADF1_MspDeInit 0 */
+    /* USER CODE END ADF1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_ADF1_CLK_DISABLE();
 
@@ -155,13 +154,13 @@ void HAL_MDF_MspDeInit(MDF_HandleTypeDef* mdfHandle)
     PF3     ------> ADF1_CCK0
     PF4     ------> ADF1_SDI0
     */
-    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_3|GPIO_PIN_4);
+    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_3 | GPIO_PIN_4);
 
     /* ADF1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(ADF1_IRQn);
-  /* USER CODE BEGIN ADF1_MspDeInit 1 */
+    /* USER CODE BEGIN ADF1_MspDeInit 1 */
 
-  /* USER CODE END ADF1_MspDeInit 1 */
+    /* USER CODE END ADF1_MspDeInit 1 */
   }
 }
 
@@ -180,27 +179,29 @@ void MDF1_DeInit(void)
 
 void micDmaStart(void)
 {
-  MDF_DmaConfigTypeDef  micDmaConfig;
-  micDmaConfig.Address = (uint32_t)&micDataBuffer[0];
+  MDF_DmaConfigTypeDef micDmaConfig;
+  micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
   micDmaConfig.DataLength = 2U;
   micDmaConfig.MsbOnly = ENABLE;
 
   HAL_Delay(200);
 
-  if (HAL_MDF_AcqStart_DMA(&AdfHandle0,&AdfFilterConfig0,&micDmaConfig) != HAL_OK)
+  if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
   {
     Error_Handler();
   }
 
-   if (HAL_MDF_GenerateTrgo(&AdfHandle0) != HAL_OK)
-   {
-     Error_Handler();
-   }
+  if (HAL_MDF_GenerateTrgo(&AdfHandle0) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
+
 void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf)
 {
   __NOP();
   __NOP();
   HAL_MDF_AcqStop_DMA(hmdf);
 }
+
 /* USER CODE END 1 */
