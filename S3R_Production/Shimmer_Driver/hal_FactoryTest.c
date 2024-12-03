@@ -25,6 +25,8 @@ uint32_t run_factory_test(void)
   send_test_report("//**************************** TEST START "
                    "************************************//\r\n");
 
+  shimmerStatus.testResult = 0;
+
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
   {
     print_date_and_time();
@@ -38,6 +40,9 @@ uint32_t run_factory_test(void)
     print_shimmer_model();
     send_test_report("\r\n");
 
+    //Sensing power is needed for ADC peripheral and I2C/SPI tests
+    Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
+
     print_mcu_details();
     send_test_report("\r\n");
 
@@ -47,16 +52,14 @@ uint32_t run_factory_test(void)
     sd_card_test();
     send_test_report("\r\n");
 
-    shimmerStatus.testResult += (!bt_module_test()) << 7;
+    bt_module_test();
     send_test_report("\r\n");
 
-    shimmerStatus.testResult += InfoMem_test() << 8;
+    //InfoMem_test();
 
-    Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
+    I2C_test();
 
-    shimmerStatus.testResult += I2C_test();
-
-    shimmerStatus.testResult += SPI_test() << 16;
+    SPI_test();
 
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
   }
@@ -68,6 +71,12 @@ uint32_t run_factory_test(void)
       send_test_report("\r\n");
     }
     led_test();
+  }
+
+  if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
+  {
+    sprintf(buffer, "\r\nOverall Result = %s\r\n", shimmerStatus.testResult ? "FAIL" : "PASS");
+    send_test_report(buffer);
   }
 
   send_test_report("//***************************** TEST END "
@@ -108,6 +117,7 @@ void print_shimmer_model(void)
   else
   {
     send_test_report(" - S3R_TEST_0003 - FAIL: not set\r\n");
+    shimmerStatus.testResult |= S3R_TEST_0003;
   }
 }
 
@@ -147,6 +157,10 @@ void print_mcu_details(void)
       testPass ? "PASS" : "FAIL", adcDebugInfo.vRefMV,
       TEST_THRESHOLD_VREF_LOWER, TEST_THRESHOLD_VREF_UPPER);
   send_test_report(buffer);
+  if (!testPass)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0007;
+  }
 
   testPass = (adcDebugInfo.vCoreMV > TEST_THRESHOLD_VCORE_LOWER
       && adcDebugInfo.vCoreMV < TEST_THRESHOLD_VCORE_UPPER);
@@ -154,6 +168,10 @@ void print_mcu_details(void)
       testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV,
       TEST_THRESHOLD_VCORE_LOWER, TEST_THRESHOLD_VCORE_UPPER);
   send_test_report(buffer);
+  if (!testPass)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0008;
+  }
 
   //Specification = 1.9V from voltage external regulator
   testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_VBATT_PIN_LOWER
@@ -162,12 +180,20 @@ void print_mcu_details(void)
       testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
       TEST_THRESHOLD_VBATT_PIN_LOWER, TEST_THRESHOLD_VBATT_PIN_UPPER);
   send_test_report(buffer);
+  if (!testPass)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0009;
+  }
 
   testPass = (adcDebugInfo.temperature > TEST_THRESHOLD_MCU_TEMPERATURE_LOWER
       && adcDebugInfo.temperature < TEST_THRESHOLD_MCU_TEMPERATURE_UPPER);
   sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xB0 C\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   send_test_report(buffer);
+  if (!testPass)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0010;
+  }
 }
 
 void print_battery_details(void)
@@ -181,10 +207,18 @@ void print_battery_details(void)
       testPass ? "PASS" : "FAIL", batteryStatus.battValMV,
       TEST_THRESHOLD_VBATT_LOWER, TEST_THRESHOLD_VBATT_UPPER);
   send_test_report(buffer);
+  if (!testPass)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0011;
+  }
 
   testPass = batteryStatus.battStatusRaw.rawBytes[2] == CHRG_CHIP_STATUS_BAD_BATTERY ? 0 : 1;
   sprintf(buffer, " - S3R_TEST_0012 - %s: Charger chip status = ", testPass ? "PASS" : "FAIL");
   send_test_report(buffer);
+  if (!testPass)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0012;
+  }
 
   switch (batteryStatus.battStatusRaw.rawBytes[2])
   {
@@ -323,6 +357,7 @@ void sd_card_test(void)
   if (!shimmerStatus.sdInserted)
   {
     send_test_report(" - S3R_TEST_0013 - FAIL: not detected\r\n");
+    shimmerStatus.testResult |= S3R_TEST_0013;
   }
   else
   {
@@ -342,6 +377,11 @@ void sd_card_test(void)
         shimmerStatus.sdBadFile ? "FAIL" : "PASS");
     send_test_report(buffer);
 
+    if (shimmerStatus.sdBadFile)
+    {
+      shimmerStatus.testResult |= S3R_TEST_0013;
+    }
+
     if (shimmerStatus.docked)
     {
       Board_sd2Pc();
@@ -349,7 +389,7 @@ void sd_card_test(void)
   }
 }
 
-uint8_t bt_module_test(void)
+void bt_module_test(void)
 {
   send_test_report("BT Module:\r\n");
   if (isBtIsInitialised())
@@ -369,14 +409,13 @@ uint8_t bt_module_test(void)
   else
   {
     send_test_report(" - S3R_TEST_0014 - FAIL - BT hasn't initialised\r\n");
+    shimmerStatus.testResult |= S3R_TEST_0014;
   }
-  return isBtIsInitialised();
 }
 
-uint8_t I2C_test(void)
+void I2C_test(void)
 {
   self_test_result_t self_test_result = SELF_TEST_PASS;
-  uint8_t ret_val = 0;
   float_t tempCal = 0;
 
   MX_I2C1_Init();
@@ -416,17 +455,25 @@ uint8_t I2C_test(void)
   if (self_test_result == SELF_TEST_PASS)
   {
     //Get last temperature value left over from self test
-    ret_val = lis2mdl_temperature_get(&tempCal);
-    if (is_temperature_outside_of_range(tempCal))
+    self_test_result = lis2mdl_temperature_get(&tempCal);
+    if (self_test_result || is_temperature_outside_of_range(tempCal))
     {
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
+  }
+  if (self_test_result)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0015;
   }
   print_chip_test_result("S3R_TEST_0015", "LIS2MDL", self_test_result, tempCal);
 
   uint8_t eeprom_result = eepromTest();
   sprintf(buffer, " - S3R_TEST_0016 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
   send_test_report(buffer);
+  if (eeprom_result)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0016;
+  }
 #endif
 
 #if defined(SHIMMER4_SDK)
@@ -448,6 +495,10 @@ uint8_t I2C_test(void)
 
     sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n", eeprom_result ? "FAIL" : "PASS");
     send_test_report(buffer);
+    if (eeprom_result)
+    {
+      shimmerStatus.testResult |= S3R_TEST_0017;
+    }
   }
   else
   {
@@ -455,14 +506,11 @@ uint8_t I2C_test(void)
         " - S3R_TEST_0017 - I2C4 test not applicable for this model\r\n");
   }
 #endif
-
-  return ret_val;
 }
 
-uint8_t SPI_test(void)
+void SPI_test(void)
 {
   self_test_result_t self_test_result = SELF_TEST_PASS;
-  uint8_t ret_val = 0;
   float_t tempCal = 0;
 
 #if defined(SHIMMER3R)
@@ -474,11 +522,15 @@ uint8_t SPI_test(void)
   if (self_test_result == SELF_TEST_PASS)
   {
     //Get last temperature value left over from self test
-    ret_val = lsm6dsv_temperature_get(&tempCal);
-    if (is_temperature_outside_of_range(tempCal))
+    self_test_result = lsm6dsv_temperature_get(&tempCal);
+    if (self_test_result || is_temperature_outside_of_range(tempCal))
     {
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
+  }
+  if (self_test_result)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0018;
   }
   print_chip_test_result("S3R_TEST_0018", "LSM6DSV", self_test_result, tempCal);
 
@@ -499,6 +551,10 @@ uint8_t SPI_test(void)
     send_test_report(" - ");
     bmp3_check_rslt("BMP390", bmp390_result, buffer);
     send_test_report(buffer);
+    if (bmp390_result)
+    {
+      shimmerStatus.testResult |= S3R_TEST_0019;
+    }
   }
 
   if (isAdxl371Present())
@@ -506,6 +562,10 @@ uint8_t SPI_test(void)
     self_test_result = adxl371_self_test();
     print_chip_test_result("S3R_TEST_0020", "ADXL371", self_test_result,
         TEST_THRESHOLD_IMU_TEMPERATURE_INVALID);
+    if (self_test_result)
+    {
+      shimmerStatus.testResult |= S3R_TEST_0020;
+    }
   }
   else
   {
@@ -523,26 +583,34 @@ uint8_t SPI_test(void)
   if (self_test_result == SELF_TEST_PASS)
   {
     //Get new temperature value
-    ret_val = lis3mdl_temperature_get(&tempCal);
-    if (is_temperature_outside_of_range(tempCal))
+    self_test_result = lis3mdl_temperature_get(&tempCal);
+    if (self_test_result || is_temperature_outside_of_range(tempCal))
     {
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
   }
   print_chip_test_result("S3R_TEST_0021", "LIS3MDL", self_test_result, tempCal);
+  if (self_test_result)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0021;
+  }
 
   tempCal = TEST_THRESHOLD_IMU_TEMPERATURE_INVALID;
   self_test_result = lis2dw12_self_test();
   if (self_test_result == SELF_TEST_PASS)
   {
     //Get last temperature value left over from self test
-    ret_val = lis2dw12_temperature_get(&tempCal);
-    if (is_temperature_outside_of_range(tempCal))
+    self_test_result = lis2dw12_temperature_get(&tempCal);
+    if (self_test_result || is_temperature_outside_of_range(tempCal))
     {
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
   }
   print_chip_test_result("S3R_TEST_0022", "LIS2DW12", self_test_result, tempCal);
+  if (self_test_result)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0022;
+  }
 
   SPI2_DeInit();
 
@@ -558,6 +626,10 @@ uint8_t SPI_test(void)
 
     send_test_report(
         " - S3R_TEST_0023 - WARNING: ADS1292R test not implemented yet\r\n");
+    //if (self_test_result)
+    //{
+    //  shimmerStatus.testResult |= S3R_TEST_0023;
+    //}
 
     SPI3_DeInit();
   }
@@ -566,7 +638,6 @@ uint8_t SPI_test(void)
     send_test_report(
         " - S3R_TEST_0023 - ADS1292R test not applicable for this model\r\n");
   }
-  return ret_val;
 }
 
 void setup_factory_test(factory_test_target_t target, factory_test_t testToRun)

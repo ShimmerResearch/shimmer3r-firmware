@@ -546,6 +546,11 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state)
     {
       HAL_Delay(50); //Arbitrary delay to allow chips to power up
     }
+    /* TODO can't call HAL_Delay from interrupt (i.e. battery voltage ADC callback) so commenting this out until we decide if it's needed */
+    //else
+    //{
+    //  HAL_Delay(210); //ADXL371 needs 200ms to power down. No harm for other chips.
+    //}
   }
 }
 #endif

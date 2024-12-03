@@ -218,6 +218,8 @@ void S4Ram_SetDefaultInfomem(void)
   storedConfig.chEnGyro = 1;
   storedConfig.chEnVBattery = 1;
 
+  storedConfig.expansionBoardPower = 0;
+
 #if defined(SHIMMER3)
   //LSM303DLHC Accel 100Hz, +/-2G, Low Power and High Resolution modes off
   storedConfig.wrAccelRate = LSM303DLHC_ACCEL_100HZ;
