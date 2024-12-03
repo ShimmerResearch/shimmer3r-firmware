@@ -11,10 +11,10 @@
 #include <math.h>
 #include <stdint.h>
 
-#define DELAY_BETWEEN_LED_CHANGES_MS           2000
+#define DELAY_BETWEEN_LED_CHANGES_MS               2000
 
-#define TEST_THRESHOLD_VREF_LOWER              (VREF_EXTERNAL_SUPPLY_MV - 80)
-#define TEST_THRESHOLD_VREF_UPPER              (VREF_EXTERNAL_SUPPLY_MV + 80)
+#define TEST_THRESHOLD_VREF_LOWER                  (VREF_EXTERNAL_SUPPLY_MV - 80)
+#define TEST_THRESHOLD_VREF_UPPER                  (VREF_EXTERNAL_SUPPLY_MV + 80)
 /*
  * Range 1 (VCORE = 1.2 V) with CPU and peripherals running at up to 160 MHz
  * Range 2 (VCORE = 1.1 V) with CPU and peripherals running at up to 110 MHz
@@ -23,28 +23,28 @@
  * */
 /* TODO values we're measuring (1376mV at time of writing) don't match values
 given above */
-#define TEST_THRESHOLD_MV_VCORE_LOWER             900
-#define TEST_THRESHOLD_MV_VCORE_UPPER             1800
-#define TEST_THRESHOLD_MV_VBATT_PIN_LOWER         1850
-#define TEST_THRESHOLD_MV_VBATT_PIN_UPPER         1950
-#define TEST_THRESHOLD_MV_MCU_TEMPERATURE_LOWER   10
-#define TEST_THRESHOLD_MV_MCU_TEMPERATURE_UPPER   35
-#define TEST_THRESHOLD_MV_VBATT_LOWER             2980
-#define TEST_THRESHOLD_MV_VBATT_UPPER             4750
+#define TEST_THRESHOLD_MV_VCORE_LOWER              900
+#define TEST_THRESHOLD_MV_VCORE_UPPER              1800
+#define TEST_THRESHOLD_MV_VBATT_PIN_LOWER          1850
+#define TEST_THRESHOLD_MV_VBATT_PIN_UPPER          1950
+#define TEST_THRESHOLD_MV_MCU_TEMPERATURE_LOWER    10
+#define TEST_THRESHOLD_MV_MCU_TEMPERATURE_UPPER    35
+#define TEST_THRESHOLD_MV_VBATT_LOWER              2980
+#define TEST_THRESHOLD_MV_VBATT_UPPER              4750
 #define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER   10.0
 #define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER   35.0
 
 #define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID -1.0
 
-#define TEST_BT_MODULE_FW                      "v01.04.16.16"
+#define TEST_BT_MODULE_FW                          "v01.04.16.16"
 
-#define SELF_TEST_STR_PASS                     "PASS"
-#define SELF_TEST_STR_FAIL                     "FAIL"
-#define SELF_TEST_STR_EMPTY                    ""
-#define SELF_TEST_STR_CHIP_DETECTION           " - Chip not detected"
-#define SELF_TEST_STR_SIGNAL_ISSUE             " - Signal issue"
-#define SELF_TEST_STR_TEMPERATURE_ISSUE        " - Temperature issue"
-#define SELF_TEST_STR_UNKNOWN                  " - Unknown"
+#define SELF_TEST_STR_PASS                         "PASS"
+#define SELF_TEST_STR_FAIL                         "FAIL"
+#define SELF_TEST_STR_EMPTY                        ""
+#define SELF_TEST_STR_CHIP_DETECTION               " - Chip not detected"
+#define SELF_TEST_STR_SIGNAL_ISSUE                 " - Signal issue"
+#define SELF_TEST_STR_TEMPERATURE_ISSUE            " - Temperature issue"
+#define SELF_TEST_STR_UNKNOWN                      " - Unknown"
 
 typedef enum
 {
