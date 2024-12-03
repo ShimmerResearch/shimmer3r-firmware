@@ -173,11 +173,7 @@ void MX_ADC4_Init(void)
    */
   hadc4.Instance = ADC4;
   hadc4.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-#if OLD_CONSENSYS_SUPPORT
   hadc4.Init.Resolution = ADC_RESOLUTION_12B;
-#else
-  hadc4.Init.Resolution = ADC_RESOLUTION_14B;
-#endif
   hadc4.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc4.Init.ScanConvMode = ADC4_SCAN_DISABLE;
   hadc4.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
