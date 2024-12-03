@@ -725,7 +725,7 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
     vCoreCounts = HAL_ADC_GetValue(hadcFactoryTestPtr);
     //1us sampling time
     adcDebugInfo->vCoreMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcFactoryTestPtr,
-        3300, vCoreCounts, hadcFactoryTestPtr->Init.Resolution);
+        adcDebugInfo->vRefMV, vCoreCounts, hadcFactoryTestPtr->Init.Resolution);
   }
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
@@ -738,7 +738,11 @@ void initSensAdc(uint32_t numChannels)
 #if defined(SHIMMER3R)
   hadcSensPtr->Instance = ADC1;
   hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+#if OLD_CONSENSYS_SUPPORT
+  hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
+#else
   hadcSensPtr->Init.Resolution = ADC_RESOLUTION_14B;
+#endif
   hadcSensPtr->Init.GainCompensation = 0;
   hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadcSensPtr->Init.ScanConvMode = ADC_SCAN_ENABLE;
