@@ -111,13 +111,6 @@ void overWriteDefaultConfig(void)
 
   storedConfigPtr->bluetoothDisable = 0;
 
-  storedConfigPtr->rawBytes[NV_SENSORS0] = 0;
-  storedConfigPtr->rawBytes[NV_SENSORS1] = 0;
-  storedConfigPtr->rawBytes[NV_SENSORS2] = 0;
-  storedConfigPtr->rawBytes[NV_SENSORS3] = 0;
-  storedConfigPtr->rawBytes[NV_SENSORS4] = 0;
-  storedConfigPtr->chEnAltAccel = 1;
-
   if (storedConfigPtr->chEnLnAccel)
   {
     storedConfigPtr->altAccelRange = LSM6DSV_2g;
