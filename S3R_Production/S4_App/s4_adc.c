@@ -781,7 +781,7 @@ void initSensAdc(uint32_t numChannels)
     Error_Handler();
   }
 #if defined(SHIMMER3R)
-  linkedListConfig(hadcSensPtr);
+  adcLinkedListConfig(hadcSensPtr);
 #endif
 }
 
