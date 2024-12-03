@@ -140,6 +140,8 @@ void adxl371_configure(uint8_t rate)
 {
   adxl371_set_op_mode(&adxl371, ADXL371_STANDBY);
 
+  adxl371_reset(&adxl371);
+
   adxl371_set_autosleep(&adxl371, false);
 
   //adxl371_set_bandwidth(adxl371, ADXL371_BW_3200HZ);
@@ -183,8 +185,11 @@ void adxl371_configure(uint8_t rate)
 HAL_StatusTypeDef adxl371_accel_get(uint8_t *buf)
 {
   HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { ADXL371_X_DATA_H, 0, 0, 0, 0, 0, 0 };
+  static uint8_t txBuff[] = { (ADXL371_X_DATA_H << 1) | 0x01, 0, 0, 0, 0, 0, 0 };
   ret = platform_read_raw_data_dma(&SENSOR_BUS, &txBuff[0], buf, sizeof(txBuff));
+
+  adxl371_spi_reg_read_multiple(&adxl371, ADXL371_DEVID, &buf[0], 4);
+
   return ret;
 }
 
