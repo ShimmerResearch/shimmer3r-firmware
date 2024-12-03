@@ -460,7 +460,7 @@ void SetSdCfgFlag(uint8_t flag)
   }
   storedConfig.infoSdcfg = flag;
   InfoMem_write(NV_SD_CONFIG_DELAY_FLAG,
-      &storedConfig->rawBytes[NV_SD_CONFIG_DELAY_FLAG], 1);
+      &storedConfig.rawBytes[NV_SD_CONFIG_DELAY_FLAG], 1);
 }
 
 uint8_t GetRamCalibFlag(void)

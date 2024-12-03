@@ -1349,7 +1349,7 @@ void ParseConfig(void)
     sample_period = (uint16_t) round(((float) 32768.0) / sample_rate);
     stored_config_temp.samplingRateTicks = sample_period;
 
-    triggerSdCardUpdate = checkAndCorrectConfig(stored_config_temp);
+    triggerSdCardUpdate = checkAndCorrectConfig(&stored_config_temp);
 
     setSyncEstExpLen(stored_config_temp.experimentLengthEstimatedInSec);
 
