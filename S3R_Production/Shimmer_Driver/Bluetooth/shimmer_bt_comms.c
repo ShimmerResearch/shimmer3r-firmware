@@ -1948,9 +1948,16 @@ void BtUart_sendRsp(void)
         *(resPacket + packet_length++) = INQUIRY_RESPONSE;
         *(uint16_t *) (resPacket + packet_length) = storedConfig->samplingRateTicks; //ADC sampling rate
         packet_length += 2;
-        memcpy(resPacket + packet_length,
-            &storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0], 4);
-        packet_length += 4;
+
+        *(resPacket + packet_length++) = storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE0];
+        *(resPacket + packet_length++) = storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE1];
+        *(resPacket + packet_length++) = storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE2];
+        *(resPacket + packet_length++) = storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE3];
+
+        *(resPacket + packet_length++) = storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE4];
+        *(resPacket + packet_length++) = storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE5];
+        *(resPacket + packet_length++) = storedConfig->rawBytes[NV_CONFIG_SETUP_BYTE6];
+
         *(resPacket + packet_length++) = sensing.nbrAdcChans + sensing.nbrDigiChans; //number of data channels
         *(resPacket + packet_length++) = storedConfig->bufferSize; //buffer size
         memcpy((resPacket + packet_length), sensing.cc,
