@@ -37,6 +37,7 @@ FATFS fatfs;
 DIR dir;
 FIL dataFile;
 FILINFO dataFileInfo;
+char dataFileName[256];
 
 extern uint8_t retSD;  /* Return value for SD */
 extern char SDPath[4]; /* SD logical drive path */
@@ -73,26 +74,22 @@ uint8_t SD_test(void)
   UINT bw;
 #endif
 
-  Board_sd2Arm();
-  shimmerStatus.pinPvSd = 1;
-  SD_mount(0);
-  SD_mount(1);
-
 #if USE_FATFS
-  shimmerStatus.badFile += f_open(&test_file, file_name, FA_CREATE_ALWAYS | FA_WRITE);
-  shimmerStatus.badFile += f_write(&test_file, test_text1, TEST_TEXT_LEN - 1, &bw);
-  shimmerStatus.badFile += f_write(&test_file, test_text2, TEST_TEXT_LEN - 1, &bw);
-  shimmerStatus.badFile += f_close(&test_file);
+  shimmerStatus.sdBadFile += f_open(&test_file, file_name, FA_CREATE_ALWAYS | FA_WRITE);
+  shimmerStatus.sdBadFile += f_write(&test_file, test_text1, TEST_TEXT_LEN - 1, &bw);
+  shimmerStatus.sdBadFile += f_write(&test_file, test_text2, TEST_TEXT_LEN - 1, &bw);
+  shimmerStatus.sdBadFile += f_close(&test_file);
+  set_file_timestamp(file_name);
 
   memset(test_text3, 0, 40);
-  shimmerStatus.badFile += f_open(&test_file, file_name, FA_OPEN_EXISTING | FA_READ);
-  shimmerStatus.badFile += f_read(&test_file, test_text3, TEST_TEXT_LEN - 1, &bw);
-  shimmerStatus.badFile += f_close(&test_file);
+  shimmerStatus.sdBadFile += f_open(&test_file, file_name, FA_OPEN_EXISTING | FA_READ);
+  shimmerStatus.sdBadFile += f_read(&test_file, test_text3, TEST_TEXT_LEN - 1, &bw);
+  shimmerStatus.sdBadFile += f_close(&test_file);
 #endif
 
-  shimmerStatus.badFile += strcmp(test_text1, test_text3);
+  shimmerStatus.sdBadFile += strcmp(test_text1, test_text3);
 
-  return shimmerStatus.badFile;
+  return shimmerStatus.sdBadFile;
 }
 
 uint8_t SD_test_alternative(void)
@@ -132,7 +129,6 @@ uint8_t SD_test_alternative(void)
         }
         else
         {
-
           f_close(&SDFile);
         }
       }
@@ -172,8 +168,9 @@ void SD_setExpIdName(void)
   if (i == 0)
   {
     setDefaultTrialId();
+    i = 12;
   }
-  memcpy((char *) expIdName, &(configBytes->expIdName[0]), sizeof(configBytes->expIdName));
+  memcpy((char *) expIdName, &(configBytes->expIdName[0]), i);
   //strcpy((char*)expIdName,"DefaultTrial");
 }
 
@@ -205,9 +202,10 @@ void SetName(void)
   {
     strcpy((char *) configTimeText, "0");
   }
-
   if (strlen((char *) fileName) == 0)
+  {
     strcpy((char *) fileName, "no_file   ");
+  }
 }
 
 void SD_infomem2Names(void)
@@ -232,16 +230,23 @@ uint8_t SD_setBasedir(void)
   if (file_status)
   {
     if (file_status == FR_NO_PATH) //we'll have to make /data first
+    {
       file_status = f_mkdir("/data");
+    }
     if (file_status) //in every case, we're toast
-      return 0;      //FAIL;
+    {
+      return 0; //FAIL;
+    }
 
     //try one more time
     file_status = f_opendir(&dir, "/data");
     if (file_status)
+    {
       return 0; //FAIL;
+    }
   }
   file_status = f_closedir(&dir);
+  set_file_timestamp("/data");
 
   strcpy((char *) expDirName, "data/");
   strcat((char *) expDirName, (char *) expIdName);
@@ -252,14 +257,20 @@ uint8_t SD_setBasedir(void)
   if (file_status)
   {
     if (file_status == FR_NO_PATH) //we'll have to make the experiment folder first
+    {
       file_status = f_mkdir((char *) expDirName);
+    }
     if (file_status) //in every case, we're toast
-      return 0;      //FAIL;
+    {
+      return 0; //FAIL;
+    }
 
     //try one more time
     file_status = f_opendir(&dir, (char *) expDirName);
     if (file_status)
+    {
       return 0; //FAIL;
+    }
   }
 
   dirCounter = 0; //this might be the first log for this shimmer
@@ -272,7 +283,9 @@ uint8_t SD_setBasedir(void)
   while (f_readdir(&dir, &fno) == FR_OK)
   {
     if (*fno.fname == 0)
+    {
       break;
+    }
     else if (fno.fattrib & AM_DIR)
     {
       fname = (*lfn) ? lfn : fno.fname;
@@ -300,11 +313,14 @@ uint8_t SD_setBasedir(void)
           }
         }
         else
+        {
           return 0; //FAIL;
+        }
       }
     }
   }
   file_status = f_closedir(&dir);
+  set_file_timestamp((char *) expDirName);
 
   //at this point, we have the id string and the counter, so we can make a directory name
   return 1; //SUCCESS;
@@ -331,6 +347,7 @@ uint8_t SD_makeBasedir(void)
     //FindError(fileBad, dirName);
     return 0; //FAIL;
   }
+
 #endif
 
   memset(fileName, 0, 64);
@@ -339,6 +356,8 @@ uint8_t SD_makeBasedir(void)
   strcat((char *) fileName, "/000");
   fileNum = 0;
   //sprintf((char*)fileName, "/%03d", fileNum++);
+
+  set_file_timestamp((char *) dirName);
 
   return 1; //SUCCESS;
 }
@@ -356,8 +375,6 @@ void SD_makeFileName(char *name_buf)
 void SD_fileInit(void)
 {
 #if USE_SD
-  char file_name[128];
-  //char file_name[128];
 #if USE_FATFS
   UINT bw;
 #endif
@@ -372,13 +389,13 @@ void SD_fileInit(void)
   //SD_mount(1);
   SD_setBasedir();
   SD_makeBasedir();
-  SD_makeFileName(file_name);
+  SD_makeFileName(dataFileName);
 
   S4Ram_sdHeadTextGet(temp_sdHeadText, 0, SD_HEAD_SIZE);
 
 #if USE_FATFS
-  file_status = f_open(&dataFile, file_name, FA_CREATE_ALWAYS | FA_WRITE);
-  f_stat(file_name, &dataFileInfo);
+  file_status = f_open(&dataFile, dataFileName, FA_CREATE_ALWAYS | FA_WRITE);
+  f_stat(dataFileName, &dataFileInfo);
 #endif
   sdFileSyncTs = sdFileCrTs = RTC_get64();
 #if USE_8BYTES_INIT_TS
@@ -404,10 +421,11 @@ void SD_close(void)
 #if USE_FATFS
   f_sync(&dataFile);
   f_close(&dataFile);
+  set_file_timestamp(dataFileName);
   file_status = FR_OK;
 #endif
   //Board_sdPower(0);
-  shimmerStatus.badFile = 0;
+  shimmerStatus.sdBadFile = 0;
   sensing.isFileCreated = 0;
 #endif //USE_SD
 }
@@ -479,16 +497,16 @@ void SD_writeToCard(void)
   { //(&& (test_cnt < 15))
     //sdFileCrTs = sensing.latestTs;
     sdFileSyncTs = sdFileCrTs = RTC_get64();
-    char file_name[256];
 #if USE_FATFS
     file_status = f_sync(&dataFile);
     assert_param(file_status == FR_OK);
     file_status = f_close(&dataFile);
     assert_param(file_status == FR_OK);
+    set_file_timestamp(dataFileName);
 #endif
-    SD_makeFileName(file_name);
+    SD_makeFileName(dataFileName);
 #if USE_FATFS
-    file_status = f_open(&dataFile, file_name, FA_CREATE_ALWAYS | FA_WRITE);
+    file_status = f_open(&dataFile, dataFileName, FA_CREATE_ALWAYS | FA_WRITE);
     assert_param(file_status == FR_OK);
 #endif
     //S4_RTC_GetDateTime(&hrtc, &rtc_data);
@@ -539,11 +557,11 @@ void SD_writeToCard(void)
 #if USE_FATFS
   if (file_status != 0)
   {
-    shimmerStatus.badFile = 1;
+    shimmerStatus.sdBadFile = 1;
   }
   else
   {
-    shimmerStatus.badFile = 0;
+    shimmerStatus.sdBadFile = 0;
   }
 #endif
 
@@ -570,12 +588,12 @@ void UpdateSdConfig(void)
 {
   FIL cfgFile;
 
-  if (!shimmerStatus.isDocked && CheckSdInslot() && !shimmerStatus.badFile)
+  if (!shimmerStatus.docked && CheckSdInslot() && !shimmerStatus.sdBadFile)
   {
     uint8_t sd_power_state;
     if (!isSdPowerOn())
     {
-      SdPowerOn();
+      Board_setSdPower(1);
       sd_power_state = 0;
     }
     else
@@ -721,7 +739,7 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "interval=%d\r\n", storedConfig->btInterval);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "bluetooth=%d\r\n", storedConfig->bluetoothEnable);
+      sprintf(buffer, "bluetoothDisabled=%d\r\n", storedConfig->bluetoothDisable);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
       sprintf(buffer, "max_exp_len=%d\r\n", storedConfig->experimentLengthMaxInMinutes);
@@ -841,6 +859,7 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
       file_status = f_close(&cfgFile);
+      set_file_timestamp(cfgname);
 
       HAL_Delay(100); //100ms @ 24MHz
     }
@@ -850,7 +869,7 @@ void UpdateSdConfig(void)
     }
     if (!sd_power_state)
     {
-      SdPowerOff();
+      Board_setSdPower(0);
     }
   }
 }
@@ -881,7 +900,7 @@ void ParseConfig(void)
   }
   else if (file_status != FR_OK)
   {
-    shimmerStatus.badFile = 0;
+    shimmerStatus.sdBadFile = 1;
     //fileBad = (initializing) ? 0 : 1;
     return;
   }
@@ -925,50 +944,94 @@ void ParseConfig(void)
     while (f_gets(buffer, 64, &cfgFile))
     {
       if (!(equals = strchr(buffer, '=')))
+      {
         continue;
+      }
       equals++; //this is the value
       if (strstr(buffer, "accel="))
+      {
         stored_config_temp.chEnLnAccel = atoi(equals);
+      }
       else if (strstr(buffer, "gyro="))
+      {
         stored_config_temp.chEnGyro = atoi(equals);
+      }
       else if (strstr(buffer, "mag="))
+      {
         stored_config_temp.chEnMag = atoi(equals);
+      }
       else if (strstr(buffer, "exg1_24bit="))
+      {
         stored_config_temp.chEnExg1_24Bit = atoi(equals);
+      }
       else if (strstr(buffer, "exg2_24bit="))
+      {
         stored_config_temp.chEnExg2_24Bit = atoi(equals);
+      }
       else if (strstr(buffer, "gsr="))
+      {
         stored_config_temp.chEnGsr = atoi(equals);
+      }
       else if (strstr(buffer, "extch7="))
+      {
         stored_config_temp.chEnExtADC0 = atoi(equals);
+      }
       else if (strstr(buffer, "extch6="))
+      {
         stored_config_temp.chEnExtADC1 = atoi(equals);
+      }
       else if (strstr(buffer, "str=") || strstr(buffer, "br_amp="))
+      {
         stored_config_temp.chEnBridgeAmp = atoi(equals);
+      }
       else if (strstr(buffer, "vbat="))
+      {
         stored_config_temp.chEnVBattery = atoi(equals);
+      }
       else if (strstr(buffer, "accel_d="))
+      {
         stored_config_temp.chEnWrAccel = atoi(equals);
+      }
       else if (strstr(buffer, "extch15="))
+      {
         stored_config_temp.chEnExtADC2 = atoi(equals);
+      }
       else if (strstr(buffer, "intch1="))
+      {
         stored_config_temp.chEnIntADC3 = atoi(equals);
+      }
       else if (strstr(buffer, "intch12="))
+      {
         stored_config_temp.chEnIntADC0 = atoi(equals);
+      }
       else if (strstr(buffer, "intch13="))
+      {
         stored_config_temp.chEnIntADC1 = atoi(equals);
+      }
       else if (strstr(buffer, "intch14="))
+      {
         stored_config_temp.chEnIntADC2 = atoi(equals);
+      }
       else if (strstr(buffer, "accel_mpu="))
+      {
         stored_config_temp.chEnAltAccel = atoi(equals);
+      }
       else if (strstr(buffer, "mag_mpu="))
+      {
         stored_config_temp.chEnAltMag = atoi(equals);
+      }
       else if (strstr(buffer, "exg1_16bit="))
+      {
         stored_config_temp.chEnExg1_16Bit = atoi(equals);
+      }
       else if (strstr(buffer, "exg2_16bit="))
+      {
         stored_config_temp.chEnExg2_16Bit = atoi(equals);
+      }
       else if (strstr(buffer, "pres="))
+      {
         stored_config_temp.chEnPressureAndTemperature = atoi(equals);
+      }
       else if (strstr(buffer, "sample_rate="))
       {
         sample_rate = atof(equals);
@@ -1005,7 +1068,9 @@ void ParseConfig(void)
       { //or "gsr_range="?
         gsr_range = atoi(equals);
         if (gsr_range > 4)
+        {
           gsr_range = 4;
+        }
 
         stored_config_temp.gsrRange = gsr_range;
       }
@@ -1077,9 +1142,9 @@ void ParseConfig(void)
       {
         broadcast_interval = atoi(equals) > 255 ? 255 : atoi(equals);
       }
-      else if (strstr(buffer, "bluetooth="))
+      else if (strstr(buffer, "bluetoothDisabled="))
       {
-        stored_config_temp.bluetoothEnable = atoi(equals);
+        stored_config_temp.bluetoothDisable = atoi(equals);
       }
       else if (strstr(buffer, "exp_power="))
       {
@@ -1113,14 +1178,22 @@ void ParseConfig(void)
       {
         string_length = strlen(equals);
         if (string_length > MAX_CHARS)
+        {
           string_length = MAX_CHARS - 1;
+        }
         else if (string_length >= 2)
+        {
           string_length -= 2;
+        }
         else
+        {
           string_length = 0;
+        }
         memcpy(&stored_config_temp.shimmerName[0], equals, string_length);
         if (!memcmp(&stored_config_temp.shimmerName[0], "ID", 2))
+        {
           memcpy(&stored_config_temp.shimmerName[0], "id", 2);
+        }
         memcpy((char *) shimmerName, &stored_config_temp.shimmerName[0], MAX_CHARS - 1);
         shimmerName[string_length] = 0;
       }
@@ -1128,11 +1201,17 @@ void ParseConfig(void)
       {
         string_length = strlen(equals);
         if (string_length > MAX_CHARS)
+        {
           string_length = MAX_CHARS - 1;
+        }
         else if (string_length >= 2)
+        {
           string_length -= 2;
+        }
         else
+        {
           string_length = 0;
+        }
         memcpy(&stored_config_temp.expIdName[0], equals, string_length);
         memcpy((char *) expIdName, &stored_config_temp.expIdName[0], MAX_CHARS - 1);
         expIdName[string_length] = 0;
@@ -1145,45 +1224,85 @@ void ParseConfig(void)
         *(configTimeText + string_length - 1) = 0;
       }
       else if (strstr(buffer, "EXG_ADS1292R_1_CONFIG1="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CONFIG1] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_CONFIG2="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CONFIG2] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_LOFF="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_CH1SET="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CH1SET] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_CH2SET="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CH2SET] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_RLD_SENS="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RLD_SENS] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_LOFF_SENS="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF_SENS] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_LOFF_STAT="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF_STAT] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_RESP1="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RESP1] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_1_RESP2="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RESP2] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_CONFIG1="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CONFIG1] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_CONFIG2="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CONFIG2] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_LOFF="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_CH1SET="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CH1SET] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_CH2SET="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CH2SET] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_RLD_SENS="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RLD_SENS] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_LOFF_SENS="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF_SENS] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_LOFF_STAT="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF_STAT] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_RESP1="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP1] = atoi(equals);
+      }
       else if (strstr(buffer, "EXG_ADS1292R_2_RESP2="))
+      {
         stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP2] = atoi(equals);
+      }
       //#if defined(SHIMMER3)
       //      else if (strstr(buffer, "baud_rate="))
       //      {
@@ -1227,6 +1346,8 @@ void ParseConfig(void)
       }
     }
     file_status = f_close(&cfgFile);
+    set_file_timestamp(cfgname);
+
     HAL_Delay(50); //50ms
 
     sample_period = (uint16_t) round(((float) 32768.0) / sample_rate);
@@ -1325,11 +1446,15 @@ void ItoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len)
   uint8_t idx, i_move;
   memset(buf, 0, max_len);
   if (!num)
+  {
     buf[0] = '0';
+  }
   for (idx = 0; (idx < max_len - 1) && (num > 0); idx++)
   {
     for (i_move = idx; i_move > 0; i_move--)
+    {
       buf[i_move] = buf[i_move - 1];
+    }
     buf[0] = '0' + num % 10;
     num /= 10;
   }
@@ -1358,4 +1483,30 @@ uint8_t *getConfigTimeTextPtr(void)
 uint8_t *getFileNamePtr(void)
 {
   return &fileName[0];
+}
+
+FRESULT set_file_timestamp(char *path)
+{
+  FILINFO fno;
+  RTC_TimeTypeDef RTC_TimeStructure;
+  RTC_DateTypeDef RTC_DateStructure;
+  //HAL_RTC_GetTime(&hrtc, &RTC_TimeStructure, RTC_Format_BIN);
+  //HAL_RTC_GetDate(&hrtc, &RTC_DateStructure, RTC_Format_BIN);
+  //int hour = RTC_TimeStructure.RTC_Hours;
+  //int min = RTC_TimeStructure.RTC_Minutes;
+  //int sec = RTC_TimeStructure.RTC_Seconds;
+  //int month = RTC_DateStructure.RTC_Month;
+  //int mday = RTC_DateStructure.RTC_Date;
+  //int year = RTC_DateStructure.RTC_Year;
+  //year += 2000;
+  //fno.fdate = (WORD) (((year - 1980) << 9) | month << 5 | mday);
+  //fno.ftime = (WORD) (hour << 11 | min << 5 | sec / 2);
+
+  S4_RTC_t data;
+  S4_RTC_GetDateTime(&data);
+  data.year += 2000;
+  fno.fdate = (WORD) (((data.year - 1980) << 9) | data.month << 5 | data.date);
+  fno.ftime = (WORD) (data.hours << 11 | data.minutes << 5 | data.seconds / 2);
+
+  return f_utime(path, &fno);
 }

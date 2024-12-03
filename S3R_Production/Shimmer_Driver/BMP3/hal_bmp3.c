@@ -78,7 +78,7 @@ int8_t bmp3_self_test(void)
   return result;
 }
 
-void bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSamplingRatio)
+int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSamplingRatio)
 {
   int8_t rslt;
 
@@ -115,6 +115,7 @@ void bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSamplin
     settings.op_mode = BMP3_MODE_NORMAL;
     rslt = bmp3_set_op_mode(&settings, &bmp3);
   }
+  return rslt;
 }
 
 HAL_StatusTypeDef bmp3_pressure_temperature_get(uint8_t *buf)

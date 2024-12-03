@@ -46,6 +46,8 @@
 volatile uint32_t taskList = 0;
 uint32_t taskCurrent;
 
+extern void SetupDock(void);
+
 void S4_NORM_Task_init(void)
 {
   taskList = 0;
@@ -62,7 +64,12 @@ void S4_NORM_Task_manage(void)
 
   if (!taskCurrent)
   {
+    /* Only wake MCU when new Task is set. See corresponding
+     * HAL_PWR_DisableSleepOnExit() in S4_NORM_Task_set() */
+    HAL_PWR_EnableSleepOnExit();
+
     Power_SleepUntilInterrupt();
+
     //if(shimmerStatus.isBtConnected && !shimmerStatus.isSensing){
     //   Power_SleepUntilInterrupt();
     //
@@ -96,7 +103,7 @@ void S4_NORM_Task_manage(void)
     switch (taskCurrent)
     {
     case TASK_DOCKSETUP:
-      DockUart_setup();
+      SetupDock();
       break;
     case TASK_DOCK_PROCESS_CMD:
       DockUart_processCmd();
@@ -135,14 +142,14 @@ void S4_NORM_Task_manage(void)
       SD_writeToCard();
       break;
     case TASK_SDLOG_CFG_UPDATE:
-      if (!shimmerStatus.isDocked && !shimmerStatus.isSensing
-          && shimmerStatus.isSdInserted && GetSdCfgFlag())
+      if (!shimmerStatus.docked && !shimmerStatus.sensing
+          && shimmerStatus.sdInserted && GetSdCfgFlag())
       {
-        shimmerStatus.isConfiguring = 1;
+        shimmerStatus.configuring = 1;
         IniReadInfoMem();
         UpdateSdConfig();
         SetSdCfgFlag(0);
-        shimmerStatus.isConfiguring = 0;
+        shimmerStatus.configuring = 0;
       }
       break;
     case TASK_BATT_READ_FROM_ALARM:
@@ -195,8 +202,11 @@ uint8_t S4_NORM_Task_set(uint32_t task_id)
   uint8_t is_sleeping = 0;
   //if(!taskList && !TaskCurrentGet())
   if (!taskList && !taskCurrent)
+  {
     is_sleeping = 1;
+  }
   taskList |= task_id;
+  HAL_PWR_DisableSleepOnExit();
   return is_sleeping;
 }
 

@@ -87,10 +87,10 @@ static volatile  UINT  WriteStatus = 0, ReadStatus = 0;
 static DSTATUS SD_CheckStatus(BYTE lun);
 DSTATUS SD_initialize (BYTE);
 DSTATUS SD_status (BYTE);
-DRESULT SD_read (BYTE, BYTE*, DWORD, UINT);
-#if _USE_WRITE == 1
-DRESULT SD_write (BYTE, const BYTE*, DWORD, UINT);
-#endif /* _USE_WRITE == 1 */
+//DRESULT SD_read (BYTE, BYTE*, DWORD, UINT);
+//#if _USE_WRITE == 1
+//DRESULT SD_write (BYTE, const BYTE*, DWORD, UINT);
+//#endif /* _USE_WRITE == 1 */
 #if _USE_IOCTL == 1
 DRESULT SD_ioctl (BYTE, BYTE, void*);
 #endif  /* _USE_IOCTL == 1 */

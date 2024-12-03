@@ -13,8 +13,13 @@
 //TODO decide if needed and remove it and associated code if not. Seems to be needed or else BLE won't advertise just using ezs_cmd_gap_start_adv.
 #define USE_GET_SET_ADV_PARAM 0
 
-#define BAUD_TO_USE           2000000L //2000000L //1000000L //115200L
-#define FLOW_CONTROL          1
+#ifdef SR48_6_0
+#define BAUD_TO_USE  115200L
+#define FLOW_CONTROL 0
+#else
+#define BAUD_TO_USE  2000000L //2000000L //1000000L //115200L
+#define FLOW_CONTROL 1
+#endif
 
 enum BT_SET_COMMAND_STAGES
 {
@@ -73,10 +78,11 @@ enum BLUETOOTH_UART_TYPE
   UART_TYPE_HCI_UART
 };
 
-void btInit(void);
+void btInit(uint32_t baudRate, uint8_t factoryReset);
+void btDeinit(void);
 void btInitCommands(void);
-void btFactoryResetInit(void);
 void btFactoryResetCommands(void);
+void progressToNextBtInCmd(void);
 void setExpectedResponse(uint16_t idx);
 bool isBtIsInitialised(void);
 bool isBtIsFactoryResetted(void);
@@ -84,7 +90,6 @@ bool isBtInitCmdsRunning(void);
 bool isBtFactoryResetCmdsRunning(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
-void setBtLpMode(bool allowLowPower);
 uint8_t *BT_getCyw20820MacAddressPtr(void);
 void BT_generateCyw20820FirmwareVersionStr(char *str);
 

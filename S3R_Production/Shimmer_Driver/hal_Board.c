@@ -53,6 +53,8 @@ TIM_HandleTypeDef *htimLwrLedsPtr;
 TIM_HandleTypeDef *htimUprLedsPtr;
 TIM_HandleTypeDef *htimLedBlinkPtr;
 
+volatile uint8_t sensePwrFlags = 0;
+
 static void updateLedState(led_mode updateMode, uint8_t ledMask);
 
 //https://www.youtube.com/watch?v=GBr6bQ-PzV8
@@ -295,15 +297,25 @@ void Board_ledOn(uint8_t ledMask)
 void Board_ledOn(uint8_t ledMask)
 {
   if (ledMask & LED_RED)
+  {
     HAL_GPIO_WritePin(LED_RED_GPIO, LED_RED_PIN, GPIO_PIN_RESET); //red
+  }
   if (ledMask & LED_GREEN0)
+  {
     HAL_GPIO_WritePin(LED_GR0_GPIO, LED_GR0_PIN, GPIO_PIN_RESET); //green0
+  }
   if (ledMask & LED_YELLOW)
+  {
     HAL_GPIO_WritePin(LED_YEL_GPIO, LED_YEL_PIN, GPIO_PIN_RESET); //orange
+  }
   if (ledMask & LED_GREEN1)
+  {
     HAL_GPIO_WritePin(LED_GR1_GPIO, LED_GR1_PIN, GPIO_PIN_RESET); //green1
+  }
   if (ledMask & LED_BLUE)
+  {
     HAL_GPIO_WritePin(LED_BLU_GPIO, LED_BLU_PIN, GPIO_PIN_RESET); //blue
+  }
 }
 #endif
 
@@ -323,15 +335,25 @@ void Board_ledOff(uint8_t ledMask)
 void Board_ledOff(uint8_t ledMask)
 {
   if (ledMask & LED_RED)
+  {
     HAL_GPIO_WritePin(LED_RED_GPIO, LED_RED_PIN, GPIO_PIN_SET); //red
+  }
   if (ledMask & LED_GREEN0)
+  {
     HAL_GPIO_WritePin(LED_GR0_GPIO, LED_GR0_PIN, GPIO_PIN_SET); //green0
+  }
   if (ledMask & LED_YELLOW)
+  {
     HAL_GPIO_WritePin(LED_YEL_GPIO, LED_YEL_PIN, GPIO_PIN_SET); //orange
+  }
   if (ledMask & LED_GREEN1)
+  {
     HAL_GPIO_WritePin(LED_GR1_GPIO, LED_GR1_PIN, GPIO_PIN_SET); //green1
+  }
   if (ledMask & LED_BLUE)
+  {
     HAL_GPIO_WritePin(LED_BLU_GPIO, LED_BLU_PIN, GPIO_PIN_SET); //blue
+  }
 }
 #endif
 
@@ -351,15 +373,25 @@ void Board_ledToggle(uint8_t ledMask)
 void Board_ledToggle(uint8_t ledMask)
 {
   if (ledMask & LED_RED)
+  {
     HAL_GPIO_TogglePin(LED_RED_GPIO, LED_RED_PIN); //red
+  }
   if (ledMask & LED_GREEN0)
+  {
     HAL_GPIO_TogglePin(LED_GR0_GPIO, LED_GR0_PIN); //green0
+  }
   if (ledMask & LED_YELLOW)
+  {
     HAL_GPIO_TogglePin(LED_YEL_GPIO, LED_YEL_PIN); //orange
+  }
   if (ledMask & LED_GREEN1)
+  {
     HAL_GPIO_TogglePin(LED_GR1_GPIO, LED_GR1_PIN); //green1
+  }
   if (ledMask & LED_BLUE)
+  {
     HAL_GPIO_TogglePin(LED_BLU_GPIO, LED_BLU_PIN); //blue
+  }
 }
 #endif
 
@@ -371,10 +403,10 @@ void Board_ledToggle(uint8_t ledMask)
 void Board_sdPowerCycle(void)
 {
   Board_detectN(1);
-  Board_sdPower(0);
-  Board_arm0pc1(0);
+  Board_setSdPower(0);
+  Board_setDockAccessToSd(0);
   HAL_Delay(120);
-  Board_sdPower(1);
+  Board_setSdPower(1);
   HAL_Delay(50);
   SD_mount(0);
   SD_mount(1);
@@ -387,19 +419,24 @@ void Board_sdPowerCycle(void)
  */
 void Board_sd2Pc(void)
 {
-
   //Board_sdPowerCycle();
+
+  ///* ADC pins are shared with two dat pins, ensure both are inputs */
+  //HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP0_GPIO_Port, GPIO_ADC_EXT_EXP0_Pin);
+  //HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP1_GPIO_Port, GPIO_ADC_EXT_EXP1_Pin);
 
   //Board_detectN(1);
   HAL_Delay(120);
-  Board_sdPower(0);
-  Board_arm0pc1(1);
+  Board_setSdPower(0);
+  Board_setDockAccessToSd(1);
   //Board_detectN(GPIO_PIN_RESET);
   HAL_Delay(120);
-  Board_sdPower(1);
+  Board_setSdPower(1);
   HAL_Delay(50);
   Board_detectN(0);
   SD_mount(0);
+
+  mmc1DeInit();
 }
 
 /**
@@ -411,27 +448,49 @@ void Board_sd2Arm(void)
 {
   Board_detectN(1);
   HAL_Delay(120);
-  Board_sdPower(0);
-  Board_arm0pc1(0);
+  Board_setSdPower(0);
+  Board_setDockAccessToSd(0);
   HAL_Delay(120);
-  Board_sdPower(1);
+  Board_setSdPower(1);
   HAL_Delay(50);
+
+  MX_SDMMC1_SD_Init();
+#if USE_FATFS
+  MX_FATFS_Init();
+#endif
+
   SD_mount(0);
   SD_mount(1);
 }
 
-///***************************************************************************//**
-//* @brief  SD power on/off, toggling pin SW_FLASH
-//* @param  power_on
-//* @return none
-//******************************************************************************/
-//void Board_sdPower(uint8_t on) {
-//  if(on){
-//     HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin,GPIO_PIN_SET);
-//  } else{
-//     HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin,GPIO_PIN_RESET);
-//  }
-//}
+/***************************************************************************/
+/**
+ * @brief  SD power on/off, toggling pin SW_FLASH
+ * @param  power_on
+ * @return none
+ ******************************************************************************/
+void Board_setSdPower(uint8_t state)
+{
+  Board_SW_FLASH(state);
+  shimmerStatus.sdPowerOn = state;
+}
+
+void Board_setDockAccessToSd(uint8_t mcu0dock1)
+{
+  Board_sdMcu0Dock1(mcu0dock1);
+  shimmerStatus.sdMcu0Pc1 = mcu0dock1;
+
+  //TODO remove below when functionality is working
+  if (mcu0dock1)
+  {
+    send_test_report("SD to Dock\r\n");
+  }
+  else
+  {
+    send_test_report("SD to MCU\r\n");
+  }
+}
+
 //void Board_detectN(uint8_t on) {
 //  if(on){
 //     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12,GPIO_PIN_SET);
@@ -463,15 +522,35 @@ void Board_delayMicros(uint32_t micros)
 }
 
 #if defined(SHIMMER3R)
-void Board_enableSensingPower(uint8_t state)
+void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state)
 {
-  Board_SW_PV_SENSE(state);
-  Board_SW_PV_SENSE_IO(state);
-
-  //delay to allow voltage to settle after turning on ADC & IMUs etc.
+  uint8_t originalState = sensePwrFlags;
   if (state)
   {
-    HAL_Delay(50); //Arbitrary delay to allow chips to power up
+    sensePwrFlags |= flag;
+  }
+  else
+  {
+    sensePwrFlags &= ~flag;
+  }
+
+  /* take action if state has changed */
+  if ((originalState == 0 && sensePwrFlags != 0)
+      || (originalState != 0 && sensePwrFlags == 0))
+  {
+    Board_SW_PV_SENSE(state);
+    Board_SW_PV_SENSE_IO(state);
+
+    //delay to allow voltage to settle after turning on ADC & IMUs etc.
+    if (state)
+    {
+      HAL_Delay(50); //Arbitrary delay to allow chips to power up
+    }
+    /* TODO can't call HAL_Delay from interrupt (i.e. battery voltage ADC callback) so commenting this out until we decide if it's needed */
+    //else
+    //{
+    //  HAL_Delay(210); //ADXL371 needs 200ms to power down. No harm for other chips.
+    //}
   }
 }
 #endif

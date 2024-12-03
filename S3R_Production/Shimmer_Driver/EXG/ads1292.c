@@ -239,9 +239,13 @@ void ADS1292_readDataContinuousMode(uint8_t enable)
 {
   uint8_t tx_buf;
   if (enable)
+  {
     tx_buf = RDATAC;
+  }
   else
+  {
     tx_buf = SDATAC;
+  }
   ADS1292_Tx1Byte(tx_buf);
 }
 
@@ -249,9 +253,13 @@ void ADS1292_start(uint8_t start)
 {
   uint8_t tx_buf;
   if (start)
+  {
     tx_buf = START;
+  }
   else
+  {
     tx_buf = STOP;
+  }
   ADS1292_Tx1Byte(tx_buf);
 }
 
@@ -310,7 +318,9 @@ uint8_t ADS1292_readDataChip1(uint8_t *data)
     memcpy(data, chip1Buffer2, 9);
   }
   else
+  {
     return 0;
+  }
   return 1;
 }
 
@@ -325,7 +335,9 @@ uint8_t ADS1292_readDataChip2(uint8_t *data)
     memcpy(data, chip2Buffer2, 9);
   }
   else
+  {
     return 0;
+  }
   return 1;
 }
 
@@ -457,9 +469,13 @@ uint8_t ADS1292_spiRxIsr(void)
   {
     chip1ReadPending = 0;
     if (activeBuffer == chip1Buffer1)
+    {
       chip1CurrentFullBuffer = 1;
+    }
     else
+    {
       chip1CurrentFullBuffer = 2;
+    }
     if (chip2Enabled)
     {
       ADS1292_dataReadFromChip2();
@@ -474,9 +490,13 @@ uint8_t ADS1292_spiRxIsr(void)
   {
     chip2ReadPending = 0;
     if (activeBuffer == chip2Buffer1)
+    {
       chip2CurrentFullBuffer = 1;
+    }
     else
+    {
       chip2CurrentFullBuffer = 2;
+    }
     chipBusy = 0;
     ADS1292_gatherDataDone();
   }

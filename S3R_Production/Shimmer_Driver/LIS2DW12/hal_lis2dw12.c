@@ -264,8 +264,10 @@ static uint8_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
       lis2dw12_acceleration_raw_get(dev_ctx, data_raw_acceleration[i].i16bit);
 
       for (axis = 0; axis < 3; axis++)
+      {
         acceleration_mg[i][axis]
             = lis2dw12_from_fs4_to_mg(data_raw_acceleration[i].i16bit[axis]);
+      }
 
       i++;
     }
@@ -331,9 +333,10 @@ void lis2dw12_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-uint8_t lis2dw12_self_test(void)
+self_test_result_t lis2dw12_self_test(void)
 {
   uint8_t st_result;
+  self_test_result_t self_test_result = SELF_TEST_PASS;
 
   lis2dw12_driver_init();
 #if !defined(SHIMMER3R)
@@ -347,15 +350,23 @@ uint8_t lis2dw12_self_test(void)
 
   if (whoamI != LIS2DW12_ID)
   {
-    st_result = ST_FAIL;
+    //st_result = ST_FAIL;
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
-
-  if (st_result == ST_PASS)
+  else
   {
     /* Start self test */
     //while (1) {
     st_result = test_self_test_lis2dw12(&lis2dw12_obj.Ctx);
     //}
+    if (st_result == ST_FAIL)
+    {
+      self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
+    }
+    else
+    {
+      self_test_result = SELF_TEST_PASS;
+    }
   }
 
   //if (st_result == ST_PASS)
@@ -368,7 +379,8 @@ uint8_t lis2dw12_self_test(void)
   //}
   //
   //tx_com(tx_buffer, strlen((char const *) tx_buffer));
-  return st_result;
+  //return st_result;
+  return self_test_result;
 }
 
 int32_t lis2dw12_configure(float shimmerSamplingFreq,
@@ -402,11 +414,15 @@ int32_t lis2dw12_configure(float shimmerSamplingFreq,
   }
 
   isDrdyIntEnabled = false;
-#if defined(LIS2DW12_INT1_Pin)
+  //TODO remove IF when fully switched from eval board to BGA variant
+#ifndef S3R_NUCLEO
   if (lis2dw12_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
   {
     lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
-    lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), int1_drdy);
+
+    lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl;
+    int1_pad_ctrl.int1_drdy = PROPERTY_ENABLE;
+    lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
     isDrdyIntEnabled = true;
   }
 #endif
@@ -476,6 +492,14 @@ float lis2dw12_get_sensor_freq_from_rate(lis2dw12_odr_t rate)
 int32_t lis2dw12_standby(void)
 {
   return LIS2DW12_ACC_Disable(&lis2dw12_obj);
+}
+
+int32_t lis2dw12_temperature_get(float_t *tempCal)
+{
+  int16_t tempUncal = 0;
+  int32_t res = lis2dw12_temperature_raw_get(&lis2dw12_obj.Ctx, &tempUncal);
+  *tempCal = lis2dw12_from_lsb_to_celsius(tempUncal);
+  return res;
 }
 
 /*

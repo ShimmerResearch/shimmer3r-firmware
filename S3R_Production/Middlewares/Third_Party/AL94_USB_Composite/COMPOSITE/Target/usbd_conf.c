@@ -24,7 +24,6 @@
 #include "usbd_core.h"
 
 /* USER CODE BEGIN Includes */
-
 #include "usbd_composite.h"
 #if (STM32F1_DEVICE) /** for STM32F1 or similar */
 #include "usb.h"
@@ -33,8 +32,8 @@
 #endif
 
 #include "s4_taskList.h"
-
 /* USER CODE END Includes */
+
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -228,6 +227,7 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
   //TODO only call if unplugged
   S4_Task_set(TASK_USB_SETUP);
   return;
+
   /* USER CODE END 3 */
   USBD_LL_Resume((USBD_HandleTypeDef *)hpcd->pData);
 }

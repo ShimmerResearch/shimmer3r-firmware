@@ -38,6 +38,8 @@ extern "C"
 
   extern I2C_HandleTypeDef hi2c1;
 
+  extern I2C_HandleTypeDef hi2c4;
+
   /* USER CODE BEGIN Private defines */
 
   typedef enum
@@ -184,10 +186,12 @@ extern "C"
   /* USER CODE END Private defines */
 
   void MX_I2C1_Init(void);
+  void MX_I2C4_Init(void);
 
   /* USER CODE BEGIN Prototypes */
 
   void I2C1_DeInit(void);
+  void I2C4_DeInit(void);
   void I2C_scan_busses(void);
   void I2C_scan(I2C_HandleTypeDef *hi2c);
   I2C_HandleTypeDef *I2C_getHandlerSensor(void);

@@ -11,5 +11,6 @@
 #include "shimmer_definitions.h"
 
 extern STATTypeDef shimmerStatus;
+extern BattStatus batteryStatus;
 
 #endif /* SHIMMER_EXTERNS_H_ */

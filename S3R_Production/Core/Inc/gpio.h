@@ -52,11 +52,13 @@ extern "C"
 #endif
 
   uint8_t SD_insertedCheck(void);
-  void SdPowerOn(void);
-  void SdPowerOff(void);
   uint8_t isSdPowerOn(void);
-  void setMcuHasSdcardControl(uint8_t state);
+  void gpioInitPerBoard(void);
   void vbusPinStateCheck(void);
+  void initBtPins(void);
+  void initBtInterrupts(void);
+  void deinitBtPins(void);
+  void setBtPower(uint8_t state);
 
   /* USER CODE END Prototypes */
 

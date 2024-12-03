@@ -17,6 +17,7 @@
 #include "s4_ram.h"
 #include "s4_sd.h"
 #include "s4_sensing.h"
+#include "shimmer_definitions.h"
 #include "shimmer_externs.h"
 #if defined(SHIMMER4_SDK)
 #include "STC3100.h"
@@ -51,7 +52,8 @@
 #include <LSM6DSV/lsm6dsv.h>
 #endif
 #include "BMP280_driver\bmp280.h"
-#include "CAT24C16.h"
+#include "CAT24C16/CAT24C16.h"
+#include "CAT24C16/hal_CAT24C16.h"
 #include "EXG\exg.h"
 #include "bmp180.h"
 #include "hal_Board.h"

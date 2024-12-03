@@ -180,18 +180,18 @@ void lsm6dsv_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-uint8_t lsm6dsv_self_test(void)
+self_test_result_t lsm6dsv_self_test(void)
 {
   lsm6dsv_all_sources_t all_sources;
   int16_t data_raw[3];
   float val_st_off[3];
   float val_st_on[3];
   float test_val[3];
-  uint8_t st_result;
   uint8_t whoamI;
   lsm6dsv_reset_t rst;
   uint8_t i;
   uint8_t j;
+  self_test_result_t self_test_result = SELF_TEST_PASS;
 
   lsm6dsv_driver_init();
 
@@ -200,7 +200,8 @@ uint8_t lsm6dsv_self_test(void)
 
   if (whoamI != LSM6DSV_ID)
   {
-    st_result = ST_FAIL;
+    //st_result = ST_FAIL;
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
   {
@@ -304,13 +305,12 @@ uint8_t lsm6dsv_self_test(void)
     }
 
     /* Check self test limit */
-    st_result = ST_PASS;
-
     for (i = 0; i < 3; i++)
     {
       if ((SELF_TEST_MIN_ST_LIMIT_mg > test_val[i]) || (test_val[i] > SELF_TEST_MAX_ST_LIMIT_mg))
       {
-        st_result = ST_FAIL;
+        //st_result = ST_FAIL;
+        self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
       }
     }
 
@@ -403,7 +403,8 @@ uint8_t lsm6dsv_self_test(void)
     {
       if ((MIN_ST_LIMIT_mdps > test_val[i]) || (test_val[i] > MAX_ST_LIMIT_mdps))
       {
-        st_result = ST_FAIL;
+        //st_result = ST_FAIL;
+        self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
       }
     }
 
@@ -424,7 +425,9 @@ uint8_t lsm6dsv_self_test(void)
   //}
   //
   //tx_com(tx_buffer, strlen((char const *) tx_buffer));
-  return (st_result == ST_PASS ? 0 : 1);
+
+  //return st_result == ST_PASS ? 0 : 1;
+  return self_test_result;
 }
 
 void lsm6dsv_configure(float shimmerSamplingFreq,
@@ -663,6 +666,14 @@ void lsm6dsv_status_get(void)
 {
   lsm6dsv_data_ready_t drdy;
   lsm6dsv_flag_data_ready_get(&lsm6dsv_obj.Ctx, &drdy);
+}
+
+int32_t lsm6dsv_temperature_get(float_t *tempCal)
+{
+  int16_t tempUncal = 0;
+  int32_t res = lsm6dsv_temperature_raw_get(&lsm6dsv_obj.Ctx, &tempUncal);
+  *tempCal = lsm6dsv_from_lsb_to_celsius(tempUncal);
+  return res;
 }
 
 #endif

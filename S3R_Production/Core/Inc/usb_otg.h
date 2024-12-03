@@ -53,6 +53,13 @@ extern "C"
   void MX_USB_OTG_HS_PCD_Init(void);
 
   /* USER CODE BEGIN Prototypes */
+
+#ifdef SR48_6_0
+  void MX_USB_OTG_HS_PCD_Init_NoVbusSense(void);
+  void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef *hpcd);
+  void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *hpcd);
+#endif
+
   USB_STATE usbPlugInState(void);
   /* USER CODE END Prototypes */
 

@@ -72,7 +72,9 @@ uint32_t adc_battVal, adcBufSens[12], adcBufResv[12]; //max 12 channels, each of
 uint8_t gsrActiveResistor;
 uint8_t adcConfig;
 
+#if defined(SHIMMER4_SDK)
 uint32_t battInterval = BATT_INTERVAL_D;
+#endif
 uint8_t battCriticalCount = 0;
 battAlarmInterval_t battAlarmInterval;
 
@@ -311,13 +313,22 @@ void S4_NORM_ADC_configureChannels(void)
   }
 
   //Internal ADC 3
-  if (configBytes->chEnIntADC3)
+  if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
   {
-    *channel_contents_ptr++ = INTERNAL_ADC_3;
+    if (configBytes->chEnGsr)
+    {
+      *channel_contents_ptr++ = GSR_RAW;
+      sensing.ptr.gsr = sensing.dataLen;
+      adc.sensorList[adc.sensorLen++] = GSR_RAW;
+    }
+    else
+    {
+      *channel_contents_ptr++ = INTERNAL_ADC_3;
+      sensing.ptr.intADC3 = sensing.dataLen;
+      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
+    }
     nbr_adc_chans += 1;
-    sensing.ptr.intADC3 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
   }
 
   sensing.nbrAdcChans += nbr_adc_chans;
@@ -334,8 +345,6 @@ void S4_NORM_ADC_startSensing()
   uint8_t adc_counter_sens = 1; //adc channel rank counter
 #endif
   adcConfig = ADC_CONFIG_SENS;
-  uint32_t adcGpioPinA = 0;
-  uint32_t adcGpioPinB = 0;
 
   initSensAdc(adc.sensorLen);
 
@@ -458,7 +467,6 @@ void S4_NORM_ADC_startSensing()
     {
       Error_Handler();
     }
-    adcGpioPinA |= GPIO_ADC_EXT_EXP0_Pin;
   }
 
   //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
@@ -470,7 +478,6 @@ void S4_NORM_ADC_startSensing()
     {
       Error_Handler();
     }
-    adcGpioPinA |= GPIO_ADC_EXT_EXP1_Pin;
   }
 
   if (configBytes->chEnExtADC2)
@@ -481,18 +488,6 @@ void S4_NORM_ADC_startSensing()
     {
       Error_Handler();
     }
-    adcGpioPinA |= GPIO_ADC_EXT_EXP2_Pin;
-  }
-
-  if (configBytes->chEnIntADC3)
-  {
-    sConfig.Channel = ADC_CHANNEL_INT_A3;
-    sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
-    if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    adcGpioPinB |= GPIO_ADC_INT_EXP3_Pin;
   }
 
   if (configBytes->chEnIntADC0)
@@ -503,7 +498,6 @@ void S4_NORM_ADC_startSensing()
     {
       Error_Handler();
     }
-    adcGpioPinA |= GPIO_ADC_INT_EXP0_Pin;
   }
 
   if (configBytes->chEnIntADC1)
@@ -514,7 +508,6 @@ void S4_NORM_ADC_startSensing()
     {
       Error_Handler();
     }
-    adcGpioPinB |= GPIO_ADC_INT_EXP1_Pin;
   }
 
   if (configBytes->chEnIntADC2)
@@ -525,17 +518,19 @@ void S4_NORM_ADC_startSensing()
     {
       Error_Handler();
     }
-    adcGpioPinB |= GPIO_ADC_INT_EXP2_Pin;
   }
-  /*GPIO init as per configuration*/
-  if (adcGpioPinA != 0)
+
+  if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
   {
-    adcGpioInit(adcGpioPinA, GPIOA);
+    sConfig.Channel = ADC_CHANNEL_INT_A3;
+    sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
+    if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
+    {
+      Error_Handler();
+    }
   }
-  if (adcGpioPinB != 0)
-  {
-    adcGpioInit(adcGpioPinB, GPIOB);
-  }
+
+  shimmerAdcGpioSetup(1);
   HAL_ADCEx_Calibration_Start(hadcSensPtr, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED); //can be removed later
 
 #if defined(SHIMMER4_SDK)
@@ -549,6 +544,82 @@ void S4_NORM_ADC_startSensing()
     }
   }
 #endif
+}
+
+void shimmerAdcGpioSetup(uint8_t init)
+{
+  uint32_t adcPinsPortA = 0;
+  uint32_t adcPinsPortB = 0;
+  uint32_t adcPinsPortC = 0;
+  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+
+  if (configBytes->chEnExtADC0)
+  {
+    adcPinsPortA |= GPIO_ADC_EXT_EXP0_Pin;
+  }
+  if (configBytes->chEnExtADC1)
+  {
+    adcPinsPortC |= GPIO_ADC_EXT_EXP1_Pin;
+  }
+  if (configBytes->chEnExtADC2)
+  {
+    adcPinsPortA |= GPIO_ADC_EXT_EXP2_Pin;
+  }
+  if (configBytes->chEnIntADC0)
+  {
+    adcPinsPortA |= GPIO_ADC_INT_EXP0_Pin;
+  }
+  if (configBytes->chEnIntADC1)
+  {
+    adcPinsPortB |= GPIO_ADC_INT_EXP1_Pin;
+  }
+  if (configBytes->chEnIntADC2)
+  {
+    adcPinsPortB |= GPIO_ADC_INT_EXP2_Pin;
+  }
+  if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
+  {
+    adcPinsPortB |= GPIO_ADC_INT_EXP3_Pin;
+  }
+
+  /*GPIO init as per configuration*/
+  if (adcPinsPortA != 0)
+  {
+    if (init)
+    {
+      //TODO manage GPIO CLK enable/disable properly
+      __HAL_RCC_GPIOA_CLK_ENABLE();
+      adcGpioInit(adcPinsPortA, GPIOA);
+    }
+    else
+    {
+      //TODO manage GPIO CLK enable/disable properly
+      //__HAL_RCC_GPIOA_CLK_DISABLE();
+      HAL_GPIO_DeInit(GPIOA, adcPinsPortA);
+    }
+  }
+  if (adcPinsPortB != 0)
+  {
+    if (init)
+    {
+      adcGpioInit(adcPinsPortB, GPIOB);
+    }
+    else
+    {
+      HAL_GPIO_DeInit(GPIOB, adcPinsPortB);
+    }
+  }
+  if (adcPinsPortC != 0)
+  {
+    if (init)
+    {
+      adcGpioInit(adcPinsPortC, GPIOC);
+    }
+    else
+    {
+      HAL_GPIO_DeInit(GPIOC, adcPinsPortC);
+    }
+  }
 }
 
 void (*ADC_gatherDataDone_cb)(void);
@@ -575,8 +646,6 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   ADC_ChannelConfTypeDef sConfig = { 0 };
   uint8_t adc_counter_sens = 0; //adc channel rank counter
   uint8_t numChannels = 3;
-
-  Board_enableSensingPower(1);
 
   //FIXME: reusing ADC1 here because I haven't been able to get DMA LL working with ADC4
   initSensAdc(numChannels);
@@ -658,8 +727,6 @@ void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
   }
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
-
-  Board_enableSensingPower(0);
 }
 
 void initSensAdc(uint32_t numChannels)
@@ -850,12 +917,12 @@ void S4_NORM_ADC_bufPoll()
       uint32_t u32;
     } gsr_buf;
 
-    gsr_buf.u8[0] = sensing.dataBuf[sensing.ptr.intADC3 + 0];
-    gsr_buf.u8[1] = sensing.dataBuf[sensing.ptr.intADC3 + 1];
+    gsr_buf.u8[0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    gsr_buf.u8[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
     GSR_output(&gsr_buf.u32);
 
-    sensing.dataBuf[sensing.ptr.intADC3 + 0] = gsr_buf.u8[0];
-    sensing.dataBuf[sensing.ptr.intADC3 + 1] = gsr_buf.u8[1];
+    sensing.dataBuf[sensing.ptr.gsr + 0] = gsr_buf.u8[0];
+    sensing.dataBuf[sensing.ptr.gsr + 1] = gsr_buf.u8[1];
   }
 }
 
@@ -938,85 +1005,72 @@ void S4_NORM_ADC_stopSensing()
 
 void S4_NORM_ADC_rankBatt(void)
 {
-  if (shimmerStatus.battStat == BATT_MID)
+  if (batteryStatus.battStat == BATT_MID)
   {
-    if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MIN)
+    if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MIN)
     {
-      shimmerStatus.battStat = BATT_LOW;
+      batteryStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MAX)
+    else if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MAX)
     {
-      shimmerStatus.battStat = BATT_MID;
+      batteryStatus.battStat = BATT_MID;
     }
     else
     {
-      shimmerStatus.battStat = BATT_HIGH;
+      batteryStatus.battStat = BATT_HIGH;
     }
   }
-  else if (shimmerStatus.battStat == BATT_LOW)
+  else if (batteryStatus.battStat == BATT_LOW)
   {
-    if (*(uint16_t *) shimmerStatus.battVal < BATT_LOW_MAX)
+    if (batteryStatus.battStatusRaw.adcBattVal < BATT_LOW_MAX)
     {
-      shimmerStatus.battStat = BATT_LOW;
+      batteryStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MAX)
+    else if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MAX)
     {
-      shimmerStatus.battStat = BATT_MID;
+      batteryStatus.battStat = BATT_MID;
     }
     else
     {
-      shimmerStatus.battStat = BATT_HIGH;
+      batteryStatus.battStat = BATT_HIGH;
     }
   }
   else
   { //high
-    if (*(uint16_t *) shimmerStatus.battVal < BATT_MID_MIN)
+    if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MIN)
     {
-      shimmerStatus.battStat = BATT_LOW;
+      batteryStatus.battStat = BATT_LOW;
     }
-    else if (*(uint16_t *) shimmerStatus.battVal < BATT_HIGH_MIN)
+    else if (batteryStatus.battStatusRaw.adcBattVal < BATT_HIGH_MIN)
     {
-      shimmerStatus.battStat = BATT_MID;
+      batteryStatus.battStat = BATT_MID;
     }
     else
     {
-      shimmerStatus.battStat = BATT_HIGH;
+      batteryStatus.battStat = BATT_HIGH;
     }
   }
-  switch (shimmerStatus.battStat)
+
+  switch (batteryStatus.battStat)
   {
-#if defined(SHIMMER3R)
   case BATT_LOW:
-    shimmerStatus.battStatLed = LED_RGB_RED;
+    batteryStatus.battStatLed = LED_RGB_RED;
     break;
   case BATT_MID:
-    shimmerStatus.battStatLed = LED_RGB_YELLOW;
+    batteryStatus.battStatLed = LED_RGB_YELLOW;
     break;
   case BATT_HIGH:
-    shimmerStatus.battStatLed = LED_RGB_GREEN;
+    batteryStatus.battStatLed = LED_RGB_GREEN;
     break;
   default:
-    shimmerStatus.battStatLed = LED_RED;
+    batteryStatus.battStatLed = LED_RGB_RED;
     break;
-#elif defined(SHIMMER4_SDK)
-  case BATT_LOW:
-    shimmerStatus.battStatLed = LED_RED;
-    break;
-  case BATT_MID:
-    shimmerStatus.battStatLed = LED_YELLOW;
-    break;
-  case BATT_HIGH:
-    shimmerStatus.battStatLed = LED_GREEN;
-    break;
-  default:
-    shimmerStatus.battStatLed = LED_RED_LWR;
-    break;
-#endif
   }
 }
 
 void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
 {
+  Board_enableSensingPower(SENSE_PWR_VBATT, 1);
 #if defined(SHIMMER3R)
   MX_ADC2_Init();
 #elif defined(SHIMMER4_SDK)
@@ -1067,7 +1121,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
     }
     HAL_ADC_Stop(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
-    Board_enableSensingPower(0);
+    Board_enableSensingPower(SENSE_PWR_VBATT, 0);
   }
   else
   {
@@ -1094,7 +1148,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 #if defined(SHIMMER3R)
   if (hadc->Instance == hadcSensPtr->Instance)
   {
-    if (shimmerStatus.isSensing)
+    if (shimmerStatus.sensing)
     {
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
@@ -1111,7 +1165,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
     updateBatteryStatus(adc_battVal, hadcBattPtr);
     HAL_ADC_Stop_IT(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
-    Board_enableSensingPower(0);
+    Board_enableSensingPower(SENSE_PWR_VBATT, 0);
   }
 #elif defined(SHIMMER4_SDK)
   if (hadc->Instance == hadcResv.Instance)
@@ -1132,27 +1186,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 void adcGpioInit(uint32_t pin, GPIO_TypeDef *port)
 {
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-  if (port == VBAT_SENSE_GPIO_Port)
-  {
-    GPIO_InitStruct.Pin = pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(VBAT_SENSE_GPIO_Port, &GPIO_InitStruct);
-  }
-  else if (port == GPIOA)
-  {
-    GPIO_InitStruct.Pin = pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  }
-  else if (port == GPIOB)
-  {
-    GPIO_InitStruct.Pin = pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-  }
+  GPIO_InitStruct.Pin = pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(port, &GPIO_InitStruct);
 }
 
 void manageReadBatt(uint8_t isBlockingRead)
@@ -1163,7 +1200,7 @@ void manageReadBatt(uint8_t isBlockingRead)
   }
 
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  if (shimmerStatus.isSensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
+  if (shimmerStatus.sensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
     updateBatteryStatus(*(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog], hadcSensPtr);
   }
@@ -1172,7 +1209,6 @@ void manageReadBatt(uint8_t isBlockingRead)
     //Don't start a new measurement if one is already underway
     if (hadcBattPtr->Instance == NULL || hadcBattPtr->State == HAL_ADC_STATE_RESET)
     {
-      Board_enableSensingPower(1);
       S4_ADC_readBatt(isBlockingRead);
     }
   }
@@ -1180,17 +1216,93 @@ void manageReadBatt(uint8_t isBlockingRead)
 
 void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
 {
-  shimmerStatus.battVal[0] = adc_battVal & 0xff;
-  shimmerStatus.battVal[1] = (adc_battVal >> 8) & 0xff;
-  shimmerStatus.battVal[2] = 0;
-  shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin) << 7;
-  shimmerStatus.battVal[2] |= HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin) << 6;
+  batteryStatus.battStatusRaw.adcBattVal = adc_battVal;
+  batteryStatus.battStatusRaw.rawBytes[2] = 0;
+#ifdef SR48_6_0
+  batteryStatus.battStatusRaw.STAT2
+      = HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT2_GPIO_Port, SR48_6_0_CHG_STAT2_Pin);
+  batteryStatus.battStatusRaw.STAT1
+      = HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT1_GPIO_Port, SR48_6_0_CHG_STAT1_Pin);
+#else
+  batteryStatus.battStatusRaw.STAT2 = HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin);
+  batteryStatus.battStatusRaw.STAT1 = HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin);
+#endif
 
-  shimmerStatus.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
+  //Multipled by 2 due to voltage divider
+  batteryStatus.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
                                 adc_battVal, hadcPtr->Init.Resolution)
       * 2;
 
   S4_ADC_rankBatt();
+  rankBattChargingStatus();
+}
+
+void rankBattChargingStatus(void)
+{
+  if (batteryStatus.battValMV > BATTERY_ERROR_VOLTAGE_MAX)
+  {
+    batteryStatus.battChargingStatus = CHARGING_STATUS_CHECKING;
+  }
+  else
+  {
+    switch (batteryStatus.battStatusRaw.rawBytes[2])
+    {
+    case CHRG_CHIP_STATUS_SUSPENDED:
+      if (batteryStatus.battValMV <= BATTERY_ERROR_VOLTAGE_MIN)
+      {
+        batteryStatus.battChargingStatus = CHARGING_STATUS_BAD_BATTERY;
+      }
+      else
+      {
+        batteryStatus.battChargingStatus = CHARGING_STATUS_SUSPENDED;
+      }
+      break;
+    case CHRG_CHIP_STATUS_FULLY_CHARGED:
+      batteryStatus.battChargingStatus = CHARGING_STATUS_FULLY_CHARGED;
+      break;
+    case CHRG_CHIP_STATUS_PRECONDITIONING:
+      batteryStatus.battChargingStatus = CHARGING_STATUS_CHARGING;
+      break;
+    case CHRG_CHIP_STATUS_BAD_BATTERY:
+      batteryStatus.battChargingStatus = CHARGING_STATUS_BAD_BATTERY;
+      break;
+    case CHRG_CHIP_STATUS_UNKNOWN:
+      batteryStatus.battChargingStatus = CHARGING_STATUS_UNKNOWN;
+      break;
+    default:
+      batteryStatus.battChargingStatus = CHARGING_STATUS_ERROR;
+      break;
+    }
+  }
+
+  batteryStatus.battStatLedFlash = 0;
+  if (shimmerStatus.docked)
+  {
+    if (batteryStatus.battChargingStatus == CHARGING_STATUS_SUSPENDED)
+    {
+      batteryStatus.battStatLedCharging = LED_RGB_YELLOW;
+    }
+    else if (batteryStatus.battChargingStatus == CHARGING_STATUS_UNKNOWN
+        || batteryStatus.battChargingStatus == CHARGING_STATUS_BAD_BATTERY
+        || batteryStatus.battChargingStatus == CHARGING_STATUS_ERROR)
+    {
+      batteryStatus.battStatLedCharging = LED_RGB_RED;
+      batteryStatus.battStatLedFlash = 1;
+    }
+    else if (batteryStatus.battChargingStatus == CHARGING_STATUS_CHECKING
+        || batteryStatus.battChargingStatus == CHARGING_STATUS_CHARGING)
+    {
+      batteryStatus.battStatLedCharging = LED_RGB_RED;
+    }
+    else if (batteryStatus.battChargingStatus == CHARGING_STATUS_FULLY_CHARGED)
+    {
+      batteryStatus.battStatLedCharging = LED_RGB_GREEN;
+    }
+    else
+    {
+      batteryStatus.battStatLedCharging = LED_RGB_ALL_OFF;
+    }
+  }
 }
 
 //void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)

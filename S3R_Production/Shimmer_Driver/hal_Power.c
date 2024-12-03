@@ -134,7 +134,7 @@ void Power_GpioAnalogConfig(void)
 void Power_SleepUntilInterrupt(void)
 {
   HAL_SuspendTick();
-  HAL_PWR_EnterSLEEPMode(0, PWR_SLEEPENTRY_WFI);
+  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
   HAL_ResumeTick();
 }
 

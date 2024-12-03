@@ -40,23 +40,37 @@
  * @date May, 2016
  */
 
-#include <shimmer_include.h>
 #include <stdint.h>
+
+#include "shimmer_include.h"
+
+#include "stm32u5a5xx.h"
 
 #ifndef HAL_BOARD_H
 #define HAL_BOARD_H
 
-//TODO change to 3000 for production boards
+#if S3R_NUCLEO
 #define VREF_EXTERNAL_SUPPLY_MV 3300
+#else
+#define VREF_EXTERNAL_SUPPLY_MV 3000
+#endif
+
+typedef enum
+{
+  SENSE_PWR_VBATT = (0x01 << 0),
+  SENSE_PWR_SENSING = (0x01 << 1),
+  SENSE_PWR_EEPROM = (0x01 << 2),
+  SENSE_PWR_FACTORY_TEST = (0x01 << 3)
+} sense_pwr_flg_t;
 
 //Legacy approach for 5 individual LEDs before two RGB LEDs were introduced
-#define LED_RED                 0x01 //== BATT_LOW
-#define LED_YELLOW              0x02 //== BATT_MID
-#define LED_GREEN0              0x04 //== BATT_HIGH
-#define LED_ALL_BATT            (LED_RED + LED_YELLOW + LED_GREEN0)
-#define LED_GREEN1              0x08
-#define LED_BLUE                0x10
-#define LED_ALL                 0xFF
+#define LED_RED      0x01 //== BATT_LOW
+#define LED_YELLOW   0x02 //== BATT_MID
+#define LED_GREEN0   0x04 //== BATT_HIGH
+#define LED_ALL_BATT (LED_RED + LED_YELLOW + LED_GREEN0)
+#define LED_GREEN1   0x08
+#define LED_BLUE     0x10
+#define LED_ALL      0xFF
 
 #if defined(SHIMMER3R)
 typedef enum
@@ -66,6 +80,7 @@ typedef enum
   LED_RGB_GREEN = 0x00FF00,
   LED_RGB_BLUE = 0x0000FF,
   LED_RGB_YELLOW = 0xFFFF00,
+  LED_RGB_PURPLE = 0x800080,
   LED_RGB_ALL_ON = 0xFFFFFF,
 } led_rgb_t;
 
@@ -104,15 +119,16 @@ extern void Board_ledOn(uint8_t ledMask);
 extern void Board_ledOff(uint8_t ledMask);
 extern void Board_ledToggle(uint8_t ledMask);
 
+extern void Board_sdPowerCycle(void);
 extern void Board_sd2Pc(void);
 extern void Board_sd2Arm(void);
-//extern void Board_sdPower(uint8_t on);
-extern void Board_sdPowerCycle(void);
+void Board_setSdPower(uint8_t state);
+void Board_setDockAccessToSd(uint8_t mcu0dock1);
 
 extern void Board_delayMicrosInit(void);
 extern void Board_delayMicros(uint32_t micros);
 #if defined(SHIMMER3R)
-void Board_enableSensingPower(uint8_t state);
+void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #endif
 
 #if defined(SHIMMER3R)
@@ -121,8 +137,8 @@ void Board_enableSensingPower(uint8_t state);
 #define RESP_CS_GPIO              GPIO_ADC_INT_EXP0_GPIO_Port
 #define RESP_CS_PIN               GPIO_ADC_INT_EXP0_Pin
 
-#define GSR_RANGE_A0_Pin          GPIO_ADC_INT_EXP3_Pin
-#define GSR_RANGE_A1_Pin          GPIO_ADC_INT_EXP2_Pin
+#define GSR_RANGE_A0_Pin          GPIO_INTERNAL0_Pin
+#define GSR_RANGE_A1_Pin          GPIO_INTERNAL1_Pin
 
 #define SW_STRAIN_GAUGE_Pin       GPIO_INTERNAL1_Pin
 #define SW_STRAIN_GAUGE_GPIO_Port GPIO_INTERNAL1_GPIO_Port
@@ -132,15 +148,50 @@ void Board_enableSensingPower(uint8_t state);
 #define SW_PPG_EN_GPIO_Port       GPIO_INTERNAL1_GPIO_Port
 
 #if defined(SHIMMER3R)
-#define ADC_CHANNEL_VBATT  ADC_CHANNEL_4
+/* Interrupts */
+/* Either GPIO_ADC_INT_EXP1 or SD_DETECT_N can be used on line 0 */
+#define INT_LINE_GPIO_ADC_INT_EXP1 EXTI0_IRQn
+//#define INT_LINE_SD_DETECT_N       EXTI0_IRQn
+#define INT_LINE_DOCK_DETECT       EXTI1_IRQn //Enabled by CubeMX
+#define INT_LINE_LIS3MDL_DRDY      EXTI2_IRQn
+#ifdef SR48_6_0_PATCH_DOCK_DETECT
+#define INT_LINE_SR48_6_0_BOOT0_USER_BTN EXTI3_IRQn //Only used on SR48-6-0
+#endif
+#define INT_LINE_GPIO_INTERNAL1    EXTI4_IRQn
+/* Either GPIO_ADC_INT_EXP0 or GPIO_INTERNAL2 can be used on line 5 */
+#define INT_LINE_GPIO_ADC_INT_EXP0 EXTI5_IRQn
+//#define INT_LINE_GPIO_INTERNAL2    EXTI5_IRQn
+#define INT_LINE_USER_BTN          EXTI6_IRQn //Enabled by CubeMX
+#define INT_LINE_LSM6DSV_INT1      EXTI7_IRQn
+#define INT_LINE_BT_HOST_WAKE      EXTI8_IRQn
+//#define INT_LINE_GPIO_EXTERNAL     EXTI9_IRQn
+#define INT_LINE_USB_VBUS          EXTI9_IRQn
+#define INT_LINE_LIS2MDL_DRDY      EXTI10_IRQn
+#define INT_LINE_BMP390_INT        EXTI11_IRQn
+#define INT_LINE_LIS2DW12_INT1     EXTI12_IRQn
+#define INT_LINE_GPIO_INTERNAL0    EXTI13_IRQn
+#define INT_LINE_BT_CONNECTION     EXTI14_IRQn
+#define INT_LINE_BT_CYSPP          EXTI15_IRQn
 
-#define ADC_CHANNEL_EXT_A0 ADC_CHANNEL_9
-#define ADC_CHANNEL_EXT_A1 ADC_CHANNEL_11
-#define ADC_CHANNEL_EXT_A2 ADC_CHANNEL_12
-#define ADC_CHANNEL_INT_A0 ADC_CHANNEL_10
-#define ADC_CHANNEL_INT_A1 ADC_CHANNEL_15
-#define ADC_CHANNEL_INT_A2 ADC_CHANNEL_16
-#define ADC_CHANNEL_INT_A3 ADC_CHANNEL_17
+/* Power wake-up lines */
+#define PWR_WKUP_GPIO_INTERNAL0    PWR_WKUP2
+#define PWR_WKUP_DOCK_DETECT       PWR_WKUP3
+#define PWR_WKUP_LSM6DSV_INT1      PWR_WKUP6
+#define PWR_WKUP_BT_HOST_WAKE      PWR_WKUP7
+
+/* DAQ Channels */
+#define DAQ_CH_GPIO_ADC_EXT_EXP0   DAC1_CHANNEL_1
+#define DAQ_CH_GPIO_ADC_INT_EXP0   DAC1_CHANNEL_2
+
+/* ADC Channels */
+#define ADC_CHANNEL_VBATT          ADC_CHANNEL_4
+#define ADC_CHANNEL_EXT_A0         ADC_CHANNEL_9
+#define ADC_CHANNEL_EXT_A1         ADC_CHANNEL_11
+#define ADC_CHANNEL_EXT_A2         ADC_CHANNEL_12
+#define ADC_CHANNEL_INT_A0         ADC_CHANNEL_10
+#define ADC_CHANNEL_INT_A1         ADC_CHANNEL_15
+#define ADC_CHANNEL_INT_A2         ADC_CHANNEL_16
+#define ADC_CHANNEL_INT_A3         ADC_CHANNEL_17
 
 #elif defined(SHIMMER4_SDK)
 #define ADC_CHANNEL_ACCEL_X ADC_CHANNEL_0
@@ -238,6 +289,35 @@ void Board_enableSensingPower(uint8_t state);
 #define Board_SW_MIC(x) \
   HAL_GPIO_WritePin(SW_MIC_GPIO_Port, SW_MIC_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
+/* Specific to Shimmer3R GSR+ model:
+ * Output low = I2C4 is connected to PPG connector
+ * Output high = I2C4 is disconnected from PPG connector */
+#define Board_SW_I2C4_ON_PPG(x)                                         \
+  HAL_GPIO_WritePin(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin, \
+      x ? GPIO_PIN_RESET : GPIO_PIN_SET)
+
+/* 0/1 = power off/on */
+#define Board_SW_BT(x) \
+  HAL_GPIO_WritePin(SW_BT_GPIO_Port, SW_BT_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+/* Active low with internal pull-up. 0 = held in reset, 1 = normal operation */
+#define Board_BT_RST_N(x) \
+  HAL_GPIO_WritePin(BT_RST_GPIO_Port, BT_RST_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+/* CYSPP role control.
+ * Assert (LOW) for central mode, de-assert (HIGH) for peripheral mode. */
+#define Board_BT_CP_ROLE(x) \
+  HAL_GPIO_WritePin(BT_CP_ROLE_GPIO_Port, BT_CP_ROLE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+/* Low-power mode control.
+ * Assert (LOW) to allow sleep, de-assert (HIGH) to disable sleep or exit sleep
+ * mode. Note:  The LP_MODE pin is internally pulled up. */
+#define Board_BT_LP_MODE(x) \
+  HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+/* CYSPP mode control.
+ * CYSPP pin externally de-asserted (HIGH): Command mode
+ * CYSPP pin externally asserted (LOW): CYSPP mode
+ * CYSPP pin left floating: Command mode until activating CYSPP data pipe, then CYSPP mode */
+#define Board_BT_CYSPP_MODE(x) \
+  HAL_GPIO_WritePin(BT_CYSPP_GPIO_Port, BT_CYSPP_MODE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+
 #define LIS2MDL_DRDY HAL_GPIO_ReadPin(LIS2MDL_DRDY_GPIO_Port, LIS2MDL_DRDY_Pin)
 #define LIS3MDL_DRDY HAL_GPIO_ReadPin(LIS3MDL_DRDY_GPIO_Port, LIS3MDL_DRDY_Pin)
 #define LSM6DSV_DRDY HAL_GPIO_ReadPin(LSM6DSV_INT1_GPIO_Port, LSM6DSV_INT1_Pin)
@@ -263,11 +343,21 @@ void Board_enableSensingPower(uint8_t state);
 #define Board_RESP_CS(x) \
   HAL_GPIO_WritePin(RESP_CS_GPIO, RESP_CS_PIN, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
-#define Board_arm0pc1(x) \
-  HAL_GPIO_WritePin(GPIOG, SW_SD_MCU_DOCK_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET) //EXT_MEM: 0 for arm, 1 for pc
-#define Board_sdPower(x) \
+#if defined(SHIMMER3R)
+#define Board_sdMcu0Dock1(x)                                      \
+  HAL_GPIO_WritePin(SW_SD_MCU_DOCK_GPIO_Port, SW_SD_MCU_DOCK_Pin, \
+      x ? GPIO_PIN_RESET : GPIO_PIN_SET) //EXT_MEM: 0 for arm, 1 for pc
+#define Board_SW_FLASH(x) \
   HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_detectN(x) \
+  HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#elif defined(SHIMMER4_SDK)
+#define Board_sdMcu0Dock1(x) \
+  HAL_GPIO_WritePin(GPIOG, EXT_MEM_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET) //EXT_MEM: 0 for arm, 1 for pc
+#define Board_SW_FLASH(x) \
+  HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_detectN(x) \
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#endif
 
 #endif

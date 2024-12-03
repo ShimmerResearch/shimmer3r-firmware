@@ -34,10 +34,17 @@ typedef struct
 #define ADC_CONFIG_SENS 1
 #define ADC_CONFIG_BATT 2
 
-#define BATT_LOW_MAX    2618
-#define BATT_MID_MIN    2568
-#define BATT_MID_MAX    2767
-#define BATT_HIGH_MIN   2717
+#if OLD_CONSENSYS_SUPPORT
+#define BATT_LOW_MAX  2618
+#define BATT_MID_MIN  2568
+#define BATT_MID_MAX  2767
+#define BATT_HIGH_MIN 2717
+#else
+#define BATT_LOW_MAX  (2618 << 2)
+#define BATT_MID_MIN  (2568 << 2)
+#define BATT_MID_MAX  (2767 << 2)
+#define BATT_HIGH_MIN (2717 << 2)
+#endif
 
 #if USE_FREERTOS
 #define S4_ADC_init              S4_RTOS_ADC_init
@@ -88,6 +95,7 @@ void S4_NORM_ADC_initBatt(void);
 #endif
 void S4_NORM_ADC_configureChannels(void);
 void S4_NORM_ADC_startSensing(void);
+void shimmerAdcGpioSetup(uint8_t init);
 void initSensAdc(uint32_t numChannels);
 void S4_NORM_ADC_bufPoll(void);
 void S4_NORM_ADC_stopSensing(void);
@@ -105,6 +113,7 @@ battAlarmInterval_t getBatteryInterval(void);
 bool areAdcChannelsEnabled(void);
 #endif
 
+void rankBattChargingStatus(void);
 void setBatteryInterval(battAlarmInterval_t value);
 void resetBatteryCriticalCount(void);
 

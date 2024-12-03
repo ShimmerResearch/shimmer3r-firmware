@@ -55,9 +55,8 @@ void adxl371_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-uint8_t adxl371_self_test(void)
+self_test_result_t adxl371_self_test(void)
 {
-  uint8_t result = 0;
   /*Needs to contain >=200ms worth of data. @320Hz, 100 samples = 312ms */
   struct adxl371_xyz_accel_data accel_data;
   uint16_t self_test_data[100] = { 0 };
@@ -67,10 +66,12 @@ uint8_t adxl371_self_test(void)
   uint16_t second_set_avg = 0;
   int32_t ret;
   uint8_t i;
+  self_test_result_t self_test_result = SELF_TEST_PASS;
 
   if (!isAdxl371Detected())
   {
-    return result;
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
+    return self_test_result;
   }
 
   /*1. Ensure that the low-pass activity filter is enabled. */
@@ -79,8 +80,8 @@ uint8_t adxl371_self_test(void)
   ret = adxl371_reset(&adxl371);
 
   /*2. Place the device in measurement mode. */
-  ret = adxl371_set_bandwidth(&adxl371, ADXL371_BW_320HZ);
   ret = adxl371_set_odr(&adxl371, ADXL371_ODR_320HZ);
+  ret = adxl371_set_bandwidth(&adxl371, ADXL371_BW_640HZ);
   ret = adxl371_set_op_mode(&adxl371, ADXL371_FULL_BW_MEASUREMENT);
 
   /*3. Wait until the filter settling time passes. */
@@ -126,20 +127,23 @@ uint8_t adxl371_self_test(void)
 
   /*8. If the absolute value of the difference between the two averaged values
    * is greater than 5 LSB, the self test passes. */
-  result = second_set_avg - first_set_avg > 5;
+  uint16_t diff = abs((int16_t) second_set_avg - (int16_t) first_set_avg);
+  self_test_result = diff > 5 ? SELF_TEST_PASS : SELF_TEST_FAIL_SIGNAL_ISSUE;
 
   //adxl371_reset(&adxl371);
   ret = adxl371_set_op_mode(&adxl371, ADXL371_STANDBY);
 
-  return result;
+  return self_test_result;
 }
 
 void adxl371_configure(uint8_t rate)
 {
   adxl371_set_op_mode(&adxl371, ADXL371_STANDBY);
 
-  //adxl371_set_autosleep(adxl371, false);
-  //
+  adxl371_reset(&adxl371);
+
+  adxl371_set_autosleep(&adxl371, false);
+
   //adxl371_set_bandwidth(adxl371, ADXL371_BW_3200HZ);
   //
   //adxl371_set_odr(adxl371, ADXL371_ODR_6400HZ);
@@ -171,18 +175,21 @@ void adxl371_configure(uint8_t rate)
   ///* Set operation mode to Instant-On */
   //adxl371_set_op_mode(adxl371, ADXL371_INSTANT_ON);
 
-  adxl371_set_bandwidth(&adxl371, ADXL371_BW_2560HZ);
-  adxl371_set_odr(&adxl371, ADXL371_ODR_5120HZ);
+  adxl371_set_odr(&adxl371, rate);
+  adxl371_set_bandwidth(&adxl371, rate);
 
-  /* Set operation mode to Instant-On */
-  adxl371_set_op_mode(&adxl371, ADXL371_INSTANT_ON);
+  /* Set operation mode to Full bandwidth measurement mode */
+  adxl371_set_op_mode(&adxl371, ADXL371_FULL_BW_MEASUREMENT);
 }
 
 HAL_StatusTypeDef adxl371_accel_get(uint8_t *buf)
 {
   HAL_StatusTypeDef ret;
-  static uint8_t txBuff[] = { ADXL371_X_DATA_H, 0, 0, 0, 0, 0, 0 };
+  static uint8_t txBuff[] = { (ADXL371_X_DATA_H << 1) | 0x01, 0, 0, 0, 0, 0, 0 };
   ret = platform_read_raw_data_dma(&SENSOR_BUS, &txBuff[0], buf, sizeof(txBuff));
+
+  adxl371_spi_reg_read_multiple(&adxl371, ADXL371_DEVID, &buf[0], 4);
+
   return ret;
 }
 
@@ -193,7 +200,9 @@ int32_t adxl371_is_data_rdy(void)
 
   ret = adxl371_spi_reg_read(&adxl371, ADXL371_STATUS_1, &status1);
   if (ret < 0)
+  {
     return ret;
+  }
 
   return ADXL371_STATUS_1_DATA_RDY(status1);
 }

@@ -35,6 +35,7 @@ uint8_t isAds1292PresentForSrId(uint8_t srId)
       || (srId == SHIMMER_ECG_MD) || (srId == SHIMMER4_SDK);
 }
 
+#if defined(SHIMMER3)
 uint8_t isRn4678PresentAndCmdModeSupport(uint8_t srId, uint8_t srRev, uint8_t srRevSpecial)
 {
   /* Checking EEPROM here to rule out older sensors in factory test which
@@ -83,6 +84,7 @@ uint8_t areGsrControlsPinsReversed(uint8_t srId, uint8_t srRevMajor, uint8_t srR
   return (hwId == HW_ID_SHIMMER3 && srId == EXP_BRD_GSR_UNIFIED
       && srRevMajor == 4 && srRevMinor == 1);
 }
+#endif
 
 void parseDaughterCardId(uint8_t srId)
 {
@@ -145,6 +147,7 @@ uint8_t isDaughterCardIdSet(void)
       && daughterCardIdPage.expansion_brd.exp_brd_id != 0xFF);
 }
 
+#if defined(SHIMMER3)
 void setWrAccelAndMagInUse(uint8_t wr_accel_and_mag_in_use)
 {
   wrAccelAndMagInUse = wr_accel_and_mag_in_use;
@@ -179,6 +182,7 @@ uint8_t isGyroInUseIcm20948(void)
 {
   return gyroInUse == GYRO_ICM20948_IN_USE;
 }
+#endif
 
 void setEepromIsPresent(uint8_t eeprom_is_preset)
 {
@@ -190,11 +194,13 @@ uint8_t isEepromIsPresent(void)
   return eepromIsPresent;
 }
 
+#if defined(SHIMMER3)
 uint8_t isLnAccelKxtc9_2050Present(void)
 {
   //Assuming here that if BMP280 and LSM303AHTR/ICM20948 present, infer low-noise accel is KXTC9-2050 and not KXRB5-2042
   return ((isWrAccelInUseLsm303ahtr() || isWrAccelInUseIcm20948()) && isBmp280InUse());
 }
+#endif
 
 uint8_t isBmp180InUse(void)
 {
@@ -207,3 +213,34 @@ uint8_t isBmp280InUse(void)
   //TODO
   return 0;
 }
+
+#if defined(SHIMMER3R)
+uint8_t isAdxl371Present(void)
+{
+  return (isDaughterCardIdSet() //&& hwId == HW_ID_SHIMMER3R
+      && (daughterCardIdPage.expansion_brd.exp_brd_id == SHIMMER3_IMU
+          || (daughterCardIdPage.expansion_brd.exp_brd_id == EXP_BRD_GSR_UNIFIED
+              && daughterCardIdPage.expansion_brd.exp_brd_rev == 6
+              && daughterCardIdPage.expansion_brd.exp_brd_special_rev == 0)));
+}
+
+uint8_t isI2c4Supported(void)
+{
+  return (isDaughterCardIdSet() //&& hwId == HW_ID_SHIMMER3R
+      && daughterCardIdPage.expansion_brd.exp_brd_id == EXP_BRD_GSR_UNIFIED);
+}
+
+uint8_t isBoardSr48_6_0(void)
+{
+  return isBoardSrNumber(EXP_BRD_GSR_UNIFIED, 6, 0);
+}
+
+uint8_t isBoardSrNumber(uint8_t exp_brd_id, uint8_t exp_brd_rev, uint8_t exp_brd_special_rev)
+{
+  return (isDaughterCardIdSet() //&& hwId == HW_ID_SHIMMER3R
+      && (daughterCardIdPage.expansion_brd.exp_brd_id == exp_brd_id
+          && daughterCardIdPage.expansion_brd.exp_brd_rev == exp_brd_rev
+          && daughterCardIdPage.expansion_brd.exp_brd_special_rev == exp_brd_special_rev));
+}
+
+#endif

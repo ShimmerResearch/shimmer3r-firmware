@@ -22,6 +22,7 @@
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "shimmer_definitions.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -249,44 +250,17 @@ void EXTI1_IRQHandler(void)
 }
 
 /**
- * @brief This function handles EXTI Line3 interrupt.
+ * @brief This function handles EXTI Line6 interrupt.
  */
-void EXTI3_IRQHandler(void)
+void EXTI6_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI3_IRQn 0 */
+  /* USER CODE BEGIN EXTI6_IRQn 0 */
 
-  /* USER CODE END EXTI3_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(BOOT0_USER_BTN_Pin);
-  /* USER CODE BEGIN EXTI3_IRQn 1 */
+  /* USER CODE END EXTI6_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(USER_BTN_Pin);
+  /* USER CODE BEGIN EXTI6_IRQn 1 */
 
-  /* USER CODE END EXTI3_IRQn 1 */
-}
-
-/**
- * @brief This function handles EXTI Line9 interrupt.
- */
-void EXTI9_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI9_IRQn 0 */
-
-  /* USER CODE END EXTI9_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
-  /* USER CODE BEGIN EXTI9_IRQn 1 */
-
-  /* USER CODE END EXTI9_IRQn 1 */
-}
-
-/**
- * @brief This function handles EXTI Line14 interrupt.
- */
-void EXTI14_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI14_IRQn 0 */
-
-  /* USER CODE END EXTI14_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(BT_CONNECTION_Pin);
-  /* USER CODE BEGIN EXTI14_IRQn 1 */
-  /* USER CODE END EXTI14_IRQn 1 */
+  /* USER CODE END EXTI6_IRQn 1 */
 }
 
 /**
@@ -594,5 +568,126 @@ void SPI3_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+
+/* Note the interrupts listed below are not enabled by default in CubeMX and
+ * instead are turned on/off when needed by firmware to save power. */
+
+/**
+ * @brief This function handles EXTI Line0 interrupt.
+ */
+void EXTI0_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP1_Pin);
+  //HAL_GPIO_EXTI_IRQHandler(SD_DETECT_N_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line2 interrupt.
+ */
+void EXTI2_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LIS3MDL_DRDY_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line3 interrupt.
+ */
+void EXTI3_IRQHandler(void)
+{
+#if SR48_6_0_PATCH_DOCK_DETECT
+  HAL_GPIO_EXTI_IRQHandler(SR48_6_0_BOOT0_USER_BTN_Pin);
+#endif
+}
+
+/**
+ * @brief This function handles EXTI Line4 interrupt.
+ */
+void EXTI4_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL1_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line5 interrupt.
+ */
+void EXTI5_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP0_Pin);
+  //No plans to use GPIO_INTERNAL2_Pin as interrupt
+  //HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL2_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line7 interrupt.
+ */
+void EXTI7_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LSM6DSV_INT1_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line8 interrupt.
+ */
+void EXTI8_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BT_HOST_WAKE_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line9 interrupt.
+ */
+void EXTI9_IRQHandler(void)
+{
+  //HAL_GPIO_EXTI_IRQHandler(GPIO_EXTERNAL_Pin);
+  HAL_GPIO_EXTI_IRQHandler(USB_VBUS_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line10 interrupt.
+ */
+void EXTI10_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LIS2MDL_DRDY_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line11 interrupt.
+ */
+void EXTI11_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BMP390_INT_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line12 interrupt.
+ */
+void EXTI12_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LIS2DW12_INT1_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line13 interrupt.
+ */
+void EXTI13_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL0_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line14 interrupt.
+ */
+void EXTI14_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BT_CONNECTION_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line15 interrupt.
+ */
+void EXTI15_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BT_CYSPP_Pin);
+}
 
 /* USER CODE END 1 */

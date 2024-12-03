@@ -5,13 +5,18 @@
 
 #include <stdint.h>
 
+#define OLD_CONSENSYS_SUPPORT 1
+
 #if defined(SHIMMER3R)
-#define DEVICE_VER    3 //For older Consensys support
-//#define DEVICE_VER    10
+#if OLD_CONSENSYS_SUPPORT
+#define DEVICE_VER 3 //For older Consensys support
+#else
+#define DEVICE_VER 10
+#endif
 #define FW_IDENTIFIER 3 //12 is the firmware for shimmer4sdk
 #define FW_VER_MAJOR  1 //Major version number: 0-65535
 #define FW_VER_MINOR  0 //Minor version number: 0-255
-#define FW_VER_REL    0 //internal version number: 0-255
+#define FW_VER_REL    4 //internal version number: 0-255
 #elif defined(SHIMMER4_SDK)
 #define DEVICE_VER 58 //HARDWARE VERSION: SR_58 for Shimmer4SDK
 #define FW_IDENTIFIER \
@@ -23,7 +28,7 @@
 
 #define FW_IS_LOGANDSTREAM  1
 
-#define IS_CONNECTED_EEPROM 0
+#define IS_CONNECTED_EEPROM 1
 
 #define USE_DEFAULT_SENSOR  0
 #define RTC_FAST \
@@ -46,6 +51,14 @@
 #define USE_FATFS             1
 #define USE_USBX              0
 #define SHIMMER_ENABLE_PRINTF 1
+
+#ifdef SR48_6_0
+#define SR48_6_0_PATCH_DOCK_DETECT 1
+#define SR48_6_0_PATCH_VBUS_SENSE  1
+#else
+#define SR48_6_0_PATCH_DOCK_DETECT 0
+#define SR48_6_0_PATCH_VBUS_SENSE  0
+#endif
 
 #ifdef SHIMMER_ENABLE_PRINTF
 #define SHIMMER_PRINTF(...) printf(__VA_ARGS__)
@@ -386,53 +399,59 @@ NV_SENSORS5
 #define SDH_ALT_MAG_CALIBRATION         285 //+21
 #define SDH_ALT_MAG_CALIB_TS            306 //+8
 
-////SENSORS0
-//#define SDH_SENSOR_A_ACCEL               0x80
-//#define SDH_SENSOR_MPU9250_GYRO          0x40
-//#define SDH_SENSOR_LSM303DLHC_MAG        0x20
-//#define SDH_SENSOR_EXG1_24BIT            0x10
-//#define SDH_SENSOR_EXG2_24BIT            0x08
-//#define SDH_SENSOR_GSR                   0x04
-//#define SDH_SENSOR_EXTCH7                0x02
-//#define SDH_SENSOR_EXTCH6                0x01
-////SENSORS1
-//#define SDH_SENSOR_STRAIN                0x80
-////#define SDH_SENSOR_HR                0x40
-//#define SDH_SENSOR_VBATT                 0x20
-//#define SDH_SENSOR_LSM303DLHC_ACCEL      0x10
-//#define SDH_SENSOR_EXTCH15               0x08
-//#define SDH_SENSOR_INTCH1                0x04
-//#define SDH_SENSOR_INTCH12               0x02
-//#define SDH_SENSOR_INTCH13               0x01
-////SENSORS2
-//#define SDH_SENSOR_INTCH14               0x80
-//#define SDH_SENSOR_MPU9250_ACCEL         0x40
-//#define SDH_SENSOR_MPU9250_MAG           0x20
-//#define SDH_SENSOR_EXG1_16BIT            0x10
-//#define SDH_SENSOR_EXG2_16BIT            0x08
-//#define SDH_SENSOR_BMP180_PRES           0x04
-////#define SDH_SENSOR_BMP180_TEMP       0x02
-////SENSORS3
-//#define SDH_SENSOR_MSP430_TEMP           0x01
-//#define SDH_SENSOR_TCXO                  0x80
-//
-////SDH_TRIAL_CONFIG0
+/*
+//SENSORS0
+#define SDH_SENSOR_A_ACCEL               0x80
+#define SDH_SENSOR_MPU9250_GYRO          0x40
+#define SDH_SENSOR_LSM303DLHC_MAG        0x20
+#define SDH_SENSOR_EXG1_24BIT            0x10
+#define SDH_SENSOR_EXG2_24BIT            0x08
+#define SDH_SENSOR_GSR                   0x04
+#define SDH_SENSOR_EXTCH7                0x02
+#define SDH_SENSOR_EXTCH6                0x01
+//SENSORS1
+#define SDH_SENSOR_STRAIN                0x80
+//#define SDH_SENSOR_HR                0x40
+#define SDH_SENSOR_VBATT                 0x20
+#define SDH_SENSOR_LSM303DLHC_ACCEL      0x10
+#define SDH_SENSOR_EXTCH15               0x08
+#define SDH_SENSOR_INTCH1                0x04
+#define SDH_SENSOR_INTCH12               0x02
+#define SDH_SENSOR_INTCH13               0x01
+//SENSORS2
+#define SDH_SENSOR_INTCH14               0x80
+#define SDH_SENSOR_MPU9250_ACCEL         0x40
+#define SDH_SENSOR_MPU9250_MAG           0x20
+#define SDH_SENSOR_EXG1_16BIT            0x10
+#define SDH_SENSOR_EXG2_16BIT            0x08
+#define SDH_SENSOR_BMP180_PRES           0x04
+//#define SDH_SENSOR_BMP180_TEMP       0x02
+//SENSORS3
+#define SDH_SENSOR_MSP430_TEMP           0x01
+#define SDH_SENSOR_TCXO                  0x80
+
+//SDH_TRIAL_CONFIG0
+ */
 #define SDH_IAMMASTER                   0x02
-//#define SDH_TIME_SYNC                    0x04
-//#define SDH_TIME_STAMP                   0x08 //not used now, reserved as 1
-//#define SDH_RWCERROR_EN \
-//  0x10 //when 0, won't flash error. when 1, will flash error if RTC isn't set (RTC_offset == 0)
-////#define SDH_GYRO_BUTTON_ENABLE         0x10
-//#define SDH_USER_BUTTON_ENABLE 0x20
-//#define SDH_SET_PMUX           0x40 //not used now, reserved as 0
-//#define SDH_RTC_SET_BY_BT      0x80
-////SDH_TRIAL_CONFIG1
-//#define SDH_SINGLETOUCH        0x80
-////#define SDH_ACCEL_LPM                  0x40//config has this bit
-////#define SDH_ACCEL_HRM                  0x20//config has this bit
+/*
+#define SDH_TIME_SYNC                    0x04
+#define SDH_TIME_STAMP                   0x08 //not used now, reserved as 1
+#define SDH_RWCERROR_EN \
+  0x10 //when 0, won't flash error. when 1, will flash error if RTC isn't set (RTC_offset == 0)
+//#define SDH_GYRO_BUTTON_ENABLE         0x10
+#define SDH_USER_BUTTON_ENABLE 0x20
+#define SDH_SET_PMUX           0x40 //not used now, reserved as 0
+#define SDH_RTC_SET_BY_BT      0x80
+//SDH_TRIAL_CONFIG1
+#define SDH_SINGLETOUCH        0x80
+//#define SDH_ACCEL_LPM                  0x40//config has this bit
+//#define SDH_ACCEL_HRM                  0x20//config has this bit
+ */
 #define SDH_TCXO                        0x10
-////#define SDH_EXP_POWER                  0x08//config has this bit
-////#define SDH_MONITOR                    0x04
+/*
+//#define SDH_EXP_POWER                  0x08//config has this bit
+//#define SDH_MONITOR                    0x04
+ */
 
 #define MAX_CHARS                       13
 #define UINT32_LEN                      11 //10+1, where the last byte should be 0x00
@@ -443,11 +462,37 @@ NV_SENSORS5
 #define BATT_LOW                        0x01
 #define BATT_MID                        0x02
 #define BATT_HIGH                       0x04
-#define BATT_INTERVAL                   600 //600 seconds = 10min interval
-#define BATT_INTERVAL_D                 30  //30 seconds
+#if defined(SHIMMER4_SDK)
+#define BATT_INTERVAL   600 //600 seconds = 10min interval
+#define BATT_INTERVAL_D 30  //30 seconds
+#endif
 
-#define STAT_PERI_ADC                   0x01
-#define STAT_PERI_I2C_SENS              0x02
+#define BATTERY_ERROR_VOLTAGE_MAX 4500 //mV
+#define BATTERY_ERROR_VOLTAGE_MIN 3200 //mV
+
+enum
+{
+  //STAT2 = bit7, STAT1 = bit 6
+  CHRG_CHIP_STATUS_SUSPENDED = 0xC0,       //STAT2 high (off), STAT1 high (off)
+  CHRG_CHIP_STATUS_PRECONDITIONING = 0x80, //STAT2 high (off), STAT1 low (on)
+  CHRG_CHIP_STATUS_FULLY_CHARGED = 0x40,   //STAT2 low (on), STAT1 high (off)
+  CHRG_CHIP_STATUS_BAD_BATTERY = 0x00,     //STAT2 low (on), STAT1 low (on)
+  CHRG_CHIP_STATUS_UNKNOWN = 0xFF,
+};
+
+typedef enum
+{
+  CHARGING_STATUS_UNKNOWN,
+  CHARGING_STATUS_CHECKING,
+  CHARGING_STATUS_SUSPENDED,
+  CHARGING_STATUS_FULLY_CHARGED,
+  CHARGING_STATUS_CHARGING,
+  CHARGING_STATUS_BAD_BATTERY,
+  CHARGING_STATUS_ERROR
+} chargingStatus_t;
+
+#define STAT_PERI_ADC      0x01
+#define STAT_PERI_I2C_SENS 0x02
 #if defined(SHIMMER4_SDK)
 #define STAT_PERI_I2C_BATT 0x04
 #endif
@@ -467,38 +512,80 @@ NV_SENSORS5
 
 typedef volatile struct STATTypeDef_t
 { //STATUS
-  uint8_t isInitialising;
-  uint8_t isSensing;
-  uint8_t isDocked;
-  uint8_t isLogging;
-  uint8_t isStreaming;
-  uint8_t isConfiguring;
-  uint8_t isButtonPressed;
-  uint8_t isBtConnected;
-  uint8_t isBtPoweredOn;
-  uint8_t isSdInserted;
-  uint8_t isLedRed;
-  uint8_t isDockUartStep;
+  uint8_t initialising  : 1;
+  uint8_t docked        : 1;
+  uint8_t sensing       : 1;
+  uint8_t configuring   : 1;
+  uint8_t buttonPressed : 1;
+
+  uint8_t btConnected   : 1;
+  uint8_t btPowerOn     : 1;
+  uint8_t btStreaming   : 1;
+  uint8_t btstreamReady : 1;
+  uint8_t btstreamCmd   : 2;
+
+#if defined(SHIMMER3R)
+  uint8_t sdPeripheralInit : 1;
+#endif
+  uint8_t sdInserted : 1;
+  uint8_t sdPowerOn  : 1;
+#if defined(SHIMMER3R)
+  uint8_t sdMcu0Pc1 : 1;
+#endif
+  uint8_t sdLogging              : 1;
+  uint8_t sdlogReady             : 1;
+  uint8_t sdlogCmd               : 2;
+  uint8_t sdBadFile              : 1;
+  uint8_t sdSyncEnabled          : 1;
+  uint8_t sdSyncCommTimerRunning : 1;
+
+  uint8_t toggleLedRedCmd        : 1;
+#if defined(SHIMMER3R)
+  uint32_t testResult;
+  uint8_t pinPvI2c : 1;
+  uint8_t pinPvSd  : 1;
+  uint8_t pinPvExt : 1;
+  uint8_t periStat;
+#endif
+} STATTypeDef;
+
+typedef union
+{
+  uint8_t rawBytes[3];
+
+  struct __attribute__((packed))
+  {
+    uint16_t adcBattVal;
+
+    //STAT2 sits in Bit7 and STAT1 in Bit6
+    uint8_t unusedBits : 6;
+    uint8_t STAT1      : 1;
+    uint8_t STAT2      : 1;
+  };
+} BattStatusRaw;
+
+typedef volatile struct batt_status_t
+{
+  /* General battery level based on ADC voltage with buffered min/max values */
   uint8_t battStat;
+#if defined(SHIMMER3R)
+  /* LED colour to show when undocked based on the latest battStat */
   uint32_t battStatLed;
-  uint8_t battVal[3];
+  /* LED colour to show when docked */
+  uint32_t battStatLedCharging;
+  /* Lets the LED timer know whether the LED should flash or stay solid */
+  uint8_t battStatLedFlash : 1;
+#endif
+  /* The ADC value and charger status bytes which are sent via dock/BT */
+  BattStatusRaw battStatusRaw;
+  /* Latest measured battery voltage in mV */
   uint16_t battValMV;
+  /* Overall status based on batt mV, charger chip status and docked/undocked */
+  chargingStatus_t battChargingStatus;
 #if defined(SHIMMER4_SDK)
   uint8_t battDigital[10];
 #endif
-  uint8_t sdlogReady;
-  uint8_t btstreamReady;
-  uint8_t badFile;
-  uint8_t sdlogCmd;
-  uint8_t btstreamCmd;
-  uint8_t toggleLedRedCmd;
-  uint32_t testResult;
-  uint8_t pinPvI2c;
-  uint8_t pinPvSd;
-  uint8_t pinPvExt;
-  uint8_t periStat;
-  uint8_t syncEnabled;
-} STATTypeDef;
+} BattStatus;
 
 typedef enum
 {
@@ -515,6 +602,13 @@ typedef enum
   BOOT_STAGE_CONFIGURATION,
   BOOT_STAGE_END
 } boot_stage_t;
+
+enum
+{
+  SD_LOG_CMD_STATE_IDLE = 0,
+  SD_LOG_CMD_STATE_START = 1,
+  SD_LOG_CMD_STATE_STOP = 2
+};
 
 //typedef enum{//bt
 //   UART_BT_STAT_IDLE = 0,

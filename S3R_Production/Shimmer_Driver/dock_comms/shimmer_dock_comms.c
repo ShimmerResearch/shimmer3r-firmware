@@ -96,7 +96,7 @@ uint8_t DockUart_rxCallback(uint8_t data)
 #if defined(SHIMMER3)
   if (initializing)
 #else
-  if (shimmerStatus.isInitialising)
+  if (shimmerStatus.initialising)
 #endif
   {
     return 0;
@@ -197,13 +197,6 @@ uint8_t DockUart_rxCallback(uint8_t data)
 
 void DockUart_processCmd(void)
 {
-#if defined(SHIMMER4_SDK)
-  HAL_GPIO_TogglePin(GPIOG, GPIO_PIN_6); //green
-#elif defined(SHIMMER3R)
-  Board_ledLwrToggleColourRgb(LED_RGB_GREEN);
-#else
-#endif
-
   if (uartAction)
   {
 #if defined(SHIMMER3)
@@ -481,7 +474,9 @@ void DockUart_processCmd(void)
               uartSendRspAck = 1;
             }
             else
+            {
               uartSendRspBadArg = 1;
+            }
             break;
 #endif
           default:
@@ -643,7 +638,7 @@ void DockUart_sendRsp(void)
 #if defined(SHIMMER3)
     memcpy(uartRespBuf + uart_resp_len, battVal, 3);
 #else
-    memcpy(uartRespBuf + uart_resp_len, (uint8_t *) shimmerStatus.battVal, 3);
+    memcpy(&uartRespBuf[uart_resp_len], &batteryStatus.battStatusRaw.rawBytes[0], 3);
 #endif
     uart_resp_len += 3;
   }
@@ -711,7 +706,7 @@ void DockUart_sendRsp(void)
 #if defined(SHIMMER3)
       if (!sensing)
 #else
-      if (!shimmerStatus.isSensing)
+      if (!shimmerStatus.sensing)
 #endif
       {
         eepromRead(uartDcMemOffset + 16U, (uint16_t) uartDcMemLength,
@@ -789,7 +784,9 @@ void DockUart_sendRsp(void)
 uint8_t UartCheckCrc(uint8_t len)
 {
   if (len > UART_DATA_LEN_MAX)
+  {
     return 0;
+  }
   uint16_t uart_rx_crc, uart_calc_crc;
   uart_calc_crc = CRC_data(dockRxBuf, len);
   uart_rx_crc = (uint16_t) dockRxBuf[len];

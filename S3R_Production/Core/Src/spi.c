@@ -89,7 +89,7 @@ void MX_SPI1_Init(void)
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi1.Init.CRCPolynomial = 0x7;
-  hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   hspi1.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
   hspi1.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
   hspi1.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
@@ -154,7 +154,7 @@ void MX_SPI2_Init(void)
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi2.Init.CRCPolynomial = 0x7;
-  hspi2.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi2.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   hspi2.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
   hspi2.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
   hspi2.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
@@ -277,11 +277,11 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
 
     __HAL_RCC_GPIOE_CLK_ENABLE();
     /**SPI1 GPIO Configuration
-    PE13     ------> SPI1_SCK
     PE14     ------> SPI1_MISO
     PE15     ------> SPI1_MOSI
+    PE13     ------> SPI1_SCK
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
+    GPIO_InitStruct.Pin = GPIO_PIN_14 | GPIO_PIN_15 | GPIO_PIN_13;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -466,17 +466,25 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     __HAL_RCC_SPI3_CLK_ENABLE();
 
     __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOG_CLK_ENABLE();
     /**SPI3 GPIO Configuration
-    PB3 (JTDO/TRACESWO)     ------> SPI3_SCK
     PB4 (NJTRST)     ------> SPI3_MISO
+    PG9     ------> SPI3_SCK
     PB5     ------> SPI3_MOSI
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5;
+    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
+    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
     /* SPI3 DMA Init */
     /* GPDMA1_REQUEST_SPI3_TX Init */
@@ -556,11 +564,11 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *spiHandle)
     __HAL_RCC_SPI1_CLK_DISABLE();
 
     /**SPI1 GPIO Configuration
-    PE13     ------> SPI1_SCK
     PE14     ------> SPI1_MISO
     PE15     ------> SPI1_MOSI
+    PE13     ------> SPI1_SCK
     */
-    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
+    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_14 | GPIO_PIN_15 | GPIO_PIN_13);
 
     /* SPI1 DMA DeInit */
     HAL_DMA_DeInit(spiHandle->hdmatx);
@@ -606,11 +614,13 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *spiHandle)
     __HAL_RCC_SPI3_CLK_DISABLE();
 
     /**SPI3 GPIO Configuration
-    PB3 (JTDO/TRACESWO)     ------> SPI3_SCK
     PB4 (NJTRST)     ------> SPI3_MISO
+    PG9     ------> SPI3_SCK
     PB5     ------> SPI3_MOSI
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_4 | GPIO_PIN_5);
+
+    HAL_GPIO_DeInit(GPIOG, GPIO_PIN_9);
 
     /* SPI3 DMA DeInit */
     HAL_DMA_DeInit(spiHandle->hdmatx);
@@ -704,13 +714,22 @@ void SPI_configureChannels()
 
   if (configBytes->chEnPressureAndTemperature)
   {
+    nbr_spi_chans += 2; //TEMP & PRES, ON/OFF together
+#if defined(SHIMMER3R)
+    *channel_contents_ptr++ = BMP_PRESSURE;
+    *channel_contents_ptr++ = BMP_TEMPERATURE;
+    sensing.ptr.pressure = sensing.dataLen;
+    sensing.dataLen += 3;
+    sensing.ptr.temperature = sensing.dataLen;
+    sensing.dataLen += 3;
+#else
     *channel_contents_ptr++ = BMP_TEMPERATURE;
     *channel_contents_ptr++ = BMP_PRESSURE;
-    nbr_spi_chans += 2; //TEMP & PRES, ON/OFF together
     sensing.ptr.temperature = sensing.dataLen;
     sensing.dataLen += 3;
     sensing.ptr.pressure = sensing.dataLen;
     sensing.dataLen += 3;
+#endif
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_BMP390_PRESSURE_TEMP;
   }
 
@@ -862,7 +881,7 @@ void SPI_startSensing()
 
   if (configBytes->chEnPressureAndTemperature)
   {
-    bmp3_configure(shimmerSamplingFreq, configBytes->pressureRate,
+    int8_t rslt = bmp3_configure(shimmerSamplingFreq, configBytes->pressureRate,
         get_config_byte_pressure_oversampling_ratio());
   }
 
@@ -1206,7 +1225,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
     bmp3_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.temperature,
+    memcpy(sensing.dataBuf + sensing.ptr.pressure,
         &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;

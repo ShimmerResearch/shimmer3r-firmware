@@ -72,16 +72,19 @@ void setHwId(uint8_t hwIdToSet);
 void setDaugherCardIdPage(uint8_t *pagePtr);
 uint8_t isAds1292Present(void);
 uint8_t isAds1292PresentForSrId(uint8_t srId);
+#if defined(SHIMMER3)
 uint8_t isRn4678PresentAndCmdModeSupport(uint8_t srId, uint8_t srRev, uint8_t srRevSpecial);
 uint8_t isSubstitutionNeededForWrAccel(uint8_t srId, uint8_t srRevMajor, uint8_t srRevMinor);
 uint8_t are2ndGenImuSensorsPresent(void);
 uint8_t are2ndGenSensorsPresentAndUnknownBoard(uint8_t srId);
 uint8_t areGsrControlsPinsReversed(uint8_t srId, uint8_t srRevMajor, uint8_t srRevMinor);
+#endif
 void parseDaughterCardId(uint8_t srId);
 shimmer_expansion_brd *getDaughtCardId(void);
 char *getDaughtCardIdStrPtr(void);
 uint8_t isDaughterCardIdSet(void);
 
+#if defined(SHIMMER3)
 void setWrAccelAndMagInUse(uint8_t wr_accel_and_mag_in_use);
 uint8_t isWrAccelInUseLsm303dlhc(void);
 uint8_t isWrAccelInUseLsm303ahtr(void);
@@ -90,13 +93,23 @@ uint8_t isWrAccelInUseIcm20948(void);
 void setGyroInUse(uint8_t gyro_in_use);
 uint8_t isGyroInUseMpu9x50(void);
 uint8_t isGyroInUseIcm20948(void);
+#endif
 
 void setEepromIsPresent(uint8_t eeprom_is_preset);
 uint8_t isEepromIsPresent(void);
 
+#if defined(SHIMMER3)
 uint8_t isLnAccelKxtc9_2050Present(void);
+#endif
 
 uint8_t isBmp180InUse(void);
 uint8_t isBmp280InUse(void);
+
+#if defined(SHIMMER3R)
+uint8_t isAdxl371Present(void);
+uint8_t isI2c4Supported(void);
+uint8_t isBoardSr48_6_0(void);
+uint8_t isBoardSrNumber(uint8_t exp_brd_id, uint8_t exp_brd_rev, uint8_t exp_brd_special_rev);
+#endif
 
 #endif /* SHIMMER3_COMMON_SOURCE_SHIMMER_BOARDS_SHIMMER_BOARDS_H_ */

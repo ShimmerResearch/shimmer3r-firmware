@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "sdmmc.h"
-#include "shimmer_definitions.h"
 
 /* USER CODE BEGIN 0 */
 #include "gpio.h"
@@ -44,8 +43,8 @@ void MX_SDMMC1_SD_Init(void)
 
   //Initialise will fail if an SD card is not detected
   SD_insertedCheck();
-  shimmerStatus.badFile = 1;
-  if (shimmerStatus.isSdInserted)
+  shimmerStatus.sdBadFile = 1;
+  if (shimmerStatus.sdInserted)
   {
     /* USER CODE END SDMMC1_Init 1 */
     hsd1.Instance = SDMMC1;
@@ -61,7 +60,8 @@ void MX_SDMMC1_SD_Init(void)
     /* USER CODE BEGIN SDMMC1_Init 2 */
     else
     {
-      shimmerStatus.badFile = 0;
+      shimmerStatus.sdBadFile = 0;
+      shimmerStatus.sdPeripheralInit = 1;
     }
   }
   /* USER CODE END SDMMC1_Init 2 */
@@ -91,30 +91,36 @@ void HAL_SD_MspInit(SD_HandleTypeDef *sdHandle)
     /* SDMMC1 clock enable */
     __HAL_RCC_SDMMC1_CLK_ENABLE();
 
-    __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOD_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
     /**SDMMC1 GPIO Configuration
-    PC8     ------> SDMMC1_D0
-    PC9     ------> SDMMC1_D1
-    PC10     ------> SDMMC1_D2
+    PD2     ------> SDMMC1_CMD
     PC11     ------> SDMMC1_D3
     PC12     ------> SDMMC1_CK
-    PD2     ------> SDMMC1_CMD
+    PC10     ------> SDMMC1_D2
+    PC9     ------> SDMMC1_D1
+    PC8     ------> SDMMC1_D0
     */
-    GPIO_InitStruct.Pin = SDMMC1_D0_Pin | SDMMC1_D1_Pin | SDMMC1_D2_Pin
-        | SDMMC1_D3_Pin | SDMMC1_CK_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
     GPIO_InitStruct.Pin = SDMMC1_CMD_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
     HAL_GPIO_Init(SDMMC1_CMD_GPIO_Port, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = SDMMC1_D3_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
+    HAL_GPIO_Init(SDMMC1_D3_GPIO_Port, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = SDMMC1_CK_Pin | SDMMC1_D2_Pin | SDMMC1_D1_Pin | SDMMC1_D0_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     /* SDMMC1 interrupt Init */
     HAL_NVIC_SetPriority(SDMMC1_IRQn, 6, 0);
@@ -137,17 +143,17 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef *sdHandle)
     __HAL_RCC_SDMMC1_CLK_DISABLE();
 
     /**SDMMC1 GPIO Configuration
-    PC8     ------> SDMMC1_D0
-    PC9     ------> SDMMC1_D1
-    PC10     ------> SDMMC1_D2
+    PD2     ------> SDMMC1_CMD
     PC11     ------> SDMMC1_D3
     PC12     ------> SDMMC1_CK
-    PD2     ------> SDMMC1_CMD
+    PC10     ------> SDMMC1_D2
+    PC9     ------> SDMMC1_D1
+    PC8     ------> SDMMC1_D0
     */
-    HAL_GPIO_DeInit(GPIOC,
-        SDMMC1_D0_Pin | SDMMC1_D1_Pin | SDMMC1_D2_Pin | SDMMC1_D3_Pin | SDMMC1_CK_Pin);
-
     HAL_GPIO_DeInit(SDMMC1_CMD_GPIO_Port, SDMMC1_CMD_Pin);
+
+    HAL_GPIO_DeInit(GPIOC,
+        SDMMC1_D3_Pin | SDMMC1_CK_Pin | SDMMC1_D2_Pin | SDMMC1_D1_Pin | SDMMC1_D0_Pin);
 
     /* SDMMC1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(SDMMC1_IRQn);
@@ -158,6 +164,15 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef *sdHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+void mmc1DeInit(void)
+{
+  if (shimmerStatus.sdPeripheralInit)
+  {
+    HAL_SD_DeInit(&hsd1);
+    shimmerStatus.sdPeripheralInit = 0;
+  }
+}
 
 void printSdCardInfo(char *outputStr)
 {

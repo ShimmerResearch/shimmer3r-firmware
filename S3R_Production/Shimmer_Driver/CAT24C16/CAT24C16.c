@@ -44,51 +44,27 @@
  */
 
 #include "CAT24C16.h"
-#include "hal_Board.h"
-#include <shimmer_include.h>
 
-I2C_HandleTypeDef *eeprom_hi2c;
-HAL_StatusTypeDef cat24c16_result;
-#if !IS_CONNECTED_EEPROM
-uint8_t eepromContents[512] = { 0 };
-#endif
+#include <stdlib.h>
+#include <string.h>
 
-void CAT24C16_init(I2C_HandleTypeDef *hi2c)
+int32_t CAT24C16_read(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length, uint8_t *outBuffer)
 {
-  eeprom_hi2c = hi2c;
+  if ((!length) || (length > CAT24C16_TOTAL_SIZE) || (address + length > CAT24C16_TOTAL_SIZE))
+  {
+    return CAT24C16_OUT_OF_BOUNDS_ERROR;
+  }
+  return ctx->read(ctx->handle, address, length, outBuffer);
 }
 
-void CAT24C16_powerOn(void)
+int32_t CAT24C16_write(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length, uint8_t *data)
 {
-  Board_enableSensingPower(1);
-  MX_I2C1_Init();
-}
+  if ((!length) || (length > CAT24C16_TOTAL_SIZE) || (address + length > CAT24C16_TOTAL_SIZE))
+  {
+    return CAT24C16_OUT_OF_BOUNDS_ERROR;
+  }
 
-void CAT24C16_powerOff(void)
-{
-  HAL_Delay(5); //5ms to ensure no writes pending
-  I2C1_DeInit();
-  Board_enableSensingPower(0);
-}
-
-void CAT24C16_read(uint16_t address, uint16_t length, uint8_t *outBuffer)
-{
-  if ((!length) || (length > 2048) || (address + length > 2048))
-    return;
-  //I2C_Set_Slave_Address(CAT24C16_ADDR|(address>>8));
-  uint8_t addr_hi = CAT24C16_ADDR | (address >> 8);
-  uint8_t addr_lo = address & 0xff;
-
-  cat24c16_result = HAL_I2C_Master_Transmit(eeprom_hi2c, addr_hi << 1, &addr_lo, 1, 1000);
-  cat24c16_result
-      = HAL_I2C_Master_Receive(eeprom_hi2c, addr_hi << 1, outBuffer, length, 1000);
-}
-
-void CAT24C16_write(uint16_t address, uint16_t length, uint8_t *data)
-{
-  if ((!length) || (length > 2048) || (address + length > 2048))
-    return;
-
+  int32_t result = 0;
   uint8_t addr_hi = CAT24C16_ADDR | (address >> 8);
   //uint8_t addr_lo = address & 0xff;
 
@@ -122,109 +98,70 @@ void CAT24C16_write(uint16_t address, uint16_t length, uint8_t *data)
     memcpy(buf + 1, data + buf_offset, this_write);
 
     //Write to EEPROM:
-    cat24c16_result = HAL_I2C_Master_Transmit(
-        eeprom_hi2c, addr_hi << 1, buf, this_write + 1, 1000);
-    HAL_Delay(5);
-
-    __NOP();
+    result = ctx->write(ctx->handle, addr_hi << 1, this_write + 1, buf);
+    if (result)
+    {
+      break;
+    }
+    ctx->mdelay(5);
 
     mem_ptr += this_write;
     buf_offset += this_write;
 
     //if reaches edge of flash mem, reassign the slave address
     if (!(mem_ptr % CAT24C16_BLOCK_SIZE))
+    {
       inc_addr = 1;
+    }
   }
+
+  return result;
 }
 
-//#if HAL_TEST_EEPROM
-#include <stdlib.h>
-
-//returns 0 if successful, 1 if failure
-uint8_t CAT24C16_test(void)
+uint8_t CAT24C16_test(cat24c16dev_ctx_t *ctx)
 {
+  int32_t result = 0;
   uint16_t i, j = 0;
-  uint8_t ret_val = 0;
   uint8_t test_eeprom_backup[CAT24C16_TEST_SIZE];
   uint8_t test_eeprom_wr[CAT24C16_TEST_SIZE];
   uint8_t test_eeprom_rd[CAT24C16_TEST_SIZE];
 
-  CAT24C16_read(CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup);
+  result = CAT24C16_read(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup);
+  if (result)
+  {
+    return EEPROM_TEST_FAIL_INITIAL_BACKUP;
+  }
 
   while (j++ < 3)
   {
-    srand((unsigned) SysTick->VAL);
+    srand((unsigned) ctx->sys_tick);
     for (i = 0; i < CAT24C16_TEST_SIZE; i++)
     {
       test_eeprom_wr[i] = rand();
     }
     memset(test_eeprom_rd, 0, CAT24C16_TEST_SIZE);
-    CAT24C16_write(CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_wr);
-    CAT24C16_read(CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_rd);
-
-    ret_val = memcmp(test_eeprom_wr, test_eeprom_rd, CAT24C16_TEST_SIZE);
-    if (ret_val)
+    result = CAT24C16_write(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_wr);
+    if (result)
     {
-      break;
+      return EEPROM_TEST_FAIL_WRITING_BUF;
+    }
+    result = CAT24C16_read(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_rd);
+    if (result)
+    {
+      return EEPROM_TEST_FAIL_READING_BUF;
+    }
+
+    if (memcmp(test_eeprom_wr, test_eeprom_rd, CAT24C16_TEST_SIZE))
+    {
+      return EEPROM_TEST_FAIL_BUF_COMPARISON;
     }
   }
 
-  CAT24C16_write(CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup);
-
-  return ret_val;
-}
-
-//#else
-//uint8_t CAT24C16_test(void){
-//   // always return success
-//   return 0;
-//}
-//#endif //HAL_TEST_EEPROM
-
-void eepromRead(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf)
-{
-  eepromReadWrite(dataAddr, dataSize, dataBuf, EEPROM_READ);
-}
-
-void eepromWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf)
-{
-  eepromReadWrite(dataAddr, dataSize, dataBuf, EEPROM_WRITE);
-}
-
-void eepromReadWrite(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf, enum EEPROM_RW eepromRW)
-{
-#if IS_CONNECTED_EEPROM
-  CAT24C16_powerOn();
-
-  //EEPROM needs to be updated with latest bt baud rate, configure here
-  if (eepromRW == EEPROM_READ)
+  result = CAT24C16_write(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup);
+  if (result)
   {
-    CAT24C16_read(dataAddr, dataSize, dataBuf);
-  }
-  else
-  {
-    CAT24C16_write(dataAddr, dataSize, dataBuf);
+    return EEPROM_TEST_FAIL_RESTORING_BACKUP;
   }
 
-  //Wind down EEPROM and required timing peripherals
-  CAT24C16_powerOff();
-#else
-  if (eepromRW == EEPROM_READ)
-  {
-    memcpy(dataBuf, &eepromContents[dataAddr], dataSize);
-  }
-  else
-  {
-    memcpy(&eepromContents[dataAddr], dataBuf, dataSize);
-  }
-#endif
+  return EEPROM_TEST_PASS;
 }
-
-#if !IS_CONNECTED_EEPROM
-void setMockExpansionBrdDetails(void)
-{
-  eepromContents[0] = EXP_BRD_PROTO3_DELUXE; //0xFF
-  eepromContents[1] = 9;                     //0xFF
-  eepromContents[2] = 0;                     //0xFF
-}
-#endif

@@ -12,13 +12,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BMP_LEN_CALIB_DATA BMP3_LEN_CALIB_DATA
+#define BMP_LEN_CALIB_DATA   BMP3_LEN_CALIB_DATA
+
+#define BMP390_TEMP_SKIPPED  0x800000
+#define BMP390_PRESS_SKIPPED 0x800000
 
 void bmp3_driver_init(void);
 void bmp3_selectDevice(void);
 void bmp3_unselectDevice(void);
 int8_t bmp3_self_test(void);
-void bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSamplingRatio);
+int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSamplingRatio);
 HAL_StatusTypeDef bmp3_pressure_temperature_get(uint8_t *buf);
 bool bmp3_is_drdy_int_enabled(void);
 bool bmp3_is_shimmer_freq_higher(float shimmerSamplingFreq, uint8_t rate);

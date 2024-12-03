@@ -445,7 +445,9 @@ uint8_t GetSdCfgFlag(void)
   if (!(sd_config_delay_flag & 0x80))
   {
     if (sd_config_delay_flag & 0x01)
+    {
       return 1;
+    }
   }
   return 0;
 }

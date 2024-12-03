@@ -104,30 +104,48 @@ bool btIsInitialised, btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 static char hexdigit2int(uint8_t xd)
 {
   if (xd <= 9)
+  {
     return xd + '0';
+  }
   if (xd == 10)
+  {
     return 'A';
+  }
   if (xd == 11)
+  {
     return 'B';
+  }
   if (xd == 12)
+  {
     return 'C';
+  }
   if (xd == 13)
+  {
     return 'D';
+  }
   if (xd == 14)
+  {
     return 'E';
+  }
   if (xd == 15)
+  {
     return 'F';
+  }
   return '0';
 }
 
 static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator)
 {
   if (reverse)
+  {
     data += bytes;
+  }
   while (bytes)
   {
     if (reverse)
+    {
       data--;
+    }
     //printf(((*data >> 4) & 0xF) < 10 ? ('0' + ((*data >> 4) & 0xF)) : ('A' - 10 + ((*data >> 4) & 0xF)));
     //printf(( *data       & 0xF) < 10 ? ('0' + ( *data       & 0xF)) : ('A' - 10 + ( *data       & 0xF)));
 
@@ -137,18 +155,41 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
     printf("%c", (*data & 0xF) < 10 ? ('0' + (*data & 0xF)) : ('A' - 10 + (*data & 0xF)));
 
     if (!reverse)
+    {
       data++;
+    }
     bytes--;
     if (bytes && separator)
+    {
       printf("%c", separator);
+    }
   }
 }
 
-void btInit(void)
+void btInit(uint32_t baudRate, uint8_t factoryReset)
 {
-  btInitCmdsRunning = 1;
-  btInitCmdsStep = WAIT_FOR_BOOT;
-  btIsInitialised = false;
+  if (factoryReset)
+  {
+    btFactoryResetCmdsRunning = 1;
+    btFactoryResetCmdsStep = FR_WAIT_FOR_BOOT;
+    btIsFactoryResetted = false;
+  }
+  else
+  {
+    btInitCmdsRunning = 1;
+    btInitCmdsStep = WAIT_FOR_BOOT;
+    btIsInitialised = false;
+  }
+
+  initBtPins();
+  //Enable BT power
+  setBtPower(1);
+  //TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
+  HAL_Delay(10);
+  Board_BT_LP_MODE(1);
+  Board_BT_CP_ROLE(1);
+
+  BtUart_init(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
 
   /* packet pointer for working with response/event data */
   //ezs_packet_t *packet;
@@ -160,55 +201,28 @@ void btInit(void)
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
 
+  //TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
+  HAL_Delay(10);
+  /* Setting DMA waiting for first char from BT module */
   HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+  /* Allow BT module to boot */
+  Board_BT_RST_N(1);
 
-  btInitCommands();
+  if (factoryReset)
+  {
+    btFactoryResetCommands();
+  }
+  else
+  {
+    btInitCommands();
+  }
+}
 
-  //if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_query_firmware_version(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) == 0)
-  //{
-  //  /* "system_ping" response packet not received */
-  //  printf("FW request timed out, check communication settings and reset module\r\n");
-  //}
-  //else
-  //{
-  //  /* "system_ping" response packet received */
-  //  printf("FW request successful\r\n");
-  //}
-  //
-  //if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_system_get_bluetooth_address(), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-  //{
-  //  /* "system_ping" response packet received */
-  //  printf("BT address request successful\r\n");
-  //}
-  //
-  //if ((packet = EZS_SEND_AND_WAIT(ezs_cmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-  //{
-  // /*"system_ping" response packet received*/
-  //printf("Device name set successful\r\n");
-  //}
-
-  /*
-    uint8_t nameAry[] = {14, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r', '-', '7', '4', '6', '2'};
-    if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(1U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-    {
-      printf("Device name set successful\r\n");
-    }
-
-    if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_name(0U, &nameAry[0]), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-    {
-      printf("Device name set successful\r\n");
-    }
-
-    if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_get_device_name(1U), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-    {
-      printf("Device name get successful\r\n");
-    }
-
-    if ((packet = EZS_SEND_AND_WAIT(ezs_fcmd_gap_set_device_appearance(0x0540), COMMAND_TIMEOUT_MS*HAL_GetTickFreq())) != 0)
-    {
-      printf("Device Appearance set successful\r\n");
-    }
-  */
+void btDeinit(void)
+{
+  setBtPower(0);
+  btUart_deint();
+  deinitBtPins();
 }
 
 //TODO set appropriate values for setDmaRx() calls
@@ -217,14 +231,18 @@ void btInitCommands(void)
   if (btInitCmdsStep == WAIT_FOR_BOOT)
   {
     btInitCmdsStep++;
-    //// TODO will be needed once we can turn the module on/off
-    //setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
-    //return;
+    //Only ASCII boot message currently working so had to implement our own
+    //approach setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+    setWaitingForBtBoot(1);
+    return;
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)
   {
     btInitCmdsStep++;
+
+    printf("Boot Msgs=\r\n%s", getBtBootMsgPtr());
+
     printf("Update UART Stage1\r\n");
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS);
     ezs_cmd_system_get_uart_parameters(UART_TYPE_PUART);
@@ -263,7 +281,7 @@ void btInitCommands(void)
     {
       printf("Update UART Stage3\r\n");
       //TODO resolve reference
-      usartBtUpdate(rsp_system_get_uart_parameters_ref.baud,
+      BtUart_update(rsp_system_get_uart_parameters_ref.baud,
           rsp_system_get_uart_parameters_ref.flow);
     }
   }
@@ -560,30 +578,14 @@ void btInitCommands(void)
   }
 }
 
-void btFactoryResetInit(void)
-{
-  btFactoryResetCmdsRunning = 1;
-  btFactoryResetCmdsStep = FR_WAIT_FOR_BOOT;
-  btIsFactoryResetted = false;
-
-  resetEzsPendingResponse();
-
-  /* initialize EZ-Serial interface and callbacks */
-  EZSerial_Init(appHandler, appOutput, appInput);
-
-  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
-
-  btFactoryResetCommands();
-}
-
 void btFactoryResetCommands(void)
 {
   if (btFactoryResetCmdsStep == FR_WAIT_FOR_BOOT)
   {
     btFactoryResetCmdsStep++;
-    //// TODO will be needed once we can turn the module on/off
-    //setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
-    //return;
+    //Only ASCII boot message currently working so had to implement our own
+    //approach setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+    setWaitingForBtBoot(1);
   }
 
   if (btFactoryResetCmdsStep == FR_GET_BT_MAC_ID)
@@ -614,7 +616,7 @@ void btFactoryResetCommands(void)
     btFactoryResetCmdsStep++;
     printf("Update UART to factory default\r\n");
     //TODO resolve reference
-    usartBtUpdate(115200, 0);
+    BtUart_update(115200, 0);
     HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
   }
 
@@ -1034,19 +1036,27 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     /* -------- Shimmer added end -------- */
 
   default:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    //#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: unhandled packet: ");
     printHex8(packet->header.group);
     printf("/");
     printHex8(packet->header.id);
     printf("\r\n");
-#endif
+    //#endif
     break;
   }
 
   //printf("\r\n");
 
-  if ((btInitCmdsRunning || btFactoryResetCmdsRunning) && packet->tbl_index == expectedResponseIdx)
+  if (packet->tbl_index == expectedResponseIdx)
+  {
+    progressToNextBtInCmd();
+  }
+}
+
+void progressToNextBtInCmd(void)
+{
+  if (btInitCmdsRunning || btFactoryResetCmdsRunning)
   {
     /* Set the expected response to be invalid */
     setExpectedResponse(EZS_IDX_EVT_MAX);
@@ -1105,16 +1115,6 @@ void setBtCysppState(bool state)
 bool getBtCysppState(void)
 {
   return btCysppState;
-}
-
-void setBtLpMode(bool allowLowPower)
-{
-  //TODO get working and update default LP_MODE pin state appropriately in CubeMX
-  //TODO move out of this driver file
-  //HAL_GPIO_WritePin(BT_LP_MODE_GPIO_Port, BT_LP_MODE_Pin, allowLowPower ? GPIO_PIN_RESET : GPIO_PIN_SET);
-
-  //TODO remove or update delay when value known
-  //HAL_Delay(100);
 }
 
 uint8_t *BT_getCyw20820MacAddressPtr(void)
