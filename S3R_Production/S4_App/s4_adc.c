@@ -70,9 +70,9 @@ uint32_t adc_battVal, adcBufSens[12], adcBufResv[12]; //max 12 channels, each of
 #endif
 //uint32_t adcBuf3[12];
 uint8_t gsrActiveResistor;
-uint8_t adcConfig;
 
 #if defined(SHIMMER4_SDK)
+uint8_t adcConfig;
 uint32_t battInterval = BATT_INTERVAL_D;
 #endif
 uint8_t battCriticalCount = 0;
@@ -96,8 +96,8 @@ void S4_NORM_ADC_init(void)
 #elif defined(SHIMMER4_SDK)
   adc.chanCntResv = adc.chanCntSens = adc.chanCntBatt = 0;
   memset(&hadcResv, 0, sizeof(ADC_HandleTypeDef)); //= 0;//&hadc1;
-#endif
   adcConfig = ADC_CONFIG_NONE;
+#endif
 #if defined(SHIMMER3R)
   hadcSensPtr = getHadc1();
   hadcBattPtr = getHadc2();
@@ -339,12 +339,18 @@ void S4_NORM_ADC_startSensing()
 {
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
   ADC_ChannelConfTypeDef sConfig = { 0 };
+
+  if (configBytes->expansionBoardPower)
+  {
+    Board_SW_EXP_BRD_POWER(1);
+  }
+
 #if defined(SHIMMER3R)
   uint8_t adc_counter_sens = 0; //adc channel rank counter
 #elif defined(SHIMMER4_SDK)
   uint8_t adc_counter_sens = 1; //adc channel rank counter
-#endif
   adcConfig = ADC_CONFIG_SENS;
+#endif
 
   initSensAdc(adc.sensorLen);
 
@@ -406,8 +412,6 @@ void S4_NORM_ADC_startSensing()
     configBytes->chEnIntADC0 = 1;
     configBytes->chEnIntADC4 = 1;
     HAL_GPIO_WritePin(SW_PPG_EN_GPIO_Port, SW_PPG_EN_Pin, GPIO_PIN_SET);
-#elif defined(SHIMMER3R)
-    Board_SW_PPG(1);
 #endif
   }
   if (configBytes->chEnBridgeAmp)
@@ -417,8 +421,6 @@ void S4_NORM_ADC_startSensing()
     configBytes->chEnIntADC1 = 1;
     configBytes->chEnIntADC2 = 1;
     HAL_GPIO_WritePin(SW_STRAIN_GAUGE_GPIO_Port, SW_STRAIN_GAUGE_Pin, GPIO_PIN_SET);
-#elif defined(SHIMMER3R)
-    Board_SW_STRAIN_GUAGE(1);
 #endif
   }
   if (configBytes->chEnGsr)
@@ -965,6 +967,9 @@ void S4_NORM_ADC_stopSensing()
 
   HAL_ADC_Stop_DMA(hadcSensPtr);
   HAL_ADC_DeInit(hadcSensPtr);
+
+  Board_SW_EXP_BRD_POWER(0);
+
 #if defined(SHIMMER4_SDK)
   //Analog Accel (KXRB5-2042)
   HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
@@ -974,16 +979,12 @@ void S4_NORM_ADC_stopSensing()
   {
 #if defined(SHIMMER4_SDK)
     HAL_GPIO_WritePin(SW_PPG_EN_GPIO_Port, SW_PPG_EN_Pin, GPIO_PIN_RESET);
-#elif defined(SHIMMER3R)
-    Board_SW_PPG(0);
 #endif
   }
   if (configBytes->chEnBridgeAmp)
   {
 #if defined(SHIMMER4_SDK)
     HAL_GPIO_WritePin(SW_STRAIN_GAUGE_GPIO_Port, SW_STRAIN_GAUGE_Pin, GPIO_PIN_RESET);
-#elif defined(SHIMMER3R)
-    Board_SW_STRAIN_GUAGE(0);
 #endif
   }
   if (configBytes->chEnGsr)
@@ -999,8 +1000,8 @@ void S4_NORM_ADC_stopSensing()
     HAL_ADC_Stop_DMA(&hadcResv);
     HAL_ADC_DeInit(&hadcResv);
   }
-#endif
   adcConfig = ADC_CONFIG_NONE;
+#endif
 }
 
 void S4_NORM_ADC_rankBatt(void)
