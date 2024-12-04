@@ -24,7 +24,9 @@
 
 #include "gpdma.h"
 #include "hal_Board.h"
-int16_t micDataBuffer[100];
+#include "pcm_config.h"
+#include "pcm_lowlevel.h"
+int16_t micDataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE];
 /* USER CODE END 0 */
 
 MDF_HandleTypeDef AdfHandle0;
@@ -49,13 +51,13 @@ void MX_ADF1_Init(void)
   AdfHandle0.Init.CommonParam.ProcClockDivider = 1;
   AdfHandle0.Init.CommonParam.OutputClock.Activation = ENABLE;
   AdfHandle0.Init.CommonParam.OutputClock.Pins = MDF_OUTPUT_CLOCK_0;
-  AdfHandle0.Init.CommonParam.OutputClock.Divider = 1;
-  AdfHandle0.Init.CommonParam.OutputClock.Trigger.Activation = DISABLE;
+  AdfHandle0.Init.CommonParam.OutputClock.Divider = 10;
+  AdfHandle0.Init.CommonParam.OutputClock.Trigger.Activation = ENABLE;
   AdfHandle0.Init.SerialInterface.Activation = ENABLE;
   AdfHandle0.Init.SerialInterface.Mode = MDF_SITF_NORMAL_SPI_MODE;
   AdfHandle0.Init.SerialInterface.ClockSource = MDF_SITF_CCK0_SOURCE;
   AdfHandle0.Init.SerialInterface.Threshold = 31;
-  AdfHandle0.Init.FilterBistream = MDF_BITSTREAM0_FALLING;
+  AdfHandle0.Init.FilterBistream = MDF_BITSTREAM0_RISING;
   if (HAL_MDF_Init(&AdfHandle0) != HAL_OK)
   {
     Error_Handler();
@@ -69,8 +71,8 @@ void MX_ADF1_Init(void)
   AdfFilterConfig0.DataSource = MDF_DATA_SOURCE_BSMX;
   AdfFilterConfig0.Delay = 0;
   AdfFilterConfig0.CicMode = MDF_ONE_FILTER_SINC5;
-  AdfFilterConfig0.DecimationRatio = 2;
-  AdfFilterConfig0.Gain = 0;
+  AdfFilterConfig0.DecimationRatio = 24;
+  AdfFilterConfig0.Gain = 6;
   AdfFilterConfig0.ReshapeFilter.Activation = ENABLE;
   AdfFilterConfig0.ReshapeFilter.DecimationRatio = MDF_RSF_DECIMATION_RATIO_4;
   AdfFilterConfig0.HighPassFilter.Activation = ENABLE;
@@ -94,7 +96,7 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef *mdfHandle)
   if (IS_ADF_INSTANCE(mdfHandle->Instance))
   {
     /* USER CODE BEGIN ADF1_MspInit 0 */
-
+    __HAL_RCC_ADF1_CONFIG(RCC_ADF1CLKSOURCE_PLL3);
     /* USER CODE END ADF1_MspInit 0 */
 
     /** Initializes the peripherals clock
@@ -181,10 +183,10 @@ void micDmaStart(void)
 {
   MDF_DmaConfigTypeDef micDmaConfig;
   micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
-  micDmaConfig.DataLength = 2U;
+  micDmaConfig.DataLength = PCM_REC_BUFF_SIZE ;
   micDmaConfig.MsbOnly = ENABLE;
 
-  HAL_Delay(200);
+  HAL_Delay(500);
 
   if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
   {

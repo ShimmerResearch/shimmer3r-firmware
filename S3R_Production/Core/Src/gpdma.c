@@ -74,7 +74,7 @@ void MX_GPDMA1_Init(void)
   handle_GPDMA1_Channel11.InitLinkedList.LinkStepMode = DMA_LSM_FULL_EXECUTION;
   handle_GPDMA1_Channel11.InitLinkedList.LinkAllocatedPort = DMA_LINK_ALLOCATED_PORT0;
   handle_GPDMA1_Channel11.InitLinkedList.TransferEventMode = DMA_TCEM_LAST_LL_ITEM_TRANSFER;
-  handle_GPDMA1_Channel11.InitLinkedList.LinkedListMode = DMA_LINKEDLIST_CIRCULAR;
+  handle_GPDMA1_Channel11.InitLinkedList.LinkedListMode = DMA_LINKEDLIST_NORMAL;
   if (HAL_DMAEx_List_Init(&handle_GPDMA1_Channel11) != HAL_OK)
   {
     Error_Handler();
