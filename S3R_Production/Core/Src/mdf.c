@@ -183,7 +183,7 @@ void micDmaStart(void)
 {
   MDF_DmaConfigTypeDef micDmaConfig;
   micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
-  micDmaConfig.DataLength = PCM_REC_BUFF_SIZE ;
+  micDmaConfig.DataLength = PCM_REC_BUFF_SIZE;
   micDmaConfig.MsbOnly = ENABLE;
 
   HAL_Delay(500);
