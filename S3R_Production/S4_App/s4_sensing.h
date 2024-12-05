@@ -120,7 +120,9 @@ extern SENSINGTypeDef sensing;
 void S4Sens_init(void);
 SENSINGTypeDef *S4Sens_getSensing(void);
 void S4Sens_configureChannels(void);
-void overWriteDefaultConfig(void);
+#if OLD_CONSENSYS_SUPPORT
+void overwriteDefaultConfig(void);
+#endif
 uint8_t S4Sens_checkStartSensorConditions(void);
 uint8_t S4Sens_checkStartLoggingConditions(void);
 uint8_t S4Sens_checkStartStreamingConditions(void);
