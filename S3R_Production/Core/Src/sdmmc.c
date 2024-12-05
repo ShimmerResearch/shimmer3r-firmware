@@ -46,18 +46,18 @@ void MX_SDMMC1_SD_Init(void)
   shimmerStatus.sdBadFile = 1;
   if (shimmerStatus.sdInserted)
   {
-  /* USER CODE END SDMMC1_Init 1 */
-  hsd1.Instance = SDMMC1;
-  hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
-  hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
-  hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
-  hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd1.Init.ClockDiv = 2;
-  if (HAL_SD_Init(&hsd1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SDMMC1_Init 2 */
+    /* USER CODE END SDMMC1_Init 1 */
+    hsd1.Instance = SDMMC1;
+    hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
+    hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
+    hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
+    hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
+    hsd1.Init.ClockDiv = 2;
+    if (HAL_SD_Init(&hsd1) != HAL_OK)
+    {
+      Error_Handler();
+    }
+    /* USER CODE BEGIN SDMMC1_Init 2 */
     else
     {
       shimmerStatus.sdBadFile = 0;
@@ -65,23 +65,22 @@ void MX_SDMMC1_SD_Init(void)
     }
   }
   /* USER CODE END SDMMC1_Init 2 */
-
 }
 
-void HAL_SD_MspInit(SD_HandleTypeDef* sdHandle)
+void HAL_SD_MspInit(SD_HandleTypeDef *sdHandle)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  if(sdHandle->Instance==SDMMC1)
+  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
+  if (sdHandle->Instance == SDMMC1)
   {
-  /* USER CODE BEGIN SDMMC1_MspInit 0 */
+    /* USER CODE BEGIN SDMMC1_MspInit 0 */
 
-  /* USER CODE END SDMMC1_MspInit 0 */
+    /* USER CODE END SDMMC1_MspInit 0 */
 
-  /** Initializes the peripherals clock
-  */
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SDMMC|RCC_PERIPHCLK_CLK48;
+    /** Initializes the peripherals clock
+     */
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SDMMC | RCC_PERIPHCLK_CLK48;
     PeriphClkInit.IclkClockSelection = RCC_CLK48CLKSOURCE_HSI48;
     PeriphClkInit.SdmmcClockSelection = RCC_SDMMCCLKSOURCE_CLK48;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -116,7 +115,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* sdHandle)
     GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
     HAL_GPIO_Init(SDMMC1_D3_GPIO_Port, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = SDMMC1_CK_Pin|SDMMC1_D2_Pin|SDMMC1_D1_Pin|SDMMC1_D0_Pin;
+    GPIO_InitStruct.Pin = SDMMC1_CK_Pin | SDMMC1_D2_Pin | SDMMC1_D1_Pin | SDMMC1_D0_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -126,20 +125,20 @@ void HAL_SD_MspInit(SD_HandleTypeDef* sdHandle)
     /* SDMMC1 interrupt Init */
     HAL_NVIC_SetPriority(SDMMC1_IRQn, 6, 0);
     HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
-  /* USER CODE BEGIN SDMMC1_MspInit 1 */
+    /* USER CODE BEGIN SDMMC1_MspInit 1 */
 
-  /* USER CODE END SDMMC1_MspInit 1 */
+    /* USER CODE END SDMMC1_MspInit 1 */
   }
 }
 
-void HAL_SD_MspDeInit(SD_HandleTypeDef* sdHandle)
+void HAL_SD_MspDeInit(SD_HandleTypeDef *sdHandle)
 {
 
-  if(sdHandle->Instance==SDMMC1)
+  if (sdHandle->Instance == SDMMC1)
   {
-  /* USER CODE BEGIN SDMMC1_MspDeInit 0 */
+    /* USER CODE BEGIN SDMMC1_MspDeInit 0 */
 
-  /* USER CODE END SDMMC1_MspDeInit 0 */
+    /* USER CODE END SDMMC1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_SDMMC1_CLK_DISABLE();
 
@@ -153,14 +152,14 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef* sdHandle)
     */
     HAL_GPIO_DeInit(SDMMC1_CMD_GPIO_Port, SDMMC1_CMD_Pin);
 
-    HAL_GPIO_DeInit(GPIOC, SDMMC1_D3_Pin|SDMMC1_CK_Pin|SDMMC1_D2_Pin|SDMMC1_D1_Pin
-                          |SDMMC1_D0_Pin);
+    HAL_GPIO_DeInit(GPIOC,
+        SDMMC1_D3_Pin | SDMMC1_CK_Pin | SDMMC1_D2_Pin | SDMMC1_D1_Pin | SDMMC1_D0_Pin);
 
     /* SDMMC1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(SDMMC1_IRQn);
-  /* USER CODE BEGIN SDMMC1_MspDeInit 1 */
+    /* USER CODE BEGIN SDMMC1_MspDeInit 1 */
 
-  /* USER CODE END SDMMC1_MspDeInit 1 */
+    /* USER CODE END SDMMC1_MspDeInit 1 */
   }
 }
 

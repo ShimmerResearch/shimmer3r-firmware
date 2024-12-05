@@ -94,22 +94,21 @@ void MX_ADF1_Init(void)
   AdfFilterConfig0.SnapshotFormat = MDF_SNAPSHOT_23BITS;
   micLinkedListConfig(&AdfHandle0);
   /* USER CODE END ADF1_Init 2 */
-
 }
 
-void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
+void HAL_MDF_MspInit(MDF_HandleTypeDef *mdfHandle)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  if(IS_ADF_INSTANCE(mdfHandle->Instance))
+  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
+  if (IS_ADF_INSTANCE(mdfHandle->Instance))
   {
-  /* USER CODE BEGIN ADF1_MspInit 0 */
+    /* USER CODE BEGIN ADF1_MspInit 0 */
     __HAL_RCC_ADF1_CONFIG(RCC_ADF1CLKSOURCE_PLL3);
-  /* USER CODE END ADF1_MspInit 0 */
+    /* USER CODE END ADF1_MspInit 0 */
 
-  /** Initializes the peripherals clock
-  */
+    /** Initializes the peripherals clock
+     */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADF1;
     PeriphClkInit.Adf1ClockSelection = RCC_ADF1CLKSOURCE_PLL3;
     PeriphClkInit.PLL3.PLL3Source = RCC_PLLSOURCE_HSE;
@@ -134,7 +133,7 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
     PF3     ------> ADF1_CCK0
     PF4     ------> ADF1_SDI0
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4;
+    GPIO_InitStruct.Pin = GPIO_PIN_3 | GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -144,20 +143,20 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
     /* ADF1 interrupt Init */
     HAL_NVIC_SetPriority(ADF1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(ADF1_IRQn);
-  /* USER CODE BEGIN ADF1_MspInit 1 */
+    /* USER CODE BEGIN ADF1_MspInit 1 */
 
-  /* USER CODE END ADF1_MspInit 1 */
+    /* USER CODE END ADF1_MspInit 1 */
   }
 }
 
-void HAL_MDF_MspDeInit(MDF_HandleTypeDef* mdfHandle)
+void HAL_MDF_MspDeInit(MDF_HandleTypeDef *mdfHandle)
 {
 
-  if(IS_ADF_INSTANCE(mdfHandle->Instance))
+  if (IS_ADF_INSTANCE(mdfHandle->Instance))
   {
-  /* USER CODE BEGIN ADF1_MspDeInit 0 */
+    /* USER CODE BEGIN ADF1_MspDeInit 0 */
 
-  /* USER CODE END ADF1_MspDeInit 0 */
+    /* USER CODE END ADF1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_ADF1_CLK_DISABLE();
 
@@ -165,13 +164,13 @@ void HAL_MDF_MspDeInit(MDF_HandleTypeDef* mdfHandle)
     PF3     ------> ADF1_CCK0
     PF4     ------> ADF1_SDI0
     */
-    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_3|GPIO_PIN_4);
+    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_3 | GPIO_PIN_4);
 
     /* ADF1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(ADF1_IRQn);
-  /* USER CODE BEGIN ADF1_MspDeInit 1 */
+    /* USER CODE BEGIN ADF1_MspDeInit 1 */
 
-  /* USER CODE END ADF1_MspDeInit 1 */
+    /* USER CODE END ADF1_MspDeInit 1 */
   }
 }
 
@@ -189,7 +188,7 @@ void MDF1_DeInit(void)
 }
 
 void micDmaStart(void)
-{ 
+{
   micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
   micDmaConfig.DataLength = PCM_REC_BUFF_SIZE;
   micDmaConfig.MsbOnly = ENABLE;
@@ -207,20 +206,24 @@ void micDmaStart(void)
 
 void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf)
 {
-/*  __NOP();
-  __NOP(); */
+  /*  __NOP();
+    __NOP(); */
   if (Mic_CountSkip < 64)
   {
     ++Mic_CountSkip;
     return;
   }
-  for (uint32_t j = 0U; j < ((AUDIO_IN_SAMPLING_FREQUENCY/ 1000U) * N_MS_PER_INTERRUPT); j++) {
-    int32_t Z = ((micDataBuffer[j + ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT)]) * 10U/*(int32_t)(PCM.Volume)*/) / 100;
+  for (uint32_t j = 0U;
+       j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++)
+  {
+    int32_t Z = ((micDataBuffer[j + ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT)])
+                    * 10U /*(int32_t)(PCM.Volume)*/)
+        / 100;
     micDataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
   }
   HAL_MDF_AcqStop_DMA(hmdf);
-
 }
+
 void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
 {
   if (Mic_CountSkip < 64)
@@ -228,9 +231,12 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
     ++Mic_CountSkip;
     return;
   }
-  for (uint32_t j = 0U; j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++) {
-    int32_t Z = (micDataBuffer[j] * 10U/*(int32_t)(PCM.Volume)*/) / 100;
+  for (uint32_t j = 0U;
+       j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++)
+  {
+    int32_t Z = (micDataBuffer[j] * 10U /*(int32_t)(PCM.Volume)*/) / 100;
     micDataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
   }
 }
+
 /* USER CODE END 1 */
