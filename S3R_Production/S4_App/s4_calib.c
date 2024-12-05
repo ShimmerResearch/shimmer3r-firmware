@@ -701,8 +701,8 @@ void setDefaultAdxl371AccelCalib(sc_t *sc1Ptr)
   sc1Ptr->id = SC_SENSOR_ADXL371_ACCEL;
   sc1Ptr->data_len = SC_DATA_LEN_STD_IMU_CALIB;
 
-  bias = 0;
-  sensitivity = 16;
+  bias = 10; // +1g
+  sensitivity = 1; // 100mg/LSB which equates to 1.0197 LSB/m/s^2
 
   sc1Ptr->range = 0;
   sc1Ptr->data.dd.bias_x = bias;
