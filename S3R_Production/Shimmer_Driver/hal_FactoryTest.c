@@ -33,7 +33,7 @@ uint32_t run_factory_test(void)
     send_test_report("\r\n");
 
     sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f\xB0 C\r\n",
-        TEST_THRESHOLD_IMU_TEMPERATURE_LOWER, TEST_THRESHOLD_IMU_TEMPERATURE_UPPER);
+        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER, TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
     send_test_report(buffer);
     send_test_report("\r\n");
 
@@ -162,11 +162,11 @@ void print_mcu_details(void)
     shimmerStatus.testResult |= S3R_TEST_0007;
   }
 
-  testPass = (adcDebugInfo.vCoreMV > TEST_THRESHOLD_VCORE_LOWER
-      && adcDebugInfo.vCoreMV < TEST_THRESHOLD_VCORE_UPPER);
+  testPass = (adcDebugInfo.vCoreMV > TEST_THRESHOLD_MV_VCORE_LOWER
+      && adcDebugInfo.vCoreMV < TEST_THRESHOLD_MV_VCORE_UPPER);
   sprintf(buffer, " - S3R_TEST_0008 - %s: VCore = %ldmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV,
-      TEST_THRESHOLD_VCORE_LOWER, TEST_THRESHOLD_VCORE_UPPER);
+      TEST_THRESHOLD_MV_VCORE_LOWER, TEST_THRESHOLD_MV_VCORE_UPPER);
   send_test_report(buffer);
   if (!testPass)
   {
@@ -174,19 +174,19 @@ void print_mcu_details(void)
   }
 
   //Specification = 1.9V from voltage external regulator
-  testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_VBATT_PIN_LOWER
-      && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_VBATT_PIN_UPPER);
+  testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_MV_VBATT_PIN_LOWER
+      && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
   sprintf(buffer, " - S3R_TEST_0009 - %s: VBatt pin = %ldmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
-      TEST_THRESHOLD_VBATT_PIN_LOWER, TEST_THRESHOLD_VBATT_PIN_UPPER);
+      TEST_THRESHOLD_MV_VBATT_PIN_LOWER, TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
   send_test_report(buffer);
   if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0009;
   }
 
-  testPass = (adcDebugInfo.temperature > TEST_THRESHOLD_MCU_TEMPERATURE_LOWER
-      && adcDebugInfo.temperature < TEST_THRESHOLD_MCU_TEMPERATURE_UPPER);
+  testPass = (adcDebugInfo.temperature > TEST_THRESHOLD_MV_MCU_TEMPERATURE_LOWER
+      && adcDebugInfo.temperature < TEST_THRESHOLD_MV_MCU_TEMPERATURE_UPPER);
   sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xB0 C\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   send_test_report(buffer);
@@ -201,11 +201,11 @@ void print_battery_details(void)
   send_test_report("Battery:\r\n");
   manageReadBatt(1);
 
-  uint8_t testPass = (batteryStatus.battValMV > TEST_THRESHOLD_VBATT_LOWER
-      && batteryStatus.battValMV < TEST_THRESHOLD_VBATT_UPPER);
+  uint8_t testPass = (batteryStatus.battValMV > TEST_THRESHOLD_MV_VBATT_LOWER
+      && batteryStatus.battValMV < TEST_THRESHOLD_MV_VBATT_UPPER);
   sprintf(buffer, " - S3R_TEST_0011 - %s: VBatt = %dmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", batteryStatus.battValMV,
-      TEST_THRESHOLD_VBATT_LOWER, TEST_THRESHOLD_VBATT_UPPER);
+      TEST_THRESHOLD_MV_VBATT_LOWER, TEST_THRESHOLD_MV_VBATT_UPPER);
   send_test_report(buffer);
   if (!testPass)
   {
@@ -450,7 +450,7 @@ void I2C_test(void)
 #elif defined(SHIMMER3R)
   send_test_report("I2C1:\r\n");
 
-  tempCal = TEST_THRESHOLD_IMU_TEMPERATURE_INVALID;
+  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
   self_test_result = lis2mdl_self_test();
   if (self_test_result == SELF_TEST_PASS)
   {
@@ -517,7 +517,7 @@ void SPI_test(void)
   send_test_report("SPI1:\r\n");
   MX_SPI1_Init();
 
-  tempCal = TEST_THRESHOLD_IMU_TEMPERATURE_INVALID;
+  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
   self_test_result = lsm6dsv_self_test();
   if (self_test_result == SELF_TEST_PASS)
   {
@@ -538,8 +538,8 @@ void SPI_test(void)
   if (bmp390_result == 0)
   {
     struct bmp3_data *bmp3_data = (struct bmp3_data *) get_bmp3_selftest_data();
-    uint8_t testPass = (bmp3_data->temperature > TEST_THRESHOLD_IMU_TEMPERATURE_LOWER
-        && bmp3_data->temperature < TEST_THRESHOLD_IMU_TEMPERATURE_UPPER);
+    uint8_t testPass = (bmp3_data->temperature > TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
+        && bmp3_data->temperature < TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
     sprintf(buffer, " - S3R_TEST_0019 - %s: BMP390 (%.2f\xB0 C)\r\n",
         bmp390_result ? "FAIL" : "PASS", bmp3_data->temperature);
     send_test_report(buffer);
@@ -561,7 +561,7 @@ void SPI_test(void)
   {
     self_test_result = adxl371_self_test();
     print_chip_test_result("S3R_TEST_0020", "ADXL371", self_test_result,
-        TEST_THRESHOLD_IMU_TEMPERATURE_INVALID);
+        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
     if (self_test_result)
     {
       shimmerStatus.testResult |= S3R_TEST_0020;
@@ -578,7 +578,7 @@ void SPI_test(void)
   send_test_report("SPI2:\r\n");
   MX_SPI2_Init();
 
-  tempCal = TEST_THRESHOLD_IMU_TEMPERATURE_INVALID;
+  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
   self_test_result = lis3mdl_self_test();
   if (self_test_result == SELF_TEST_PASS)
   {
@@ -595,7 +595,7 @@ void SPI_test(void)
     shimmerStatus.testResult |= S3R_TEST_0021;
   }
 
-  tempCal = TEST_THRESHOLD_IMU_TEMPERATURE_INVALID;
+  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
   self_test_result = lis2dw12_self_test();
   if (self_test_result == SELF_TEST_PASS)
   {
@@ -648,8 +648,8 @@ void setup_factory_test(factory_test_target_t target, factory_test_t testToRun)
 
 uint8_t is_temperature_outside_of_range(float_t temperature)
 {
-  return (temperature < TEST_THRESHOLD_IMU_TEMPERATURE_LOWER
-      || temperature > TEST_THRESHOLD_IMU_TEMPERATURE_UPPER);
+  return (temperature < TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
+      || temperature > TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
 }
 
 void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_test_result, float_t tempCal)
@@ -682,7 +682,7 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
     }
   }
 
-  if (tempCal == TEST_THRESHOLD_IMU_TEMPERATURE_INVALID)
+  if (tempCal == TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID)
   {
     sprintf(buffer, " - %s - %s: %s%s\r\n", testId, selfTestResultStr, chipId, selfTestDetailsStr);
   }

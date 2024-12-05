@@ -64,7 +64,7 @@ uint8_t eepromTest(void)
 
 void altEepromPowerOn(void)
 {
-  Board_SW_PPG(1);
+  Board_SW_EXP_BRD_POWER(1);
   Board_SW_I2C4_ON_PPG(1);
   MX_I2C4_Init();
   HAL_Delay(2); //2ms as per Shimmer3 code
@@ -74,7 +74,7 @@ void altEepromPowerOff(void)
 {
   HAL_Delay(5); //5ms to ensure no writes pending
   I2C4_DeInit();
-  Board_SW_PPG(0);
+  Board_SW_EXP_BRD_POWER(0);
   Board_SW_I2C4_ON_PPG(0);
 }
 
