@@ -351,6 +351,19 @@ int32_t adxl371_set_filter_settle(struct adxl371_dev *dev, enum adxl371_filter_s
       ADXL371_POWER_CTL_FIL_SETTLE_MSK, ADXL371_POWER_CTL_FIL_SETTLE_MODE(mode));
 }
 
+
+int32_t adxl371_set_filter_lpf_mode(struct adxl371_dev *dev, enum adxl371_lpf_filter mode)
+{
+  return adxl371_write_mask(dev, ADXL371_POWER_CTL,
+      ADXL371_POWER_CTL_LPF_DIS_MSK, ADXL371_POWER_CTL_LPF_DIS_MODE(mode));
+}
+
+int32_t adxl371_set_filter_hpf_mode(struct adxl371_dev *dev, enum adxl371_hpf_filter mode)
+{
+  return adxl371_write_mask(dev, ADXL371_POWER_CTL,
+      ADXL371_POWER_CTL_HPF_DIS_MSK, ADXL371_POWER_CTL_HPF_DIS_MODE(mode));
+}
+
 /**
  * Configure the INT1 and INT2 interrupt pins.
  * @param dev - The device structure.
