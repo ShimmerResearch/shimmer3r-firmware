@@ -46,10 +46,10 @@ DMA_QListTypeDef MICQueue;
 /* USER CODE END PM */
 
 /**
- * @brief  DMA Linked-list ADCQueue configuration
- * @param  None
- * @retval None
- */
+  * @brief  DMA Linked-list ADCQueue configuration
+  * @param  None
+  * @retval None
+  */
 HAL_StatusTypeDef MX_ADCQueue_Config(void)
 {
   HAL_StatusTypeDef ret = HAL_OK;
@@ -67,7 +67,7 @@ HAL_StatusTypeDef MX_ADCQueue_Config(void)
   pNodeConfig.Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
   pNodeConfig.Init.SrcBurstLength = 1;
   pNodeConfig.Init.DestBurstLength = 1;
-  pNodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+  pNodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
   pNodeConfig.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
   pNodeConfig.TriggerConfig.TriggerPolarity = DMA_TRIG_POLARITY_MASKED;
   pNodeConfig.DataHandlingConfig.DataExchange = DMA_EXCHANGE_NONE;
@@ -82,14 +82,14 @@ HAL_StatusTypeDef MX_ADCQueue_Config(void)
   /* Insert ADCNode to Queue */
   ret |= HAL_DMAEx_List_InsertNode_Tail(&ADCQueue, &ADCNode);
 
-  return ret;
+   return ret;
 }
 
 /**
- * @brief  DMA Linked-list MICQueue configuration
- * @param  None
- * @retval None
- */
+  * @brief  DMA Linked-list MICQueue configuration
+  * @param  None
+  * @retval None
+  */
 HAL_StatusTypeDef MX_MICQueue_Config(void)
 {
   HAL_StatusTypeDef ret = HAL_OK;
@@ -103,15 +103,15 @@ HAL_StatusTypeDef MX_MICQueue_Config(void)
   pNodeConfig.Init.Direction = DMA_PERIPH_TO_MEMORY;
   pNodeConfig.Init.SrcInc = DMA_SINC_FIXED;
   pNodeConfig.Init.DestInc = DMA_DINC_INCREMENTED;
-  pNodeConfig.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_WORD;
-  pNodeConfig.Init.DestDataWidth = DMA_DEST_DATAWIDTH_WORD;
+  pNodeConfig.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_HALFWORD;
+  pNodeConfig.Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
   pNodeConfig.Init.SrcBurstLength = 1;
   pNodeConfig.Init.DestBurstLength = 1;
-  pNodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+  pNodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
   pNodeConfig.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
   pNodeConfig.TriggerConfig.TriggerPolarity = DMA_TRIG_POLARITY_MASKED;
   pNodeConfig.DataHandlingConfig.DataExchange = DMA_EXCHANGE_NONE;
-  pNodeConfig.DataHandlingConfig.DataAlignment = DMA_DATA_RIGHTALIGN_ZEROPADDED;
+  pNodeConfig.DataHandlingConfig.DataAlignment = DMA_DATA_UNPACK;
   pNodeConfig.SrcAddress = 0;
   pNodeConfig.DstAddress = 0;
   pNodeConfig.DataSize = 0;
@@ -122,5 +122,8 @@ HAL_StatusTypeDef MX_MICQueue_Config(void)
   /* Insert MICNode to Queue */
   ret |= HAL_DMAEx_List_InsertNode_Tail(&MICQueue, &MICNode);
 
-  return ret;
+  ret |= HAL_DMAEx_List_SetCircularMode(&MICQueue);
+
+   return ret;
 }
+

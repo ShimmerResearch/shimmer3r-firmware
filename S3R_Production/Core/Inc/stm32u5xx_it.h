@@ -22,65 +22,64 @@
 #define __STM32U5xx_IT_H
 
 #ifdef __cplusplus
-extern "C"
-{
+ extern "C" {
 #endif
 
-  /* Private includes ----------------------------------------------------------*/
-  /* USER CODE BEGIN Includes */
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  /* Exported types ------------------------------------------------------------*/
-  /* USER CODE BEGIN ET */
+/* Exported types ------------------------------------------------------------*/
+/* USER CODE BEGIN ET */
 
-  /* USER CODE END ET */
+/* USER CODE END ET */
 
-  /* Exported constants --------------------------------------------------------*/
-  /* USER CODE BEGIN EC */
+/* Exported constants --------------------------------------------------------*/
+/* USER CODE BEGIN EC */
 
-  /* USER CODE END EC */
+/* USER CODE END EC */
 
-  /* Exported macro ------------------------------------------------------------*/
-  /* USER CODE BEGIN EM */
+/* Exported macro ------------------------------------------------------------*/
+/* USER CODE BEGIN EM */
 
-  /* USER CODE END EM */
+/* USER CODE END EM */
 
-  /* Exported functions prototypes ---------------------------------------------*/
-  void NMI_Handler(void);
-  void HardFault_Handler(void);
-  void MemManage_Handler(void);
-  void BusFault_Handler(void);
-  void UsageFault_Handler(void);
-  void SVC_Handler(void);
-  void DebugMon_Handler(void);
-  void PendSV_Handler(void);
-  void SysTick_Handler(void);
-  void RTC_IRQHandler(void);
-  void GPDMA1_Channel0_IRQHandler(void);
-  void GPDMA1_Channel1_IRQHandler(void);
-  void GPDMA1_Channel2_IRQHandler(void);
-  void GPDMA1_Channel4_IRQHandler(void);
-  void GPDMA1_Channel5_IRQHandler(void);
-  void GPDMA1_Channel6_IRQHandler(void);
-  void GPDMA1_Channel7_IRQHandler(void);
-  void ADC1_2_IRQHandler(void);
-  void TIM6_IRQHandler(void);
-  void I2C1_EV_IRQHandler(void);
-  void I2C1_ER_IRQHandler(void);
-  void SPI1_IRQHandler(void);
-  void SPI2_IRQHandler(void);
-  void USART1_IRQHandler(void);
-  void USART3_IRQHandler(void);
-  void OTG_HS_IRQHandler(void);
-  void SDMMC1_IRQHandler(void);
-  void GPDMA1_Channel8_IRQHandler(void);
-  void GPDMA1_Channel9_IRQHandler(void);
-  void GPDMA1_Channel10_IRQHandler(void);
-  void GPDMA1_Channel11_IRQHandler(void);
-  void SPI3_IRQHandler(void);
-  void ADF1_IRQHandler(void);
-  /* USER CODE BEGIN EFP */
+/* Exported functions prototypes ---------------------------------------------*/
+void NMI_Handler(void);
+void HardFault_Handler(void);
+void MemManage_Handler(void);
+void BusFault_Handler(void);
+void UsageFault_Handler(void);
+void SVC_Handler(void);
+void DebugMon_Handler(void);
+void PendSV_Handler(void);
+void SysTick_Handler(void);
+void RTC_IRQHandler(void);
+void GPDMA1_Channel0_IRQHandler(void);
+void GPDMA1_Channel1_IRQHandler(void);
+void GPDMA1_Channel2_IRQHandler(void);
+void GPDMA1_Channel4_IRQHandler(void);
+void GPDMA1_Channel5_IRQHandler(void);
+void GPDMA1_Channel6_IRQHandler(void);
+void GPDMA1_Channel7_IRQHandler(void);
+void ADC1_2_IRQHandler(void);
+void TIM6_IRQHandler(void);
+void I2C1_EV_IRQHandler(void);
+void I2C1_ER_IRQHandler(void);
+void SPI1_IRQHandler(void);
+void SPI2_IRQHandler(void);
+void USART1_IRQHandler(void);
+void USART3_IRQHandler(void);
+void OTG_HS_IRQHandler(void);
+void SDMMC1_IRQHandler(void);
+void GPDMA1_Channel8_IRQHandler(void);
+void GPDMA1_Channel9_IRQHandler(void);
+void GPDMA1_Channel10_IRQHandler(void);
+void GPDMA1_Channel11_IRQHandler(void);
+void SPI3_IRQHandler(void);
+void ADF1_IRQHandler(void);
+/* USER CODE BEGIN EFP */
 
   /* Note the interrupts listed below are not enabled by default in CubeMX and
    * instead are turned on/off when needed by firmware to save power. */
@@ -100,7 +99,7 @@ extern "C"
   void EXTI14_IRQHandler(void);
   void EXTI15_IRQHandler(void);
 
-  /* USER CODE END EFP */
+/* USER CODE END EFP */
 
 #ifdef __cplusplus
 }
