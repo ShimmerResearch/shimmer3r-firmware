@@ -142,8 +142,8 @@ void adxl371_configure(uint8_t rate)
 
   adxl371_reset(&adxl371);
 
-  adxl371_set_autosleep(&adxl371, false);
-
+  //adxl371_set_autosleep(&adxl371, false);
+  //
   //adxl371_set_bandwidth(adxl371, ADXL371_BW_3200HZ);
   //
   //adxl371_set_odr(adxl371, ADXL371_ODR_6400HZ);
@@ -177,6 +177,12 @@ void adxl371_configure(uint8_t rate)
 
   adxl371_set_odr(&adxl371, rate);
   adxl371_set_bandwidth(&adxl371, rate);
+
+  /* Set filter settle time */
+  adxl371_set_filter_settle(&adxl371, ADXL371_FILTER_SETTLE_4_ODR);
+
+  adxl371_set_filter_lpf_mode(&adxl371, ADXL371_LPF_DISABLE);
+  adxl371_set_filter_hpf_mode(&adxl371, ADXL371_HPF_DISABLE);
 
   /* Set operation mode to Full bandwidth measurement mode */
   adxl371_set_op_mode(&adxl371, ADXL371_FULL_BW_MEASUREMENT);

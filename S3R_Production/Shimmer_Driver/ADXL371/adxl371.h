@@ -307,8 +307,20 @@ enum adxl371_th_activity
 
 enum adxl371_filter_settle
 {
-  ADXL371_FILTER_SETTLE_370,
-  ADXL371_FILTER_SETTLE_16
+  ADXL371_FILTER_SETTLE_462_5, // Filter settling set to 462.5 ms.
+  ADXL371_FILTER_SETTLE_4_ODR // Filter settling set to 4/ODR. Ideal for when the filters are disabled.
+};
+
+enum adxl371_lpf_filter
+{
+  ADXL371_LPF_ENABLE,
+  ADXL371_LPF_DISABLE
+};
+
+enum adxl371_hpf_filter
+{
+  ADXL371_HPF_ENABLE,
+  ADXL371_HPF_DISABLE
 };
 
 enum adxl371_fifo_format
@@ -466,6 +478,8 @@ int32_t adxl371_interrupt_config(struct adxl371_dev *dev,
     struct adxl371_irq_config int1,
     struct adxl371_irq_config int2);
 int32_t adxl371_set_filter_settle(struct adxl371_dev *dev, enum adxl371_filter_settle mode);
+int32_t adxl371_set_filter_lpf_mode(struct adxl371_dev *dev, enum adxl371_lpf_filter mode);
+int32_t adxl371_set_filter_hpf_mode(struct adxl371_dev *dev, enum adxl371_hpf_filter mode);
 int32_t adxl371_get_status(struct adxl371_dev *dev,
     uint8_t *status1,
     uint8_t *status2,
