@@ -251,7 +251,6 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-  MX_ADF1_Init(); //temporary for devel
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();
 #endif
@@ -272,8 +271,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    micDmaStart();
-    //S4_Task_manage();
+    S4_Task_manage();
   }
   /* USER CODE END 3 */
 }

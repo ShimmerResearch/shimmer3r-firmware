@@ -250,7 +250,7 @@ void S4Sens_startSensing(void)
     I2C_startSensing();
     SPI_startSensing();
 
-    if (S4Ram_getStoredConfig()->chEnMicrophone)
+    if (isMicrophoneEnabled())
     {
       //TODO remove IF when fully switched from eval board to BGA variant
 #ifdef S3R_NUCLEO
@@ -391,7 +391,7 @@ void S4Sens_stopPeripherals(void)
 
   Board_enableSensingPower(SENSE_PWR_SENSING, 0);
 
-  if (S4Ram_getStoredConfig()->chEnMicrophone)
+  if (isMicrophoneEnabled())
   {
     MDF1_DeInit();
   }
@@ -436,6 +436,11 @@ void S4Sens_bufPoll()
   I2C_pollSensors();
 
   SPI_pollSensors();
+
+  if(isMicrophoneEnabled())
+  {
+    micDmaStart();
+  }
 }
 
 //this is to be called in the ISR
@@ -605,7 +610,7 @@ void saveData(void)
 
 uint8_t areAnyChannelsEnabled(void)
 {
-  if (sensing.nbrAdcChans > 0 || sensing.nbrDigiChans > 0)
+  if (sensing.nbrAdcChans > 0 || sensing.nbrDigiChans > 0 || isMicrophoneEnabled())
   {
     return 1;
   }

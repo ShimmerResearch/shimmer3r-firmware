@@ -49,6 +49,7 @@ extern "C"
   void micDmaStart(void);
   void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf);
   void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf);
+  uint8_t isMicrophoneEnabled(void);
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

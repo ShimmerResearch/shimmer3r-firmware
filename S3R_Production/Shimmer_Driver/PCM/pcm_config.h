@@ -1,8 +1,8 @@
 #ifndef PCM_CONFIG_H
 #define PCM_CONFIG_H
 
-#include "app_config.h"
-#include <pcm_lowlevel.h>
+#include <PCM/app_config.h>
+#include <PCM/pcm_lowlevel.h>
 
 #define N_MS_PER_INTERRUPT (1)
 

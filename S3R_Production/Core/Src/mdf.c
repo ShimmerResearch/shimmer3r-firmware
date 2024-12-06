@@ -18,14 +18,14 @@
  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <PCM/pcm_config.h>
+#include <PCM/pcm_lowlevel.h>
 #include "mdf.h"
 
 /* USER CODE BEGIN 0 */
 
 #include "gpdma.h"
 #include "hal_Board.h"
-#include "pcm_config.h"
-#include "pcm_lowlevel.h"
 
 int16_t micDataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE];
 MDF_DmaConfigTypeDef micDmaConfig;
@@ -192,7 +192,7 @@ void micDmaStart(void)
   micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
   micDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);
   micDmaConfig.MsbOnly = ENABLE;
-  HAL_Delay(50);
+  
   if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
   {
     Error_Handler();
@@ -237,6 +237,11 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
     int32_t Z = (micDataBuffer[j] * 10U /*(int32_t)(PCM.Volume)*/) / 100;
     micDataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
   }
+}
+
+uint8_t isMicrophoneEnabled(void)
+{
+  return S4Ram_getStoredConfig()->chEnMicrophone;
 }
 
 /* USER CODE END 1 */
