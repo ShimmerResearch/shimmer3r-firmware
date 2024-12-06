@@ -18,9 +18,9 @@
  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include "mdf.h"
 #include <PCM/pcm_config.h>
 #include <PCM/pcm_lowlevel.h>
-#include "mdf.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -192,7 +192,7 @@ void micDmaStart(void)
   micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
   micDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);
   micDmaConfig.MsbOnly = ENABLE;
-  
+
   if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
   {
     Error_Handler();

@@ -437,7 +437,7 @@ void S4Sens_bufPoll()
 
   SPI_pollSensors();
 
-  if(isMicrophoneEnabled())
+  if (isMicrophoneEnabled())
   {
     micDmaStart();
   }
