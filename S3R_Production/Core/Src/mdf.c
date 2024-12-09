@@ -28,8 +28,10 @@
 #include "hal_Board.h"
 
 int16_t micDataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE];
+uint16_t dataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE/2U];
 MDF_DmaConfigTypeDef micDmaConfig;
 int Mic_CountSkip;
+volatile uint8_t counter =0;
 /* USER CODE END 0 */
 
 MDF_HandleTypeDef AdfHandle0;
@@ -45,7 +47,6 @@ void MX_ADF1_Init(void)
 
   /* USER CODE BEGIN ADF1_Init 1 */
   Board_SW_MIC(1);
-  AdfHandle0.Init.CommonParam.OutputClock.Trigger.Edge = MDF_CLOCK_TRIG_RISING_EDGE;
   /* USER CODE END ADF1_Init 1 */
 
   /**
@@ -58,12 +59,12 @@ void MX_ADF1_Init(void)
   AdfHandle0.Init.CommonParam.OutputClock.Divider = 10;
   AdfHandle0.Init.CommonParam.OutputClock.Trigger.Activation = ENABLE;
   AdfHandle0.Init.CommonParam.OutputClock.Trigger.Source = MDF_CLOCK_TRIG_TRGO;
-  AdfHandle0.Init.CommonParam.OutputClock.Trigger.Edge = MDF_CLOCK_TRIG_FALLING_EDGE;
+  AdfHandle0.Init.CommonParam.OutputClock.Trigger.Edge = MDF_CLOCK_TRIG_RISING_EDGE;
   AdfHandle0.Init.SerialInterface.Activation = ENABLE;
   AdfHandle0.Init.SerialInterface.Mode = MDF_SITF_NORMAL_SPI_MODE;
   AdfHandle0.Init.SerialInterface.ClockSource = MDF_SITF_CCK0_SOURCE;
   AdfHandle0.Init.SerialInterface.Threshold = 31;
-  AdfHandle0.Init.FilterBistream = MDF_BITSTREAM0_FALLING;
+  AdfHandle0.Init.FilterBistream = MDF_BITSTREAM0_RISING;
   if (HAL_MDF_Init(&AdfHandle0) != HAL_OK)
   {
     Error_Handler();
@@ -89,10 +90,16 @@ void MX_ADF1_Init(void)
   AdfFilterConfig0.DiscardSamples = 0;
   AdfFilterConfig0.Trigger.Source = MDF_CLOCK_TRIG_TRGO;
   AdfFilterConfig0.Trigger.Edge = MDF_FILTER_TRIG_RISING_EDGE;
+
   /* USER CODE BEGIN ADF1_Init 2 */
-  AdfFilterConfig0.Trigger.Edge = MDF_FILTER_TRIG_RISING_EDGE;
   AdfFilterConfig0.SnapshotFormat = MDF_SNAPSHOT_23BITS;
+
+  //DMA & Linkedlist config
+  micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
+  micDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);
+  micDmaConfig.MsbOnly = ENABLE;
   micLinkedListConfig(&AdfHandle0);
+
   /* USER CODE END ADF1_Init 2 */
 }
 
@@ -187,13 +194,10 @@ void MDF1_DeInit(void)
   Board_SW_MIC(0);
 }
 
-void micDmaStart(void)
+void micStartSensing(void)
 {
-  micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
-  micDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);
-  micDmaConfig.MsbOnly = ENABLE;
-  
-  if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
+  if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig)
+      != HAL_OK)
   {
     Error_Handler();
   }
@@ -204,28 +208,34 @@ void micDmaStart(void)
   }
 }
 
+void micStopSensing(void)
+{
+  HAL_MDF_AcqStop_DMA(&AdfHandle0);
+  MDF1_DeInit();
+  HAL_Delay(100);
+}
+
 void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf)
 {
-  /*  __NOP();
-    __NOP(); */
+  UNUSED(hmdf);
+
   if (Mic_CountSkip < 64)
   {
     ++Mic_CountSkip;
     return;
   }
-  for (uint32_t j = 0U;
-       j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++)
+  for (uint32_t j = 0U; j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++)
   {
     int32_t Z = ((micDataBuffer[j + ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT)])
-                    * 10U /*(int32_t)(PCM.Volume)*/)
-        / 100;
-    micDataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
+                    * 50U /*(int32_t)(PCM.Volume)*/) / 100; // volume arbitrarily set to 100
+    dataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
   }
-  HAL_MDF_AcqStop_DMA(hmdf);
 }
 
 void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
 {
+  UNUSED(hmdf);
+
   if (Mic_CountSkip < 64)
   {
     ++Mic_CountSkip;
@@ -234,8 +244,8 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
   for (uint32_t j = 0U;
        j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++)
   {
-    int32_t Z = (micDataBuffer[j] * 10U /*(int32_t)(PCM.Volume)*/) / 100;
-    micDataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
+    int32_t Z = (micDataBuffer[j] * 50U /*(int32_t)(PCM.Volume)*/) / 100;// volume arbitrarily set to 100
+    dataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
   }
 }
 

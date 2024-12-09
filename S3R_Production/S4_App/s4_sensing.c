@@ -257,6 +257,7 @@ void S4Sens_startSensing(void)
       MX_MDF1_Init();
 #else
       MX_ADF1_Init();
+      micStartSensing();
 #endif
     }
 
@@ -393,7 +394,7 @@ void S4Sens_stopPeripherals(void)
 
   if (isMicrophoneEnabled())
   {
-    MDF1_DeInit();
+    micStopSensing();
   }
 }
 
@@ -439,7 +440,7 @@ void S4Sens_bufPoll()
 
   if(isMicrophoneEnabled())
   {
-    micDmaStart();
+    micStartSensing();
   }
 }
 
