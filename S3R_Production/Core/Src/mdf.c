@@ -28,10 +28,10 @@
 #include "hal_Board.h"
 
 int16_t micDataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE];
-uint16_t dataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE/2U];
+uint16_t dataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U];
 MDF_DmaConfigTypeDef micDmaConfig;
 int Mic_CountSkip;
-volatile uint8_t counter =0;
+volatile uint8_t counter = 0;
 /* USER CODE END 0 */
 
 MDF_HandleTypeDef AdfHandle0;
@@ -227,10 +227,12 @@ void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf)
     ++Mic_CountSkip;
     return;
   }
-  for (uint32_t j = 0U; j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++)
+  for (uint32_t j = 0U;
+       j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++)
   {
     int32_t Z = ((micDataBuffer[j + ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT)])
-                    * 50U /*(int32_t)(PCM.Volume)*/) / 100; // volume arbitrarily set to 100
+                    * 50U /*(int32_t)(PCM.Volume)*/)
+        / 100; //volume arbitrarily set to 100
     dataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
   }
 }
@@ -247,7 +249,8 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
   for (uint32_t j = 0U;
        j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++)
   {
-    int32_t Z = (micDataBuffer[j] * 50U /*(int32_t)(PCM.Volume)*/) / 100;// volume arbitrarily set to 100
+    int32_t Z = (micDataBuffer[j] * 50U /*(int32_t)(PCM.Volume)*/)
+        / 100; //volume arbitrarily set to 100
     dataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
   }
 }
