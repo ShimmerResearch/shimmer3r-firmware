@@ -335,7 +335,7 @@ void S4_NORM_ADC_configureChannels(void)
   sensing.ccLen += nbr_adc_chans;
 }
 
-void S4_NORM_ADC_startSensing()
+void S4_NORM_ADC_startSensing(void)
 {
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
   ADC_ChannelConfTypeDef sConfig = { 0 };
@@ -993,9 +993,7 @@ void S4_NORM_ADC_stopSensing()
   }
   if (configBytes->chEnGsr)
   {
-    Board_SW_GSR(0);
-    GSR_setRange(HW_RES_40K);
-    gsrActiveResistor = HW_RES_40K;
+    resetGsrPwrAndRange();
   }
 
 #if defined(SHIMMER4_SDK)
@@ -1330,6 +1328,48 @@ battAlarmInterval_t getBatteryInterval(void)
 void resetBatteryCriticalCount(void)
 {
   battCriticalCount = 0;
+}
+
+HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t * sample)
+{
+  HAL_StatusTypeDef status = HAL_ADC_Start(hadc);
+  status = HAL_ADC_PollForConversion(hadc, 100);
+  if (status == HAL_OK)
+  {
+    *sample = HAL_ADC_GetValue(hadc);
+  }
+  else
+  {
+    return 1;
+  }
+
+  return status;
+}
+
+HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t * gsrResistance)
+{
+  uint32_t adcValue = 0;
+
+  HAL_StatusTypeDef status = getSingleAdcChSample(hadc, &adcValue);
+  if (status == HAL_OK)
+  {
+    GSR_output(&adcValue);
+
+    int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadc, VREF_EXTERNAL_SUPPLY_MV,
+          adcValue & 0x3F, hadc->Init.Resolution);
+
+    *gsrResistance = GSR_calcResistance(gsrMv, (adcValue >> 14) & 0x03);
+
+  }
+
+  return status;
+}
+
+void resetGsrPwrAndRange(void)
+{
+  Board_SW_GSR(0);
+  GSR_setRange(HW_RES_40K);
+  gsrActiveResistor = HW_RES_40K;
 }
 
 /* USER CODE END 1 */

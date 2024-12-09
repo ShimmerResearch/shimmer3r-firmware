@@ -20,6 +20,8 @@ factory_test_t factoryTestToRun;
 
 char buffer[100];
 
+uint8_t test_i2c_addr_list[128], test_i2c_addr_list_len;
+
 uint32_t run_factory_test(void)
 {
   send_test_report("//**************************** TEST START "
@@ -489,11 +491,26 @@ void I2C_test(void)
   send_test_report("I2C4:\r\n");
   if (isI2c4Supported())
   {
-    altEepromPowerOn();
-    uint8_t eeprom_result = altEepromTest();
-    altEepromPowerOff();
+    uint8_t i2c4_result = 1;
 
-    sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n", eeprom_result ? "FAIL" : "PASS");
+    enableI2cOnInternalExpansionBrd(1);
+    HAL_Delay(2); //2ms as per Shimmer3 code
+    I2C_scan_internal_expansion_bus(test_i2c_addr_list, &test_i2c_addr_list_len);
+
+    if (test_i2c_addr_list_len == 3)
+    {
+      i2c4_result = runGsrFactoryTest();
+    }
+    else
+    {
+      altEepromInit(&hi2c4);
+      i2c4_result = altEepromTest();
+      HAL_Delay(5); //5ms to ensure no writes pending
+    }
+
+    enableI2cOnInternalExpansionBrd(0);
+
+    sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
     send_test_report(buffer);
     if (eeprom_result)
     {
@@ -715,4 +732,85 @@ void send_test_report(char *str)
   default:
     break;
   }
+}
+
+//TODO
+uint8_t runGsrFactoryTest(void)
+{
+  int32_t gsrResistance = 0;
+  uint8_t returnVal = 0;
+
+  gsrTestRigInit(&hi2c4);
+
+  // Backup original configuration
+  gConfigBytes configBytesFactoryBackup;
+  memcpy(&configBytesFactoryBackup, S4Ram_getStoredConfig(), sizeof(configBytesFactoryBackup));
+
+  // Generate test configuration
+  gConfigBytes configBytesFactoryTest;
+  configBytesFactoryTest.chEnGsr = 1;
+  configBytesFactoryTest.expansionBoardPower = 1;
+  configBytesFactoryTest.gsrRange = GSR_AUTORANGE;
+  configBytesFactoryTest.samplingRateTicks = 32768 / 10;
+
+  // Apply test configuration
+  S4Ram_storedConfigSet(&configBytesFactoryTest.rawBytes[0], 0, sizeof(configBytesFactoryTest));
+  S4_NORM_ADC_configureChannels();
+  S4_NORM_ADC_startSensing();
+
+  ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc1();
+
+  // Dummy read to set correct GSR Range
+  HAL_StatusTypeDef status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+  if (status != HAL_OK)
+  {
+    returnVal = 1;
+  }
+
+  // Test 1 - 75kOhm
+  if (returnVal == 0)
+  {
+    setGsrTestRigResistance(750000L);
+    status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+    if (status != HAL_OK || gsrResistance < 70000 || gsrResistance > 80000)
+    {
+      returnVal = 1;
+    }
+  }
+
+  // Test 2 - 1.5MOhm
+  if (returnVal == 0)
+  {
+    setGsrTestRigResistance(1500000L);
+    status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+    if (status != HAL_OK || gsrResistance < 125000L || gsrResistance > 1750000L)
+    {
+      returnVal = 1;
+    }
+  }
+
+  // Test 2 - 3.5MOhm
+  if (returnVal == 0)
+  {
+    setGsrTestRigResistance(3500000L);
+    status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+    if (status != HAL_OK || gsrResistance < 3400000L || gsrResistance > 3600000L)
+    {
+      returnVal = 1;
+    }
+  }
+
+  // Stop ADC
+  HAL_ADC_Stop(hadcFactoryTestPtr);
+  HAL_ADC_DeInit(hadcFactoryTestPtr);
+
+  // Reset GSR hardware and settings
+//  S4_NORM_ADC_stopSensing();
+  resetGsrPwrAndRange();
+
+  // Restore original configuration
+  S4Ram_storedConfigSet(&configBytesFactoryBackup.rawBytes[0], 0, sizeof(configBytesFactoryBackup));
+  S4_NORM_ADC_configureChannels();
+
+  return returnVal;
 }

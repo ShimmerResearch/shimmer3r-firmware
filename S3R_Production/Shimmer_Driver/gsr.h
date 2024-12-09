@@ -68,11 +68,11 @@ void GSR_setRange(uint8_t range);
 
 void GSR_setResistor(uint8_t res);
 
-//Calculates resistance from a raw ADC value using linear fit to conductance
-//ADC_val: the ADC value to be used in the calculation
+//Calculates resistance from a raw ADC value amplifier gain equation
+//mvolts: the measure voltage from the ADC
 //active_resistor: the currently active resistor on the GSR board
 //returns the calculated resistance
-uint32_t GSR_calcResistance(uint16_t ADC_val, uint8_t active_resistor);
+int32_t GSR_calcResistance(int32_t mvolts, uint8_t active_resistor);
 
 //Determines whether to change the currently active internal resistor based
 //on the ADC value, and if necessary change the internal resistor to a new

@@ -54,6 +54,7 @@
 #include "BMP280_driver\bmp280.h"
 #include "CAT24C16/CAT24C16.h"
 #include "CAT24C16/hal_CAT24C16.h"
+#include "GSRTestRig/gsrTestRig.h"
 #include "EXG\exg.h"
 #include "bmp180.h"
 #include "hal_Board.h"
