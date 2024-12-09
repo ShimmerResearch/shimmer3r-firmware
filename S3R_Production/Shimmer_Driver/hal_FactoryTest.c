@@ -742,32 +742,33 @@ uint8_t runGsrFactoryTest(void)
 
   gsrTestRigInit(&hi2c4);
 
-  // Backup original configuration
+  //Backup original configuration
   gConfigBytes configBytesFactoryBackup;
   memcpy(&configBytesFactoryBackup, S4Ram_getStoredConfig(), sizeof(configBytesFactoryBackup));
 
-  // Generate test configuration
+  //Generate test configuration
   gConfigBytes configBytesFactoryTest;
   configBytesFactoryTest.chEnGsr = 1;
   configBytesFactoryTest.expansionBoardPower = 1;
   configBytesFactoryTest.gsrRange = GSR_AUTORANGE;
   configBytesFactoryTest.samplingRateTicks = 32768 / 10;
 
-  // Apply test configuration
-  S4Ram_storedConfigSet(&configBytesFactoryTest.rawBytes[0], 0, sizeof(configBytesFactoryTest));
+  //Apply test configuration
+  S4Ram_storedConfigSet(
+      &configBytesFactoryTest.rawBytes[0], 0, sizeof(configBytesFactoryTest));
   S4_NORM_ADC_configureChannels();
   S4_NORM_ADC_startSensing();
 
   ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc1();
 
-  // Dummy read to set correct GSR Range
+  //Dummy read to set correct GSR Range
   HAL_StatusTypeDef status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
   if (status != HAL_OK)
   {
     returnVal = 1;
   }
 
-  // Test 1 - 75kOhm
+  //Test 1 - 75kOhm
   if (returnVal == 0)
   {
     setGsrTestRigResistance(750000L);
@@ -778,7 +779,7 @@ uint8_t runGsrFactoryTest(void)
     }
   }
 
-  // Test 2 - 1.5MOhm
+  //Test 2 - 1.5MOhm
   if (returnVal == 0)
   {
     setGsrTestRigResistance(1500000L);
@@ -789,7 +790,7 @@ uint8_t runGsrFactoryTest(void)
     }
   }
 
-  // Test 2 - 3.5MOhm
+  //Test 2 - 3.5MOhm
   if (returnVal == 0)
   {
     setGsrTestRigResistance(3500000L);
@@ -800,16 +801,17 @@ uint8_t runGsrFactoryTest(void)
     }
   }
 
-  // Stop ADC
+  //Stop ADC
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
 
-  // Reset GSR hardware and settings
-//  S4_NORM_ADC_stopSensing();
+  //Reset GSR hardware and settings
+  //S4_NORM_ADC_stopSensing();
   resetGsrPwrAndRange();
 
-  // Restore original configuration
-  S4Ram_storedConfigSet(&configBytesFactoryBackup.rawBytes[0], 0, sizeof(configBytesFactoryBackup));
+  //Restore original configuration
+  S4Ram_storedConfigSet(&configBytesFactoryBackup.rawBytes[0], 0,
+      sizeof(configBytesFactoryBackup));
   S4_NORM_ADC_configureChannels();
 
   return returnVal;

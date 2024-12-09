@@ -59,10 +59,10 @@
 #define HW_RES_3M3_MAX_ADC_VAL  3930 //680k to 4M7
 #define HW_RES_3M3_MIN_ADC_VAL  1125 //680k to 4M7
 
-#define HW_RES_40_0KOHMS   40.2
-#define HW_RES_287_0KOHMS   287.0
-#define HW_RES_1000KOHMS   1000.0
-#define HW_RES_3300KOHMS   3300.0
+#define HW_RES_40_0KOHMS        40.2
+#define HW_RES_287_0KOHMS       287.0
+#define HW_RES_1000KOHMS        1000.0
+#define HW_RES_3300KOHMS        3300.0
 
 //when we switch resistors with the ADG658 it takes a few samples for the
 //ADC to start to see the new sampled voltage correctly, the catch below is
@@ -193,7 +193,7 @@ int32_t GSR_calcResistance(int32_t mvolts, uint8_t active_resistor)
     break;
   }
 
-  return (int32_t)rFeedback/((((float)mvolts/1000.0)/0.5)-1.0);
+  return (int32_t) rFeedback / ((((float) mvolts / 1000.0) / 0.5) - 1.0);
 }
 
 void GSR_controlRange(uint16_t ADC_val)

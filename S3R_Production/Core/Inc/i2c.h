@@ -193,10 +193,8 @@ extern "C"
   void I2C1_DeInit(void);
   void I2C4_DeInit(void);
   void I2C_scan_busses(void);
-  void I2C_scan_internal_expansion_bus(uint8_t *i2c_addr_list_ptr,
-      uint8_t *i2c_addr_list_len_ptr);
-  void I2C_scan(I2C_HandleTypeDef *hi2c, uint8_t *i2c_addr_list,
-      uint8_t *i2c_addr_list_len);
+  void I2C_scan_internal_expansion_bus(uint8_t *i2c_addr_list_ptr, uint8_t *i2c_addr_list_len_ptr);
+  void I2C_scan(I2C_HandleTypeDef *hi2c, uint8_t *i2c_addr_list, uint8_t *i2c_addr_list_len);
   I2C_HandleTypeDef *I2C_getHandlerSensor(void);
 #if defined(SHIMMER4_SDK)
   I2C_HandleTypeDef *I2C_getHandlerBatt(void);

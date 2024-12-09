@@ -116,8 +116,8 @@ bool areAdcChannelsEnabled(void);
 void rankBattChargingStatus(void);
 void setBatteryInterval(battAlarmInterval_t value);
 void resetBatteryCriticalCount(void);
-HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t * sample);
-HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t * resistance);
+HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample);
+HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t *resistance);
 void resetGsrPwrAndRange(void);
 
 #endif /* S4_ADC_H */

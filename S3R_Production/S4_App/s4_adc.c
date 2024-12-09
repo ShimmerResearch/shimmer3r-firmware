@@ -1330,7 +1330,7 @@ void resetBatteryCriticalCount(void)
   battCriticalCount = 0;
 }
 
-HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t * sample)
+HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample)
 {
   HAL_StatusTypeDef status = HAL_ADC_Start(hadc);
   status = HAL_ADC_PollForConversion(hadc, 100);
@@ -1346,7 +1346,7 @@ HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t * sampl
   return status;
 }
 
-HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t * gsrResistance)
+HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t *gsrResistance)
 {
   uint32_t adcValue = 0;
 
@@ -1355,11 +1355,10 @@ HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t * gsrRes
   {
     GSR_output(&adcValue);
 
-    int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadc, VREF_EXTERNAL_SUPPLY_MV,
-          adcValue & 0x3F, hadc->Init.Resolution);
+    int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
+        hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue & 0x3F, hadc->Init.Resolution);
 
     *gsrResistance = GSR_calcResistance(gsrMv, (adcValue >> 14) & 0x03);
-
   }
 
   return status;
