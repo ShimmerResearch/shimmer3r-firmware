@@ -60,7 +60,7 @@ void *handle;
 void setADG715SwitchMode(uint8_t value)
 {
   switchModeCurrent = value;
-  HAL_I2C_Master_Transmit(handle, ADDR_U3_ADG715, &value, 1, 1000);
+  HAL_I2C_Master_Transmit(handle, ADDR_U3_ADG715 << 1, &value, 1, 1000);
 }
 
 void gsrTestRigInit(I2C_HandleTypeDef *hi2c)
@@ -169,19 +169,19 @@ void setGsrTestRig(uint8_t switchMode, uint8_t u1Rdac1, uint8_t u1Rdac2,
   uint8_t buf[2];
   buf[0] = RDAC1;
   buf[1] = u1Rdac1;
-  HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242, buf, 2, 1000);
+  HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242 << 1, buf, 2, 1000);
 
   buf[0] = RDAC2;
   buf[1] = u1Rdac2;
-  HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242, buf, 2, 1000);
+  HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242 << 1, buf, 2, 1000);
 
   buf[0] = RDAC1;
   buf[1] = u2Rdac1;
-  HAL_I2C_Master_Transmit(handle, ADDR_U2_AD5242, buf, 2, 1000);
+  HAL_I2C_Master_Transmit(handle, ADDR_U2_AD5242 << 1, buf, 2, 1000);
 
   buf[0] = RDAC2;
   buf[1] = u2Rdac2;
-  HAL_I2C_Master_Transmit(handle, ADDR_U2_AD5242, buf, 2, 1000);
+  HAL_I2C_Master_Transmit(handle, ADDR_U2_AD5242 << 1, buf, 2, 1000);
 }
 
 void run_gsrTestRig(uint8_t *config)
@@ -204,8 +204,8 @@ void digital_pot(void)
     buf1[i] = digitalval1 + 1;
     digitalval1++;
   }
-  HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242, buf, 254, 1000);
+  HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242 << 1, buf, 254, 1000);
   buf1[0] = RDAC1;    //ensure I2C_MST_EN is 0
-  HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242, buf1, 254, 1000);
+  HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242 << 1, buf1, 254, 1000);
 }
 

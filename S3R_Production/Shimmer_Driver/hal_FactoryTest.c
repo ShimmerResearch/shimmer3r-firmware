@@ -760,6 +760,17 @@ uint8_t runGsrFactoryTest(void)
 
   ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc1();
 
+//  //  {8.0, 63.0},    //Range 0
+//  setGsrTestRigResistance(10000L); // 3.9kOhm
+//  //  {63.0, 220.0},    //Range 1
+//  setGsrTestRigResistance(75000L); // kOhm
+//  //  {220.0, 680.0},   //Range 2
+//  setGsrTestRigResistance(250000L); // 3.8kOhm
+////  setGsrTestRigResistance(750000L); // 77.5kOhm
+//  setGsrTestRigResistance(1500000L); // 1.55MOhm
+//  //  {680.0, 4700.0}};   //Range 3
+//  setGsrTestRigResistance(4000000L); // 3.95MOhm
+
   // Dummy read to set correct GSR Range
   HAL_StatusTypeDef status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
   if (status != HAL_OK)
