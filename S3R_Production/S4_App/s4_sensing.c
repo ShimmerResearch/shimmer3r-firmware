@@ -438,10 +438,10 @@ void S4Sens_bufPoll()
 
   SPI_pollSensors();
 
-  if (isMicrophoneEnabled())
+/*  if (isMicrophoneEnabled())
   {
     micStartSensing();
-  }
+  }*/
 }
 
 //this is to be called in the ISR
