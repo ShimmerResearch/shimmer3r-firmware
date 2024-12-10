@@ -516,8 +516,7 @@ void I2C_test(void)
         i2c4_result = altEepromTest();
         HAL_Delay(5); //5ms to ensure no writes pending
 
-        sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n",
-            i2c4_result ? "FAIL" : "PASS");
+        sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
         send_test_report(buffer);
         send_test_report(
             " - S3R_TEST_0018 - WARNING: GSR - no test rig detected\r\n");
@@ -529,7 +528,8 @@ void I2C_test(void)
           send_test_report(" - S3R_TEST_0017 - PASS: I2C4\r\n");
 
           uint8_t gsr_result = runGsrFactoryTest();
-          sprintf(buffer, " - S3R_TEST_0018 - %s: GSR signal test\r\n", gsr_result ? "FAIL" : "PASS");
+          sprintf(buffer, " - S3R_TEST_0018 - %s: GSR signal test\r\n",
+              gsr_result ? "FAIL" : "PASS");
           send_test_report(buffer);
 
           if (gsr_result)
@@ -539,8 +539,10 @@ void I2C_test(void)
         }
         else
         {
-          send_test_report(" - S3R_TEST_0017 - FAIL: I2C4 - test rig not recognised\r\n");
-          send_test_report(" - S3R_TEST_0018 - FAIL: GSR - test rig not recognised\r\n");
+          send_test_report(
+              " - S3R_TEST_0017 - FAIL: I2C4 - test rig not recognised\r\n");
+          send_test_report(
+              " - S3R_TEST_0018 - FAIL: GSR - test rig not recognised\r\n");
         }
       }
     }
@@ -783,18 +785,18 @@ uint8_t runGsrFactoryTest(void)
 
   ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc2();
 
-//  //  {8.0, 63.0},    //Range 0
-//  setGsrTestRigResistance(10000L); // 3.9kOhm
-//  //  {63.0, 220.0},    //Range 1
-//  setGsrTestRigResistance(75000L); // kOhm
-//  //  {220.0, 680.0},   //Range 2
-//  setGsrTestRigResistance(250000L); // 3.8kOhm
-////  setGsrTestRigResistance(750000L); // 77.5kOhm
-//  setGsrTestRigResistance(1500000L); // 1.55MOhm
-//  //  {680.0, 4700.0}};   //Range 3
-//  setGsrTestRigResistance(4000000L); // 3.95MOhm
+  ////  {8.0, 63.0},    //Range 0
+  //setGsrTestRigResistance(10000L); // 3.9kOhm
+  ////  {63.0, 220.0},    //Range 1
+  //setGsrTestRigResistance(75000L); // kOhm
+  ////  {220.0, 680.0},   //Range 2
+  //setGsrTestRigResistance(250000L); // 3.8kOhm
+  ////  setGsrTestRigResistance(750000L); // 77.5kOhm
+  //setGsrTestRigResistance(1500000L); // 1.55MOhm
+  ////  {680.0, 4700.0}};   //Range 3
+  //setGsrTestRigResistance(4000000L); // 3.95MOhm
 
-  // Dummy read to set correct GSR Range
+  //Dummy read to set correct GSR Range
   HAL_StatusTypeDef status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
   if (status != HAL_OK)
   {
