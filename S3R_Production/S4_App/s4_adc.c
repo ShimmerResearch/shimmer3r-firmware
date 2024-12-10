@@ -1395,7 +1395,7 @@ HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t *gsrResi
   HAL_StatusTypeDef status = getSingleAdcChSample(hadc, &adcValue);
   if (status == HAL_OK)
   {
-//    GSR_output(&adcValue);
+    //GSR_output(&adcValue);
     GSR_controlRange(adcValue);
 
     int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
