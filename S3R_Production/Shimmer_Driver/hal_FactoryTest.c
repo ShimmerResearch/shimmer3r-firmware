@@ -847,11 +847,12 @@ uint8_t runMicrophoneTest(void)
 {
   uint8_t self_test_result = 1;
 
+  send_test_report("Microphone:\r\n");
   Board_SW_MIC(1);
-  //TODO
 
+  //TODO
   send_test_report(
-      " - S3R_TEST_0025 - WARNING: Microphone test not implemented yet\r\n");
+      " - S3R_TEST_0025 - WARNING: test not implemented yet\r\n");
 
   Board_SW_MIC(0);
 
