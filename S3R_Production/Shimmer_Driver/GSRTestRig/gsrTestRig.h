@@ -50,41 +50,40 @@
 /* Each bit of the 8-bit serial word corresponds to one switch of the device. A
  * Logic 1 in the bit position turns the switch on, and a Logic 0 turns the
  * switch off. */
-#define ADG715_SWITCH_RESET 0x00  // All switches open
-#define ADG715_SETTING      0xF0  // Switches S5-8 closed - U1.1 in series
-#define ADG715_A_B_PARALLEL 0xF1  // Switches S1 and S5-8 closed - U1.1 & U1.2 in parallel
-#define ADG715_ALL_SERIES   0b01011010  // Switches S2, S4, S5, S7 closed
+#define ADG715_SWITCH_RESET 0x00 //All switches open
+#define ADG715_SETTING      0xF0 //Switches S5-8 closed - U1.1 in series
+#define ADG715_A_B_PARALLEL \
+  0xF1 //Switches S1 and S5-8 closed - U1.1 & U1.2 in parallel
+#define ADG715_ALL_SERIES       0b01011010 //Switches S2, S4, S5, S7 closed
 
-#define ADG715_S1           (1<<0)
-#define ADG715_S2           (1<<1)
-#define ADG715_S3           (1<<2)
-#define ADG715_S4           (1<<3)
-#define ADG715_S5           (1<<4)
-#define ADG715_S6           (1<<5)
-#define ADG715_S7           (1<<6)
-#define ADG715_S8           (1<<7)
+#define ADG715_S1               (1 << 0)
+#define ADG715_S2               (1 << 1)
+#define ADG715_S3               (1 << 2)
+#define ADG715_S4               (1 << 3)
+#define ADG715_S5               (1 << 4)
+#define ADG715_S6               (1 << 5)
+#define ADG715_S7               (1 << 6)
+#define ADG715_S8               (1 << 7)
 
+#define RDAC1                   0x00 //Wiper 1 address
+#define RDAC2                   0x80 //Wiper 2 address
 
-#define RDAC1               0x00  // Wiper 1 address
-#define RDAC2               0x80  // Wiper 2 address
+#define ADDR_U1_AD5242          0x2D //7 bit address I2C address
+#define ADDR_U2_AD5242          0x2C //7 bit address I2C address
+#define ADDR_U3_ADG715          0x48 //7 bit address I2C address
 
-#define ADDR_U1_AD5242      0x2D  // 7 bit address I2C address
-#define ADDR_U2_AD5242      0x2C  // 7 bit address I2C address
-#define ADDR_U3_ADG715      0x48  // 7 bit address I2C address
+#define ADG715_1M_RAB           1000000L
+#define ADG715_1M_TOTAL_RES     (ADG715_1M_RAB + 60)
+#define ADG715_1M_TOTAL_RES_MIN 3906 //3966.25-60
+#define TOTAL_RES_2_PARALLEL    500000
+#define TOTAL_RES_3_PARALLEL    333333
 
-#define ADG715_1M_RAB       1000000L
-#define ADG715_1M_TOTAL_RES (ADG715_1M_RAB + 60)
-#define ADG715_1M_TOTAL_RES_MIN    3906// 3966.25-60
-#define TOTAL_RES_2_PARALLEL       500000
-#define TOTAL_RES_3_PARALLEL       333333
-
-// Function definitions:
+//Function definitions:
 void setADG715SwitchMode(uint8_t value);
 void digital_pot(void);
 void gsrTestRigInit(I2C_HandleTypeDef *hi2c);
 void setGsrTestRigResistance(uint32_t resistance);
-void setGsrTestRig(uint8_t switchMode, uint8_t u1Rdac1, uint8_t u1Rdac2,
-    uint8_t u2Rdac1, uint8_t u2Rdac2);
+void setGsrTestRig(uint8_t switchMode, uint8_t u1Rdac1, uint8_t u1Rdac2, uint8_t u2Rdac1, uint8_t u2Rdac2);
 uint8_t calculateRdacValue(uint32_t resistance);
 
 void run_gsrTestRig(uint8_t *config);

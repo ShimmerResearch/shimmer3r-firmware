@@ -342,14 +342,12 @@ void I2C_scan_busses(void)
 #endif
 }
 
-void I2C_scan_internal_expansion_bus(uint8_t *i2c_addr_list_ptr,
-    uint8_t *i2c_addr_list_len_ptr)
+void I2C_scan_internal_expansion_bus(uint8_t *i2c_addr_list_ptr, uint8_t *i2c_addr_list_len_ptr)
 {
   I2C_scan(&hi2c4, i2c_addr_list_ptr, i2c_addr_list_len_ptr);
 }
 
-void I2C_scan(I2C_HandleTypeDef *hi2c, uint8_t *i2c_addr_list_ptr,
-    uint8_t *i2c_addr_list_len_ptr)
+void I2C_scan(I2C_HandleTypeDef *hi2c, uint8_t *i2c_addr_list_ptr, uint8_t *i2c_addr_list_len_ptr)
 {
   uint8_t buf = 0;
   uint16_t i2c_addr;

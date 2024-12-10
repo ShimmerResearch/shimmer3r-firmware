@@ -49,6 +49,7 @@
 #include "math.h"
 #include "stm32u5xx_hal.h"
 
+#if OLD_CONSENSYS_SUPPORT
 #define HW_RES_40K_MIN_ADC_VAL \
   1120 //10k to 56k..1159->1140 //nom: changed to 1120 for linear conversion
 #define HW_RES_287K_MAX_ADC_VAL \
@@ -58,11 +59,22 @@
 #define HW_RES_1M_MIN_ADC_VAL   1630 //220k to 680k..1650->1630
 #define HW_RES_3M3_MAX_ADC_VAL  3930 //680k to 4M7
 #define HW_RES_3M3_MIN_ADC_VAL  1125 //680k to 4M7
+#else
+#define HW_RES_40K_MIN_ADC_VAL \
+  (1120<<2) //10k to 56k..1159->1140 //nom: changed to 1120 for linear conversion
+#define HW_RES_287K_MAX_ADC_VAL \
+  (3960<<2) //56k to 220k was 4000 but was 3948 on shimmer so changed to 3800 //nom: changed to 3960 for linear conversion
+#define HW_RES_287K_MIN_ADC_VAL (1490<<2) //56k to 220k..1510->1490
+#define HW_RES_1M_MAX_ADC_VAL   (3700<<2) //220k to 680k
+#define HW_RES_1M_MIN_ADC_VAL   (1630<<2) //220k to 680k..1650->1630
+#define HW_RES_3M3_MAX_ADC_VAL  (3930<<2) //680k to 4M7
+#define HW_RES_3M3_MIN_ADC_VAL  (1125<<2) //680k to 4M7
+#endif
 
-#define HW_RES_40_0KOHMS   40.2
-#define HW_RES_287_0KOHMS   287.0
-#define HW_RES_1000KOHMS   1000.0
-#define HW_RES_3300KOHMS   3300.0
+#define HW_RES_40_0KOHMS        40.2
+#define HW_RES_287_0KOHMS       287.0
+#define HW_RES_1000KOHMS        1000.0
+#define HW_RES_3300KOHMS        3300.0
 
 //when we switch resistors with the ADG658 it takes a few samples for the
 //ADC to start to see the new sampled voltage correctly, the catch below is
@@ -193,7 +205,7 @@ int32_t GSR_calcResistance(int32_t mvolts, uint8_t active_resistor)
     break;
   }
 
-  return (int32_t)rFeedback/((((float)mvolts/1000.0)/0.5)-1.0);
+  return (int32_t) rFeedback / ((((float) mvolts / 1000.0) / 0.5) - 1.0);
 }
 
 void GSR_controlRange(uint16_t ADC_val)
@@ -352,4 +364,9 @@ uint32_t GSR_smoothSample(uint32_t resistance, uint8_t active_resistor)
   }
 
   return resistance;
+}
+
+uint8_t GSR_getCurrentActiveResistor(void)
+{
+  return gsrActiveRes;
 }
