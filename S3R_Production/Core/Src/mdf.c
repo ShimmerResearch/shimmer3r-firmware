@@ -254,7 +254,8 @@ uint8_t isMicrophoneEnabled(void)
 {
   return S4Ram_getStoredConfig()->chEnMicrophone;
 }
-uint16_t* micTest(void)
+
+uint16_t *micTest(void)
 {
   MX_ADF1_Init();
   micStartSensing();
@@ -262,4 +263,5 @@ uint16_t* micTest(void)
   micStopSensing();
   return dataBuffer;
 }
+
 /* USER CODE END 1 */
