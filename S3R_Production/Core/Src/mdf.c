@@ -195,10 +195,6 @@ void MDF1_DeInit(void)
 
 void micStartSensing(void)
 {
-  micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
-  micDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);
-  micDmaConfig.MsbOnly = ENABLE;
-
   if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
   {
     Error_Handler();
@@ -258,5 +254,12 @@ uint8_t isMicrophoneEnabled(void)
 {
   return S4Ram_getStoredConfig()->chEnMicrophone;
 }
-
+uint16_t* micTest(void)
+{
+  MX_ADF1_Init();
+  micStartSensing();
+  HAL_Delay(100);
+  micStopSensing();
+  return dataBuffer;
+}
 /* USER CODE END 1 */
