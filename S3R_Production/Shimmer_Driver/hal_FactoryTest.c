@@ -802,53 +802,53 @@ uint8_t runGsrFactoryTest(void)
     returnVal = 1;
   }
 
-//  uint8_t currentActiveResistor;
+  //uint8_t currentActiveResistor;
   while (1)
   {
-//    currentActiveResistor = GSR_getCurrentActiveResistor();
-//    status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-//    SHIMMER_PRINTF("GSR Range=%d, Resistance=%ld\r\n", gsrResistance, currentActiveResistor);
-//    HAL_Delay(1000);
-//  }
+    //currentActiveResistor = GSR_getCurrentActiveResistor();
+    //status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+    //SHIMMER_PRINTF("GSR Range=%d, Resistance=%ld\r\n", gsrResistance,
+    //currentActiveResistor); HAL_Delay(1000);
+    //}
 
-  //Test 1 - 75kOhm
-  if (returnVal == 0)
-  {
-    setGsrTestRigResistance(75000L);
-    HAL_Delay(1000);
-    status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-    SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
-//    if (status != HAL_OK || gsrResistance < 700 || gsrResistance > 800)
-//    {
-//      returnVal = 1;
-//    }
-  }
+    //Test 1 - 75kOhm
+    if (returnVal == 0)
+    {
+      setGsrTestRigResistance(75000L);
+      HAL_Delay(1000);
+      status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+      SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
+      //if (status != HAL_OK || gsrResistance < 700 || gsrResistance > 800)
+      //{
+      //  returnVal = 1;
+      //}
+    }
 
-  //Test 2 - 1.5MOhm
-  if (returnVal == 0)
-  {
-    setGsrTestRigResistance(1500000L);
-    HAL_Delay(1000);
-    status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-    SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
-//    if (status != HAL_OK || gsrResistance < 1400 || gsrResistance > 1600)
-//    {
-//      returnVal = 1;
-//    }
-  }
+    //Test 2 - 1.5MOhm
+    if (returnVal == 0)
+    {
+      setGsrTestRigResistance(1500000L);
+      HAL_Delay(1000);
+      status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+      SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
+      //if (status != HAL_OK || gsrResistance < 1400 || gsrResistance > 1600)
+      //{
+      //  returnVal = 1;
+      //}
+    }
 
-  //Test 2 - 3.5MOhm
-  if (returnVal == 0)
-  {
-    setGsrTestRigResistance(3500000L);
-    HAL_Delay(1000);
-    status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-    SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
-//    if (status != HAL_OK || gsrResistance < 3400 || gsrResistance > 3600)
-//    {
-//      returnVal = 1;
-//    }
-  }
+    //Test 2 - 3.5MOhm
+    if (returnVal == 0)
+    {
+      setGsrTestRigResistance(3500000L);
+      HAL_Delay(1000);
+      status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+      SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
+      //if (status != HAL_OK || gsrResistance < 3400 || gsrResistance > 3600)
+      //{
+      //  returnVal = 1;
+      //}
+    }
   }
   //Stop ADC
   HAL_ADC_Stop(hadcFactoryTestPtr);
@@ -867,8 +867,7 @@ uint8_t runMicrophoneTest(void)
   Board_SW_MIC(1);
 
   //TODO
-  send_test_report(
-      " - S3R_TEST_0025 - WARNING: test not implemented yet\r\n");
+  send_test_report(" - S3R_TEST_0025 - WARNING: test not implemented yet\r\n");
 
   Board_SW_MIC(0);
 
