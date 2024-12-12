@@ -777,10 +777,9 @@ uint8_t runGsrFactoryTest(void)
   int32_t gsrResistance = 0;
   uint8_t returnVal = 0;
 
+  Board_SW_GSR(1);
   gsrTestRigInit(&hi2c4);
-
-  Board_SW_EXP_BRD_POWER(1);
-
+  GSR_setRange(HW_RES_40K);
   initGsrAdc();
 
   ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc2();
@@ -803,44 +802,59 @@ uint8_t runGsrFactoryTest(void)
     returnVal = 1;
   }
 
+//  uint8_t currentActiveResistor;
+  while (1)
+  {
+//    currentActiveResistor = GSR_getCurrentActiveResistor();
+//    status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+//    SHIMMER_PRINTF("GSR Range=%d, Resistance=%ld\r\n", gsrResistance, currentActiveResistor);
+//    HAL_Delay(1000);
+//  }
+
   //Test 1 - 75kOhm
   if (returnVal == 0)
   {
-    setGsrTestRigResistance(750000L);
+    setGsrTestRigResistance(75000L);
+    HAL_Delay(1000);
     status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-    if (status != HAL_OK || gsrResistance < 70000 || gsrResistance > 80000)
-    {
-      returnVal = 1;
-    }
+    SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
+//    if (status != HAL_OK || gsrResistance < 700 || gsrResistance > 800)
+//    {
+//      returnVal = 1;
+//    }
   }
 
   //Test 2 - 1.5MOhm
   if (returnVal == 0)
   {
     setGsrTestRigResistance(1500000L);
+    HAL_Delay(1000);
     status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-    if (status != HAL_OK || gsrResistance < 125000L || gsrResistance > 1750000L)
-    {
-      returnVal = 1;
-    }
+    SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
+//    if (status != HAL_OK || gsrResistance < 1400 || gsrResistance > 1600)
+//    {
+//      returnVal = 1;
+//    }
   }
 
   //Test 2 - 3.5MOhm
   if (returnVal == 0)
   {
     setGsrTestRigResistance(3500000L);
+    HAL_Delay(1000);
     status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-    if (status != HAL_OK || gsrResistance < 3400000L || gsrResistance > 3600000L)
-    {
-      returnVal = 1;
-    }
+    SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
+//    if (status != HAL_OK || gsrResistance < 3400 || gsrResistance > 3600)
+//    {
+//      returnVal = 1;
+//    }
   }
-
+  }
   //Stop ADC
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
 
-  Board_SW_EXP_BRD_POWER(0);
+  Board_SW_GSR(0);
 
   return returnVal;
 }

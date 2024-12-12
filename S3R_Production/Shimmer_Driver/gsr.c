@@ -145,23 +145,23 @@ void GSR_setRange(uint8_t range)
   switch (range)
   {
   case HW_RES_40K:
-    HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A0_Pin, GPIO_PIN_RESET); //A0 = 0
-    HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A1_Pin, GPIO_PIN_RESET); //A1 = 0
+    HAL_GPIO_WritePin(GSR_RANGE_A0_GPIO_Port, GSR_RANGE_A0_Pin, GPIO_PIN_RESET); //A0 = 0
+    HAL_GPIO_WritePin(GSR_RANGE_A1_GPIO_Port, GSR_RANGE_A1_Pin, GPIO_PIN_RESET); //A1 = 0
     break;
 
   case HW_RES_287K:
-    HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A0_Pin, GPIO_PIN_SET);   //A0 = 1
-    HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A1_Pin, GPIO_PIN_RESET); //A1 = 0
+    HAL_GPIO_WritePin(GSR_RANGE_A0_GPIO_Port, GSR_RANGE_A0_Pin, GPIO_PIN_SET);   //A0 = 1
+    HAL_GPIO_WritePin(GSR_RANGE_A1_GPIO_Port, GSR_RANGE_A1_Pin, GPIO_PIN_RESET); //A1 = 0
     break;
 
   case HW_RES_1M:
-    HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A0_Pin, GPIO_PIN_RESET); //A0 = 0
-    HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A1_Pin, GPIO_PIN_SET);   //A1 = 1
+    HAL_GPIO_WritePin(GSR_RANGE_A0_GPIO_Port, GSR_RANGE_A0_Pin, GPIO_PIN_RESET); //A0 = 0
+    HAL_GPIO_WritePin(GSR_RANGE_A1_GPIO_Port, GSR_RANGE_A1_Pin, GPIO_PIN_SET);   //A1 = 1
     break;
 
   case HW_RES_3M3:
-    HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A0_Pin, GPIO_PIN_SET); //A0 = 1
-    HAL_GPIO_WritePin(GPIOH, GSR_RANGE_A1_Pin, GPIO_PIN_SET); //A1 = 1
+    HAL_GPIO_WritePin(GSR_RANGE_A0_GPIO_Port, GSR_RANGE_A0_Pin, GPIO_PIN_SET); //A0 = 1
+    HAL_GPIO_WritePin(GSR_RANGE_A1_GPIO_Port, GSR_RANGE_A1_Pin, GPIO_PIN_SET); //A1 = 1
     break;
   }
   gsrActiveRes = range;

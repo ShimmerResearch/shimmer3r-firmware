@@ -797,7 +797,11 @@ void initGsrAdc(void)
 
   hadc2.Instance = ADC2;
   hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+#if OLD_CONSENSYS_SUPPORT
+  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
+#else
   hadc2.Init.Resolution = ADC_RESOLUTION_14B;
+#endif
   hadc2.Init.GainCompensation = 0;
   hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
@@ -814,6 +818,7 @@ void initGsrAdc(void)
   hadc2.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
   hadc2.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
   hadc2.Init.OversamplingMode = DISABLE;
+  hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc2) != HAL_OK)
   {
     Error_Handler();
@@ -1396,12 +1401,13 @@ HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t *gsrResi
   if (status == HAL_OK)
   {
     //GSR_output(&adcValue);
-    GSR_controlRange(adcValue);
 
     int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
         hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
 
     *gsrResistance = GSR_calcResistance(gsrMv, GSR_getCurrentActiveResistor());
+
+    GSR_controlRange(adcValue);
   }
 
   return status;
