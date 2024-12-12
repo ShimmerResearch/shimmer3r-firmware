@@ -23,9 +23,9 @@
 /* USER CODE BEGIN 0 */
 #include "gpdma.h"
 #include "hal_Board.h"
-#define AUDIO_IN_SAMPLING_FREQUENCY      16000U
-#define DEFAULT_AUDIO_IN_BUFFER_SIZE     (AUDIO_IN_SAMPLING_FREQUENCY/1000)*2U
-#define SaturaLH(N, L, H) (((N)<(L))?(L):(((N)>(H))?(H):(N)))
+#define AUDIO_IN_SAMPLING_FREQUENCY  16000U
+#define DEFAULT_AUDIO_IN_BUFFER_SIZE (AUDIO_IN_SAMPLING_FREQUENCY / 1000) * 2U
+#define SaturaLH(N, L, H)            (((N) < (L)) ? (L) : (((N) > (H)) ? (H) : (N)))
 
 uint8_t micdata[DEFAULT_AUDIO_IN_BUFFER_SIZE] = { 0 };
 uint16_t dataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U];
@@ -96,22 +96,21 @@ void MX_MDF1_Init(void)
   mdfDmaConfiguration();
   micLinklistConfig(&MdfHandle4);
   /* USER CODE END MDF1_Init 2 */
-
 }
 
-void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
+void HAL_MDF_MspInit(MDF_HandleTypeDef *mdfHandle)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  if(IS_MDF_INSTANCE(mdfHandle->Instance))
+  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
+  if (IS_MDF_INSTANCE(mdfHandle->Instance))
   {
-  /* USER CODE BEGIN MDF1_MspInit 0 */
+    /* USER CODE BEGIN MDF1_MspInit 0 */
 
-  /* USER CODE END MDF1_MspInit 0 */
+    /* USER CODE END MDF1_MspInit 0 */
 
-  /** Initializes the peripherals clock
-  */
+    /** Initializes the peripherals clock
+     */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_MDF1;
     PeriphClkInit.Mdf1ClockSelection = RCC_MDF1CLKSOURCE_PLL3;
     PeriphClkInit.PLL3.PLL3Source = RCC_PLLSOURCE_HSE;
@@ -162,20 +161,20 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef* mdfHandle)
     /* MDF1 interrupt Init */
     HAL_NVIC_SetPriority(MDF1_FLT4_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(MDF1_FLT4_IRQn);
-  /* USER CODE BEGIN MDF1_MspInit 1 */
+    /* USER CODE BEGIN MDF1_MspInit 1 */
 
-  /* USER CODE END MDF1_MspInit 1 */
+    /* USER CODE END MDF1_MspInit 1 */
   }
 }
 
-void HAL_MDF_MspDeInit(MDF_HandleTypeDef* mdfHandle)
+void HAL_MDF_MspDeInit(MDF_HandleTypeDef *mdfHandle)
 {
 
-  if(IS_MDF_INSTANCE(mdfHandle->Instance))
+  if (IS_MDF_INSTANCE(mdfHandle->Instance))
   {
-  /* USER CODE BEGIN MDF1_MspDeInit 0 */
+    /* USER CODE BEGIN MDF1_MspDeInit 0 */
 
-  /* USER CODE END MDF1_MspDeInit 0 */
+    /* USER CODE END MDF1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_MDF1_CLK_DISABLE();
 
@@ -184,15 +183,15 @@ void HAL_MDF_MspDeInit(MDF_HandleTypeDef* mdfHandle)
     PC1     ------> MDF1_CKI4
     PE9     ------> MDF1_CCK0
     */
-    HAL_GPIO_DeInit(GPIOC, MIC_SD_Pin|MIC_CK_Pin);
+    HAL_GPIO_DeInit(GPIOC, MIC_SD_Pin | MIC_CK_Pin);
 
     HAL_GPIO_DeInit(GPIO_EXTERNAL_GPIO_Port, GPIO_EXTERNAL_Pin);
 
     /* MDF1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(MDF1_FLT4_IRQn);
-  /* USER CODE BEGIN MDF1_MspDeInit 1 */
+    /* USER CODE BEGIN MDF1_MspDeInit 1 */
 
-  /* USER CODE END MDF1_MspDeInit 1 */
+    /* USER CODE END MDF1_MspDeInit 1 */
   }
 }
 
@@ -209,7 +208,7 @@ void startDataGather(void)
 
   HAL_Delay(100);
   mdfDmaConfiguration();
-  if(HAL_MDF_AcqStart_DMA(&MdfHandle4, &MdfFilterConfig4, &mdfDmaConfig)!= HAL_OK)
+  if (HAL_MDF_AcqStart_DMA(&MdfHandle4, &MdfFilterConfig4, &mdfDmaConfig) != HAL_OK)
   {
     Error_Handler();
   }
@@ -222,29 +221,32 @@ void startDataGather(void)
 void mdfDmaConfiguration(void)
 {
   mdfDmaConfig.Address = (uint32_t) &micdata[0];
-  mdfDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);;
+  mdfDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);
+  ;
   mdfDmaConfig.MsbOnly = ENABLE;
 }
+
 void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
 {
   UNUSED(hmdf);
 
-
-  for (uint32_t j = 0U; j < 16U; j++) {
+  for (uint32_t j = 0U; j < 16U; j++)
+  {
     int32_t Z = (micdata[j] * 50) / 100;
     dataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
   }
-
 }
+
 void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf)
 {
   //printf("here");
-  for (uint32_t j = 0U; j < 16U; j++) {
+  for (uint32_t j = 0U; j < 16U; j++)
+  {
     int32_t Z = ((micdata[j + 16]) * 50) / 100;
     dataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
   }
   //HAL_MDF_AcqStop_DMA(&MdfHandle4);
- // mdfDmaConfiguration();
+  //mdfDmaConfiguration();
   //TODO: Take care of the data here.
 }
 
