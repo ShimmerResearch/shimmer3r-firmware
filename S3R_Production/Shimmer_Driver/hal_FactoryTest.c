@@ -68,6 +68,7 @@ uint32_t run_factory_test(void)
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
 
     runMicrophoneTest();
+    send_test_report("\r\n");
   }
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
@@ -862,15 +863,19 @@ uint8_t runGsrFactoryTest(void)
 uint8_t runMicrophoneTest(void)
 {
   uint8_t self_test_result = 1;
-
+  uint16_t *micTestData = { 0 };
   send_test_report("Microphone:\r\n");
-  Board_SW_MIC(1);
-
-  //TODO
-  send_test_report(" - S3R_TEST_0025 - WARNING: test not implemented yet\r\n");
-
-  Board_SW_MIC(0);
-
+  micTestData = micTest();
+  if (micTestData[0] != 0 && micTestData[5] != 0 && micTestData[10] != 0) //checking 3 data indexes to see if there is any 0's
+  {
+    self_test_result = SELF_TEST_PASS;
+    send_test_report(" - S3R_TEST_0025 - PASS : Test buffer not empty\r\n");
+  }
+  else
+  {
+    self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
+    send_test_report(" - S3R_TEST_0025 - FAIL: Test buffer is empty\r\n");
+  }
   if (self_test_result)
   {
     shimmerStatus.testResult |= S3R_TEST_0025;
