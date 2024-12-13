@@ -335,7 +335,7 @@ void S4_NORM_ADC_configureChannels(void)
   sensing.ccLen += nbr_adc_chans;
 }
 
-void S4_NORM_ADC_startSensing()
+void S4_NORM_ADC_startSensing(void)
 {
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
   ADC_ChannelConfTypeDef sConfig = { 0 };
@@ -791,6 +791,53 @@ void initSensAdc(uint32_t numChannels)
 #endif
 }
 
+void initGsrAdc(void)
+{
+  ADC_ChannelConfTypeDef sConfig = { 0 };
+
+  hadc2.Instance = ADC2;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+#if OLD_CONSENSYS_SUPPORT
+  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
+#else
+  hadc2.Init.Resolution = ADC_RESOLUTION_14B;
+#endif
+  hadc2.Init.GainCompensation = 0;
+  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc2.Init.LowPowerAutoWait = DISABLE;
+  hadc2.Init.ContinuousConvMode = DISABLE;
+  hadc2.Init.NbrOfConversion = 1;
+  hadc2.Init.DiscontinuousConvMode = DISABLE;
+  hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc2.Init.DMAContinuousRequests = DISABLE;
+  hadc2.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_LOW;
+  hadc2.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc2.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
+  hadc2.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
+  hadc2.Init.OversamplingMode = DISABLE;
+  hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  if (HAL_ADC_Init(&hadc2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+   */
+  sConfig.Channel = ADC_CHANNEL_INT_A3;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_814CYCLES;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
 void S4_NORM_ADC_bufPoll()
 {
   uint8_t adc_offset_sens = 0; //, adc_offset_resv = 0;
@@ -993,9 +1040,7 @@ void S4_NORM_ADC_stopSensing()
   }
   if (configBytes->chEnGsr)
   {
-    Board_SW_GSR(0);
-    GSR_setRange(HW_RES_40K);
-    gsrActiveResistor = HW_RES_40K;
+    resetGsrPwrAndRange();
   }
 
 #if defined(SHIMMER4_SDK)
@@ -1330,6 +1375,49 @@ battAlarmInterval_t getBatteryInterval(void)
 void resetBatteryCriticalCount(void)
 {
   battCriticalCount = 0;
+}
+
+HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample)
+{
+  HAL_StatusTypeDef status = HAL_ADC_Start(hadc);
+  status = HAL_ADC_PollForConversion(hadc, 100);
+  if (status == HAL_OK)
+  {
+    *sample = HAL_ADC_GetValue(hadc);
+  }
+  else
+  {
+    return 1;
+  }
+
+  return status;
+}
+
+HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t *gsrResistance)
+{
+  uint32_t adcValue = 0;
+
+  HAL_StatusTypeDef status = getSingleAdcChSample(hadc, &adcValue);
+  if (status == HAL_OK)
+  {
+    //GSR_output(&adcValue);
+
+    int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
+        hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
+
+    *gsrResistance = GSR_calcResistance(gsrMv, GSR_getCurrentActiveResistor());
+
+    GSR_controlRange(adcValue);
+  }
+
+  return status;
+}
+
+void resetGsrPwrAndRange(void)
+{
+  Board_SW_GSR(0);
+  GSR_setRange(HW_RES_40K);
+  gsrActiveResistor = HW_RES_40K;
 }
 
 /* USER CODE END 1 */

@@ -437,7 +437,9 @@ typedef union
     uint8_t macAddr[6];
 
     //SDConfigDelayFlag;
-    uint8_t infoSdcfg        : 1;
+    uint8_t infoSdcfg : 1;
+    /* Used to be used by older, individual calibration files. Replaced by calib
+     * dump file*/
     uint8_t infoCalib        : 1;
     uint8_t unusedIdx230Bit2 : 1;
     uint8_t unusedIdx230Bit3 : 1;
@@ -543,5 +545,6 @@ void set_config_byte_pressure_oversampling_ratio(gConfigBytes *storedConfigPtr, 
 uint8_t get_config_byte_pressure_oversampling_ratio(void);
 void set_config_byte_mag_rate(gConfigBytes *storedConfigPtr, uint8_t value);
 uint8_t get_config_byte_mag_rate(void);
+uint8_t checkAndCorrectConfig(gConfigBytes *storedConfig);
 
 #endif //S4Ram_H

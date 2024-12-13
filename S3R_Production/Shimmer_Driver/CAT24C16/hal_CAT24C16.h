@@ -33,8 +33,6 @@ void eepromPowerOff(void);
 
 uint8_t eepromTest(void);
 
-void altEepromPowerOn(void);
-void altEepromPowerOff(void);
 uint8_t altEepromTest(void);
 
 void eepromRead(uint16_t dataAddr, uint16_t dataSize, uint8_t *dataBuf);

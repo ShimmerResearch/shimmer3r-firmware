@@ -13,8 +13,6 @@
 #include <shimmer_include.h>
 #include <stdint.h>
 
-#define BT_DMA_USED_FOR_RX                          1
-
 #define MAX_COMMAND_ARG_SIZE                        131
 
 //Packet Types// Packet Types
@@ -180,6 +178,23 @@
 #define PRESSURE_CALIBRATION_COEFFICIENTS_RESPONSE    0xA6
 #define GET_PRESSURE_CALIBRATION_COEFFICIENTS_COMMAND 0xA7
 #define SET_FACTORY_TEST                              0xA8
+#if defined(SHIMMER3R)
+#define SET_ALT_ACCEL_CALIBRATION_COMMAND   0xA9
+#define ALT_ACCEL_CALIBRATION_RESPONSE      0xAA
+#define GET_ALT_ACCEL_CALIBRATION_COMMAND   0xAB
+#define SET_ALT_ACCEL_SAMPLING_RATE_COMMAND 0xAC
+#define ALT_ACCEL_SAMPLING_RATE_RESPONSE    0xAD
+#define GET_ALT_ACCEL_SAMPLING_RATE_COMMAND 0xAE
+#define SET_ALT_MAG_CALIBRATION_COMMAND     0xAF
+#define ALT_MAG_CALIBRATION_RESPONSE        0xB0
+#define GET_ALT_MAG_CALIBRATION_COMMAND     0xB1
+#define SET_ALT_MAG_SAMPLING_RATE_COMMAND   0xB2
+#define ALT_MAG_SAMPLING_RATE_RESPONSE      0xB3
+#define GET_ALT_MAG_SAMPLING_RATE_COMMAND   0xB4
+#define SET_PRESSURE_SAMPLING_RATE_COMMAND  0xB5
+#define PRESSURE_SAMPLING_RATE_RESPONSE     0xB6
+#define GET_PRESSURE_SAMPLING_RATE_COMMAND  0xB7
+#endif
 #if !USE_OLD_SD_SYNC_APPROACH
 #define SET_SD_SYNC_COMMAND 0xE0
 #define SD_SYNC_RESPONSE    0xE1
@@ -204,37 +219,11 @@ enum
   PRESSURE_SENSOR_BMP390 = 2
 };
 
-#if BT_DMA_USED_FOR_RX
-//uint8_t Dma2ConversionDone(void);
 uint8_t Dma2ConversionDone(uint8_t *rxBuff);
 #if defined(SHIMMER3)
 uint8_t parseRn4678Status(void);
 #endif
 void resetBtRxVariablesOnConnect(void);
-//void resetBtRxBuff(void);
-#else
-void processBtUartBuf(void);
-void handleBtRxTimeout(void);
-uint8_t hasBtRxTimeoutOccurred(void);
-void processStartRnCmdResponse(void);
-uint8_t wasStartBtCmdModeSentAndReponseReceived(void);
-//uint8_t waitingForRnBtCmdResponse(void);
-//uint8_t isExpectedRnBtCmdResponseInFifo(void);
-void clearBytesFromBtRxBuf(uint16_t numBytes);
-uint8_t getRxByteAtIndex(uint16_t index);
-uint8_t processStatusString(void);
-uint8_t isBtRxBufLike(char statStrCheck[], uint8_t numCharTolerance);
-uint8_t processRnCmdResponse(void);
-uint8_t isFullRN4678CmdResponseReceived(void);
-void clearBtCmdTxRxBuffsAndProceed(void);
-uint8_t processShimmerBtCmd(void);
-void readActionAndArgBytes(uint8_t numArgs);
-uint8_t isNewLineDetectedInBtRxBuf(void);
-uint8_t isShimmerBtCmd(uint8_t data);
-void updateNumBytesInBtRxBufWhenLastProcessed(void);
-uint16_t getNumBytesInBtRxBufWhenLastProcessed(void);
-uint8_t areUnprocessedBytesInBtRxBuff(void);
-#endif
 
 #if defined(SHIMMER3)
 void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void),
@@ -249,7 +238,7 @@ void btCommsProtocolInit(uint8_t (*newBtCmdToProcessCb)(void));
 void triggerBtRfCommStateChangeCallback(bool state);
 void triggerShimmerErrorState(void);
 #endif
-void resetBtResponseBools(void);
+void resetBtResponseVars(void);
 uint8_t getBtVerStrLen(void);
 char *getBtVerStrPtr(void);
 void updateBtVer(void);
@@ -257,7 +246,16 @@ void updateBtVer(void);
 uint8_t isWaitingForArgs(void);
 
 void BtUart_processCmd(void);
+void BtUart_settingChangeCommon(uint16_t configByteIdx, uint16_t sdHeaderIdx, uint16_t len);
+void BtUart_calibrationChangeCommon(uint16_t configByteIdx,
+    uint16_t sdHeaderIdx,
+    uint8_t *configBytePtr,
+    uint8_t *newCalibPtr,
+    uint8_t sensorCalibId);
+void BtUart_updateCalibDumpFile(void);
+uint8_t BtUart_replySingleSensorCalibCmd(uint8_t cmdWaitingResponse, uint8_t *resPacketPtr);
 void BtUart_sendRsp(void);
+uint8_t BtUart_getExpectedRspForGetCmd(uint8_t getCmd);
 
 void setDmaWaitingForResponse(uint16_t count);
 uint16_t getBtRxShimmerCommsWaitByteCount(void);

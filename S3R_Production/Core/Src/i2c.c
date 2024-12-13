@@ -158,7 +158,7 @@ void MX_I2C4_Init(void)
   }
   /* USER CODE BEGIN I2C4_Init 2 */
 
-  altEepromInit(&hi2c4);
+  HAL_Delay(BOOT_TIME);
 
   /* USER CODE END I2C4_Init 2 */
 }
@@ -336,25 +336,30 @@ void I2C4_DeInit(void)
 
 void I2C_scan_busses(void)
 {
-  I2C_scan(hi2cMainBus);
+  I2C_scan(hi2cMainBus, i2c_addr_list, &i2c_addr_list_len);
 #if defined(SHIMMER4_SDK)
   I2C_scan(hi2cBattery);
 #endif
 }
 
-void I2C_scan(I2C_HandleTypeDef *hi2c)
+void I2C_scan_internal_expansion_bus(uint8_t *i2c_addr_list_ptr, uint8_t *i2c_addr_list_len_ptr)
+{
+  I2C_scan(&hi2c4, i2c_addr_list_ptr, i2c_addr_list_len_ptr);
+}
+
+void I2C_scan(I2C_HandleTypeDef *hi2c, uint8_t *i2c_addr_list_ptr, uint8_t *i2c_addr_list_len_ptr)
 {
   uint8_t buf = 0;
   uint16_t i2c_addr;
   HAL_StatusTypeDef result;
 
-  i2c_addr_list_len = 0;
+  *i2c_addr_list_len_ptr = 0;
   for (i2c_addr = 0; i2c_addr < 0x80; i2c_addr++)
   {
     result = HAL_I2C_Master_Receive(hi2c, i2c_addr << 1, &buf, 1, 1);
     if (result == HAL_OK)
     {
-      i2c_addr_list[i2c_addr_list_len++] = i2c_addr;
+      i2c_addr_list_ptr[(*i2c_addr_list_len_ptr)++] = i2c_addr;
     }
   }
 }
@@ -1360,6 +1365,22 @@ void loadDaughterCardIdFromEeprom(void)
   setDaugherCardIdPage(daughterCardIdBuf);
   parseDaughterCardId(getDaughtCardId()->exp_brd_id);
   HAL_Delay(5); //5ms to ensure no writes pending
+}
+
+void enableI2cOnInternalExpansionBrd(uint8_t state)
+{
+  if (state)
+  {
+    Board_SW_EXP_BRD_POWER(1);
+    Board_SW_I2C4_ON_PPG(1);
+    MX_I2C4_Init();
+  }
+  else
+  {
+    I2C4_DeInit();
+    Board_SW_EXP_BRD_POWER(0);
+    Board_SW_I2C4_ON_PPG(0);
+  }
 }
 
 /* USER CODE END 1 */

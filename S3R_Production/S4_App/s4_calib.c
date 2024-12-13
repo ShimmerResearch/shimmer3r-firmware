@@ -975,22 +975,19 @@ void ShimmerCalibFromInfo(uint8_t sensor, uint8_t use_sys_time)
   {
     offset = NV_GYRO_CALIBRATION;
     sc1.data_len = SC_DATA_LEN_MPU9X50_ICM20948_GYRO;
-    InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE2, 1);
-    sc1.range = info_config & 0x03;
+    sc1.range = storedConfig.gyroRangeLsb;
   }
   else if (sc1.id == SC_SENSOR_LSM303_ACCEL)
   {
     offset = NV_WR_ACCEL_CALIBRATION;
     sc1.data_len = SC_DATA_LEN_LSM303_ACCEL;
-    InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE0, 1);
-    sc1.range = (info_config & 0x0c) >> 2;
+    sc1.range = configBytes->wrAccelRange;
   }
   else if (sc1.id == SC_SENSOR_LSM303_MAG)
   {
     offset = NV_MAG_CALIBRATION;
     sc1.data_len = SC_DATA_LEN_LSM303_MAG;
-    InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE2, 1);
-    sc1.range = (info_config & 0xe0) >> 5;
+    sc1.range = configBytes->magRange;
   }
 #elif defined(SHIMMER3R)
   if (sc1.id == SC_SENSOR_LSM6DSV_ACCEL)
@@ -1003,35 +1000,30 @@ void ShimmerCalibFromInfo(uint8_t sensor, uint8_t use_sys_time)
   {
     offset = NV_GYRO_CALIBRATION;
     sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-    InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE2, 1);
     sc1.range = get_config_byte_gyro_range();
   }
   else if (sc1.id == SC_SENSOR_LIS2DW12_ACCEL)
   {
     offset = NV_WR_ACCEL_CALIBRATION;
     sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-    InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE0, 1);
     sc1.range = configBytes->wrAccelRange;
   }
   else if (sc1.id == SC_SENSOR_ADXL371_ACCEL)
   {
     offset = NV_ALT_ACCEL_CALIBRATION;
     sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-    InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE2, 1);
     sc1.range = 0;
   }
   else if (sc1.id == SC_SENSOR_LIS3MDL_MAG)
   {
     offset = NV_MAG_CALIBRATION;
     sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-    InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE2, 1);
     sc1.range = configBytes->magRange;
   }
   else if (sc1.id == SC_SENSOR_LIS2MDL_MAG)
   {
     offset = NV_ALT_MAG_CALIBRATION;
     sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
-    InfoMem_readRam(&info_config, NV_CONFIG_SETUP_BYTE0, 1);
     sc1.range = 0;
   }
 #endif
@@ -1040,7 +1032,6 @@ void ShimmerCalibFromInfo(uint8_t sensor, uint8_t use_sys_time)
     return;
   }
 
-  InfoMem_readRam(&configBytes->rawBytes[offset], offset, SC_DATA_LEN_STD_IMU_CALIB);
   for (byte_cnt = SC_DATA_LEN_STD_IMU_CALIB; byte_cnt > 0; byte_cnt--)
   {
     if (configBytes->rawBytes[offset + byte_cnt] != 0xff)
@@ -1140,7 +1131,7 @@ void ShimmerCalibSyncFromDumpRamSingleSensor(uint8_t sensor)
     scs_infomem_offset = NV_ALT_ACCEL_CALIBRATION;
     scs_sdhead_offset = SDH_ALT_ACCEL_CALIBRATION;
     scs_sdhead_ts = SDH_ALT_ACCEL_CALIB_TS;
-    sc1.range = 0;
+    sc1.range = SC_SENSOR_RANGE_ADXL371_RANGE;
     break;
   case SC_SENSOR_LIS3MDL_MAG:
     scs_infomem_offset = NV_MAG_CALIBRATION;
@@ -1152,7 +1143,7 @@ void ShimmerCalibSyncFromDumpRamSingleSensor(uint8_t sensor)
     scs_infomem_offset = NV_ALT_MAG_CALIBRATION;
     scs_sdhead_offset = SDH_ALT_MAG_CALIBRATION;
     scs_sdhead_ts = SDH_ALT_MAG_CALIB_TS;
-    sc1.range = 0;
+    sc1.range = SC_SENSOR_RANGE_LIS2MDL_RANGE;
     break;
   default:
     break;

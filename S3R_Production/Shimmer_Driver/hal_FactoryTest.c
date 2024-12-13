@@ -20,6 +20,8 @@ factory_test_t factoryTestToRun;
 
 char buffer[100];
 
+uint8_t test_i2c_addr_list[128], test_i2c_addr_list_len;
+
 uint32_t run_factory_test(void)
 {
   send_test_report("//**************************** TEST START "
@@ -58,10 +60,14 @@ uint32_t run_factory_test(void)
     //InfoMem_test();
 
     I2C_test();
+    send_test_report("\r\n");
 
     SPI_test();
+    send_test_report("\r\n");
 
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
+
+    runMicrophoneTest();
   }
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
@@ -489,13 +495,61 @@ void I2C_test(void)
   send_test_report("I2C4:\r\n");
   if (isI2c4Supported())
   {
-    altEepromPowerOn();
-    uint8_t eeprom_result = altEepromTest();
-    altEepromPowerOff();
+    uint8_t i2c4_result = 1;
 
-    sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n", eeprom_result ? "FAIL" : "PASS");
-    send_test_report(buffer);
-    if (eeprom_result)
+    enableI2cOnInternalExpansionBrd(1);
+    HAL_Delay(2); //2ms as per Shimmer3 code
+    I2C_scan_internal_expansion_bus(test_i2c_addr_list, &test_i2c_addr_list_len);
+
+    if (test_i2c_addr_list_len == 0)
+    {
+      send_test_report(
+          " - S3R_TEST_0017 - WARNING: I2C4 - no test rig detected\r\n");
+      send_test_report(
+          " - S3R_TEST_0018 - WARNING: GSR - no test rig detected\r\n");
+    }
+    else
+    {
+      if (test_i2c_addr_list_len == 1)
+      {
+        altEepromInit(&hi2c4);
+        i2c4_result = altEepromTest();
+        HAL_Delay(5); //5ms to ensure no writes pending
+
+        sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
+        send_test_report(buffer);
+        send_test_report(
+            " - S3R_TEST_0018 - WARNING: GSR - no test rig detected\r\n");
+      }
+      else
+      {
+        if (test_i2c_addr_list_len == 3)
+        {
+          send_test_report(" - S3R_TEST_0017 - PASS: I2C4\r\n");
+
+          uint8_t gsr_result = runGsrFactoryTest();
+          sprintf(buffer, " - S3R_TEST_0018 - %s: GSR signal test\r\n",
+              gsr_result ? "FAIL" : "PASS");
+          send_test_report(buffer);
+
+          if (gsr_result)
+          {
+            shimmerStatus.testResult |= S3R_TEST_0018;
+          }
+        }
+        else
+        {
+          send_test_report(
+              " - S3R_TEST_0017 - FAIL: I2C4 - test rig not recognised\r\n");
+          send_test_report(
+              " - S3R_TEST_0018 - FAIL: GSR - test rig not recognised\r\n");
+        }
+      }
+    }
+
+    enableI2cOnInternalExpansionBrd(0);
+
+    if (i2c4_result)
     {
       shimmerStatus.testResult |= S3R_TEST_0017;
     }
@@ -530,9 +584,9 @@ void SPI_test(void)
   }
   if (self_test_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0018;
+    shimmerStatus.testResult |= S3R_TEST_0019;
   }
-  print_chip_test_result("S3R_TEST_0018", "LSM6DSV", self_test_result, tempCal);
+  print_chip_test_result("S3R_TEST_0019", "LSM6DSV", self_test_result, tempCal);
 
   int8_t bmp390_result = bmp3_self_test();
   if (bmp390_result == 0)
@@ -540,36 +594,36 @@ void SPI_test(void)
     struct bmp3_data *bmp3_data = (struct bmp3_data *) get_bmp3_selftest_data();
     uint8_t testPass = (bmp3_data->temperature > TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
         && bmp3_data->temperature < TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
-    sprintf(buffer, " - S3R_TEST_0019 - %s: BMP390 (%.2f\xB0 C)\r\n",
+    sprintf(buffer, " - S3R_TEST_0020 - %s: BMP390 (%.2f\xB0 C)\r\n",
         bmp390_result ? "FAIL" : "PASS", bmp3_data->temperature);
     send_test_report(buffer);
   }
   else
   {
-    sprintf(buffer, " - S3R_TEST_0019 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
+    sprintf(buffer, " - S3R_TEST_0020 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
     send_test_report(buffer);
     send_test_report(" - ");
     bmp3_check_rslt("BMP390", bmp390_result, buffer);
     send_test_report(buffer);
     if (bmp390_result)
     {
-      shimmerStatus.testResult |= S3R_TEST_0019;
+      shimmerStatus.testResult |= S3R_TEST_0020;
     }
   }
 
   if (isAdxl371Present())
   {
     self_test_result = adxl371_self_test();
-    print_chip_test_result("S3R_TEST_0020", "ADXL371", self_test_result,
+    print_chip_test_result("S3R_TEST_0021", "ADXL371", self_test_result,
         TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
     if (self_test_result)
     {
-      shimmerStatus.testResult |= S3R_TEST_0020;
+      shimmerStatus.testResult |= S3R_TEST_0021;
     }
   }
   else
   {
-    sprintf(buffer, " - S3R_TEST_0020 - ADXL371 test not applicable for this model\r\n");
+    sprintf(buffer, " - S3R_TEST_0021 - ADXL371 test not applicable for this model\r\n");
     send_test_report(buffer);
   }
 
@@ -589,10 +643,10 @@ void SPI_test(void)
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
   }
-  print_chip_test_result("S3R_TEST_0021", "LIS3MDL", self_test_result, tempCal);
+  print_chip_test_result("S3R_TEST_0022", "LIS3MDL", self_test_result, tempCal);
   if (self_test_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0021;
+    shimmerStatus.testResult |= S3R_TEST_0022;
   }
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
@@ -606,10 +660,10 @@ void SPI_test(void)
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
   }
-  print_chip_test_result("S3R_TEST_0022", "LIS2DW12", self_test_result, tempCal);
+  print_chip_test_result("S3R_TEST_0023", "LIS2DW12", self_test_result, tempCal);
   if (self_test_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0022;
+    shimmerStatus.testResult |= S3R_TEST_0023;
   }
 
   SPI2_DeInit();
@@ -625,7 +679,7 @@ void SPI_test(void)
     //ret_val |= EXG_test();
 
     send_test_report(
-        " - S3R_TEST_0023 - WARNING: ADS1292R test not implemented yet\r\n");
+        " - S3R_TEST_0024 - WARNING: ADS1292R test not implemented yet\r\n");
     //if (self_test_result)
     //{
     //  shimmerStatus.testResult |= S3R_TEST_0023;
@@ -636,7 +690,7 @@ void SPI_test(void)
   else
   {
     send_test_report(
-        " - S3R_TEST_0023 - ADS1292R test not applicable for this model\r\n");
+        " - S3R_TEST_0024 - ADS1292R test not applicable for this model\r\n");
   }
 }
 
@@ -715,4 +769,112 @@ void send_test_report(char *str)
   default:
     break;
   }
+}
+
+//TODO
+uint8_t runGsrFactoryTest(void)
+{
+  int32_t gsrResistance = 0;
+  uint8_t returnVal = 0;
+
+  Board_SW_GSR(1);
+  gsrTestRigInit(&hi2c4);
+  GSR_setRange(HW_RES_40K);
+  initGsrAdc();
+
+  ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc2();
+
+  ////  {8.0, 63.0},    //Range 0
+  //setGsrTestRigResistance(10000L); // 3.9kOhm
+  ////  {63.0, 220.0},    //Range 1
+  //setGsrTestRigResistance(75000L); // kOhm
+  ////  {220.0, 680.0},   //Range 2
+  //setGsrTestRigResistance(250000L); // 3.8kOhm
+  ////  setGsrTestRigResistance(750000L); // 77.5kOhm
+  //setGsrTestRigResistance(1500000L); // 1.55MOhm
+  ////  {680.0, 4700.0}};   //Range 3
+  //setGsrTestRigResistance(4000000L); // 3.95MOhm
+
+  //Dummy read to set correct GSR Range
+  HAL_StatusTypeDef status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+  if (status != HAL_OK)
+  {
+    returnVal = 1;
+  }
+
+  //uint8_t currentActiveResistor;
+  while (1)
+  {
+    //currentActiveResistor = GSR_getCurrentActiveResistor();
+    //status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+    //SHIMMER_PRINTF("GSR Range=%d, Resistance=%ld\r\n", gsrResistance,
+    //currentActiveResistor); HAL_Delay(1000);
+    //}
+
+    //Test 1 - 75kOhm
+    if (returnVal == 0)
+    {
+      setGsrTestRigResistance(75000L);
+      HAL_Delay(1000);
+      status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+      SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
+      //if (status != HAL_OK || gsrResistance < 700 || gsrResistance > 800)
+      //{
+      //  returnVal = 1;
+      //}
+    }
+
+    //Test 2 - 1.5MOhm
+    if (returnVal == 0)
+    {
+      setGsrTestRigResistance(1500000L);
+      HAL_Delay(1000);
+      status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+      SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
+      //if (status != HAL_OK || gsrResistance < 1400 || gsrResistance > 1600)
+      //{
+      //  returnVal = 1;
+      //}
+    }
+
+    //Test 2 - 3.5MOhm
+    if (returnVal == 0)
+    {
+      setGsrTestRigResistance(3500000L);
+      HAL_Delay(1000);
+      status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
+      SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
+      //if (status != HAL_OK || gsrResistance < 3400 || gsrResistance > 3600)
+      //{
+      //  returnVal = 1;
+      //}
+    }
+  }
+  //Stop ADC
+  HAL_ADC_Stop(hadcFactoryTestPtr);
+  HAL_ADC_DeInit(hadcFactoryTestPtr);
+
+  Board_SW_GSR(0);
+
+  return returnVal;
+}
+
+uint8_t runMicrophoneTest(void)
+{
+  uint8_t self_test_result = 1;
+
+  send_test_report("Microphone:\r\n");
+  Board_SW_MIC(1);
+
+  //TODO
+  send_test_report(" - S3R_TEST_0025 - WARNING: test not implemented yet\r\n");
+
+  Board_SW_MIC(0);
+
+  if (self_test_result)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0025;
+  }
+
+  return self_test_result;
 }
