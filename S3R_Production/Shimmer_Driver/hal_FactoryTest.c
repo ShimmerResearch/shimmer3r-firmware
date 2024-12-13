@@ -866,7 +866,8 @@ uint8_t runMicrophoneTest(void)
   uint16_t *micTestData = { 0 };
   send_test_report("Microphone:\r\n");
   micTestData = micTest();
-  if (micTestData[0] != 0 && micTestData[5] != 0 && micTestData[10] != 0) //checking 3 data indexes to see if there is any 0's
+  if (micTestData[0] != 0 && micTestData[5] != 0
+      && micTestData[10] != 0) //checking 3 data indexes to see if there is any 0's
   {
     self_test_result = SELF_TEST_PASS;
     send_test_report(" - S3R_TEST_0025 - PASS : Test buffer not empty\r\n");
