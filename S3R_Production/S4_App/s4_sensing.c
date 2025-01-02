@@ -443,10 +443,10 @@ void S4Sens_bufPoll()
   SPI_pollSensors();
 
   //TODO come back to when support is added
-//  if (isMicrophoneEnabled())
-//  {
-//    micStartSensing();
-//  }
+  //if (isMicrophoneEnabled())
+  //{
+  //  micStartSensing();
+  //}
 }
 
 //this is to be called in the ISR

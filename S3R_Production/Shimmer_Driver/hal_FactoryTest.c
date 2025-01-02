@@ -13,8 +13,8 @@
 #include "spi.h"
 
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
-#include "bmp3_defs.h"
 #include "PCM/pcm_config.h"
+#include "bmp3_defs.h"
 
 factory_test_target_t factoryTestTarget = PRINT_TO_DEBUGGER;
 factory_test_t factoryTestToRun;
@@ -867,14 +867,13 @@ uint8_t runMicrophoneTest(void)
 
   send_test_report("Microphone:\r\n");
 
-  self_test_result = micTest()? SELF_TEST_FAIL_SIGNAL_ISSUE : SELF_TEST_PASS;
+  self_test_result = micTest() ? SELF_TEST_FAIL_SIGNAL_ISSUE : SELF_TEST_PASS;
 
   sprintf(buffer, " - S3R_TEST_0025 - %s\r\n",
-      self_test_result == SELF_TEST_PASS ?
-          "PASS" : "FAIL: Test buffer is empty");
+      self_test_result == SELF_TEST_PASS ? "PASS" : "FAIL: Test buffer is empty");
   send_test_report(buffer);
 
-  if(self_test_result != SELF_TEST_PASS)
+  if (self_test_result != SELF_TEST_PASS)
   {
     shimmerStatus.testResult |= S3R_TEST_0025;
   }

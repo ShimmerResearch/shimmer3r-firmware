@@ -266,9 +266,9 @@ uint8_t micTest(void)
 
   for (uint8_t i = 0; i < (DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U); i++)
   {
-    if(dataBuffer[i] != 0)
+    if (dataBuffer[i] != 0)
     {
-      // some data is present, so the microphone is working
+      //some data is present, so the microphone is working
       return 0;
     }
   }
