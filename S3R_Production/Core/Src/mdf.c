@@ -21,6 +21,7 @@
 #include "mdf.h"
 
 /* USER CODE BEGIN 0 */
+
 #include "gpdma.h"
 #include "hal_Board.h"
 #include <PCM/pcm_config.h>
@@ -29,8 +30,9 @@
 int16_t micDataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE];
 uint16_t dataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U];
 MDF_DmaConfigTypeDef micDmaConfig;
-int Mic_CountSkip;
-volatile uint8_t counter = 0;
+int Mic_CountSkip = 0;
+//volatile uint8_t counter = 0;
+
 /* USER CODE END 0 */
 
 MDF_HandleTypeDef AdfHandle0;
@@ -195,6 +197,8 @@ void MDF1_DeInit(void)
 
 void micStartSensing(void)
 {
+  Mic_CountSkip = 0;
+
   if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
   {
     Error_Handler();
@@ -248,11 +252,6 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
         / 100; //volume arbitrarily set to 100
     dataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
   }
-}
-
-uint8_t isMicrophoneEnabled(void)
-{
-  return S4Ram_getStoredConfig()->chEnMicrophone;
 }
 
 uint8_t micTest(void)

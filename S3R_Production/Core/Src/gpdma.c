@@ -26,6 +26,7 @@
 
 extern DMA_QListTypeDef ADCQueue;
 extern DMA_QListTypeDef MICQueue;
+
 /* USER CODE END 0 */
 
 DMA_HandleTypeDef handle_GPDMA1_Channel11;
@@ -67,7 +68,9 @@ void MX_GPDMA1_Init(void)
   HAL_NVIC_EnableIRQ(GPDMA1_Channel11_IRQn);
 
   /* USER CODE BEGIN GPDMA1_Init 1 */
+
   HAL_DMAEx_List_SetCircularMode(&MICQueue);
+
   /* USER CODE END GPDMA1_Init 1 */
   handle_GPDMA1_Channel11.Instance = GPDMA1_Channel11;
   handle_GPDMA1_Channel11.InitLinkedList.Priority = DMA_LOW_PRIORITY_HIGH_WEIGHT;

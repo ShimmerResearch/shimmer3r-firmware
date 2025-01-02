@@ -50,7 +50,6 @@ extern "C"
   void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf);
   void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf);
   void micStopSensing(void);
-  uint8_t isMicrophoneEnabled(void);
   uint8_t micTest(void);
 
   /* USER CODE END Prototypes */
