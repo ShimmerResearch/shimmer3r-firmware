@@ -255,13 +255,25 @@ uint8_t isMicrophoneEnabled(void)
   return S4Ram_getStoredConfig()->chEnMicrophone;
 }
 
-uint16_t *micTest(void)
+uint8_t micTest(void)
 {
+  memset(dataBuffer, 0, sizeof(dataBuffer));
+
   MX_ADF1_Init();
   micStartSensing();
   HAL_Delay(100);
   micStopSensing();
-  return dataBuffer;
+
+  for (uint8_t i = 0; i < (DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U); i++)
+  {
+    if(dataBuffer[i] != 0)
+    {
+      // some data is present, so the microphone is working
+      return 0;
+    }
+  }
+
+  return 1;
 }
 
 /* USER CODE END 1 */

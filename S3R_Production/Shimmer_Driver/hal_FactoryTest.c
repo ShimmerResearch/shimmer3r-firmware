@@ -14,6 +14,7 @@
 
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
 #include "bmp3_defs.h"
+#include "PCM/pcm_config.h"
 
 factory_test_target_t factoryTestTarget = PRINT_TO_DEBUGGER;
 factory_test_t factoryTestToRun;
@@ -862,22 +863,18 @@ uint8_t runGsrFactoryTest(void)
 
 uint8_t runMicrophoneTest(void)
 {
-  uint8_t self_test_result = 1;
-  uint16_t *micTestData = { 0 };
+  uint8_t self_test_result = SELF_TEST_PASS;
+
   send_test_report("Microphone:\r\n");
-  micTestData = micTest();
-  if (micTestData[0] != 0 && micTestData[5] != 0
-      && micTestData[10] != 0) //checking 3 data indexes to see if there is any 0's
-  {
-    self_test_result = SELF_TEST_PASS;
-    send_test_report(" - S3R_TEST_0025 - PASS : Test buffer not empty\r\n");
-  }
-  else
-  {
-    self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
-    send_test_report(" - S3R_TEST_0025 - FAIL: Test buffer is empty\r\n");
-  }
-  if (self_test_result)
+
+  self_test_result = micTest()? SELF_TEST_FAIL_SIGNAL_ISSUE : SELF_TEST_PASS;
+
+  sprintf(buffer, " - S3R_TEST_0025 - %s\r\n",
+      self_test_result == SELF_TEST_PASS ?
+          "PASS" : "FAIL: Test buffer is empty");
+  send_test_report(buffer);
+
+  if(self_test_result != SELF_TEST_PASS)
   {
     shimmerStatus.testResult |= S3R_TEST_0025;
   }
