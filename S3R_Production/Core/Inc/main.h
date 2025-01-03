@@ -146,16 +146,12 @@ extern "C"
 #define BT_CTS_GPIO_Port            GPIOD
 #define BT_RTS_Pin                  GPIO_PIN_12
 #define BT_RTS_GPIO_Port            GPIOD
-#define BSL_TX_Pin                  GPIO_PIN_2
-#define BSL_TX_GPIO_Port            GPIOA
 #define GPIO_ADC_INT_EXP3_Pin       GPIO_PIN_2
 #define GPIO_ADC_INT_EXP3_GPIO_Port GPIOB
 #define LSM6DSV_INT1_Pin            GPIO_PIN_7
 #define LSM6DSV_INT1_GPIO_Port      GPIOE
 #define LED_UPR_GR_Pin              GPIO_PIN_10
 #define LED_UPR_GR_GPIO_Port        GPIOB
-#define BSL_RX_Pin                  GPIO_PIN_3
-#define BSL_RX_GPIO_Port            GPIOA
 #define USER_BTN_Pin                GPIO_PIN_6
 #define USER_BTN_GPIO_Port          GPIOA
 #define USER_BTN_EXTI_IRQn          EXTI6_IRQn
@@ -193,6 +189,12 @@ extern "C"
 
 #define GPIO_ADC_INT_EXP0_Pin       GPIO_PIN_5
 #define GPIO_ADC_INT_EXP0_GPIO_Port GPIOA
+
+#define BSL_TX_Pin                  GPIO_PIN_2
+#define BSL_TX_GPIO_Port            GPIOA
+
+#define BSL_RX_Pin                  GPIO_PIN_3
+#define BSL_RX_GPIO_Port            GPIOA
 
 #if SR48_6_0_PATCH_DOCK_DETECT
 #define SR48_6_0_BOOT0_USER_BTN_Pin       GPIO_PIN_3

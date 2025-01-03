@@ -37,8 +37,8 @@ extern "C"
 
   extern MDF_FilterConfigTypeDef AdfFilterConfig0;
 
-  /* USER CODE BEGIN Private defines */
-
+/* USER CODE BEGIN Private defines */
+#define MAX_BUFFER_SIZE 32000
   /* USER CODE END Private defines */
 
   void MX_ADF1_Init(void);
@@ -46,6 +46,11 @@ extern "C"
   /* USER CODE BEGIN Prototypes */
 
   void MDF1_DeInit(void);
+  void micStartSensing(void);
+  void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf);
+  void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf);
+  void micStopSensing(void);
+  uint8_t micTest(void);
 
   /* USER CODE END Prototypes */
 

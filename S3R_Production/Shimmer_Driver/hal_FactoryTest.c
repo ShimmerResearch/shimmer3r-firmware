@@ -13,6 +13,7 @@
 #include "spi.h"
 
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
+#include "PCM/pcm_config.h"
 #include "bmp3_defs.h"
 
 factory_test_target_t factoryTestTarget = PRINT_TO_DEBUGGER;
@@ -68,6 +69,7 @@ uint32_t run_factory_test(void)
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
 
     runMicrophoneTest();
+    send_test_report("\r\n");
   }
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
@@ -861,17 +863,17 @@ uint8_t runGsrFactoryTest(void)
 
 uint8_t runMicrophoneTest(void)
 {
-  uint8_t self_test_result = 1;
+  uint8_t self_test_result = SELF_TEST_PASS;
 
   send_test_report("Microphone:\r\n");
-  Board_SW_MIC(1);
 
-  //TODO
-  send_test_report(" - S3R_TEST_0025 - WARNING: test not implemented yet\r\n");
+  self_test_result = micTest() ? SELF_TEST_FAIL_SIGNAL_ISSUE : SELF_TEST_PASS;
 
-  Board_SW_MIC(0);
+  sprintf(buffer, " - S3R_TEST_0025 - %s\r\n",
+      self_test_result == SELF_TEST_PASS ? "PASS" : "FAIL: Test buffer is empty");
+  send_test_report(buffer);
 
-  if (self_test_result)
+  if (self_test_result != SELF_TEST_PASS)
   {
     shimmerStatus.testResult |= S3R_TEST_0025;
   }

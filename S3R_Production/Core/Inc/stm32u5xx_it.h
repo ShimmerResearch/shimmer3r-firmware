@@ -79,7 +79,9 @@ extern "C"
   void GPDMA1_Channel8_IRQHandler(void);
   void GPDMA1_Channel9_IRQHandler(void);
   void GPDMA1_Channel10_IRQHandler(void);
+  void GPDMA1_Channel11_IRQHandler(void);
   void SPI3_IRQHandler(void);
+  void ADF1_IRQHandler(void);
   /* USER CODE BEGIN EFP */
 
   /* Note the interrupts listed below are not enabled by default in CubeMX and
