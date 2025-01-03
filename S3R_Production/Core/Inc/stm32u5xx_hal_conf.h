@@ -74,6 +74,7 @@ extern "C"
 #define HAL_RTC_MODULE_ENABLED
 /*#define HAL_SAI_MODULE_ENABLED */
 #define HAL_SD_MODULE_ENABLED
+/*#define HAL_SDIO_MODULE_ENABLED */
 /*#define HAL_SMARTCARD_MODULE_ENABLED */
 /*#define HAL_SMBUS_MODULE_ENABLED */
 #define HAL_SPI_MODULE_ENABLED
@@ -173,18 +174,17 @@ vary depending on the variations in voltage and temperature.*/
 /**
  * @brief This is the HAL system configuration section
  */
-#define VDD_VALUE 3300UL /*!< Value of VDD in mv */
-#define TICK_INT_PRIORITY \
-  (0UL) /*!< tick interrupt priority (lowest by default) */
-#define USE_RTOS        0U
-#define PREFETCH_ENABLE 1U /*!< Enable prefetch */
+#define VDD_VALUE         3300UL /*!< Value of VDD in mv */
+#define TICK_INT_PRIORITY (0UL)  /*!< tick interrupt priority */
+#define USE_RTOS          0U
+#define PREFETCH_ENABLE   1U /*!< Enable prefetch */
 
   /* ########################## Assert Selection ############################## */
   /**
    * @brief Uncomment the line below to expanse the "assert_param" macro in the
    *        HAL drivers code
    */
-#define USE_FULL_ASSERT 1U
+#define USE_FULL_ASSERT   1U
 
 /* ################## Register callback feature configuration ############### */
 /**
@@ -264,6 +264,8 @@ vary depending on the variations in voltage and temperature.*/
   0U /* SAI register callback disabled       */
 #define USE_HAL_SD_REGISTER_CALLBACKS \
   0U /* SD register callback disabled        */
+#define USE_HAL_SDIO_REGISTER_CALLBACKS \
+  0U /* SDIO register callback disabled      */
 #define USE_HAL_SDRAM_REGISTER_CALLBACKS \
   0U /* SDRAM register callback disabled     */
 #define USE_HAL_SMARTCARD_REGISTER_CALLBACKS \
@@ -292,11 +294,15 @@ vary depending on the variations in voltage and temperature.*/
  * Activated: CRC code is present inside driver
  * Deactivated: CRC code cleaned from driver
  */
-#define USE_SPI_CRC        0U
+#define USE_SPI_CRC          0U
 
   /* ################## SDMMC peripheral configuration ######################### */
 
-#define USE_SD_TRANSCEIVER 0U
+#define USE_SD_TRANSCEIVER   0U
+
+/* ################## SDIO peripheral configuration ########################## */
+#define USE_SDIO_TRANSCEIVER 0U
+#define SDIO_MAX_IO_NUMBER   7U
 
   /* Includes ------------------------------------------------------------------*/
   /**
@@ -434,6 +440,10 @@ vary depending on the variations in voltage and temperature.*/
 #ifdef HAL_SD_MODULE_ENABLED
 #include "stm32u5xx_hal_sd.h"
 #endif /* HAL_SD_MODULE_ENABLED */
+
+#ifdef HAL_SDIO_MODULE_ENABLED
+#include "stm32u5xx_hal_sdio.h"
+#endif /* HAL_SDIO_MODULE_ENABLED */
 
 #ifdef HAL_SMBUS_MODULE_ENABLED
 #include "stm32u5xx_hal_smbus.h"
