@@ -69,7 +69,6 @@ uint32_t run_factory_test(void)
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
 
     runMicrophoneTest();
-    send_test_report("\r\n");
   }
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
@@ -506,47 +505,41 @@ void I2C_test(void)
     if (test_i2c_addr_list_len == 0)
     {
       send_test_report(
-          " - S3R_TEST_0017 - WARNING: I2C4 - no test rig detected\r\n");
+          " - S3R_TEST_0017 - FAIL: I2C4 - no test rig detected\r\n");
+      send_test_report(
+          " - S3R_TEST_0018 - FAIL: GSR - no test rig detected\r\n");
+    }
+    else if (test_i2c_addr_list_len == 1)
+    {
+      altEepromInit(&hi2c4);
+      i2c4_result = altEepromTest();
+      HAL_Delay(5); //5ms to ensure no writes pending
+
+      sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
+      send_test_report(buffer);
       send_test_report(
           " - S3R_TEST_0018 - WARNING: GSR - no test rig detected\r\n");
     }
+    else if (test_i2c_addr_list_len == 3)
+    {
+      send_test_report(" - S3R_TEST_0017 - PASS: I2C4\r\n");
+
+      uint8_t gsr_result = runGsrFactoryTest();
+      sprintf(buffer, " - S3R_TEST_0018 - %s: GSR signal test\r\n",
+          gsr_result ? "FAIL" : "PASS");
+      send_test_report(buffer);
+
+      if (gsr_result)
+      {
+        shimmerStatus.testResult |= S3R_TEST_0018;
+      }
+    }
     else
     {
-      if (test_i2c_addr_list_len == 1)
-      {
-        altEepromInit(&hi2c4);
-        i2c4_result = altEepromTest();
-        HAL_Delay(5); //5ms to ensure no writes pending
-
-        sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
-        send_test_report(buffer);
-        send_test_report(
-            " - S3R_TEST_0018 - WARNING: GSR - no test rig detected\r\n");
-      }
-      else
-      {
-        if (test_i2c_addr_list_len == 3)
-        {
-          send_test_report(" - S3R_TEST_0017 - PASS: I2C4\r\n");
-
-          uint8_t gsr_result = runGsrFactoryTest();
-          sprintf(buffer, " - S3R_TEST_0018 - %s: GSR signal test\r\n",
-              gsr_result ? "FAIL" : "PASS");
-          send_test_report(buffer);
-
-          if (gsr_result)
-          {
-            shimmerStatus.testResult |= S3R_TEST_0018;
-          }
-        }
-        else
-        {
-          send_test_report(
-              " - S3R_TEST_0017 - FAIL: I2C4 - test rig not recognised\r\n");
-          send_test_report(
-              " - S3R_TEST_0018 - FAIL: GSR - test rig not recognised\r\n");
-        }
-      }
+      send_test_report(
+          " - S3R_TEST_0017 - FAIL: I2C4 - test rig not recognised\r\n");
+      send_test_report(
+          " - S3R_TEST_0018 - FAIL: GSR - test rig not recognised\r\n");
     }
 
     enableI2cOnInternalExpansionBrd(0);
