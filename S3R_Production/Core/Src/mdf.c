@@ -60,12 +60,12 @@ void MX_ADF1_Init(void)
   AdfHandle0.Init.CommonParam.OutputClock.Divider = 10;
   AdfHandle0.Init.CommonParam.OutputClock.Trigger.Activation = ENABLE;
   AdfHandle0.Init.CommonParam.OutputClock.Trigger.Source = MDF_CLOCK_TRIG_TRGO;
-  AdfHandle0.Init.CommonParam.OutputClock.Trigger.Edge = MDF_CLOCK_TRIG_RISING_EDGE;
+  AdfHandle0.Init.CommonParam.OutputClock.Trigger.Edge = MDF_CLOCK_TRIG_FALLING_EDGE;
   AdfHandle0.Init.SerialInterface.Activation = ENABLE;
   AdfHandle0.Init.SerialInterface.Mode = MDF_SITF_NORMAL_SPI_MODE;
   AdfHandle0.Init.SerialInterface.ClockSource = MDF_SITF_CCK0_SOURCE;
   AdfHandle0.Init.SerialInterface.Threshold = 31;
-  AdfHandle0.Init.FilterBistream = MDF_BITSTREAM0_RISING;
+  AdfHandle0.Init.FilterBistream = MDF_BITSTREAM0_FALLING;
   if (HAL_MDF_Init(&AdfHandle0) != HAL_OK)
   {
     Error_Handler();
@@ -91,7 +91,6 @@ void MX_ADF1_Init(void)
   AdfFilterConfig0.DiscardSamples = 0;
   AdfFilterConfig0.Trigger.Source = MDF_CLOCK_TRIG_TRGO;
   AdfFilterConfig0.Trigger.Edge = MDF_FILTER_TRIG_RISING_EDGE;
-
   /* USER CODE BEGIN ADF1_Init 2 */
   AdfFilterConfig0.SnapshotFormat = MDF_SNAPSHOT_23BITS;
 
@@ -126,7 +125,7 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef *mdfHandle)
     PeriphClkInit.PLL3.PLL3Q = 25;
     PeriphClkInit.PLL3.PLL3R = 2;
     PeriphClkInit.PLL3.PLL3RGE = RCC_PLLVCIRANGE_1;
-    PeriphClkInit.PLL3.PLL3FRACN = 0.0;
+    PeriphClkInit.PLL3.PLL3FRACN = 0;
     PeriphClkInit.PLL3.PLL3ClockOut = RCC_PLL3_DIVQ;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
