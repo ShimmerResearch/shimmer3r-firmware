@@ -635,3 +635,8 @@ uint8_t checkAndCorrectConfig(gConfigBytes *storedConfigPtr)
 
   return settingCorrected;
 }
+
+uint8_t isMicrophoneEnabled(void)
+{
+  return storedConfig.chEnMicrophone;
+}

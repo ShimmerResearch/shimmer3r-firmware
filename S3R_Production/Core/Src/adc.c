@@ -89,7 +89,7 @@ void MX_ADC1_Init(void)
   }
   /* USER CODE BEGIN ADC1_Init 2 */
 
-  linkedListConfig(&hadc1); //configure linkedlist for ADC
+  adcLinkedListConfig(&hadc1); //configure linkedlist for ADC
 
   /* USER CODE END ADC1_Init 2 */
 }

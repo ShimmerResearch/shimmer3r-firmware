@@ -9,7 +9,7 @@
 
 #include "CAT24C16.h"
 #include "hal_Board.h"
-#include <shimmer_include.h>
+#include "shimmer_include.h"
 
 #include <stdlib.h>
 
@@ -60,22 +60,6 @@ void eepromPowerOff(void)
 uint8_t eepromTest(void)
 {
   return CAT24C16_test(&cat24c16_ctx);
-}
-
-void altEepromPowerOn(void)
-{
-  Board_SW_EXP_BRD_POWER(1);
-  Board_SW_I2C4_ON_PPG(1);
-  MX_I2C4_Init();
-  HAL_Delay(2); //2ms as per Shimmer3 code
-}
-
-void altEepromPowerOff(void)
-{
-  HAL_Delay(5); //5ms to ensure no writes pending
-  I2C4_DeInit();
-  Board_SW_EXP_BRD_POWER(0);
-  Board_SW_I2C4_ON_PPG(0);
 }
 
 uint8_t altEepromTest(void)

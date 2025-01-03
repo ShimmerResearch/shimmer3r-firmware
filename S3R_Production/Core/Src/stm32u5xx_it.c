@@ -58,6 +58,8 @@
 /* External variables --------------------------------------------------------*/
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
+extern MDF_HandleTypeDef AdfHandle0;
+extern DMA_HandleTypeDef handle_GPDMA1_Channel11;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel10;
 extern I2C_HandleTypeDef hi2c1;
@@ -246,6 +248,7 @@ void EXTI1_IRQHandler(void)
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
+
   /* USER CODE END EXTI1_IRQn 1 */
 }
 
@@ -554,6 +557,20 @@ void GPDMA1_Channel10_IRQHandler(void)
 }
 
 /**
+ * @brief This function handles GPDMA1 Channel 11 global interrupt.
+ */
+void GPDMA1_Channel11_IRQHandler(void)
+{
+  /* USER CODE BEGIN GPDMA1_Channel11_IRQn 0 */
+
+  /* USER CODE END GPDMA1_Channel11_IRQn 0 */
+  HAL_DMA_IRQHandler(&handle_GPDMA1_Channel11);
+  /* USER CODE BEGIN GPDMA1_Channel11_IRQn 1 */
+
+  /* USER CODE END GPDMA1_Channel11_IRQn 1 */
+}
+
+/**
  * @brief This function handles SPI3 global interrupt.
  */
 void SPI3_IRQHandler(void)
@@ -565,6 +582,20 @@ void SPI3_IRQHandler(void)
   /* USER CODE BEGIN SPI3_IRQn 1 */
 
   /* USER CODE END SPI3_IRQn 1 */
+}
+
+/**
+ * @brief This function handles ADF interrupt.
+ */
+void ADF1_IRQHandler(void)
+{
+  /* USER CODE BEGIN ADF1_IRQn 0 */
+
+  /* USER CODE END ADF1_IRQn 0 */
+  HAL_MDF_IRQHandler(&AdfHandle0);
+  /* USER CODE BEGIN ADF1_IRQn 1 */
+
+  /* USER CODE END ADF1_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
