@@ -36,9 +36,9 @@ int Mic_CountSkip = 0;
 /* USER CODE END 0 */
 
 #ifdef S3R_NUCLEO
-  MDF_HandleTypeDef MdfHandle4;
+MDF_HandleTypeDef MdfHandle4;
 #else
-  MDF_HandleTypeDef AdfHandle0;
+MDF_HandleTypeDef AdfHandle0;
 #endif
 MDF_FilterConfigTypeDef AdfFilterConfig0;
 

@@ -590,7 +590,7 @@ void SPI3_IRQHandler(void)
 void ADF1_IRQHandler(void)
 {
   /* USER CODE BEGIN ADF1_IRQn 0 */
-  
+
 #ifndef S3R_NUCLEO
 
   /* USER CODE END ADF1_IRQn 0 */
