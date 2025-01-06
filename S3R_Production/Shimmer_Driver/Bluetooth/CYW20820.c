@@ -233,15 +233,19 @@ void btInitCommands(void)
     btInitCmdsStep++;
     //Only ASCII boot message currently working so had to implement our own
     //approach setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
+#ifndef S3R_NUCLEO
     setWaitingForBtBoot(1);
     return;
+#endif
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)
   {
     btInitCmdsStep++;
 
+#ifndef S3R_NUCLEO
     printf("Boot Msgs=\r\n%s", getBtBootMsgPtr());
+#endif
 
     printf("Update UART Stage1\r\n");
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS);

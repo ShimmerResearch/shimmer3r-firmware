@@ -35,7 +35,11 @@ int Mic_CountSkip = 0;
 
 /* USER CODE END 0 */
 
-MDF_HandleTypeDef AdfHandle0;
+#ifdef S3R_NUCLEO
+  MDF_HandleTypeDef MdfHandle4;
+#else
+  MDF_HandleTypeDef AdfHandle0;
+#endif
 MDF_FilterConfigTypeDef AdfFilterConfig0;
 
 /* ADF1 init function */
@@ -47,6 +51,7 @@ void MX_ADF1_Init(void)
   /* USER CODE END ADF1_Init 0 */
 
   /* USER CODE BEGIN ADF1_Init 1 */
+#ifndef S3R_NUCLEO
   Board_SW_MIC(1);
   /* USER CODE END ADF1_Init 1 */
 
@@ -99,6 +104,8 @@ void MX_ADF1_Init(void)
   micDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);
   micDmaConfig.MsbOnly = ENABLE;
   micLinkedListConfig(&AdfHandle0);
+
+#endif
 
   /* USER CODE END ADF1_Init 2 */
 }
@@ -196,6 +203,7 @@ void MDF1_DeInit(void)
 
 void micStartSensing(void)
 {
+#ifndef S3R_NUCLEO
   Mic_CountSkip = 0;
 
   if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
@@ -207,13 +215,16 @@ void micStartSensing(void)
   {
     Error_Handler();
   }
+#endif
 }
 
 void micStopSensing(void)
 {
+#ifndef S3R_NUCLEO
   HAL_MDF_AcqStop_DMA(&AdfHandle0);
   MDF1_DeInit();
   HAL_Delay(100);
+#endif
 }
 
 void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf)

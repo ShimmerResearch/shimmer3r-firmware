@@ -339,7 +339,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle)
     handle_GPDMA1_Channel1.Instance = GPDMA1_Channel1;
     handle_GPDMA1_Channel1.Init.Request = GPDMA1_REQUEST_USART3_TX;
     handle_GPDMA1_Channel1.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
-    handle_GPDMA1_Channel1.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    handle_GPDMA1_Channel1.Init.Direction = DMA_MEMORY_TO_PERIPH;
     handle_GPDMA1_Channel1.Init.SrcInc = DMA_SINC_INCREMENTED;
     handle_GPDMA1_Channel1.Init.DestInc = DMA_DINC_FIXED;
     handle_GPDMA1_Channel1.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
@@ -486,8 +486,12 @@ void BtUart_init(uint32_t baudRate, uint32_t hwFlowCtrl)
   huartBt->Init.OverSampling = UART_OVERSAMPLING_16;
   huartBt->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huartBt->Init.ClockPrescaler = UART_PRESCALER_DIV1;
+#ifdef SR48_6_0
   huartBt->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_SWAP_INIT;
   huartBt->AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
+#else
+  huartBt->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+#endif
   if (HAL_UART_Init(huartBt) != HAL_OK)
   {
     Error_Handler();

@@ -258,7 +258,7 @@ void S4Sens_startSensing(void)
     {
       //TODO remove IF when fully switched from eval board to BGA variant
 #ifdef S3R_NUCLEO
-      MX_MDF1_Init();
+//      MX_MDF1_Init();
 #else
       MX_ADF1_Init();
       micStartSensing();
