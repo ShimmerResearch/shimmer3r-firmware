@@ -451,7 +451,7 @@ void S4_NORM_ADC_startSensing(void)
   if (configBytes->chEnVBattery)
 #endif
   {
-//    sConfig.Channel = ADC_CHANNEL_VBATT;
+    //sConfig.Channel = ADC_CHANNEL_VBATT;
     sConfig.Channel = ADC_CHANNEL_VREFINT;
     sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
     if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
