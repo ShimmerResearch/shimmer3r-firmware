@@ -68,8 +68,10 @@ uint32_t run_factory_test(void)
 
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
 
+#ifndef S3R_NUCLEO
     runMicrophoneTest();
     send_test_report("\r\n");
+#endif
   }
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_LEDS)
