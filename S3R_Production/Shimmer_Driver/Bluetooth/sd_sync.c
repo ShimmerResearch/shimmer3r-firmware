@@ -17,7 +17,7 @@
 
 //#include "../5xx_HAL/hal_RTC.h"
 #include "shimmer_bt_comms.h"
-//#include "RN4X.h"
+#include "RN42.h"
 //#include "../../shimmer_btsd.h"
 #include "s4_taskList.h"
 #include "shimmer_definitions.h"
@@ -45,7 +45,7 @@ uint8_t myTimeDiff[SYNC_PACKET_PAYLOAD_SIZE];
 //TODO figure out how best to do away with the need for externs
 void (*btStartCb)(void);
 void (*btStopCb)(uint8_t);
-uint8_t (*taskSetCb)(TASK_FLAGS);
+uint8_t (*taskSetCb)(TASK_FLAGS_T);
 
 //extern uint8_t sensing, onSingleTouch, docked, btPowerOn, stopLogging;
 extern SENSINGTypeDef sensing;
@@ -55,7 +55,7 @@ static uint8_t all0xff[7U] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 void sdSyncInit(void (*btStart_cb)(void),
     void (*btStop_cb)(uint8_t),
-    uint8_t (*taskSet_cb)(TASK_FLAGS))
+    uint8_t (*taskSet_cb)(TASK_FLAGS_T))
 {
   btSdSyncIsRunning = 0;
 
