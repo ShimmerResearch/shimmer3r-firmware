@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#define OLD_CONSENSYS_SUPPORT 0
+#define OLD_CONSENSYS_SUPPORT 1
 
 #if defined(SHIMMER3R)
 #if OLD_CONSENSYS_SUPPORT

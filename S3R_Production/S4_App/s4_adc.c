@@ -355,7 +355,7 @@ void S4_NORM_ADC_startSensing(void)
   initSensAdc(adc.sensorLen);
 
 #if defined(SHIMMER3R)
-  sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_814CYCLES;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
@@ -451,7 +451,8 @@ void S4_NORM_ADC_startSensing(void)
   if (configBytes->chEnVBattery)
 #endif
   {
-    sConfig.Channel = ADC_CHANNEL_VBATT;
+//    sConfig.Channel = ADC_CHANNEL_VBATT;
+    sConfig.Channel = ADC_CHANNEL_VREFINT;
     sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
     if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
     {
