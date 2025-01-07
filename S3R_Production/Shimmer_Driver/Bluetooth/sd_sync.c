@@ -16,8 +16,8 @@
 //#include "msp430.h"
 
 //#include "../5xx_HAL/hal_RTC.h"
-#include "shimmer_bt_comms.h"
 #include "RN42.h"
+#include "shimmer_bt_comms.h"
 //#include "../../shimmer_btsd.h"
 #include "s4_taskList.h"
 #include "shimmer_definitions.h"
