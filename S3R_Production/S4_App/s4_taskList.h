@@ -65,7 +65,7 @@
 
 #define TASK_SIZE 31
 
-typedef enum TASK_FLAGS
+typedef enum
 {
   TASK_NONE = 0,
   //TASK_TESTSDSTOP    = 0x1,
@@ -96,7 +96,7 @@ typedef enum TASK_FLAGS
   TASK_NEXTSENSOR = 0x1 << 20,
   TASK_FACTORY_TEST = 0x1 << 21,
   TASK_USB_SETUP = 0x1 << 22
-} TASK_FLAGS_T;
+} TASK_FLAGS;
 //return the task id of the current task
 
 void S4_NORM_Task_init(void);
