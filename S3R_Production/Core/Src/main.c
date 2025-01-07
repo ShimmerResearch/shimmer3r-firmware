@@ -260,8 +260,8 @@ int main(void)
   setBootStage(BOOT_STAGE_END);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
-  //run_factory_test();
+  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+  run_factory_test();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -432,6 +432,85 @@ void btFactoryResetViaFw(void)
   SHIMMER_PRINTF("BT factory reset end\r\n");
 }
 
+#ifdef S3R_NUCLEO
+void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
+{
+  uint8_t failCount = 0U;
+  uint8_t resetCntCurrent = resetCnt;
+  uint32_t baudToTry = BAUD_TO_USE;
+
+  Board_BT_LP_MODE(0);
+
+  SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
+
+  btInit(baudToTry, factoryReset);
+
+  while ((isBtInitCmdsRunning() && !isBtIsInitialised())
+      || (isBtFactoryResetCmdsRunning() && !isBtIsFactoryResetted()))
+  {
+    //HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+    /* Insert delay 100 ms */
+    HAL_Delay(100);
+
+    if (isEzsBaudRateDelayPending())
+    {
+      /* Delay or arbitrary value. As a guide, the EZ-Serial user guide states that it takes ~150 ms for a "chipset reset and boot process". */
+      HAL_Delay(500);
+      incrementBtInitCmdsStep();
+      btInitCommands();
+    }
+    else if (isEzsFactoryRebootDelayPending())
+    {
+      /* Experimentally found to be ~ 2.75s. */
+      HAL_Delay(3000);
+      incrementBtFactoryResetCmdsStep();
+      btFactoryResetCommands();
+    }
+
+    if (!(resetCntCurrent--))
+    {
+      failCount++;
+
+      btDeinit();
+      HAL_Delay(500);
+
+      if (failCount <= 4)
+      {
+        if (failCount == 1)
+        {
+          baudToTry = 115200;
+        }
+        else if (failCount == 2)
+        {
+          baudToTry = 460800;
+        }
+        else if (failCount == 3)
+        {
+          baudToTry = 2000000;
+        }
+        else if (failCount == 4)
+        {
+          baudToTry = 500000;
+        }
+
+        SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
+        btInit(baudToTry, factoryReset);
+
+        resetCntCurrent = resetCnt;
+      }
+      else
+      {
+        //SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
+        ////software POR reset
+        //NVIC_SystemReset();
+        setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
+      }
+    }
+  }
+
+  Board_BT_LP_MODE(1);
+}
+#else
 void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
 {
   uint8_t failCount = 0U;
@@ -519,6 +598,7 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
     //Board_BT_LP_MODE(0);
   }
 }
+#endif
 
 void setBtConnectionState(bool state)
 {

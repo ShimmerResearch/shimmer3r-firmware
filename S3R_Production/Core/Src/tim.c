@@ -74,7 +74,11 @@ void MX_TIM2_Init(void)
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
+#ifdef S3R_NUCLEO
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
+#else
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+#endif
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
@@ -136,7 +140,11 @@ void MX_TIM3_Init(void)
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
+#ifdef S3R_NUCLEO
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
+#else
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+#endif
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
@@ -265,7 +273,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *timHandle)
 
     /* USER CODE BEGIN TIM2_MspPostInit 1 */
 
-#ifdef SR48_6_0
+#if defined(S3R_NUCLEO) || defined(SR48_6_0)
     /* SR48-6-0 has LED_UPR_GR and LED_UPR_BLU connections attached to different
      *  MCU pins */
     HAL_GPIO_DeInit(GPIOB, LED_UPR_GR_Pin | LED_UPR_BLU_Pin);

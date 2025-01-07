@@ -166,6 +166,33 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
   }
 }
 
+#ifdef S3R_NUCLEO
+void btInit(uint32_t baudRate, uint8_t factoryReset)
+{
+  btInitCmdsRunning = 1;
+  btInitCmdsStep = WAIT_FOR_BOOT;
+  btIsInitialised = false;
+
+  /* packet pointer for working with response/event data */
+  //ezs_packet_t *packet;
+
+  //printf("\r\nEZ-Serial API communication demo started\r\n");
+
+  initBtPins();
+  HAL_Delay(10);
+
+  BtUart_init(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
+
+  resetEzsPendingResponse();
+
+  /* initialize EZ-Serial interface and callbacks */
+  EZSerial_Init(appHandler, appOutput, appInput);
+
+  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+
+  btInitCommands();
+}
+#else
 void btInit(uint32_t baudRate, uint8_t factoryReset)
 {
   if (factoryReset)
@@ -217,6 +244,7 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
     btInitCommands();
   }
 }
+#endif
 
 void btDeinit(void)
 {
@@ -344,17 +372,17 @@ void btInitCommands(void)
   {
     printf("Stop BLE Advertising\r\n");
     btInitCmdsStep++;
-    setExpectedResponse(EZS_IDX_RSP_GAP_STOP_ADV);
-    ezs_cmd_gap_stop_adv();
-    return;
+//    setExpectedResponse(EZS_IDX_RSP_GAP_STOP_ADV);
+//    ezs_cmd_gap_stop_adv();
+//    return;
   }
 
   if (btInitCmdsStep == STOP_BLE_ADVERTISING_STAGE2)
   {
     printf("Wait for BLE stop\r\n");
     btInitCmdsStep++;
-    setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
-    return;
+//    setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
+//    return;
   }
 
   if (btInitCmdsStep == GET_FIRMWARE_VERSION)
@@ -569,9 +597,9 @@ void btInitCommands(void)
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE2)
   {
     btInitCmdsStep++;
-    printf("Wait for BLE start\r\n");
-    setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
-    return;
+//    printf("Wait for BLE start\r\n");
+//    setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
+//    return;
   }
 
   if (btInitCmdsStep == FINISH)

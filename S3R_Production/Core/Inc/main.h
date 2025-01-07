@@ -201,7 +201,7 @@ extern "C"
 #define SR48_6_0_BOOT0_USER_BTN_GPIO_Port GPIOH
 #endif
 
-#ifdef SR48_6_0
+#if defined(S3R_NUCLEO) || defined(SR48_6_0)
 #define SR48_6_0_LED_UPR_GR_Pin        GPIO_PIN_2
 #define SR48_6_0_LED_UPR_GR_GPIO_Port  GPIOA
 #define SR48_6_0_LED_UPR_BLU_Pin       GPIO_PIN_3

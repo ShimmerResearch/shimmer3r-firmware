@@ -608,10 +608,16 @@ void initBtPins(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
 
+#ifdef S3R_NUCLEO
+  Board_BT_LP_MODE(1);
+  Board_BT_CP_ROLE(1);
+  Board_BT_RST_N(1);
+#else
   Board_BT_LP_MODE(0);
   Board_BT_CP_ROLE(0);
   /* Hold BT module in reset until we're ready */
   Board_BT_RST_N(0);
+#endif
 
   GPIO_InitStruct.Pin = BT_CP_ROLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
