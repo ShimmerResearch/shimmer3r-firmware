@@ -201,6 +201,17 @@ void print_mcu_details(void)
   {
     shimmerStatus.testResult |= S3R_TEST_0010;
   }
+
+  send_test_report(" - I/O status:\r\n");
+  sprintf(buffer, "    - Docked: %s\r\n", shimmerStatus.docked ? "Yes" : "No");
+  send_test_report(buffer);
+  sprintf(buffer, "    - BT connected: %s\r\n", shimmerStatus.btConnected ? "Yes" : "No");
+  send_test_report(buffer);
+  sprintf(buffer, "    - Button pressed: %s\r\n", shimmerStatus.buttonPressed ? "Yes" : "No");
+  send_test_report(buffer);
+  GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
+  sprintf(buffer, "    - USB connected: %s\r\n", pin == GPIO_PIN_SET ? "Yes" : "No");
+  send_test_report(buffer);
 }
 
 void print_battery_details(void)
