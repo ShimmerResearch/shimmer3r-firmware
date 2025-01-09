@@ -53,9 +53,7 @@ extern STATTypeDef stat;
 extern uint8_t sdHeadText[SD_HEAD_SIZE];
 static uint8_t all0xff[7U] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
-void sdSyncInit(void (*btStart_cb)(void),
-    void (*btStop_cb)(uint8_t),
-    uint8_t (*taskSet_cb)(uint16_t))
+void sdSyncInit(void (*btStart_cb)(void), void (*btStop_cb)(uint8_t), uint8_t (*taskSet_cb)(uint16_t))
 {
   btSdSyncIsRunning = 0;
 

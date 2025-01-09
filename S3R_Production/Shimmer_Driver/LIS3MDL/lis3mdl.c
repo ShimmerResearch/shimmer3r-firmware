@@ -621,12 +621,12 @@ static int32_t WriteRegWrap(void *handle, uint8_t Reg, const uint8_t *pData, uin
   if (pObj->IO.BusType == LIS3MDL_I2C_BUS) /* I2C */
   {
     /* Enable Multi-byte write */
-    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x80U), (uint8_t*)pData, Length);
+    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x80U), (uint8_t *) pData, Length);
   }
   else /* SPI 4-Wires or SPI 3-Wires */
   {
     /* Enable Multi-byte write */
-    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x40U), (uint8_t*)pData, Length);
+    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x40U), (uint8_t *) pData, Length);
   }
 }
 

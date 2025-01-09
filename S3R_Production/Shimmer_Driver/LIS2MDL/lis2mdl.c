@@ -795,16 +795,16 @@ static int32_t WriteMagRegWrap(void *Handle, uint8_t Reg, const uint8_t *pData, 
   if (pObj->IO.BusType == LIS2MDL_I2C_BUS) /* I2C */
   {
     /* Enable Multi-byte write */
-    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x80U), (uint8_t*)pData, Length);
+    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x80U), (uint8_t *) pData, Length);
   }
   else if (pObj->IO.BusType == LSM6DSOX_SENSORHUB_LIS2MDL_I2C_BUS) /* LSM6DSOX SensorHub with LIS2MDL example */
   {
-    return pObj->IO.WriteReg(pObj->IO.Address, Reg, (uint8_t*)pData, Length);
+    return pObj->IO.WriteReg(pObj->IO.Address, Reg, (uint8_t *) pData, Length);
   }
   else /* SPI 3-Wires or SPI 4-Wires */
   {
     /* Enable Multi-byte write */
-    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x40U), (uint8_t*)pData, Length);
+    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x40U), (uint8_t *) pData, Length);
   }
 }
 

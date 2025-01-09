@@ -88,7 +88,7 @@ void setBtConnectionState(bool state);
 bool isBtConnected(void);
 void loadSensorConfigurationAndCalibration(void);
 void SetupDock(void);
-// void SdInfoSync(void);
+//void SdInfoSync(void);
 uint8_t CheckOnDefault(void);
 void ReadSdConfiguration(void);
 #if USE_CUSTOM_HAL_DELAY

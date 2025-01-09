@@ -75,7 +75,7 @@ LSM6DSV_GYRO_Drv_t LSM6DSV_GYRO_Driver = {
  */
 
 static int32_t ReadRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length);
-static int32_t WriteRegWrap(void *Handle, uint8_t Reg,const uint8_t *pData, uint16_t Length);
+static int32_t WriteRegWrap(void *Handle, uint8_t Reg, const uint8_t *pData, uint16_t Length);
 static int32_t LSM6DSV_ACC_SetOutputDataRate_When_Enabled(LSM6DSV_Object_t *pObj, float_t Odr);
 static int32_t
 LSM6DSV_ACC_SetOutputDataRate_When_Disabled(LSM6DSV_Object_t *pObj, float_t Odr);
@@ -1298,7 +1298,7 @@ static int32_t WriteRegWrap(void *Handle, uint8_t Reg, const uint8_t *pData, uin
 {
   LSM6DSV_Object_t *pObj = (LSM6DSV_Object_t *) Handle;
 
-  return pObj->IO.WriteReg(pObj->IO.Address, Reg, (uint8_t*)pData, Length);
+  return pObj->IO.WriteReg(pObj->IO.Address, Reg, (uint8_t *) pData, Length);
 }
 
 /**

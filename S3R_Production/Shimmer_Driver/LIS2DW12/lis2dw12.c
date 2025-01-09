@@ -1844,7 +1844,7 @@ static int32_t WriteRegWrap(void *Handle, uint8_t Reg, const uint8_t *pData, uin
 {
   LIS2DW12_Object_t *pObj = (LIS2DW12_Object_t *) Handle;
 
-  return pObj->IO.WriteReg(pObj->IO.Address, Reg, (uint8_t*)pData, Length);
+  return pObj->IO.WriteReg(pObj->IO.Address, Reg, (uint8_t *) pData, Length);
 }
 
 /**

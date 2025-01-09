@@ -639,15 +639,15 @@ void DockUart_sendRsp(void)
 #if defined(SHIMMER3)
     memcpy(uartRespBuf + uart_resp_len, battVal, 3);
 #else
-  //  memcpy(&uartRespBuf[uart_resp_len], &batteryStatus.battStatusRaw.rawBytes[0], 3);
+    //memcpy(&uartRespBuf[uart_resp_len], &batteryStatus.battStatusRaw.rawBytes[0], 3);
     uint8_t i = 0;
-    for(i=0;i<3;i++)
+    for (i = 0; i < 3; i++)
     {
-    	uartRespBuf[uart_resp_len] = batteryStatus.battStatusRaw.rawBytes[i];
-    	uart_resp_len++;
+      uartRespBuf[uart_resp_len] = batteryStatus.battStatusRaw.rawBytes[i];
+      uart_resp_len++;
     }
 #endif
-    // uart_resp_len += 3;
+    //uart_resp_len += 3;
   }
   else if (uartSendRspRtcConfigTime)
   {
