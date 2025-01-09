@@ -63,7 +63,7 @@ LIS2DW12_ACC_Drv_t LIS2DW12_ACC_Driver = {
  */
 
 static int32_t ReadRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length);
-static int32_t WriteRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length);
+static int32_t WriteRegWrap(void *Handle, uint8_t Reg, const uint8_t *pData, uint16_t Length);
 static int32_t LIS2DW12_ACC_SetOutputDataRate_When_Enabled(LIS2DW12_Object_t *pObj,
     float Odr,
     LIS2DW12_Operating_Mode_t Mode,
@@ -1840,11 +1840,11 @@ static int32_t ReadRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t L
  * @param  Length the length
  * @retval 0 in case of success, an error code otherwise
  */
-static int32_t WriteRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
+static int32_t WriteRegWrap(void *Handle, uint8_t Reg, const uint8_t *pData, uint16_t Length)
 {
   LIS2DW12_Object_t *pObj = (LIS2DW12_Object_t *) Handle;
 
-  return pObj->IO.WriteReg(pObj->IO.Address, Reg, pData, Length);
+  return pObj->IO.WriteReg(pObj->IO.Address, Reg, (uint8_t*)pData, Length);
 }
 
 /**

@@ -60,7 +60,7 @@ LIS3MDL_MAG_Drv_t LIS3MDL_MAG_Driver = {
  * @{
  */
 static int32_t ReadRegWrap(void *handle, uint8_t Reg, uint8_t *Data, uint16_t Length);
-static int32_t WriteRegWrap(void *handle, uint8_t Reg, uint8_t *Data, uint16_t Length);
+static int32_t WriteRegWrap(void *handle, uint8_t Reg, const uint8_t *Data, uint16_t Length);
 
 /**
  * @}
@@ -614,19 +614,19 @@ static int32_t ReadRegWrap(void *handle, uint8_t Reg, uint8_t *pData, uint16_t L
  * @param  Component object pointer
  * @retval Component status
  */
-static int32_t WriteRegWrap(void *handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
+static int32_t WriteRegWrap(void *handle, uint8_t Reg, const uint8_t *pData, uint16_t Length)
 {
   LIS3MDL_Object_t *pObj = (LIS3MDL_Object_t *) handle;
 
   if (pObj->IO.BusType == LIS3MDL_I2C_BUS) /* I2C */
   {
     /* Enable Multi-byte write */
-    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x80U), pData, Length);
+    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x80U), (uint8_t*)pData, Length);
   }
   else /* SPI 4-Wires or SPI 3-Wires */
   {
     /* Enable Multi-byte write */
-    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x40U), pData, Length);
+    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x40U), (uint8_t*)pData, Length);
   }
 }
 

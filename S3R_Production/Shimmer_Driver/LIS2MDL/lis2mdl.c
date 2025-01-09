@@ -62,7 +62,7 @@ LIS2MDL_MAG_Drv_t LIS2MDL_MAG_Driver = {
  * @{
  */
 static int32_t ReadMagRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length);
-static int32_t WriteMagRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length);
+static int32_t WriteMagRegWrap(void *Handle, uint8_t Reg, const uint8_t *pData, uint16_t Length);
 static int32_t LSM6DSOX_SENSORHUB_LIS2MDL_ReadShData(LIS2MDL_Object_t *pObj,
     uint8_t Reg,
     uint8_t *pData,
@@ -788,23 +788,23 @@ static int32_t ReadMagRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_
  * @param  Length the length
  * @retval 0 in case of success, an error code otherwise
  */
-static int32_t WriteMagRegWrap(void *Handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
+static int32_t WriteMagRegWrap(void *Handle, uint8_t Reg, const uint8_t *pData, uint16_t Length)
 {
   LIS2MDL_Object_t *pObj = (LIS2MDL_Object_t *) Handle;
 
   if (pObj->IO.BusType == LIS2MDL_I2C_BUS) /* I2C */
   {
     /* Enable Multi-byte write */
-    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x80U), pData, Length);
+    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x80U), (uint8_t*)pData, Length);
   }
   else if (pObj->IO.BusType == LSM6DSOX_SENSORHUB_LIS2MDL_I2C_BUS) /* LSM6DSOX SensorHub with LIS2MDL example */
   {
-    return pObj->IO.WriteReg(pObj->IO.Address, Reg, pData, Length);
+    return pObj->IO.WriteReg(pObj->IO.Address, Reg, (uint8_t*)pData, Length);
   }
   else /* SPI 3-Wires or SPI 4-Wires */
   {
     /* Enable Multi-byte write */
-    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x40U), pData, Length);
+    return pObj->IO.WriteReg(pObj->IO.Address, (Reg | 0x40U), (uint8_t*)pData, Length);
   }
 }
 
