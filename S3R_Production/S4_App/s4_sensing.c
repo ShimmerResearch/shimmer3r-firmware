@@ -196,14 +196,12 @@ uint8_t S4Sens_checkStartStreamingConditions(void)
     if (shimmerStatus.btStreaming && (shimmerStatus.btstreamCmd == BT_STREAM_CMD_STATE_STOP))
     {
       shimmerStatus.btStreaming = 0;
-      setBtCrcMode(CRC_OFF);
       shimmerStatus.btstreamCmd = BT_STREAM_CMD_STATE_IDLE;
     }
   }
   else
   {
     shimmerStatus.btStreaming = 0;
-    setBtCrcMode(CRC_OFF);
   }
   return 0;
 }
@@ -352,7 +350,6 @@ void S4Sens_stopSensing(void)
     shimmerStatus.configuring = 1;
     shimmerStatus.sensing = 0;
     shimmerStatus.btStreaming = 0;
-    setBtCrcMode(CRC_OFF);
     sensing.startTs = 0;
     //sensing.isSampling = 0;
     S4Sens_stopPeripherals();
