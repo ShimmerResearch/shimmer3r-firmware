@@ -355,7 +355,7 @@ void S4_NORM_ADC_startSensing(void)
   initSensAdc(adc.sensorLen);
 
 #if defined(SHIMMER3R)
-  sConfig.SamplingTime = ADC_SAMPLETIME_391CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_814CYCLES;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
@@ -451,7 +451,7 @@ void S4_NORM_ADC_startSensing(void)
   if (configBytes->chEnVBattery)
 #endif
   {
-    sConfig.Channel = ADC_CHANNEL_VBATT;
+    sConfig.Channel = ADC_CHANNEL_VREFINT;
     sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
     if (HAL_ADC_ConfigChannel(hadcSensPtr, &sConfig) != HAL_OK)
     {
@@ -739,7 +739,7 @@ void initSensAdc(uint32_t numChannels)
   hadcSensPtr->Instance = ADC1;
   hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
 #if OLD_CONSENSYS_SUPPORT
-  hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
+  hadcSensPtr->Init.Resolution = ADC_RESOLUTION_14B;
 #else
   hadcSensPtr->Init.Resolution = ADC_RESOLUTION_14B;
 #endif
@@ -753,12 +753,15 @@ void initSensAdc(uint32_t numChannels)
   hadcSensPtr->Init.DiscontinuousConvMode = DISABLE;
   hadcSensPtr->Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadcSensPtr->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadcSensPtr->Init.DMAContinuousRequests = DISABLE;
+  hadcSensPtr->Init.DMAContinuousRequests = ENABLE;
   hadcSensPtr->Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_LOW;
   hadcSensPtr->Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadcSensPtr->Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
   hadcSensPtr->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_ONESHOT;
   hadcSensPtr->Init.OversamplingMode = DISABLE;
+  hadcSensPtr->Init.OversamplingMode = ENABLE;
+  hadcSensPtr->Init.Oversampling.Ratio = ADC_OVERSAMPLING_RATIO_4;
+  hadcSensPtr->Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_2;
 
 #elif defined(SHIMMER4_SDK)
   hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
@@ -847,6 +850,11 @@ void S4_NORM_ADC_bufPoll()
   //if(adc.chanCntBatt > 0){
   //   ADC_readBatt();
   //}
+
+  for (uint8_t i = 0; i < adc.sensorLen; i++)
+  {
+    adcBufSens[i] = adcBufSens[i] >> 2;
+  }
 
 #if defined(SHIMMER4_SDK)
   //Analog Accel
