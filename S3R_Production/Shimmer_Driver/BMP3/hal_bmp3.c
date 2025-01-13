@@ -98,6 +98,18 @@ int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSampl
   settings.odr_filter.temp_os = overSamplingRatio;
   settings.odr_filter.odr = rate;
 
+
+
+  if((settings.odr_filter.press_os == BMP3_OVERSAMPLING_16X)||
+	 (settings.odr_filter.press_os == BMP3_OVERSAMPLING_32X))
+  {
+	  settings.odr_filter.temp_os == 2;
+  }
+  else
+  {
+	  settings.odr_filter.temp_os == 1;
+  }
+
   /* Assign the settings which needs to be set in the sensor */
   settings_sel = BMP3_SEL_PRESS_EN | BMP3_SEL_TEMP_EN | BMP3_SEL_PRESS_OS
       | BMP3_SEL_TEMP_OS | BMP3_SEL_ODR;
