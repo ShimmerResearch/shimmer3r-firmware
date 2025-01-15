@@ -584,7 +584,7 @@ void I2C_startSensing(void)
 #if defined(SHIMMER3R)
   if (configBytes->chEnMag)
   {
-    lis2mdl_configure(shimmerSamplingFreq, configBytes->altMagRate);
+    lis2mdl_configure(shimmerSamplingFreq, get_config_byte_mag_rate());
   }
 
 #elif defined(SHIMMER4_SDK)

@@ -899,8 +899,7 @@ void SPI_startSensing()
 
   if (configBytes->chEnAltMag)
   {
-    lis3mdl_configure(
-        shimmerSamplingFreq, get_config_byte_mag_rate(), configBytes->magRange);
+    lis3mdl_configure(shimmerSamplingFreq, configBytes->altMagRate, configBytes->magRange);
   }
 
 #endif
