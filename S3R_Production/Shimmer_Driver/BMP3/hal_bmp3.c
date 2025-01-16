@@ -92,21 +92,20 @@ int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSampl
   settings.temp_en = BMP3_ENABLE;
   /* Select the output data rate and over sampling settings for pressure and temperature */
   settings.odr_filter.press_os = overSamplingRatio;
-  settings.odr_filter.temp_os = overSamplingRatio;
 
   if ((settings.odr_filter.press_os == BMP3_OVERSAMPLING_16X)
       || (settings.odr_filter.press_os == BMP3_OVERSAMPLING_32X))
   {
-    settings.odr_filter.temp_os = 2;
+    settings.odr_filter.temp_os = BMP3_OVERSAMPLING_2X;
   }
   else
   {
-    settings.odr_filter.temp_os = 1;
+    settings.odr_filter.temp_os = BMP3_NO_OVERSAMPLING;
   }
 
   if (shimmerSamplingFreq >= (float) 100.0)
   {
-    rate = BMP3_ODR_100_HZ;
+    rate = BMP3_ODR_200_HZ;
   }
   else if ((shimmerSamplingFreq >= (float) 50.0))
   {
@@ -143,6 +142,9 @@ int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSampl
   {
     isDrdyIntEnabled = true;
     settings_sel |= BMP3_SEL_DRDY_EN | BMP3_SEL_LATCH;
+
+    settings.int_settings.drdy_en = 1;
+    settings.int_settings.latch = 1;
   }
 
   rslt = bmp3_set_sensor_settings(settings_sel, &settings, &bmp3);
