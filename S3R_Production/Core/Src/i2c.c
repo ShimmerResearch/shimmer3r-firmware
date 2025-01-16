@@ -432,11 +432,11 @@ void I2cSens_configureChannels(void)
   i2c4Sens.busId = I2C4_BUS_FLAG;
 
   //Mag (LIS2MDL)
-  if (configBytes->chEnMag)
+  if (configBytes->chEnAltMag)
   {
-    *channel_contents_ptr++ = X_MAG;
-    *channel_contents_ptr++ = Z_MAG;
-    *channel_contents_ptr++ = Y_MAG;
+    *channel_contents_ptr++ = X_ALT_MAG;
+    *channel_contents_ptr++ = Z_ALT_MAG;
+    *channel_contents_ptr++ = Y_ALT_MAG;
     nbr_i2c1_chans += 3;
     sensing.ptr.mag1 = sensing.dataLen;
     sensing.dataLen += 6;
@@ -582,9 +582,9 @@ void I2C_startSensing(void)
   }
 
 #if defined(SHIMMER3R)
-  if (configBytes->chEnMag)
+  if (configBytes->chEnAltMag)
   {
-    lis2mdl_configure(shimmerSamplingFreq, get_config_byte_mag_rate());
+    lis2mdl_configure(shimmerSamplingFreq, configBytes->altMagRate);
   }
 
 #elif defined(SHIMMER4_SDK)
