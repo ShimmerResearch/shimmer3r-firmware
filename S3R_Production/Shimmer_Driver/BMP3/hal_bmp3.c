@@ -115,21 +115,21 @@ int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSampl
   {
     rate = BMP3_ODR_50_HZ;
   }
-  else if ((shimmerSamplingFreq >= (float) 10.0))
+  else if ((shimmerSamplingFreq >= (float) 12.5))
   {
     rate = BMP3_ODR_25_HZ;
   }
-  else if ((shimmerSamplingFreq >= (float) 5.0))
+  else if ((shimmerSamplingFreq >= (float) 6.25))
   {
     rate = BMP3_ODR_12_5_HZ;
   }
-  else if ((shimmerSamplingFreq > (float) 1.0))
+  else if ((shimmerSamplingFreq > (float) 3.1))
   {
     rate = BMP3_ODR_6_25_HZ;
   }
-  else if (shimmerSamplingFreq == (float) 1.00)
+  else
   {
-    rate = BMP3_ODR_3_1_HZ;
+    rate = BMP3_ODR_1_5_HZ;
   }
   settings.odr_filter.odr = rate;
 
