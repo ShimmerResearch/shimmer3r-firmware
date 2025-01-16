@@ -881,8 +881,8 @@ void SPI_startSensing()
 
   if (configBytes->chEnPressureAndTemperature)
   {
-    int8_t rslt = bmp3_configure(shimmerSamplingFreq,
-        get_config_byte_pressure_oversampling_ratio());
+    int8_t rslt = bmp3_configure(
+        shimmerSamplingFreq, get_config_byte_pressure_oversampling_ratio());
   }
 
   if (configBytes->chEnAltAccel)
