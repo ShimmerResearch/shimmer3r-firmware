@@ -78,9 +78,10 @@ int8_t bmp3_self_test(void)
   return result;
 }
 
-int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSamplingRatio)
+int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
 {
   int8_t rslt;
+  uint8_t rate = BMP3_ODR_200_HZ;
 
   /* Used to select the settings user needs to change */
   uint16_t settings_sel;

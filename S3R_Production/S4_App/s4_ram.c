@@ -249,7 +249,6 @@ void S4Ram_SetDefaultInfomem(void)
   set_config_byte_pressure_oversampling_ratio(&storedConfig, BMP3_NO_OVERSAMPLING);
   set_config_byte_wr_accel_mode(&storedConfig, LIS2DW12_HIGH_PERFORMANCE);
   storedConfig.altMagRate = LIS2MDL_ODR_100Hz;
-  storedConfig.pressureRate = BMP3_ODR_100_HZ;
 #endif
   storedConfig.gsrRange = GSR_AUTORANGE;
   //set all ExG registers to their reset values

@@ -345,7 +345,9 @@ typedef union
     uint8_t altAccelRate                 : 2;
 
     //Idx 131: Config setup byte 5
-    uint8_t pressureRate      : 3;
+    uint8_t unusedByte131Bit0 : 1;
+    uint8_t unusedByte131Bit1 : 1;
+    uint8_t unusedByte131Bit2 : 1;
     uint8_t magRateMsb        : 3;
     uint8_t unusedByte131Bit6 : 1;
     uint8_t unusedByte131Bit7 : 1;
