@@ -738,11 +738,7 @@ void initSensAdc(uint32_t numChannels)
 #if defined(SHIMMER3R)
   hadcSensPtr->Instance = ADC1;
   hadcSensPtr->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-#if OLD_CONSENSYS_SUPPORT
   hadcSensPtr->Init.Resolution = ADC_RESOLUTION_12B;
-#else
-  hadcSensPtr->Init.Resolution = ADC_RESOLUTION_14B;
-#endif
   hadcSensPtr->Init.GainCompensation = 0;
   hadcSensPtr->Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadcSensPtr->Init.ScanConvMode = ADC_SCAN_ENABLE;
@@ -797,11 +793,7 @@ void initGsrAdc(void)
 
   hadc2.Instance = ADC2;
   hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-#if OLD_CONSENSYS_SUPPORT
   hadc2.Init.Resolution = ADC_RESOLUTION_12B;
-#else
-  hadc2.Init.Resolution = ADC_RESOLUTION_14B;
-#endif
   hadc2.Init.GainCompensation = 0;
   hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;

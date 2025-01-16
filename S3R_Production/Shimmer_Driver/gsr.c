@@ -49,7 +49,6 @@
 #include "math.h"
 #include "stm32u5xx_hal.h"
 
-#if OLD_CONSENSYS_SUPPORT
 #define HW_RES_40K_MIN_ADC_VAL \
   1120 //10k to 56k..1159->1140 //nom: changed to 1120 for linear conversion
 #define HW_RES_287K_MAX_ADC_VAL \
@@ -59,35 +58,24 @@
 #define HW_RES_1M_MIN_ADC_VAL   1630 //220k to 680k..1650->1630
 #define HW_RES_3M3_MAX_ADC_VAL  3930 //680k to 4M7
 #define HW_RES_3M3_MIN_ADC_VAL  1125 //680k to 4M7
-#else
-#define HW_RES_40K_MIN_ADC_VAL \
-  (1120 << 2) //10k to 56k..1159->1140 //nom: changed to 1120 for linear conversion
-#define HW_RES_287K_MAX_ADC_VAL \
-  (3960 << 2) //56k to 220k was 4000 but was 3948 on shimmer so changed to 3800 //nom: changed to 3960 for linear conversion
-#define HW_RES_287K_MIN_ADC_VAL (1490 << 2) //56k to 220k..1510->1490
-#define HW_RES_1M_MAX_ADC_VAL   (3700 << 2) //220k to 680k
-#define HW_RES_1M_MIN_ADC_VAL   (1630 << 2) //220k to 680k..1650->1630
-#define HW_RES_3M3_MAX_ADC_VAL  (3930 << 2) //680k to 4M7
-#define HW_RES_3M3_MIN_ADC_VAL  (1125 << 2) //680k to 4M7
-#endif
 
-#define HW_RES_40_0KOHMS      40.2
-#define HW_RES_287_0KOHMS     287.0
-#define HW_RES_1000KOHMS      1000.0
-#define HW_RES_3300KOHMS      3300.0
+#define HW_RES_40_0KOHMS        40.2
+#define HW_RES_287_0KOHMS       287.0
+#define HW_RES_1000KOHMS        1000.0
+#define HW_RES_3300KOHMS        3300.0
 
 //when we switch resistors with the ADG658 it takes a few samples for the
 //ADC to start to see the new sampled voltage correctly, the catch below is
 //to eliminate any glitches in the data
-#define ONE_HUNDRED_OHM_STEP  100
-#define MAX_RESISTANCE_STEP   5000
+#define ONE_HUNDRED_OHM_STEP    100
+#define MAX_RESISTANCE_STEP     5000
 //instead of having a large step when resistors change - have a smoother step
-#define NUM_SMOOTHING_SAMPLES 64
+#define NUM_SMOOTHING_SAMPLES   64
 //ignore these samples after a resistor switch - instead send special code
-#define NUM_SAMPLES_TO_IGNORE 6
-#define STARTING_RESISTANCE   10000000
+#define NUM_SAMPLES_TO_IGNORE   6
+#define STARTING_RESISTANCE     10000000
 //Settling time for a hardware resistor change (80 ms)
-#define SETTLING_TIME         2621 //32768*0.08=2621.44
+#define SETTLING_TIME           2621 //32768*0.08=2621.44
 
 uint8_t last_active_resistor, transient_active_resistor, got_first_sample, gsrActiveRes;
 uint16_t transient_sample, transient_smoothing_samples, max_resistance_step;

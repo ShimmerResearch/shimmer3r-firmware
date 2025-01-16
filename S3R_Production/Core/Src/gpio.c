@@ -94,14 +94,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PDPin PDPin PDPin PDPin */
+  /*Configure GPIO pins : CS_BMP390_Pin SW_FLASH_Pin SW_SENSE_Pin CS_LIS2DW12_Pin */
   GPIO_InitStruct.Pin = CS_BMP390_Pin | SW_FLASH_Pin | SW_SENSE_Pin | CS_LIS2DW12_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PDPin PDPin PDPin */
+  /*Configure GPIO pins : GPIO_INTERNAL2_Pin GPIO_INTERNAL1_Pin BT_CYSPP_Pin */
   GPIO_InitStruct.Pin = GPIO_INTERNAL2_Pin | GPIO_INTERNAL1_Pin | BT_CYSPP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -113,40 +113,40 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PEPin PEPin PEPin PEPin
-                           PEPin PEPin */
+  /*Configure GPIO pins : LIS3MDL_DRDY_Pin BT_HOST_WAKE_Pin LIS2MDL_DRDY_Pin
+     LSM6DSV_INT1_Pin BMP390_INT_Pin GPIO_EXTERNAL_Pin */
   GPIO_InitStruct.Pin = LIS3MDL_DRDY_Pin | BT_HOST_WAKE_Pin | LIS2MDL_DRDY_Pin
       | LSM6DSV_INT1_Pin | BMP390_INT_Pin | GPIO_EXTERNAL_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PEPin PEPin PEPin */
+  /*Configure GPIO pins : CS_LIS3MDL_Pin SW_GSR_Pin SW_SENSE_IO_Pin */
   GPIO_InitStruct.Pin = CS_LIS3MDL_Pin | SW_GSR_Pin | SW_SENSE_IO_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PtPin */
+  /*Configure GPIO pin : GPIO_INTERNAL0_Pin */
   GPIO_InitStruct.Pin = GPIO_INTERNAL0_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIO_INTERNAL0_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PtPin */
+  /*Configure GPIO pin : SD_DETECT_N_Pin */
   GPIO_InitStruct.Pin = SD_DETECT_N_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(SD_DETECT_N_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PFPin PFPin */
+  /*Configure GPIO pins : CHG_STAT1_Pin CHG_STAT2_Pin */
   GPIO_InitStruct.Pin = CHG_STAT1_Pin | CHG_STAT2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PAPin PAPin */
+  /*Configure GPIO pins : CS_HIGH_G_Pin SW_MIC_Pin */
   GPIO_InitStruct.Pin = CS_HIGH_G_Pin | SW_MIC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -160,14 +160,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PCPin PCPin PCPin PCPin */
+  /*Configure GPIO pins : SW_BT_Pin CS_LSM6DSV_Pin DETECT_N_Pin SW_SD_MCU_DOCK_Pin */
   GPIO_InitStruct.Pin = SW_BT_Pin | CS_LSM6DSV_Pin | DETECT_N_Pin | SW_SD_MCU_DOCK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PtPin */
+  /*Configure GPIO pin : DOCK_DETECT_Pin */
   GPIO_InitStruct.Pin = DOCK_DETECT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
@@ -179,7 +179,7 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PtPin */
+  /*Configure GPIO pin : BT_CONNECTION_Pin */
   GPIO_InitStruct.Pin = BT_CONNECTION_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -193,13 +193,13 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PtPin */
+  /*Configure GPIO pin : USER_BTN_Pin */
   GPIO_InitStruct.Pin = USER_BTN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(USER_BTN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin */
+  /*Configure GPIO pins : LIS2DW12_INT1_Pin GPIO_ADC_INT_EXP1_Pin */
   GPIO_InitStruct.Pin = LIS2DW12_INT1_Pin | GPIO_ADC_INT_EXP1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
