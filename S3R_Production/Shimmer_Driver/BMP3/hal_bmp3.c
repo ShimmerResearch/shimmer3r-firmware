@@ -123,9 +123,13 @@ int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t rate, uint8_t overSampl
   {
     rate = BMP3_ODR_12_5_HZ;
   }
-  else if ((shimmerSamplingFreq > (float) 3.1))
+  else if ((shimmerSamplingFreq >= (float) 3.1))
   {
     rate = BMP3_ODR_6_25_HZ;
+  }
+  else if ((shimmerSamplingFreq >= (float) 1.5))
+  {
+    rate = BMP3_ODR_3_1_HZ;
   }
   else
   {
