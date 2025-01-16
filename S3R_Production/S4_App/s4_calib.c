@@ -319,7 +319,7 @@ uint8_t ShimmerCalib_ramWrite(const uint8_t *buf, uint8_t length, uint16_t offse
   //starting with offset > 2 is not accepted.
   if (offset < 2)
   {
-    // + 2 as length bytes in header are not included in the overall array length
+    //+ 2 as length bytes in header are not included in the overall array length
     shimmerCalib_ramTempMax = (*(uint16_t *) shimmerCalib_ramTemp) + 2;
     shimmerCalib_ramTempLen = length;
   }
