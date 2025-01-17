@@ -719,8 +719,6 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "accel_alt_rate=%d\r\n", storedConfig->altAccelRate);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "pres_bmp390_rate=%d\r\n", storedConfig->pressureRate);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "mag_rate=%d\r\n", get_config_byte_mag_rate());
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
@@ -1092,10 +1090,6 @@ void ParseConfig(void)
       else if (strstr(buffer, "accel_alt_rate="))
       {
         stored_config_temp.altAccelRate = atoi(equals);
-      }
-      else if (strstr(buffer, "pres_bmp390_rate="))
-      {
-        stored_config_temp.pressureRate = atoi(equals);
       }
       else if (strstr(buffer, "mag_rate="))
       {
