@@ -435,8 +435,8 @@ void I2cSens_configureChannels(void)
   if (configBytes->chEnAltMag)
   {
     *channel_contents_ptr++ = X_ALT_MAG;
-    *channel_contents_ptr++ = Z_ALT_MAG;
     *channel_contents_ptr++ = Y_ALT_MAG;
+    *channel_contents_ptr++ = Z_ALT_MAG;
     nbr_i2c1_chans += 3;
     sensing.ptr.mag1 = sensing.dataLen;
     sensing.dataLen += 6;
