@@ -477,7 +477,6 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
         case GET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
         case GET_ALT_MAG_CALIBRATION_COMMAND:
         case GET_ALT_MAG_SAMPLING_RATE_COMMAND:
-        case GET_PRESSURE_SAMPLING_RATE_COMMAND:
           *(gActionPtr) = data;
           if (newBtCmdToProcess_cb)
           {
@@ -513,7 +512,6 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
         case SET_FACTORY_TEST:
         case SET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
         case SET_ALT_MAG_SAMPLING_RATE_COMMAND:
-        case SET_PRESSURE_SAMPLING_RATE_COMMAND:
           *(gActionPtr) = data;
           waitingForArgs = 1U;
           break;
@@ -1235,7 +1233,6 @@ void BtUart_processCmd(void)
   case GET_ALT_ACCEL_SAMPLING_RATE_COMMAND:
   case GET_ALT_MAG_CALIBRATION_COMMAND:
   case GET_ALT_MAG_SAMPLING_RATE_COMMAND:
-  case GET_PRESSURE_SAMPLING_RATE_COMMAND:
     getCmdWaitingResponse = gAction;
     break;
 
@@ -1749,10 +1746,6 @@ void BtUart_processCmd(void)
     storedConfig->altMagRate = args[0] & 0x03;
     BtUart_settingChangeCommon(NV_CONFIG_SETUP_BYTE4, SDH_CONFIG_SETUP_BYTE4, 1);
     break;
-  case SET_PRESSURE_SAMPLING_RATE_COMMAND:
-    storedConfig->pressureRate = args[0] & 0x07;
-    BtUart_settingChangeCommon(NV_CONFIG_SETUP_BYTE5, SDH_CONFIG_SETUP_BYTE5, 1);
-    break;
 
 #if USE_OLD_SD_SYNC_APPROACH
   case ACK_COMMAND_PROCESSED:
@@ -2260,10 +2253,6 @@ void BtUart_sendRsp(void)
       case GET_ALT_MAG_SAMPLING_RATE_COMMAND:
         *(resPacket + packet_length++) = ALT_MAG_SAMPLING_RATE_RESPONSE;
         *(resPacket + packet_length++) = storedConfig->altMagRate;
-        break;
-      case GET_PRESSURE_SAMPLING_RATE_COMMAND:
-        *(resPacket + packet_length++) = PRESSURE_SAMPLING_RATE_RESPONSE;
-        *(resPacket + packet_length++) = storedConfig->pressureRate;
         break;
 
       case GET_EXG_REGS_COMMAND:
