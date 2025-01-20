@@ -314,6 +314,13 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
   }
 }
 
+int8_t bmp3_read_sensor_status(void)
+{
+	struct bmp3_status status = { { 0 } };
+	int8_t rslt = bmp3_get_status(&status,&bmp3);
+	return rslt;
+}
+
 /*!
  * SPI write function map to Shimmer platform
  */

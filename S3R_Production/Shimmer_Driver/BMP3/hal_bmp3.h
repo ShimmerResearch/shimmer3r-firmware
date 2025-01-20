@@ -31,6 +31,7 @@ int8_t bmp3_restore_default_config(void);
 uint8_t *get_bmp_calib_data_bytes(void);
 uint8_t get_bmp_calib_data_bytes_len(void);
 int8_t save_calib_data_bytes(void);
+int8_t bmp3_read_sensor_status(void);
 /*!
  *  @brief Prints the execution status of the APIs.
  *
