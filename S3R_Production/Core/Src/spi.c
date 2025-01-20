@@ -1224,6 +1224,11 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
+    if (bmp3_is_drdy_int_enabled())
+    {
+      /* Read chip status registers to reset interrupt pin */
+      bmp3_read_sensor_status();
+    }
     bmp3_unselectDevice();
     memcpy(sensing.dataBuf + sensing.ptr.pressure,
         &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
