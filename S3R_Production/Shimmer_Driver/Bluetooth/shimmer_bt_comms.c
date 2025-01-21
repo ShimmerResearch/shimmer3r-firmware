@@ -1996,8 +1996,6 @@ void BtUart_sendRsp(void)
         manageReadBatt(1);
         *(resPacket + packet_length++) = INSTREAM_CMD_RESPONSE;
         *(resPacket + packet_length++) = VBATT_RESPONSE;
-        //memcpy(&resPacket[packet_length],
-        //&batteryStatus.battStatusRaw.rawBytes[0], 3); packet_length += 3;
         uint8_t i = 0;
         for (i = 0; i < 3; i++)
         {

@@ -42,6 +42,7 @@ extern "C"
   void MX_CRC_Init(void);
 
   /* USER CODE BEGIN Prototypes */
+
   void setCrcHandleToUse(CRC_HandleTypeDef *hcrc);
   CRC_HandleTypeDef *getCrcHandle(void);
   void deinitCrc(void);

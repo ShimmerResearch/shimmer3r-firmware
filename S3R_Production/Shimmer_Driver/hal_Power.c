@@ -89,7 +89,10 @@ void Power_GpioAnalogConfig(void)
   __GPIOH_CLK_ENABLE();
   __GPIOI_CLK_ENABLE();
   __GPIOJ_CLK_ENABLE();
-  //__GPIOK_CLK_ENABLE();
+
+#if defined (SHIMMER4_SDK)
+  __GPIOK_CLK_ENABLE();
+#endif /* SHIMMER4_SDK) */
 
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
@@ -107,7 +110,10 @@ void Power_GpioAnalogConfig(void)
   HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
   HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
   HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
-  //HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+
+#if defined (SHIMMER4_SDK)
+  HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+#endif /* SHIMMER4_SDK) */
 
   /* Disable GPIOs clock */
 
@@ -122,7 +128,10 @@ void Power_GpioAnalogConfig(void)
   __GPIOH_CLK_DISABLE();
   __GPIOI_CLK_DISABLE();
   __GPIOJ_CLK_DISABLE();
-  //__GPIOK_CLK_DISABLE();
+
+#if defined (SHIMMER4_SDK)
+  __GPIOK_CLK_DISABLE();
+#endif /* SHIMMER4_SDK) */
 
 #ifndef DEBUG //Something to do with debugging...
   __GPIOA_CLK_ENABLE();
