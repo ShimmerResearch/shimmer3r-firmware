@@ -93,6 +93,7 @@ void S4_NORM_ADC_init2(void);
 #if defined(SHIMMER4_SDK)
 void S4_NORM_ADC_initBatt(void);
 #endif
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_configureChannels(void);
 void S4_NORM_ADC_startSensing(void);
 void shimmerAdcGpioSetup(uint8_t init);
@@ -102,6 +103,7 @@ void S4_NORM_ADC_bufPoll(void);
 void S4_NORM_ADC_stopSensing(void);
 void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void));
 void S4_NORM_ADC_gatherDataStart(void);
+#endif
 void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo);
 void S4_NORM_ADC_readBatt(uint8_t isBlockingRead);
 void S4_NORM_ADC_rankBatt(void);
