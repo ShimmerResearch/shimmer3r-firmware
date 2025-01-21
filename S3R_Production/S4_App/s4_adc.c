@@ -162,6 +162,7 @@ void S4_NORM_ADC_initBatt(void)
 }
 #endif
 
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_configureChannels(void)
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
@@ -642,6 +643,7 @@ void S4_NORM_ADC_gatherDataStart(void)
 
   HAL_ADC_Start_DMA(hadcSensPtr, (uint32_t *) adcBufSens, (uint32_t) adc.sensorLen);
 }
+#endif
 
 void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
 {

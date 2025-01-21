@@ -346,7 +346,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle)
 
     /* USER CODE BEGIN ADC1_MspDeInit 1 */
 
+#ifdef SR48_6_0
     shimmerAdcGpioSetup(0);
+#endif
 
     /* USER CODE END ADC1_MspDeInit 1 */
   }

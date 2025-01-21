@@ -561,7 +561,7 @@ void gpioInitPerBoard(void)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOE, SW_GSR_Pin);
+    HAL_GPIO_WritePin(SW_GSR_GPIO_Port, SW_GSR_Pin, GPIO_PIN_RESET);
 
     /*Configure GPIO pins : SW_GSR_Pin */
     GPIO_InitStruct.Pin = SW_GSR_Pin;
