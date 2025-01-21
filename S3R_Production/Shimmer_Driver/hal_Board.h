@@ -279,8 +279,10 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
   HAL_GPIO_WritePin(SW_SENSE_GPIO_Port, SW_SENSE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_SW_PV_SENSE_IO(x) \
   HAL_GPIO_WritePin(SW_SENSE_IO_GPIO_Port, SW_SENSE_IO_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#ifdef SR48_6_0
 #define Board_SW_GSR(x) \
   HAL_GPIO_WritePin(SW_GSR_GPIO_Port, SW_GSR_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#endif
 #define Board_SW_EXP_BRD_POWER(x) \
   HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 //TODO confirm which pin is going to be used
