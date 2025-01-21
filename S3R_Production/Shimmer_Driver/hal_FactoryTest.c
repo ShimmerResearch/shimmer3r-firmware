@@ -577,7 +577,7 @@ void SPI_test(void)
   send_test_report("SPI1:\r\n");
   MX_SPI1_Init();
 
-  if(isBoardSr48_6_0())
+  if (isBoardSr48_6_0())
   {
     sprintf(buffer, " - S3R_TEST_0019 - ADS7028 test not applicable for this model\r\n");
     send_test_report(buffer);
