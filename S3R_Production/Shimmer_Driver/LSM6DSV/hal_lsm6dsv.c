@@ -439,9 +439,6 @@ void lsm6dsv_configure(float shimmerSamplingFreq,
 {
   LSM6DSV_Init(&lsm6dsv_obj);
 
-  //TODO remove when rate is set correctly in config bytes
-  rate = LSM6DSV_ODR_AT_1920Hz;
-
   if (isGyroEn)
   {
     lsm6dsv_gy_data_rate_set(&lsm6dsv_obj.Ctx, (lsm6dsv_data_rate_t) rate);
