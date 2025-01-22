@@ -105,8 +105,8 @@ void Power_GpioAnalogConfig (void)
    HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
    HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
    HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
-//  HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
-   
+//   HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+
    /* Disable GPIOs clock */
 
 
