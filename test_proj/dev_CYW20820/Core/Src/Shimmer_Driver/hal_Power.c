@@ -104,7 +104,7 @@ void Power_GpioAnalogConfig (void)
    HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
    HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
    HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
-//   HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+// HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
 
    /* Disable GPIOs clock */
 
@@ -120,10 +120,8 @@ void Power_GpioAnalogConfig (void)
    __GPIOH_CLK_DISABLE();
    __GPIOI_CLK_DISABLE();
    __GPIOJ_CLK_DISABLE();
-
-#if defined (SHIMMER4_SDK)
    __GPIOK_CLK_DISABLE();
-#endif /* SHIMMER4_SDK) */
+
 
 
 
