@@ -1134,7 +1134,7 @@ void BT_generateCyw20820FirmwareVersionStr(char *str)
       rsp_system_query_firmware_version.hardware);
 }
 
-//TO DO placeholder for now, implement this later
+//TODO placeholder for now, implement this later
 uint8_t BT_connect(uint8_t *addr)
 {
   return 1;
