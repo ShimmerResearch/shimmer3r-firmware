@@ -88,6 +88,7 @@ void Power_GpioAnalogConfig (void)
    __GPIOI_CLK_ENABLE();
    __GPIOJ_CLK_ENABLE();
    __GPIOK_CLK_ENABLE();
+
    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
    GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
    GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -104,8 +105,8 @@ void Power_GpioAnalogConfig (void)
    HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
    HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
    HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
-// HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
-
+//  HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+   
    /* Disable GPIOs clock */
 
 
@@ -121,9 +122,6 @@ void Power_GpioAnalogConfig (void)
    __GPIOI_CLK_DISABLE();
    __GPIOJ_CLK_DISABLE();
    __GPIOK_CLK_DISABLE();
-
-
-
 
 #ifndef DEBUG // Something to do with debugging...
    __GPIOA_CLK_ENABLE();
