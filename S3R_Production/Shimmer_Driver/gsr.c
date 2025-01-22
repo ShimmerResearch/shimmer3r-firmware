@@ -59,10 +59,10 @@
 #define HW_RES_3M3_MAX_ADC_VAL  3930 //680k to 4M7
 #define HW_RES_3M3_MIN_ADC_VAL  1125 //680k to 4M7
 
-#define HW_RES_40_0OHMS        40200
-#define HW_RES_287_0OHMS       287000
-#define HW_RES_1000OHMS        1000000
-#define HW_RES_3300OHMS        3300000
+#define HW_RES_40_0OHMS         40200
+#define HW_RES_287_0OHMS        287000
+#define HW_RES_1000OHMS         1000000
+#define HW_RES_3300OHMS         3300000
 
 //when we switch resistors with the ADG658 it takes a few samples for the
 //ADC to start to see the new sampled voltage correctly, the catch below is

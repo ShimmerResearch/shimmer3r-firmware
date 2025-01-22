@@ -23,11 +23,10 @@ char buffer[100];
 
 uint8_t test_i2c_addr_list[128], test_i2c_addr_list_len;
 
-static uint32_t testGsrResistances[] = {
-    12000L, 48800L, // GSR Range 0 (8.0kOhm-63.0kOhm)
-    76000L, 197000L, // GSR Range 1 (63.0kOhm-220.0kOhm)
-    248000L, 498000L, // GSR Range 2 (220.0kOhm-680.0kOhm)
-    2000000L, 3000000L, 4000000L }; // GSR Range 3 (680.0kOhm-4.7MOhm)
+static uint32_t testGsrResistances[] = { 12000L, 48800L, //GSR Range 0 (8.0kOhm-63.0kOhm)
+  76000L, 197000L,                //GSR Range 1 (63.0kOhm-220.0kOhm)
+  248000L, 498000L,               //GSR Range 2 (220.0kOhm-680.0kOhm)
+  2000000L, 3000000L, 4000000L }; //GSR Range 3 (680.0kOhm-4.7MOhm)
 
 uint32_t run_factory_test(void)
 {
@@ -90,7 +89,8 @@ uint32_t run_factory_test(void)
   {
     if (shimmerStatus.testResult)
     {
-      sprintf(buffer, "\r\nOverall Result = FAIL (0x%08" PRIX32 ")\r\n", shimmerStatus.testResult);
+      sprintf(buffer, "\r\nOverall Result = FAIL (0x%08" PRIX32 ")\r\n",
+          shimmerStatus.testResult);
     }
     else
     {
