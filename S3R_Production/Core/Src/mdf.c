@@ -189,7 +189,7 @@ void MDF1_DeInit(void)
 #ifdef S3R_NUCLEO
   HAL_MDF_MspDeInit(&MdfHandle4);
 #else
-  HAL_MDF_MspDeInit(&AdfHandle0);
+  HAL_MDF_DeInit(&AdfHandle0);
 #endif
   Board_SW_MIC(0);
 }
