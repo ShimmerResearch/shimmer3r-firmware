@@ -23,6 +23,12 @@ char buffer[100];
 
 uint8_t test_i2c_addr_list[128], test_i2c_addr_list_len;
 
+static uint32_t testGsrResistances[] = {
+    12000L, 48800L, // GSR Range 0 (8.0kOhm-63.0kOhm)
+    76000L, 197000L, // GSR Range 1 (63.0kOhm-220.0kOhm)
+    248000L, 498000L, // GSR Range 2 (220.0kOhm-680.0kOhm)
+    2000000L, 3000000L, 4000000L }; // GSR Range 3 (680.0kOhm-4.7MOhm)
+
 uint32_t run_factory_test(void)
 {
   send_test_report("//**************************** TEST START "
@@ -82,7 +88,14 @@ uint32_t run_factory_test(void)
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
   {
-    sprintf(buffer, "\r\nOverall Result = %s\r\n", shimmerStatus.testResult ? "FAIL" : "PASS");
+    if (shimmerStatus.testResult)
+    {
+      sprintf(buffer, "\r\nOverall Result = FAIL (0x%08" PRIX32 ")\r\n", shimmerStatus.testResult);
+    }
+    else
+    {
+      sprintf(buffer, "\r\nOverall Result = PASS\r\n");
+    }
     send_test_report(buffer);
   }
 
@@ -507,7 +520,7 @@ void I2C_test(void)
   send_test_report("I2C4:\r\n");
   if (isI2c4Supported())
   {
-    uint8_t i2c4_result = 1;
+    uint8_t i2c4_result = 0;
 
     enableI2cOnInternalExpansionBrd(1);
     HAL_Delay(2); //2ms as per Shimmer3 code
@@ -519,6 +532,7 @@ void I2C_test(void)
           " - S3R_TEST_0017 - FAIL: I2C4 - no test rig detected\r\n");
       send_test_report(
           " - S3R_TEST_0018 - FAIL: GSR - no test rig detected\r\n");
+      i2c4_result = 1;
     }
     else if (test_i2c_addr_list_len == 3)
     {
@@ -551,6 +565,7 @@ void I2C_test(void)
           " - S3R_TEST_0017 - FAIL: I2C4 - test rig not recognised\r\n");
       send_test_report(
           " - S3R_TEST_0018 - FAIL: GSR - test rig not recognised\r\n");
+      i2c4_result = 1;
     }
 
     enableI2cOnInternalExpansionBrd(0);
@@ -777,85 +792,36 @@ void send_test_report(char *str)
   }
 }
 
-//TODO
 uint8_t runGsrFactoryTest(void)
 {
-  int32_t gsrResistance = 0;
+  uint32_t gsrResistance = 0;
   uint8_t returnVal = 0;
+  uint8_t i = 0;
+  HAL_StatusTypeDef status;
 
   Board_SW_GSR(1);
   gsrTestRigInit(&hi2c4);
+
   GSR_setRange(HW_RES_40K);
   initGsrAdc();
-
   ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc2();
 
-  ////  {8.0, 63.0},    //Range 0
-  //setGsrTestRigResistance(10000L); // 3.9kOhm
-  ////  {63.0, 220.0},    //Range 1
-  //setGsrTestRigResistance(75000L); // kOhm
-  ////  {220.0, 680.0},   //Range 2
-  //setGsrTestRigResistance(250000L); // 3.8kOhm
-  ////  setGsrTestRigResistance(750000L); // 77.5kOhm
-  //setGsrTestRigResistance(1500000L); // 1.55MOhm
-  ////  {680.0, 4700.0}};   //Range 3
-  //setGsrTestRigResistance(4000000L); // 3.95MOhm
-
-  //Dummy read to set correct GSR Range
-  HAL_StatusTypeDef status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-  if (status != HAL_OK)
+  for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
   {
-    returnVal = 1;
+    setGsrTestRigResistance(testGsrResistances[i]);
+    HAL_Delay(100);
+
+    status = getFactoryTestGsrAvg(hadcFactoryTestPtr, &gsrResistance);
+
+    uint32_t buffer = gsrResistance * GSR_TEST_TOLERANCE;
+    if (status != HAL_OK || (gsrResistance < (testGsrResistances[i] - buffer))
+        || (gsrResistance > (testGsrResistances[i] + buffer)))
+    {
+      returnVal = 1;
+      break;
+    }
   }
 
-  //uint8_t currentActiveResistor;
-  while (1)
-  {
-    //currentActiveResistor = GSR_getCurrentActiveResistor();
-    //status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-    //SHIMMER_PRINTF("GSR Range=%d, Resistance=%ld\r\n", gsrResistance,
-    //currentActiveResistor); HAL_Delay(1000);
-    //}
-
-    //Test 1 - 75kOhm
-    if (returnVal == 0)
-    {
-      setGsrTestRigResistance(75000L);
-      HAL_Delay(1000);
-      status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-      SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
-      //if (status != HAL_OK || gsrResistance < 700 || gsrResistance > 800)
-      //{
-      //  returnVal = 1;
-      //}
-    }
-
-    //Test 2 - 1.5MOhm
-    if (returnVal == 0)
-    {
-      setGsrTestRigResistance(1500000L);
-      HAL_Delay(1000);
-      status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-      SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
-      //if (status != HAL_OK || gsrResistance < 1400 || gsrResistance > 1600)
-      //{
-      //  returnVal = 1;
-      //}
-    }
-
-    //Test 2 - 3.5MOhm
-    if (returnVal == 0)
-    {
-      setGsrTestRigResistance(3500000L);
-      HAL_Delay(1000);
-      status = getSingleGsrChSample(hadcFactoryTestPtr, &gsrResistance);
-      SHIMMER_PRINTF("GSR Resistance = %ldkOhms\r\n", gsrResistance);
-      //if (status != HAL_OK || gsrResistance < 3400 || gsrResistance > 3600)
-      //{
-      //  returnVal = 1;
-      //}
-    }
-  }
   //Stop ADC
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);

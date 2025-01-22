@@ -46,6 +46,9 @@ given above */
 #define SELF_TEST_STR_TEMPERATURE_ISSUE            " - Temperature issue"
 #define SELF_TEST_STR_UNKNOWN                      " - Unknown"
 
+#define GSR_TEST_TOLERANCE                         0.05
+
+
 typedef enum
 {
   PRINT_TO_DEBUGGER = 0,

@@ -118,7 +118,8 @@ void rankBattChargingStatus(void);
 void setBatteryInterval(battAlarmInterval_t value);
 void resetBatteryCriticalCount(void);
 HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample);
-HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t *resistance);
+HAL_StatusTypeDef getFactoryTestGsrResistance(ADC_HandleTypeDef *hadc, uint32_t *resistance);
+HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrResistance);
 void resetGsrPwrAndRange(void);
 
 #endif /* S4_ADC_H */
