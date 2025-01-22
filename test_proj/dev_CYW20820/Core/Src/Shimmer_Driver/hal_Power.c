@@ -121,9 +121,9 @@ void Power_GpioAnalogConfig (void)
    __GPIOI_CLK_DISABLE();
    __GPIOJ_CLK_DISABLE();
 
-#if defined (SHIMMER4_SDK)
+#if defined (GPIOK)
    __GPIOK_CLK_DISABLE();
-#endif /* SHIMMER4_SDK) */
+#endif /* GPIOK */
 
 
 
