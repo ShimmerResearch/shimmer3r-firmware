@@ -87,10 +87,7 @@ void Power_GpioAnalogConfig (void)
    __GPIOH_CLK_ENABLE();
    __GPIOI_CLK_ENABLE();
    __GPIOJ_CLK_ENABLE();
-
-#if defined (SHIMMER4_SDK)
    __GPIOK_CLK_ENABLE();
-#endif  /* SHIMMER4_SDK) */
    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
    GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
    GPIO_InitStruct.Pull = GPIO_NOPULL;
