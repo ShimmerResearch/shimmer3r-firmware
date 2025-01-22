@@ -43,6 +43,7 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
+  void setCrcHandleToUse(CRC_HandleTypeDef *hcrc);
   CRC_HandleTypeDef *getCrcHandle(void);
   void deinitCrc(void);
 

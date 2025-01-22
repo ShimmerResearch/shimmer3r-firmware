@@ -68,7 +68,7 @@
 
 void sdSyncInit(void (*btStart_cb)(void),
     void (*btStop_cb)(uint8_t),
-    uint8_t (*taskSet_cb)(TASK_FLAGS));
+    uint8_t (*taskSet_cb)(uint16_t taskflags));
 void resetMyTimeDiff(void);
 void resetMyTimeDiffArrays(void);
 void resetMyTimeDiffLongMin(void);
@@ -118,6 +118,7 @@ void startBtForSync(void);
 
 void CommTimerStart(void);
 void CommTimerStop(void);
+
 #if defined(SHIMMER3)
 uint16_t GetTA0(void);
 #endif

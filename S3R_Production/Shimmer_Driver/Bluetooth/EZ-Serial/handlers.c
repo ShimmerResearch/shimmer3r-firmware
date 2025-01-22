@@ -412,7 +412,7 @@ void sendNextChar(void)
       numBytes = BT_TX_BUF_SIZE - rdIdx;
     }
     gBtTxFifo.rdIdx += numBytes;
-    ret_val = HAL_UART_Transmit_DMA(huartBtPtr, &gBtTxFifo.data[rdIdx], numBytes);
+    ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *) &gBtTxFifo.data[rdIdx], numBytes);
   }
   else
   {
