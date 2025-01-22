@@ -1137,7 +1137,7 @@ void BT_generateCyw20820FirmwareVersionStr(char *str)
 //TO DO placeholder for now, implement this later
 uint8_t BT_connect(uint8_t *addr)
 {
-   return 1;
+  return 1;
 }
 
 uint8_t BT_disconnect(void)
