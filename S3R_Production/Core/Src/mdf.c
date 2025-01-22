@@ -187,7 +187,7 @@ void MDF1_DeInit(void)
 {
   //TODO remove IF when fully switched from eval board to BGA variant
 #ifdef S3R_NUCLEO
-  HAL_MDF_MspDeInit(&MdfHandle4);
+  HAL_MDF_DeInit(&MdfHandle4);
 #else
   HAL_MDF_DeInit(&AdfHandle0);
 #endif
