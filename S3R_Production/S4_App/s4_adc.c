@@ -1420,7 +1420,7 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrRes
     uint8_t range = GSR_getCurrentActiveResistor();
     status = getFactoryTestGsrResistance(hadc, gsrResistance);
 
-    // Skip first 3 measurements to account for range changing
+    //Skip first 3 measurements to account for range changing
     if (i > 2)
     {
       gsrResistanceAvg += *gsrResistance;
