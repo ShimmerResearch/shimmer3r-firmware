@@ -72,7 +72,7 @@ void GSR_setResistor(uint8_t res);
 //mvolts: the measure voltage from the ADC
 //active_resistor: the currently active resistor on the GSR board
 //returns the calculated resistance
-int32_t GSR_calcResistance(int32_t mvolts, uint8_t active_resistor);
+uint32_t GSR_calcResistance(int32_t mvolts, uint8_t active_resistor);
 
 //Determines whether to change the currently active internal resistor based
 //on the ADC value, and if necessary change the internal resistor to a new

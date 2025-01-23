@@ -811,6 +811,11 @@ void initGsrAdc(void)
   hadc2.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
   hadc2.Init.OversamplingMode = DISABLE;
   hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+
+  hadc2.Init.OversamplingMode = ENABLE;
+  hadc2.Init.Oversampling.Ratio = 3;
+  hadc2.Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_2;
+
   if (HAL_ADC_Init(&hadc2) != HAL_OK)
   {
     Error_Handler();
@@ -1385,15 +1390,13 @@ HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample
   return status;
 }
 
-HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t *gsrResistance)
+HAL_StatusTypeDef getFactoryTestGsrResistance(ADC_HandleTypeDef *hadc, uint32_t *gsrResistance)
 {
   uint32_t adcValue = 0;
 
   HAL_StatusTypeDef status = getSingleAdcChSample(hadc, &adcValue);
   if (status == HAL_OK)
   {
-    //GSR_output(&adcValue);
-
     int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
         hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
 
@@ -1402,6 +1405,29 @@ HAL_StatusTypeDef getSingleGsrChSample(ADC_HandleTypeDef *hadc, int32_t *gsrResi
     GSR_controlRange(adcValue);
   }
 
+  return status;
+}
+
+HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrResistance)
+{
+  HAL_StatusTypeDef status;
+  uint32_t gsrResistanceAvg = 0;
+
+  for (uint8_t i = 0; i < 13; i++)
+  {
+    uint8_t range = GSR_getCurrentActiveResistor();
+    status = getFactoryTestGsrResistance(hadc, gsrResistance);
+
+    //Skip first 3 measurements to account for range changing
+    if (i > 2)
+    {
+      gsrResistanceAvg += *gsrResistance;
+    }
+
+    HAL_Delay(10);
+  }
+
+  *gsrResistance = gsrResistanceAvg / 10;
   return status;
 }
 

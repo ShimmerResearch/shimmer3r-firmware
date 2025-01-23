@@ -83,33 +83,33 @@ void setGsrTestRigResistance(uint32_t resistance)
 
   if (resistance > 500000)
   {
-    if (resistance > (3 * ADG715_1M_TOTAL_RES))
+    if (resistance > (3 * AD5242_1M_TOTAL_RES))
     {
       //Connect all resistors in series
       switchModeToSet = ADG715_S2 | ADG715_S4 | ADG715_S5 | ADG715_S7;
 
-      res_u1_1 = ADG715_1M_TOTAL_RES;
-      res_u1_2 = ADG715_1M_TOTAL_RES;
-      res_u2_1 = ADG715_1M_TOTAL_RES;
-      res_u2_2 = resistance - (3 * ADG715_1M_TOTAL_RES);
+      res_u1_1 = AD5242_1M_TOTAL_RES;
+      res_u1_2 = AD5242_1M_TOTAL_RES;
+      res_u2_1 = AD5242_1M_TOTAL_RES;
+      res_u2_2 = resistance - (3 * AD5242_1M_TOTAL_RES);
     }
-    else if (resistance > (2 * ADG715_1M_TOTAL_RES))
+    else if (resistance > (2 * AD5242_1M_TOTAL_RES))
     {
       //Connect U1.1, U1.2 and U2.1 resistors in series
       switchModeToSet = ADG715_S5 | ADG715_S2 | ADG715_S7 | ADG715_S8;
 
-      res_u1_1 = ADG715_1M_TOTAL_RES;
-      res_u1_2 = ADG715_1M_TOTAL_RES;
-      res_u2_1 = resistance - (2 * ADG715_1M_TOTAL_RES);
+      res_u1_1 = AD5242_1M_TOTAL_RES;
+      res_u1_2 = AD5242_1M_TOTAL_RES;
+      res_u2_1 = resistance - (2 * AD5242_1M_TOTAL_RES);
       res_u2_2 = 0;
     }
-    else if (resistance > (1 * ADG715_1M_TOTAL_RES))
+    else if (resistance > (1 * AD5242_1M_TOTAL_RES))
     {
       //Connect U1.1 and U1.2 resistors in series
       switchModeToSet = ADG715_S5 | ADG715_S2 | ADG715_S3 | ADG715_S4;
 
-      res_u1_1 = ADG715_1M_TOTAL_RES;
-      res_u1_2 = resistance - ADG715_1M_TOTAL_RES;
+      res_u1_1 = AD5242_1M_TOTAL_RES;
+      res_u1_2 = resistance - AD5242_1M_TOTAL_RES;
       res_u2_1 = 0;
       res_u2_2 = 0;
     }
@@ -129,7 +129,7 @@ void setGsrTestRigResistance(uint32_t resistance)
     //TODO implement parallel connected resistors. For the moment, utilising a single resistor
 
     //Connect U2.2 resistor
-    switchModeToSet = ADG715_S1 | ADG715_S2 | ADG715_S3 | ADG715_S8;
+    switchModeToSet = ADG715_S5 | ADG715_S6 | ADG715_S7 | ADG715_S8;
 
     res_u1_1 = resistance;
     res_u1_2 = 0;
@@ -152,8 +152,8 @@ uint8_t calculateRdacValue(uint32_t resistance)
     return 255;
   }
 
-  float result = (256.0 - ((((float) resistance - 60.0) / (float) ADG715_1M_RAB) * 256.0));
-  return (uint8_t) result;
+  float result = (256.0 - ((((float) resistance - 60.0) / (float) AD5242_1M_RAB) * 256.0));
+  return (uint8_t) round(result);
 }
 
 void setGsrTestRig(uint8_t switchMode, uint8_t u1Rdac1, uint8_t u1Rdac2, uint8_t u2Rdac1, uint8_t u2Rdac2)
