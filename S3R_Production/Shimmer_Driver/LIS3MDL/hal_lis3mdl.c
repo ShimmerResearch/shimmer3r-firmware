@@ -140,8 +140,6 @@ static const float max_st_limit[] = { 3.0f, 3.0f, 1.0f };
 /* Private variables ---------------------------------------------------------*/
 static LIS3MDL_Object_t lis3mdl_obj;
 
-static bool isDrdyIntEnabled = false;
-
 /* Extern variables ----------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
@@ -343,14 +341,7 @@ self_test_result_t lis3mdl_self_test(void)
 void lis3mdl_configure(float shimmerSamplingFreq, lis3mdl_om_t rate, lis3mdl_fs_t range)
 {
   LIS3MDL_Init(&lis3mdl_obj);
-
-  isDrdyIntEnabled = false;
-  if (lis3mdl_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
-  {
-    /* Note: DRDY pin is always enabled for LIS3MDL but we only need to utilise
-    it if the Shimmer's sampling rate is faster then the chip can support. */
-    isDrdyIntEnabled = true;
-  }
+  /* Note: DRDY pin is always enabled for LIS3MDL nothing needs to be configured */
 
   /* Set Full Scale */
   lis3mdl_full_scale_set(&lis3mdl_obj.Ctx, range);
@@ -370,16 +361,6 @@ HAL_StatusTypeDef lis3mdl_mag_get(uint8_t *buf)
   static uint8_t txBuff[] = { LIS3MDL_OUT_X_L | 0xC0, 0, 0, 0, 0, 0, 0 };
   ret = platform_read_raw_data_dma(lis3mdl_obj.Ctx.handle, &txBuff[0], buf, sizeof(txBuff));
   return ret;
-}
-
-bool lis3mdl_is_drdy_int_enabled(void)
-{
-  return isDrdyIntEnabled;
-}
-
-bool lis3mdl_is_shimmer_freq_higher(float shimmerSamplingFreq, lis3mdl_om_t rate)
-{
-  return shimmerSamplingFreq > lis3mdl_get_sensor_freq_from_rate(rate);
 }
 
 float lis3mdl_get_sensor_freq_from_rate(lis3mdl_om_t rate)

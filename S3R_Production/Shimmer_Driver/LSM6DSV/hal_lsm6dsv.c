@@ -456,8 +456,9 @@ void lsm6dsv_configure(float shimmerSamplingFreq,
     lsm6dsv_xl_full_scale_set(&lsm6dsv_obj.Ctx, (lsm6dsv_xl_full_scale_t) rangeAccel);
   }
 
-  //TODO if chip sampling rate is lower than Shimmer sampling, enable pin
+  //if chip sampling rate is lower than Shimmer sampling, enable pin
   //interrupt to only read data from chip when it's ready
+  lsm6dsv_interrupt_mode_t mode_int;
   lsm6dsv_pin_int_route_t pin_int;
   pin_int.drdy_g_eis = 0;
   pin_int.drdy_temp = 0;
@@ -482,13 +483,18 @@ void lsm6dsv_configure(float shimmerSamplingFreq,
     if ((isGyroEn && isAccelEn) || isGyroEn)
     {
       pin_int.drdy_g = PROPERTY_ENABLE;
+      mode_int.enable = PROPERTY_ENABLE;
+      mode_int.lir = PROPERTY_ENABLE;
       isDrdyIntEnabled = true;
     }
     else
     {
       pin_int.drdy_xl = PROPERTY_ENABLE;
+      mode_int.enable = PROPERTY_ENABLE;
+      mode_int.lir = PROPERTY_ENABLE;
       isDrdyIntEnabled = true;
     }
+    lsm6dsv_interrupt_enable_set(&lsm6dsv_obj.Ctx, mode_int);
     lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
   }
 
