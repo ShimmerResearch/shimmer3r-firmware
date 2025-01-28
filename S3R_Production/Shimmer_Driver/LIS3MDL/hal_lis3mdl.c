@@ -343,12 +343,10 @@ self_test_result_t lis3mdl_self_test(void)
 void lis3mdl_configure(float shimmerSamplingFreq, lis3mdl_om_t rate, lis3mdl_fs_t range)
 {
   LIS3MDL_Init(&lis3mdl_obj);
-
   isDrdyIntEnabled = false;
   if (lis3mdl_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
   {
-    /* Note: DRDY pin is always enabled for LIS3MDL but we only need to utilise
-    it if the Shimmer's sampling rate is faster then the chip can support. */
+    /* Note: DRDY pin is always enabled for LIS3MDL nothing needs to be configured */
     isDrdyIntEnabled = true;
   }
 

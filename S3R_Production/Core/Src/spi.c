@@ -1091,8 +1091,8 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
   }
   else if (spiSensingInfo->sensorCnt < spiSensingInfo->sensorLen)
   {
-    uint8_t res = 0;
-    while ((res = SpiSens_sensorNext(spiSensingInfo)) == 0)
+    uint8_t waitingDmaRxcb = 0;
+    while ((waitingDmaRxcb = SpiSens_sensorNext(spiSensingInfo)) == 0)
     {
       spiSensingInfo->sensorCnt++;
 
