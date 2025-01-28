@@ -1175,7 +1175,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 #endif
     break;
   case SPI2_LIS3MDL_MAG:
-    if (!lis3mdl_is_drdy_int_enabled() || LIS3MDL_DRDY)
+    if (LIS3MDL_DRDY)
     {
       spiSensingInfo->status = SPI_STAT_LIS3MDL_MAG_GET;
       lis3mdl_mag_get(spi2Sens_buf.lis3mdlMagBuf);
