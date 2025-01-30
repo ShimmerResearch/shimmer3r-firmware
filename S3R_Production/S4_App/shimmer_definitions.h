@@ -458,8 +458,8 @@ NV_SENSORS5
 #define UINT64_LEN                      21 //20+1, where the last byte should be 0x00
 #define RESPONSE_PACKET_SIZE            1024 //133
 
-#define STAT_PERI_ADC      0x01
-#define STAT_PERI_I2C_SENS 0x02
+#define STAT_PERI_ADC                   0x01
+#define STAT_PERI_I2C_SENS              0x02
 #if defined(SHIMMER4_SDK)
 #define STAT_PERI_I2C_BATT 0x04
 #endif
