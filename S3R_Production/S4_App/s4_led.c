@@ -42,7 +42,7 @@
 
 #include "s4_led.h"
 #include "shimmer_definitions.h"
-#include "shimmer_externs.h"
+#include "log_and_stream_externs.h"
 
 uint8_t cntBlink = 0;
 uint8_t cnt1 = 0;

@@ -29,7 +29,7 @@
 #include "s4_sensing.h"
 #include "s4_taskList.h"
 #include "shimmer_definitions.h"
-#include "shimmer_externs.h"
+#include "log_and_stream_externs.h"
 #endif
 
 #include "sd_sync.h"

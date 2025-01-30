@@ -26,7 +26,7 @@
 #include "usb_device.h"
 #include "usbd_core.h"
 
-#include "shimmer_externs.h"
+#include "log_and_stream_externs.h"
 
 /* USER CODE END 0 */
 

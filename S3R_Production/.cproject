@@ -71,6 +71,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Shimmer_Driver/LIS2MDL/lis2mdl-pid}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Shimmer_Driver/LIS3MDL/lis3mdl-pid}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Shimmer_Driver/LSM6DSV/lsm6dsv-pid}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/log-and-stream-common}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.otherflags.1026514267" name="Other flags" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.otherflags" useByScannerDiscovery="true" valueType="stringList">
 									<listOptionValue builtIn="false" value="-Wno-unused-but-set-variable"/>
@@ -110,6 +111,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Middlewares"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="S4_App"/>
 						<entry excluding="LSM303AH/lsm303ah.c|RN42.c|STC3100_OLD.c|SR7/sr7.c|BMP280_driver/bmp280_support.c|BMP3/BMP3_SensorAPI/examples|STC3100.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Shimmer_Driver"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="log-and-stream-common"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

@@ -23,7 +23,7 @@
 #include "../shimmer_boards/shimmer_boards.h"
 #else
 #include "s4_taskList.h"
-#include "shimmer_definitions.h"
+#include "log_and_stream_definitions.h"
 
 #include "stm32u5xx_hal_uart.h"
 #endif

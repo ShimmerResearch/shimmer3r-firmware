@@ -45,7 +45,7 @@
 #include "stm32u5xx.h"
 
 #include "../../S4_App/shimmer_definitions.h"
-#include "../../S4_App/shimmer_externs.h"
+#include "log_and_stream_externs.h"
 #include "../EZ-Serial/handlers.h"
 #include "../shimmer_bt_comms.h"
 
