@@ -751,6 +751,10 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
     {
       selfTestDetailsStr = &SELF_TEST_STR_TEMPERATURE_ISSUE[0];
     }
+    else if (self_test_result == SELF_TEST_FAIL_DRDY_ISSUE)
+    {
+    	selfTestDetailsStr = &SELF_TEST_STR_DRDY_ISSUE[0];
+    }
     else
     {
       selfTestDetailsStr = &SELF_TEST_STR_UNKNOWN[0];

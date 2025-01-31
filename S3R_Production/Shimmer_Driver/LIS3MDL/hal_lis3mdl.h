@@ -15,7 +15,7 @@ void lis3mdl_driver_init(void);
 void lis3mdl_selectDevice(void);
 void lis3mdl_unselectDevice(void);
 self_test_result_t lis3mdl_self_test(void);
-self_test_result_t lis3mdl_drdy_test(void);
+uint8_t lis3mdl_drdy_test(void);
 void lis3mdl_configure(float shimmerSamplingFreq, lis3mdl_om_t rate, lis3mdl_fs_t range);
 HAL_StatusTypeDef lis3mdl_mag_get(uint8_t *buf);
 bool lis3mdl_is_shimmer_freq_higher(float shimmerSamplingFreq, lis3mdl_om_t rate);
