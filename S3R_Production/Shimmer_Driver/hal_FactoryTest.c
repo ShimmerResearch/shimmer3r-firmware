@@ -753,7 +753,7 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
     }
     else if (self_test_result == SELF_TEST_FAIL_DRDY_ISSUE)
     {
-    	selfTestDetailsStr = &SELF_TEST_STR_DRDY_ISSUE[0];
+      selfTestDetailsStr = &SELF_TEST_STR_DRDY_ISSUE[0];
     }
     else
     {
