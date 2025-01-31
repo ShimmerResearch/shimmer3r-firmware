@@ -44,10 +44,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "s4_adc.h"
-#include "gpdma.h"
-#include "shimmer_definitions.h"
-#include "log_and_stream_externs.h"
 #include "battery.h"
+#include "gpdma.h"
+#include "log_and_stream_externs.h"
+#include "shimmer_definitions.h"
 
 ADCTypeDef adc;
 #if defined(SHIMMER4_SDK)
@@ -1044,8 +1044,6 @@ void S4_NORM_ADC_stopSensing()
 #endif
 }
 
-
-
 void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
 {
   Board_enableSensingPower(SENSE_PWR_VBATT, 1);
@@ -1178,7 +1176,8 @@ void manageReadBatt(uint8_t isBlockingRead)
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
   if (shimmerStatus.sensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
-    saveBatteryVoltageAndUpdateStatus(*(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog], hadcBattPtr);
+    saveBatteryVoltageAndUpdateStatus(
+        *(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog], hadcBattPtr);
   }
   else
   {
@@ -1264,9 +1263,9 @@ void resetGsrPwrAndRange(void)
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr)
 {
   //Multiplied by 2 due to voltage divider
-  uint16_t battValMV =
-      __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, VREF_EXTERNAL_SUPPLY_MV,
-          adcBattVal, hadcSensPtr->Init.Resolution) * 2;
+  uint16_t battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, VREF_EXTERNAL_SUPPLY_MV,
+                           adcBattVal, hadcSensPtr->Init.Resolution)
+      * 2;
   updateBatteryStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
 }
 

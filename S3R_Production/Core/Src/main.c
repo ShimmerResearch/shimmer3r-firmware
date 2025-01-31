@@ -29,8 +29,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "shimmer_definitions.h"
 #include "log_and_stream_globals.h"
+#include "shimmer_definitions.h"
 #include "shimmer_include.h"
 #include "usb_otg.h"
 #include <ctype.h>
