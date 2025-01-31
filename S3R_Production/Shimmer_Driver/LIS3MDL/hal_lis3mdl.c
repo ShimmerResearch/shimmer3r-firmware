@@ -197,9 +197,9 @@ self_test_result_t lis3mdl_self_test(void)
   self_test_result_t self_test_result = SELF_TEST_PASS;
 
   lis3mdl_driver_init();
-  if(LIS3MDL_DRDY)
+  if (LIS3MDL_DRDY)
   {
-	  self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
+    self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
   }
 
   /* Check device ID */
@@ -321,10 +321,11 @@ self_test_result_t lis3mdl_drdy_test(void)
 {
   int16_t data_raw[3];
   self_test_result_t self_test_result = SELF_TEST_PASS;
-  while(!LIS3MDL_DRDY);
+  while (!LIS3MDL_DRDY)
+    ;
   /* Read dummy data and discard it */
   lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
-  if(LIS3MDL_DRDY)
+  if (LIS3MDL_DRDY)
   {
     self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
   }
