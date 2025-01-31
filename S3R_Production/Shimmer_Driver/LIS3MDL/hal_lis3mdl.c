@@ -190,7 +190,6 @@ self_test_result_t lis3mdl_self_test(void)
   float val_st_off[3];
   float val_st_on[3];
   float test_val[3];
-  //uint8_t st_result;
   uint8_t whoamI;
   uint8_t drdy;
   uint8_t i;
@@ -198,19 +197,21 @@ self_test_result_t lis3mdl_self_test(void)
   self_test_result_t self_test_result = SELF_TEST_PASS;
 
   lis3mdl_driver_init();
+  if(LIS3MDL_DRDY)
+  {
+	  self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
+  }
 
   /* Check device ID */
   lis3mdl_device_id_get(&lis3mdl_obj.Ctx, &whoamI);
 
   if (whoamI != LIS3MDL_ID)
   {
-    //st_result = ST_FAIL;
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
   {
     lis3mdl_restore_default_config();
-
     /* Set Full Scale */
     lis3mdl_full_scale_set(&lis3mdl_obj.Ctx, LIS3MDL_12_GAUSS);
     /* Set Output Data Rate */
@@ -221,18 +222,14 @@ self_test_result_t lis3mdl_self_test(void)
     lis3mdl_operating_mode_set(&lis3mdl_obj.Ctx, LIS3MDL_CONTINUOUS_MODE);
     /* Wait stable output */
     platform_delay(WAIT_TIME_01);
-
+    lis3mdl_drdy_test();
     /* Check if new value available */
     do
     {
       lis3mdl_mag_data_ready_get(&lis3mdl_obj.Ctx, &drdy);
     } while (!drdy);
-
-    /* Read dummy data and discard it */
-    lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
     /* Read samples and get the average vale for each axis */
     memset(val_st_off, 0x00, 3 * sizeof(float));
-
     for (i = 0; i < SAMPLES; i++)
     {
       /* Check if new value available */
@@ -295,8 +292,6 @@ self_test_result_t lis3mdl_self_test(void)
       val_st_on[i] /= SAMPLES;
     }
 
-    //st_result = ST_PASS;
-
     /* Calculate the mg values for self test */
     for (i = 0; i < 3; i++)
     {
@@ -308,11 +303,9 @@ self_test_result_t lis3mdl_self_test(void)
     {
       if ((min_st_limit[i] > test_val[i]) || (test_val[i] > max_st_limit[i]))
       {
-        //st_result = ST_FAIL;
         self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
       }
     }
-
     float_t tempCal;
     lis3mdl_temperature_get(&tempCal);
 
@@ -321,20 +314,20 @@ self_test_result_t lis3mdl_self_test(void)
     /* Disable sensor. */
     lis3mdl_operating_mode_set(&lis3mdl_obj.Ctx, LIS3MDL_POWER_DOWN);
   }
+  return self_test_result;
+}
 
-  //if (st_result == ST_PASS)
-  //{
-  //  sprintf((char *) tx_buffer, "LIS3MDL Self Test - PASS\r\n");
-  //}
-  //
-  //else
-  //{
-  //  sprintf((char *) tx_buffer, "LIS3MDL Self Test - FAIL\r\n");
-  //}
-  //
-  //tx_com(tx_buffer, strlen((char const *) tx_buffer));
-
-  //return st_result == ST_PASS ? 0 : 1;
+self_test_result_t lis3mdl_drdy_test(void)
+{
+  int16_t data_raw[3];
+  self_test_result_t self_test_result = SELF_TEST_PASS;
+  while(!LIS3MDL_DRDY);
+  /* Read dummy data and discard it */
+  lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
+  if(LIS3MDL_DRDY)
+  {
+    self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
+  }
   return self_test_result;
 }
 
