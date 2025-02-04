@@ -330,8 +330,9 @@ uint8_t lis3mdl_drdy_test(void)
 {
   int16_t data_raw[3];
   uint8_t i;
-  for(i=0;i<5;i++)
+  for (i = 0; i < 5; i++)
   {
+<<<<<<< HEAD
 	platform_delay(WAIT_TIME_01);
 	if(LIS3MDL_DRDY) 
 	{
@@ -346,6 +347,13 @@ uint8_t lis3mdl_drdy_test(void)
         return 1; // Test pass
       }
 	}
+=======
+    if (!LIS3MDL_DRDY)
+    {
+      break;
+    }
+    platform_delay(WAIT_TIME_01);
+>>>>>>> branch 'DEV-138_interrupt_verification_in_factory_test' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
   }
   return 0; //Test fails due to incorrect pin settings after timeout
 }
