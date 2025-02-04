@@ -213,10 +213,10 @@ self_test_result_t lis2mdl_self_test(void)
     platform_delay(WAIT_TIME_01);
 
     /* DRDY/INT pin test */
-    if(!lis2mdl_drdy_test())
+    if (!lis2mdl_drdy_test())
     {
       self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
-      lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx,0);
+      lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0);
     }
     else
     {
@@ -315,21 +315,21 @@ uint8_t lis2mdl_drdy_test(void)
   uint8_t i;
   /* Set DRDY pin */
   lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
-  for(i=0;i<4;i++)
+  for (i = 0; i < 4; i++)
   {
-	platform_delay(WAIT_TIME_01);
-    if(LIS2MDL_DRDY)
+    platform_delay(WAIT_TIME_01);
+    if (LIS2MDL_DRDY)
     {
       /* Read dummy data and discard it */
       lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
-      if(LIS2MDL_DRDY)
+      if (LIS2MDL_DRDY)
       {
         return 0; //Test fails
       }
       else
       {
         /* reset DRDY pin */
-    	lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0);
+        lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0);
         return 1; //Test pass
       }
     }
