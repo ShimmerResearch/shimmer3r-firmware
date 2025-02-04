@@ -225,7 +225,7 @@ self_test_result_t lis3mdl_self_test(void)
     platform_delay(WAIT_TIME_01);
 
     /* Adding DRDY pin test */
-    if(!lis3mdl_drdy_test())
+    if (!lis3mdl_drdy_test())
     {
       self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
     }
@@ -336,20 +336,19 @@ uint8_t lis3mdl_drdy_test(void)
   uint8_t i;
   for(i=0;i<5;i++)
   {
-
-	  if(!LIS3MDL_DRDY)
-	  {
-		  break;
-	  }
-	  platform_delay(WAIT_TIME_01);
+    if(!LIS3MDL_DRDY)
+	{
+      break;
+    }
+	platform_delay(WAIT_TIME_01);
   }
   /* Read dummy data and discard it */
   lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
   if (LIS3MDL_DRDY)
   {
-      return 0; // Test fails
+    return 0; //Test fails
   }
-  return 1; // Test pass
+  return 1; //Test pass
 }
 
 void lis3mdl_configure(float shimmerSamplingFreq, lis3mdl_om_t rate, lis3mdl_fs_t range)
