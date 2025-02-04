@@ -332,6 +332,7 @@ uint8_t lis3mdl_drdy_test(void)
   uint8_t i;
   for(i = 0; i < 5; i++)
   {
+	platform_delay(WAIT_TIME_01);
     if(LIS3MDL_DRDY)
     {
       /* Read dummy data and discard it */
