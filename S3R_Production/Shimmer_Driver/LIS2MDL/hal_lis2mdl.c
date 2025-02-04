@@ -216,7 +216,6 @@ self_test_result_t lis2mdl_self_test(void)
     if(!lis2mdl_drdy_test())
     {
       self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
-      lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx,0);
     }
     else
     {
@@ -230,7 +229,6 @@ self_test_result_t lis2mdl_self_test(void)
       lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
       /* Read samples and get the average vale for each axis */
       memset(val_st_off, 0x00, 3 * sizeof(float));
-
       for (i = 0; i < SAMPLES; i++)
       {
         /* Check if new value available */
@@ -241,7 +239,6 @@ self_test_result_t lis2mdl_self_test(void)
 
         /* Read data and accumulate the mg value */
         lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
-
         for (j = 0; j < 3; j++)
         {
           val_st_off[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
@@ -253,14 +250,12 @@ self_test_result_t lis2mdl_self_test(void)
       {
         val_st_off[i] /= SAMPLES;
       }
-
       /* Enable Self Test */
       lis2mdl_self_test_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE);
       /* Wait stable output */
       platform_delay(WAIT_TIME_02);
       /* Read samples and get the average vale for each axis */
       memset(val_st_on, 0x00, 3 * sizeof(float));
-
       for (i = 0; i < SAMPLES; i++)
       {
         /* Check if new value available */
@@ -271,7 +266,6 @@ self_test_result_t lis2mdl_self_test(void)
 
         /* Read data and accumulate the mg value */
         lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
-
         for (j = 0; j < 3; j++)
         {
           val_st_on[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
@@ -305,7 +299,6 @@ self_test_result_t lis2mdl_self_test(void)
     /* Disable sensor. */
     lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_POWER_DOWN);
   }
-
   return self_test_result;
 }
 
@@ -313,28 +306,22 @@ uint8_t lis2mdl_drdy_test(void)
 {
   int16_t data_raw[3];
   uint8_t i;
+  uint8_t res = 0;
   /* Set DRDY pin */
   lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
-  for(i=0;i<4;i++)
+  for(i=0;i<4;i++)// ODR=100hz(interrupt every 10ms),20ms delay each iteration,with timeout of 80 ms(test for 8 interrupts).
   {
-	platform_delay(WAIT_TIME_01);
+    platform_delay(WAIT_TIME_01);
     if(LIS2MDL_DRDY)
     {
       /* Read dummy data and discard it */
-      lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
-      if(LIS2MDL_DRDY)
-      {
-        return 0; //Test fails
-      }
-      else
-      {
-        /* reset DRDY pin */
-    	lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0);
-        return 1; //Test pass
-      }
+      lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);// read data once pin is set
+      res = LIS2MDL_DRDY?1:0;// pin status after data read, pin set indicates test fail return 0
+      break;
     }
   }
-  return 0; //Test fails due to incorrect pin settings after timeout
+  lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0);
+  return res;
 }
 
 void lis2mdl_configure(float shimmerSamplingFreq, lis2mdl_odr_t rate)
