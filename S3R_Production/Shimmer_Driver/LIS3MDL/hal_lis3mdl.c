@@ -330,13 +330,13 @@ uint8_t lis3mdl_drdy_test(void)
 {
   int16_t data_raw[3];
   uint8_t i;
-  for(i = 0; i < 5; i++)
+  for (i = 0; i < 5; i++)
   {
-    if(LIS3MDL_DRDY)
+    if (LIS3MDL_DRDY)
     {
       /* Read dummy data and discard it */
       lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
-      if(LIS3MDL_DRDY)
+      if (LIS3MDL_DRDY)
       {
         return 0; //Test fails
       }
