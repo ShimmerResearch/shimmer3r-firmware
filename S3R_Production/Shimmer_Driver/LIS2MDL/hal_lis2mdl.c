@@ -213,7 +213,7 @@ self_test_result_t lis2mdl_self_test(void)
     platform_delay(WAIT_TIME_01);
 
     /* DRDY/INT pin test */
-    if(!lis2mdl_drdy_test())
+    if (!lis2mdl_drdy_test())
     {
       self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
     }
@@ -307,14 +307,14 @@ uint8_t lis2mdl_drdy_test(void)
   uint8_t res = 0;
   /* Set DRDY pin */
   lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
-  for(i=0;i<4;i++)// ODR=100hz(interrupt every 10ms),20ms delay each iteration,with timeout of 80 ms(test for 8 interrupts).
+  for (i = 0; i < 4; i++) //ODR=100hz(interrupt every 10ms),20ms delay each iteration,with timeout of 80 ms(test for 8 interrupts).
   {
     platform_delay(WAIT_TIME_01);
-    if(LIS2MDL_DRDY)
+    if (LIS2MDL_DRDY)
     {
       /* Read dummy data and discard it */
-      lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);// read data once pin is set
-      res = LIS2MDL_DRDY?1:0;// pin status after data read, pin set indicates test fail return 0
+      lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw); //read data once pin is set
+      res = LIS2MDL_DRDY ? 1 : 0; //pin status after data read, pin set indicates test fail return 0
       break;
     }
   }
