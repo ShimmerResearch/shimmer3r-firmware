@@ -224,7 +224,6 @@ self_test_result_t lis2mdl_self_test(void)
       {
         lis2mdl_mag_data_ready_get(&lis2mdl_obj.Ctx, &drdy);
       } while (!drdy);
-
       /* Read dummy data and discard it */
       lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
       /* Read samples and get the average vale for each axis */
@@ -271,7 +270,6 @@ self_test_result_t lis2mdl_self_test(void)
           val_st_on[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
         }
       }
-
       /* Calculate the mg average values */
       for (i = 0; i < 3; i++)
       {
