@@ -314,12 +314,12 @@ self_test_result_t lis3mdl_self_test(void)
           self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
         }
       }
-    }
     float_t tempCal;
     lis3mdl_temperature_get(&tempCal);
 
     /* Disable Self Test */
     lis3mdl_self_test_set(&lis3mdl_obj.Ctx, PROPERTY_DISABLE);
+    }
     /* Disable sensor. */
     lis3mdl_operating_mode_set(&lis3mdl_obj.Ctx, LIS3MDL_POWER_DOWN);
   }
@@ -330,6 +330,7 @@ uint8_t lis3mdl_drdy_test(void)
 {
   int16_t data_raw[3];
   uint8_t i;
+  uint8_t res = 0;
   for (i = 0; i < 5; i++)
   {
     platform_delay(WAIT_TIME_01);
@@ -337,17 +338,9 @@ uint8_t lis3mdl_drdy_test(void)
     {
       /* Read dummy data and discard it */
       lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
-      if (LIS3MDL_DRDY)
-      {
-        return 0; //Test fails
-      }
-      else
-      {
-        return 1; //Test pass
-      }
-    }
+      res = LIS3MDL_DRDY? 0 : 1; // if pin is set test fail send 0
   }
-  return 0; //Test fails due to incorrect pin settings after timeout
+  return res;
 }
 
 void lis3mdl_configure(float shimmerSamplingFreq, lis3mdl_om_t rate, lis3mdl_fs_t range)

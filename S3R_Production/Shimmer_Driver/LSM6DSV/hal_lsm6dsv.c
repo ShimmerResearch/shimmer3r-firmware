@@ -444,9 +444,9 @@ uint8_t lsm6dsv_drdy_test(void)
       /* Read raw data */
       lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
       /* read status again, before checking interrupt pin
-       *to make sure pin reads the correct output from register
-       *this is to account for delay to see status change in register and pin
-       *after data read */
+       * to make sure pin reads the correct output from register
+       * this is to account for delay to see status change in register and pin
+       * after data read */
       lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
       res = LSM6DSV_DRDY?0:1;
       if(res == 1) // run test multiple times to get the proper value

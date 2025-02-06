@@ -314,7 +314,7 @@ uint8_t lis2mdl_drdy_test(void)
     {
       /* Read dummy data and discard it */
       lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw); //read data once pin is set
-      res = LIS2MDL_DRDY ? 1 : 0; //pin status after data read, pin set indicates test fail return 0
+      res = LIS2MDL_DRDY ? 0 : 1; //pin status after data read, pin set indicates test fail return 0
       break;
     }
   }
