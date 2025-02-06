@@ -15,6 +15,7 @@ void lsm6dsv_driver_init(void);
 void lsm6dsv_selectDevice(void);
 void lsm6dsv_unselectDevice(void);
 self_test_result_t lsm6dsv_self_test(void);
+uint8_t lsm6dsv_drdy_test(void);
 void lsm6dsv_configure(float shimmerSamplingFreq,
     uint8_t isGyroEn,
     uint8_t isAccelEn,
