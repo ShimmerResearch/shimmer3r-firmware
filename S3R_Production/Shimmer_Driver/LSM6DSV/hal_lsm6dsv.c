@@ -218,19 +218,19 @@ self_test_result_t lsm6dsv_self_test(void)
      * Accelerometer Self Test
      */
     /* Set Output Data Rate */
-    lsm6dsv_xl_data_rate_set(&lsm6dsv_obj.Ctx,  LSM6DSV_ODR_AT_60Hz);
+    lsm6dsv_xl_data_rate_set(&lsm6dsv_obj.Ctx, LSM6DSV_ODR_AT_60Hz);
     /* Set full scale */
     lsm6dsv_xl_full_scale_set(&lsm6dsv_obj.Ctx, LSM6DSV_4g);
     /* Wait stable output */
     platform_delay(100);
 
-    if(!lsm6dsv_drdy_test())
+    if (!lsm6dsv_drdy_test())
     {
       self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
     }
     else
     {
-    /* Check if new value available */
+      /* Check if new value available */
       do
       {
         lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
@@ -436,10 +436,10 @@ uint8_t lsm6dsv_drdy_test(void)
   lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
   lsm6dsv_all_sources_t all_sources;
   uint16_t count = 0;
-  for(i = 0;i < 15; i++)
+  for (i = 0; i < 15; i++)
   {
-    platform_delay(15); // every 16.6 msec new value is seen as per current odr settings
-    if(LSM6DSV_DRDY)
+    platform_delay(15); //every 16.6 msec new value is seen as per current odr settings
+    if (LSM6DSV_DRDY)
     {
       /* Read raw data */
       lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
@@ -448,9 +448,11 @@ uint8_t lsm6dsv_drdy_test(void)
        * this is to account for delay to see status change in register and pin
        * after data read */
       lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
-      res = LSM6DSV_DRDY?0:1;
-      if(res == 1) // run test multiple times to get the proper value
-      break;
+      res = LSM6DSV_DRDY ? 0 : 1;
+      if (res == 1) //run test multiple times to get the proper value
+      {
+        break;
+      }
     }
   }
   pin_int.drdy_xl = PROPERTY_DISABLE;
