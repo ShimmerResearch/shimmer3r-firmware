@@ -44,14 +44,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "s4_adc.h"
+#include "battery.h"
 #include "gpdma.h"
+#include "log_and_stream_externs.h"
 #include "shimmer_definitions.h"
-#include "shimmer_externs.h"
-//#include "gpio.h"
-//#include "dma.h"
-
-//static STATTypeDef * pStat;
-//static SENSINGTypeDef *pSensing;
 
 ADCTypeDef adc;
 #if defined(SHIMMER4_SDK)
@@ -64,7 +60,7 @@ ADC_HandleTypeDef *hadcSensPtr;
 ADC_HandleTypeDef *hadcBattPtr;
 
 #if defined(SHIMMER3R)
-uint16_t adc_battVal, adcBufSens[8]; //max 8 channels, each of 16 bits
+uint16_t adcBufSens[8]; //max 8 channels, each of 16 bits
 #elif defined(SHIMMER4_SDK)
 uint32_t adc_battVal, adcBufSens[12], adcBufResv[12]; //max 12 channels, each of 16 bits
 #endif
@@ -75,8 +71,6 @@ uint8_t gsrActiveResistor;
 uint8_t adcConfig;
 uint32_t battInterval = BATT_INTERVAL_D;
 #endif
-uint8_t battCriticalCount = 0;
-battAlarmInterval_t battAlarmInterval;
 
 uint8_t waitingForDebugData = 0;
 
@@ -1050,71 +1044,6 @@ void S4_NORM_ADC_stopSensing()
 #endif
 }
 
-void S4_NORM_ADC_rankBatt(void)
-{
-  if (batteryStatus.battStat == BATT_MID)
-  {
-    if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MIN)
-    {
-      batteryStatus.battStat = BATT_LOW;
-    }
-    else if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MAX)
-    {
-      batteryStatus.battStat = BATT_MID;
-    }
-    else
-    {
-      batteryStatus.battStat = BATT_HIGH;
-    }
-  }
-  else if (batteryStatus.battStat == BATT_LOW)
-  {
-    if (batteryStatus.battStatusRaw.adcBattVal < BATT_LOW_MAX)
-    {
-      batteryStatus.battStat = BATT_LOW;
-    }
-    else if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MAX)
-    {
-      batteryStatus.battStat = BATT_MID;
-    }
-    else
-    {
-      batteryStatus.battStat = BATT_HIGH;
-    }
-  }
-  else
-  { //high
-    if (batteryStatus.battStatusRaw.adcBattVal < BATT_MID_MIN)
-    {
-      batteryStatus.battStat = BATT_LOW;
-    }
-    else if (batteryStatus.battStatusRaw.adcBattVal < BATT_HIGH_MIN)
-    {
-      batteryStatus.battStat = BATT_MID;
-    }
-    else
-    {
-      batteryStatus.battStat = BATT_HIGH;
-    }
-  }
-
-  switch (batteryStatus.battStat)
-  {
-  case BATT_LOW:
-    batteryStatus.battStatLed = LED_RGB_RED;
-    break;
-  case BATT_MID:
-    batteryStatus.battStatLed = LED_RGB_YELLOW;
-    break;
-  case BATT_HIGH:
-    batteryStatus.battStatLed = LED_RGB_GREEN;
-    break;
-  default:
-    batteryStatus.battStatLed = LED_RGB_RED;
-    break;
-  }
-}
-
 void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
 {
   Board_enableSensingPower(SENSE_PWR_VBATT, 1);
@@ -1163,8 +1092,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
     status = HAL_ADC_PollForConversion(hadcBattPtr, 100);
     if (status == HAL_OK)
     {
-      adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
-      updateBatteryStatus(adc_battVal, hadcBattPtr);
+      saveBatteryVoltageAndUpdateStatus(HAL_ADC_GetValue(hadcBattPtr), hadcBattPtr);
     }
     HAL_ADC_Stop(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
@@ -1208,8 +1136,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   }
   else if (hadc->Instance == hadcBattPtr->Instance)
   {
-    adc_battVal = HAL_ADC_GetValue(hadcBattPtr);
-    updateBatteryStatus(adc_battVal, hadcBattPtr);
+    saveBatteryVoltageAndUpdateStatus(HAL_ADC_GetValue(hadcBattPtr), hadcBattPtr);
     HAL_ADC_Stop_IT(hadcBattPtr);
     HAL_ADC_DeInit(hadcBattPtr);
     Board_enableSensingPower(SENSE_PWR_VBATT, 0);
@@ -1249,7 +1176,8 @@ void manageReadBatt(uint8_t isBlockingRead)
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
   if (shimmerStatus.sensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
-    updateBatteryStatus(*(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog], hadcSensPtr);
+    saveBatteryVoltageAndUpdateStatus(
+        *(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog], hadcBattPtr);
   }
   else
   {
@@ -1261,118 +1189,12 @@ void manageReadBatt(uint8_t isBlockingRead)
   }
 }
 
-void updateBatteryStatus(uint16_t adc_battVal, ADC_HandleTypeDef *hadcPtr)
-{
-  batteryStatus.battStatusRaw.adcBattVal = adc_battVal;
-  batteryStatus.battStatusRaw.rawBytes[2] = 0;
-#ifdef SR48_6_0
-  batteryStatus.battStatusRaw.STAT2
-      = HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT2_GPIO_Port, SR48_6_0_CHG_STAT2_Pin);
-  batteryStatus.battStatusRaw.STAT1
-      = HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT1_GPIO_Port, SR48_6_0_CHG_STAT1_Pin);
-#else
-  batteryStatus.battStatusRaw.STAT2 = HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin);
-  batteryStatus.battStatusRaw.STAT1 = HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin);
-#endif
-
-  //Multipled by 2 due to voltage divider
-  batteryStatus.battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcPtr, VREF_EXTERNAL_SUPPLY_MV,
-                                adc_battVal, hadcPtr->Init.Resolution)
-      * 2;
-
-  S4_ADC_rankBatt();
-  rankBattChargingStatus();
-}
-
-void rankBattChargingStatus(void)
-{
-  if (batteryStatus.battValMV > BATTERY_ERROR_VOLTAGE_MAX)
-  {
-    batteryStatus.battChargingStatus = CHARGING_STATUS_CHECKING;
-  }
-  else
-  {
-    switch (batteryStatus.battStatusRaw.rawBytes[2])
-    {
-    case CHRG_CHIP_STATUS_SUSPENDED:
-      if (batteryStatus.battValMV <= BATTERY_ERROR_VOLTAGE_MIN)
-      {
-        batteryStatus.battChargingStatus = CHARGING_STATUS_BAD_BATTERY;
-      }
-      else
-      {
-        batteryStatus.battChargingStatus = CHARGING_STATUS_SUSPENDED;
-      }
-      break;
-    case CHRG_CHIP_STATUS_FULLY_CHARGED:
-      batteryStatus.battChargingStatus = CHARGING_STATUS_FULLY_CHARGED;
-      break;
-    case CHRG_CHIP_STATUS_PRECONDITIONING:
-      batteryStatus.battChargingStatus = CHARGING_STATUS_CHARGING;
-      break;
-    case CHRG_CHIP_STATUS_BAD_BATTERY:
-      batteryStatus.battChargingStatus = CHARGING_STATUS_BAD_BATTERY;
-      break;
-    case CHRG_CHIP_STATUS_UNKNOWN:
-      batteryStatus.battChargingStatus = CHARGING_STATUS_UNKNOWN;
-      break;
-    default:
-      batteryStatus.battChargingStatus = CHARGING_STATUS_ERROR;
-      break;
-    }
-  }
-
-  batteryStatus.battStatLedFlash = 0;
-  if (shimmerStatus.docked)
-  {
-    if (batteryStatus.battChargingStatus == CHARGING_STATUS_SUSPENDED)
-    {
-      batteryStatus.battStatLedCharging = LED_RGB_YELLOW;
-    }
-    else if (batteryStatus.battChargingStatus == CHARGING_STATUS_UNKNOWN
-        || batteryStatus.battChargingStatus == CHARGING_STATUS_BAD_BATTERY
-        || batteryStatus.battChargingStatus == CHARGING_STATUS_ERROR)
-    {
-      batteryStatus.battStatLedCharging = LED_RGB_RED;
-      batteryStatus.battStatLedFlash = 1;
-    }
-    else if (batteryStatus.battChargingStatus == CHARGING_STATUS_CHECKING
-        || batteryStatus.battChargingStatus == CHARGING_STATUS_CHARGING)
-    {
-      batteryStatus.battStatLedCharging = LED_RGB_RED;
-    }
-    else if (batteryStatus.battChargingStatus == CHARGING_STATUS_FULLY_CHARGED)
-    {
-      batteryStatus.battStatLedCharging = LED_RGB_GREEN;
-    }
-    else
-    {
-      batteryStatus.battStatLedCharging = LED_RGB_ALL_OFF;
-    }
-  }
-}
-
 //void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 //{
 //   if (hadc->Instance == ADC1) {
 //      __NOP();
 //   }
 //}
-
-void setBatteryInterval(battAlarmInterval_t value)
-{
-  battAlarmInterval = value;
-}
-
-battAlarmInterval_t getBatteryInterval(void)
-{
-  return battAlarmInterval;
-}
-
-void resetBatteryCriticalCount(void)
-{
-  battCriticalCount = 0;
-}
 
 HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample)
 {
@@ -1436,6 +1258,15 @@ void resetGsrPwrAndRange(void)
   Board_SW_GSR(0);
   GSR_setRange(HW_RES_40K);
   gsrActiveResistor = HW_RES_40K;
+}
+
+void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr)
+{
+  //Multiplied by 2 due to voltage divider
+  uint16_t battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, VREF_EXTERNAL_SUPPLY_MV,
+                           adcBattVal, hadcSensPtr->Init.Resolution)
+      * 2;
+  updateBatteryStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
 }
 
 /* USER CODE END 1 */

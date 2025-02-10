@@ -18,7 +18,6 @@
 #include "s4_sd.h"
 #include "s4_sensing.h"
 #include "shimmer_definitions.h"
-#include "shimmer_externs.h"
 #if defined(SHIMMER4_SDK)
 #include "STC3100.h"
 #endif
@@ -40,6 +39,9 @@
 #include "ADXL371/hal_adxl371.h"
 #include "LIS2DW12/hal_lis2dw12.h"
 #include "LIS2DW12/lis2dw12-pid/lis2dw12_reg.h"
+#include "battery.h"
+#include "log_and_stream_definitions.h"
+#include "log_and_stream_externs.h"
 #include <LIS2DW12/lis2dw12.h>
 #include <LIS2MDL/hal_lis2mdl.h>
 #include <LIS2MDL/lis2mdl-pid/lis2mdl_reg.h>

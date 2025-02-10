@@ -41,7 +41,7 @@
  */
 
 #include "hal_Power.h"
-#include "shimmer_definitions.h"
+#include "log_and_stream_definitions.h"
 #include "stm32u5xx_hal.h"
 
 extern void SystemClock_Config(void);

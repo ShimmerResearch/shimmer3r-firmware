@@ -458,41 +458,8 @@ NV_SENSORS5
 #define UINT64_LEN                      21 //20+1, where the last byte should be 0x00
 #define RESPONSE_PACKET_SIZE            1024 //133
 
-//BATTERY
-#define BATT_LOW                        0x01
-#define BATT_MID                        0x02
-#define BATT_HIGH                       0x04
-#if defined(SHIMMER4_SDK)
-#define BATT_INTERVAL   600 //600 seconds = 10min interval
-#define BATT_INTERVAL_D 30  //30 seconds
-#endif
-
-#define BATTERY_ERROR_VOLTAGE_MAX 4500 //mV
-#define BATTERY_ERROR_VOLTAGE_MIN 3200 //mV
-
-enum
-{
-  //STAT2 = bit7, STAT1 = bit 6
-  CHRG_CHIP_STATUS_SUSPENDED = 0xC0,       //STAT2 high (off), STAT1 high (off)
-  CHRG_CHIP_STATUS_PRECONDITIONING = 0x80, //STAT2 high (off), STAT1 low (on)
-  CHRG_CHIP_STATUS_FULLY_CHARGED = 0x40,   //STAT2 low (on), STAT1 high (off)
-  CHRG_CHIP_STATUS_BAD_BATTERY = 0x00,     //STAT2 low (on), STAT1 low (on)
-  CHRG_CHIP_STATUS_UNKNOWN = 0xFF,
-};
-
-typedef enum
-{
-  CHARGING_STATUS_UNKNOWN,
-  CHARGING_STATUS_CHECKING,
-  CHARGING_STATUS_SUSPENDED,
-  CHARGING_STATUS_FULLY_CHARGED,
-  CHARGING_STATUS_CHARGING,
-  CHARGING_STATUS_BAD_BATTERY,
-  CHARGING_STATUS_ERROR
-} chargingStatus_t;
-
-#define STAT_PERI_ADC      0x01
-#define STAT_PERI_I2C_SENS 0x02
+#define STAT_PERI_ADC                   0x01
+#define STAT_PERI_I2C_SENS              0x02
 #if defined(SHIMMER4_SDK)
 #define STAT_PERI_I2C_BATT 0x04
 #endif
@@ -509,99 +476,6 @@ typedef enum
   {                               \
     shimmerStatus.periStat &= ~x; \
   } while (0)
-
-typedef volatile struct STATTypeDef_t
-{ //STATUS
-  uint8_t initialising  : 1;
-  uint8_t docked        : 1;
-  uint8_t sensing       : 1;
-  uint8_t configuring   : 1;
-  uint8_t buttonPressed : 1;
-
-  uint8_t btConnected   : 1;
-  uint8_t btPowerOn     : 1;
-  uint8_t btStreaming   : 1;
-  uint8_t btstreamReady : 1;
-  uint8_t btstreamCmd   : 2;
-
-#if defined(SHIMMER3R)
-  uint8_t sdPeripheralInit : 1;
-#endif
-  uint8_t sdInserted : 1;
-  uint8_t sdPowerOn  : 1;
-#if defined(SHIMMER3R)
-  uint8_t sdMcu0Pc1 : 1;
-#endif
-  uint8_t sdLogging              : 1;
-  uint8_t sdlogReady             : 1;
-  uint8_t sdlogCmd               : 2;
-  uint8_t sdBadFile              : 1;
-  uint8_t sdSyncEnabled          : 1;
-  uint8_t sdSyncCommTimerRunning : 1;
-
-  uint8_t toggleLedRedCmd        : 1;
-#if defined(SHIMMER3R)
-  uint32_t testResult;
-  uint8_t pinPvI2c : 1;
-  uint8_t pinPvSd  : 1;
-  uint8_t pinPvExt : 1;
-  uint8_t periStat;
-#endif
-} STATTypeDef;
-
-typedef union
-{
-  uint8_t rawBytes[3];
-
-  struct __attribute__((packed))
-  {
-    uint16_t adcBattVal;
-
-    //STAT2 sits in Bit7 and STAT1 in Bit6
-    uint8_t unusedBits : 6;
-    uint8_t STAT1      : 1;
-    uint8_t STAT2      : 1;
-  };
-} BattStatusRaw;
-
-typedef volatile struct batt_status_t
-{
-  /* General battery level based on ADC voltage with buffered min/max values */
-  uint8_t battStat;
-#if defined(SHIMMER3R)
-  /* LED colour to show when undocked based on the latest battStat */
-  uint32_t battStatLed;
-  /* LED colour to show when docked */
-  uint32_t battStatLedCharging;
-  /* Lets the LED timer know whether the LED should flash or stay solid */
-  uint8_t battStatLedFlash : 1;
-#endif
-  /* The ADC value and charger status bytes which are sent via dock/BT */
-  BattStatusRaw battStatusRaw;
-  /* Latest measured battery voltage in mV */
-  uint16_t battValMV;
-  /* Overall status based on batt mV, charger chip status and docked/undocked */
-  chargingStatus_t battChargingStatus;
-#if defined(SHIMMER4_SDK)
-  uint8_t battDigital[10];
-#endif
-} BattStatus;
-
-typedef enum
-{
-  BATT_INTERVAL_UNDOCKED, //10 Minutes
-  BATT_INTERVAL_DOCKED    //30 Seconds
-} battAlarmInterval_t;
-
-typedef enum
-{
-  BOOT_STAGE_START,
-  BOOT_STAGE_I2C,
-  BOOT_STAGE_BLUETOOTH,
-  BOOT_STAGE_BLUETOOTH_FAILURE,
-  BOOT_STAGE_CONFIGURATION,
-  BOOT_STAGE_END
-} boot_stage_t;
 
 enum
 {

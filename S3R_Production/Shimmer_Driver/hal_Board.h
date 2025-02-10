@@ -362,4 +362,14 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #endif
 
+#ifdef SR48_6_0
+#define LM3658SD_STAT2 \
+  HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT2_GPIO_Port, SR48_6_0_CHG_STAT2_Pin)
+#define LM3658SD_STAT1 \
+  HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT1_GPIO_Port, SR48_6_0_CHG_STAT1_Pin)
+#else
+#define LM3658SD_STAT2 HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)
+#define LM3658SD_STAT1 HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)
+#endif
+
 #endif

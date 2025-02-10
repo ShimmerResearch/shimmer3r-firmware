@@ -26,10 +26,10 @@
 #elif defined(SHIMMER3R) || defined(SHIMMER4_SDK)
 #include "bmp3_defs.h"
 #include "hal_FactoryTest.h"
+#include "log_and_stream_externs.h"
 #include "s4_sensing.h"
 #include "s4_taskList.h"
 #include "shimmer_definitions.h"
-#include "shimmer_externs.h"
 #endif
 
 #include "sd_sync.h"

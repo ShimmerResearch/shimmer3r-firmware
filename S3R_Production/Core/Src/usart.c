@@ -24,8 +24,8 @@
 
 #include "crc.h"
 
+#include "log_and_stream_externs.h"
 #include "shimmer_definitions.h"
-#include "shimmer_externs.h"
 
 UART_HandleTypeDef *huartBt;
 UART_HandleTypeDef *huartDock;

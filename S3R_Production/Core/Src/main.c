@@ -29,8 +29,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
-#include "shimmer_globals.h"
 #include "shimmer_include.h"
 #include "usb_otg.h"
 #include <ctype.h>
@@ -124,7 +124,7 @@ void Init()
 #endif
 
   setBootStage(BOOT_STAGE_START);
-  batteryStatus.battStatLed = LED_RGB_YELLOW;
+  batteryInit();
   shimmerStatus.configuring = 1;
 
   setHwId(DEVICE_VER);
@@ -585,7 +585,6 @@ void SetupDock(void)
   {
     setBatteryInterval(BATT_INTERVAL_DOCKED);
     resetBatteryCriticalCount();
-
     manageReadBatt(1);
 
     shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
