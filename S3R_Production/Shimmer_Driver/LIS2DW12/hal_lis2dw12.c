@@ -316,7 +316,7 @@ uint8_t lis2dw12_drdy_test()
   lis2dw12_reg_t reg;
   int1_pad_ctrl.int1_drdy = PROPERTY_ENABLE;
   lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
-  for(i = 0; i < 20; i++)
+  for(i = 0; i < 25; i++)
   {
     HAL_Delay(18);
     lis2dw12_status_reg_get(&(lis2dw12_obj.Ctx), &reg.status);
