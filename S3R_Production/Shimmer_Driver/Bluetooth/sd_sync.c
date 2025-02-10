@@ -423,7 +423,9 @@ void SyncCenterT10(void)
 #endif
   *(resPacket + packet_length++) = shimmerStatus.sensing;
   myLocalTimeLong = RTC_get64();
-  *(uint64_t *) (resPacket + packet_length) = myLocalTimeLong;
+//  *(uint64_t *) (resPacket + packet_length) = myLocalTimeLong;
+  memcpy(resPacket + packet_length, (uint8_t *) (&myLocalTimeLong), 8);
+
   packet_length += 8;
 
   if (BT_SD_SYNC_CRC_MODE)
