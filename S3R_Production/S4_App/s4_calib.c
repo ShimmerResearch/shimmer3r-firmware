@@ -165,7 +165,7 @@ uint8_t ShimmerCalib_file2Ram()
   UINT bw;
   FRESULT res;
   uint8_t this_read_size;
-  uint16_t offset= 0;
+  uint16_t offset = 0;
   strcpy(cal_file_name, "/Calibration"); //"/Calibration/calibParams"
   if (f_opendir(&gdc, "/Calibration"))
   {

@@ -523,7 +523,7 @@ uint8_t S4Ram_storedConfigSetByte(uint16_t offset, uint8_t val);
 
 void S4Ram_btMacAsciiSet(char *buf);
 void S4Ram_btMacAsciiGet(uint8_t *buf);
-uint8_t* S4Ram_getMacIdStrPtr(void);
+uint8_t *S4Ram_getMacIdStrPtr(void);
 void S4Ram_btMacHexSet(uint8_t *buf);
 void S4Ram_btMacHexGet(uint8_t *buf);
 

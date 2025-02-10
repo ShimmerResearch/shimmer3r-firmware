@@ -165,7 +165,7 @@ void Init()
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
 #endif
- // SetupDock(); Commented here to make is similar with SR3 called below @179
+  //SetupDock(); Commented here to make is similar with SR3 called below @179
   //Disable dock comms until sensor is ready to communicate
   //DockUart_disable();
 
