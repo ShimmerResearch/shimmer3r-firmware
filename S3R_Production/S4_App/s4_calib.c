@@ -83,33 +83,17 @@ void ShimmerCalib_defaultAll(void)
 
 void ShimmerCalib_init(void)
 {
-  //uint8_t temp_buf[10];
-  //uint8_t temp_ff[10];
-  uint16_t length;
-  uint8_t temp_btMacAscii[14];
-  S4Ram_btMacAsciiGet(temp_btMacAscii);
-  memcpy(shimmerCalib_macId, temp_btMacAscii + 8, 4);
-  shimmerCalib_macId[4] = 0;
-  //InfoMem_initCalib(shimmerCalib_ram);
-  //memset(shimmerCalib_ram, 0, SHIMMER_CALIB_RAM_MAX);
+  shimmerCalib_ramLen = 8;
 
-  //memset(temp_ff, 0xff, 10);
-  InfoMem_readCalib((uint8_t *) &length, 0, 2);
-  if ((length == 0) || (length == 0xffff))
-  {
-    //note: when USE_DEFAULT_SENSOR = 1, length will be 0, i.e. this 'if' will be executed
-    shimmerCalib_ramLen = 8;
-    shimmerCalib_ram[SC_OFFSET_LENGTH_L] = shimmerCalib_ramLen & 0xff;
-    shimmerCalib_ram[SC_OFFSET_LENGTH_H] = (shimmerCalib_ramLen >> 8) & 0xff;
-    ShimmerCalib_initVer();
-    ShimmerCalib_defaultAll();
-    InfoMem_update();
-  }
-  else
-  {
-    InfoMem_readCalib(shimmerCalib_ram, 0, SHIMMER_CALIB_RAM_MAX);
-    ShimmerCalib_initVer();
-  }
+  memcpy(shimmerCalib_macId, S4Ram_getMacIdStrPtr() + 8, 4);
+  shimmerCalib_macId[4] = 0;
+
+  memset(shimmerCalib_ram, 0, SHIMMER_CALIB_RAM_MAX);
+  shimmerCalib_ram[SC_OFFSET_LENGTH_L] = shimmerCalib_ramLen & 0xff;
+  shimmerCalib_ram[SC_OFFSET_LENGTH_H] = (shimmerCalib_ramLen >> 8) & 0xff;
+  ShimmerCalib_initVer();
+
+  ShimmerCalib_defaultAll();
 }
 
 uint8_t *ShimmerCalib_getRam(void)
@@ -174,15 +158,14 @@ void ShimmerCalib_ram2File(void)
 uint8_t ShimmerCalib_file2Ram()
 {
 #if USE_FATFS
-  char cal_file_name[48];
+  char cal_file_name[48] = "";
   DIR gdc;
   FIL gfc;
   FILINFO calibFileInfo;
   UINT bw;
   FRESULT res;
   uint8_t this_read_size;
-  uint16_t offset;
-
+  uint16_t offset= 0;
   strcpy(cal_file_name, "/Calibration"); //"/Calibration/calibParams"
   if (f_opendir(&gdc, "/Calibration"))
   {

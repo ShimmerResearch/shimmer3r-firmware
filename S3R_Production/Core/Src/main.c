@@ -165,10 +165,9 @@ void Init()
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
 #endif
-
-  SetupDock();
+ // SetupDock(); Commented here to make is similar with SR3 called below @179
   //Disable dock comms until sensor is ready to communicate
-  DockUart_disable();
+  //DockUart_disable();
 
   setBootStage(BOOT_STAGE_CONFIGURATION);
   /* Calibration needs to be loaded after the chips have been detected in
@@ -176,6 +175,10 @@ void Init()
    * It also needs to be loaded after the BT is initialised so that the
    * MAC ID can be used for default Shimmer name and calibration file names.*/
   loadSensorConfigurationAndCalibration();
+
+  SetupDock();
+  //Disable dock comms until sensor is ready to communicate
+  DockUart_disable();
 
   //==== 13.8ma ====
 #if FULL_TEST_MODE

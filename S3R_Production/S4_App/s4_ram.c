@@ -186,6 +186,11 @@ void S4Ram_btMacAsciiGet(uint8_t *buf)
   memcpy(buf, btMacAscii, 12);
 }
 
+uint8_t* S4Ram_getMacIdStrPtr(void)
+{
+  return &btMacAscii[0];
+}
+
 /*
  * btMacHex: Set(), Get()
  */

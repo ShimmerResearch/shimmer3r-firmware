@@ -1474,7 +1474,7 @@ void BtUart_processCmd(void)
 #if defined(SHIMMER3)
     sensorCalibId = SC_SENSOR_LSM303_MAG;
 #elif defined(SHIMMER3R)
-    sensorCalibId = SC_SENSOR_LIS2MDL_MAG;
+    sensorCalibId = SC_SENSOR_LIS3MDL_MAG;
 #endif
     BtUart_calibrationChangeCommon(NV_MAG_CALIBRATION, SDH_MAG_CALIBRATION,
         &storedConfig->magCalib.rawBytes[0], &args[0], sensorCalibId);
@@ -1733,7 +1733,7 @@ void BtUart_processCmd(void)
 #if defined(SHIMMER3)
     sensorCalibId = SC_SENSOR_MPU9X50_ICM20948_MAG;
 #elif defined(SHIMMER3R)
-    sensorCalibId = SC_SENSOR_LIS3MDL_MAG;
+    sensorCalibId = SC_SENSOR_LIS2MDL_MAG;
 #endif
     BtUart_calibrationChangeCommon(NV_ALT_MAG_CALIBRATION, SDH_ALT_MAG_CALIBRATION,
         &storedConfig->altMagCalib.rawBytes[0], &args[0], sensorCalibId);
