@@ -213,7 +213,7 @@ static self_test_result_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
   HAL_Delay(100);
   /* Flush old samples */
   flush_samples(dev_ctx);
-  if(!lis2dw12_drdy_test())
+  if (!lis2dw12_drdy_test())
   {
     self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
   }
@@ -316,19 +316,22 @@ uint8_t lis2dw12_drdy_test()
   lis2dw12_reg_t reg;
   int1_pad_ctrl.int1_drdy = PROPERTY_ENABLE;
   lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
-  for(i = 0; i < 25; i++)
+  for (i = 0; i < 25; i++)
   {
     HAL_Delay(18);
     lis2dw12_status_reg_get(&(lis2dw12_obj.Ctx), &reg.status);
 #if defined(LIS2DW12_INT1_Pin)
-    if(LIS2DW12_INT1)
+    if (LIS2DW12_INT1)
     {
       /* Read accelerometer data */
-      lis2dw12_acceleration_raw_get(&(lis2dw12_obj.Ctx), data_raw_acceleration[i].i16bit);
+      lis2dw12_acceleration_raw_get(
+          &(lis2dw12_obj.Ctx), data_raw_acceleration[i].i16bit);
       lis2dw12_status_reg_get(&(lis2dw12_obj.Ctx), &reg.status);
       res = LIS2DW12_INT1 ? 0 : 1;
-      if(res == 1)
+      if (res == 1)
+      {
         break;
+      }
     }
 #endif
   }
@@ -336,7 +339,6 @@ uint8_t lis2dw12_drdy_test()
   lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
   return res;
 }
-
 
 /* Main Example --------------------------------------------------------------*/
 
@@ -382,7 +384,7 @@ self_test_result_t lis2dw12_self_test(void)
     /* Start self test */
     self_test_result = test_self_test_lis2dw12(&lis2dw12_obj.Ctx);
   }
-    return self_test_result;
+  return self_test_result;
 }
 
 int32_t lis2dw12_configure(float shimmerSamplingFreq,
