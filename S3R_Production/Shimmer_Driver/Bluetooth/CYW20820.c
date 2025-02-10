@@ -551,10 +551,10 @@ void btInitCommands(void)
   {
     btInitCmdsStep++;
     /* Not needed at the moment so skipping */
-//    printf("Get Security Param\r\n");
-//    setExpectedResponse(EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS);
-//    ezs_cmd_smp_get_security_parameters();
-//    return;
+    //printf("Get Security Param\r\n");
+    //setExpectedResponse(EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS);
+    //ezs_cmd_smp_get_security_parameters();
+    //return;
   }
 
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
