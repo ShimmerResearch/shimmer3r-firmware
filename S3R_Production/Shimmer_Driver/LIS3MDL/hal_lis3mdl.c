@@ -331,14 +331,19 @@ uint8_t lis3mdl_drdy_test(void)
   int16_t data_raw[3];
   uint8_t i;
   uint8_t res = 0;
-  for (i = 0; i < 5; i++)
+  uint8_t drdy;
+  for (i = 0; i < 15; i++)
   {
-    platform_delay(WAIT_TIME_01);
+    platform_delay(10);
     if (LIS3MDL_DRDY)
     {
       /* Read dummy data and discard it */
       lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
+      lis3mdl_mag_data_ready_get(&lis3mdl_obj.Ctx, &drdy);
       res = LIS3MDL_DRDY? 0 : 1; // if pin is set test fail send 0
+      if(res == 1)
+        break;
+    }
   }
   return res;
 }

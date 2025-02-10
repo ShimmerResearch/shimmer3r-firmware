@@ -15,6 +15,7 @@ void lis2dw12_driver_init(void);
 void lis2dw12_selectDevice(void);
 void lis2dw12_unselectDevice(void);
 self_test_result_t lis2dw12_self_test(void);
+uint8_t lis2dw12_drdy_test(void);
 int32_t lis2dw12_configure(float shimmerSamplingFreq,
     lis2dw12_odr_t rate,
     lis2dw12_fs_t range,

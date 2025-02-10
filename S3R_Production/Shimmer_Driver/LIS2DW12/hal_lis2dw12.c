@@ -186,7 +186,7 @@ static int flush_samples(stmdev_ctx_t *dev_ctx)
   return samples;
 }
 
-static uint8_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
+static self_test_result_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
 {
   lis2dw12_reg_t reg;
   float media[3] = { 0.0f, 0.0f, 0.0f };
@@ -196,9 +196,7 @@ static uint8_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
   uint16_t i = 0;
   uint8_t k = 0;
   uint8_t axis;
-  uint8_t st_result;
-
-  st_result = ST_PASS;
+  self_test_result_t self_test_result = SELF_TEST_PASS;
 
   /* Restore default configuration */
   lis2dw12_reset_set(dev_ctx, PROPERTY_ENABLE);
@@ -215,100 +213,130 @@ static uint8_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
   HAL_Delay(100);
   /* Flush old samples */
   flush_samples(dev_ctx);
-
-  do
+  if(!lis2dw12_drdy_test())
   {
-    lis2dw12_status_reg_get(dev_ctx, &reg.status);
-
-    if (reg.status.drdy)
+    self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
+  }
+  else
+  {
+    do
     {
-      /* Read accelerometer data */
-      memset(data_raw_acceleration[i].i16bit, 0x00, 3 * sizeof(int16_t));
-      lis2dw12_acceleration_raw_get(dev_ctx, data_raw_acceleration[i].i16bit);
+      lis2dw12_status_reg_get(dev_ctx, &reg.status);
 
-      for (axis = 0; axis < 3; axis++)
+      if (reg.status.drdy)
       {
-        acceleration_mg[i][axis]
-            = lis2dw12_from_fs4_to_mg(data_raw_acceleration[i].i16bit[axis]);
+        /* Read accelerometer data */
+        memset(data_raw_acceleration[i].i16bit, 0x00, 3 * sizeof(int16_t));
+        lis2dw12_acceleration_raw_get(dev_ctx, data_raw_acceleration[i].i16bit);
+
+        for (axis = 0; axis < 3; axis++)
+        {
+          acceleration_mg[i][axis]
+              = lis2dw12_from_fs4_to_mg(data_raw_acceleration[i].i16bit[axis]);
+        }
+
+        i++;
+      }
+    } while (i < SELF_TEST_SAMPLES);
+
+    for (k = 0; k < 3; k++)
+    {
+      for (j = 0; j < SELF_TEST_SAMPLES; j++)
+      {
+        media[k] += acceleration_mg[j][k];
       }
 
-      i++;
-    }
-  } while (i < SELF_TEST_SAMPLES);
-
-  for (k = 0; k < 3; k++)
-  {
-    for (j = 0; j < SELF_TEST_SAMPLES; j++)
-    {
-      media[k] += acceleration_mg[j][k];
+      media[k] = (media[k] / j);
     }
 
-    media[k] = (media[k] / j);
-  }
+    /* Enable self test mode */
+    lis2dw12_self_test_set(dev_ctx, LIS2DW12_XL_ST_POSITIVE);
+    HAL_Delay(100);
+    i = 0;
+    /* Flush old samples */
+    flush_samples(dev_ctx);
 
-  /* Enable self test mode */
-  lis2dw12_self_test_set(dev_ctx, LIS2DW12_XL_ST_POSITIVE);
-  HAL_Delay(100);
-  i = 0;
-  /* Flush old samples */
-  flush_samples(dev_ctx);
-
-  do
-  {
-    lis2dw12_status_reg_get(dev_ctx, &reg.status);
-
-    if (reg.status.drdy)
+    do
     {
-      /* Read accelerometer data */
-      memset(data_raw_acceleration[i].i16bit, 0x00, 3 * sizeof(int16_t));
-      lis2dw12_acceleration_raw_get(dev_ctx, data_raw_acceleration[i].i16bit);
+      lis2dw12_status_reg_get(dev_ctx, &reg.status);
 
-      for (axis = 0; axis < 3; axis++)
+      if (reg.status.drdy)
       {
-        acceleration_mg[i][axis]
-            = lis2dw12_from_fs4_to_mg(data_raw_acceleration[i].i16bit[axis]);
+        /* Read accelerometer data */
+        memset(data_raw_acceleration[i].i16bit, 0x00, 3 * sizeof(int16_t));
+        lis2dw12_acceleration_raw_get(dev_ctx, data_raw_acceleration[i].i16bit);
+
+        for (axis = 0; axis < 3; axis++)
+        {
+          acceleration_mg[i][axis]
+              = lis2dw12_from_fs4_to_mg(data_raw_acceleration[i].i16bit[axis]);
+        }
+
+        i++;
+      }
+    } while (i < SELF_TEST_SAMPLES);
+
+    for (k = 0; k < 3; k++)
+    {
+      for (j = 0; j < SELF_TEST_SAMPLES; j++)
+      {
+        mediast[k] += acceleration_mg[j][k];
       }
 
-      i++;
+      mediast[k] = (mediast[k] / j);
     }
-  } while (i < SELF_TEST_SAMPLES);
 
-  for (k = 0; k < 3; k++)
-  {
-    for (j = 0; j < SELF_TEST_SAMPLES; j++)
+    /* Check for all axis self test value range */
+    for (k = 0; k < 3; k++)
     {
-      mediast[k] += acceleration_mg[j][k];
+      if ((ABSF(mediast[k] - media[k]) >= ST_MIN_POS)
+          && (ABSF(mediast[k] - media[k]) <= ST_MAX_POS))
+      {
+        match[k] = 1;
+      }
+      if (match[k] == 0)
+      {
+        self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
+      }
     }
-
-    mediast[k] = (mediast[k] / j);
+    /* Disable self test mode */
+    lis2dw12_self_test_set(dev_ctx, LIS2DW12_XL_ST_DISABLE);
   }
-
-  /* Check for all axis self test value range */
-  for (k = 0; k < 3; k++)
-  {
-    if ((ABSF(mediast[k] - media[k]) >= ST_MIN_POS)
-        && (ABSF(mediast[k] - media[k]) <= ST_MAX_POS))
-    {
-      match[k] = 1;
-    }
-
-    //sprintf((char *)tx_buffer, "%d: |%f| <= |%f| <= |%f| %s\r\n", k,
-    //        ST_MIN_POS, ABSF(mediast[k] - media[k]), ST_MAX_POS,
-    //        match[k] == 1 ? "PASSED" : "FAILED");
-    //tx_com(tx_buffer, strlen((char const *)tx_buffer));
-
-    if (match[k] == 0)
-    {
-      st_result = ST_FAIL;
-    }
-  }
-
-  /* Disable self test mode */
   lis2dw12_data_rate_set(dev_ctx, LIS2DW12_XL_ODR_OFF);
-  lis2dw12_self_test_set(dev_ctx, LIS2DW12_XL_ST_DISABLE);
-
-  return st_result;
+  return self_test_result;
 }
+
+uint8_t lis2dw12_drdy_test()
+{
+  int16_t data_raw[3];
+  uint8_t i;
+  uint8_t res = 0;
+  lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
+  lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl;
+  lis2dw12_reg_t reg;
+  int1_pad_ctrl.int1_drdy = PROPERTY_ENABLE;
+  lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
+  for(i = 0; i < 20; i++)
+  {
+    HAL_Delay(18);
+    lis2dw12_status_reg_get(&(lis2dw12_obj.Ctx), &reg.status);
+#if defined(LIS2DW12_INT1_Pin)
+    if(LIS2DW12_INT1)
+    {
+      /* Read accelerometer data */
+      lis2dw12_acceleration_raw_get(&(lis2dw12_obj.Ctx), data_raw_acceleration[i].i16bit);
+      lis2dw12_status_reg_get(&(lis2dw12_obj.Ctx), &reg.status);
+      res = LIS2DW12_INT1 ? 0 : 1;
+      if(res == 1)
+        break;
+    }
+#endif
+  }
+  int1_pad_ctrl.int1_drdy = PROPERTY_DISABLE;
+  lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
+  return res;
+}
+
 
 /* Main Example --------------------------------------------------------------*/
 
@@ -335,9 +363,7 @@ void lis2dw12_unselectDevice(void)
 
 self_test_result_t lis2dw12_self_test(void)
 {
-  uint8_t st_result;
   self_test_result_t self_test_result = SELF_TEST_PASS;
-
   lis2dw12_driver_init();
 #if !defined(SHIMMER3R)
   /* Initialize platform specific hardware */
@@ -347,40 +373,16 @@ self_test_result_t lis2dw12_self_test(void)
 #endif
   /* Check device ID */
   lis2dw12_device_id_get(&lis2dw12_obj.Ctx, &whoamI);
-
   if (whoamI != LIS2DW12_ID)
   {
-    //st_result = ST_FAIL;
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
   {
     /* Start self test */
-    //while (1) {
-    st_result = test_self_test_lis2dw12(&lis2dw12_obj.Ctx);
-    //}
-    if (st_result == ST_FAIL)
-    {
-      self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
-    }
-    else
-    {
-      self_test_result = SELF_TEST_PASS;
-    }
+    self_test_result = test_self_test_lis2dw12(&lis2dw12_obj.Ctx);
   }
-
-  //if (st_result == ST_PASS)
-  //{
-  //  sprintf((char *) tx_buffer, "LIS2DW12 Self Test - PASS\r\n");
-  //}
-  //else
-  //{
-  //  sprintf((char *) tx_buffer, "LIS2DW12 Self Test - FAIL\r\n");
-  //}
-  //
-  //tx_com(tx_buffer, strlen((char const *) tx_buffer));
-  //return st_result;
-  return self_test_result;
+    return self_test_result;
 }
 
 int32_t lis2dw12_configure(float shimmerSamplingFreq,
@@ -419,7 +421,6 @@ int32_t lis2dw12_configure(float shimmerSamplingFreq,
   if (lis2dw12_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
   {
     lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
-
     lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl;
     int1_pad_ctrl.int1_drdy = PROPERTY_ENABLE;
     lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
