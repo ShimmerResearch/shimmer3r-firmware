@@ -863,7 +863,7 @@ void CalibSaveFromInfoMemToCalibDump(uint8_t id)
   if (id == 0xFF || id == SC_SENSOR_LSM6DSV_ACCEL)
   {
     ShimmerCalib_singleSensorWriteFromInfoMem(SC_SENSOR_LSM6DSV_ACCEL,
-        configBytes->altAccelRange, SC_DATA_LEN_STD_IMU_CALIB,
+        configBytes->LnAccelRange, SC_DATA_LEN_STD_IMU_CALIB,
         &configBytes->lnAccelCalib.rawBytes[0]);
   }
   if (id == 0xFF || id == SC_SENSOR_LSM6DSV_GYRO)
@@ -977,7 +977,7 @@ void ShimmerCalibFromInfo(uint8_t sensor, uint8_t use_sys_time)
   if (sc1.id == SC_SENSOR_LSM6DSV_ACCEL)
   {
     offset = NV_LN_ACCEL_CALIBRATION;
-    sc1.range = configBytes->altAccelRange;
+    sc1.range = configBytes->LnAccelRange;
     sc1.data_len = SC_DATA_LEN_STD_IMU_CALIB;
   }
   else if (sc1.id == SC_SENSOR_LSM6DSV_GYRO)
@@ -1097,7 +1097,7 @@ void ShimmerCalibSyncFromDumpRamSingleSensor(uint8_t sensor)
     scs_infomem_offset = NV_LN_ACCEL_CALIBRATION;
     scs_sdhead_offset = SDH_LN_ACCEL_CALIBRATION;
     scs_sdhead_ts = SDH_LN_ACCEL_CALIB_TS;
-    sc1.range = configBytes->altAccelRange;
+    sc1.range = configBytes->LnAccelRange;
     break;
   case SC_SENSOR_LSM6DSV_GYRO:
     scs_infomem_offset = NV_GYRO_CALIBRATION;

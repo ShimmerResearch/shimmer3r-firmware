@@ -266,7 +266,7 @@ typedef union
     uint8_t expansionBoardPower          : 1;
     uint8_t gsrRange                     : 3;
     uint8_t pressureOversamplingRatioLsb : 2;
-    uint8_t altAccelRange : 2; //S3/S4_SDK MPU9x50/ICM20948 Accel, S3R = LSM6DSV Accel
+    uint8_t LnAccelRange : 2; //S3/S4_SDK MPU9x50/ICM20948 Accel, S3R = LSM6DSV Accel
 
     gExgADS1292rRegs exgADS1292rRegsCh1;
     gExgADS1292rRegs exgADS1292rRegsCh2;
