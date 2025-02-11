@@ -193,9 +193,6 @@ HAL_StatusTypeDef adxl371_accel_get(uint8_t *buf)
   HAL_StatusTypeDef ret;
   static uint8_t txBuff[] = { (ADXL371_X_DATA_H << 1) | 0x01, 0, 0, 0, 0, 0, 0 };
   ret = platform_read_raw_data_dma(&SENSOR_BUS, &txBuff[0], buf, sizeof(txBuff));
-
-  adxl371_spi_reg_read_multiple(&adxl371, ADXL371_DEVID, &buf[0], 4);
-
   return ret;
 }
 

@@ -1091,8 +1091,8 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
   }
   else if (spiSensingInfo->sensorCnt < spiSensingInfo->sensorLen)
   {
-    uint8_t res = 0;
-    while ((res = SpiSens_sensorNext(spiSensingInfo)) == 0)
+    uint8_t waitingDmaRxcb = 0;
+    while ((waitingDmaRxcb = SpiSens_sensorNext(spiSensingInfo)) == 0)
     {
       spiSensingInfo->sensorCnt++;
 
@@ -1175,7 +1175,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 #endif
     break;
   case SPI2_LIS3MDL_MAG:
-    if (!lis3mdl_is_drdy_int_enabled() || LIS3MDL_DRDY)
+    if (LIS3MDL_DRDY)
     {
       spiSensingInfo->status = SPI_STAT_LIS3MDL_MAG_GET;
       lis3mdl_mag_get(spi2Sens_buf.lis3mdlMagBuf);

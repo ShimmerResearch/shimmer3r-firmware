@@ -26,10 +26,10 @@
 #elif defined(SHIMMER3R) || defined(SHIMMER4_SDK)
 #include "bmp3_defs.h"
 #include "hal_FactoryTest.h"
+#include "log_and_stream_externs.h"
 #include "s4_sensing.h"
 #include "s4_taskList.h"
 #include "shimmer_definitions.h"
-#include "shimmer_externs.h"
 #endif
 
 #include "sd_sync.h"
@@ -1989,8 +1989,12 @@ void BtUart_sendRsp(void)
         manageReadBatt(1);
         *(resPacket + packet_length++) = INSTREAM_CMD_RESPONSE;
         *(resPacket + packet_length++) = VBATT_RESPONSE;
-        memcpy(&resPacket[packet_length], &batteryStatus.battStatusRaw.rawBytes[0], 3);
-        packet_length += 3;
+        uint8_t i = 0;
+        for (i = 0; i < 3; i++)
+        {
+          resPacket[packet_length] = batteryStatus.battStatusRaw.rawBytes[i];
+          packet_length++;
+        }
         break;
       case GET_TRIAL_CONFIG_COMMAND:
         *(resPacket + packet_length++) = TRIAL_CONFIG_RESPONSE;

@@ -72,8 +72,8 @@
 #define ADDR_U2_AD5242          0x2C //7 bit address I2C address
 #define ADDR_U3_ADG715          0x48 //7 bit address I2C address
 
-#define ADG715_1M_RAB           1000000L
-#define ADG715_1M_TOTAL_RES     (ADG715_1M_RAB + 60)
+#define AD5242_1M_RAB           1000000L
+#define AD5242_1M_TOTAL_RES     (AD5242_1M_RAB + 60)
 #define ADG715_1M_TOTAL_RES_MIN 3906 //3966.25-60
 #define TOTAL_RES_2_PARALLEL    500000
 #define TOTAL_RES_3_PARALLEL    333333

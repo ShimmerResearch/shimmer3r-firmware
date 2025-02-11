@@ -45,7 +45,7 @@ uint8_t myTimeDiff[SYNC_PACKET_PAYLOAD_SIZE];
 //TODO figure out how best to do away with the need for externs
 void (*btStartCb)(void);
 void (*btStopCb)(uint8_t);
-uint8_t (*taskSetCb)(TASK_FLAGS);
+uint8_t (*taskSetCb)(uint16_t);
 
 //extern uint8_t sensing, onSingleTouch, docked, btPowerOn, stopLogging;
 extern SENSINGTypeDef sensing;
@@ -53,9 +53,7 @@ extern STATTypeDef stat;
 extern uint8_t sdHeadText[SD_HEAD_SIZE];
 static uint8_t all0xff[7U] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
-void sdSyncInit(void (*btStart_cb)(void),
-    void (*btStop_cb)(uint8_t),
-    uint8_t (*taskSet_cb)(TASK_FLAGS))
+void sdSyncInit(void (*btStart_cb)(void), void (*btStop_cb)(uint8_t), uint8_t (*taskSet_cb)(uint16_t))
 {
   btSdSyncIsRunning = 0;
 
@@ -425,7 +423,9 @@ void SyncCenterT10(void)
 #endif
   *(resPacket + packet_length++) = shimmerStatus.sensing;
   myLocalTimeLong = RTC_get64();
-  *(uint64_t *) (resPacket + packet_length) = myLocalTimeLong;
+  //*(uint64_t *) (resPacket + packet_length) = myLocalTimeLong;
+  memcpy(resPacket + packet_length, (uint8_t *) (&myLocalTimeLong), 8);
+
   packet_length += 8;
 
   if (BT_SD_SYNC_CRC_MODE)

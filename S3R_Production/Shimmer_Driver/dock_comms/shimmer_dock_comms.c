@@ -22,8 +22,8 @@
 #include "../CAT24C16/cat24c16.h"
 #include "../shimmer_boards/shimmer_boards.h"
 #else
+#include "log_and_stream_definitions.h"
 #include "s4_taskList.h"
-#include "shimmer_definitions.h"
 
 #include "stm32u5xx_hal_uart.h"
 #endif
@@ -639,9 +639,13 @@ void DockUart_sendRsp(void)
 #if defined(SHIMMER3)
     memcpy(uartRespBuf + uart_resp_len, battVal, 3);
 #else
-    memcpy(&uartRespBuf[uart_resp_len], &batteryStatus.battStatusRaw.rawBytes[0], 3);
+    uint8_t i = 0;
+    for (i = 0; i < 3; i++)
+    {
+      uartRespBuf[uart_resp_len] = batteryStatus.battStatusRaw.rawBytes[i];
+      uart_resp_len++;
+    }
 #endif
-    uart_resp_len += 3;
   }
   else if (uartSendRspRtcConfigTime)
   {

@@ -59,6 +59,7 @@ ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 #endif
 ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
 ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters;
+ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters;
 
 static ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters_ref
     = { .result = 0,
@@ -546,6 +547,16 @@ void btInitCommands(void)
     }
   }
 
+  if (btInitCmdsStep == GET_SECURITY_PARAMETERS)
+  {
+    btInitCmdsStep++;
+    /* Not needed at the moment so skipping */
+    //printf("Get Security Param\r\n");
+    //setExpectedResponse(EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS);
+    //ezs_cmd_smp_get_security_parameters();
+    //return;
+  }
+
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
   {
     btInitCmdsStep++;
@@ -909,6 +920,15 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     break;
 
+  case EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS:
+    rsp_smp_get_security_parameters = packet->payload.rsp_smp_get_security_parameters;
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: rsp_smp_get_security_parameters: Result=");
+    printHex16(packet->payload.rsp_smp_get_security_parameters.result);
+    printf("\r\n");
+#endif
+    break;
+
   case EZS_IDX_RSP_GAP_SET_ADV_PARAMETERS:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_set_adv_parameters.result != EZS_ERR_SUCCESS)
@@ -1132,4 +1152,15 @@ void BT_generateCyw20820FirmwareVersionStr(char *str)
       (uint16_t) rsp_system_query_firmware_version.stack,
       rsp_system_query_firmware_version.protocol,
       rsp_system_query_firmware_version.hardware);
+}
+
+//TODO placeholder for now, implement this later
+uint8_t BT_connect(uint8_t *addr)
+{
+  return 1;
+}
+
+uint8_t BT_disconnect(void)
+{
+  return 1;
 }

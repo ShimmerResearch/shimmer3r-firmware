@@ -24,8 +24,8 @@
 
 #include "crc.h"
 
+#include "log_and_stream_externs.h"
 #include "shimmer_definitions.h"
-#include "shimmer_externs.h"
 
 UART_HandleTypeDef *huartBt;
 UART_HandleTypeDef *huartDock;
@@ -627,14 +627,14 @@ uint8_t BtUart_connectIntCheck(void)
   if (HAL_GPIO_ReadPin(BT_CONNECTION_GPIO_Port, BT_CONNECTION_Pin) == GPIO_PIN_SET)
   { //connected
     //HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_RESET);//blue
-    BT_connectionInterrupt(1);
+    // BT_connectionInterrupt(1);  // commenting this as this function is RN42 related
     shimmerStatus.btConnected = 1;
     Board_ledOn(LED_BLUE);
   }
   else
   {
     //HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_SET);//blue
-    BT_connectionInterrupt(0);
+    //BT_connectionInterrupt(0); // commenting this as this function is RN42 related
     shimmerStatus.btConnected = 0;
     S4_Task_set(TASK_STOPSENSING);
     Board_ledOff(LED_BLUE);

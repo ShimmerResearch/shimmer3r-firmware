@@ -16,3 +16,6 @@
 [submodule "S3R_Production/Shimmer_Driver/LIS2DW12/lis2dw12-pid"]
 	path = S3R_Production/Shimmer_Driver/LIS2DW12/lis2dw12-pid
 	url = https://github.com/STMicroelectronics/lis2dw12-pid/
+[submodule "S3R_Production/log-and-stream-common"]
+	path = S3R_Production/log-and-stream-common
+	url = https://github.com/ShimmerResearch/log-and-stream-common.git
