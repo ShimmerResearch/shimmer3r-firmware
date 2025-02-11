@@ -237,7 +237,7 @@ void S4Ram_SetDefaultInfomem(void)
   set_config_byte_gyro_range(&storedConfig, MPU9150_GYRO_500DPS);
   //MPU9150 Accel +/-2G, BMP pressure oversampling ratio 1, GSR auto range, EXP_RESET_N pin set low
   // todo: *** *** *** warning! *** *** ***  btStream for this here is not correct, this is mpu9150_accrange, not lsm303 acc range
-  storedConfig.LnAccelRange = ACCEL_2G;
+  storedConfig.altAccelRange = ACCEL_2G;
   set_config_byte_pressure_oversampling_ratio(&storedConfig, BMP180_OSS_8);
 #elif defined(SHIMMER3R)
   //LIS2DW12 Accel 100Hz, +/-2G, Low Power and High Resolution modes off
@@ -250,7 +250,7 @@ void S4Ram_SetDefaultInfomem(void)
   set_config_byte_mag_rate(&storedConfig, LIS3MDL_UHP_80Hz);
   //LSM6DSV Gyro +/-500 degrees per second
   set_config_byte_gyro_range(&storedConfig, LSM6DSV_500dps);
-  storedConfig.LnAccelRange = LSM6DSV_2g;
+  storedConfig.lnAccelRange = LSM6DSV_2g;
   set_config_byte_pressure_oversampling_ratio(&storedConfig, BMP3_NO_OVERSAMPLING);
   set_config_byte_wr_accel_mode(&storedConfig, LIS2DW12_HIGH_PERFORMANCE);
   storedConfig.altMagRate = LIS2MDL_ODR_100Hz;

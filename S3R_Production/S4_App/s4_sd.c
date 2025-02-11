@@ -696,7 +696,7 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "acc_internal_rate=%d\r\n", storedConfig->wrAccelRate);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "accel_alt_range=%d\r\n", storedConfig->LnAccelRange);
+      sprintf(buffer, "accel_alt_range=%d\r\n", storedConfig->lnAccelRange);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "pres_bmp390_prec=%d\r\n",
           get_config_byte_pressure_oversampling_ratio());
@@ -1046,7 +1046,7 @@ void ParseConfig(void)
       }
       else if (strstr(buffer, "accel_alt_range="))
       {
-        stored_config_temp.LnAccelRange = atoi(equals);
+        stored_config_temp.lnAccelRange = atoi(equals);
       }
       else if (strstr(buffer, "acc_range="))
       {

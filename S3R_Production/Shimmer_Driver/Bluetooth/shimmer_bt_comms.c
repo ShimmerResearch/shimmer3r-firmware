@@ -1402,9 +1402,9 @@ void BtUart_processCmd(void)
     break;
   case SET_ALT_ACCEL_RANGE_COMMAND:
 #if defined(SHIMMER3)
-    storedConfig->LnAccelRange = (args[0] < 4) ? (args[0] & 0x03) : ACCEL_2G;
+    storedConfig->altAccelRange = (args[0] < 4) ? (args[0] & 0x03) : ACCEL_2G;
 #elif defined(SHIMMER3R)
-    storedConfig->LnAccelRange = (args[0] <= LSM6DSV_16g) ? (args[0] & 0x03) : LSM6DSV_2g;
+    storedConfig->lnAccelRange = (args[0] <= LSM6DSV_16g) ? (args[0] & 0x03) : LSM6DSV_2g;
 #endif
     BtUart_settingChangeCommon(NV_CONFIG_SETUP_BYTE3, SDH_CONFIG_SETUP_BYTE3, 1);
     break;
@@ -1853,7 +1853,7 @@ uint8_t BtUart_replySingleSensorCalibCmd(uint8_t cmdWaitingResponse, uint8_t *re
     sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
 #elif defined(SHIMMER3R)
     sc1.id = SC_SENSOR_LSM6DSV_ACCEL;
-    sc1.range = storedConfig->LnAccelRange;
+    sc1.range = storedConfig->lnAccelRange;
 #endif
   }
   else if (cmdWaitingResponse == GET_GYRO_CALIBRATION_COMMAND)
@@ -2117,7 +2117,7 @@ void BtUart_sendRsp(void)
         break;
       case GET_ALT_ACCEL_RANGE_COMMAND:
         *(resPacket + packet_length++) = ALT_ACCEL_RANGE_RESPONSE;
-        *(resPacket + packet_length++) = storedConfig->LnAccelRange;
+        *(resPacket + packet_length++) = storedConfig->lnAccelRange;
         break;
       case GET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
         *(resPacket + packet_length++) = PRESSURE_OVERSAMPLING_RATIO_RESPONSE;

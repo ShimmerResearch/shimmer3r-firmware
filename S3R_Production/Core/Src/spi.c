@@ -876,7 +876,7 @@ void SPI_startSensing()
     //Shimmer config maps 0x05 to the chip's 0x0C for 4000dps
     gyroRange = (gyroRange == 5) ? LSM6DSV_4000dps : gyroRange;
     lsm6dsv_configure(shimmerSamplingFreq, configBytes->chEnGyro, configBytes->chEnLnAccel,
-        configBytes->gyroRate, gyroRange, configBytes->LnAccelRange);
+        configBytes->gyroRate, gyroRange, configBytes->lnAccelRange);
   }
 
   if (configBytes->chEnPressureAndTemperature)
