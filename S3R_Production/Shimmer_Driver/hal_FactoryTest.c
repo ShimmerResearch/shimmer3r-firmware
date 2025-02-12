@@ -303,7 +303,7 @@ void print_battery_details(void)
 
 void led_test(void)
 {
-  send_test_report("LED test (S3R_TEST_0025):\r\n");
+  send_test_report("LED test (S3R_TEST_0027):\r\n");
 
 #if defined(SHIMMER3R)
   stopLedBlinkTimer();
