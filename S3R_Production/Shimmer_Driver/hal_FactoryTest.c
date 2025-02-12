@@ -616,8 +616,15 @@ void SPI_test(void)
     uint8_t testPass = (bmp3_data->temperature > TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
         && bmp3_data->temperature < TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
     sprintf(buffer, " - S3R_TEST_0020 - %s: BMP390 (%.2f\xB0 C)\r\n",
-        bmp390_result ? "FAIL" : "PASS", bmp3_data->temperature);
+        testPass ? "PASS" : "FAIL", bmp3_data->temperature);
     send_test_report(buffer);
+    if(!testPass)
+    {
+      bmp390_result = BMP3_W_TEMPARATURE_OUTSIDE_BOUND;
+      send_test_report(" - ");
+      bmp3_check_rslt("BMP390", bmp390_result, buffer);
+      send_test_report(buffer);
+    }
   }
   else
   {
@@ -626,7 +633,7 @@ void SPI_test(void)
     send_test_report(" - ");
     bmp3_check_rslt("BMP390", bmp390_result, buffer);
     send_test_report(buffer);
-    if (bmp390_result)
+    if (self_test_result)
     {
       shimmerStatus.testResult |= S3R_TEST_0020;
     }

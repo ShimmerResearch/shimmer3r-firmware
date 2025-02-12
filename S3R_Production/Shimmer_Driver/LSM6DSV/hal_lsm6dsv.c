@@ -436,7 +436,7 @@ uint8_t lsm6dsv_drdy_test(void)
   lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
   lsm6dsv_all_sources_t all_sources;
   uint16_t count = 0;
-  for (i = 0; i < 15; i++)
+  for (i = 0; i < 20; i++) //run test multiple times to get the proper value
   {
     platform_delay(15); //every 16.6 msec new value is seen as per current odr settings
     if (LSM6DSV_DRDY)

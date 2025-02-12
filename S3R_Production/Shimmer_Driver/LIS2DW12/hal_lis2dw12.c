@@ -319,7 +319,6 @@ uint8_t lis2dw12_drdy_test()
   for(i = 0; i < 25; i++)
   {
     HAL_Delay(18);
-    lis2dw12_status_reg_get(&(lis2dw12_obj.Ctx), &reg.status);
 #if defined(LIS2DW12_INT1_Pin)
     if(LIS2DW12_INT1)
     {
