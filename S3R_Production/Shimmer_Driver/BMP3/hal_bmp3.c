@@ -66,7 +66,7 @@ int8_t bmp3_self_test(void)
   result = bmp3_selftest_check(&bmp3);
   if (result == BMP3_SENSOR_OK)
   {
-    if(!bmp3_drdy_test())
+    if (!bmp3_drdy_test())
     {
       result = BMP3_W_DRDY_INTR_FAILED;
     }
@@ -106,31 +106,33 @@ int8_t bmp3_drdy_test()
       settings.int_settings.drdy_en = 1;
       settings.int_settings.latch = 1;
       /* Assign the settings which needs to be set in the sensor */
-      settings_sel = BMP3_SEL_DRDY_EN | BMP3_SEL_PRESS_EN | BMP3_SEL_TEMP_EN |
-                     BMP3_SEL_LATCH | BMP3_SEL_PRESS_OS | BMP3_SEL_TEMP_OS | BMP3_SEL_ODR;
+      settings_sel = BMP3_SEL_DRDY_EN | BMP3_SEL_PRESS_EN | BMP3_SEL_TEMP_EN
+          | BMP3_SEL_LATCH | BMP3_SEL_PRESS_OS | BMP3_SEL_TEMP_OS | BMP3_SEL_ODR;
       rslt = bmp3_set_sensor_settings(settings_sel, &settings, &bmp3);
       if (rslt == BMP3_SENSOR_OK)
       {
         settings.op_mode = BMP3_MODE_NORMAL;
         rslt = bmp3_set_op_mode(&settings, &bmp3);
       }
-      if(rslt == BMP3_SENSOR_OK)
+      if (rslt == BMP3_SENSOR_OK)
       {
-        for(i = 0; i < 20; i++)
+        for (i = 0; i < 20; i++)
         {
           /* Wait for 15 ms */
           (&bmp3)->delay_us(15000, (&bmp3)->intf_ptr);
-          if ( (rslt == BMP3_SENSOR_OK) && (BMP390_INT))
+          if ((rslt == BMP3_SENSOR_OK) && (BMP390_INT))
           {
             /* read the sensor data */
             bmp3_get_sensor_data(BMP3_PRESS_TEMP, &data, &bmp3);
             /* NOTE : Read status register again to clear data ready interrupt status */
             rslt = bmp3_get_status(&status, &bmp3);
-            if(rslt == BMP3_SENSOR_OK)
+            if (rslt == BMP3_SENSOR_OK)
             {
-              res =BMP390_INT? 0: 1;
-              if( res == 1)
+              res = BMP390_INT ? 0 : 1;
+              if (res == 1)
+              {
                 break;
+              }
             }
           }
         }
@@ -150,22 +152,23 @@ int8_t bmp3_drdy_test()
  */
 static int8_t analyze_sensor_data(const struct bmp3_data *sens_data)
 {
-    int8_t rslt = BMP3_SENSOR_OK;
+  int8_t rslt = BMP3_SENSOR_OK;
 
-    if ((sens_data->temperature < BMP3_MIN_TEMPERATURE) || (sens_data->temperature > BMP3_MAX_TEMPERATURE))
+  if ((sens_data->temperature < BMP3_MIN_TEMPERATURE)
+      || (sens_data->temperature > BMP3_MAX_TEMPERATURE))
+  {
+    rslt = BMP3_IMPLAUSIBLE_TEMPERATURE;
+  }
+
+  if (rslt == BMP3_SENSOR_OK)
+  {
+    if ((sens_data->pressure < BMP3_MIN_PRESSURE) || (sens_data->pressure > BMP3_MAX_PRESSURE))
     {
-        rslt = BMP3_IMPLAUSIBLE_TEMPERATURE;
+      rslt = BMP3_IMPLAUSIBLE_PRESSURE;
     }
+  }
 
-    if (rslt == BMP3_SENSOR_OK)
-    {
-        if ((sens_data->pressure < BMP3_MIN_PRESSURE) || (sens_data->pressure > BMP3_MAX_PRESSURE))
-        {
-            rslt = BMP3_IMPLAUSIBLE_PRESSURE;
-        }
-    }
-
-    return rslt;
+  return rslt;
 }
 
 int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
@@ -399,14 +402,11 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
         api_name, rslt);
     break;
   case BMP3_W_DRDY_INTR_FAILED:
-    sprintf(outputStr,"API [%s] Error [%d] : - DRDY/INT issue\r\n",
-        api_name, rslt);
+    sprintf(outputStr, "API [%s] Error [%d] : - DRDY/INT issue\r\n", api_name, rslt);
     break;
   case BMP3_W_TEMPARATURE_OUTSIDE_BOUND:
-      sprintf(outputStr,"API [%s] Error [%d] : - Temperature issue\r\n",
-          api_name, rslt);
-      break;
-
+    sprintf(outputStr, "API [%s] Error [%d] : - Temperature issue\r\n", api_name, rslt);
+    break;
 
   default:
     sprintf(outputStr, "API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
