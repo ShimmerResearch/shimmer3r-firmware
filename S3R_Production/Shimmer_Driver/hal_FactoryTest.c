@@ -618,7 +618,7 @@ void SPI_test(void)
     sprintf(buffer, " - S3R_TEST_0020 - %s: BMP390 (%.2f\xB0 C)\r\n",
         testPass ? "PASS" : "FAIL", bmp3_data->temperature);
     send_test_report(buffer);
-    if(!testPass)
+    if (!testPass)
     {
       bmp390_result = BMP3_W_TEMPARATURE_OUTSIDE_BOUND;
       send_test_report(" - ");
