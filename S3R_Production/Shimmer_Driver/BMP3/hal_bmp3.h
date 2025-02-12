@@ -17,10 +17,12 @@
 #define BMP390_TEMP_SKIPPED  0x800000
 #define BMP390_PRESS_SKIPPED 0x800000
 
+#define BMP390_API_ERROR_OFFSET 100
+
 void bmp3_driver_init(void);
 void bmp3_selectDevice(void);
 void bmp3_unselectDevice(void);
-int8_t bmp3_self_test(void);
+uint8_t bmp3_self_test(void);
 int8_t bmp3_drdy_test(void);
 int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio);
 HAL_StatusTypeDef bmp3_pressure_temperature_get(uint8_t *buf);

@@ -609,34 +609,35 @@ void SPI_test(void)
   }
   print_chip_test_result("S3R_TEST_0019", "LSM6DSV", self_test_result, tempCal);
 
-  int8_t bmp390_result = bmp3_self_test();
-  if (bmp390_result == 0)
+  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
+  self_test_result = bmp3_self_test();
+  if (self_test_result == SELF_TEST_PASS)
   {
+    //Self test passed, now check temperature is reasonable
     struct bmp3_data *bmp3_data = (struct bmp3_data *) get_bmp3_selftest_data();
-    uint8_t testPass = (bmp3_data->temperature > TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
-        && bmp3_data->temperature < TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
-    sprintf(buffer, " - S3R_TEST_0020 - %s: BMP390 (%.2f\xB0 C)\r\n",
-        testPass ? "PASS" : "FAIL", bmp3_data->temperature);
-    send_test_report(buffer);
-    if (!testPass)
+    tempCal = bmp3_data->temperature;
+
+    if (tempCal <= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
+        || tempCal >= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER)
     {
-      bmp390_result = BMP3_W_TEMPARATURE_OUTSIDE_BOUND;
-      send_test_report(" - ");
-      bmp3_check_rslt("BMP390", bmp390_result, buffer);
-      send_test_report(buffer);
+      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
+  }
+
+  if (self_test_result < SELF_TEST_FAIL_COUNT)
+  {
+    print_chip_test_result("S3R_TEST_0020", "BMP390", self_test_result, tempCal);
   }
   else
   {
-    sprintf(buffer, " - S3R_TEST_0020 - %s: BMP390\r\n", bmp390_result ? "FAIL" : "PASS");
+    send_test_report(" - S3R_TEST_0020 - FAIL: BMP390 - ");
+
+    bmp3_check_rslt("BMP390", ((int8_t)self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
     send_test_report(buffer);
-    send_test_report(" - ");
-    bmp3_check_rslt("BMP390", bmp390_result, buffer);
-    send_test_report(buffer);
-    if (self_test_result)
-    {
-      shimmerStatus.testResult |= S3R_TEST_0020;
-    }
+  }
+  if (self_test_result != SELF_TEST_PASS)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0020;
   }
 
   if (isAdxl371Present())
