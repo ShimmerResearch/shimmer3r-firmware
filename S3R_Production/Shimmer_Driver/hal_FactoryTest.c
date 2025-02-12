@@ -632,7 +632,7 @@ void SPI_test(void)
   {
     send_test_report(" - S3R_TEST_0020 - FAIL: BMP390 - ");
 
-    bmp3_check_rslt("BMP390", ((int8_t)self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
+    bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
     send_test_report(buffer);
   }
   if (self_test_result != SELF_TEST_PASS)
