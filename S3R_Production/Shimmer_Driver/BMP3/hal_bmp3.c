@@ -64,18 +64,108 @@ int8_t bmp3_self_test(void)
 {
   int8_t result;
   result = bmp3_selftest_check(&bmp3);
-
-  //if (result == BMP3_SENSOR_OK)
-  //{
-  //  SHIMMER_PRINTF("BMP390 Self Test - PASS\r\n");
-  //}
-  //else
-  //{
-  //  SHIMMER_PRINTF("BMP390 Self Test - FAIL\r\n");
-  //  bmp3_check_rslt("BMP390", result);
-  //}
-
+  if (result == BMP3_SENSOR_OK)
+  {
+    if(!bmp3_drdy_test())
+    {
+      result = BMP3_W_DRDY_INTR_FAILED;
+    }
+  }
   return result;
+}
+
+int8_t bmp3_drdy_test()
+{
+  int8_t rslt;
+  int8_t res = 0;
+  uint8_t i = 0;
+  struct bmp3_status status = { { 0 } };
+  struct bmp3_data data = { 0 };
+  /* Used to select the settings user needs to change */
+  uint16_t settings_sel;
+  struct bmp3_settings settings;
+  /* Reset the sensor */
+  rslt = bmp3_soft_reset(&bmp3);
+  if (rslt == BMP3_SENSOR_OK)
+  {
+    rslt = bmp3_init(&bmp3);
+    if (rslt == BMP3_E_COMM_FAIL || rslt == BMP3_E_DEV_NOT_FOUND)
+    {
+      rslt = BMP3_COMMUNICATION_ERROR_OR_WRONG_DEVICE;
+    }
+    if (rslt == BMP3_SENSOR_OK)
+    {
+      /* Select the pressure and temperature sensor to be enabled */
+      settings.press_en = BMP3_ENABLE;
+      settings.temp_en = BMP3_ENABLE;
+      /* Select the output data rate and over sampling settings for pressure and temperature */
+      settings.odr_filter.press_os = BMP3_NO_OVERSAMPLING;
+      settings.odr_filter.temp_os = BMP3_NO_OVERSAMPLING;
+      settings.odr_filter.odr = BMP3_ODR_50_HZ;
+      /* enable interrupts and latch */
+      settings.int_settings.drdy_en = 1;
+      settings.int_settings.latch = 1;
+      /* Assign the settings which needs to be set in the sensor */
+      settings_sel = BMP3_SEL_DRDY_EN | BMP3_SEL_PRESS_EN | BMP3_SEL_TEMP_EN |
+                     BMP3_SEL_LATCH | BMP3_SEL_PRESS_OS | BMP3_SEL_TEMP_OS | BMP3_SEL_ODR;
+      rslt = bmp3_set_sensor_settings(settings_sel, &settings, &bmp3);
+      if (rslt == BMP3_SENSOR_OK)
+      {
+        settings.op_mode = BMP3_MODE_NORMAL;
+        rslt = bmp3_set_op_mode(&settings, &bmp3);
+      }
+      if(rslt == BMP3_SENSOR_OK)
+      {
+        for(i = 0; i < 20; i++)
+        {
+          /* Wait for 15 ms */
+          (&bmp3)->delay_us(15000, (&bmp3)->intf_ptr);
+          if ( (rslt == BMP3_SENSOR_OK) && (BMP390_INT))
+          {
+            /* read the sensor data */
+            bmp3_get_sensor_data(BMP3_PRESS_TEMP, &data, &bmp3);
+            /* NOTE : Read status register again to clear data ready interrupt status */
+            rslt = bmp3_get_status(&status, &bmp3);
+            if(rslt == BMP3_SENSOR_OK)
+            {
+              res =BMP390_INT? 0: 1;
+              if( res == 1)
+                break;
+            }
+          }
+        }
+      }
+      if (rslt == BMP3_SENSOR_OK)
+      {
+        settings.op_mode = BMP3_MODE_SLEEP;
+        rslt = bmp3_set_op_mode(&settings, &bmp3);
+      }
+    }
+  }
+  return res;
+}
+
+/*!
+ * @brief  Function to analyze the sensor data
+ */
+static int8_t analyze_sensor_data(const struct bmp3_data *sens_data)
+{
+    int8_t rslt = BMP3_SENSOR_OK;
+
+    if ((sens_data->temperature < BMP3_MIN_TEMPERATURE) || (sens_data->temperature > BMP3_MAX_TEMPERATURE))
+    {
+        rslt = BMP3_IMPLAUSIBLE_TEMPERATURE;
+    }
+
+    if (rslt == BMP3_SENSOR_OK)
+    {
+        if ((sens_data->pressure < BMP3_MIN_PRESSURE) || (sens_data->pressure > BMP3_MAX_PRESSURE))
+        {
+            rslt = BMP3_IMPLAUSIBLE_PRESSURE;
+        }
+    }
+
+    return rslt;
 }
 
 int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
@@ -308,6 +398,16 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
         "not in limit\r\n",
         api_name, rslt);
     break;
+  case BMP3_W_DRDY_INTR_FAILED:
+    sprintf(outputStr,"API [%s] Error [%d] : - DRDY/INT issue\r\n",
+        api_name, rslt);
+    break;
+  case BMP3_W_TEMPARATURE_OUTSIDE_BOUND:
+      sprintf(outputStr,"API [%s] Error [%d] : - Temperature issue\r\n",
+          api_name, rslt);
+      break;
+
+
   default:
     sprintf(outputStr, "API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
     break;
