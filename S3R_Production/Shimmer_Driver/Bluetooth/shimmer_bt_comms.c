@@ -2118,8 +2118,10 @@ void BtUart_sendRsp(void)
         break;
       case GET_ALT_ACCEL_RANGE_COMMAND:
 #if defined(SHIMMER3)
+        *(resPacket + packet_length++) = ALT_ACCEL_RANGE_RESPONSE;
         *(resPacket + packet_length++) = storedConfig->altAccelRange;
 #elif defined(SHIMMER3R)
+        *(resPacket + packet_length++) = ALT_ACCEL_RANGE_RESPONSE;
         *(resPacket + packet_length++) = storedConfig->lnAccelRange;
 #endif
         break;
