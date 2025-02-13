@@ -103,7 +103,7 @@ uint8_t *ShimmerCalib_getRam(void)
 
 void ShimmerCalib_ram2File(void)
 {
-  char cal_file_name[48]; //buffer[66],
+  char cal_file_name[48] = "";
   DIR gdc;
   FIL gfc;
   //sc_t sc1;
