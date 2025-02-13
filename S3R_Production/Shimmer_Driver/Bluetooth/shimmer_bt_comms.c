@@ -1886,11 +1886,11 @@ uint8_t BtUart_replySingleSensorCalibCmd(uint8_t cmdWaitingResponse, uint8_t *re
   else if (cmdWaitingResponse == GET_ALT_ACCEL_CALIBRATION_COMMAND)
   {
 #if defined(SHIMMER3)
-  	sc1.id = SC_SENSOR_MPU9X50_ICM20948_ACCEL;
-  	sc1.range = storedConfig->altAccelRange;
+    sc1.id = SC_SENSOR_MPU9X50_ICM20948_ACCEL;
+    sc1.range = storedConfig->altAccelRange;
 #elif defined(SHIMMER3R)
-  	sc1.id = SC_SENSOR_ADXL371_ACCEL;
-  	sc1.range = SC_SENSOR_RANGE_ADXL371_RANGE;
+    sc1.id = SC_SENSOR_ADXL371_ACCEL;
+    sc1.range = SC_SENSOR_RANGE_ADXL371_RANGE;
 #endif
   }
   else if (cmdWaitingResponse == GET_ALT_MAG_CALIBRATION_COMMAND)
