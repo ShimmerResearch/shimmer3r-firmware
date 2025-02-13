@@ -1048,10 +1048,17 @@ void ParseConfig(void)
       {
         stored_config_temp.wrAccelRate = atoi(equals);
       }
+#if defined(SHIMMER3)
       else if (strstr(buffer, "accel_alt_range="))
+      {
+        stored_config_temp.altAccelRange = atoi(equals);
+      }
+#elif defined(SHIMMER3R)
+      else if (strstr(buffer, "accel_ln_range="))
       {
         stored_config_temp.lnAccelRange = atoi(equals);
       }
+#endif
       else if (strstr(buffer, "acc_range="))
       {
         stored_config_temp.wrAccelRange = atoi(equals);
