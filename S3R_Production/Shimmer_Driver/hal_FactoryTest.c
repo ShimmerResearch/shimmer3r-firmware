@@ -624,6 +624,11 @@ void SPI_test(void)
     }
   }
 
+  /* If it's a Shimmer self-test result (i.e., <SELF_TEST_FAIL_COUNT), it will
+   *  be printed out like all other sensors using "print_chip_test_result".
+   *  Else, if it's specific to the BMP3 API, it is printed using
+   *  bmp3_check_rslt (subtracting the previously added offset from first so
+   *  that the function can recognise it) */
   if (self_test_result < SELF_TEST_FAIL_COUNT)
   {
     print_chip_test_result("S3R_TEST_0020", "BMP390", self_test_result, tempCal);

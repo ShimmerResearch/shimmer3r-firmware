@@ -78,6 +78,8 @@ uint8_t bmp3_self_test(void)
   }
   else
   {
+    /* Adding offset to separate our BMP3 API errors/warnings from Shimmer
+     * self-test errors */
     self_test_result = bmp3_result + BMP390_API_ERROR_OFFSET;
   }
   return self_test_result;
