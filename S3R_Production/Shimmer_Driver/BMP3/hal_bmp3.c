@@ -60,21 +60,32 @@ void bmp3_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-int8_t bmp3_self_test(void)
+uint8_t bmp3_self_test(void)
 {
-  int8_t result;
-  result = bmp3_selftest_check(&bmp3);
-  if (result == BMP3_SENSOR_OK)
+  uint8_t self_test_result = SELF_TEST_PASS;
+  int8_t bmp3_result;
+  bmp3_result = bmp3_selftest_check(&bmp3);
+  if (bmp3_result == BMP3_COMMUNICATION_ERROR_OR_WRONG_DEVICE)
+  {
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
+  }
+  else if (bmp3_result == BMP3_SENSOR_OK)
   {
     if (!bmp3_drdy_test())
     {
-      result = BMP3_W_DRDY_INTR_FAILED;
+      self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
     }
   }
-  return result;
+  else
+  {
+    /* Adding offset to separate our BMP3 API errors/warnings from Shimmer
+     * self-test errors */
+    self_test_result = bmp3_result + BMP390_API_ERROR_OFFSET;
+  }
+  return self_test_result;
 }
 
-int8_t bmp3_drdy_test()
+int8_t bmp3_drdy_test(void)
 {
   int8_t rslt;
   int8_t res = 0;
@@ -89,10 +100,7 @@ int8_t bmp3_drdy_test()
   if (rslt == BMP3_SENSOR_OK)
   {
     rslt = bmp3_init(&bmp3);
-    if (rslt == BMP3_E_COMM_FAIL || rslt == BMP3_E_DEV_NOT_FOUND)
-    {
-      rslt = BMP3_COMMUNICATION_ERROR_OR_WRONG_DEVICE;
-    }
+
     if (rslt == BMP3_SENSOR_OK)
     {
       /* Select the pressure and temperature sensor to be enabled */
@@ -145,30 +153,6 @@ int8_t bmp3_drdy_test()
     }
   }
   return res;
-}
-
-/*!
- * @brief  Function to analyze the sensor data
- */
-static int8_t analyze_sensor_data(const struct bmp3_data *sens_data)
-{
-  int8_t rslt = BMP3_SENSOR_OK;
-
-  if ((sens_data->temperature < BMP3_MIN_TEMPERATURE)
-      || (sens_data->temperature > BMP3_MAX_TEMPERATURE))
-  {
-    rslt = BMP3_IMPLAUSIBLE_TEMPERATURE;
-  }
-
-  if (rslt == BMP3_SENSOR_OK)
-  {
-    if ((sens_data->pressure < BMP3_MIN_PRESSURE) || (sens_data->pressure > BMP3_MAX_PRESSURE))
-    {
-      rslt = BMP3_IMPLAUSIBLE_PRESSURE;
-    }
-  }
-
-  return rslt;
 }
 
 int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
@@ -401,11 +385,21 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
         "not in limit\r\n",
         api_name, rslt);
     break;
-  case BMP3_W_DRDY_INTR_FAILED:
-    sprintf(outputStr, "API [%s] Error [%d] : - DRDY/INT issue\r\n", api_name, rslt);
+
+  case BMP3_TRIMMING_DATA_OUT_OF_BOUND:
+    send_test_report("Trimming data out of bound\r\n");
     break;
-  case BMP3_W_TEMPARATURE_OUTSIDE_BOUND:
-    sprintf(outputStr, "API [%s] Error [%d] : - Temperature issue\r\n", api_name, rslt);
+  case BMP3_TEMPERATURE_BOUND_WIRE_FAILURE_OR_MEMS_DEFECT:
+    send_test_report("Temperature bound wire failure or MEMs defect\r\n");
+    break;
+  case BMP3_PRESSURE_BOUND_WIRE_FAILURE_OR_MEMS_DEFECT:
+    send_test_report("Pressure bound wire failure or MEMs defect\r\n");
+    break;
+  case BMP3_IMPLAUSIBLE_TEMPERATURE:
+    send_test_report("Implausible Temperature\r\n");
+    break;
+  case BMP3_IMPLAUSIBLE_PRESSURE:
+    send_test_report("Implausible Pressure\r\n");
     break;
 
   default:
