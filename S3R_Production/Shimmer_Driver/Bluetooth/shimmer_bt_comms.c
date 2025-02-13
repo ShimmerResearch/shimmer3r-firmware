@@ -1404,7 +1404,7 @@ void BtUart_processCmd(void)
 #if defined(SHIMMER3)
     storedConfig->altAccelRange = (args[0] < 4) ? (args[0] & 0x03) : ACCEL_2G;
 #elif defined(SHIMMER3R)
-    storedConfig->altAccelRange = (args[0] <= LSM6DSV_16g) ? (args[0] & 0x03) : LSM6DSV_2g;
+    storedConfig->lnAccelRange = (args[0] <= LSM6DSV_16g) ? (args[0] & 0x03) : LSM6DSV_2g;
 #endif
     BtUart_settingChangeCommon(NV_CONFIG_SETUP_BYTE3, SDH_CONFIG_SETUP_BYTE3, 1);
     break;
@@ -1474,7 +1474,7 @@ void BtUart_processCmd(void)
 #if defined(SHIMMER3)
     sensorCalibId = SC_SENSOR_LSM303_MAG;
 #elif defined(SHIMMER3R)
-    sensorCalibId = SC_SENSOR_LIS2MDL_MAG;
+    sensorCalibId = SC_SENSOR_LIS3MDL_MAG;
 #endif
     BtUart_calibrationChangeCommon(NV_MAG_CALIBRATION, SDH_MAG_CALIBRATION,
         &storedConfig->magCalib.rawBytes[0], &args[0], sensorCalibId);
@@ -1733,7 +1733,7 @@ void BtUart_processCmd(void)
 #if defined(SHIMMER3)
     sensorCalibId = SC_SENSOR_MPU9X50_ICM20948_MAG;
 #elif defined(SHIMMER3R)
-    sensorCalibId = SC_SENSOR_LIS3MDL_MAG;
+    sensorCalibId = SC_SENSOR_LIS2MDL_MAG;
 #endif
     BtUart_calibrationChangeCommon(NV_ALT_MAG_CALIBRATION, SDH_ALT_MAG_CALIBRATION,
         &storedConfig->altMagCalib.rawBytes[0], &args[0], sensorCalibId);
@@ -1853,7 +1853,7 @@ uint8_t BtUart_replySingleSensorCalibCmd(uint8_t cmdWaitingResponse, uint8_t *re
     sc1.range = SC_SENSOR_RANGE_ANALOG_ACCEL;
 #elif defined(SHIMMER3R)
     sc1.id = SC_SENSOR_LSM6DSV_ACCEL;
-    sc1.range = storedConfig->altAccelRange;
+    sc1.range = storedConfig->lnAccelRange;
 #endif
   }
   else if (cmdWaitingResponse == GET_GYRO_CALIBRATION_COMMAND)
@@ -1887,10 +1887,11 @@ uint8_t BtUart_replySingleSensorCalibCmd(uint8_t cmdWaitingResponse, uint8_t *re
   {
 #if defined(SHIMMER3)
     sc1.id = SC_SENSOR_MPU9X50_ICM20948_ACCEL;
+    sc1.range = storedConfig->altAccelRange;
 #elif defined(SHIMMER3R)
     sc1.id = SC_SENSOR_ADXL371_ACCEL;
+    sc1.range = SC_SENSOR_RANGE_ADXL371_RANGE;
 #endif
-    sc1.range = storedConfig->altAccelRange;
   }
   else if (cmdWaitingResponse == GET_ALT_MAG_CALIBRATION_COMMAND)
   {
@@ -2116,8 +2117,13 @@ void BtUart_sendRsp(void)
         *(resPacket + packet_length++) = storedConfig->gyroRate;
         break;
       case GET_ALT_ACCEL_RANGE_COMMAND:
+#if defined(SHIMMER3)
         *(resPacket + packet_length++) = ALT_ACCEL_RANGE_RESPONSE;
         *(resPacket + packet_length++) = storedConfig->altAccelRange;
+#elif defined(SHIMMER3R)
+        *(resPacket + packet_length++) = ALT_ACCEL_RANGE_RESPONSE;
+        *(resPacket + packet_length++) = storedConfig->lnAccelRange;
+#endif
         break;
       case GET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
         *(resPacket + packet_length++) = PRESSURE_OVERSAMPLING_RATIO_RESPONSE;

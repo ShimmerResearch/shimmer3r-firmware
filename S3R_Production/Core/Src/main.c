@@ -166,16 +166,16 @@ void Init()
   BtUart_init();
 #endif
 
-  SetupDock();
-  //Disable dock comms until sensor is ready to communicate
-  DockUart_disable();
-
   setBootStage(BOOT_STAGE_CONFIGURATION);
   /* Calibration needs to be loaded after the chips have been detected in
    * order to know which default calib to set for attached chips.
    * It also needs to be loaded after the BT is initialised so that the
    * MAC ID can be used for default Shimmer name and calibration file names.*/
   loadSensorConfigurationAndCalibration();
+
+  SetupDock();
+  //Disable dock comms until sensor is ready to communicate
+  DockUart_disable();
 
   //==== 13.8ma ====
 #if FULL_TEST_MODE

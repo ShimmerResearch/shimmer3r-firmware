@@ -186,6 +186,11 @@ void S4Ram_btMacAsciiGet(uint8_t *buf)
   memcpy(buf, btMacAscii, 12);
 }
 
+uint8_t *S4Ram_getMacIdStrPtr(void)
+{
+  return &btMacAscii[0];
+}
+
 /*
  * btMacHex: Set(), Get()
  */
@@ -245,7 +250,7 @@ void S4Ram_SetDefaultInfomem(void)
   set_config_byte_mag_rate(&storedConfig, LIS3MDL_UHP_80Hz);
   //LSM6DSV Gyro +/-500 degrees per second
   set_config_byte_gyro_range(&storedConfig, LSM6DSV_500dps);
-  storedConfig.altAccelRange = LSM6DSV_2g;
+  storedConfig.lnAccelRange = LSM6DSV_2g;
   set_config_byte_pressure_oversampling_ratio(&storedConfig, BMP3_NO_OVERSAMPLING);
   set_config_byte_wr_accel_mode(&storedConfig, LIS2DW12_HIGH_PERFORMANCE);
   storedConfig.altMagRate = LIS2MDL_ODR_100Hz;
