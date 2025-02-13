@@ -1886,11 +1886,12 @@ uint8_t BtUart_replySingleSensorCalibCmd(uint8_t cmdWaitingResponse, uint8_t *re
   else if (cmdWaitingResponse == GET_ALT_ACCEL_CALIBRATION_COMMAND)
   {
 #if defined(SHIMMER3)
-    sc1.id = SC_SENSOR_MPU9X50_ICM20948_ACCEL;
+  	sc1.id = SC_SENSOR_MPU9X50_ICM20948_ACCEL;
+  	sc1.range = storedConfig->altAccelRange;
 #elif defined(SHIMMER3R)
-    sc1.id = SC_SENSOR_ADXL371_ACCEL;
+  	sc1.id = SC_SENSOR_ADXL371_ACCEL;
+  	sc1.range = SC_SENSOR_RANGE_ADXL371_RANGE;
 #endif
-    sc1.range = SC_SENSOR_RANGE_ADXL371_RANGE;
   }
   else if (cmdWaitingResponse == GET_ALT_MAG_CALIBRATION_COMMAND)
   {
@@ -2116,8 +2117,11 @@ void BtUart_sendRsp(void)
         *(resPacket + packet_length++) = storedConfig->gyroRate;
         break;
       case GET_ALT_ACCEL_RANGE_COMMAND:
-        *(resPacket + packet_length++) = ALT_ACCEL_RANGE_RESPONSE;
+#if defined(SHIMMER3)
+        *(resPacket + packet_length++) = storedConfig->altAccelRange;
+#elif defined(SHIMMER3R)
         *(resPacket + packet_length++) = storedConfig->lnAccelRange;
+#endif
         break;
       case GET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
         *(resPacket + packet_length++) = PRESSURE_OVERSAMPLING_RATIO_RESPONSE;

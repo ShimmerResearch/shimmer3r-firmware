@@ -696,7 +696,11 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "acc_internal_rate=%d\r\n", storedConfig->wrAccelRate);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "accel_alt_range=%d\r\n", storedConfig->lnAccelRange);
+#if defined(SHIMMER3)
+      sprintf(buffer, "accel_alt_range=%d\r\n", storedConfig->altAccelRange);
+#elif defined(SHIMMER3R)
+      sprintf(buffer, "accel_ln_range=%d\r\n", storedConfig->lnAccelRange);
+#endif
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "pres_bmp390_prec=%d\r\n",
           get_config_byte_pressure_oversampling_ratio());
