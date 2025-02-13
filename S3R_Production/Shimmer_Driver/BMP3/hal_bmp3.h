@@ -17,6 +17,10 @@
 #define BMP390_TEMP_SKIPPED     0x800000
 #define BMP390_PRESS_SKIPPED    0x800000
 
+/* Offset used to separate out the BMP3 specific self-test errors/warnings from
+ * those used normally in Shimmer's self-test code structure. Value chosen
+ * partly arbitrarily to ensure there's no overlap between the errors from each
+ * source. */
 #define BMP390_API_ERROR_OFFSET 100
 
 void bmp3_driver_init(void);

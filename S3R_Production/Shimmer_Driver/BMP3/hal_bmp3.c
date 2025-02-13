@@ -65,16 +65,16 @@ uint8_t bmp3_self_test(void)
   uint8_t self_test_result = SELF_TEST_PASS;
   int8_t bmp3_result;
   bmp3_result = bmp3_selftest_check(&bmp3);
-  if (bmp3_result == BMP3_SENSOR_OK)
+  if (bmp3_result == BMP3_COMMUNICATION_ERROR_OR_WRONG_DEVICE)
+  {
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
+  }
+  else if (bmp3_result == BMP3_SENSOR_OK)
   {
     if (!bmp3_drdy_test())
     {
       self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
     }
-  }
-  else if (bmp3_result == BMP3_COMMUNICATION_ERROR_OR_WRONG_DEVICE)
-  {
-    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
   {
