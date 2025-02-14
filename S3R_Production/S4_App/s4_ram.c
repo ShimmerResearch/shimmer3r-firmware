@@ -210,7 +210,8 @@ void S4Ram_SetDefaultInfomem(void)
   //uint8_t temp_btMacAscii[14];
 
   memset(storedConfig.rawBytes, 0x00, sizeof(storedConfig.rawBytes));
-  memset(storedConfig.lnAccelCalib.rawBytes, 0xFF, sizeof(storedConfig.lnAccelCalib.rawBytes));
+  memset(storedConfig.lnAccelCalib.rawBytes, 0xFF,
+      sizeof(storedConfig.lnAccelCalib.rawBytes));
   memset(storedConfig.gyroCalib.rawBytes, 0xFF, sizeof(storedConfig.gyroCalib.rawBytes));
   memset(storedConfig.magCalib.rawBytes, 0xFF, sizeof(storedConfig.magCalib.rawBytes));
   memset(storedConfig.wrAccelCalib.rawBytes, 0xFF,

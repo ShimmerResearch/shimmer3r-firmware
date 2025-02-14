@@ -1687,12 +1687,11 @@ void BtUart_processCmd(void)
         CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LIS3MDL_MAG);
         CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LIS2DW12_ACCEL);
       }
-      else if(infomemOffset == (INFOMEM_SEG_C_ADDR_MSP430 - INFOMEM_OFFSET_MSP430))
+      else if (infomemOffset == (INFOMEM_SEG_C_ADDR_MSP430 - INFOMEM_OFFSET_MSP430))
       {
         CalibSaveFromInfoMemToCalibDump(SC_SENSOR_ADXL371_ACCEL);
         CalibSaveFromInfoMemToCalibDump(SC_SENSOR_LIS2MDL_MAG);
       }
-
 
       S4Ram_config2SdHead();
       SD_infomem2Names();
