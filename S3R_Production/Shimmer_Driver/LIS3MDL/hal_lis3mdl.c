@@ -122,6 +122,8 @@
 #include "tim.h"
 #endif
 
+#include "hal_FactoryTest.h"
+
 /* Private macro -------------------------------------------------------------*/
 #define WAIT_TIME_00 20 //ms
 #define WAIT_TIME_01 20 //ms
@@ -332,20 +334,18 @@ uint8_t lis3mdl_drdy_test(void)
   uint8_t i;
   uint8_t res = 0;
   uint8_t drdy;
-  for (i = 0; i < 20; i++)
+  /* New sample is every 12.5ms @ 80Hz. Loop count + delay below allows 100ms for DRDY to toggle */
+  for (i = 0; i < 50; i++)
   {
-    platform_delay(10);
     if (LIS3MDL_DRDY)
     {
       /* Read dummy data and discard it */
       lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
-      lis3mdl_mag_data_ready_get(&lis3mdl_obj.Ctx, &drdy);
+      platform_delay(1);
       res = LIS3MDL_DRDY ? 0 : 1; //if pin is set test fail send 0
-      if (res == 1)
-      {
-        break;
-      }
+      break;
     }
+    platform_delay(1);
   }
   return res;
 }

@@ -109,6 +109,8 @@
 #include "tim.h"
 #endif
 
+#include "hal_FactoryTest.h"
+
 /* Private macro -------------------------------------------------------------*/
 
 #define BOOT_TIME       20 //ms
@@ -307,19 +309,18 @@ uint8_t lis2mdl_drdy_test(void)
   uint8_t res = 0;
   /* Set DRDY pin */
   lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
-  for (i = 0; i < 15; i++) //ODR=100hz(interrupt every 10ms),20ms delay each iteration,with timeout of 80 ms(test for 8 interrupts).
+  /* New sample is every 10ms @ 100Hz. Loop count + delay below allows 100ms for DRDY to toggle */
+  for (i = 0; i < 50; i++)
   {
-    platform_delay(WAIT_TIME_01);
     if (LIS2MDL_DRDY)
     {
       /* Read dummy data and discard it */
       lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw); //read data once pin is set
+      platform_delay(1);
       res = LIS2MDL_DRDY ? 0 : 1; //pin status after data read, pin set indicates test fail return 0
-      if (res == 1) //To make sure pin is in correct state before exit
-      {
-        break;
-      }
+      break;
     }
+    platform_delay(1);
   }
   lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0);
   return res;

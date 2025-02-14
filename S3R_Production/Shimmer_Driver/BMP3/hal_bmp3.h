@@ -7,7 +7,7 @@
 
 #ifndef BMP3_BMP3_SENSORAPI_HAL_BMP3_H_
 #define BMP3_BMP3_SENSORAPI_HAL_BMP3_H_
-#include "hal_FactoryTest.h"
+
 #include "stm32u5xx.h"
 #include <stdbool.h>
 #include <stdint.h>

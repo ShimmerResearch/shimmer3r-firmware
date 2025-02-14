@@ -112,6 +112,8 @@
 
 #endif
 
+#include "hal_FactoryTest.h"
+
 typedef union
 {
   int16_t i16bit[3];
@@ -311,28 +313,25 @@ uint8_t lis2dw12_drdy_test()
   int16_t data_raw[3];
   uint8_t i;
   uint8_t res = 0;
-  lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
-  lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl;
   lis2dw12_reg_t reg;
+  lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl;
   int1_pad_ctrl.int1_drdy = PROPERTY_ENABLE;
   lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
-  for (i = 0; i < 25; i++)
+  lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
+  /* New sample is every 20ms @ 50Hz. Loop count + delay below allows 100ms for DRDY to toggle */
+  for (i = 0; i < 50; i++)
   {
-    HAL_Delay(18);
 #if defined(LIS2DW12_INT1_Pin)
     if (LIS2DW12_INT1)
     {
       /* Read accelerometer data */
-      lis2dw12_acceleration_raw_get(
-          &(lis2dw12_obj.Ctx), data_raw_acceleration[i].i16bit);
-      lis2dw12_status_reg_get(&(lis2dw12_obj.Ctx), &reg.status);
-      res = LIS2DW12_INT1 ? 0 : 1;
-      if (res == 1)
-      {
-        break;
-      }
+      lis2dw12_acceleration_raw_get(&(lis2dw12_obj.Ctx), data_raw_acceleration[i].i16bit);
+      platform_delay(1);
+      res = LIS2DW12_INT1 ? 0 : 1; // check for pin status, if low test pass send 1 in res
+      break;
     }
 #endif
+    platform_delay(1);
   }
   int1_pad_ctrl.int1_drdy = PROPERTY_DISABLE;
   lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);

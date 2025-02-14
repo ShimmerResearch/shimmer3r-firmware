@@ -15,6 +15,8 @@
 #include "BMP3_SensorAPI/bmp3.h"
 #include "BMP3_SensorAPI/self-test/bmp3_selftest.h"
 
+#include "hal_FactoryTest.h"
+
 #define SENSOR_BUS hspi1
 
 #define CS_PORT    CS_BMP390_GPIO_Port
@@ -37,6 +39,8 @@ bmp3_spi_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
 static void bmp3_delay_us(uint32_t periodUS, void *intf_ptr);
 static int32_t
 platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len);
+static void platform_delay(uint32_t ms);
+
 
 void bmp3_driver_init(void)
 {
@@ -92,31 +96,36 @@ int8_t bmp3_drdy_test(void)
   uint8_t i = 0;
   struct bmp3_status status = { { 0 } };
   struct bmp3_data data = { 0 };
+
   /* Used to select the settings user needs to change */
   uint16_t settings_sel;
   struct bmp3_settings settings;
+
   /* Reset the sensor */
   rslt = bmp3_soft_reset(&bmp3);
   if (rslt == BMP3_SENSOR_OK)
   {
     rslt = bmp3_init(&bmp3);
-
     if (rslt == BMP3_SENSOR_OK)
     {
       /* Select the pressure and temperature sensor to be enabled */
       settings.press_en = BMP3_ENABLE;
       settings.temp_en = BMP3_ENABLE;
+
       /* Select the output data rate and over sampling settings for pressure and temperature */
       settings.odr_filter.press_os = BMP3_NO_OVERSAMPLING;
       settings.odr_filter.temp_os = BMP3_NO_OVERSAMPLING;
       settings.odr_filter.odr = BMP3_ODR_50_HZ;
+
       /* enable interrupts and latch */
       settings.int_settings.drdy_en = 1;
       settings.int_settings.latch = 1;
+
       /* Assign the settings which needs to be set in the sensor */
       settings_sel = BMP3_SEL_DRDY_EN | BMP3_SEL_PRESS_EN | BMP3_SEL_TEMP_EN
           | BMP3_SEL_LATCH | BMP3_SEL_PRESS_OS | BMP3_SEL_TEMP_OS | BMP3_SEL_ODR;
       rslt = bmp3_set_sensor_settings(settings_sel, &settings, &bmp3);
+
       if (rslt == BMP3_SENSOR_OK)
       {
         settings.op_mode = BMP3_MODE_NORMAL;
@@ -124,25 +133,22 @@ int8_t bmp3_drdy_test(void)
       }
       if (rslt == BMP3_SENSOR_OK)
       {
-        for (i = 0; i < 20; i++)
+        /* New sample is every 20ms @ 50Hz. Loop count + delay below allows 100ms for DRDY to toggle */
+        for (i = 0; i < 50; i++)
         {
-          /* Wait for 15 ms */
-          (&bmp3)->delay_us(15000, (&bmp3)->intf_ptr);
-          if ((rslt == BMP3_SENSOR_OK) && (BMP390_INT))
+          if (BMP390_INT)
           {
             /* read the sensor data */
             bmp3_get_sensor_data(BMP3_PRESS_TEMP, &data, &bmp3);
+
             /* NOTE : Read status register again to clear data ready interrupt status */
             rslt = bmp3_get_status(&status, &bmp3);
-            if (rslt == BMP3_SENSOR_OK)
-            {
-              res = BMP390_INT ? 0 : 1;
-              if (res == 1)
-              {
-                break;
-              }
-            }
+            platform_delay(1);
+            res = ((rslt == BMP3_SENSOR_OK) && (!BMP390_INT)) ? 1 : 0;
+            break;
           }
+          /* Wait for 1 ms */
+          platform_delay(1);
         }
       }
       if (rslt == BMP3_SENSOR_OK)
@@ -480,4 +486,13 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
   bmp3_selectDevice();
   ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
   return ret;
+}
+
+static void platform_delay(uint32_t ms)
+{
+#if defined(NUCLEO_F411RE) | defined(STEVAL_MKI109V3) | defined(SHIMMER3R)
+  HAL_Delay(ms);
+#elif defined(SPC584B_DIS)
+  osalThreadDelayMilliseconds(ms);
+#endif
 }

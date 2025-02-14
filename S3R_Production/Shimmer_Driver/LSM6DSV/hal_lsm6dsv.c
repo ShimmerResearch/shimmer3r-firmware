@@ -119,6 +119,8 @@
 #include "usart.h"
 #endif
 
+#include "hal_FactoryTest.h"
+
 /* Private macro -------------------------------------------------------------*/
 #define BOOT_TIME                 10
 
@@ -427,6 +429,7 @@ uint8_t lsm6dsv_drdy_test(void)
   int16_t data_raw[3];
   uint8_t i;
   uint8_t res = 0;
+  lsm6dsv_all_sources_t all_sources;
   lsm6dsv_interrupt_mode_t mode_int;
   lsm6dsv_pin_int_route_t pin_int;
   pin_int.drdy_xl = PROPERTY_ENABLE;
@@ -434,26 +437,19 @@ uint8_t lsm6dsv_drdy_test(void)
   mode_int.lir = PROPERTY_ENABLE;
   lsm6dsv_interrupt_enable_set(&lsm6dsv_obj.Ctx, mode_int);
   lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
-  lsm6dsv_all_sources_t all_sources;
-  uint16_t count = 0;
-  for (i = 0; i < 20; i++) //run test multiple times to get the proper value
+  /* New sample is every 16.6ms @ 60Hz. Loop count + delay below allows 100ms for DRDY to toggle */
+  for (i = 0; i < 50; i++)
   {
-    platform_delay(15); //every 16.6 msec new value is seen as per current odr settings
     if (LSM6DSV_DRDY)
     {
       /* Read raw data */
       lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
-      /* read status again, before checking interrupt pin
-       * to make sure pin reads the correct output from register
-       * this is to account for delay to see status change in register and pin
-       * after data read */
+      platform_delay(1);
       lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
-      res = LSM6DSV_DRDY ? 0 : 1;
-      if (res == 1) //run test multiple times to get the proper value
-      {
-        break;
-      }
+      res = LSM6DSV_DRDY ? 0 : 1; // check for pin status, if low test pass send 1 in res
+      break;
     }
+    platform_delay(1);
   }
   pin_int.drdy_xl = PROPERTY_DISABLE;
   mode_int.enable = PROPERTY_DISABLE;
