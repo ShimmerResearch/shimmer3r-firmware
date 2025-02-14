@@ -325,9 +325,10 @@ uint8_t lis2dw12_drdy_test()
     if (LIS2DW12_INT1)
     {
       /* Read accelerometer data */
-      lis2dw12_acceleration_raw_get(&(lis2dw12_obj.Ctx), data_raw_acceleration[i].i16bit);
+      lis2dw12_acceleration_raw_get(
+          &(lis2dw12_obj.Ctx), data_raw_acceleration[i].i16bit);
       platform_delay(1);
-      res = LIS2DW12_INT1 ? 0 : 1; // check for pin status, if low test pass send 1 in res
+      res = LIS2DW12_INT1 ? 0 : 1; //check for pin status, if low test pass send 1 in res
       break;
     }
 #endif

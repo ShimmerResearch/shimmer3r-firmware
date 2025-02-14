@@ -41,7 +41,6 @@ static int32_t
 platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len);
 static void platform_delay(uint32_t ms);
 
-
 void bmp3_driver_init(void)
 {
   bmp3.read = bmp3_spi_read;

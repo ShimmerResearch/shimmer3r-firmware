@@ -446,7 +446,7 @@ uint8_t lsm6dsv_drdy_test(void)
       lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
       platform_delay(1);
       lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
-      res = LSM6DSV_DRDY ? 0 : 1; // check for pin status, if low test pass send 1 in res
+      res = LSM6DSV_DRDY ? 0 : 1; //check for pin status, if low test pass send 1 in res
       break;
     }
     platform_delay(1);
