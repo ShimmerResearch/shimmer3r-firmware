@@ -31,7 +31,7 @@
 #elif defined(SHIMMER4_SDK)
 #include "RN42.h"
 #endif
-#include "../Shimmer_Driver/dock_comms/shimmer_dock_comms.h"
+#include "dock_comms/shimmer_dock_comms.h"
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/ADXL371/adxl371.h"
 #include "../Shimmer_Driver/BMP3/BMP3_SensorAPI/bmp3_defs.h"
