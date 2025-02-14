@@ -210,6 +210,14 @@ void S4Ram_SetDefaultInfomem(void)
   //uint8_t temp_btMacAscii[14];
 
   memset(storedConfig.rawBytes, 0x00, sizeof(storedConfig.rawBytes));
+  //memset(&storedConfig.rawBytes[NV_LN_ACCEL_CALIBRATION], 0xFF, 84);
+ //memset(&storedConfig.rawBytes[NV_ALT_ACCEL_CALIBRATION], 0xFF, 54);
+  memset(storedConfig.lnAccelCalib.rawBytes, 0xFF, sizeof(storedConfig.lnAccelCalib.rawBytes));
+  memset(storedConfig.gyroCalib.rawBytes, 0xFF, sizeof(storedConfig.gyroCalib.rawBytes));
+  memset(storedConfig.magCalib.rawBytes, 0xFF, sizeof(storedConfig.magCalib.rawBytes));
+  memset(storedConfig.wrAccelCalib.rawBytes, 0xFF, sizeof(storedConfig.wrAccelCalib.rawBytes));
+  memset(storedConfig.altAccelCalib.rawBytes, 0xFF, sizeof(storedConfig.altAccelCalib.rawBytes));
+  memset(storedConfig.altMagCalib.rawBytes, 0xFF, sizeof(storedConfig.altMagCalib.rawBytes));
 
   S4Ram_btMacHexGet(storedConfig.macAddr);
 

@@ -1675,7 +1675,7 @@ void BtUart_processCmd(void)
       InfoMem_write(infomemOffset, &args[3], infomemLength);
       InfoMem_readRam(&storedConfig->rawBytes[infomemOffset], infomemOffset, infomemLength);
 
-      if (infomemOffset == (INFOMEM_SEG_D_ADDR_MSP430 - INFOMEM_OFFSET_MSP430))
+      if (infomemOffset == (INFOMEM_SEG_D_ADDR_MSP430 - INFOMEM_OFFSET_MSP430) || (infomemOffset == INFOMEM_SEG_C_ADDR_MSP430 - INFOMEM_OFFSET_MSP430))
       {
         CalibSaveFromInfoMemToCalibDump(0xFF);
       }
