@@ -46,6 +46,7 @@ static char advNameBle[] = { 18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r',
 //'i', 'm', 'm', 'e', 'r', '3', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
 
 uint16_t expectedResponseIdx;
+uint8_t active_conn_handle = 0xFF; //no active connection
 
 ezs_rsp_system_ping_t rsp_system_ping;
 ezs_rsp_system_query_firmware_version_t rsp_system_query_firmware_version;
@@ -1157,10 +1158,48 @@ void BT_generateCyw20820FirmwareVersionStr(char *str)
 //TODO placeholder for now, implement this later
 uint8_t BT_connect(uint8_t *addr)
 {
-  return 1;
+
+  ezs_cmd_bt_connect_t bt_conn;
+
+  //TODO how to distinguish between Master and slave
+  /*if(bt_conn.type == MASTER)
+  {
+    memcpy(bt_conn.address.addr, addr, 6); //copying the MAC address
+  }
+  else if (bt_conn.type == SLAVE)
+  {
+    memset(bt_conn.address.addr, addr, 6);
+  }*/
+  //trying as master (0 for slave; 1 for master)
+  bt_conn.type = MASTER ; //setting this as Master for now
+
+  uint8_t status = EZS_SEND_AND_WAIT(&bt_conn, 10); //sending the connect command
+
+  if (status == 0)
+  {
+    printf("Connection failed");
+    active_conn_handle = 0xFF;
+  }
+  else
+  {
+    printf("Connection success");
+    active_conn_handle = 1;
+  }
+  return active_conn_handle;
 }
 
 uint8_t BT_disconnect(void)
 {
+  ezs_cmd_bt_disconnect_t bt_disc;
+  uint8_t status;
+  bt_disc.conn_handle = active_conn_handle; //this detects an active connection
+  if (bt_disc.conn_handle == 0xFF)
+  {
+    printf("No active connection detected");
+  }
+  else
+  {
+    status = EZS_SEND_AND_WAIT(&bt_disc, 10);
+  }
   return 1;
 }

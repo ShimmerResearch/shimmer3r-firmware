@@ -21,6 +21,9 @@
 #define FLOW_CONTROL 1
 #endif
 
+#define MASTER 1
+#define SLAVE  0
+
 enum BT_SET_COMMAND_STAGES
 {
   WAIT_FOR_BOOT,
