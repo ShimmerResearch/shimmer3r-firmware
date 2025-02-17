@@ -438,6 +438,9 @@ uint8_t lsm6dsv_drdy_test(void)
   lsm6dsv_interrupt_enable_set(&lsm6dsv_obj.Ctx, mode_int);
   lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
 
+  /* Added in case chip needs time to enable interrupt pin */
+  platform_delay(100);
+
   /* New sample is every 16.6ms @ 60Hz. Loop count + delay below allows 100ms for DRDY to toggle */
   for (i = 0; i < 50; i++)
   {

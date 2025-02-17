@@ -130,6 +130,10 @@ int8_t bmp3_drdy_test(void)
         settings.op_mode = BMP3_MODE_NORMAL;
         rslt = bmp3_set_op_mode(&settings, &bmp3);
       }
+
+      /* Added in case chip needs time to enable interrupt pin */
+      platform_delay(100);
+
       if (rslt == BMP3_SENSOR_OK)
       {
         /* New sample is every 20ms @ 50Hz. Loop count + delay below allows 100ms for DRDY to toggle */

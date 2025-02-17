@@ -311,6 +311,9 @@ uint8_t lis2mdl_drdy_test(void)
   /* Set DRDY pin */
   lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
 
+  /* Added in case chip needs time to enable interrupt pin */
+  platform_delay(100);
+
   /* New sample is every 10ms @ 100Hz. Loop count + delay below allows 100ms for DRDY to toggle */
   for (i = 0; i < 50; i++)
   {

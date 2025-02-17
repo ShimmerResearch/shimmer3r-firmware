@@ -323,6 +323,9 @@ uint8_t lis2dw12_drdy_test()
   lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
   lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
 
+  /* Added in case chip needs time to enable interrupt pin */
+  platform_delay(100);
+
   /* New sample is every 20ms @ 50Hz. Loop count + delay below allows 100ms for DRDY to toggle */
   for (i = 0; i < 50; i++)
   {
