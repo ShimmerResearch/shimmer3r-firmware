@@ -307,8 +307,13 @@ uint8_t lis2mdl_drdy_test(void)
   int16_t data_raw[3];
   uint8_t i;
   uint8_t res = 0;
+
   /* Set DRDY pin */
   lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
+
+  /* Added in case chip needs time to enable interrupt pin */
+  platform_delay(100);
+
   /* New sample is every 10ms @ 100Hz. Loop count + delay below allows 100ms for DRDY to toggle */
   for (i = 0; i < 50; i++)
   {
@@ -317,12 +322,14 @@ uint8_t lis2mdl_drdy_test(void)
       /* Read dummy data and discard it */
       lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw); //read data once pin is set
       platform_delay(1);
-      res = LIS2MDL_DRDY ? 0 : 1; //pin status after data read, pin set indicates test fail return 0
+      res = LIS2MDL_DRDY ? 0 : 1; //check for pin status, 0 = fail, 1 = pass
       break;
     }
     platform_delay(1);
   }
+
   lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0);
+
   return res;
 }
 

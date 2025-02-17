@@ -215,12 +215,14 @@ static self_test_result_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
   HAL_Delay(100);
   /* Flush old samples */
   flush_samples(dev_ctx);
+#if defined(LIS2DW12_INT1_Pin)
   if (!lis2dw12_drdy_test())
   {
     self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
   }
   else
   {
+#endif /* LIS2DW12_INT1_Pin */
     do
     {
       lis2dw12_status_reg_get(dev_ctx, &reg.status);
@@ -303,41 +305,48 @@ static self_test_result_t test_self_test_lis2dw12(stmdev_ctx_t *dev_ctx)
     }
     /* Disable self test mode */
     lis2dw12_self_test_set(dev_ctx, LIS2DW12_XL_ST_DISABLE);
+#if defined(LIS2DW12_INT1_Pin)
   }
+#endif /* LIS2DW12_INT1_Pin */
   lis2dw12_data_rate_set(dev_ctx, LIS2DW12_XL_ODR_OFF);
   return self_test_result;
 }
 
+#if defined(LIS2DW12_INT1_Pin)
 uint8_t lis2dw12_drdy_test()
 {
-  int16_t data_raw[3];
   uint8_t i;
   uint8_t res = 0;
-  lis2dw12_reg_t reg;
-  lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl;
+  lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl = { 0 };
+
   int1_pad_ctrl.int1_drdy = PROPERTY_ENABLE;
   lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
   lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
+
+  /* Added in case chip needs time to enable interrupt pin */
+  platform_delay(100);
+
   /* New sample is every 20ms @ 50Hz. Loop count + delay below allows 100ms for DRDY to toggle */
   for (i = 0; i < 50; i++)
   {
-#if defined(LIS2DW12_INT1_Pin)
     if (LIS2DW12_INT1)
     {
       /* Read accelerometer data */
       lis2dw12_acceleration_raw_get(
           &(lis2dw12_obj.Ctx), data_raw_acceleration[i].i16bit);
       platform_delay(1);
-      res = LIS2DW12_INT1 ? 0 : 1; //check for pin status, if low test pass send 1 in res
+      res = LIS2DW12_INT1 ? 0 : 1; //check for pin status, 0 = fail, 1 = pass
       break;
     }
-#endif
     platform_delay(1);
   }
+
   int1_pad_ctrl.int1_drdy = PROPERTY_DISABLE;
   lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
+
   return res;
 }
+#endif /* LIS2DW12_INT1_Pin */
 
 /* Main Example --------------------------------------------------------------*/
 
@@ -422,7 +431,7 @@ int32_t lis2dw12_configure(float shimmerSamplingFreq,
   if (lis2dw12_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
   {
     lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
-    lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl;
+    lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl = { 0 };
     int1_pad_ctrl.int1_drdy = PROPERTY_ENABLE;
     lis2dw12_pin_int1_route_set(&(lis2dw12_obj.Ctx), &int1_pad_ctrl);
     isDrdyIntEnabled = true;

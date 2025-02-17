@@ -429,14 +429,18 @@ uint8_t lsm6dsv_drdy_test(void)
   int16_t data_raw[3];
   uint8_t i;
   uint8_t res = 0;
-  lsm6dsv_all_sources_t all_sources;
-  lsm6dsv_interrupt_mode_t mode_int;
-  lsm6dsv_pin_int_route_t pin_int;
+  lsm6dsv_interrupt_mode_t mode_int = { 0 };
+  lsm6dsv_pin_int_route_t pin_int = { 0 };
+
   pin_int.drdy_xl = PROPERTY_ENABLE;
   mode_int.enable = PROPERTY_ENABLE;
   mode_int.lir = PROPERTY_ENABLE;
   lsm6dsv_interrupt_enable_set(&lsm6dsv_obj.Ctx, mode_int);
   lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
+
+  /* Added in case chip needs time to enable interrupt pin */
+  platform_delay(100);
+
   /* New sample is every 16.6ms @ 60Hz. Loop count + delay below allows 100ms for DRDY to toggle */
   for (i = 0; i < 50; i++)
   {
@@ -444,18 +448,20 @@ uint8_t lsm6dsv_drdy_test(void)
     {
       /* Read raw data */
       lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
+      /* Allow some time for pin to change state */
       platform_delay(1);
-      lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
-      res = LSM6DSV_DRDY ? 0 : 1; //check for pin status, if low test pass send 1 in res
+      res = LSM6DSV_DRDY ? 0 : 1; //check for pin status, 0 = fail, 1 = pass
       break;
     }
     platform_delay(1);
   }
+
   pin_int.drdy_xl = PROPERTY_DISABLE;
   mode_int.enable = PROPERTY_DISABLE;
   mode_int.lir = PROPERTY_DISABLE;
   lsm6dsv_interrupt_enable_set(&lsm6dsv_obj.Ctx, mode_int);
   lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
+
   return res;
 }
 
@@ -487,44 +493,27 @@ void lsm6dsv_configure(float shimmerSamplingFreq,
 
   //if chip sampling rate is lower than Shimmer sampling, enable pin
   //interrupt to only read data from chip when it's ready
-  lsm6dsv_interrupt_mode_t mode_int;
-  lsm6dsv_pin_int_route_t pin_int;
-  pin_int.drdy_g_eis = 0;
-  pin_int.drdy_temp = 0;
-  pin_int.fifo_th = 0;
-  pin_int.fifo_ovr = 0;
-  pin_int.fifo_full = 0;
-  pin_int.cnt_bdr = 0;
-  pin_int.emb_func_endop = 0;
-  pin_int.timestamp = 0;
-  pin_int.shub = 0;
-  pin_int.emb_func = 0;
-  pin_int.sixd = 0;
-  pin_int.single_tap = 0;
-  pin_int.double_tap = 0;
-  pin_int.wakeup = 0;
-  pin_int.freefall = 0;
-  pin_int.sleep_change = 0;
-
   isDrdyIntEnabled = false;
   if (lsm6dsv_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
   {
-    if ((isGyroEn && isAccelEn) || isGyroEn)
+    lsm6dsv_interrupt_mode_t mode_int = { 0 };
+    lsm6dsv_pin_int_route_t pin_int = { 0 };
+
+    /* If gyro or gyro+accel is enabled, use gyro interrupt */
+    if (isGyroEn)
     {
       pin_int.drdy_g = PROPERTY_ENABLE;
-      mode_int.enable = PROPERTY_ENABLE;
-      mode_int.lir = PROPERTY_ENABLE;
-      isDrdyIntEnabled = true;
     }
     else
     {
       pin_int.drdy_xl = PROPERTY_ENABLE;
-      mode_int.enable = PROPERTY_ENABLE;
-      mode_int.lir = PROPERTY_ENABLE;
-      isDrdyIntEnabled = true;
     }
+    mode_int.enable = PROPERTY_ENABLE;
+    mode_int.lir = PROPERTY_ENABLE;
     lsm6dsv_interrupt_enable_set(&lsm6dsv_obj.Ctx, mode_int);
     lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
+
+    isDrdyIntEnabled = true;
   }
 
   ///* Configure filtering chain */
