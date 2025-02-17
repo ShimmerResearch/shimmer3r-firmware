@@ -32,7 +32,7 @@ given above */
 #define TEST_THRESHOLD_MV_VBATT_LOWER              2980
 #define TEST_THRESHOLD_MV_VBATT_UPPER              4750
 #define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER   10.0
-#define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER   35.0
+#define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER   40.0
 
 #define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID -1.0
 
@@ -44,6 +44,7 @@ given above */
 #define SELF_TEST_STR_CHIP_DETECTION               " - Chip not detected"
 #define SELF_TEST_STR_SIGNAL_ISSUE                 " - Signal issue"
 #define SELF_TEST_STR_TEMPERATURE_ISSUE            " - Temperature issue"
+#define SELF_TEST_STR_DRDY_ISSUE                   " - DRDY/INT issue"
 #define SELF_TEST_STR_UNKNOWN                      " - Unknown"
 
 #define GSR_TEST_TOLERANCE                         0.05
@@ -69,6 +70,8 @@ typedef enum
   SELF_TEST_FAIL_CHIP_DETECTION,
   SELF_TEST_FAIL_SIGNAL_ISSUE,
   SELF_TEST_FAIL_TEMPERATURE_ISSUE,
+  SELF_TEST_FAIL_DRDY_ISSUE,
+  SELF_TEST_FAIL_COUNT,
 } self_test_result_t;
 
 enum

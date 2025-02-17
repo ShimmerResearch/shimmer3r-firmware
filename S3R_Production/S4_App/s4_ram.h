@@ -201,7 +201,7 @@ typedef union
     uint8_t chEnGsr        : 1;
     uint8_t chEnExg2_24Bit : 1;
     uint8_t chEnExg1_24Bit : 1;
-    uint8_t chEnMag  : 1; //S3/S4_SDK = LSM303DLHC/LSM303AH, S3R = LIS2MDL Mag
+    uint8_t chEnMag  : 1; //S3/S4_SDK = LSM303DLHC/LSM303AH, S3R = LIS3MDL Mag
     uint8_t chEnGyro : 1; //S3/S4_SDK = MPU9x50/ICM20948, S3R = LSM6DSV Gyro
     uint8_t chEnLnAccel : 1; //S3/S4_SDK = KXRB5-2042/KXTC9-2050, S3R = LSM6DSV Accel
 
@@ -240,7 +240,7 @@ typedef union
     uint8_t chEnPressureAndTemperature : 1;
     uint8_t chEnExg2_16Bit             : 1;
     uint8_t chEnExg1_16Bit             : 1;
-    uint8_t chEnAltMag   : 1; //S3/S4_SDK MPU9x50/ICM20948 Mag, S3R = LIS3MDL
+    uint8_t chEnAltMag   : 1; //S3/S4_SDK MPU9x50/ICM20948 Mag, S3R = LIS2MDL
     uint8_t chEnAltAccel : 1; //S3/S4_SDK MPU9x50/ICM20948 Accel, S3R = ADXL371
 #if defined(SHIMMER3)
     uint8_t chEnIntADC14 : 1;
@@ -266,8 +266,11 @@ typedef union
     uint8_t expansionBoardPower          : 1;
     uint8_t gsrRange                     : 3;
     uint8_t pressureOversamplingRatioLsb : 2;
-    uint8_t altAccelRange : 2; //S3/S4_SDK MPU9x50/ICM20948 Accel, S3R = LSM6DSV Accel
-
+#if defined(SHIMMER3)
+    uint8_t altAccelRange : 2; //S3/S4_SDK MPU9x50/ICM20948 Accel
+#else
+    uint8_t lnAccelRange : 2; //S3R = LSM6DSV Accel
+#endif
     gExgADS1292rRegs exgADS1292rRegsCh1;
     gExgADS1292rRegs exgADS1292rRegsCh2;
 
@@ -523,6 +526,7 @@ uint8_t S4Ram_storedConfigSetByte(uint16_t offset, uint8_t val);
 
 void S4Ram_btMacAsciiSet(char *buf);
 void S4Ram_btMacAsciiGet(uint8_t *buf);
+uint8_t *S4Ram_getMacIdStrPtr(void);
 void S4Ram_btMacHexSet(uint8_t *buf);
 void S4Ram_btMacHexGet(uint8_t *buf);
 

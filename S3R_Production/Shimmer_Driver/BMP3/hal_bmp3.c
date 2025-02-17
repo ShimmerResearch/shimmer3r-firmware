@@ -15,6 +15,8 @@
 #include "BMP3_SensorAPI/bmp3.h"
 #include "BMP3_SensorAPI/self-test/bmp3_selftest.h"
 
+#include "hal_FactoryTest.h"
+
 #define SENSOR_BUS hspi1
 
 #define CS_PORT    CS_BMP390_GPIO_Port
@@ -37,6 +39,7 @@ bmp3_spi_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
 static void bmp3_delay_us(uint32_t periodUS, void *intf_ptr);
 static int32_t
 platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len);
+static void platform_delay(uint32_t ms);
 
 void bmp3_driver_init(void)
 {
@@ -60,22 +63,106 @@ void bmp3_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-int8_t bmp3_self_test(void)
+uint8_t bmp3_self_test(void)
 {
-  int8_t result;
-  result = bmp3_selftest_check(&bmp3);
+  uint8_t self_test_result = SELF_TEST_PASS;
+  int8_t bmp3_result;
+  bmp3_result = bmp3_selftest_check(&bmp3);
+  if (bmp3_result == BMP3_COMMUNICATION_ERROR_OR_WRONG_DEVICE)
+  {
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
+  }
+  else if (bmp3_result == BMP3_SENSOR_OK)
+  {
+    if (!bmp3_drdy_test())
+    {
+      self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
+    }
+  }
+  else
+  {
+    /* Adding offset to separate our BMP3 API errors/warnings from Shimmer
+     * self-test errors */
+    self_test_result = bmp3_result + BMP390_API_ERROR_OFFSET;
+  }
+  return self_test_result;
+}
 
-  //if (result == BMP3_SENSOR_OK)
-  //{
-  //  SHIMMER_PRINTF("BMP390 Self Test - PASS\r\n");
-  //}
-  //else
-  //{
-  //  SHIMMER_PRINTF("BMP390 Self Test - FAIL\r\n");
-  //  bmp3_check_rslt("BMP390", result);
-  //}
+int8_t bmp3_drdy_test(void)
+{
+  int8_t rslt;
+  int8_t res = 0;
+  uint8_t i = 0;
+  struct bmp3_status status = { { 0 } };
+  struct bmp3_data data = { 0 };
 
-  return result;
+  /* Used to select the settings user needs to change */
+  uint16_t settings_sel;
+  struct bmp3_settings settings = { 0 };
+
+  /* Reset the sensor */
+  rslt = bmp3_soft_reset(&bmp3);
+  if (rslt == BMP3_SENSOR_OK)
+  {
+    rslt = bmp3_init(&bmp3);
+    if (rslt == BMP3_SENSOR_OK)
+    {
+      /* Select the pressure and temperature sensor to be enabled */
+      settings.press_en = BMP3_ENABLE;
+      settings.temp_en = BMP3_ENABLE;
+
+      /* Select the output data rate and over sampling settings for pressure and temperature */
+      settings.odr_filter.press_os = BMP3_NO_OVERSAMPLING;
+      settings.odr_filter.temp_os = BMP3_NO_OVERSAMPLING;
+      settings.odr_filter.odr = BMP3_ODR_50_HZ;
+
+      /* enable interrupts and latch */
+      settings.int_settings.drdy_en = 1;
+      settings.int_settings.latch = 1;
+
+      /* Assign the settings which needs to be set in the sensor */
+      settings_sel = BMP3_SEL_DRDY_EN | BMP3_SEL_PRESS_EN | BMP3_SEL_TEMP_EN
+          | BMP3_SEL_LATCH | BMP3_SEL_PRESS_OS | BMP3_SEL_TEMP_OS | BMP3_SEL_ODR;
+      rslt = bmp3_set_sensor_settings(settings_sel, &settings, &bmp3);
+
+      if (rslt == BMP3_SENSOR_OK)
+      {
+        settings.op_mode = BMP3_MODE_NORMAL;
+        rslt = bmp3_set_op_mode(&settings, &bmp3);
+      }
+
+      /* Added in case chip needs time to enable interrupt pin */
+      platform_delay(100);
+
+      if (rslt == BMP3_SENSOR_OK)
+      {
+        /* New sample is every 20ms @ 50Hz. Loop count + delay below allows 100ms for DRDY to toggle */
+        for (i = 0; i < 50; i++)
+        {
+          if (BMP390_INT)
+          {
+            /* read the sensor data */
+            bmp3_get_sensor_data(BMP3_PRESS_TEMP, &data, &bmp3);
+
+            /* NOTE : Read status register again to clear data ready interrupt status */
+            rslt = bmp3_get_status(&status, &bmp3);
+            platform_delay(1);
+            //check for pin status, 0 = fail, 1 = pass
+            res = ((rslt == BMP3_SENSOR_OK) && (!BMP390_INT)) ? 1 : 0;
+            break;
+          }
+          /* Wait for 1 ms */
+          platform_delay(1);
+        }
+      }
+      if (rslt == BMP3_SENSOR_OK)
+      {
+        settings.op_mode = BMP3_MODE_SLEEP;
+        rslt = bmp3_set_op_mode(&settings, &bmp3);
+      }
+    }
+  }
+  return res;
 }
 
 int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
@@ -308,6 +395,23 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
         "not in limit\r\n",
         api_name, rslt);
     break;
+
+  case BMP3_TRIMMING_DATA_OUT_OF_BOUND:
+    send_test_report("Trimming data out of bound\r\n");
+    break;
+  case BMP3_TEMPERATURE_BOUND_WIRE_FAILURE_OR_MEMS_DEFECT:
+    send_test_report("Temperature bound wire failure or MEMs defect\r\n");
+    break;
+  case BMP3_PRESSURE_BOUND_WIRE_FAILURE_OR_MEMS_DEFECT:
+    send_test_report("Pressure bound wire failure or MEMs defect\r\n");
+    break;
+  case BMP3_IMPLAUSIBLE_TEMPERATURE:
+    send_test_report("Implausible Temperature\r\n");
+    break;
+  case BMP3_IMPLAUSIBLE_PRESSURE:
+    send_test_report("Implausible Pressure\r\n");
+    break;
+
   default:
     sprintf(outputStr, "API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
     break;
@@ -386,4 +490,13 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
   bmp3_selectDevice();
   ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
   return ret;
+}
+
+static void platform_delay(uint32_t ms)
+{
+#if defined(NUCLEO_F411RE) | defined(STEVAL_MKI109V3) | defined(SHIMMER3R)
+  HAL_Delay(ms);
+#elif defined(SPC584B_DIS)
+  osalThreadDelayMilliseconds(ms);
+#endif
 }
