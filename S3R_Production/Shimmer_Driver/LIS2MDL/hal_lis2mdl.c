@@ -109,6 +109,8 @@
 #include "tim.h"
 #endif
 
+#include "hal_FactoryTest.h"
+
 /* Private macro -------------------------------------------------------------*/
 
 #define BOOT_TIME       20 //ms
@@ -171,7 +173,6 @@ self_test_result_t lis2mdl_self_test(void)
   float val_st_off[3];
   float val_st_on[3];
   float test_val[3];
-  //uint8_t st_result;
   uint8_t whoamI;
   uint8_t drdy;
   uint8_t i;
@@ -196,7 +197,6 @@ self_test_result_t lis2mdl_self_test(void)
 
   if (whoamI != LIS2MDL_ID)
   {
-    //st_result = ST_FAIL;
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
@@ -214,107 +214,123 @@ self_test_result_t lis2mdl_self_test(void)
     /* Wait stable output */
     platform_delay(WAIT_TIME_01);
 
-    /* Check if new value available */
-    do
+    /* DRDY/INT pin test */
+    if (!lis2mdl_drdy_test())
     {
-      lis2mdl_mag_data_ready_get(&lis2mdl_obj.Ctx, &drdy);
-    } while (!drdy);
-
-    /* Read dummy data and discard it */
-    lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
-    /* Read samples and get the average vale for each axis */
-    memset(val_st_off, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < SAMPLES; i++)
+      self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
+    }
+    else
     {
       /* Check if new value available */
       do
       {
         lis2mdl_mag_data_ready_get(&lis2mdl_obj.Ctx, &drdy);
       } while (!drdy);
-
-      /* Read data and accumulate the mg value */
+      /* Read dummy data and discard it */
       lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
-
-      for (j = 0; j < 3; j++)
+      /* Read samples and get the average vale for each axis */
+      memset(val_st_off, 0x00, 3 * sizeof(float));
+      for (i = 0; i < SAMPLES; i++)
       {
-        val_st_off[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
+        /* Check if new value available */
+        do
+        {
+          lis2mdl_mag_data_ready_get(&lis2mdl_obj.Ctx, &drdy);
+        } while (!drdy);
+
+        /* Read data and accumulate the mg value */
+        lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
+        for (j = 0; j < 3; j++)
+        {
+          val_st_off[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
+        }
       }
-    }
 
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_off[i] /= SAMPLES;
-    }
-
-    /* Enable Self Test */
-    lis2mdl_self_test_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE);
-    /* Wait stable output */
-    platform_delay(WAIT_TIME_02);
-    /* Read samples and get the average vale for each axis */
-    memset(val_st_on, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < SAMPLES; i++)
-    {
-      /* Check if new value available */
-      do
+      /* Calculate the mg average values */
+      for (i = 0; i < 3; i++)
       {
-        lis2mdl_mag_data_ready_get(&lis2mdl_obj.Ctx, &drdy);
-      } while (!drdy);
-
-      /* Read data and accumulate the mg value */
-      lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
-
-      for (j = 0; j < 3; j++)
-      {
-        val_st_on[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
+        val_st_off[i] /= SAMPLES;
       }
-    }
-
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_on[i] /= SAMPLES;
-    }
-
-    //st_result = ST_PASS;
-
-    /* Calculate the mg values for self test */
-    for (i = 0; i < 3; i++)
-    {
-      test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
-    }
-
-    /* Check self test limit */
-    for (i = 0; i < 3; i++)
-    {
-      if ((MIN_ST_LIMIT_mG > test_val[i]) || (test_val[i] > MAX_ST_LIMIT_mG))
+      /* Enable Self Test */
+      lis2mdl_self_test_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE);
+      /* Wait stable output */
+      platform_delay(WAIT_TIME_02);
+      /* Read samples and get the average vale for each axis */
+      memset(val_st_on, 0x00, 3 * sizeof(float));
+      for (i = 0; i < SAMPLES; i++)
       {
-        //st_result = ST_FAIL;
-        self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
-      }
-    }
+        /* Check if new value available */
+        do
+        {
+          lis2mdl_mag_data_ready_get(&lis2mdl_obj.Ctx, &drdy);
+        } while (!drdy);
 
-    /* Disable Self Test */
-    lis2mdl_self_test_set(&lis2mdl_obj.Ctx, PROPERTY_DISABLE);
+        /* Read data and accumulate the mg value */
+        lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw);
+        for (j = 0; j < 3; j++)
+        {
+          val_st_on[j] += lis2mdl_from_lsb_to_mgauss(data_raw[j]);
+        }
+      }
+      /* Calculate the mg average values */
+      for (i = 0; i < 3; i++)
+      {
+        val_st_on[i] /= SAMPLES;
+      }
+
+      /* Calculate the mg values for self test */
+      for (i = 0; i < 3; i++)
+      {
+        test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
+      }
+
+      /* Check self test limit */
+      for (i = 0; i < 3; i++)
+      {
+        if ((MIN_ST_LIMIT_mG > test_val[i]) || (test_val[i] > MAX_ST_LIMIT_mG))
+        {
+          self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
+        }
+      }
+
+      /* Disable Self Test */
+      lis2mdl_self_test_set(&lis2mdl_obj.Ctx, PROPERTY_DISABLE);
+    }
     /* Disable sensor. */
     lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_POWER_DOWN);
   }
-
-  //if (st_result == ST_PASS)
-  //{
-  //  sprintf((char *) tx_buffer, "LIS2MDL Self Test - PASS\r\n");
-  //}
-  //
-  //else
-  //{
-  //  sprintf((char *) tx_buffer, "LIS2MDL Self Test - FAIL\r\n");
-  //}
-  //
-  //tx_com(tx_buffer, strlen((char const *) tx_buffer));
-  //return st_result;
   return self_test_result;
+}
+
+uint8_t lis2mdl_drdy_test(void)
+{
+  int16_t data_raw[3];
+  uint8_t i;
+  uint8_t res = 0;
+
+  /* Set DRDY pin */
+  lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1);
+
+  /* Added in case chip needs time to enable interrupt pin */
+  platform_delay(100);
+
+  /* New sample is every 10ms @ 100Hz. Loop count + delay below allows 100ms for DRDY to toggle */
+  for (i = 0; i < 50; i++)
+  {
+    if (LIS2MDL_DRDY)
+    {
+      /* Read dummy data and discard it */
+      lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw); //read data once pin is set
+      platform_delay(1);
+      res = LIS2MDL_DRDY ? 0 : 1; //check for pin status, 0 = fail, 1 = pass
+      break;
+    }
+    platform_delay(1);
+  }
+
+  lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0);
+
+  return res;
 }
 
 void lis2mdl_configure(float shimmerSamplingFreq, lis2mdl_odr_t rate)

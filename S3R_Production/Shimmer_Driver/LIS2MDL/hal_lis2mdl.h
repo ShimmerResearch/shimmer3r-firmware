@@ -8,11 +8,11 @@
 #ifndef LIS2MDL_HAL_LIS2MDL_H_
 #define LIS2MDL_HAL_LIS2MDL_H_
 
-#include "hal_FactoryTest.h"
 #include <lis2mdl_reg.h>
 
 void lis2mdl_driver_init(void);
 self_test_result_t lis2mdl_self_test(void);
+uint8_t lis2mdl_drdy_test(void);
 void lis2mdl_configure(float shimmerSamplingFreq, lis2mdl_odr_t rate);
 HAL_StatusTypeDef lis2mdl_mag_get(uint8_t *buf);
 bool lis2mdl_is_drdy_int_enabled(void);
