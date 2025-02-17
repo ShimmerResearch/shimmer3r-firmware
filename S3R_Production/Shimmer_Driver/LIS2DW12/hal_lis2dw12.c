@@ -332,7 +332,7 @@ uint8_t lis2dw12_drdy_test()
       lis2dw12_acceleration_raw_get(
           &(lis2dw12_obj.Ctx), data_raw_acceleration[i].i16bit);
       platform_delay(1);
-      res = LIS2DW12_INT1 ? 0 : 1; // check for pin status, 0 = fail, 1 = pass
+      res = LIS2DW12_INT1 ? 0 : 1; //check for pin status, 0 = fail, 1 = pass
       break;
     }
     platform_delay(1);

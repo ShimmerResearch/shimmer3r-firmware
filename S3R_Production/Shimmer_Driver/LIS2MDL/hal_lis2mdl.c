@@ -319,7 +319,7 @@ uint8_t lis2mdl_drdy_test(void)
       /* Read dummy data and discard it */
       lis2mdl_magnetic_raw_get(&lis2mdl_obj.Ctx, data_raw); //read data once pin is set
       platform_delay(1);
-      res = LIS2MDL_DRDY ? 0 : 1; // check for pin status, 0 = fail, 1 = pass
+      res = LIS2MDL_DRDY ? 0 : 1; //check for pin status, 0 = fail, 1 = pass
       break;
     }
     platform_delay(1);
