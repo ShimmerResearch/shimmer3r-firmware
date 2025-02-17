@@ -98,7 +98,7 @@ int8_t bmp3_drdy_test(void)
 
   /* Used to select the settings user needs to change */
   uint16_t settings_sel;
-  struct bmp3_settings settings;
+  struct bmp3_settings settings = { 0 };
 
   /* Reset the sensor */
   rslt = bmp3_soft_reset(&bmp3);
@@ -143,6 +143,7 @@ int8_t bmp3_drdy_test(void)
             /* NOTE : Read status register again to clear data ready interrupt status */
             rslt = bmp3_get_status(&status, &bmp3);
             platform_delay(1);
+            // check for pin status, 0 = fail, 1 = pass
             res = ((rslt == BMP3_SENSOR_OK) && (!BMP390_INT)) ? 1 : 0;
             break;
           }

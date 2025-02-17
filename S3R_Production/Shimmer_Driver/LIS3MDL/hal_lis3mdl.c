@@ -333,7 +333,7 @@ uint8_t lis3mdl_drdy_test(void)
   int16_t data_raw[3];
   uint8_t i;
   uint8_t res = 0;
-  uint8_t drdy;
+
   /* New sample is every 12.5ms @ 80Hz. Loop count + delay below allows 100ms for DRDY to toggle */
   for (i = 0; i < 50; i++)
   {
@@ -342,11 +342,12 @@ uint8_t lis3mdl_drdy_test(void)
       /* Read dummy data and discard it */
       lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
       platform_delay(1);
-      res = LIS3MDL_DRDY ? 0 : 1; //if pin is set test fail send 0
+      res = LIS3MDL_DRDY ? 0 : 1;// check for pin status, 0 = fail, 1 = pass
       break;
     }
     platform_delay(1);
   }
+
   return res;
 }
 
