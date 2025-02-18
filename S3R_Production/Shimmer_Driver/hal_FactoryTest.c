@@ -303,7 +303,7 @@ void print_battery_details(void)
 
 void led_test(void)
 {
-  send_test_report("LED test (S3R_TEST_0025):\r\n");
+  send_test_report("LED test (S3R_TEST_0027):\r\n");
 
 #if defined(SHIMMER3R)
   stopLedBlinkTimer();
@@ -592,6 +592,22 @@ void SPI_test(void)
   send_test_report("SPI1:\r\n");
   MX_SPI1_Init();
 
+  if (isBoardSr48_6_0())
+  {
+    sprintf(buffer, " - S3R_TEST_0019 - ADS7028 test not applicable for this model\r\n");
+    send_test_report(buffer);
+  }
+  else
+  {
+    self_test_result = lsm6dsv_self_test();
+    if (self_test_result)
+    {
+      shimmerStatus.testResult |= S3R_TEST_0019;
+    }
+    print_chip_test_result("S3R_TEST_0019", "ADS7028", self_test_result,
+        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
+  }
+
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
   self_test_result = lsm6dsv_self_test();
   if (self_test_result == SELF_TEST_PASS)
@@ -605,9 +621,9 @@ void SPI_test(void)
   }
   if (self_test_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0019;
+    shimmerStatus.testResult |= S3R_TEST_0020;
   }
-  print_chip_test_result("S3R_TEST_0019", "LSM6DSV", self_test_result, tempCal);
+  print_chip_test_result("S3R_TEST_0020", "LSM6DSV", self_test_result, tempCal);
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
   self_test_result = bmp3_self_test();
@@ -631,33 +647,33 @@ void SPI_test(void)
    *  that the function can recognise it) */
   if (self_test_result < SELF_TEST_FAIL_COUNT)
   {
-    print_chip_test_result("S3R_TEST_0020", "BMP390", self_test_result, tempCal);
+    print_chip_test_result("S3R_TEST_0021", "BMP390", self_test_result, tempCal);
   }
   else
   {
-    send_test_report(" - S3R_TEST_0020 - FAIL: BMP390 - ");
+    send_test_report(" - S3R_TEST_0021 - FAIL: BMP390 - ");
 
     bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
     send_test_report(buffer);
   }
   if (self_test_result != SELF_TEST_PASS)
   {
-    shimmerStatus.testResult |= S3R_TEST_0020;
+    shimmerStatus.testResult |= S3R_TEST_0021;
   }
 
   if (isAdxl371Present())
   {
     self_test_result = adxl371_self_test();
-    print_chip_test_result("S3R_TEST_0021", "ADXL371", self_test_result,
+    print_chip_test_result("S3R_TEST_0022", "ADXL371", self_test_result,
         TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
     if (self_test_result)
     {
-      shimmerStatus.testResult |= S3R_TEST_0021;
+      shimmerStatus.testResult |= S3R_TEST_0022;
     }
   }
   else
   {
-    sprintf(buffer, " - S3R_TEST_0021 - ADXL371 test not applicable for this model\r\n");
+    sprintf(buffer, " - S3R_TEST_0022 - ADXL371 test not applicable for this model\r\n");
     send_test_report(buffer);
   }
 
@@ -677,10 +693,10 @@ void SPI_test(void)
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
   }
-  print_chip_test_result("S3R_TEST_0022", "LIS3MDL", self_test_result, tempCal);
+  print_chip_test_result("S3R_TEST_0023", "LIS3MDL", self_test_result, tempCal);
   if (self_test_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0022;
+    shimmerStatus.testResult |= S3R_TEST_0023;
   }
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
@@ -694,10 +710,10 @@ void SPI_test(void)
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
   }
-  print_chip_test_result("S3R_TEST_0023", "LIS2DW12", self_test_result, tempCal);
+  print_chip_test_result("S3R_TEST_0024", "LIS2DW12", self_test_result, tempCal);
   if (self_test_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0023;
+    shimmerStatus.testResult |= S3R_TEST_0024;
   }
 
   SPI2_DeInit();
@@ -713,10 +729,10 @@ void SPI_test(void)
     //ret_val |= EXG_test();
 
     send_test_report(
-        " - S3R_TEST_0024 - WARNING: ADS1292R test not implemented yet\r\n");
+        " - S3R_TEST_0025 - WARNING: ADS1292R test not implemented yet\r\n");
     //if (self_test_result)
     //{
-    //  shimmerStatus.testResult |= S3R_TEST_0023;
+    //  shimmerStatus.testResult |= S3R_TEST_0025;
     //}
 
     SPI3_DeInit();
@@ -724,7 +740,7 @@ void SPI_test(void)
   else
   {
     send_test_report(
-        " - S3R_TEST_0024 - ADS1292R test not applicable for this model\r\n");
+        " - S3R_TEST_0025 - ADS1292R test not applicable for this model\r\n");
   }
 }
 
@@ -856,13 +872,13 @@ uint8_t runMicrophoneTest(void)
 
   self_test_result = micTest() ? SELF_TEST_FAIL_SIGNAL_ISSUE : SELF_TEST_PASS;
 
-  sprintf(buffer, " - S3R_TEST_0025 - %s\r\n",
+  sprintf(buffer, " - S3R_TEST_0026 - %s\r\n",
       self_test_result == SELF_TEST_PASS ? "PASS" : "FAIL: Test buffer is empty");
   send_test_report(buffer);
 
   if (self_test_result != SELF_TEST_PASS)
   {
-    shimmerStatus.testResult |= S3R_TEST_0025;
+    shimmerStatus.testResult |= S3R_TEST_0026;
   }
 
   return self_test_result;

@@ -88,15 +88,16 @@ enum
   S3R_TEST_0014 = (1 << (14 - 1)), //BT Module
   S3R_TEST_0015 = (1 << (15 - 1)), //I2C1 - LIS2MDL
   S3R_TEST_0016 = (1 << (16 - 1)), //I2C1 - CAT24C16
-  S3R_TEST_0017 = (1 << (17 - 1)), //I2C4 - CAT24C16 (S3R GSR+ unit)
+  S3R_TEST_0017 = (1 << (17 - 1)), //I2C4 - CAT24C16 or GSR rig (S3R GSR+ unit)
   S3R_TEST_0018 = (1 << (18 - 1)), //GSR signal test
-  S3R_TEST_0019 = (1 << (19 - 1)), //SPI1 - LSM6DSV
-  S3R_TEST_0020 = (1 << (20 - 1)), //SPI1 - BMP390
-  S3R_TEST_0021 = (1 << (21 - 1)), //SPI1 - ADXL371
-  S3R_TEST_0022 = (1 << (22 - 1)), //SPI2 - LIS3MDL
-  S3R_TEST_0023 = (1 << (23 - 1)), //SPI2 - LIS2DW12
-  S3R_TEST_0024 = (1 << (24 - 1)), //SPI3 - ADS1292R (ExG)
-  S3R_TEST_0025 = (1 << (25 - 1)), //Microphone
+  S3R_TEST_0019 = (1 << (19 - 1)), //SPI1 - ADS7028
+  S3R_TEST_0020 = (1 << (20 - 1)), //SPI1 - LSM6DSV
+  S3R_TEST_0021 = (1 << (21 - 1)), //SPI1 - BMP390
+  S3R_TEST_0022 = (1 << (22 - 1)), //SPI1 - ADXL371
+  S3R_TEST_0023 = (1 << (23 - 1)), //SPI2 - LIS3MDL
+  S3R_TEST_0024 = (1 << (24 - 1)), //SPI2 - LIS2DW12
+  S3R_TEST_0025 = (1 << (25 - 1)), //SPI3 - ADS1292R (ExG)
+  S3R_TEST_0026 = (1 << (26 - 1)), //Microphone
 };
 
 uint32_t run_factory_test(void);
