@@ -1171,7 +1171,7 @@ uint8_t BT_connect(uint8_t *addr)
     memset(bt_conn.address.addr, addr, 6);
   }*/
   //trying as master (0 for slave; 1 for master)
-  bt_conn.type = MASTER ; //setting this as Master for now
+  bt_conn.type = MASTER; //setting this as Master for now
 
   uint8_t status = EZS_SEND_AND_WAIT(&bt_conn, 10); //sending the connect command
 
