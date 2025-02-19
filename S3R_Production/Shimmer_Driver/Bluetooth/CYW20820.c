@@ -1158,39 +1158,32 @@ void BT_generateCyw20820FirmwareVersionStr(char *str)
 //TODO placeholder for now, implement this later
 uint8_t BT_connect(uint8_t *addr)
 {
-  ezs_cmd_bt_connect_t bt_conn;
-  /*//TODO how to distinguish between Master and slave
-   if(bt_conn.type == MASTER)
-   {
-   memcpy(bt_conn.address.addr, addr, 6); //copying the MAC address
-   }
-   else if (bt_conn.type == SLAVE)
-   {
-   memset(bt_conn.address.addr, addr, 6);
-   }*/
-  bt_conn.type = 1; // for SPP
-  printf("Connecting to MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", addr[0], addr[1],
-      addr[2], addr[3], addr[4], addr[5]); // printing out MAC Address
-  //connect
-  setExpectedResponse(EZS_IDX_CMD_BT_CONNECT);
-  uint8_t status = ezs_cmd_bt_connect(bt_conn.address.addr,bt_conn.type); //returns status code
 
-   /* Connection status codes :
-  0x00 -> Success
-  0x01 -> Failure
-  0x02 -> Timeout
-  0x03 -> Already connected
-  else other error*/
+  ezs_cmd_bt_connect_t bt_conn;
+
+  //TODO how to distinguish between Master and slave
+  /*if(bt_conn.type == MASTER)
+  {
+    memcpy(bt_conn.address.addr, addr, 6); //copying the MAC address
+  }
+  else if (bt_conn.type == SLAVE)
+  {
+    memset(bt_conn.address.addr, addr, 6);
+  }*/
+  //trying as master (0 for slave; 1 for master)
+  bt_conn.type = MASTER ; //setting this as Master for now
+
+  uint8_t status = EZS_SEND_AND_WAIT(&bt_conn, 10); //sending the connect command
 
   if (status == 0)
   {
-    printf("Connection success\n");
-    active_conn_handle = 1;
+    printf("Connection failed");
+    active_conn_handle = 0xFF;
   }
   else
   {
-    printf("Connection failed\n");
-    active_conn_handle = 0xFF;
+    printf("Connection success");
+    active_conn_handle = 1;
   }
   return active_conn_handle;
 }
@@ -1202,28 +1195,11 @@ uint8_t BT_disconnect(void)
   bt_disc.conn_handle = active_conn_handle; //this detects an active connection
   if (bt_disc.conn_handle == 0xFF)
   {
-    printf("No active connection detected\n");
-    return 0;
+    printf("No active connection detected");
   }
   else
   {
-    setExpectedResponse(EZS_IDX_CMD_BT_DISCONNECT);
-    status = ezs_cmd_bt_disconnect(bt_disc.conn_handle); //status for debug to check if correct status code was achieved
+    status = EZS_SEND_AND_WAIT(&bt_disc, 10);
   }
   return 1;
-}
-
-uint8_t BT_cancelConnection(void)
-{
-  uint8_t status;
-  //expects a response of 11 bytes
-  uint8_t response[11];
-  setExpectedResponse(EZS_IDX_CMD_BT_CANCEL_CONNECTION);
-  status = ezs_cmd_bt_cancel_connection();
-  printf("Received response from BT cancel connection:\n");
-  for (int i = 0; i < 11; i++)
-  {
-    printf("0x%02X ", response[i]);
-  }
-  printf("\n");
 }
