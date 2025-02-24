@@ -1059,26 +1059,25 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
   case EZS_IDX_CMD_BT_CONNECT: //NO PREDEFINED MACRO PRESENT UNLIKE DISCONNECT
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: idx_bt_connected: conn_handle=");
-        printHex8(packet->payload.rsp_bt_connect.conn_handle);
-        printf(", Address=");
-        printHexMac(packet->payload.rsp_bt_connect.address);
-        printf(", Type=");
-        printHex8(packet->payload.rsp_bt_connect.type);
-        printf("\r\n");
+    printHex8(packet->payload.rsp_bt_connect.conn_handle);
+    printf(", Address=");
+    printHexMac(packet->payload.rsp_bt_connect.address);
+    printf(", Type=");
+    printHex8(packet->payload.rsp_bt_connect.type);
+    printf("\r\n");
 #endif
 
   case EZS_IDX_RSP_BT_CANCEL_CONNECTION:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    rsp_bt_cancel_connection = packet -> payload.rsp_bt_cancel_connection;
+    rsp_bt_cancel_connection = packet->payload.rsp_bt_cancel_connection;
 #endif
     break;
 
   case EZS_IDX_RSP_BT_DISCONNECT:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    rsp_bt_disconnect = packet-> payload.rsp_bt_disconnect;
+    rsp_bt_disconnect = packet->payload.rsp_bt_disconnect;
 #endif
     break;
-
 
     /* -------- Shimmer added end -------- */
 
@@ -1194,28 +1193,28 @@ uint8_t BT_connect(uint8_t *addr)
    {
    memset(bt_conn.address.addr, addr, 6);
    }*/
-  bt_conn.type = 1; // for SPP
+  bt_conn.type = 1; //for SPP
   printf("Connecting to MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", addr[0], addr[1],
       addr[2], addr[3], addr[4], addr[5]);
   //connect
   setExpectedResponse(EZS_IDX_CMD_BT_CONNECT);
   uint8_t status = ezs_cmd_bt_connect(bt_conn.address.addr, 1); //returns status code
   ezs_packet_t packet;
-  while(EZS_WAIT_FOR_EVENT(&packet)) //timeout is &packet
+  while (EZS_WAIT_FOR_EVENT(&packet)) //timeout is &packet
   {
-    if(packet.tbl_index == EZS_IDX_EVT_BT_CONNECTION_FAILED)
+    if (packet.tbl_index == EZS_IDX_EVT_BT_CONNECTION_FAILED)
     {
       BT_connectionFailed(&packet);
       return 0xFF;
     }
   }
 
-   /* Connection status codes :
-  0x00 -> Success
-  0x01 -> Failure
-  0x02 -> Timeout
-  0x03 -> Already connected
-  else other error*/
+  /* Connection status codes :
+ 0x00 -> Success
+ 0x01 -> Failure
+ 0x02 -> Timeout
+ 0x03 -> Already connected
+ else other error*/
 
   if (status == 0)
   {
@@ -1227,7 +1226,7 @@ uint8_t BT_connect(uint8_t *addr)
     printf("Connection failed\n");
     active_conn_handle = 0xFF;
   }
-  
+
   //TODO fix connection fail
   return active_conn_handle;
 }
@@ -1267,7 +1266,7 @@ uint8_t BT_cancelConnection(void)
 //TODO fix this
 //uint8_t BT_connectionFailed(uint8_t ezs_packet_t *packet)
 //{
-//  ezs_evt_bt_connection_failed_t *fail_event =  (ezs_evt_bt_connection_failed_t *)&packet->payload.evt_bt_connection_failed;
+//  ezs_evt_bt_connection_failed_t *fail_event = (ezs_evt_bt_connection_failed_t *)&packet->payload.evt_bt_connection_failed;
 //
 //  printf(" Bluetooth Connection Failed! Conn Handle: %02X, Reason: %04X\n",
 //         fail_event->conn_handle, fail_event->reason);
