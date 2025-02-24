@@ -41,7 +41,7 @@ static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r',
 static char advNameBle[] = { 18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r',
   '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E' };
 
-#define CONNECTION_TIMEOUT_MS 10000  // 10 seconds timeout
+#define CONNECTION_TIMEOUT_MS 10000 //10 seconds timeout
 //uint8_t advNameMacIdStartIdx = 10;
 //static char advNameBt[] = {16, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', '-',
 //'X', 'X', 'X', 'X', '-', 'B', 'T'}; static char advNameBle[] = {17, 'S', 'h',
@@ -1212,7 +1212,7 @@ uint8_t BT_connect(uint8_t *addr)
  0x03 -> Already connected
  else other error*/
 
-  while(1)
+  while (1)
   {
     if (status == 0) //Success case
     {
@@ -1221,12 +1221,12 @@ uint8_t BT_connect(uint8_t *addr)
       return active_conn_handle;
     }
     else if ((((clock() - start_time) * 1000 / CLOCKS_PER_SEC) > 5000))
-  {
+    {
       printf("Connection failed\n");
       BT_connectionFailed(0xFF, 0x0008);
       active_conn_handle = 0xFF;
       return 0;
-  }
+    }
     else
     {
       printf("Connection Status Code: %02X\n", status);
@@ -1273,19 +1273,20 @@ uint8_t BT_connectionFailed(uint8_t conn_handle, uint16_t reason)
 {
   printf("Connection Failed! Conn Handle: %02X, Reason: %04X\n", conn_handle, reason);
 
-      // Handling failure cases
-      switch (reason) {
-          case 0x0001:
-              printf("Reason: Authentication Failed\n");
-              break;
-          case 0x0008:
-              printf("Reason: Connection Timeout\n");
-              break;
-          case 0x0013:
-              printf("Reason: Remote Device Terminated Connection\n");
-              break;
-          default:
-              printf("Reason: Unknown Error\n");
-              break;
-      }
+  //Handling failure cases
+  switch (reason)
+  {
+  case 0x0001:
+    printf("Reason: Authentication Failed\n");
+    break;
+  case 0x0008:
+    printf("Reason: Connection Timeout\n");
+    break;
+  case 0x0013:
+    printf("Reason: Remote Device Terminated Connection\n");
+    break;
+  default:
+    printf("Reason: Unknown Error\n");
+    break;
+  }
 }
