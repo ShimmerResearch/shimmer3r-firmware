@@ -11,6 +11,7 @@
 
 #include "stdio.h"
 #include "string.h"
+#include "time.h"
 
 #include "EZ-Serial/ezsapi.h"
 #include "EZ-Serial/handlers.h"
@@ -40,6 +41,7 @@ static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r',
 static char advNameBle[] = { 18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r',
   '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E' };
 
+#define CONNECTION_TIMEOUT_MS 10000  // 10 seconds timeout
 //uint8_t advNameMacIdStartIdx = 10;
 //static char advNameBt[] = {16, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', '-',
 //'X', 'X', 'X', 'X', '-', 'B', 'T'}; static char advNameBle[] = {17, 'S', 'h',
@@ -1184,6 +1186,7 @@ void BT_generateCyw20820FirmwareVersionStr(char *str)
 uint8_t BT_connect(uint8_t *addr)
 {
   ezs_cmd_bt_connect_t bt_conn;
+  clock_t start_time = clock();
   /*//TODO how to distinguish between Master and slave
    if(bt_conn.type == MASTER)
    {
@@ -1193,22 +1196,15 @@ uint8_t BT_connect(uint8_t *addr)
    {
    memset(bt_conn.address.addr, addr, 6);
    }*/
+  memcpy(bt_conn.address.addr, addr, 6);
   bt_conn.type = 1; //for SPP
   printf("Connecting to MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", addr[0], addr[1],
       addr[2], addr[3], addr[4], addr[5]);
   //connect
+
   setExpectedResponse(EZS_IDX_CMD_BT_CONNECT);
   uint8_t status = ezs_cmd_bt_connect(bt_conn.address.addr, 1); //returns status code
-  ezs_packet_t packet;
-  while (EZS_WAIT_FOR_EVENT(&packet)) //timeout is &packet
-  {
-    if (packet.tbl_index == EZS_IDX_EVT_BT_CONNECTION_FAILED)
-    {
-      BT_connectionFailed(&packet);
-      return 0xFF;
-    }
-  }
-
+  printf("Connection Status Code: %02X\n", status);
   /* Connection status codes :
  0x00 -> Success
  0x01 -> Failure
@@ -1216,19 +1212,28 @@ uint8_t BT_connect(uint8_t *addr)
  0x03 -> Already connected
  else other error*/
 
-  if (status == 0)
+  while(1)
   {
-    printf("Connection success\n");
-    active_conn_handle = 1;
-  }
-  else
+    if (status == 0) //Success case
+    {
+      printf("Connection success\n");
+      active_conn_handle = 0;
+      return active_conn_handle;
+    }
+    else if ((((clock() - start_time) * 1000 / CLOCKS_PER_SEC) > 5000))
   {
-    printf("Connection failed\n");
-    active_conn_handle = 0xFF;
+      printf("Connection failed\n");
+      BT_connectionFailed(0xFF, 0x0008);
+      active_conn_handle = 0xFF;
+      return 0;
   }
-
-  //TODO fix connection fail
-  return active_conn_handle;
+    else
+    {
+      printf("Connection Status Code: %02X\n", status);
+      return 0;
+    }
+  }
+  //return active_conn_handle; //Feels unnecessary
 }
 
 uint8_t BT_disconnect(void)
@@ -1245,7 +1250,7 @@ uint8_t BT_disconnect(void)
     setExpectedResponse(EZS_IDX_CMD_BT_DISCONNECT);
     status = ezs_cmd_bt_disconnect(bt_disc.conn_handle); //status for debug to check if correct status code was achieved
   }
-  return 1;
+  return 0;
 }
 
 uint8_t BT_cancelConnection(void)
@@ -1264,33 +1269,23 @@ uint8_t BT_cancelConnection(void)
 }
 
 //TODO fix this
-//uint8_t BT_connectionFailed(uint8_t ezs_packet_t *packet)
-//{
-//  ezs_evt_bt_connection_failed_t *fail_event = (ezs_evt_bt_connection_failed_t *)&packet->payload.evt_bt_connection_failed;
-//
-//  printf(" Bluetooth Connection Failed! Conn Handle: %02X, Reason: %04X\n",
-//         fail_event->conn_handle, fail_event->reason);
-//
-//  // Handle specific failure reasons
-//  switch (fail_event->reason)
-//  {
-//      case 0x0100:
-//          printf("Connection Timeout\n");
-//          break;
-//      case 0x0003:
-//          printf("Remote Device Rejected Connection\n");
-//          break;
-//      case 0x0016:
-//          printf("Authentication Failed\n");
-//          break;
-//      case 0x0022:
-//          printf("Page Timeout\n");
-//          break;
-//      case 0x003E:
-//          printf(" Connection Rejected Due to Limited Resources\n");
-//          break;
-//      default:
-//          printf("Unknown Failure Reason\n");
-//          break;
-//  }
-//}
+uint8_t BT_connectionFailed(uint8_t conn_handle, uint16_t reason)
+{
+  printf("Connection Failed! Conn Handle: %02X, Reason: %04X\n", conn_handle, reason);
+
+      // Handling failure cases
+      switch (reason) {
+          case 0x0001:
+              printf("Reason: Authentication Failed\n");
+              break;
+          case 0x0008:
+              printf("Reason: Connection Timeout\n");
+              break;
+          case 0x0013:
+              printf("Reason: Remote Device Terminated Connection\n");
+              break;
+          default:
+              printf("Reason: Unknown Error\n");
+              break;
+      }
+}
