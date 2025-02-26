@@ -1081,14 +1081,14 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_BT_CONNECTION_FAILED:
-  #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-      printf("RX: idx_bt_connection_fail: conn_handle=");
-      printHex8(packet->payload.evt_bt_connection_failed.conn_handle);
-      printf(", Reason");
-      printHex8(packet->payload.evt_bt_connection_failed.reason);
-      printf("\r\n");
-  #endif
-      break;
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: idx_bt_connection_fail: conn_handle=");
+    printHex8(packet->payload.evt_bt_connection_failed.conn_handle);
+    printf(", Reason");
+    printHex8(packet->payload.evt_bt_connection_failed.reason);
+    printf("\r\n");
+#endif
+    break;
 
     /* -------- Shimmer added end -------- */
 
@@ -1206,12 +1206,11 @@ uint8_t BT_connect(uint8_t *addr)
    memset(bt_conn.address.addr, addr, 6);
    }*/
   memcpy(bt_conn.address.addr, addr, 6); //copying the MAC address
-  bt_conn.type = 1; //for SPP
+  bt_conn.type = 1;                      //for SPP
 
   setExpectedResponse(EZS_IDX_CMD_BT_CONNECT);
   uint8_t status = ezs_cmd_bt_connect(bt_conn.address.addr, 1); //returns status code
   printf("Connection Status Code: %02X\n", status);
-
 
   /* Connection status codes :
  0x00 -> Success
@@ -1225,8 +1224,8 @@ uint8_t BT_connect(uint8_t *addr)
     if (status == 0) //Success case
     {
       printf("Connection success\n");
-      printf("Connecting to MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", addr[0], addr[1],
-            addr[2], addr[3], addr[4], addr[5]);
+      printf("Connecting to MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", addr[0],
+          addr[1], addr[2], addr[3], addr[4], addr[5]);
       active_conn_handle = 0;
       return active_conn_handle;
     }
