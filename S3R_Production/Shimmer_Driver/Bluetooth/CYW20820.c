@@ -1058,16 +1058,15 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     rsp_smp_get_privacy_mode = packet->payload.rsp_smp_get_privacy_mode;
     break;
 
-  case EZS_IDX_CMD_BT_CONNECT: //NO PREDEFINED MACRO PRESENT UNLIKE DISCONNECT
+  case EZS_IDX_RSP_BT_CONNECT:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: idx_bt_connected: conn_handle=");
     printHex8(packet->payload.rsp_bt_connect.conn_handle);
-    printf(", Address=");
-    printHexMac(packet->payload.rsp_bt_connect.address);
-    printf(", Type=");
-    printHex8(packet->payload.rsp_bt_connect.type);
+    printf(", Result");
+    printHexMac(packet->payload.rsp_bt_connect.result);
     printf("\r\n");
 #endif
+    break;
 
   case EZS_IDX_RSP_BT_CANCEL_CONNECTION:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
@@ -1080,6 +1079,16 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     rsp_bt_disconnect = packet->payload.rsp_bt_disconnect;
 #endif
     break;
+
+  case EZS_IDX_EVT_BT_CONNECTION_FAILED:
+  #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+      printf("RX: idx_bt_connection_fail: conn_handle=");
+      printHex8(packet->payload.evt_bt_connection_failed.conn_handle);
+      printf(", Reason");
+      printHex8(packet->payload.evt_bt_connection_failed.reason);
+      printf("\r\n");
+  #endif
+      break;
 
     /* -------- Shimmer added end -------- */
 
@@ -1196,15 +1205,14 @@ uint8_t BT_connect(uint8_t *addr)
    {
    memset(bt_conn.address.addr, addr, 6);
    }*/
-  memcpy(bt_conn.address.addr, addr, 6);
+  memcpy(bt_conn.address.addr, addr, 6); //copying the MAC address
   bt_conn.type = 1; //for SPP
-  printf("Connecting to MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", addr[0], addr[1],
-      addr[2], addr[3], addr[4], addr[5]);
-  //connect
 
   setExpectedResponse(EZS_IDX_CMD_BT_CONNECT);
   uint8_t status = ezs_cmd_bt_connect(bt_conn.address.addr, 1); //returns status code
   printf("Connection Status Code: %02X\n", status);
+
+
   /* Connection status codes :
  0x00 -> Success
  0x01 -> Failure
@@ -1217,23 +1225,25 @@ uint8_t BT_connect(uint8_t *addr)
     if (status == 0) //Success case
     {
       printf("Connection success\n");
+      printf("Connecting to MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", addr[0], addr[1],
+            addr[2], addr[3], addr[4], addr[5]);
       active_conn_handle = 0;
       return active_conn_handle;
     }
-    else if ((((clock() - start_time) * 1000 / CLOCKS_PER_SEC) > 5000))
+    else if ((((clock() - start_time) * 1000 / CLOCKS_PER_SEC) > 5000)) //TODO fix this condition
     {
       printf("Connection failed\n");
-      BT_connectionFailed(0xFF, 0x0008);
+      BT_connectionFailed(0xFF, 0x08);
       active_conn_handle = 0xFF;
       return 0;
     }
     else
     {
-      printf("Connection Status Code: %02X\n", status);
+      printf("Connection failed, Connection Status Code: %02X\n", status);
       return 0;
     }
   }
-  //return active_conn_handle; //Feels unnecessary
+  //return 0;
 }
 
 uint8_t BT_disconnect(void)
@@ -1271,22 +1281,26 @@ uint8_t BT_cancelConnection(void)
 //TODO fix this
 uint8_t BT_connectionFailed(uint8_t conn_handle, uint16_t reason)
 {
-  printf("Connection Failed! Conn Handle: %02X, Reason: %04X\n", conn_handle, reason);
+
+  ezs_evt_bt_connection_failed_t connection_handle;
+  setExpectedResponse(EZS_IDX_EVT_BT_CONNECTION_FAILED);
+  printf("Connection Failed! Conn Handle: %02X, Reason: %04X\n", connection_handle, reason);
 
   //Handling failure cases
   switch (reason)
   {
-  case 0x0001:
-    printf("Reason: Authentication Failed\n");
+  case 0x01:
+    printf("Reason: General Failure\n");
     break;
-  case 0x0008:
+  case 0x08:
     printf("Reason: Connection Timeout\n");
     break;
-  case 0x0013:
+  case 0x13:
     printf("Reason: Remote Device Terminated Connection\n");
     break;
   default:
     printf("Reason: Unknown Error\n");
     break;
   }
+  return;
 }
