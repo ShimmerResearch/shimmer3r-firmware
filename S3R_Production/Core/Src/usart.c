@@ -716,7 +716,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   //#else
   else if (huart->Instance == huartDock->Instance)
   {
-    dockUartRxCallback(huart);
+     dockUartRxCallback(huart);
   }
   //#endif
 }
@@ -724,11 +724,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void dockUartRxCallback(UART_HandleTypeDef *huart)
 {
-  //Board_ledToggle(LED_YELLOW);
-
-  DockUart_rxCallback(uartDockRxBuf[0]);
-
-  //HAL_UART_Receive_DMA(huartDock, uartDockRxBuf, 1);
+  DockUart_rxCallback(uartDockRxBuf[0],DATA_SOURCE_DOCK_USART);
   HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
 }
 
