@@ -93,7 +93,7 @@ void DockUart_resetVariables(void)
   uartTimeStart = uartTimeEnd = 0;
 }
 
-uint8_t DockUart_rxCallback(uint8_t data,uint8_t dataSource)
+uint8_t DockUart_rxCallback(uint8_t data, uint8_t dataSource)
 {
 #if defined(SHIMMER3)
   if (initializing)
@@ -787,7 +787,7 @@ void DockUart_sendRsp(void)
     *(uartRespBuf + uart_resp_len++) = 0x0d;
     *(uartRespBuf + uart_resp_len++) = 0x0a;
   }
-  if(SendRspUsb)
+  if (SendRspUsb)
   {
     SendRspUsb = 0;
     /* respond to commands via usb */
