@@ -716,7 +716,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   //#else
   else if (huart->Instance == huartDock->Instance)
   {
-     dockUartRxCallback(huart);
+    dockUartRxCallback(huart);
   }
   //#endif
 }

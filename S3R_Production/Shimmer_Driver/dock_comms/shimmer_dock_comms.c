@@ -786,7 +786,7 @@ void DockUart_sendRsp(void)
   }
 
   if(shimmerStatus.usbPluggedIn)
-  {
+ {
     /* respond to commands via usb */
     CDC_Transmit(0, uartRespBuf, uart_resp_len);
   }
