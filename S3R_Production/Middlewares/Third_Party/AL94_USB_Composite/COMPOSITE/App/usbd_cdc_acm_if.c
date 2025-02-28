@@ -426,7 +426,7 @@ static int8_t CDC_Receive(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len)
   uint8_t i = 0;
   for(i = 0; i < (*Len); i++)
   {
-    DockUart_rxCallback(Buf[i],DATA_SOURCE_USB);
+    DockUart_rxCallback(Buf[i]);
   }
   USBD_CDC_SetRxBuffer(cdc_ch, &hUsbDevice, &Buf[0]);
   USBD_CDC_ReceivePacket(cdc_ch, &hUsbDevice);
@@ -474,7 +474,9 @@ uint8_t CDC_Transmit(uint8_t ch, uint8_t *Buf, uint16_t Len)
     return USBD_BUSY;
   }
   USBD_CDC_SetTxBuffer(ch, &hUsbDevice, Buf, Len);
+  while(hcdc->TxState != 0);
   result = USBD_CDC_TransmitPacket(ch, &hUsbDevice);
+
   /* USER CODE END 7 */
   return result;
 }

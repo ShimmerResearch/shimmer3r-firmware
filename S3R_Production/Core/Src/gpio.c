@@ -368,6 +368,9 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
 #if SR48_6_0_PATCH_VBUS_SENSE
   case USB_VBUS_Pin:
+#if defined(SHIMMER3R)
+    Usb_interruptCheck();
+#endif
     if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
     {
       S4_Task_set(TASK_USB_SETUP);
