@@ -813,7 +813,7 @@ void send_test_report(char *str)
   case PRINT_TO_DOCK_UART:
     if (shimmerStatus.usbPluggedIn)
     {
-      CDC_Transmit(0, (uint8_t *)str, strlen(str));
+      CDC_Transmit(0, (uint8_t *) str, strlen(str));
     }
     else if (shimmerStatus.docked)
     {

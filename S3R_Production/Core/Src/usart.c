@@ -751,7 +751,7 @@ uint8_t Usb_interruptCheck(void)
   {
     shimmerStatus.usbPluggedIn = 0;
   }
- return shimmerStatus.usbPluggedIn;
+  return shimmerStatus.usbPluggedIn;
 }
 #endif
 /* USER CODE END 1 */
