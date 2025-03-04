@@ -40,17 +40,17 @@ void MX_RTC_Init(void)
 
   /* USER CODE END RTC_Init 0 */
 
-  RTC_PrivilegeStateTypeDef privilegeState = { 0 };
-  RTC_TimeTypeDef sTime = { 0 };
-  RTC_DateTypeDef sDate = { 0 };
-  RTC_AlarmTypeDef sAlarm = { 0 };
+  RTC_PrivilegeStateTypeDef privilegeState = {0};
+  RTC_TimeTypeDef sTime = {0};
+  RTC_DateTypeDef sDate = {0};
+  RTC_AlarmTypeDef sAlarm = {0};
 
   /* USER CODE BEGIN RTC_Init 1 */
 
   /* USER CODE END RTC_Init 1 */
 
   /** Initialize RTC Only
-   */
+  */
   hrtc.Instance = RTC;
   hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
   hrtc.Init.AsynchPrediv = 0;
@@ -84,36 +84,36 @@ void MX_RTC_Init(void)
   {
     /* Configure RTC Calendar */
 
-    /* USER CODE END Check_RTC_BKUP */
+  /* USER CODE END Check_RTC_BKUP */
 
-    /** Initialize RTC and set the Time and Date
-     */
-    sTime.Hours = 0x0;
-    sTime.Minutes = 0x0;
-    sTime.Seconds = 0x0;
-    sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-    sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-    sDate.Month = RTC_MONTH_JANUARY;
-    sDate.Date = 0x1;
-    sDate.Year = 0x70;
+  /** Initialize RTC and set the Time and Date
+  */
+  sTime.Hours = 0x0;
+  sTime.Minutes = 0x0;
+  sTime.Seconds = 0x0;
+  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
+  sDate.Month = RTC_MONTH_JANUARY;
+  sDate.Date = 0x1;
+  sDate.Year = 0x70;
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    /** Enable the Alarm A
-     */
+  /** Enable the Alarm A
+  */
     sAlarm.AlarmTime.Hours = 0x0;
     sAlarm.AlarmTime.Minutes = 0x1;
     sAlarm.AlarmTime.Seconds = 0x0;
     sAlarm.AlarmTime.SubSeconds = 0x0;
-    sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS | RTC_ALARMMASK_SECONDS;
+    sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS
+        | RTC_ALARMMASK_SECONDS;
     sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
     sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
     sAlarm.AlarmDateWeekDay = 0x1;
@@ -122,14 +122,29 @@ void MX_RTC_Init(void)
     {
       Error_Handler();
     }
+  /** Enable the Alarm B
+  */
 
-    /** Enable the WakeUp
-     */
-    if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
+    sAlarm.AlarmTime.Hours = 0x0;
+    sAlarm.AlarmTime.Minutes = 0x3; //2 min after first trigger
+    sAlarm.AlarmTime.Seconds = 0x0;
+    sAlarm.AlarmTime.SubSeconds = 0x0;
+    sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+    // sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+    sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+    sAlarm.AlarmDateWeekDay = 0x1;
+    sAlarm.Alarm = RTC_ALARM_B;
+    if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
     {
       Error_Handler();
     }
-    /* USER CODE BEGIN RTC_Init 2 */
+  /** Enable the WakeUp
+  */
+  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN RTC_Init 2 */
     /* Writes a data in a RTC Backup data Register0 */
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x32F2);
   }
@@ -153,20 +168,21 @@ void MX_RTC_Init(void)
   //__HAL_RCC_CLEAR_RESET_FLAGS();
 
   /* USER CODE END RTC_Init 2 */
+
 }
 
-void HAL_RTC_MspInit(RTC_HandleTypeDef *rtcHandle)
+void HAL_RTC_MspInit(RTC_HandleTypeDef* rtcHandle)
 {
 
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
-  if (rtcHandle->Instance == RTC)
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  if(rtcHandle->Instance==RTC)
   {
-    /* USER CODE BEGIN RTC_MspInit 0 */
+  /* USER CODE BEGIN RTC_MspInit 0 */
 
-    /* USER CODE END RTC_MspInit 0 */
+  /* USER CODE END RTC_MspInit 0 */
 
-    /** Initializes the peripherals clock
-     */
+  /** Initializes the peripherals clock
+  */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
     PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -182,20 +198,20 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef *rtcHandle)
     /* RTC interrupt Init */
     HAL_NVIC_SetPriority(RTC_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(RTC_IRQn);
-    /* USER CODE BEGIN RTC_MspInit 1 */
+  /* USER CODE BEGIN RTC_MspInit 1 */
 
-    /* USER CODE END RTC_MspInit 1 */
+  /* USER CODE END RTC_MspInit 1 */
   }
 }
 
-void HAL_RTC_MspDeInit(RTC_HandleTypeDef *rtcHandle)
+void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 {
 
-  if (rtcHandle->Instance == RTC)
+  if(rtcHandle->Instance==RTC)
   {
-    /* USER CODE BEGIN RTC_MspDeInit 0 */
+  /* USER CODE BEGIN RTC_MspDeInit 0 */
 
-    /* USER CODE END RTC_MspDeInit 0 */
+  /* USER CODE END RTC_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_RTC_DISABLE();
     __HAL_RCC_RTCAPB_CLK_DISABLE();
@@ -203,9 +219,9 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef *rtcHandle)
 
     /* RTC interrupt Deinit */
     HAL_NVIC_DisableIRQ(RTC_IRQn);
-    /* USER CODE BEGIN RTC_MspDeInit 1 */
+  /* USER CODE BEGIN RTC_MspDeInit 1 */
 
-    /* USER CODE END RTC_MspDeInit 1 */
+  /* USER CODE END RTC_MspDeInit 1 */
   }
 }
 

@@ -1965,6 +1965,10 @@ __weak void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
    */
 }
 
+__weak void HAL_RTC_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
+{
+  printf("Alarm B Triggered!\n");
+}
 /**
   * @brief  Handle AlarmA Polling request.
   * @param  hrtc RTC handle

@@ -811,6 +811,8 @@ HAL_StatusTypeDef HAL_RTC_GetAlarm(const RTC_HandleTypeDef *hrtc, RTC_AlarmTypeD
 void              HAL_RTC_AlarmIRQHandler(RTC_HandleTypeDef *hrtc);
 HAL_StatusTypeDef HAL_RTC_PollForAlarmAEvent(const RTC_HandleTypeDef *hrtc, uint32_t Timeout);
 void              HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc);
+void              HAL_RTC_AlarmBEventCallback(RTC_HandleTypeDef *hrtc);
+void              RTC_Set_AlarmB(void);
 /**
   * @}
   */
