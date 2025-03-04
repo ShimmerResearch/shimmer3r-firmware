@@ -21,7 +21,9 @@ typedef struct
   uint8_t chanCntSens;
   uint8_t chanCntBatt;
 } ADCTypeDef;
+
 extern ADCTypeDef Ext_adc;
+
 typedef struct
 {
   int32_t vRefMV;

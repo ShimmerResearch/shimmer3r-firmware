@@ -23,8 +23,8 @@
 /* USER CODE BEGIN 0 */
 
 //TODO remove, needed until SW supports setting pressure sensor rate in config
-#include "bmp3_defs.h"
 #include "ADS7028/ads7028.h"
+#include "bmp3_defs.h"
 #define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
 #if defined(SHIMMER3R)
@@ -45,7 +45,7 @@ SPITypeDef spi3Sens;
 
 uint8_t expectedSpiBusCbFlags = 0, currentSpiBusCbFlags = 0;
 
-uint16_t Ads2078RxBuf[SPI_DMA_TXRX_OFFSET + 8] = {0};
+uint16_t Ads2078RxBuf[SPI_DMA_TXRX_OFFSET + 8] = { 0 };
 uint8_t adcChannelId = 0;
 #endif
 
@@ -750,10 +750,10 @@ void SPI_configureChannels()
   if (isAds7028Present()) //External ADC ADS7028
   {
     ads7028_configureChannels();
-    if(areAdcChannelsEnabled())
+    if (areAdcChannelsEnabled())
     {
       spi1Sens.sensorLen += Ext_adc.sensorLen;
-      spi1Sens.sensorList[ spi1Sens.sensorLen] = SPI1_ADS7028;
+      spi1Sens.sensorList[spi1Sens.sensorLen] = SPI1_ADS7028;
     }
   }
 
@@ -1178,7 +1178,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     }
     break;
   case SPI1_ADS7028:
-    if(isAds7028Present()&& areAdcChannelsEnabled())
+    if (isAds7028Present() && areAdcChannelsEnabled())
     {
       spiSensingInfo->status = SPI_STAT_ADS7028_GET;
       ads7028DataGet(spi1Sens_buf.Ads2078Buf);
@@ -1258,14 +1258,14 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;
   case SPI1_ADS7028:
-    if(isAds7028Present())
+    if (isAds7028Present())
     {
-    for (uint8_t i = 0; i <= Ext_adc.sensorLen; i++)
-    {
-        adcChannelId = (spi1Sens_buf.Ads2078Buf[i] >> 12) & 0x0F; // channel ID
-        spi1Sens_buf.Ads2078Buf[i] &= 0x0FFF; // ADC data
-        ads7028ProcessData(adcChannelId,spi1Sens_buf.Ads2078Buf[i]);
-    }
+      for (uint8_t i = 0; i <= Ext_adc.sensorLen; i++)
+      {
+        adcChannelId = (spi1Sens_buf.Ads2078Buf[i] >> 12) & 0x0F; //channel ID
+        spi1Sens_buf.Ads2078Buf[i] &= 0x0FFF;                     //ADC data
+        ads7028ProcessData(adcChannelId, spi1Sens_buf.Ads2078Buf[i]);
+      }
     }
     break;
   default:

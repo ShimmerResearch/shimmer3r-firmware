@@ -246,7 +246,7 @@ uint8_t isBoardSrNumber(uint8_t exp_brd_id, uint8_t exp_brd_rev, uint8_t exp_brd
 uint8_t isAds7028Present(void)
 {
   return (isDaughterCardIdSet() //&& hwId == HW_ID_SHIMMER3R
-          &&( daughterCardIdPage.expansion_brd.exp_brd_rev > 6
+      && (daughterCardIdPage.expansion_brd.exp_brd_rev > 6
           && daughterCardIdPage.expansion_brd.exp_brd_special_rev >= 0));
 }
 #endif

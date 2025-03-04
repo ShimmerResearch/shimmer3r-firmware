@@ -236,121 +236,122 @@ void S4_NORM_ADC_configureChannels(void)
     writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH7_ENABLED);
 #endif
 #endif
-  }
-  //External ADC 0
-  if (configBytes->chEnExtADC0)
-  {
-    *channel_contents_ptr++ = EXTERNAL_ADC_0;
-    nbr_adc_chans += 1;
-    sensing.ptr.extADC0 = sensing.dataLen;
-    sensing.dataLen += 2;
-    Ext_adc.sensorList[Ext_adc.sensorLen++] = EXTERNAL_ADC_0;
-#if (defined(SHIMMER3R) &&!defined(SR48_6_0))
-    writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED);
-#endif
-  }
+}
 
-  //External ADC 1
-  if (configBytes->chEnExtADC1)
-  {
-    *channel_contents_ptr++ = EXTERNAL_ADC_1;
-    nbr_adc_chans += 1;
-    sensing.ptr.extADC1 = sensing.dataLen;
-    sensing.dataLen += 2;
-    Ext_adc.sensorList[Ext_adc.sensorLen++] = EXTERNAL_ADC_1;
-#if (defined(SHIMMER3R) &&!defined(SR48_6_0))
-    writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED);
+//External ADC 0
+if (configBytes->chEnExtADC0)
+{
+  *channel_contents_ptr++ = EXTERNAL_ADC_0;
+  nbr_adc_chans += 1;
+  sensing.ptr.extADC0 = sensing.dataLen;
+  sensing.dataLen += 2;
+  Ext_adc.sensorList[Ext_adc.sensorLen++] = EXTERNAL_ADC_0;
+#if (defined(SHIMMER3R) && !defined(SR48_6_0))
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED);
 #endif
-  }
+}
 
-  //External ADC 2
-  if (configBytes->chEnExtADC2)
-  {
-    *channel_contents_ptr++ = EXTERNAL_ADC_2;
-    nbr_adc_chans += 1;
-    sensing.ptr.extADC2 = sensing.dataLen;
-    sensing.dataLen += 2;
-    Ext_adc.sensorList[Ext_adc.sensorLen++] = EXTERNAL_ADC_2;
-#if (defined(SHIMMER3R) &&!defined(SR48_6_0))
-    writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH6_ENABLED);
+//External ADC 1
+if (configBytes->chEnExtADC1)
+{
+  *channel_contents_ptr++ = EXTERNAL_ADC_1;
+  nbr_adc_chans += 1;
+  sensing.ptr.extADC1 = sensing.dataLen;
+  sensing.dataLen += 2;
+  Ext_adc.sensorList[Ext_adc.sensorLen++] = EXTERNAL_ADC_1;
+#if (defined(SHIMMER3R) && !defined(SR48_6_0))
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED);
 #endif
-  }
+}
 
-  //Internal ADC 0
-  if (configBytes->chEnIntADC0)
-  {
-    *channel_contents_ptr++ = INTERNAL_ADC_0;
-    nbr_adc_chans += 1;
-    sensing.ptr.intADC0 = sensing.dataLen;
-    sensing.dataLen += 2;
-    Ext_adc.sensorList[Ext_adc.sensorLen++] = INTERNAL_ADC_0;
-#if (defined(SHIMMER3R) &&!defined(SR48_6_0))
-    writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH0_ENABLED);
+//External ADC 2
+if (configBytes->chEnExtADC2)
+{
+  *channel_contents_ptr++ = EXTERNAL_ADC_2;
+  nbr_adc_chans += 1;
+  sensing.ptr.extADC2 = sensing.dataLen;
+  sensing.dataLen += 2;
+  Ext_adc.sensorList[Ext_adc.sensorLen++] = EXTERNAL_ADC_2;
+#if (defined(SHIMMER3R) && !defined(SR48_6_0))
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH6_ENABLED);
 #endif
-  }
+}
+
+//Internal ADC 0
+if (configBytes->chEnIntADC0)
+{
+  *channel_contents_ptr++ = INTERNAL_ADC_0;
+  nbr_adc_chans += 1;
+  sensing.ptr.intADC0 = sensing.dataLen;
+  sensing.dataLen += 2;
+  Ext_adc.sensorList[Ext_adc.sensorLen++] = INTERNAL_ADC_0;
+#if (defined(SHIMMER3R) && !defined(SR48_6_0))
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH0_ENABLED);
+#endif
+}
 
 #if defined(SHIMMER4_SDK)
-  //Internal ADC 4
-  if (configBytes->chEnIntADC4)
-  {
-    *channel_contents_ptr++ = INT_ADC_4;
-    nbr_adc_chans += 1;
-    sensing.ptr.intADC4 = sensing.dataLen;
-    sensing.dataLen += 2;
-    Ext_adc.sensorList[Ext_adc.sensorLen++] = INT_ADC_4;
-  }
+//Internal ADC 4
+if (configBytes->chEnIntADC4)
+{
+  *channel_contents_ptr++ = INT_ADC_4;
+  nbr_adc_chans += 1;
+  sensing.ptr.intADC4 = sensing.dataLen;
+  sensing.dataLen += 2;
+  Ext_adc.sensorList[Ext_adc.sensorLen++] = INT_ADC_4;
+}
 #endif
 
-  //Internal ADC 1
-  if (configBytes->chEnIntADC1)
-  {
-    *channel_contents_ptr++ = INTERNAL_ADC_1;
-    nbr_adc_chans += 1;
-    sensing.ptr.intADC1 = sensing.dataLen;
-    sensing.dataLen += 2;
-    Ext_adc.sensorList[Ext_adc.sensorLen++] = INTERNAL_ADC_1;
-#if (defined(SHIMMER3R) &&!defined(SR48_6_0))
-    writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH1_ENABLED);
+//Internal ADC 1
+if (configBytes->chEnIntADC1)
+{
+  *channel_contents_ptr++ = INTERNAL_ADC_1;
+  nbr_adc_chans += 1;
+  sensing.ptr.intADC1 = sensing.dataLen;
+  sensing.dataLen += 2;
+  Ext_adc.sensorList[Ext_adc.sensorLen++] = INTERNAL_ADC_1;
+#if (defined(SHIMMER3R) && !defined(SR48_6_0))
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH1_ENABLED);
 #endif
-  }
+}
 
-  //Internal ADC 2
-  if (configBytes->chEnIntADC2)
-  {
-    *channel_contents_ptr++ = INTERNAL_ADC_2;
-    nbr_adc_chans += 1;
-    sensing.ptr.intADC2 = sensing.dataLen;
-    sensing.dataLen += 2;
-    Ext_adc.sensorList[Ext_adc.sensorLen++] = INTERNAL_ADC_2;
-#if (defined(SHIMMER3R) &&!defined(SR48_6_0))
-    writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH2_ENABLED);
+//Internal ADC 2
+if (configBytes->chEnIntADC2)
+{
+  *channel_contents_ptr++ = INTERNAL_ADC_2;
+  nbr_adc_chans += 1;
+  sensing.ptr.intADC2 = sensing.dataLen;
+  sensing.dataLen += 2;
+  Ext_adc.sensorList[Ext_adc.sensorLen++] = INTERNAL_ADC_2;
+#if (defined(SHIMMER3R) && !defined(SR48_6_0))
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH2_ENABLED);
 #endif
-  }
+}
 
-  //Internal ADC 3
-  if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
+//Internal ADC 3
+if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
+{
+  if (configBytes->chEnGsr)
   {
-    if (configBytes->chEnGsr)
-    {
-      *channel_contents_ptr++ = GSR_RAW;
-      sensing.ptr.gsr = sensing.dataLen;
-      Ext_adc.sensorList[Ext_adc.sensorLen++] = GSR_RAW;
-    }
-    else
-    {
-      *channel_contents_ptr++ = INTERNAL_ADC_3;
-      sensing.ptr.intADC3 = sensing.dataLen;
-      Ext_adc.sensorList[Ext_adc.sensorLen++] = INTERNAL_ADC_3;
-#if (defined(SHIMMER3R) &&!defined(SR48_6_0))
+    *channel_contents_ptr++ = GSR_RAW;
+    sensing.ptr.gsr = sensing.dataLen;
+    Ext_adc.sensorList[Ext_adc.sensorLen++] = GSR_RAW;
+  }
+  else
+  {
+    *channel_contents_ptr++ = INTERNAL_ADC_3;
+    sensing.ptr.intADC3 = sensing.dataLen;
+    Ext_adc.sensorList[Ext_adc.sensorLen++] = INTERNAL_ADC_3;
+#if (defined(SHIMMER3R) && !defined(SR48_6_0))
     writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
 #endif
-    }
-    nbr_adc_chans += 1;
-    sensing.dataLen += 2;
   }
+  nbr_adc_chans += 1;
+  sensing.dataLen += 2;
+}
 
-  sensing.nbrAdcChans += nbr_adc_chans;
-  sensing.ccLen += nbr_adc_chans;
+sensing.nbrAdcChans += nbr_adc_chans;
+sensing.ccLen += nbr_adc_chans;
 }
 
 void S4_NORM_ADC_startSensing(void)

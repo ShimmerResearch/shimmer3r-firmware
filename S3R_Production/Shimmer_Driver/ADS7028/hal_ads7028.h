@@ -34,7 +34,6 @@
 #ifndef HAL_ADS7028_H_
 #define HAL_ADS7028_H_
 
-
 //****************************************************************************
 //
 // Insert processor specific header file(s) here
@@ -44,12 +43,10 @@
 /*  --- INSERT YOUR CODE HERE --- */
 #include <assert.h>
 //#include "ti/devices/msp432e4/driverlib/driverlib.h"
-#include <ADS7028/ads7028.h>
-#include "stdint.h"
-#include "stdbool.h"
 #include "hal_FactoryTest.h"
-
-
+#include "stdbool.h"
+#include "stdint.h"
+#include <ADS7028/ads7028.h>
 
 //*****************************************************************************
 //
@@ -57,16 +54,15 @@
 //
 //*****************************************************************************
 /** Alias used for setting GPIOs pins to the logic "high" state */
-#define HIGH                                    ((bool) true)
+#define HIGH            ((bool) true)
 
 /** Alias used for setting GPIOs pins to the logic "low" state */
-#define LOW                                     ((bool) false)
+#define LOW             ((bool) false)
 
 /* SPI Peripheral Macros */
 
 /* MCU System clock frequency */
-#define SYSTEM_CLOCK_HZ                         ((uint32_t) 120000000)
-
+#define SYSTEM_CLOCK_HZ ((uint32_t) 120000000)
 
 //*****************************************************************************
 //
@@ -77,12 +73,12 @@
 self_test_result_t ads7028_self_test(void);
 
 /* SPI peripheral functions */
-void        initAdcPeripherals(void);
-void        spiSendReceiveArray(void * handle, uint8_t* DataTx, uint8_t* DataRx, uint8_t byteLength);
-uint8_t     spiSendReceiveByte(const uint8_t dataTx);
+void initAdcPeripherals(void);
+void spiSendReceiveArray(void *handle, uint8_t *DataTx, uint8_t *DataRx, uint8_t byteLength);
+uint8_t spiSendReceiveByte(const uint8_t dataTx);
 
 /* GPIO functions */
-void        setAds7028CS(const bool state);
-bool        getAds7028CS(void);    /*  Used for testing only */
+void setAds7028CS(const bool state);
+bool getAds7028CS(void); /*  Used for testing only */
 
 #endif /* HAL_H_ */
