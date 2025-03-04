@@ -597,15 +597,20 @@ void SPI_test(void)
     sprintf(buffer, " - S3R_TEST_0019 - ADS7028 test not applicable for this model\r\n");
     send_test_report(buffer);
   }
-  else
+  else    //TODO Add ADS7028 test support here
   {
-    self_test_result = lsm6dsv_self_test();
+    uint16_t* adc_val = 0;
+    self_test_result = ads7028_self_test();
     if (self_test_result)
     {
       shimmerStatus.testResult |= S3R_TEST_0019;
     }
+    else
+    {
+      ads7028GetTestData(adc_val);
+    }
     print_chip_test_result("S3R_TEST_0019", "ADS7028", self_test_result,
-        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
+        *adc_val);
   }
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;

@@ -86,10 +86,11 @@ extern "C"
     SPI1_LSM6DSV_GYRO_ONLY,
     SPI1_ADXL371_ACCEL,
     SPI1_BMP390_PRESSURE_TEMP,
+    SPI1_ADS7028,             //External ADC VBATT
     SPI2_LIS2DW12_ACCEL,
     SPI2_LIS3MDL_MAG,
     SPI3_ADS1292R_EXG1,
-    SPI3_ADS1292R_EXG2
+    SPI3_ADS1292R_EXG2,
   } SPI_SENSOR;
 
   typedef enum
@@ -104,7 +105,8 @@ extern "C"
     SPI_STAT_LIS2DW12_ACCEL_GET,
     SPI_STAT_LIS3MDL_MAG_GET,
     SPI_STAT_ADS1292R_EXG1_GET,
-    SPI_STAT_ADS1292R_EXG2_GET
+    SPI_STAT_ADS1292R_EXG2_GET,
+    SPI_STAT_ADS7028_GET
   } SPI_STATUS;
 
   typedef enum
@@ -120,6 +122,7 @@ extern "C"
     uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t adxl371Buf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET + 1 + 6]; //+1 for BMP390 dummy byte
+    uint16_t Ads2078Buf[SPI_DMA_TXRX_OFFSET + 7];
   } spi1ReadBuf;
 
   typedef struct

@@ -85,7 +85,11 @@ void S4Sens_configureChannels(void)
   overwriteDefaultConfig();
 #endif
 
+#if (defined(SHIMMER3R) && defined(SR48_6_0))
   S4_ADC_configureChannels();
+#else
+
+#endif
   I2C_configureChannels();
   SPI_configureChannels();
 
@@ -247,7 +251,11 @@ void S4Sens_startSensing(void)
 
     if (areAdcChannelsEnabled())
     {
+#if (defined(SHIMMER3R) && defined(SR48_6_0))
       S4_ADC_startSensing();
+#else
+
+#endif
     }
     I2C_startSensing();
     SPI_startSensing();

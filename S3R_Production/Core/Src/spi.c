@@ -24,7 +24,7 @@
 
 //TODO remove, needed until SW supports setting pressure sensor rate in config
 #include "bmp3_defs.h"
-
+#include "ADS7028/ads7028.h"
 #define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
 #if defined(SHIMMER3R)
@@ -44,6 +44,9 @@ SPITypeDef spi2Sens;
 SPITypeDef spi3Sens;
 
 uint8_t expectedSpiBusCbFlags = 0, currentSpiBusCbFlags = 0;
+
+uint16_t Ads2078RxBuf[SPI_DMA_TXRX_OFFSET + 8] = {0};
+uint8_t adcChannelId = 0;
 #endif
 
 void (*SPI_gatherDataDone_cb)(void);
@@ -744,6 +747,16 @@ void SPI_configureChannels()
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADXL371_ACCEL;
   }
 
+  if (isAds7028Present()) //External ADC ADS7028
+  {
+    ads7028_configureChannels();
+    if(areAdcChannelsEnabled())
+    {
+      spi1Sens.sensorLen += Ext_adc.sensorLen;
+      spi1Sens.sensorList[ spi1Sens.sensorLen] = SPI1_ADS7028;
+    }
+  }
+
   if (configBytes->chEnWrAccel)
   {
     *channel_contents_ptr++ = X_WR_ACCEL;
@@ -884,12 +897,14 @@ void SPI_startSensing()
     int8_t rslt = bmp3_configure(
         shimmerSamplingFreq, get_config_byte_pressure_oversampling_ratio());
   }
-
   if (configBytes->chEnAltAccel)
   {
     adxl371_configure(configBytes->altAccelRate);
   }
-
+  if (isAds7028Present() && areAdcChannelsEnabled()) //External ADC ADS7028
+  {
+    ads7028Configure();
+  }
   /* SPI2 */
   if (configBytes->chEnWrAccel)
   {
@@ -1162,6 +1177,14 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       retVal = 1;
     }
     break;
+  case SPI1_ADS7028:
+    if(isAds7028Present()&& areAdcChannelsEnabled())
+    {
+      spiSensingInfo->status = SPI_STAT_ADS7028_GET;
+      ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+      retVal = 1;
+    }
+    break;
   case SPI2_LIS2DW12_ACCEL:
 #if defined(LIS2DW12_INT1_Pin)
     if (!lis2dw12_is_drdy_int_enabled() || LIS2DW12_INT1)
@@ -1233,6 +1256,17 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     memcpy(sensing.dataBuf + sensing.ptr.pressure,
         &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
+    break;
+  case SPI1_ADS7028:
+    if(isAds7028Present())
+    {
+    for (uint8_t i = 0; i <= Ext_adc.sensorLen; i++)
+    {
+        adcChannelId = (spi1Sens_buf.Ads2078Buf[i] >> 12) & 0x0F; // channel ID
+        spi1Sens_buf.Ads2078Buf[i] &= 0x0FFF; // ADC data
+        ads7028ProcessData(adcChannelId,spi1Sens_buf.Ads2078Buf[i]);
+    }
+    }
     break;
   default:
     break;
