@@ -64,15 +64,10 @@ self_test_result_t ads7028_self_test(void)
   {
     setAds7028CS(LOW);
     //configure in manual mode for VBATT channel
-<<<<<<< HEAD
-    writeSingleRegister(PIN_CFG_ADDRESS,PIN_CFG_PIN_CFG_CH7_ANALOG_INPUT); // Set all Channels as Analog Inputs.
-    writeSingleRegister(CHANNEL_SEL_ADDRESS, CHANNEL_SEL_MANUAL_CHID_7); //Write registor setting selecting channels.
-=======
-    writeSingleRegister(CHANNEL_SEL_ADDRESS,
-        CHANNEL_SEL_MANUAL_CHID_7); //Write registor setting selecting channels.
-    writeSingleRegister(PIN_CFG_ADDRESS,
-        PIN_CFG_PIN_CFG_CH7_ANALOG_INPUT); //Set all Channels as Analog Inputs.
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
+
+    writeSingleRegister(CHANNEL_SEL_ADDRESS,CHANNEL_SEL_MANUAL_CHID_7); //Write registor setting selecting channels.
+    writeSingleRegister(PIN_CFG_ADDRESS,PIN_CFG_PIN_CFG_CH7_ANALOG_INPUT); //Set all Channels as Analog Inputs.
+
     //setRegisterBits(DATA_CFG_FIX_PAT_ENABLED, DATA_CFG_FIX_PAT_MASK); //Device outputs fixed code 0xA5A repetitively when reading ADC data.
     setAds7028CS(HIGH);
   }
@@ -80,20 +75,11 @@ self_test_result_t ads7028_self_test(void)
   return self_test_result;
 }
 
-<<<<<<< HEAD
 void ads7028GetTestData(uint8_t* buff)
-=======
-void ads7028GetTestData(uint16_t *buff)
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 {
-  setAds7028CS(LOW);
-<<<<<<< HEAD
+   setAds7028CS(LOW);
   //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK);
   *buff = readData(buff);
-=======
-  setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK);
-  *buff = readData((uint8_t *) buff);
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
   setAds7028CS(HIGH);
 }
 

@@ -187,16 +187,6 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 
 /* ADC Channels */
 #ifdef SR48_6_0
-<<<<<<< HEAD
-#define ADC_CHANNEL_VBATT          ADC_CHANNEL_4
-#define ADC_CHANNEL_EXT_A0         ADC_CHANNEL_9
-#define ADC_CHANNEL_EXT_A1         ADC_CHANNEL_11
-#define ADC_CHANNEL_EXT_A2         ADC_CHANNEL_12
-#define ADC_CHANNEL_INT_A0         ADC_CHANNEL_10
-#define ADC_CHANNEL_INT_A1         ADC_CHANNEL_15
-#define ADC_CHANNEL_INT_A2         ADC_CHANNEL_16
-#define ADC_CHANNEL_INT_A3         ADC_CHANNEL_17
-=======
 #define ADC_CHANNEL_VBATT  ADC_CHANNEL_4
 #define ADC_CHANNEL_EXT_A0 ADC_CHANNEL_9
 #define ADC_CHANNEL_EXT_A1 ADC_CHANNEL_11
@@ -205,17 +195,6 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define ADC_CHANNEL_INT_A1 ADC_CHANNEL_15
 #define ADC_CHANNEL_INT_A2 ADC_CHANNEL_16
 #define ADC_CHANNEL_INT_A3 ADC_CHANNEL_17
-
-#else
-#define ADC_CHANNEL_VBATT  AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH7_ENABLED
-#define ADC_CHANNEL_EXT_A0 ADC_CHANNEL_9
-#define ADC_CHANNEL_EXT_A1 ADC_CHANNEL_11
-#define ADC_CHANNEL_EXT_A2 ADC_CHANNEL_12
-#define ADC_CHANNEL_INT_A0 ADC_CHANNEL_10
-#define ADC_CHANNEL_INT_A1 ADC_CHANNEL_15
-#define ADC_CHANNEL_INT_A2 ADC_CHANNEL_16
-#define ADC_CHANNEL_INT_A3 ADC_CHANNEL_17
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 #endif
 
 #elif defined(SHIMMER4_SDK)
