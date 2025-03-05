@@ -75,7 +75,7 @@ self_test_result_t ads7028_self_test(void)
         DATA_CFG_FIX_PAT_MASK); //Device outputs fixed code 0xA5A repetitively when reading ADC data.
     setAds7028CS(HIGH);
     ads7028GetTestData(adcTestVal);
-    if ( *adcTestVal != FIXED_OUTPUT)
+    if (*adcTestVal != FIXED_OUTPUT)
     {
       self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
     }
