@@ -85,14 +85,12 @@ bool ads7028_whoAmI(void)
 uint8_t initADS7028(void)
 {
   //Clear BOR flag
-  setAds7028CS(LOW);
-  //resetDevice() //Reset
+  resetDevice(); //Reset
+  HAL_Delay(5);
   if (!ads7028_whoAmI())
   {
     return 0;
   }
-  writeSingleRegister(DATA_CFG_ADDRESS, DATA_CFG_CPOL_CPHA_POLARITY0_PHASE1); //SPI 1 Since by default it is on SPI0 and returns to SPI0 on power cycle this will be sent via SPI0.
-  setAds7028CS(HIGH);
   return 1;
 }
 
