@@ -266,8 +266,8 @@ void S4Sens_startSensing(void)
 #ifdef S3R_NUCLEO
       MX_MDF1_Init();
 #else
-      MX_ADF1_Init();
-      micStartSensing();
+    MX_ADF1_Init();
+    micStartSensing();
 #endif
     }
 
@@ -283,7 +283,7 @@ void S4Sens_startSensing(void)
 #if SENS_CLK_RTC0TIM1
     TIM_startSensing();
 #else
-    S4_RTC_WakeUpSet(samplingRateTicks);
+  S4_RTC_WakeUpSet(samplingRateTicks);
 #endif
 
     sensing.startTs = RTC_get64();
