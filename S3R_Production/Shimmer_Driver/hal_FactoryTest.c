@@ -599,7 +599,7 @@ void SPI_test(void)
   }
   else    //TODO Add ADS7028 test support here
   {
-    uint16_t* adc_val = 0;
+    uint8_t* adc_val = 0;
     self_test_result = ads7028_self_test();
     if (self_test_result)
     {

@@ -122,7 +122,7 @@ extern "C"
     uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t adxl371Buf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET + 1 + 6]; //+1 for BMP390 dummy byte
-    uint16_t Ads2078Buf[SPI_DMA_TXRX_OFFSET + 7];
+    uint8_t Ads2078Buf[SPI_DMA_TXRX_OFFSET + 7];
   } spi1ReadBuf;
 
   typedef struct

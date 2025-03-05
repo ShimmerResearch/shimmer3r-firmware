@@ -1133,7 +1133,7 @@ void        resetDevice();
 void        startAutoConversions(uint8_t channelID, uint32_t samplesPerSecond);
 void        stopConversions(void);
 
-void        ads7028DataGet(uint16_t* data);
+void        ads7028DataGet(uint8_t* data);
 int16_t     readData(uint8_t* dataRx);
 uint8_t     readSingleRegister(uint8_t address);
 uint8_t     getRegisterValue(uint8_t address);

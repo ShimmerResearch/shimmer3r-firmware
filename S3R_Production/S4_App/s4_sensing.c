@@ -249,9 +249,9 @@ void S4Sens_startSensing(void)
     DockUart_disable();
     S4Sens_stepInit();
 
+#if (defined(SHIMMER3R) && defined(SR48_6_0))
     if (areAdcChannelsEnabled())
     {
-#if (defined(SHIMMER3R) && defined(SR48_6_0))
       S4_ADC_startSensing();
 #else
 

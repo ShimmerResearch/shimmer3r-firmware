@@ -235,13 +235,13 @@ void ads7028Configure(void)
   setAds7028CS(HIGH);
 }
 
-void ads7028DataGet(uint16_t* data)
+void ads7028DataGet(uint8_t* data)
 {
   HAL_StatusTypeDef ret;
   setAds7028CS(LOW);
 
   setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
-   *data = readData((uint8_t*)data);
+   *data = readData(data);
 
   setAds7028CS(HIGH);
 }

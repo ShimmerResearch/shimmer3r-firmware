@@ -75,7 +75,7 @@
 //*****************************************************************************
 
 self_test_result_t ads7028_self_test(void);
-
+void        ads7028GetTestData(uint8_t* buff);
 /* SPI peripheral functions */
 void        initAdcPeripherals(void);
 void        spiSendReceiveArray(void * handle, uint8_t* DataTx, uint8_t* DataRx, uint8_t byteLength);
