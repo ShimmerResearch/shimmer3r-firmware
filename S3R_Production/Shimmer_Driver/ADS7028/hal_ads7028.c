@@ -56,7 +56,7 @@ void TIMER0IntHandler(void);
 //TODO implement test here.
 self_test_result_t ads7028_self_test(void)
 {
-  uint8_t *adcTestVal;
+  uint8_t *adcTestVal = 0;
   self_test_result_t self_test_result = SELF_TEST_PASS;
   resetDevice();
   if (!initADS7028())
@@ -74,7 +74,8 @@ self_test_result_t ads7028_self_test(void)
     setRegisterBits(DATA_CFG_FIX_PAT_ENABLED,
         DATA_CFG_FIX_PAT_MASK); //Device outputs fixed code 0xA5A repetitively when reading ADC data.
     setAds7028CS(HIGH);
-    if (!ads7028GetTestData(adcTestVal) == FIXED_OUTPUT)
+    ads7028GetTestData(adcTestVal);
+    if ( *adcTestVal != FIXED_OUTPUT)
     {
       self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
     }
@@ -86,7 +87,7 @@ void ads7028GetTestData(uint8_t *buff)
 {
   setAds7028CS(LOW);
   //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK);
-  *buff = readData(buff);
+  readData(buff);
   setAds7028CS(HIGH);
 }
 

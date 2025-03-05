@@ -238,7 +238,7 @@ void ads7028DataGet(uint8_t *data)
   setAds7028CS(LOW);
 
   setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
-  *data = readData(data);
+  readData(data);
 
   setAds7028CS(HIGH);
 }
@@ -269,7 +269,7 @@ void stopConversions(void)
 //!\return int16_t (sign-extended data).
 //
 //*****************************************************************************
-int16_t readData(uint8_t *dataRx)
+void readData(uint8_t *dataRx)
 {
   uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
 
@@ -281,7 +281,7 @@ int16_t readData(uint8_t *dataRx)
   }
   spiSendReceiveArray(&SENSOR_BUS, &dataTx[0], dataRx, numberOfBytes);
 
-  return signExtend(dataRx);
+  //return signExtend(dataRx);
 }
 
 //*****************************************************************************
