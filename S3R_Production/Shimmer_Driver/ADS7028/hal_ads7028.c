@@ -56,7 +56,7 @@ void TIMER0IntHandler(void);
 //TODO implement test here.
 self_test_result_t ads7028_self_test(void)
 {
-  uint8_t* adcTestVal;
+  uint8_t *adcTestVal;
   self_test_result_t self_test_result = SELF_TEST_PASS;
   resetDevice();
   if (!initADS7028())
@@ -71,9 +71,10 @@ self_test_result_t ads7028_self_test(void)
     //writeSingleRegister(CHANNEL_SEL_ADDRESS, CHANNEL_SEL_MANUAL_CHID_7);
     //Set all Channels as Analog Inputs.
     //writeSingleRegister(PIN_CFG_ADDRESS, PIN_CFG_PIN_CFG_CH7_ANALOG_INPUT);
-    setRegisterBits(DATA_CFG_FIX_PAT_ENABLED, DATA_CFG_FIX_PAT_MASK); //Device outputs fixed code 0xA5A repetitively when reading ADC data.
+    setRegisterBits(DATA_CFG_FIX_PAT_ENABLED,
+        DATA_CFG_FIX_PAT_MASK); //Device outputs fixed code 0xA5A repetitively when reading ADC data.
     setAds7028CS(HIGH);
-    if(!ads7028GetTestData(adcTestVal)== FIXED_OUTPUT)
+    if (!ads7028GetTestData(adcTestVal) == FIXED_OUTPUT)
     {
       self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
     }

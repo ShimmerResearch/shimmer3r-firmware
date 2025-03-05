@@ -605,7 +605,8 @@ void SPI_test(void)
     {
       shimmerStatus.testResult |= S3R_TEST_0019;
     }
-    print_chip_test_result("S3R_TEST_0019", "ADS7028", self_test_result,TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
+    print_chip_test_result("S3R_TEST_0019", "ADS7028", self_test_result,
+        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
   }
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
