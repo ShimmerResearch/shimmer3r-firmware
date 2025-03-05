@@ -137,7 +137,7 @@
  * --------------------------------------------------------------------------------------------------------
  * |   Bit 7   |    Bit 6   |    Bit 5   |    Bit 4   |    Bit 3   |    Bit 2 | Bit 1   |    Bit 0   |
  * --------------------------------------------------------------------------------------------------------
- * |   RSVD    |   CRC_EN   |  STATS_EN  |   DWC_EN   |    RSVD    |    CH_RST |     CAL    |     RST    |
+ * |   RSVD    |   CRC_EN   |  STATS_EN  |   DWC_EN   |    RSVD    |    CH_RST | CAL    |     RST    |
  * --------------------------------------------------------------------------------------------------------
  */
 
@@ -240,7 +240,7 @@
 
 /* Register 0x04 (OPMODE_CFG) definition
  * --------------------------------------------------------------------------------------------------------
- * |   Bit 7    |    Bit 6   |    Bit 5   |    Bit 4   |    Bit 3   |    Bit 2 |    Bit 1   |    Bit 0   |
+ * |   Bit 7    |    Bit 6   |    Bit 5   |    Bit 4   |    Bit 3   |    Bit 2 | Bit 1   |    Bit 0   |
  * --------------------------------------------------------------------------------------------------------
  * |CONV_ON_ERR |        CONV_MODE        |   OSC_SEL  | CLK_DIV[3:0] |
  * --------------------------------------------------------------------------------------------------------
@@ -1161,11 +1161,11 @@ void startAutoConversions(uint8_t channelID, uint32_t samplesPerSecond);
 void stopConversions(void);
 
 <<<<<<< HEAD
-void        ads7028DataGet(uint8_t* data);
-int16_t     readData(uint8_t* dataRx);
-uint8_t     readSingleRegister(uint8_t address);
-uint8_t     getRegisterValue(uint8_t address);
-void        ads7028Configure(void);
+void ads7028DataGet(uint8_t *data);
+int16_t readData(uint8_t *dataRx);
+uint8_t readSingleRegister(uint8_t address);
+uint8_t getRegisterValue(uint8_t address);
+void ads7028Configure(void);
 =======
 void ads7028DataGet(uint16_t *data);
 int16_t readData(uint8_t *dataRx);

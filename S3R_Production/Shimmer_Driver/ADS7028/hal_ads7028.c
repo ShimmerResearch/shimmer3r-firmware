@@ -65,8 +65,10 @@ self_test_result_t ads7028_self_test(void)
     setAds7028CS(LOW);
     //configure in manual mode for VBATT channel
 <<<<<<< HEAD
-    writeSingleRegister(PIN_CFG_ADDRESS,PIN_CFG_PIN_CFG_CH7_ANALOG_INPUT); // Set all Channels as Analog Inputs.
-    writeSingleRegister(CHANNEL_SEL_ADDRESS, CHANNEL_SEL_MANUAL_CHID_7); //Write registor setting selecting channels.
+    writeSingleRegister(PIN_CFG_ADDRESS,
+        PIN_CFG_PIN_CFG_CH7_ANALOG_INPUT); //Set all Channels as Analog Inputs.
+    writeSingleRegister(CHANNEL_SEL_ADDRESS,
+        CHANNEL_SEL_MANUAL_CHID_7); //Write registor setting selecting channels.
 =======
     writeSingleRegister(CHANNEL_SEL_ADDRESS,
         CHANNEL_SEL_MANUAL_CHID_7); //Write registor setting selecting channels.
@@ -81,8 +83,10 @@ self_test_result_t ads7028_self_test(void)
 }
 
 <<<<<<< HEAD
-void ads7028GetTestData(uint8_t* buff)
+
+void ads7028GetTestData(uint8_t *buff)
 =======
+
 void ads7028GetTestData(uint16_t *buff)
 >>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 {

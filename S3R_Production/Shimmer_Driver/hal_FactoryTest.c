@@ -600,7 +600,7 @@ void SPI_test(void)
   else //TODO Add ADS7028 test support here
   {
 <<<<<<< HEAD
-    uint8_t* adc_val = 0;
+    uint8_t *adc_val = 0;
 =======
     uint16_t *adc_val = 0;
 >>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
