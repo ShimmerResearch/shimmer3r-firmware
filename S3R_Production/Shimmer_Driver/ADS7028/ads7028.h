@@ -98,7 +98,7 @@
  */
 
 #define ADS7028_ADDRESS_DEVICE_ID               0x00 //Device ID
-#define ADS7028_DEVICE_ID                       0x25 //device ID for ADS7028
+#define ADS7028_DEVICE_ID                       0x21 //device ID for ADS7028
 
 /* SYSTEM_STATUS register address & default value */
 #define SYSTEM_STATUS_ADDRESS                   ((uint8_t) 0x00)

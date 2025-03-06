@@ -77,7 +77,7 @@ bool ads7028_whoAmI(void)
 {
   uint16_t response;
   setAds7028CS(LOW);
-  response = readSingleRegister(ADS7028_ADDRESS_DEVICE_ID); //WHO_AM_I Need to verify this.
+  response = readSingleRegister(ADS7028_ADDRESS_DEVICE_ID); //WHO_AM_I reads status register.
   setAds7028CS(HIGH);
   return (response == ADS7028_DEVICE_ID);
 }
