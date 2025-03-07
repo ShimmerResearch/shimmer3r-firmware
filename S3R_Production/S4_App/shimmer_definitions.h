@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #if defined(SHIMMER3R)
-#define DEVICE_VER 10
+#define DEVICE_VER    10
 #define FW_IDENTIFIER 3  //12 is the firmware for shimmer4sdk
 #define FW_VER_MAJOR  1  //Major version number: 0-65535
 #define FW_VER_MINOR  0  //Minor version number: 0-255
@@ -64,8 +64,8 @@
 //#define SUCCESS 1
 //#define FAIL 0
 
-#define STAT_PERI_ADC                   0x01
-#define STAT_PERI_I2C_SENS              0x02
+#define STAT_PERI_ADC      0x01
+#define STAT_PERI_I2C_SENS 0x02
 #if defined(SHIMMER4_SDK)
 #define STAT_PERI_I2C_BATT 0x04
 #endif
@@ -82,7 +82,6 @@
   {                               \
     shimmerStatus.periStat &= ~x; \
   } while (0)
-
 
 //typedef enum{//bt
 //   UART_BT_STAT_IDLE = 0,

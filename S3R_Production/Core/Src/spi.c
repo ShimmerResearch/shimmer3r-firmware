@@ -881,8 +881,8 @@ void SPI_startSensing()
 
   if (configBytes->chEnPressureAndTemperature)
   {
-    int8_t rslt = bmp3_configure(
-        shimmerSamplingFreq, ShimConfig_configBytePressureOversamplingRatioGet());
+    int8_t rslt = bmp3_configure(shimmerSamplingFreq,
+        ShimConfig_configBytePressureOversamplingRatioGet());
   }
 
   if (configBytes->chEnAltAccel)
@@ -899,8 +899,8 @@ void SPI_startSensing()
 
   if (configBytes->chEnMag)
   {
-    lis3mdl_configure(
-        shimmerSamplingFreq, ShimConfig_configByteMagRateGet(), configBytes->magRange);
+    lis3mdl_configure(shimmerSamplingFreq, ShimConfig_configByteMagRateGet(),
+        configBytes->magRange);
   }
 
 #endif

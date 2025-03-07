@@ -44,10 +44,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "s4_adc.h"
-#include <Battery/shimmer_battery.h>
 #include "gpdma.h"
 #include "log_and_stream_externs.h"
 #include "shimmer_definitions.h"
+#include <Battery/shimmer_battery.h>
 
 ADCTypeDef adc;
 #if defined(SHIMMER4_SDK)

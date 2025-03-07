@@ -22,9 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
-#include <log_and_stream_externs.h>
-#include <TaskList/shimmer_taskList.h>
 #include "shimmer_definitions.h"
+#include <TaskList/shimmer_taskList.h>
+#include <log_and_stream_externs.h>
 
 uint64_t rwcConfigTime64;
 uint32_t S4_RTC_Status = RTC_STATUS_ZERO;
