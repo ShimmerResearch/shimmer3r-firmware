@@ -485,7 +485,6 @@ uint8_t CDC_Transmit(uint8_t ch, uint8_t *Buf, uint16_t Len)
     return USBD_BUSY;
   }
   USBD_CDC_SetTxBuffer(ch, &hUsbDevice, Buf, Len);
-  while(hcdc->TxState != 0);
   result = USBD_CDC_TransmitPacket(ch, &hUsbDevice);
 
   /* USER CODE END 7 */
