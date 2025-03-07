@@ -46,7 +46,7 @@
 
 #include "../../S4_App/shimmer_definitions.h"
 #include "../EZ-Serial/handlers.h"
-#include "../shimmer_bt_comms.h"
+#include <Comms/shimmer_bt_uart.h>
 #include "log_and_stream_externs.h"
 
 uint8_t pending_response = 0;
@@ -92,6 +92,8 @@ volatile uint8_t messageInProgress;
 
 uint8_t dataRateTestState;
 uint8_t dataRateTestTxPacket[] = { DATA_RATE_TEST_RESPONSE, 0, 0, 0, 0 };
+
+uint16_t btRxWaitByteCount = 0;
 
 /*******************************************************************************
  * Interrupt Handler Name: TimerInterruptHandler
@@ -293,17 +295,17 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
      * parse is ideal and the header byte is a Shimmer packet header byte,
      * parse as Shimmer packet */
-    else if (isWaitingForArgs()
+    else if (ShimBt_isWaitingForArgs()
         || (getEzsPacketLength() == 0 && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
             && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
             && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
     {
       //Parse as Shimmer packet
       SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
-      count = getBtRxShimmerCommsWaitByteCount();
-      Dma2ConversionDone(&rxBuf[i]);
+      count = btRxWaitByteCount;
+      ShimBt_dmaConversionDone(&rxBuf[i]);
       i += count;
-      count = getBtRxShimmerCommsWaitByteCount();
+      count = btRxWaitByteCount;
     }
     else
     {
@@ -597,4 +599,9 @@ void setWaitingForBtBoot(uint8_t state)
 char *getBtBootMsgPtr(void)
 {
   return &btBootMsg[0];
+}
+
+void setDmaWaitingForResponse(uint16_t count)
+{
+  btRxWaitByteCount = count;
 }

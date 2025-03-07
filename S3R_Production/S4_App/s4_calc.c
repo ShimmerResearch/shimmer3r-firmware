@@ -84,32 +84,3 @@ uint8_t S4Calc_crcCheck(uint8_t *msg, uint8_t len)
     return 0; //FALSE
   }
 }
-
-void S4Calc_itoaWith0(uint64_t num, uint8_t *buf, uint8_t len)
-{ //len = actual len + 1 extra '\0' at the end
-  memset(buf, 0, len--);
-  while (len--)
-  {
-    buf[len] = '0' + num % 10;
-    num /= 10;
-  }
-}
-
-void S4Calc_itoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len)
-{ //len = actual len + 1 extra '\0' at the end
-  uint8_t idx, i_move;
-  memset(buf, 0, max_len);
-  if (!num)
-  {
-    buf[0] = '0';
-  }
-  for (idx = 0; (idx < max_len - 1) && (num > 0); idx++)
-  {
-    for (i_move = idx; i_move > 0; i_move--)
-    {
-      buf[i_move] = buf[i_move - 1];
-    }
-    buf[0] = '0' + num % 10;
-    num /= 10;
-  }
-}

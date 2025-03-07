@@ -86,7 +86,7 @@ void MX_USART1_UART_Init(void)
   }
   /* USER CODE BEGIN USART1_Init 2 */
 
-  DockUart_resetVariables();
+  ShimDock_resetVariables();
   DockUart_init(&huart1);
 
   MX_CRC_Init();
@@ -726,7 +726,7 @@ void dockUartRxCallback(UART_HandleTypeDef *huart)
 {
   //Board_ledToggle(LED_YELLOW);
 
-  DockUart_rxCallback(uartDockRxBuf[0]);
+  ShimDock_rxCallback(uartDockRxBuf[0]);
 
   //HAL_UART_Receive_DMA(huartDock, uartDockRxBuf, 1);
   HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);

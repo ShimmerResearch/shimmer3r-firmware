@@ -215,8 +215,6 @@ extern "C"
 
   /* USER CODE END Private defines */
 
-  void SdInfoSync(void);
-
 #ifdef __cplusplus
 }
 #endif

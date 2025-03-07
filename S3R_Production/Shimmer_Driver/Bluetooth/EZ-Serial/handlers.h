@@ -103,6 +103,8 @@ void resetBtRxBuff(void);
 void setWaitingForBtBoot(uint8_t state);
 char *getBtBootMsgPtr(void);
 
+void setDmaWaitingForResponse(uint16_t count);
+
 #endif /* HANDLERS_H */
 
 /* [] END OF FILE */

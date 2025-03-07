@@ -195,7 +195,7 @@ void MX_SPI3_Init(void)
 {
 
   /* USER CODE BEGIN SPI3_Init 0 */
-  if (isAds1292Present())
+  if (ShimBrd_isAds1292Present())
   {
 
     /* USER CODE END SPI3_Init 0 */
@@ -668,7 +668,7 @@ void SPI_configureChannels()
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
   uint8_t nbr_spi_chans = 0;
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
 #if defined(SHIMMER3R)
   memset((uint8_t *) &spi1Sens, 0, sizeof(spi1Sens));
@@ -768,7 +768,7 @@ void SPI_configureChannels()
 #endif
 
   //ExG (spi)
-  if (isAds1292Present())
+  if (ShimBrd_isAds1292Present())
   {
     if (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
         || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit)
@@ -848,8 +848,8 @@ void SPI_configureChannels()
 void SPI_startSensing()
 {
   static uint8_t temp_exg_buf[11];
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  float shimmerSamplingFreq = get_shimmer_sampling_freq();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
+  float shimmerSamplingFreq = ShimConfig_getShimmerSamplingFreq();
 
   memset((uint8_t *) &spi1Sens_buf, 0, sizeof(spi1ReadBuf));
   memset((uint8_t *) &spi2Sens_buf, 0, sizeof(spi2ReadBuf));
@@ -872,7 +872,7 @@ void SPI_startSensing()
   /* SPI1 */
   if ((configBytes->chEnLnAccel) || (configBytes->chEnGyro))
   {
-    uint8_t gyroRange = get_config_byte_gyro_range();
+    uint8_t gyroRange = ShimConfig_gyroRangeGet();
     //Shimmer config maps 0x05 to the chip's 0x0C for 4000dps
     gyroRange = (gyroRange == 5) ? LSM6DSV_4000dps : gyroRange;
     lsm6dsv_configure(shimmerSamplingFreq, configBytes->chEnGyro, configBytes->chEnLnAccel,
@@ -882,7 +882,7 @@ void SPI_startSensing()
   if (configBytes->chEnPressureAndTemperature)
   {
     int8_t rslt = bmp3_configure(
-        shimmerSamplingFreq, get_config_byte_pressure_oversampling_ratio());
+        shimmerSamplingFreq, ShimConfig_configBytePressureOversamplingRatioGet());
   }
 
   if (configBytes->chEnAltAccel)
@@ -894,27 +894,27 @@ void SPI_startSensing()
   if (configBytes->chEnWrAccel)
   {
     lis2dw12_configure(shimmerSamplingFreq, configBytes->wrAccelRate,
-        configBytes->wrAccelRange, get_config_byte_wr_accel_mode());
+        configBytes->wrAccelRange, ShimConfig_wrAccelModeGet());
   }
 
   if (configBytes->chEnMag)
   {
     lis3mdl_configure(
-        shimmerSamplingFreq, get_config_byte_mag_rate(), configBytes->magRange);
+        shimmerSamplingFreq, ShimConfig_configByteMagRateGet(), configBytes->magRange);
   }
 
 #endif
 
   //TODO clean up ExG code
   //ExG (SPI3)
-  if (isAds1292Present()
+  if (ShimBrd_isAds1292Present()
       && (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
           || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit))
   {
     EXG_init(hspiExg);
     if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
     {
-      S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_1_CONFIG1, 10);
+      ShimConfig_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_1_CONFIG1, 10);
       EXG_writeRegs(0, ADS1292R_CONFIG1, 10, temp_exg_buf);
       EXG_readRegs(0, 0, 11, temp_exg_buf); //can read back to check if write is done successfully
     }
@@ -922,7 +922,7 @@ void SPI_startSensing()
     {
       HAL_Delay(100); //100ms
       EXG_setRdatac(1, 0);
-      S4Ram_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_2_CONFIG1, 10);
+      ShimConfig_storedConfigGet(temp_exg_buf, NV_EXG_ADS1292R_2_CONFIG1, 10);
       EXG_writeRegs(1, ADS1292R_CONFIG1, 10, temp_exg_buf);
       EXG_readRegs(1, 0, 11, temp_exg_buf);
       EXG_enableChip2(1);
@@ -936,12 +936,12 @@ void SPI_startSensing()
 
     //probably setting the PGA gain so cancel the channel offset
     if ((configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
-        && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_1_RESP2) & 0x80))
+        && (ShimConfig_storedConfigGetByte(NV_EXG_ADS1292R_1_RESP2) & 0x80))
     {
       EXG_offsetCal(0);
     }
     if ((configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
-        && (S4Ram_storedConfigGetByte(NV_EXG_ADS1292R_2_RESP2) & 0x80))
+        && (ShimConfig_storedConfigGetByte(NV_EXG_ADS1292R_2_RESP2) & 0x80))
     {
       EXG_offsetCal(1);
     }
@@ -983,10 +983,10 @@ void SPI_pollSensors(void)
 #endif
 
   //ExG (SPI)
-  if (isAds1292Present())
+  if (ShimBrd_isAds1292Present())
   {
     //exg
-    gConfigBytes *configBytes = S4Ram_getStoredConfig();
+    gConfigBytes *configBytes = ShimConfig_getStoredConfig();
     if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
     {
       EXG_readData(0, 0, sensing.dataBuf + sensing.ptr.exg1);
@@ -1003,9 +1003,9 @@ void SPI_stopSensing()
   //gConfigBytes *configBytes = S4Ram_getStoredConfig();
 
   //SPI3
-  if (isAds1292Present())
+  if (ShimBrd_isAds1292Present())
   {
-    gConfigBytes *configBytes = S4Ram_getStoredConfig();
+    gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
     //HAL_NVIC_EnableIRQ(EXTI3_IRQn);
     //HAL_NVIC_EnableIRQ(EXTI4_IRQn);

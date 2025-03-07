@@ -408,8 +408,8 @@ void Board_sdPowerCycle(void)
   HAL_Delay(120);
   Board_setSdPower(1);
   HAL_Delay(50);
-  SD_mount(0);
-  SD_mount(1);
+  ShimSd_mount(0);
+  ShimSd_mount(1);
 }
 
 /**
@@ -434,7 +434,7 @@ void Board_sd2Pc(void)
   Board_setSdPower(1);
   HAL_Delay(50);
   Board_detectN(0);
-  SD_mount(0);
+  ShimSd_mount(0);
 
   mmc1DeInit();
 }
@@ -459,8 +459,8 @@ void Board_sd2Arm(void)
   MX_FATFS_Init();
 #endif
 
-  SD_mount(0);
-  SD_mount(1);
+  ShimSd_mount(0);
+  ShimSd_mount(1);
 }
 
 /***************************************************************************/

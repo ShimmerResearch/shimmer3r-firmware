@@ -9,29 +9,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "log_and_stream_definitions.h"
+#include "log_and_stream_externs.h"
+#include "log_and_stream_includes.h"
+
 #include "hal_Power.h"
 #include "s4_adc.h"
 #include "s4_calc.h"
-#include "s4_calib.h"
 #include "s4_led.h"
-#include "s4_ram.h"
-#include "s4_sd.h"
-#include "s4_sensing.h"
 #include "shimmer_definitions.h"
 #if defined(SHIMMER4_SDK)
 #include "STC3100.h"
 #endif
-#include "../Shimmer_Driver/shimmer_boards/shimmer_boards.h"
 #include "gsr.h"
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/Bluetooth/CYW20820.h"
 #include "../Shimmer_Driver/Bluetooth/EZ-Serial/handlers.h"
-#include "../Shimmer_Driver/Bluetooth/sd_sync.h"
-#include "../Shimmer_Driver/Bluetooth/shimmer_bt_comms.h"
 #elif defined(SHIMMER4_SDK)
 #include "RN42.h"
 #endif
-#include "../Shimmer_Driver/dock_comms/shimmer_dock_comms.h"
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/ADXL371/adxl371.h"
 #include "../Shimmer_Driver/BMP3/BMP3_SensorAPI/bmp3_defs.h"
@@ -39,9 +35,6 @@
 #include "ADXL371/hal_adxl371.h"
 #include "LIS2DW12/hal_lis2dw12.h"
 #include "LIS2DW12/lis2dw12-pid/lis2dw12_reg.h"
-#include "battery.h"
-#include "log_and_stream_definitions.h"
-#include "log_and_stream_externs.h"
 #include <LIS2DW12/lis2dw12.h>
 #include <LIS2MDL/hal_lis2mdl.h>
 #include <LIS2MDL/lis2mdl-pid/lis2mdl_reg.h>
@@ -65,7 +58,6 @@
 #include "hal_Infomem.h"
 #include "lsm303dlhc.h"
 #include "mpu9250.h"
-#include "s4_taskList.h"
 
 #include "adc.h"
 #if defined(SHIMMER4_SDK)

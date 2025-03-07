@@ -52,7 +52,7 @@ typedef struct
 #define S4_ADC_init1             S4_NORM_ADC_init1
 #define S4_ADC_init2             S4_NORM_ADC_init2
 #define S4_ADC_initBatt          S4_NORM_ADC_initBatt
-#define S4_ADC_configureChannels S4_NORM_ADC_configureChannels
+#define ADC_configureChannels    S4_NORM_ADC_configureChannels
 #define S4_ADC_startSensing      S4_NORM_ADC_startSensing
 #define S4_ADC_bufPoll           S4_NORM_ADC_bufPoll
 #define S4_ADC_stopSensing       S4_NORM_ADC_stopSensing

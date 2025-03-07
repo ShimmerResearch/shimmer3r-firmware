@@ -44,7 +44,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "s4_adc.h"
-#include "battery.h"
+#include <Battery/shimmer_battery.h>
 #include "gpdma.h"
 #include "log_and_stream_externs.h"
 #include "shimmer_definitions.h"
@@ -160,7 +160,7 @@ void S4_NORM_ADC_configureChannels(void)
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
   uint8_t nbr_adc_chans = 0;
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   adc.sensorLen = 0; //adc.sensorCnt = 0;
 #if defined(SHIMMER3R)
@@ -331,7 +331,7 @@ void S4_NORM_ADC_configureChannels(void)
 
 void S4_NORM_ADC_startSensing(void)
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
   ADC_ChannelConfTypeDef sConfig = { 0 };
 
   if (configBytes->expansionBoardPower)
@@ -547,7 +547,7 @@ void shimmerAdcGpioSetup(uint8_t init)
   uint32_t adcPinsPortA = 0;
   uint32_t adcPinsPortB = 0;
   uint32_t adcPinsPortC = 0;
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   if (configBytes->chEnExtADC0)
   {
@@ -833,7 +833,7 @@ void S4_NORM_ADC_bufPoll()
 {
   uint8_t adc_offset_sens = 0; //, adc_offset_resv = 0;
   //uint8_t adc_vbattery[2];
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   //if(adc.chanCntBatt > 0){
   //   ADC_readBatt();
@@ -1005,7 +1005,7 @@ void S4_NORM_ADC_bufPoll()
 
 void S4_NORM_ADC_stopSensing()
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   HAL_ADC_Stop_DMA(hadcSensPtr);
   HAL_ADC_DeInit(hadcSensPtr);
@@ -1173,7 +1173,7 @@ void manageReadBatt(uint8_t isBlockingRead)
     return;
   }
 
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
   if (shimmerStatus.sensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
     saveBatteryVoltageAndUpdateStatus(

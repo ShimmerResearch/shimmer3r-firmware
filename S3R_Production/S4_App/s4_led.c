@@ -98,7 +98,7 @@ void S4Led_Blink(void)
   }
 
   if (!shimmerStatus.docked && (shimmerStatus.sdBadFile || !shimmerStatus.sdInserted)
-      && S4Ram_getStoredConfig()->sdErrorEnable)
+      && ShimConfig_getStoredConfig()->sdErrorEnable)
   {
     //Alternate Red/Yellow for SD error
     if (cntBlink % 2)

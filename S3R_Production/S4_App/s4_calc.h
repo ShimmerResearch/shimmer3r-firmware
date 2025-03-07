@@ -52,7 +52,4 @@
 uint16_t S4Calc_crcCalc(uint8_t *msg, uint8_t len);
 uint8_t S4Calc_crcCheck(uint8_t *msg, uint8_t len);
 
-void S4Calc_itoaWith0(uint64_t num, uint8_t *buf, uint8_t len);
-void S4Calc_itoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len);
-
 #endif //S4_CALC_H

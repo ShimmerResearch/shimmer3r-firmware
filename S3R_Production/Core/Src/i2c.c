@@ -420,7 +420,7 @@ void I2cSens_configureChannels(void)
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
   uint8_t nbr_i2c1_chans = 0;
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
 #if defined(SHIMMER3R)
   memset((uint8_t *) &i2c1Sens, 0, sizeof(i2c1Sens));
@@ -563,8 +563,8 @@ void I2cBatt_configureChannels(void)
 
 void I2C_startSensing(void)
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  float shimmerSamplingFreq = get_shimmer_sampling_freq();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
+  float shimmerSamplingFreq = ShimConfig_getShimmerSamplingFreq();
 
   memset((uint8_t *) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
 
@@ -673,7 +673,7 @@ void I2C_stopSensing(void)
 
 void I2cSens_stopSensing(void)
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
 #if defined(SHIMMER3R)
 //if (configBytes->chEnMag)
@@ -1362,8 +1362,8 @@ void loadDaughterCardIdFromEeprom(void)
 {
   uint8_t daughterCardIdBuf[CAT24C16_PAGE_SIZE];
   eepromRead(0, CAT24C16_PAGE_SIZE, &daughterCardIdBuf[0]);
-  setDaugherCardIdPage(daughterCardIdBuf);
-  parseDaughterCardId(getDaughtCardId()->exp_brd_id);
+  ShimBrd_setDaugherCardIdPage(daughterCardIdBuf);
+  ShimBrd_parseDaughterCardId();
   HAL_Delay(5); //5ms to ensure no writes pending
 }
 

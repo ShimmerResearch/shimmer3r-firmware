@@ -26,7 +26,8 @@
 #include "usb_device.h"
 #include "usbd_core.h"
 
-#include "log_and_stream_externs.h"
+#include <log_and_stream_externs.h>
+#include <TaskList/shimmer_taskList.h>
 
 /* USER CODE END 0 */
 
@@ -262,12 +263,12 @@ void GPIO_userButtonCheck()
       if (shimmerStatus.sensing == 0)
       {
         shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
-        S4_Task_set(TASK_STARTSENSING);
+        ShimTask_set(TASK_STARTSENSING);
       }
       else
       {
         shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_STOP;
-        S4_Task_set(TASK_STOPSENSING);
+        ShimTask_set(TASK_STOPSENSING);
       }
     }
     GPIO_tsLastRelease = GPIO_tsRelease;
@@ -351,26 +352,26 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
   case DOCK_DETECT_Pin:
     DockUart_interruptCheck();
-    S4_Task_set(TASK_DOCKSETUP);
+    ShimTask_set(TASK_SETUP_DOCK);
     break;
 #if SR48_6_0_PATCH_DOCK_DETECT
   case SR48_6_0_BOOT0_USER_BTN_Pin:
     /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
     DockUart_interruptCheck();
-    S4_Task_set(TASK_DOCKSETUP);
+    ShimTask_set(TASK_SETUP_DOCK);
     break;
 #endif
   case USER_BTN_Pin:
     GPIO_userButtonCheck();
     break;
   case SD_DETECT_N_Pin:
-    SD_insertedCheck();
+    CheckSdInslot();
     break;
 #if SR48_6_0_PATCH_VBUS_SENSE
   case USB_VBUS_Pin:
-    if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
+    if (!(ShimTask_getList() & TASK_USB_SETUP))
     {
-      S4_Task_set(TASK_USB_SETUP);
+      ShimTask_set(TASK_USB_SETUP);
     }
     break;
 #endif
@@ -423,7 +424,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     GPIO_userButtonCheck();
     break;
   case SD_DETECT_N_Pin:
-    SD_insertedCheck();
+    CheckSdInslot();
     break;
   default:
     break;
@@ -431,7 +432,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 #endif
 
-uint8_t SD_insertedCheck()
+uint8_t CheckSdInslot(void)
 {
   if (HAL_GPIO_ReadPin(SD_DETECT_N_GPIO_Port, SD_DETECT_N_Pin) == GPIO_PIN_RESET)
   { //inserted
@@ -461,7 +462,7 @@ uint8_t isSdPowerOn(void)
  * */
 void gpioInitPerBoard(void)
 {
-  shimmer_expansion_brd *daughtCardId = getDaughtCardId();
+  shimmer_expansion_brd *daughtCardId = ShimBrd_getDaughtCardId();
   if (daughtCardId->exp_brd_id == EXP_BRD_GSR_UNIFIED)
   {
     GPIO_InitTypeDef GPIO_InitStruct = { 0 };

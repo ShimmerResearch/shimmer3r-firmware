@@ -125,13 +125,13 @@ void print_date_and_time(void)
 void print_shimmer_model(void)
 {
   send_test_report("Shimmer model:\r\n");
-  if (isDaughterCardIdSet())
+  if (ShimBrd_isDaughterCardIdSet())
   {
-    sprintf(buffer, " - S3R_TEST_0003 - PASS: %s", getDaughtCardIdStrPtr());
+    sprintf(buffer, " - S3R_TEST_0003 - PASS: %s", ShimBrd_getDaughtCardIdStrPtr());
     send_test_report(buffer);
-    shimmer_expansion_brd *daughterCardId = getDaughtCardId();
+    shimmer_expansion_brd *daughterCardId = ShimBrd_getDaughtCardId();
     sprintf(buffer, " (SR%d-%d-%d)\r\n", daughterCardId->exp_brd_id,
-        daughterCardId->exp_brd_rev, daughterCardId->exp_brd_special_rev);
+        daughterCardId->exp_brd_major, daughterCardId->exp_brd_minor);
     send_test_report(buffer);
   }
   else
@@ -402,7 +402,7 @@ void sd_card_test(void)
     printSdCardInfo(buffer);
     send_test_report(buffer);
 
-    shimmerStatus.testResult += SD_test() << 6;
+    shimmerStatus.testResult += ShimSd_test1() << 6;
     //SD_test_alternative();
     sprintf(buffer, " - S3R_TEST_0013 - %s: MCU read/write test\r\n",
         shimmerStatus.sdBadFile ? "FAIL" : "PASS");
@@ -426,11 +426,11 @@ void bt_module_test(void)
   if (isBtIsInitialised())
   {
     send_test_report(" - MAC ID: ");
-    BT_getMacAddressAscii(buffer);
+    ShimBt_getMacAddressAscii(buffer);
     send_test_report(buffer);
     send_test_report("\r\n");
 
-    sprintf(buffer, " - %s\r\n", getBtVerStrPtr());
+    sprintf(buffer, " - %s\r\n", ShimBt_getBtVerStrPtr());
     send_test_report(buffer);
 
     sprintf(buffer, " - S3R_TEST_0014 - %s BT firmware version\r\n",
@@ -518,7 +518,7 @@ void I2C_test(void)
 
 #if defined(SHIMMER3R)
   send_test_report("I2C4:\r\n");
-  if (isI2c4Supported())
+  if (ShimBrd_isI2c4Supported())
   {
     uint8_t i2c4_result = 0;
 
@@ -592,7 +592,7 @@ void SPI_test(void)
   send_test_report("SPI1:\r\n");
   MX_SPI1_Init();
 
-  if (isBoardSr48_6_0())
+  if (ShimBrd_isBoardSr48_6_0())
   {
     sprintf(buffer, " - S3R_TEST_0019 - ADS7028 test not applicable for this model\r\n");
     send_test_report(buffer);
@@ -661,7 +661,7 @@ void SPI_test(void)
     shimmerStatus.testResult |= S3R_TEST_0021;
   }
 
-  if (isAdxl371Present())
+  if (ShimBrd_isAdxl371Present())
   {
     self_test_result = adxl371_self_test();
     print_chip_test_result("S3R_TEST_0022", "ADXL371", self_test_result,
@@ -721,7 +721,7 @@ void SPI_test(void)
 #endif
 
   send_test_report("SPI3:\r\n");
-  if (isAds1292Present())
+  if (ShimBrd_isAds1292Present())
   {
     MX_SPI3_Init();
 
