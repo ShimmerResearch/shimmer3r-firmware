@@ -78,7 +78,6 @@ static void SystemPower_Config(void);
 
 void Init(void);
 //TODO move out of here
-#if defined(SHIMMER3R)
 void setBootStage(boot_stage_t bootStageNew);
 boot_stage_t getBootStage(void);
 void btInitialise(void);
@@ -92,7 +91,13 @@ void ReadSdConfiguration(void);
 void HAL_Delay(uint32_t Delay);
 #endif
 void sleepWhenNoTask(void);
-#endif
+
+void BtStop(uint8_t isCalledFromMain);
+float samplingClockFreqGet(void);
+void InitialiseBtAfterBoot(void);
+uint8_t getDefaultBaudForBtVersion(void);
+uint8_t* getMacIdBytesPtr(void);
+void BT_setSendNextChar_cb(void (*cb)(void));
 
 /* USER CODE END PFP */
 
@@ -584,7 +589,7 @@ void ReadSdConfiguration(void)
 {
   ShimTask_clear(TASK_STREAMDATA); //this will skip one sample
   Board_setSdPower(1);
-  ParseConfig();
+  ShimSd_parseConfig();
 }
 
 #if USE_CUSTOM_HAL_DELAY
@@ -650,6 +655,37 @@ void sleepWhenNoTask(void)
   //Power_SleepUntilInterrupt();
   //}
   //}
+}
+
+void BtStop(uint8_t isCalledFromMain)
+{
+  //TODO
+}
+
+float samplingClockFreqGet(void)
+{
+    return 32768.0f;
+}
+
+void InitialiseBtAfterBoot(void)
+{
+  //TODO
+}
+
+uint8_t getDefaultBaudForBtVersion(void)
+{
+  return 12; // To represent 2M baud rate
+}
+
+uint8_t* getMacIdBytesPtr(void)
+{
+  //TODO
+  return 0;
+}
+
+void BT_setSendNextChar_cb(void (*cb)(void))
+{
+  //TODO
 }
 
 /* USER CODE END 4 */

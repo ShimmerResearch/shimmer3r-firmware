@@ -8,8 +8,9 @@
 #ifndef SRC_CYW20820_H_
 #define SRC_CYW20820_H_
 
-#include "stdbool.h"
-
+#include <stdbool.h>
+#include <stdint.h>
+#
 //TODO decide if needed and remove it and associated code if not. Seems to be needed or else BLE won't advertise just using ezs_cmd_gap_start_adv.
 #define USE_GET_SET_ADV_PARAM 0
 

@@ -1266,7 +1266,7 @@ void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *h
   uint16_t battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, VREF_EXTERNAL_SUPPLY_MV,
                            adcBattVal, hadcSensPtr->Init.Resolution)
       * 2;
-  updateBatteryStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
+  ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
 }
 
 /* USER CODE END 1 */

@@ -45,9 +45,9 @@
 #include "stm32u5xx.h"
 
 #include "../../S4_App/shimmer_definitions.h"
-#include "../EZ-Serial/handlers.h"
 #include "log_and_stream_externs.h"
 #include <Comms/shimmer_bt_uart.h>
+#include <CYW20820/EZ-Serial/handlers.h>
 
 uint8_t pending_response = 0;
 //uint8_t timer_active = 0;

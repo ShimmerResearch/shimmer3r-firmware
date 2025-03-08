@@ -23,8 +23,8 @@
 #endif
 #include "gsr.h"
 #if defined(SHIMMER3R)
-#include "../Shimmer_Driver/Bluetooth/CYW20820.h"
-#include "../Shimmer_Driver/Bluetooth/EZ-Serial/handlers.h"
+#include <CYW20820/CYW20820.h>
+#include <CYW20820/EZ-Serial/handlers.h>
 #elif defined(SHIMMER4_SDK)
 #include "RN42.h"
 #endif

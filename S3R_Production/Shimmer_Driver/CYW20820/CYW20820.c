@@ -5,17 +5,14 @@
  *      Author: MarkNolan
  */
 
+#include <CYW20820/CYW20820.h>
+#include <CYW20820/EZ-Serial/ezsapi.h>
+#include <CYW20820/EZ-Serial/handlers.h>
 #include "stm32u5xx.h"
-
-#include "CYW20820.h"
 
 #include "stdio.h"
 #include "string.h"
 
-#include "EZ-Serial/ezsapi.h"
-#include "EZ-Serial/handlers.h"
-
-//TODO remove the need for this include
 #include "main.h"
 #include "usart.h"
 

@@ -46,9 +46,9 @@
 #define HANDLERS_H
 
 //#include <project.h>
+#include <CYW20820/EZ-Serial/ezsapi.h>
 #include "stm32u5xx.h"
 
-#include "../EZ-Serial/ezsapi.h"
 
 #define BT_TX_BUF_SIZE 256U /* serial buffer in bytes (power 2)  */
 #define BT_TX_BUF_MASK (BT_TX_BUF_SIZE - 1UL)
