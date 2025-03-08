@@ -96,7 +96,7 @@ void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 void InitialiseBtAfterBoot(void);
 uint8_t getDefaultBaudForBtVersion(void);
-uint8_t* getMacIdBytesPtr(void);
+uint8_t *getMacIdBytesPtr(void);
 void BT_setSendNextChar_cb(void (*cb)(void));
 
 /* USER CODE END PFP */
@@ -664,7 +664,7 @@ void BtStop(uint8_t isCalledFromMain)
 
 float samplingClockFreqGet(void)
 {
-    return 32768.0f;
+  return 32768.0f;
 }
 
 void InitialiseBtAfterBoot(void)
@@ -674,10 +674,10 @@ void InitialiseBtAfterBoot(void)
 
 uint8_t getDefaultBaudForBtVersion(void)
 {
-  return 12; // To represent 2M baud rate
+  return 12; //To represent 2M baud rate
 }
 
-uint8_t* getMacIdBytesPtr(void)
+uint8_t *getMacIdBytesPtr(void)
 {
   //TODO
   return 0;

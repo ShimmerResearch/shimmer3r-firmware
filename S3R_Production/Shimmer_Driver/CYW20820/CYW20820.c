@@ -5,10 +5,10 @@
  *      Author: MarkNolan
  */
 
+#include "stm32u5xx.h"
 #include <CYW20820/CYW20820.h>
 #include <CYW20820/EZ-Serial/ezsapi.h>
 #include <CYW20820/EZ-Serial/handlers.h>
-#include "stm32u5xx.h"
 
 #include "stdio.h"
 #include "string.h"
