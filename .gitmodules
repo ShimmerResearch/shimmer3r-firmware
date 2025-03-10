@@ -1,6 +1,3 @@
-[submodule "S3R_Production/Shimmer_Driver/LSM303AH/lsm303ah-pid"]
-	path = S3R_Production/Shimmer_Driver/LSM303AH/lsm303ah-pid
-	url = https://github.com/STMicroelectronics/lsm303ah-pid/
 [submodule "S3R_Production/Shimmer_Driver/LSM6DSV/lsm6dsv-pid"]
 	path = S3R_Production/Shimmer_Driver/LSM6DSV/lsm6dsv-pid
 	url = https://github.com/STMicroelectronics/lsm6dsv-pid/
