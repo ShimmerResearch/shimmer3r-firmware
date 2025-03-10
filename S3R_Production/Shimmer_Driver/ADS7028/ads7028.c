@@ -82,10 +82,10 @@ uint8_t ads7028_whoAmI(void)
   dataTx[2] = OPCODE_NULL;
 
   setAds7028CS(LOW);
-   HAL_SPI_Transmit( &SENSOR_BUS,&dataTx[0], numberOfBytes, 1000);
-   setAds7028CS(HIGH);
-   setAds7028CS(LOW);
-   HAL_SPI_Receive( &SENSOR_BUS,&response, 1, 1000);//WHO_AM_I reads status register.
+  HAL_SPI_Transmit(&SENSOR_BUS, &dataTx[0], numberOfBytes, 1000);
+  setAds7028CS(HIGH);
+  setAds7028CS(LOW);
+  HAL_SPI_Receive(&SENSOR_BUS, &response, 1, 1000); //WHO_AM_I reads status register.
   setAds7028CS(HIGH);
   return response;
 }

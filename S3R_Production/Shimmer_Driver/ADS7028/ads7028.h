@@ -39,9 +39,9 @@
 //Standard libraries
 #include <ADS7028/hal_ads7028.h>
 #include <assert.h>
+#include <spi.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <spi.h>
 //#include "log_and_stream_definitions.h"
 #include "s4_adc.h"
 //Custom libraries

@@ -44,10 +44,10 @@
 #include <assert.h>
 //#include "ti/devices/msp432e4/driverlib/driverlib.h"
 #include "hal_FactoryTest.h"
+#include "spi.h"
 #include "stdbool.h"
 #include "stdint.h"
 #include <ADS7028/ads7028.h>
-#include "spi.h"
 
 //*****************************************************************************
 //

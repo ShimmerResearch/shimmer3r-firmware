@@ -69,35 +69,34 @@ self_test_result_t ads7028_self_test(void)
   {
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
-/*  else
-  {
-    setAds7028CS(LOW);
-    HAL_SPI_Transmit(&SENSOR_BUS,&dataTx[0], numberOfBytes, 1000);
- //Device outputs fixed code 0xA5A repetitively when reading ADC data.
-    setAds7028CS(HIGH);
-    setAds7028CS(LOW);
-    //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK);
-    //readData(buff);
-    //NULL command
-    setAds7028CS(LOW);
-    HAL_SPI_Receive(&SENSOR_BUS,&dataRx[0], 2, 1000);
-    setAds7028CS(HIGH);
-    if (dataRx[0] != FIXED_OUTPUT)
+  /*  else
     {
-      self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
-    }
-  }*/
+      setAds7028CS(LOW);
+      HAL_SPI_Transmit(&SENSOR_BUS,&dataTx[0], numberOfBytes, 1000);
+   //Device outputs fixed code 0xA5A repetitively when reading ADC data.
+      setAds7028CS(HIGH);
+      setAds7028CS(LOW);
+      //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK);
+      //readData(buff);
+      //NULL command
+      setAds7028CS(LOW);
+      HAL_SPI_Receive(&SENSOR_BUS,&dataRx[0], 2, 1000);
+      setAds7028CS(HIGH);
+      if (dataRx[0] != FIXED_OUTPUT)
+      {
+        self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
+      }
+    }*/
   return self_test_result;
 }
 
 void ads7028GetTestData(uint16_t *buff)
 {
   setAds7028CS(LOW);
-  //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK);
-  //readData(buff);
-  //NULL command
+  //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED,
+  //SEQUENCE_CFG_SEQ_START_MASK); readData(buff); NULL command
   setAds7028CS(LOW);
-  HAL_SPI_Receive(&SENSOR_BUS,(uint8_t*)buff, 2, 1000);
+  HAL_SPI_Receive(&SENSOR_BUS, (uint8_t *) buff, 2, 1000);
   setAds7028CS(HIGH);
 }
 
