@@ -286,8 +286,20 @@ void S4_NORM_ADC_configureChannels(void)
   }
 #endif
 
+  //Strain gauge
+  if (storedConfigPtr->chEnBridgeAmp)
+  {
+      *channel_contents_ptr++ = STRAIN_HIGH;
+      *channel_contents_ptr++ = STRAIN_LOW;
+      nbr_adc_chans += 2;
+      sensing.ptr.strainGauge = sensing.dataLen;
+      sensing.dataLen += 4;
+      adc.sensorList[adc.sensorLen++] = STRAIN_HIGH;
+      adc.sensorList[adc.sensorLen++] = STRAIN_LOW;
+  }
+
   //Internal ADC 1
-  if (configBytes->chEnIntADC1)
+  if (configBytes->chEnIntADC1 && !configBytes->chEnBridgeAmp)
   {
     *channel_contents_ptr++ = INTERNAL_ADC_1;
     nbr_adc_chans += 1;
@@ -297,7 +309,7 @@ void S4_NORM_ADC_configureChannels(void)
   }
 
   //Internal ADC 2
-  if (configBytes->chEnIntADC2)
+  if (configBytes->chEnIntADC2 && !configBytes->chEnBridgeAmp)
   {
     *channel_contents_ptr++ = INTERNAL_ADC_2;
     nbr_adc_chans += 1;
