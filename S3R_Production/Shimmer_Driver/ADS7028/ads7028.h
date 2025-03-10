@@ -41,10 +41,11 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <spi.h>
 //#include "log_and_stream_definitions.h"
 #include "s4_adc.h"
 //Custom libraries
-
+#define SENSOR_BUS hspi1
 //****************************************************************************
 //
 // Settings
@@ -98,7 +99,7 @@
  */
 
 #define ADS7028_ADDRESS_DEVICE_ID               0x00 //Device ID
-#define ADS7028_DEVICE_ID                       0x21 //device ID for ADS7028
+#define ADS7028_DEVICE_ID                       0x81 //device ID for ADS7028
 
 /* SYSTEM_STATUS register address & default value */
 #define SYSTEM_STATUS_ADDRESS                   ((uint8_t) 0x00)
@@ -1154,7 +1155,7 @@ enum ads7028_ch_ID
 //
 //****************************************************************************
 
-bool ads7028_whoAmI(void);
+uint8_t ads7028_whoAmI(void);
 uint8_t initADS7028(void);
 void resetDevice();
 void startAutoConversions(uint8_t channelID, uint32_t samplesPerSecond);

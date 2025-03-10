@@ -33,7 +33,6 @@
 
 #include "ads7028.h"
 #include "s4_ram.h"
-#include "spi.h"
 //****************************************************************************
 //
 // Internal variables
@@ -42,7 +41,6 @@
 
 /** Array used to recall device register map configurations */
 static uint8_t registerMap[MAX_REGISTER_ADDRESS + 1];
-#define SENSOR_BUS hspi1
 //ADCTypeDef Ext_adc;
 uint8_t enabledChannels = 0x00;
 
@@ -73,21 +71,31 @@ static int16_t signExtend(const uint8_t dataBytes[]);
 //
 //*****************************************************************************
 
-bool ads7028_whoAmI(void)
+uint8_t ads7028_whoAmI(void)
 {
-  uint16_t response;
+  uint8_t response = 0;
+  uint8_t dataTx[4] = { 0 };
+  uint8_t numberOfBytes = 3;
+  bool crcError = false;
+  dataTx[0] = OPCODE_RREG;
+  dataTx[1] = ADS7028_ADDRESS_DEVICE_ID;
+  dataTx[2] = OPCODE_NULL;
+
   setAds7028CS(LOW);
-  response = readSingleRegister(ADS7028_ADDRESS_DEVICE_ID); //WHO_AM_I reads status register.
+   HAL_SPI_Transmit( &SENSOR_BUS,&dataTx[0], numberOfBytes, 1000);
+   setAds7028CS(HIGH);
+   setAds7028CS(LOW);
+   HAL_SPI_Receive( &SENSOR_BUS,&response, 1, 1000);//WHO_AM_I reads status register.
   setAds7028CS(HIGH);
-  return (response == ADS7028_DEVICE_ID);
+  return response;
 }
 
 uint8_t initADS7028(void)
 {
   //Clear BOR flag
-  resetDevice(); //Reset
+  //resetDevice(); //Reset
   HAL_Delay(5);
-  if (!ads7028_whoAmI())
+  if (ADS7028_DEVICE_ID != ads7028_whoAmI())
   {
     return 0;
   }

@@ -47,6 +47,7 @@
 #include "stdbool.h"
 #include "stdint.h"
 #include <ADS7028/ads7028.h>
+#include "spi.h"
 
 //*****************************************************************************
 //
@@ -71,7 +72,7 @@
 //*****************************************************************************
 
 self_test_result_t ads7028_self_test(void);
-void ads7028GetTestData(uint8_t *buff);
+void ads7028GetTestData(uint16_t *buff);
 /* SPI peripheral functions */
 void initAdcPeripherals(void);
 void spiSendReceiveArray(void *handle, uint8_t *DataTx, uint8_t *DataRx, uint8_t byteLength);

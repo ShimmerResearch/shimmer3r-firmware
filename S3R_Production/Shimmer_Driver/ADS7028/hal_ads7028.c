@@ -56,38 +56,48 @@ void TIMER0IntHandler(void);
 //TODO implement test here.
 self_test_result_t ads7028_self_test(void)
 {
-  uint8_t *adcTestVal = 0;
+  uint8_t dataRx[2];
   self_test_result_t self_test_result = SELF_TEST_PASS;
-  resetDevice();
+  //resetDevice();
+  uint8_t dataTx[4] = { 0 };
+  uint8_t numberOfBytes = 3;
+  bool crcError = false;
+  dataTx[0] = OPCODE_SETBIT;
+  dataTx[1] = DATA_CFG_FIX_PAT_ENABLED;
+  dataTx[2] = DATA_CFG_FIX_PAT_MASK;
   if (!initADS7028())
   {
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
-  else
+/*  else
   {
     setAds7028CS(LOW);
-    //configure in manual mode for VBATT channel
-    //Write registor setting selecting channels.
-    //writeSingleRegister(CHANNEL_SEL_ADDRESS, CHANNEL_SEL_MANUAL_CHID_7);
-    //Set all Channels as Analog Inputs.
-    //writeSingleRegister(PIN_CFG_ADDRESS, PIN_CFG_PIN_CFG_CH7_ANALOG_INPUT);
-    setRegisterBits(DATA_CFG_FIX_PAT_ENABLED,
-        DATA_CFG_FIX_PAT_MASK); //Device outputs fixed code 0xA5A repetitively when reading ADC data.
+    HAL_SPI_Transmit(&SENSOR_BUS,&dataTx[0], numberOfBytes, 1000);
+ //Device outputs fixed code 0xA5A repetitively when reading ADC data.
     setAds7028CS(HIGH);
-    ads7028GetTestData(adcTestVal);
-    if (*adcTestVal != FIXED_OUTPUT)
+    setAds7028CS(LOW);
+    //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK);
+    //readData(buff);
+    //NULL command
+    setAds7028CS(LOW);
+    HAL_SPI_Receive(&SENSOR_BUS,&dataRx[0], 2, 1000);
+    setAds7028CS(HIGH);
+    if (dataRx[0] != FIXED_OUTPUT)
     {
       self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
     }
-  }
+  }*/
   return self_test_result;
 }
 
-void ads7028GetTestData(uint8_t *buff)
+void ads7028GetTestData(uint16_t *buff)
 {
   setAds7028CS(LOW);
   //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK);
-  readData(buff);
+  //readData(buff);
+  //NULL command
+  setAds7028CS(LOW);
+  HAL_SPI_Receive(&SENSOR_BUS,(uint8_t*)buff, 2, 1000);
   setAds7028CS(HIGH);
 }
 
