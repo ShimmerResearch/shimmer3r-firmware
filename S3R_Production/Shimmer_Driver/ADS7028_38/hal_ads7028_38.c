@@ -281,6 +281,7 @@ uint8_t spiSendReceiveByte(const uint8_t dataTx)
 
   return dataRx;
 }
+#endif
 
 //*****************************************************************************
 //
@@ -294,6 +295,7 @@ uint8_t spiSendReceiveByte(const uint8_t dataTx)
 //*****************************************************************************
 void startTimer(uint32_t timerFreqHz)
 {
+#if defined(MSP432E401Y)
   //Configure full-width periodic timer and count time
   TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
   TimerLoadSet(TIMER0_BASE, TIMER_A, SYSTEM_CLOCK_HZ / timerFreqHz);
@@ -303,6 +305,9 @@ void startTimer(uint32_t timerFreqHz)
 
   //Enable the timer
   TimerEnable(TIMER0_BASE, TIMER_A);
+#else
+  //TODO decide how to handle timer configuration for STM32 if needed
+#endif
 }
 
 //*****************************************************************************
@@ -316,12 +321,16 @@ void startTimer(uint32_t timerFreqHz)
 //*****************************************************************************
 void stopTimer(void)
 {
+#if defined(MSP432E401Y)
   //Disable and clear timer interrupts
   TimerIntDisable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
   TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 
   //Disable the timer
   TimerDisable(TIMER0_BASE, TIMER_A);
+#else
+  //TODO decide how to handle timer configuration for STM32 if needed
+#endif
 }
 
 //*****************************************************************************
@@ -331,8 +340,12 @@ void stopTimer(void)
 //*****************************************************************************
 void TIMER0IntHandler(void)
 {
+#if defined(MSP432E401Y)
   //Clear the timer interrupt
   MAP_TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+#else
+  //TODO decide how to handle timer configuration for STM32 if needed
+#endif
 
   //Array to store ADC conversion results
   uint8_t data[4] = { 0 };
@@ -347,7 +360,6 @@ void TIMER0IntHandler(void)
   //Read data
   readData(data);
 }
-#endif
 
 //****************************************************************************
 //

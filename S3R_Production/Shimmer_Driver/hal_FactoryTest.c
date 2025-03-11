@@ -838,15 +838,18 @@ uint8_t runGsrFactoryTest(void)
   gsrTestRigInit(&hi2c4);
 
   GSR_setRange(HW_RES_40K);
+#ifdef SR48_6_0
   initGsrAdc();
-  ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc2();
+#else
+  //TODO for ADS7028
+#endif
 
   for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
   {
     setGsrTestRigResistance(testGsrResistances[i]);
     HAL_Delay(100);
 
-    status = getFactoryTestGsrAvg(hadcFactoryTestPtr, &gsrResistance);
+    status = getFactoryTestGsrAvg(&gsrResistance);
 
     uint32_t buffer = gsrResistance * GSR_TEST_TOLERANCE;
     if (status != HAL_OK || (gsrResistance < (testGsrResistances[i] - buffer))
@@ -857,12 +860,14 @@ uint8_t runGsrFactoryTest(void)
     }
   }
 
+#ifdef SR48_6_0
   //Stop ADC
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
 
-#ifdef SR48_6_0
   Board_SW_GSR(0);
+#else
+  //TODO for ADS7028
 #endif
 
   return returnVal;

@@ -51,6 +51,8 @@
 #else
 #include "stm32u5xx.h"
 #include <stdbool.h>
+
+#include "hal_FactoryTest.h"
 #endif
 
 #if defined(MSP432E401Y)
@@ -61,7 +63,7 @@
 //****************************************************************************
 //
 //                  LEFT                                RIGHT
-//               /--------\                          /--------\
+//               |--------|                          |--------|
 //        +3.3V -|3V3  +5V|- +5V                CLK -|PG1  GND|- GND
 //              -|PD2  GND|- GND       nSYNC/nRESET -|PK4  PM7|-
 //              -|PP0  PB4|-                    nCS -|PK5 *PP5|-
@@ -72,7 +74,7 @@
 //              -|PP4* PK3|-                        -|PH1 *PP3|-
 //              -|PN5  PA4|-                        -|PK6  PQ1|-
 //              -|PN4  PA5|-                        -|PK7  PM6|-
-//               \--------/                          \--------/
+//               |--------|                          |--------|
 //
 
 //*****************************************************************************
@@ -128,10 +130,10 @@ bool getCS(void); /*  Used for testing only */
 /* Timing functions */
 void delay_ms(const uint32_t delay_time_ms);
 void delay_us(const uint32_t delay_time_us);
-#if defined(MSP432E401Y)
 void startTimer(uint32_t timerFreq);
 void stopTimer(void);
 void TIMER0IntHandler(void);
-#endif
+
+self_test_result_t ads7028_self_test(void);
 
 #endif /* HAL_ADC7028_38_H_ */
