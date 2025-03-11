@@ -832,7 +832,9 @@ uint8_t runGsrFactoryTest(void)
   uint8_t i = 0;
   HAL_StatusTypeDef status;
 
+#ifdef SR48_6_0
   Board_SW_GSR(1);
+#endif
   gsrTestRigInit(&hi2c4);
 
   GSR_setRange(HW_RES_40K);
@@ -859,7 +861,9 @@ uint8_t runGsrFactoryTest(void)
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
 
+#ifdef SR48_6_0
   Board_SW_GSR(0);
+#endif
 
   return returnVal;
 }

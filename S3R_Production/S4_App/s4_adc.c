@@ -156,7 +156,6 @@ void S4_NORM_ADC_initBatt(void)
 }
 #endif
 
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_configureChannels(void)
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
@@ -330,6 +329,7 @@ void S4_NORM_ADC_configureChannels(void)
   sensing.ccLen += nbr_adc_chans;
 }
 
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_startSensing(void)
 {
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
@@ -1127,8 +1127,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
     if (shimmerStatus.sensing)
     {
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
+#endif
     }
     else
     {
@@ -1257,7 +1259,9 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrRes
 
 void resetGsrPwrAndRange(void)
 {
+#ifdef SR48_6_0
   Board_SW_GSR(0);
+#endif
   GSR_setRange(HW_RES_40K);
   gsrActiveResistor = HW_RES_40K;
 }

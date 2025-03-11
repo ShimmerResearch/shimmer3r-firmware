@@ -51,13 +51,17 @@ typedef struct
 #define S4_ADC_init              S4_NORM_ADC_init
 #define S4_ADC_init1             S4_NORM_ADC_init1
 #define S4_ADC_init2             S4_NORM_ADC_init2
+#if defined(SHIMMER4_SDK)
 #define S4_ADC_initBatt          S4_NORM_ADC_initBatt
+#endif
 #define S4_ADC_configureChannels S4_NORM_ADC_configureChannels
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 #define S4_ADC_startSensing      S4_NORM_ADC_startSensing
 #define S4_ADC_bufPoll           S4_NORM_ADC_bufPoll
 #define S4_ADC_stopSensing       S4_NORM_ADC_stopSensing
 #define S4_ADC_gatherDataCb      S4_NORM_ADC_gatherDataCb
 #define S4_ADC_gatherDataStart   S4_NORM_ADC_gatherDataStart
+#endif
 #define S4_ADC_readBatt          S4_NORM_ADC_readBatt
 #endif //USE_FREERTOS
 
@@ -80,8 +84,8 @@ void S4_NORM_ADC_init2(void);
 #if defined(SHIMMER4_SDK)
 void S4_NORM_ADC_initBatt(void);
 #endif
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_configureChannels(void);
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_startSensing(void);
 void shimmerAdcGpioSetup(uint8_t init);
 void initSensAdc(uint32_t numChannels);
