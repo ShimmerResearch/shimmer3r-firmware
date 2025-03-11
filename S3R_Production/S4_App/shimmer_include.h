@@ -52,6 +52,7 @@
 #include <LSM6DSV/hal_lsm6dsv.h>
 #include <LSM6DSV/lsm6dsv-pid/lsm6dsv_reg.h>
 #include <LSM6DSV/lsm6dsv.h>
+#include <ADS7028_38/ads7028_38.h>
 #endif
 #include "BMP280_driver\bmp280.h"
 #include "CAT24C16/CAT24C16.h"

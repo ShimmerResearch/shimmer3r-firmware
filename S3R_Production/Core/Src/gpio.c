@@ -479,6 +479,7 @@ void gpioInitPerBoard(void)
      * GPIO_ADC_INT_EXP1_Pin:
      * PPG ADCs. Also connected to I2C4. Allow code ADC to manage. */
 
+#if defined(SR48_6_0)
     /* GPIO_ADC_INT_EXP2_Pin
      * Controls whether I2C4 connected to PPG connector */
     Board_SW_I2C4_ON_PPG(0);
@@ -487,6 +488,7 @@ void gpioInitPerBoard(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIO_ADC_INT_EXP2_GPIO_Port, &GPIO_InitStruct);
+#endif
 
     /* GPIO_ADC_INT_EXP3_Pin:
      * GSR ADC. Allow code ADC to manage. */

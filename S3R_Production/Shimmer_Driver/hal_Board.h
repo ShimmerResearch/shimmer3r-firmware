@@ -132,10 +132,10 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #endif
 
 #if defined(SHIMMER3R)
-#define ECG_CS_GPIO               GPIO_ADC_INT_EXP1_GPIO_Port
-#define ECG_CS_PIN                GPIO_ADC_INT_EXP1_Pin
-#define RESP_CS_GPIO              GPIO_ADC_INT_EXP0_GPIO_Port
-#define RESP_CS_PIN               GPIO_ADC_INT_EXP0_Pin
+#define ECG_CS_GPIO               CS_EXG_EU4_GPIO_Port
+#define ECG_CS_PIN                CS_EXG_EU4_Pin
+#define RESP_CS_GPIO              CS_RESP_EU3_GPIO_Port
+#define RESP_CS_PIN               CS_RESP_EU3_Pin
 
 #define GSR_RANGE_A0_Pin          GPIO_INTERNAL0_Pin
 #define GSR_RANGE_A0_GPIO_Port    GPIO_INTERNAL0_GPIO_Port
@@ -296,9 +296,11 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 /* Specific to Shimmer3R GSR+ model:
  * Output low = I2C4 is connected to PPG connector
  * Output high = I2C4 is disconnected from PPG connector */
+#if defined(SR48_6_0)
 #define Board_SW_I2C4_ON_PPG(x)                                         \
   HAL_GPIO_WritePin(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin, \
       x ? GPIO_PIN_RESET : GPIO_PIN_SET)
+#endif
 
 /* 0/1 = power off/on */
 #define Board_SW_BT(x) \

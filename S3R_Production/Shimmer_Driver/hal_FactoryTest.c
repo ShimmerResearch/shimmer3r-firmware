@@ -599,7 +599,7 @@ void SPI_test(void)
   }
   else
   {
-    self_test_result = lsm6dsv_self_test();
+    self_test_result = ads7028_self_test();
     if (self_test_result)
     {
       shimmerStatus.testResult |= S3R_TEST_0019;
