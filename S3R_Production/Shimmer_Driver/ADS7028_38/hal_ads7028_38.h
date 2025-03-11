@@ -37,7 +37,6 @@
 #ifndef HAL_ADC7028_38_H_
 #define HAL_ADC7028_38_H_
 
-
 //****************************************************************************
 //
 // Insert processor specific header file(s) here
@@ -45,8 +44,8 @@
 //****************************************************************************
 
 /*  --- INSERT YOUR CODE HERE --- */
-#include <assert.h>
 #include <ADS7028_38/ads7028_38.h>
+#include <assert.h>
 #if defined(MSP432E401Y)
 #include "ti/devices/msp432e4/driverlib/driverlib.h"
 #else
@@ -76,7 +75,6 @@
 //               \--------/                          \--------/
 //
 
-
 //*****************************************************************************
 //
 // Pin definitions (MSP432E401Y)
@@ -84,8 +82,8 @@
 //*****************************************************************************
 
 /** name Chip Select Pin */
-#define nCS_PORT            (GPIO_PORTM_BASE)
-#define nCS_PIN             (GPIO_PIN_7)
+#define nCS_PORT (GPIO_PORTM_BASE)
+#define nCS_PIN  (GPIO_PIN_7)
 #endif
 /**@}*/
 
@@ -95,19 +93,18 @@
 //
 //*****************************************************************************
 /** Alias used for setting GPIOs pins to the logic "high" state */
-#define HIGH                                    ((bool) true)
+#define HIGH ((bool) true)
 
 /** Alias used for setting GPIOs pins to the logic "low" state */
-#define LOW                                     ((bool) false)
+#define LOW  ((bool) false)
 
 /* SPI Peripheral Macros */
 #if defined(MSP432E401Y)
-#define SSI_BASE_ADDR                           (SSI3_BASE)
+#define SSI_BASE_ADDR   (SSI3_BASE)
 
 /* MCU System clock frequency */
-#define SYSTEM_CLOCK_HZ                         ((uint32_t) 120000000)
+#define SYSTEM_CLOCK_HZ ((uint32_t) 120000000)
 #endif
-
 
 //*****************************************************************************
 //
@@ -117,24 +114,24 @@
 
 /* SPI peripheral functions */
 #if defined(MSP432E401Y)
-void        initAdcPeripherals(void);
+void initAdcPeripherals(void);
 #endif
-void        spiSendReceiveArray(const uint8_t DataTx[], uint8_t DataRx[], const uint8_t byteLength);
+void spiSendReceiveArray(const uint8_t DataTx[], uint8_t DataRx[], const uint8_t byteLength);
 #if defined(MSP432E401Y)
-uint8_t     spiSendReceiveByte(const uint8_t dataTx);
+uint8_t spiSendReceiveByte(const uint8_t dataTx);
 #endif
 
 /* GPIO functions */
-void        setCS(const bool state);
-bool        getCS(void);    /*  Used for testing only */
+void setCS(const bool state);
+bool getCS(void); /*  Used for testing only */
 
 /* Timing functions */
-void        delay_ms(const uint32_t delay_time_ms);
-void        delay_us(const uint32_t delay_time_us);
+void delay_ms(const uint32_t delay_time_ms);
+void delay_us(const uint32_t delay_time_us);
 #if defined(MSP432E401Y)
-void        startTimer(uint32_t timerFreq);
-void        stopTimer(void);
-void        TIMER0IntHandler(void);
+void startTimer(uint32_t timerFreq);
+void stopTimer(void);
+void TIMER0IntHandler(void);
 #endif
 
 #endif /* HAL_ADC7028_38_H_ */
