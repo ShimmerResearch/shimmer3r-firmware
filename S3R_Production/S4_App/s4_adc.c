@@ -287,7 +287,7 @@ void S4_NORM_ADC_configureChannels(void)
 #endif
 
   //Strain gauge
-  if (storedConfigPtr->chEnBridgeAmp)
+  if (configBytes->chEnBridgeAmp)
   {
     *channel_contents_ptr++ = STRAIN_HIGH;
     *channel_contents_ptr++ = STRAIN_LOW;
