@@ -50,16 +50,16 @@
   */
 /* USER CODE BEGIN EXPORTED_DEFINES */
 
+#define USB_TX_FIFO_BUF_SIZE                  512U              /* serial buffer in bytes (power 2)  */
+#define USB_TX_FIFO_BUF_MASK                  (USB_TX_FIFO_BUF_SIZE-1UL)
+
  typedef struct{
-     uint8_t data[BT_TX_BUF_SIZE];
+     uint8_t data[USB_TX_FIFO_BUF_SIZE];
      // tail points to the buffer index for the oldest byte that was added to it
      uint16_t rdIdx;
      // head points to the index of the next empty byte in the buffer
      uint16_t wrIdx;
  } RingFifoUsbUartTx_t;
-
-#define USB_TX_FIFO_BUF_SIZE                  512U              /* serial buffer in bytes (power 2)  */
-#define USB_TX_FIFO_BUF_MASK                  (BT_TX_BUF_SIZE-1UL)
 
 /* USER CODE END EXPORTED_DEFINES */
 
@@ -118,12 +118,12 @@ uint8_t CDC_Transmit(uint8_t ch, uint8_t* Buf, uint16_t Len);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
 
-void sendNextPacketIfNotInProgress(void);
-void sendNextPacket(void);
-void pushByteToBtTxBuf(uint8_t c);
-void pushBytesToBtTxBuf(uint8_t *buf, uint8_t len);
-uint16_t getUsedSpaceInBtTxBuf(void);
-uint16_t getSpaceInBtTxBuf(void);
+void sendNextUsbUartPacketIfNotInProgress(void);
+void sendNextUsbUartPacket(void);
+void pushByteToUsbTxBuf(uint8_t c);
+void pushBytesToUsbTxBuf(uint8_t *buf, uint8_t len);
+uint16_t getUsedSpaceInUsbTxBuf(void);
+uint16_t getSpaceInUsbTxBuf(void);
 void usbUartWrite(uint8_t ch, uint8_t *Buf, uint16_t Len);
 void usbUartWriteBlocking(uint8_t ch, uint8_t *Buf, uint16_t Len);
 

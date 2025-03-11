@@ -112,8 +112,10 @@ uint32_t Read_Index[NUMBER_OF_CDC];  /* keep track of sent data to USB */
 #define RINGFIFO_FULL(ringFifo, mask)           ((mask & ringFifo.rdIdx) == (mask & (ringFifo.wrIdx+1)))
 #define RINGFIFO_COUNT(ringFifo, mask)          (mask & (ringFifo.wrIdx - ringFifo.rdIdx))
 
-volatile uint8_t messageInProgress = 0;
+volatile uint8_t usbUartMessageInProgress = 0;
 volatile RingFifoUsbUartTx_t gUsbTxFifo;
+
+uint8_t activeCdcCh = 0;
 
 /* USER CODE END PRIVATE_VARIABLES */
 
@@ -458,7 +460,7 @@ static int8_t CDC_Receive(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len)
   */
 static int8_t CDC_TransmitCplt(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len, uint8_t epnum)
 {
-  sendNextPacket();
+  sendNextUsbUartPacket();
   return (USBD_OK);
 }
 
@@ -548,38 +550,38 @@ uint8_t CDC_Transmit(uint8_t ch, uint8_t *Buf, uint16_t Len)
 //  HAL_UART_Receive_IT(huart, (TX_Buffer[cdc_ch] + Write_Index[cdc_ch]), 1);
 //}
 
-void sendNextPacketIfNotInProgress(void)
+void sendNextUsbUartPacketIfNotInProgress(void)
 {
-    if (!messageInProgress)
+    if (!usbUartMessageInProgress)
     {
-        sendNextPacket();
+        sendNextUsbUartPacket();
     }
 }
 
-void sendNextPacket(void)
+void sendNextUsbUartPacket(void)
 {
     if (!RINGFIFO_EMPTY(gUsbTxFifo))
     {
-        messageInProgress = 1;
+        usbUartMessageInProgress = 1;
 
         uint8_t i = 0;
         for (i = 0; i < CDC_DATA_FS_MAX_PACKET_SIZE; i++)
         {
-          RINGFIFO_RD(gUsbTxFifo, &TX_Buffer[0][i], USB_TX_FIFO_BUF_MASK);
+          RINGFIFO_RD(gUsbTxFifo, TX_Buffer[activeCdcCh][i], USB_TX_FIFO_BUF_MASK);
           if (RINGFIFO_EMPTY(gUsbTxFifo))
           {
             break;
           }
         }
-        CDC_Transmit(0, &TX_Buffer[0][0], i);
+        CDC_Transmit(0, &TX_Buffer[activeCdcCh][0], i);
     }
     else
     {
-        messageInProgress = 0;              //false
+        usbUartMessageInProgress = 0;              //false
     }
 }
 
-void pushByteToBtTxBuf(uint8_t c)
+void pushByteToUsbTxBuf(uint8_t c)
 {
     if (!RINGFIFO_FULL(gUsbTxFifo, USB_TX_FIFO_BUF_MASK))
     {
@@ -587,12 +589,12 @@ void pushByteToBtTxBuf(uint8_t c)
     }
 }
 
-void pushBytesToBtTxBuf(uint8_t *buf, uint8_t len)
+void pushBytesToUsbTxBuf(uint8_t *buf, uint8_t len)
 {
 //    uint8_t i;
 //    for (i = 0; i < len; i++)
 //    {
-//        pushByteToBtTxBuf(*(buf + i));
+//        pushByteToUsbTxBuf(*(buf + i));
 //    }
 
     /* if enough space at after head, copy it in */
@@ -609,7 +611,7 @@ void pushBytesToBtTxBuf(uint8_t *buf, uint8_t len)
         gUsbTxFifo.wrIdx += spaceAfterHead;
 
         /* Fill from start of buf. We already checked above whether there is
-         * enough space in the buf (getSpaceInBtTxBuf()) so we don't need to
+         * enough space in the buf (getSpaceInUsbTxBuf()) so we don't need to
          * worry about the tail position. */
         uint16_t remaining = len - spaceAfterHead;
         memcpy(&gUsbTxFifo.data[(gUsbTxFifo.wrIdx & USB_TX_FIFO_BUF_MASK)], buf + spaceAfterHead, remaining);
@@ -617,27 +619,27 @@ void pushBytesToBtTxBuf(uint8_t *buf, uint8_t len)
     }
 }
 
-uint16_t getUsedSpaceInBtTxBuf(void)
+uint16_t getUsedSpaceInUsbTxBuf(void)
 {
     return RINGFIFO_COUNT(gUsbTxFifo, USB_TX_FIFO_BUF_MASK);
 }
 
-uint16_t getSpaceInBtTxBuf(void)
+uint16_t getSpaceInUsbTxBuf(void)
 {
     // Minus 1 as we always need to leave 1 empty byte in the rolling buffer
-    return USB_TX_FIFO_BUF_SIZE - 1 - getUsedSpaceInBtTxBuf();
+    return USB_TX_FIFO_BUF_SIZE - 1 - getUsedSpaceInUsbTxBuf();
 }
 
 void usbUartWrite(uint8_t ch, uint8_t *Buf, uint16_t Len)
 {
-  pushBytesToBtTxBuf(buf, len);
-  sendNextPacketIfNotInProgress();
+  pushBytesToUsbTxBuf(Buf, Len);
+  sendNextUsbUartPacketIfNotInProgress();
 }
 
 void usbUartWriteBlocking(uint8_t ch, uint8_t *Buf, uint16_t Len)
 {
   usbUartWrite(ch, Buf, Len);
-  while (getUsedSpaceInUsbTxBuf(0) > 0)
+  while (getUsedSpaceInUsbTxBuf() > 0)
   {
     HAL_Delay(10);
   }
