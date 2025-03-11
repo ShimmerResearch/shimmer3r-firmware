@@ -221,7 +221,12 @@ extern "C"
 
 #define GPIO_ADC_INT_EXP0_Pin          GPIO_PIN_5
 #define GPIO_ADC_INT_EXP0_GPIO_Port    GPIOA
-
+#else
+//TODO add these to CubeMx one ADS7028 code is developed
+#define CS_EXG_EU4_Pin        GPIO_PIN_2
+#define CS_EXG_EU4_GPIO_Port  GPIOB
+#define CS_RESP_EU3_Pin       GPIO_PIN_1
+#define CS_RESP_EU3_GPIO_Port GPIOB
 #endif
 
   /* USER CODE END Private defines */

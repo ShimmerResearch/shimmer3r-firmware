@@ -156,7 +156,6 @@ void S4_NORM_ADC_initBatt(void)
 }
 #endif
 
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_configureChannels(void)
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
@@ -330,6 +329,7 @@ void S4_NORM_ADC_configureChannels(void)
   sensing.ccLen += nbr_adc_chans;
 }
 
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_startSensing(void)
 {
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
@@ -1127,8 +1127,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
     if (shimmerStatus.sensing)
     {
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
+#endif
     }
     else
     {
@@ -1214,15 +1216,21 @@ HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample
   return status;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrResistance(ADC_HandleTypeDef *hadc, uint32_t *gsrResistance)
+HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *gsrResistance)
 {
   uint32_t adcValue = 0;
+  ADC_HandleTypeDef *hadc = getHadc2();
 
   HAL_StatusTypeDef status = getSingleAdcChSample(hadc, &adcValue);
   if (status == HAL_OK)
   {
+#ifdef SR48_6_0
     int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
         hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
+#else
+    //TODO for ADS7028
+    int32_t gsrMv = 0;
+#endif
 
     *gsrResistance = GSR_calcResistance(gsrMv, GSR_getCurrentActiveResistor());
 
@@ -1232,7 +1240,7 @@ HAL_StatusTypeDef getFactoryTestGsrResistance(ADC_HandleTypeDef *hadc, uint32_t 
   return status;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrResistance)
+HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
 {
   HAL_StatusTypeDef status;
   uint32_t gsrResistanceAvg = 0;
@@ -1240,7 +1248,7 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrRes
   for (uint8_t i = 0; i < 13; i++)
   {
     uint8_t range = GSR_getCurrentActiveResistor();
-    status = getFactoryTestGsrResistance(hadc, gsrResistance);
+    status = getFactoryTestGsrResistance(gsrResistance);
 
     //Skip first 3 measurements to account for range changing
     if (i > 2)
@@ -1257,7 +1265,9 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrRes
 
 void resetGsrPwrAndRange(void)
 {
+#ifdef SR48_6_0
   Board_SW_GSR(0);
+#endif
   GSR_setRange(HW_RES_40K);
   gsrActiveResistor = HW_RES_40K;
 }
