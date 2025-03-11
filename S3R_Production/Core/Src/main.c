@@ -96,7 +96,6 @@ void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 void InitialiseBtAfterBoot(void);
 uint8_t getDefaultBaudForBtVersion(void);
-uint8_t *getMacIdBytesPtr(void);
 void BT_setSendNextChar_cb(void (*cb)(void));
 
 /* USER CODE END PFP */
@@ -161,7 +160,7 @@ void Init()
 
 #if defined(SHIMMER3R)
   setBootStage(BOOT_STAGE_BLUETOOTH);
-  ShimBt_btCommsProtocolInit(ShimTask_setNewBtCmdToProcess);
+  ShimBt_btCommsProtocolInit();
   //btFactoryResetViaFw();
   btInitialise();
   ShimBt_updateBtVer();
@@ -411,9 +410,9 @@ void btInitialise(void)
   {
     char temp_btMacAscii[14];
     uint8_t temp_btMacHex[6];
-    ShimBt_getMacAddressHex(temp_btMacHex);
+    ShimBt_macAddressHexGet(temp_btMacHex);
     ShimConfig_btMacHexSet(temp_btMacHex);
-    ShimBt_getMacAddressAscii(temp_btMacAscii);
+    ShimBt_macAddressAsciiGet(temp_btMacAscii);
     ShimConfig_btMacAsciiSet(temp_btMacAscii);
   }
 
@@ -675,12 +674,6 @@ void InitialiseBtAfterBoot(void)
 uint8_t getDefaultBaudForBtVersion(void)
 {
   return 12; //To represent 2M baud rate
-}
-
-uint8_t *getMacIdBytesPtr(void)
-{
-  //TODO
-  return 0;
 }
 
 void BT_setSendNextChar_cb(void (*cb)(void))

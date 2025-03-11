@@ -426,7 +426,7 @@ void bt_module_test(void)
   if (isBtIsInitialised())
   {
     send_test_report(" - MAC ID: ");
-    ShimBt_getMacAddressAscii(buffer);
+    ShimBt_macAddressAsciiGet(buffer);
     send_test_report(buffer);
     send_test_report("\r\n");
 
