@@ -486,8 +486,12 @@ void BtUart_init(uint32_t baudRate, uint32_t hwFlowCtrl)
   huartBt->Init.OverSampling = UART_OVERSAMPLING_16;
   huartBt->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huartBt->Init.ClockPrescaler = UART_PRESCALER_DIV1;
+#ifdef SR48_6_0
   huartBt->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_SWAP_INIT;
   huartBt->AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
+#else
+  huartBt->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+#endif
   if (HAL_UART_Init(huartBt) != HAL_OK)
   {
     Error_Handler();

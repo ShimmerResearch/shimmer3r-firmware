@@ -723,8 +723,6 @@ void UpdateSdConfig(void)
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
       sprintf(buffer, "accel_alt_rate=%d\r\n", storedConfig->altAccelRate);
       f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "mag_rate=%d\r\n", get_config_byte_mag_rate());
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
 
       //trial config
       sprintf(buffer, "user_button_enable=%d\r\n", storedConfig->userButtonEnable);
@@ -1101,10 +1099,6 @@ void ParseConfig(void)
       else if (strstr(buffer, "accel_alt_rate="))
       {
         stored_config_temp.altAccelRate = atoi(equals);
-      }
-      else if (strstr(buffer, "mag_rate="))
-      {
-        set_config_byte_mag_rate(&stored_config_temp, atoi(equals));
       }
       else if (strstr(buffer, "rtc_error_enable="))
       {
