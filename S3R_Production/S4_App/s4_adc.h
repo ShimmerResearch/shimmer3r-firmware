@@ -48,17 +48,21 @@ typedef struct
 #define S4_ADC_readBatt          S4_RTOS_ADC_readBatt
 #define S4_ADC_rankBatt          S4_RTOS_ADC_rankBatt
 #else
-#define S4_ADC_init              S4_NORM_ADC_init
-#define S4_ADC_init1             S4_NORM_ADC_init1
-#define S4_ADC_init2             S4_NORM_ADC_init2
-#define S4_ADC_initBatt          S4_NORM_ADC_initBatt
+#define S4_ADC_init  S4_NORM_ADC_init
+#define S4_ADC_init1 S4_NORM_ADC_init1
+#define S4_ADC_init2 S4_NORM_ADC_init2
+#if defined(SHIMMER4_SDK)
+#define S4_ADC_initBatt S4_NORM_ADC_initBatt
+#endif
 #define S4_ADC_configureChannels S4_NORM_ADC_configureChannels
-#define S4_ADC_startSensing      S4_NORM_ADC_startSensing
-#define S4_ADC_bufPoll           S4_NORM_ADC_bufPoll
-#define S4_ADC_stopSensing       S4_NORM_ADC_stopSensing
-#define S4_ADC_gatherDataCb      S4_NORM_ADC_gatherDataCb
-#define S4_ADC_gatherDataStart   S4_NORM_ADC_gatherDataStart
-#define S4_ADC_readBatt          S4_NORM_ADC_readBatt
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
+#define S4_ADC_startSensing    S4_NORM_ADC_startSensing
+#define S4_ADC_bufPoll         S4_NORM_ADC_bufPoll
+#define S4_ADC_stopSensing     S4_NORM_ADC_stopSensing
+#define S4_ADC_gatherDataCb    S4_NORM_ADC_gatherDataCb
+#define S4_ADC_gatherDataStart S4_NORM_ADC_gatherDataStart
+#endif
+#define S4_ADC_readBatt S4_NORM_ADC_readBatt
 #endif //USE_FREERTOS
 
 void S4_RTOS_ADC_init(void);
@@ -81,14 +85,18 @@ void S4_NORM_ADC_init2(void);
 void S4_NORM_ADC_initBatt(void);
 #endif
 void S4_NORM_ADC_configureChannels(void);
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_startSensing(void);
 void shimmerAdcGpioSetup(uint8_t init);
+#endif
 void initSensAdc(uint32_t numChannels);
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void initGsrAdc(void);
 void S4_NORM_ADC_bufPoll(void);
 void S4_NORM_ADC_stopSensing(void);
 void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void));
 void S4_NORM_ADC_gatherDataStart(void);
+#endif
 void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo);
 void S4_NORM_ADC_readBatt(uint8_t isBlockingRead);
 void adcGpioInit(uint32_t pin, GPIO_TypeDef *port);
@@ -99,8 +107,8 @@ bool areAdcChannelsEnabled(void);
 #endif
 
 HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample);
-HAL_StatusTypeDef getFactoryTestGsrResistance(ADC_HandleTypeDef *hadc, uint32_t *resistance);
-HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrResistance);
+HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *resistance);
+HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance);
 void resetGsrPwrAndRange(void);
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr);
 

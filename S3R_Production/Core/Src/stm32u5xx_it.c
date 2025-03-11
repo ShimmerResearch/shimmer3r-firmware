@@ -608,7 +608,9 @@ void ADF1_IRQHandler(void)
  */
 void EXTI0_IRQHandler(void)
 {
+#if defined(SR48_6_0)
   HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP1_Pin);
+#endif
   //HAL_GPIO_EXTI_IRQHandler(SD_DETECT_N_Pin);
 }
 
@@ -643,7 +645,9 @@ void EXTI4_IRQHandler(void)
  */
 void EXTI5_IRQHandler(void)
 {
+#if defined(SR48_6_0)
   HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP0_Pin);
+#endif
   //No plans to use GPIO_INTERNAL2_Pin as interrupt
   //HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL2_Pin);
 }

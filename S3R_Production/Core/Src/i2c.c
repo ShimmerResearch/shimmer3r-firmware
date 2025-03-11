@@ -1372,14 +1372,22 @@ void enableI2cOnInternalExpansionBrd(uint8_t state)
   if (state)
   {
     Board_SW_EXP_BRD_POWER(1);
+#ifdef SR48_6_0
     Board_SW_I2C4_ON_PPG(1);
+#else
+    //TODO
+#endif
     MX_I2C4_Init();
   }
   else
   {
     I2C4_DeInit();
     Board_SW_EXP_BRD_POWER(0);
+#ifdef SR48_6_0
     Board_SW_I2C4_ON_PPG(0);
+#else
+    //TODO
+#endif
   }
 }
 
