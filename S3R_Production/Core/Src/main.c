@@ -86,7 +86,6 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
 void SetupDock(void);
-void ReadSdConfiguration(void);
 #if USE_CUSTOM_HAL_DELAY
 void HAL_Delay(uint32_t Delay);
 #endif
@@ -582,13 +581,6 @@ void SetupDock(void)
   }
   setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
   shimmerStatus.configuring = 0;
-}
-
-void ReadSdConfiguration(void)
-{
-  ShimTask_clear(TASK_STREAMDATA); //this will skip one sample
-  Board_setSdPower(1);
-  ShimSd_parseConfig();
 }
 
 #if USE_CUSTOM_HAL_DELAY
