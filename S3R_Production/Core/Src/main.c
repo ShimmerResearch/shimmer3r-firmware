@@ -95,7 +95,6 @@ void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 void InitialiseBtAfterBoot(void);
 uint8_t getDefaultBaudForBtVersion(void);
-void BT_setSendNextChar_cb(void (*cb)(void));
 
 /* USER CODE END PFP */
 
@@ -666,11 +665,6 @@ void InitialiseBtAfterBoot(void)
 uint8_t getDefaultBaudForBtVersion(void)
 {
   return 12; //To represent 2M baud rate
-}
-
-void BT_setSendNextChar_cb(void (*cb)(void))
-{
-  //TODO
 }
 
 /* USER CODE END 4 */
