@@ -357,7 +357,7 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #else
 #define Board_detectN(x) \
   HAL_GPIO_WritePin(DETECT_N_GPIO_Port, DETECT_N_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#endif // SR48_6_0_PATCH_DOCK_DETECT
+#endif //SR48_6_0_PATCH_DOCK_DETECT
 #elif defined(SHIMMER4_SDK)
 #define Board_sdMcu0Dock1(x) \
   HAL_GPIO_WritePin(GPIOG, EXT_MEM_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET) //EXT_MEM: 0 for arm, 1 for pc
