@@ -516,7 +516,6 @@ void swI2C4PpgOnAds7028(uint8_t state)
 {
   if (state)
   {
-    MX_SPI1_Init();
     setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_PIN_CFG_CH2_GPIO);
     setRegisterBits(GPIO_CFG_ADDRESS, GPIO_CFG_GPIO_CFG_CH2_DIGITAL_OUTPUT);
     setRegisterBits(GPO_OUTPUT_VALUE_ADDRESS, GPO_OUTPUT_VALUE_GPO_OUTPUT_VALUE_CH2_LOW);
@@ -525,6 +524,5 @@ void swI2C4PpgOnAds7028(uint8_t state)
   {
     setRegisterBits(GPO_OUTPUT_VALUE_ADDRESS, GPO_OUTPUT_VALUE_GPO_OUTPUT_VALUE_CH2_HIGH);
     setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_PIN_CFG_CH2_ANALOG_INPUT);
-    SPI1_DeInit();
   }
 }
