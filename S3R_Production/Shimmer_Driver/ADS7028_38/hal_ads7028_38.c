@@ -500,3 +500,29 @@ self_test_result_t ads7028_self_test(void)
 
   return self_test_result;
 }
+
+//*****************************************************************************
+//
+//!\brief  To enable/diasble GPIO_ADC_INT_EXP2/GPIO2 in ADS7028
+//!
+//!\fn void swI2C4PpgOnAds7028(uint8_t state)
+//!
+//!\param state: 1/0 to enable/disable
+//!
+//!\return None.
+//
+//*****************************************************************************
+void swI2C4PpgOnAds7028(uint8_t state)
+{
+  if (state)
+  {
+    setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_PIN_CFG_CH2_GPIO);
+    setRegisterBits(GPIO_CFG_ADDRESS, GPIO_CFG_GPIO_CFG_CH2_DIGITAL_OUTPUT);
+    setRegisterBits(GPO_OUTPUT_VALUE_ADDRESS, GPO_OUTPUT_VALUE_GPO_OUTPUT_VALUE_CH2_LOW);
+  }
+  else
+  {
+    setRegisterBits(GPO_OUTPUT_VALUE_ADDRESS, GPO_OUTPUT_VALUE_GPO_OUTPUT_VALUE_CH2_HIGH);
+    setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_PIN_CFG_CH2_ANALOG_INPUT);
+  }
+}
