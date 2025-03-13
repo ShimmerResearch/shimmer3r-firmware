@@ -135,5 +135,5 @@ void stopTimer(void);
 void TIMER0IntHandler(void);
 
 self_test_result_t ads7028_self_test(void);
-
+void swI2C4PpgOnAds7028(uint8_t state);
 #endif /* HAL_ADC7028_38_H_ */

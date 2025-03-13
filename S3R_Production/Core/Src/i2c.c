@@ -1375,7 +1375,8 @@ void enableI2cOnInternalExpansionBrd(uint8_t state)
 #ifdef SR48_6_0
     Board_SW_I2C4_ON_PPG(1);
 #else
-    //TODO
+    MX_SPI1_Init(); //SPI is needed to change GPIO state in ADS7028
+    swI2C4PpgOnAds7028(1);
 #endif
     MX_I2C4_Init();
   }
@@ -1386,7 +1387,8 @@ void enableI2cOnInternalExpansionBrd(uint8_t state)
 #ifdef SR48_6_0
     Board_SW_I2C4_ON_PPG(0);
 #else
-    //TODO
+    swI2C4PpgOnAds7028(0);
+    SPI1_DeInit();
 #endif
   }
 }
