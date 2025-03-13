@@ -1122,10 +1122,10 @@ void setBtCysppState(bool state)
   //HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, btCysppState? GPIO_PIN_SET:GPIO_PIN_RESET);
 
   //TODO move out of this driver file and make common with implementation in shimmer_bt_comms.c
-  if (!state && getBtDataRateTestState())
+  if (!state && ShimBt_getDataRateTestState())
   {
-    setBtDataRateTestState(0);
-    clearBtTxBuf(1);
+    ShimBt_setDataRateTestState(0);
+    ShimBt_clearBtTxBuf(1);
   }
 }
 

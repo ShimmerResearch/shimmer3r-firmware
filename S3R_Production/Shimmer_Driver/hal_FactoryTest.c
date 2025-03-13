@@ -813,9 +813,9 @@ void send_test_report(char *str)
     DockUart_writeBlocking((uint8_t *) str, strlen(str));
     break;
   case PRINT_TO_BT_UART:
-    BT_write((uint8_t *) str, strlen(str));
+    ShimBt_writeToTxBufAndSend((uint8_t *) str, strlen(str), SHIMMER_CMD);
     //wait for msg to finish transmitting
-    while (getUsedSpaceInBtTxBuf() > 0)
+    while (ShimBt_getUsedSpaceInBtTxBuf() > 0)
     {
       HAL_Delay(100);
     }

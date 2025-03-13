@@ -48,18 +48,7 @@
 //#include <project.h>
 #include "stm32u5xx.h"
 #include <CYW20820/EZ-Serial/ezsapi.h>
-
-#define BT_TX_BUF_SIZE 256U /* serial buffer in bytes (power 2)  */
-#define BT_TX_BUF_MASK (BT_TX_BUF_SIZE - 1UL)
-
-typedef struct
-{
-  uint8_t data[BT_TX_BUF_SIZE];
-  //tail points to the buffer index for the oldest byte that was added to it
-  uint16_t rdIdx;
-  //head points to the index of the next empty byte in the buffer
-  uint16_t wrIdx;
-} RingFifoTx_t;
+#include <log_and_stream_definitions.h>
 
 //CY_ISR_PROTO(TimerInterruptHandler);
 
@@ -73,20 +62,6 @@ void setBtUartInstance(UART_HandleTypeDef *huartToUse);
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart);
 void btUartTxCpltCallback(UART_HandleTypeDef *huart);
 
-void sendNextCharIfNotInProgress(void);
-void sendNextChar(void);
-
-void clearBtTxBuf(uint8_t isCalledFromMain);
-void pushByteToBtTxBuf(uint8_t b);
-void pushBytesToBtTxBuf(uint8_t *buf, uint8_t len);
-volatile void *memcpy_vout(volatile void *dest, const void *src, size_t n);
-uint16_t getUsedSpaceInBtTxBuf(void);
-uint16_t getSpaceInBtTxBuf(void);
-
-void setBtDataRateTestState(uint8_t state);
-uint8_t getBtDataRateTestState(void);
-void loadBtTxBufForDataRateTest(void);
-
 uint8_t isEzsBaudRateDelayPending(void);
 uint8_t isEzsFactoryRebootDelayPending(void);
 void incrementBtInitCmdsStep(void);
@@ -95,7 +70,7 @@ void incrementBtFactoryResetCmdsStep(void);
 extern void ezsHandler(ezs_packet_t *packet) __attribute__((weak));
 extern void ezsHandlerShimmer(ezs_packet_t *packet) __attribute__((weak));
 
-HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len);
+HAL_StatusTypeDefShimmer BtTransmit(uint8_t *buf, uint8_t len);
 void resetEzsPendingResponse(void);
 void resetBtRxBuff(void);
 
