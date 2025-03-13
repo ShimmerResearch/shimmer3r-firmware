@@ -597,9 +597,8 @@ void SPI_test(void)
     sprintf(buffer, " - S3R_TEST_0019 - ADS7028 test not applicable for this model\r\n");
     send_test_report(buffer);
   }
-  else //TODO Add ADS7028 test support here
+  else
   {
-    uint8_t *adc_val = 0;
     self_test_result = ads7028_self_test();
     if (self_test_result)
     {
@@ -833,19 +832,24 @@ uint8_t runGsrFactoryTest(void)
   uint8_t i = 0;
   HAL_StatusTypeDef status;
 
+#ifdef SR48_6_0
   Board_SW_GSR(1);
+#endif
   gsrTestRigInit(&hi2c4);
 
   GSR_setRange(HW_RES_40K);
+#ifdef SR48_6_0
   initGsrAdc();
-  ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc2();
+#else
+  //TODO for ADS7028
+#endif
 
   for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
   {
     setGsrTestRigResistance(testGsrResistances[i]);
     HAL_Delay(100);
 
-    status = getFactoryTestGsrAvg(hadcFactoryTestPtr, &gsrResistance);
+    status = getFactoryTestGsrAvg(&gsrResistance);
 
     uint32_t buffer = gsrResistance * GSR_TEST_TOLERANCE;
     if (status != HAL_OK || (gsrResistance < (testGsrResistances[i] - buffer))
@@ -856,11 +860,15 @@ uint8_t runGsrFactoryTest(void)
     }
   }
 
+#ifdef SR48_6_0
   //Stop ADC
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
 
   Board_SW_GSR(0);
+#else
+  //TODO for ADS7028
+#endif
 
   return returnVal;
 }

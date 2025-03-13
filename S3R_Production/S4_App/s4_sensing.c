@@ -249,14 +249,12 @@ void S4Sens_startSensing(void)
     DockUart_disable();
     S4Sens_stepInit();
 
-#if (defined(SHIMMER3R) && defined(SR48_6_0))
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
     if (areAdcChannelsEnabled())
     {
       S4_ADC_startSensing();
-#else
-
-#endif
     }
+#endif
     I2C_startSensing();
     SPI_startSensing();
 
@@ -390,10 +388,12 @@ void S4Sens_stopPeripherals(void)
 
 #endif
 
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
   if (areAdcChannelsEnabled())
   {
     S4_ADC_stopSensing();
   }
+#endif
   //HAL_Delay(10); //Send ACK command needs delay here...
   //BtUart_sendRsp();
   I2C_stopSensing();
@@ -438,10 +438,12 @@ void S4Sens_streamData(void)
 
 void S4Sens_bufPoll()
 {
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
   if (areAdcChannelsEnabled())
   {
     S4_ADC_gatherDataStart();
   }
+#endif
 
   I2C_pollSensors();
 
@@ -481,7 +483,9 @@ void S4Sens_gatherData(void)
 void S4Sens_stepInit(void)
 {
 #if defined(SHIMMER3R)
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
   S4_ADC_gatherDataCb(sensing_adcCompleteCb);
+#endif
   I2cSens_gatherDataCb(sensing_i2cCompleteCb);
   SPI_gatherDataCb(sensing_spiCompleteCb);
 #elif defined(SHIMMER4_SDK)
