@@ -47,21 +47,38 @@ static uint8_t data[9];
 
 void EXG_init(SPI_HandleTypeDef *hspi)
 {
-  ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
+/*  ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
   ADS1292_init(hspi);
   ADS1292_resetPulse();
-
   ADS1292_chip1CsEnable(1);
+
   ADS1292_readDataContinuousMode(0);
   ADS1292_chip2CsEnable(1);
   ADS1292_readDataContinuousMode(0);
+  ADS1292_chip2CsEnable(0); */
+  ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
+  ADS1292_init(hspi);
+  ADS1292_chip1CsEnable(0);
   ADS1292_chip2CsEnable(0);
+}
+
+
+void EXG_startSensing(void)
+{
+  ADS1292_resetPulse();
+    ADS1292_chip1CsEnable(1);
+    ADS1292_readDataContinuousMode(0);
+    ADS1292_chip1CsEnable(0);
+    ADS1292_chip2CsEnable(1);
+    ADS1292_readDataContinuousMode(0);
+    ADS1292_chip2CsEnable(0);
 }
 
 uint8_t EXG_test(void)
 {
-  uint8_t temp_buf[2], ret_val = 0;
+  uint8_t temp_buf[2], ret_val = 1;
   temp_buf[0] = 0x08;
+  EXG_startSensing();
   EXG_writeRegs(0, ADS1292R_CONFIG2, 1, temp_buf);
   EXG_readRegs(0, ADS1292R_DEVID, 1, temp_buf); //can read back to check if write is done successfully
   if (temp_buf[0] != 0x73)
@@ -78,6 +95,10 @@ uint8_t EXG_test(void)
   //EXG_stop(1);     //probably not needed
   //EXG_stop(0);     //probably not needed
   EXG_powerOff();
+  if(ret_val == 0x03)
+  {
+    ret_val = 0;
+  }
   return ret_val;
 }
 
