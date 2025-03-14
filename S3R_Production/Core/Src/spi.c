@@ -248,7 +248,6 @@ void MX_SPI3_Init(void)
 
     hspiExg = &hspi3;
     EXG_init(hspiExg);
-
   }
 
   /* USER CODE END SPI3_Init 2 */
