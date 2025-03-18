@@ -725,18 +725,18 @@ void SPI_test(void)
   {
     MX_SPI3_Init();
     uint8_t test_result = EXG_self_test();
-      if(!test_result)
-      {
-       self_test_result = SELF_TEST_PASS;
-      }
-      else
-      {
-        self_test_result = 10;
-      }
-     print_chip_test_result("S3R_TEST_0025", "ADS1292", self_test_result,
-             TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
-     /* send_test_report(
-          " - S3R_TEST_0025 - WARNING: ADS1292R test not implemented yet\r\n");*/
+    if (!test_result)
+    {
+      self_test_result = SELF_TEST_PASS;
+    }
+    else
+    {
+      self_test_result = 10;
+    }
+    print_chip_test_result("S3R_TEST_0025", "ADS1292", self_test_result,
+        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
+    /* send_test_report(
+         " - S3R_TEST_0025 - WARNING: ADS1292R test not implemented yet\r\n");*/
     if (self_test_result)
     {
       shimmerStatus.testResult |= S3R_TEST_0025;
