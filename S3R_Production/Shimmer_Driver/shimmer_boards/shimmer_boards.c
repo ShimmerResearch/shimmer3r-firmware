@@ -221,7 +221,8 @@ uint8_t isAdxl371Present(void)
       && (daughterCardIdPage.expansion_brd.exp_brd_id == SHIMMER3_IMU
           || isBoardSrNumber(EXP_BRD_GSR_UNIFIED, 6, 0)
           || isBoardSrNumber(EXP_BRD_GSR_UNIFIED, 7, 0)
-          || isBoardSrNumber(EXP_BRD_EXG_UNIFIED, 7, 0)));
+          || isBoardSrNumber(EXP_BRD_EXG_UNIFIED, 7, 0)
+          || isBoardSrNumber(EXP_BRD_BR_AMP_UNIFIED, 4, 0)));
 }
 
 uint8_t isAds7028Present(void)
