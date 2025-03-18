@@ -72,7 +72,7 @@ void EXG_startSensing(void)
   ADS1292_chip2CsEnable(0);
 }
 
-uint8_t EXG_test(void)
+uint8_t EXG_self_test(void)
 {
   uint8_t temp_buf[2], ret_val = 1;
   temp_buf[0] = 0x08;
