@@ -1258,12 +1258,12 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;
   case SPI1_ADS7028:
-/*      for (uint8_t i = 0; i <= adc.sensorLen; i++)
-      {
-        adcChannelId = (spi1Sens_buf.Ads2078Buf[i] >> 12) & 0x0F; //channel ID
-        spi1Sens_buf.Ads2078Buf[i] &= 0x0FFF;                     //ADC data
-        ads7028ProcessData(adcChannelId, spi1Sens_buf.Ads2078Buf[i]);
-      }*/
+    /*      for (uint8_t i = 0; i <= adc.sensorLen; i++)
+          {
+            adcChannelId = (spi1Sens_buf.Ads2078Buf[i] >> 12) & 0x0F; //channel
+       ID spi1Sens_buf.Ads2078Buf[i] &= 0x0FFF;                     //ADC data
+            ads7028ProcessData(adcChannelId, spi1Sens_buf.Ads2078Buf[i]);
+          }*/
     memcpy(sensing.dataBuf + sensing.ptr.extADC0,
         &spi1Sens_buf.Ads2078Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.Ads2078Buf) - SPI_DMA_TXRX_OFFSET);
