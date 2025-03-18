@@ -36,8 +36,6 @@
 #include "../Shimmer_Driver/ADXL371/adxl371.h"
 #include "../Shimmer_Driver/BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #include "../Shimmer_Driver/BMP3/hal_bmp3.h"
-#include "ADS7028/ads7028.h"
-#include "ADS7028/hal_ads7028.h"
 #include "ADXL371/hal_adxl371.h"
 #include "LIS2DW12/hal_lis2dw12.h"
 #include "LIS2DW12/lis2dw12-pid/lis2dw12_reg.h"

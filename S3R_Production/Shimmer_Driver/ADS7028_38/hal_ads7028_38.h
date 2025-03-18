@@ -53,6 +53,7 @@
 #include <stdbool.h>
 
 #include "hal_FactoryTest.h"
+#include "spi.h"
 #endif
 
 #if defined(MSP432E401Y)
@@ -108,6 +109,20 @@
 #define SYSTEM_CLOCK_HZ ((uint32_t) 120000000)
 #endif
 
+enum ads7028_ch_ID
+{
+  ADS7028_INT_EXP0,
+  ADS7028_INT_EXP1,
+  ADS7028_INT_EXP2,
+  ADS7028_INT_EXP3,
+  ADS7028_EXT_EXP0,
+  ADS7028_EXT_EXP1,
+  ADS7028_EXT_EXP2,
+  ADS7028_VBATT
+};
+
+#define SENSOR_BUS hspi1
+
 //*****************************************************************************
 //
 // Function Prototypes
@@ -136,4 +151,9 @@ void TIMER0IntHandler(void);
 
 self_test_result_t ads7028_self_test(void);
 void swI2C4PpgOnAds7028(uint8_t state);
+void ads7028_configureChannels(void);
+void ads7028Configure(uint8_t* dataRx);
+void ads7028DataGet(uint8_t *dataRx , uint8_t channelIDs);
+void ads7028ProcessData(uint8_t ChID, uint16_t data);
+void Ads7028GsrTestInit(void);
 #endif /* HAL_ADC7028_38_H_ */

@@ -1147,7 +1147,7 @@ void resetDevice();
 void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond);
 void stopConversions(void);
 
-int16_t readData(uint8_t dataRx[]);
+int16_t readData(/*uint8_t* dataTx,*/ uint8_t* dataRx/*, uint8_t numberOfBytes*/);
 uint8_t readSingleRegister(uint8_t address);
 uint8_t getRegisterValue(uint8_t address);
 

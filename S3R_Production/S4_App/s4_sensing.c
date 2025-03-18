@@ -95,10 +95,12 @@ void S4Sens_configureChannels(void)
 
 #if defined(SHIMMER3R)
   expectedCbFlags = 0;
+#if defined(SR48_6_0)
   if (areAdcChannelsEnabled())
   {
     expectedCbFlags |= STAT_PERI_ADC;
   }
+#endif
   if (areI2cChannelsEnabled())
   {
     expectedCbFlags |= STAT_PERI_I2C_SENS;

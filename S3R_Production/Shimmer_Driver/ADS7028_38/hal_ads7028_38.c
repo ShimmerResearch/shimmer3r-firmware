@@ -49,15 +49,13 @@ static void initTIMER(void);
 void TIMER0IntHandler(void);
 #else
 #include "gpio.h"
-#include "spi.h"
 #include "stm32u5xx_hal.h"
 
-#define SENSOR_BUS hspi1
 
 #define nCS_PORT   (CS_ADS7028_GPIO_Port)
 #define nCS_PIN    (CS_ADS7028_Pin)
 #endif
-
+uint8_t* dataADC = 0;
 //****************************************************************************
 //
 // Function Definitions
@@ -307,6 +305,8 @@ void startTimer(uint32_t timerFreqHz)
   TimerEnable(TIMER0_BASE, TIMER_A);
 #else
   //TODO decide how to handle timer configuration for STM32 if needed
+  //HAL_Delay(1);
+  TIMER0IntHandler();
 #endif
 }
 
@@ -348,17 +348,19 @@ void TIMER0IntHandler(void)
 #endif
 
   //Array to store ADC conversion results
-  uint8_t data[4] = { 0 };
+
 
   //Start conversion
   setCS(HIGH);
 
   //Wait for conversion to complete
   //IMPORTANT: This delay will need to be modified if averaging is enabled!
-  delay_us(3);
+  //delay_us(3);
 
   //Read data
-  readData(data);
+//#if defined(MSP432E401Y)
+  readData(dataADC);
+//#endif
 }
 
 //****************************************************************************
@@ -421,11 +423,11 @@ void setCS(const bool state)
   }
 #else
   //TODO decide delay time based on example above
-  HAL_Delay(1); //Arbitrary delay
+  //HAL_Delay(1); //Arbitrary delay
   GPIO_PinState value = (state ? GPIO_PIN_SET : GPIO_PIN_RESET);
   HAL_GPIO_WritePin(nCS_PORT, nCS_PIN, value);
   //TODO decide delay time based on example above
-  HAL_Delay(1); //Arbitrary delay
+  //HAL_Delay(1); //Arbitrary delay
 #endif
 }
 
@@ -525,4 +527,86 @@ void swI2C4PpgOnAds7028(uint8_t state)
     setRegisterBits(GPO_OUTPUT_VALUE_ADDRESS, GPO_OUTPUT_VALUE_GPO_OUTPUT_VALUE_CH2_HIGH);
     setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_PIN_CFG_CH2_ANALOG_INPUT);
   }
+}
+
+
+
+void ads7028Configure(uint8_t *dataRx)
+{
+  //setCS(LOW);
+ setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT); //Set all Channels as Analog Inputs.
+  //setRegisterBits(DATA_CFG_ADDRESS, DATA_CFG_APPEND_STATUS_FOUR_BIT_CHID); //Append Channel ID to ADC data
+  //setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS, ChannelIDs);
+  //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
+  //uint8_t status = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);
+  //uint8_t status1 = readSingleRegister(GENERAL_CFG_ADDRESS);
+ // uint8_t status2 = readSingleRegister(DATA_CFG_ADDRESS);
+  //setCS(HIGH);
+ ads7028DataGet(dataRx, CHANNEL_SEL_MANUAL_CHID_3);
+}
+
+void ads7028DataGet(uint8_t *dataRx, uint8_t channelIDs)
+{
+  HAL_StatusTypeDef ret;
+  uint8_t numberOfBytes = adc.sensorLen * 2 + 1/*SPI_CRC_ENABLED ? 4 : 3*/;
+
+  uint8_t dataTx[17] = {0};
+  dataADC = dataRx;
+//dataTx[0] = SPI_READ_REGISTER;
+/*  setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
+  setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS, channelIDs);
+  uint8_t status = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);*/
+ // uint16_t res = readData(dataRx);
+startManualConversions(channelIDs, 51U);
+  //setCS(HIGH);
+}
+
+void ads7028ProcessData(uint8_t ChID, uint16_t data)
+{
+  if (ChID == ADS7028_INT_EXP0)
+  {
+    sensing.dataBuf[sensing.ptr.intADC0 + 0] = data & 0xFF;
+    sensing.dataBuf[sensing.ptr.intADC0 + 1] = (data >> 8) & 0xFF;
+  }
+  else if (ChID == ADS7028_INT_EXP1)
+  {
+    sensing.dataBuf[sensing.ptr.intADC1 + 0] = data & 0xFF;
+    sensing.dataBuf[sensing.ptr.intADC1 + 1] = (data >> 8) & 0xFF;
+  }
+  else if (ChID == ADS7028_INT_EXP2)
+  {
+    sensing.dataBuf[sensing.ptr.intADC2 + 0] = data & 0xFF;
+    sensing.dataBuf[sensing.ptr.intADC2 + 1] = (data >> 8) & 0xFF;
+  }
+  else if (ChID == ADS7028_INT_EXP3)
+  {
+    sensing.dataBuf[sensing.ptr.intADC3 + 0] = data & 0xFF;
+    sensing.dataBuf[sensing.ptr.intADC3 + 1] = (data >> 8) & 0xFF;
+  }
+  else if (ChID == ADS7028_EXT_EXP0)
+  {
+    sensing.dataBuf[sensing.ptr.extADC0 + 0] = data & 0xFF;
+    sensing.dataBuf[sensing.ptr.extADC0 + 1] = (data >> 8) & 0xFF;
+  }
+  else if (ChID == ADS7028_EXT_EXP1)
+  {
+    sensing.dataBuf[sensing.ptr.extADC1 + 0] = data & 0xFF;
+    sensing.dataBuf[sensing.ptr.extADC1 + 1] = (data >> 8) & 0xFF;
+  }
+  else if (ChID == ADS7028_EXT_EXP2)
+  {
+    sensing.dataBuf[sensing.ptr.extADC2 + 0] = data & 0xFF;
+    sensing.dataBuf[sensing.ptr.extADC2 + 1] = (data >> 8) & 0xFF;
+  }
+  else if (ChID == ADS7028_VBATT)
+  {
+    sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = data & 0xFF;
+    sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = (data >> 8) & 0xFF;
+  }
+}
+
+void Ads7028GsrTestInit(void)
+{
+  //set channel 3 for auto sequencing conversion.
+  setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS,AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED );
 }

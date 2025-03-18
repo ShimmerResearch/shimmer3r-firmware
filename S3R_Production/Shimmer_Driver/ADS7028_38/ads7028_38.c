@@ -45,7 +45,7 @@
 
 /** Array used to recall device register map configurations */
 static uint8_t registerMap[MAX_REGISTER_ADDRESS + 1];
-
+uint16_t adcData = 0;
 //****************************************************************************
 //
 // Internal Function prototypes
@@ -123,14 +123,18 @@ void resetDevice()
 void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond)
 {
   //Select manual mode
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
+  //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
+  setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT);
+  setRegisterBits(SEQUENCE_CFG_ADDRESS,SEQUENCE_CFG_SEQ_MODE_MANUAL);
 
   //Configure pin as analog input
-  setChannelAsAnalogInput(channelID);
+  //setChannelAsAnalogInput(channelID);
 
   //Select channel as MUX input
-  writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
+  //writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
+  setRegisterBits(CHANNEL_SEL_ADDRESS, CHANNEL_SEL_MANUAL_CHID_3);
 
+  setRegisterBits(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_START_ENABLED);
   //Set nCS pin LOW, next rising edge will trigger start of conversion
   setCS(LOW);
 
@@ -167,19 +171,28 @@ void stopConversions(void)
 //!\return int16_t (sign-extended data).
 //
 //*****************************************************************************
-int16_t readData(uint8_t dataRx[])
+int16_t readData(/*uint8_t* dataTx, */uint8_t* dataRx/*,  uint8_t numberOfBytes*/)
 {
-  uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
-
-  //NULL command
-  uint8_t dataTx[4] = { 0 };
-  if (SPI_CRC_ENABLED)
+  uint8_t dataTx[4] = {0};
+  dataTx[0] = OPCODE_RREG;
+  dataTx[1] = CHANNEL_SEL_MANUAL_CHID_3;
+  dataTx[2] = OPCODE_NULL;
+  dataTx[3] = OPCODE_NULL;
+/*  if (SPI_CRC_ENABLED)
   {
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
-  }
-  spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  }*/
 
-  return signExtend(dataRx);
+#if defined(MSP432E401Y)
+  spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+#else
+  setCS(LOW);
+  HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], &dataRx[0], 4U);
+  setCS(HIGH);
+   adcData = signExtend(dataRx);
+
+#endif
+  return 0;// signExtend(dataRx);
 }
 
 //*****************************************************************************

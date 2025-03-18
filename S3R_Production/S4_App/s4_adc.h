@@ -22,7 +22,7 @@ typedef struct
   uint8_t chanCntBatt;
 } ADCTypeDef;
 
-extern ADCTypeDef Ext_adc;
+extern ADCTypeDef adc;
 
 typedef struct
 {
