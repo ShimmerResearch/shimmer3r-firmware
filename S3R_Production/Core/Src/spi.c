@@ -247,6 +247,7 @@ void MX_SPI3_Init(void)
     HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
 
     hspiExg = &hspi3;
+    EXG_init(hspiExg);
   }
 
   /* USER CODE END SPI3_Init 2 */

@@ -66,7 +66,8 @@
 //leave both in SDATAC mode
 void EXG_init(SPI_HandleTypeDef *hspi);
 
-uint8_t EXG_test(void);
+uint8_t EXG_self_test(void);
+void EXG_startSensing(void);
 
 void EXG_setRdatac(uint8_t chip, uint8_t en);
 
