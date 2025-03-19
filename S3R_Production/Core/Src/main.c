@@ -660,8 +660,8 @@ float samplingClockFreqGet(void)
 
 void InitialiseBtAfterBoot(void)
 {
-  //TODO implement a shorted boot sequence as this is not the first time the BT has been booted at this point.
-  //btInit(baudToTry, factoryReset);
+  //TODO implement a shorted boot sequence as this is not the first time the BT
+  //has been booted at this point. btInit(baudToTry, factoryReset);
 }
 
 uint8_t getDefaultBaudForBtVersion(void)
