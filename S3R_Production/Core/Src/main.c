@@ -404,16 +404,6 @@ void btInitialise(void)
   //20 * 100ms = 2s per baud rate attempt
   btCommWithDiffBaudRates(false, 50U);
 
-  if (isBtIsInitialised())
-  {
-    char temp_btMacAscii[14];
-    uint8_t temp_btMacHex[6];
-    ShimBt_macAddressHexGet(temp_btMacHex);
-    ShimConfig_btMacHexSet(temp_btMacHex);
-    ShimBt_macAddressAsciiGet(temp_btMacAscii);
-    ShimConfig_btMacAsciiSet(temp_btMacAscii);
-  }
-
   SHIMMER_PRINTF("BT init end\r\n");
 }
 
@@ -667,6 +657,11 @@ void InitialiseBtAfterBoot(void)
 uint8_t getDefaultBaudForBtVersion(void)
 {
   return 12; //To represent 2M baud rate
+}
+
+void stopSensingWrapup(void)
+{
+
 }
 
 /* USER CODE END 4 */

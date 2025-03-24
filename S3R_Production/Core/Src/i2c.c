@@ -517,7 +517,7 @@ void I2cSens_configureChannels(void)
   }
 #endif
   sensing.ccLen += nbr_i2c1_chans;
-  sensing.nbrDigiChans += nbr_i2c1_chans;
+  sensing.nbrI2cChans = nbr_i2c1_chans;
 
 #if defined(SHIMMER3R)
   expectedI2cBusCbFlags = 0;

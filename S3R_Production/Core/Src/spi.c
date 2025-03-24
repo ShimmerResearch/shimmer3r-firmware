@@ -826,7 +826,7 @@ void SPI_configureChannels()
     }
   }
   sensing.ccLen += nbr_spi_chans;
-  sensing.nbrDigiChans += nbr_spi_chans;
+  sensing.nbrSpiChans = nbr_spi_chans;
 
 #if defined(SHIMMER3R)
   expectedSpiBusCbFlags = 0;
