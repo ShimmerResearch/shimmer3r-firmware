@@ -184,7 +184,6 @@ extern "C"
 #define RSP_INT_Pin                 GPIO_INTERNAL0_Pin
 #define RSP_INT_GPIO_PORT           GPIO_INTERNAL0_GPIO_Port
 
-
 /* USER CODE BEGIN Private defines */
 
 /* TODO including these expansion board pin definitions here because CubeMX

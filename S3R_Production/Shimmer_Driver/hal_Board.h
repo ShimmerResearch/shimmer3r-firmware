@@ -333,7 +333,6 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define ADS1292_ECG_DRDY HAL_GPIO_ReadPin(ECG_INT_GPIO_Port, ECG_INT_Pin)
 #define ADS1292_RSP_DRDY HAL_GPIO_ReadPin(RSP_INT_GPIO_PORT, RSP_INT_Pin)
 
-
 #elif defined(SHIMMER4_SDK)
 #define Board_SW_EXP(x) \
   HAL_GPIO_WritePin(EXP_RESET_N_GPIO_Port, EXP_RESET_N_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
