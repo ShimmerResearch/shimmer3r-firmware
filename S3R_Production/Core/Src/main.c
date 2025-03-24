@@ -661,7 +661,6 @@ uint8_t getDefaultBaudForBtVersion(void)
 
 void stopSensingWrapup(void)
 {
-
 }
 
 /* USER CODE END 4 */
