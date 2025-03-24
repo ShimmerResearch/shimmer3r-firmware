@@ -132,10 +132,10 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #endif
 
 #if defined(SHIMMER3R)
-#define ECG_CS_GPIO               GPIO_ADC_INT_EXP1_GPIO_Port
-#define ECG_CS_PIN                GPIO_ADC_INT_EXP1_Pin
-#define RESP_CS_GPIO              GPIO_ADC_INT_EXP0_GPIO_Port
-#define RESP_CS_PIN               GPIO_ADC_INT_EXP0_Pin
+#define ECG_CS_GPIO               GPIO_INTERNAL4_GPIO_Port
+#define ECG_CS_PIN                GPIO_INTERNAL4_Pin
+#define RESP_CS_GPIO              GPIO_INTERNAL3_GPIO_Port
+#define RESP_CS_PIN               GPIO_INTERNAL3_Pin
 
 #define GSR_RANGE_A0_Pin          GPIO_INTERNAL0_Pin
 #define GSR_RANGE_A0_GPIO_Port    GPIO_INTERNAL0_GPIO_Port
@@ -286,8 +286,10 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 //TODO confirm which pin is going to be used
 #define Board_SW_STRAIN_GUAGE(x) \
   HAL_GPIO_WritePin(GPIO_INTERNAL1_GPIO_Port, GPIO_INTERNAL1_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+/*#define Board_EXG_RESET_N(x) \
+  HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET) */
 #define Board_EXG_RESET_N(x) \
-  HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+  HAL_GPIO_WritePin(SW_EXP_GPIO_Port, SW_EXP_pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_SW_MIC(x) \
   HAL_GPIO_WritePin(SW_MIC_GPIO_Port, SW_MIC_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
@@ -328,6 +330,9 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define LIS2DW12_INT1 \
   HAL_GPIO_ReadPin(LIS2DW12_INT1_GPIO_Port, LIS2DW12_INT1_Pin)
 #endif
+#define ADS1292_ECG_DRDY HAL_GPIO_ReadPin(ECG_INT_GPIO_Port, ECG_INT_Pin)
+#define ADS1292_RSP_DRDY HAL_GPIO_ReadPin(RSP_INT_GPIO_PORT, RSP_INT_Pin)
+
 
 #elif defined(SHIMMER4_SDK)
 #define Board_SW_EXP(x) \

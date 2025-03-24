@@ -75,7 +75,7 @@ void ADS1292_init(SPI_HandleTypeDef *hspi)
   }
 
   Board_EXG_RESET_N(0);
-  Board_ExG_CS(1);
+  Board_ExG_CS(1); /* leave as is for now not sure whats the use */
   Board_ECG_CS(1);
   Board_RESP_CS(1);
 
@@ -285,18 +285,33 @@ void ADS1292_enableInternalReference(void)
 
 void ADS1292_enableDrdyInterrupts(uint8_t mask)
 {
-  if (mask & ADS1292_DRDY_INT_CHIP1)
+ /* if (mask & ADS1292_DRDY_INT_CHIP1)
   {
     HAL_NVIC_EnableIRQ(EXTI3_IRQn);
   }
   if (mask & ADS1292_DRDY_INT_CHIP2)
   {
     //HAL_NVIC_EnableIRQ(EXTI5_IRQn);
+  }*/
+  if (mask & ADS1292_DRDY_INT_CHIP1)
+  {
+    if(!ADS1292_ECG_DRDY)
+    {
+      HAL_GPIO_WritePin(ECG_INT_GPIO_Port, ECG_INT_Pin, GPIO_PIN_SET);
+    }
+  }
+  if (mask & ADS1292_DRDY_INT_CHIP2)
+  {
+    if(!ADS1292_RSP_DRDY)
+    {
+      HAL_GPIO_WritePin(RSP_INT_GPIO_PORT, RSP_INT_Pin, GPIO_PIN_SET);
+    }
   }
 }
 
 void ADS1292_disableDrdyInterrupts(uint8_t mask)
 {
+  /*
   if (mask & ADS1292_DRDY_INT_CHIP1)
   {
     HAL_NVIC_DisableIRQ(EXTI3_IRQn);
@@ -304,7 +319,22 @@ void ADS1292_disableDrdyInterrupts(uint8_t mask)
   if (mask & ADS1292_DRDY_INT_CHIP2)
   {
     //HAL_NVIC_DisableIRQ(EXTI5_IRQn);
-  }
+  } */
+
+  if (mask & ADS1292_DRDY_INT_CHIP1)
+    {
+      if(ADS1292_ECG_DRDY)
+      {
+        HAL_GPIO_WritePin(ECG_INT_GPIO_Port, ECG_INT_Pin, GPIO_PIN_RESET);
+      }
+    }
+    if (mask & ADS1292_DRDY_INT_CHIP2)
+    {
+      if(ADS1292_RSP_DRDY)
+      {
+        HAL_GPIO_WritePin(RSP_INT_GPIO_PORT, RSP_INT_Pin, GPIO_PIN_RESET);
+      }
+    }
 }
 
 uint8_t ADS1292_readDataChip1(uint8_t *data)

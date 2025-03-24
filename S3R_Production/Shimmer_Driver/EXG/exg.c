@@ -57,6 +57,7 @@ void EXG_init(SPI_HandleTypeDef *hspi)
     ADS1292_chip2CsEnable(0); */
   ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
   ADS1292_init(hspi);
+  ADS1292_resetPulse();
   ADS1292_chip1CsEnable(0);
   ADS1292_chip2CsEnable(0);
 }

@@ -173,6 +173,17 @@ extern "C"
 #define GPIO_EXTERNAL_GPIO_Port     GPIOE
 #define BT_LP_MODE_Pin              GPIO_PIN_10
 #define BT_LP_MODE_GPIO_Port        GPIOD
+#define GPIO_INTERNAL4_Pin          GPIO_PIN_2
+#define GPIO_INTERNAL4_GPIO_Port    GPIOB
+#define GPIO_INTERNAL3_Pin          GPIO_PIN_1
+#define GPIO_INTERNAL3_GPIO_Port    GPIOB
+#define SW_EXP_pin                  GPIO_PIN_0
+#define SW_EXP_GPIO_Port            GPIOE
+#define ECG_INT_Pin                 GPIO_INTERNAL1_Pin
+#define ECG_INT_GPIO_Port           GPIO_INTERNAL1_GPIO_Port
+#define RSP_INT_Pin                 GPIO_INTERNAL0_Pin
+#define RSP_INT_GPIO_PORT           GPIO_INTERNAL0_GPIO_Port
+
 
 /* USER CODE BEGIN Private defines */
 
