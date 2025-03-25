@@ -161,7 +161,8 @@ void Init()
   ShimBt_btCommsProtocolInit();
   //btFactoryResetViaFw();
   btInitialise();
-  ShimBt_updateBtVer();
+  ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
+  BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
 //btDeinit();
 #elif defined(SHIMMER4_SDK)
   BtUart_init();

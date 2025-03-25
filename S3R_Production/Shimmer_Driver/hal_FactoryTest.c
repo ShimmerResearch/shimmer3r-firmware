@@ -426,7 +426,7 @@ void bt_module_test(void)
   if (isBtIsInitialised())
   {
     send_test_report(" - MAC ID: ");
-    ShimBt_macAddressAsciiGet(buffer);
+    memcpy(&buffer[0], ShimBt_macIdStrPtrGet(), 12);
     send_test_report(buffer);
     send_test_report("\r\n");
 
@@ -846,9 +846,9 @@ uint8_t runGsrFactoryTest(void)
 
     status = getFactoryTestGsrAvg(hadcFactoryTestPtr, &gsrResistance);
 
-    uint32_t buffer = gsrResistance * GSR_TEST_TOLERANCE;
-    if (status != HAL_OK || (gsrResistance < (testGsrResistances[i] - buffer))
-        || (gsrResistance > (testGsrResistances[i] + buffer)))
+    uint32_t gsrBuffer = gsrResistance * GSR_TEST_TOLERANCE;
+    if (status != HAL_OK || (gsrResistance < (testGsrResistances[i] - gsrBuffer))
+        || (gsrResistance > (testGsrResistances[i] + gsrBuffer)))
     {
       returnVal = 1;
       break;
