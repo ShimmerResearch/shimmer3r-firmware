@@ -427,8 +427,8 @@ void bt_module_test(void)
   {
     send_test_report(" - MAC ID: ");
     memcpy(&buffer[0], ShimBt_macIdStrPtrGet(), 12);
+    sprintf(&buffer[12], "\r\n");
     send_test_report(buffer);
-    send_test_report("\r\n");
 
     sprintf(buffer, " - %s\r\n", ShimBt_getBtVerStrPtr());
     send_test_report(buffer);

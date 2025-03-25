@@ -58,6 +58,8 @@ extern "C"
 #define RTC_CHAR2NUM(x)        ((x) - '0')
 #define RTC_CHARISNUM(x)       ((x) >= '0' && (x) <= '9')
 
+#define getRwcTime             RTC_get64
+
   typedef struct
   {
     uint8_t seconds;     /*!< Seconds parameter, from 00 to 59 */

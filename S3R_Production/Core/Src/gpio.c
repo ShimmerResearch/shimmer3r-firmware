@@ -36,7 +36,7 @@
 /*----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 
-uint64_t GPIO_tsPress = 0, GPIO_tsLastRelease = 0, GPIO_tsRelease = 0;
+uint64_t GPIO_tsLastRelease = 0, GPIO_tsRelease = 0;
 
 /* USER CODE END 1 */
 
@@ -246,17 +246,10 @@ void GPIO_userButtonCheck()
   if (pinState == GPIO_PIN_SET)
   { //pressed
     shimmerStatus.buttonPressed = 1;
-#if defined(SHIMMER4_SDK)
-    Board_ledOn(LED_YELLOW);
-#endif
-    GPIO_tsPress = RTC_get64();
   }
   else
   {
     shimmerStatus.buttonPressed = 0;
-#if defined(SHIMMER4_SDK)
-    Board_ledOff(LED_YELLOW);
-#endif
     GPIO_tsRelease = RTC_get64();
     if (GPIO_tsRelease - GPIO_tsLastRelease > 3277)
     {
