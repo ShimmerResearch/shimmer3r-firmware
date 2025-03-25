@@ -835,7 +835,7 @@ uint8_t runGsrFactoryTest(void)
   Board_SW_GSR(1);
   gsrTestRigInit(&hi2c4);
 
-  GSR_setRange(HW_RES_40K);
+  GSR_setActiveResistor(HW_RES_40K);
   initGsrAdc();
   ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc2();
 

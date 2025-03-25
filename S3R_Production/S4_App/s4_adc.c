@@ -48,6 +48,7 @@
 #include "log_and_stream_externs.h"
 #include "shimmer_definitions.h"
 #include <Battery/shimmer_battery.h>
+#include <GSR/gsr.h>
 
 ADCTypeDef adc;
 #if defined(SHIMMER4_SDK)
@@ -65,7 +66,6 @@ uint16_t adcBufSens[8]; //max 8 channels, each of 16 bits
 uint32_t adc_battVal, adcBufSens[12], adcBufResv[12]; //max 12 channels, each of 16 bits
 #endif
 //uint32_t adcBuf3[12];
-uint8_t gsrActiveResistor;
 
 #if defined(SHIMMER4_SDK)
 uint8_t adcConfig;
@@ -426,17 +426,7 @@ void S4_NORM_ADC_startSensing(void)
 #endif
 
     Board_SW_GSR(1);
-    GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks, GSR_AUTORANGE);
-    if (configBytes->gsrRange <= HW_RES_3M3)
-    {
-      GSR_setRange(configBytes->gsrRange);
-      gsrActiveResistor = configBytes->gsrRange;
-    }
-    else
-    {
-      GSR_setRange(HW_RES_40K);
-      gsrActiveResistor = HW_RES_40K;
-    }
+    GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks);
   }
 
 #if USE_VBATT_ALWAYS
@@ -952,21 +942,11 @@ void S4_NORM_ADC_bufPoll()
   //   sensing.dataBuf[sensing.ptr.strainGauge + 2] = *((uint8_t*)adcBufSens + adc_offset_sens++);
   //   sensing.dataBuf[sensing.ptr.strainGauge + 3] = *((uint8_t*)adcBufSens + adc_offset_sens++);
   //}
+
   //GSR
   if (configBytes->chEnGsr)
   {
-    union
-    {
-      uint8_t u8[4];
-      uint32_t u32;
-    } gsr_buf;
-
-    gsr_buf.u8[0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    gsr_buf.u8[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    GSR_output(&gsr_buf.u32);
-
-    sensing.dataBuf[sensing.ptr.gsr + 0] = gsr_buf.u8[0];
-    sensing.dataBuf[sensing.ptr.gsr + 1] = gsr_buf.u8[1];
+    GSR_range(&sensing.dataBuf[sensing.ptr.gsr]);
   }
 }
 
@@ -1222,7 +1202,7 @@ HAL_StatusTypeDef getFactoryTestGsrResistance(ADC_HandleTypeDef *hadc, uint32_t 
     int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
         hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
 
-    *gsrResistance = GSR_calcResistance(gsrMv, GSR_getCurrentActiveResistor());
+    *gsrResistance = GSR_calcResistance(gsrMv);
 
     GSR_controlRange(adcValue);
   }
@@ -1237,7 +1217,6 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrRes
 
   for (uint8_t i = 0; i < 13; i++)
   {
-    uint8_t range = GSR_getCurrentActiveResistor();
     status = getFactoryTestGsrResistance(hadc, gsrResistance);
 
     //Skip first 3 measurements to account for range changing
@@ -1256,8 +1235,7 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrRes
 void resetGsrPwrAndRange(void)
 {
   Board_SW_GSR(0);
-  GSR_setRange(HW_RES_40K);
-  gsrActiveResistor = HW_RES_40K;
+  GSR_setActiveResistor(HW_RES_40K);
 }
 
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr)

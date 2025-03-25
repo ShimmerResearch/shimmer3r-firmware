@@ -552,6 +552,8 @@ void gpioInitPerBoard(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 #endif
+
+    GSR_setActiveResistor(HW_RES_40K);
   }
 }
 

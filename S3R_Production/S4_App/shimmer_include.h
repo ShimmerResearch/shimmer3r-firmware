@@ -21,7 +21,6 @@
 #if defined(SHIMMER4_SDK)
 #include "STC3100.h"
 #endif
-#include "gsr.h"
 #if defined(SHIMMER3R)
 #include <CYW20820/CYW20820.h>
 #include <CYW20820/EZ-Serial/handlers.h>
