@@ -41,11 +41,6 @@
 #include "usb_device.h"
 #endif
 
-#define TIM_MEASURE_START time_start = SysTick->VAL
-#define TIM_MEASURE_END    \
-  time_end = SysTick->VAL; \
-  time_diff = time_start - time_end
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -61,13 +56,20 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+#define TIM_MEASURE_START time_start = SysTick->VAL
+#define TIM_MEASURE_END    \
+  time_end = SysTick->VAL; \
+  time_diff = time_start - time_end
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
 
-uint8_t dcID[16];
+volatile uint32_t time_start, time_end, time_diff;
+
+extern UART_HandleTypeDef *huartBt;
 
 /* USER CODE END PV */
 
@@ -77,9 +79,6 @@ static void SystemPower_Config(void);
 /* USER CODE BEGIN PFP */
 
 void Init(void);
-//TODO move out of here
-void setBootStage(boot_stage_t bootStageNew);
-boot_stage_t getBootStage(void);
 void btInitialise(void);
 void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt);
@@ -100,12 +99,6 @@ uint8_t getDefaultBaudForBtVersion(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-volatile uint32_t time_start, time_end, time_diff;
-
-boot_stage_t bootStage;
-
-extern UART_HandleTypeDef *huartBt;
 
 int _write(int file, char *ptr, int len)
 {
@@ -350,41 +343,6 @@ static void SystemPower_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-void setBootStage(boot_stage_t bootStageNew)
-{
-  bootStage = bootStageNew;
-
-  switch (bootStage)
-  {
-  case BOOT_STAGE_START:
-    Board_ledOn(LED_ALL);
-    break;
-  case BOOT_STAGE_I2C:
-    Board_ledOff(LED_ALL);
-    break;
-  case BOOT_STAGE_BLUETOOTH:
-    Board_ledOn(LED_ALL);
-    break;
-  case BOOT_STAGE_BLUETOOTH_FAILURE:
-    Board_ledOff(LED_ALL);
-    break;
-  case BOOT_STAGE_CONFIGURATION:
-    Board_ledOn(LED_ALL);
-    break;
-  case BOOT_STAGE_END:
-    Board_ledOff(LED_ALL);
-    break;
-  default:
-    break;
-  }
-  return;
-}
-
-boot_stage_t getBootStage(void)
-{
-  return bootStage;
-}
-
 STATTypeDef *GetStatus()
 {
   return &shimmerStatus;
@@ -537,7 +495,7 @@ void SetupDock(void)
       //Board_sdPowerCycle();
     }
     MX_USART1_UART_Init();
-    ShimBt_btsdSelfcmd();
+    ShimBt_instreamStatusRespSend();
   }
   else
   {
@@ -546,7 +504,7 @@ void SetupDock(void)
     //Board_sdcard_arm0pc1(0);
 
     //SendStatusByte();
-    ShimBt_btsdSelfcmd();
+    ShimBt_instreamStatusRespSend();
     //Board_sdPower(0);
     //if (CheckSdInslot() && !shimmerStatus.isSensing && !shimmerStatus.badFile)
     if (CheckSdInslot() && !shimmerStatus.sensing)

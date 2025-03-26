@@ -633,7 +633,7 @@ uint8_t BtUart_connectIntCheck(void)
     //HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_RESET);//blue
     // BT_connectionInterrupt(1);  // commenting this as this function is RN42 related
     shimmerStatus.btConnected = 1;
-    Board_ledOn(LED_BLUE);
+    Board_ledOn(LED_UPR_BLUE);
   }
   else
   {
@@ -641,7 +641,7 @@ uint8_t BtUart_connectIntCheck(void)
     //BT_connectionInterrupt(0); // commenting this as this function is RN42 related
     shimmerStatus.btConnected = 0;
     ShimTask_set(TASK_STOPSENSING);
-    Board_ledOff(LED_BLUE);
+    Board_ledOff(LED_UPR_BLUE);
   }
   return shimmerStatus.btConnected;
 }

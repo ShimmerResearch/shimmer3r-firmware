@@ -16,7 +16,6 @@
 #include "hal_Power.h"
 #include "s4_adc.h"
 #include "s4_calc.h"
-#include "s4_led.h"
 #include "shimmer_definitions.h"
 #if defined(SHIMMER4_SDK)
 #include "STC3100.h"

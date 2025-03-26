@@ -80,11 +80,13 @@ void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
 void startLedBlinkTimer(void)
 {
   HAL_TIM_Base_Start_IT(htimLedBlinkPtr);
+  shimmerStatus.timerBlinkEnabled = 1;
 }
 
 void stopLedBlinkTimer(void)
 {
   HAL_TIM_Base_Stop(htimLedBlinkPtr);
+  shimmerStatus.timerBlinkEnabled = 0;
 }
 
 void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue)
@@ -208,24 +210,24 @@ static void updateLedState(led_mode updateMode, uint8_t ledMask)
     }
     else
     {
-      if (ledMask & LED_RED)
+      if (ledMask & LED_LWR_RED)
       {
         ledStateLwrRed = valueToSet;
       }
-      if (ledMask & LED_GREEN0)
+      if (ledMask & LED_LWR_GREEN)
       {
         ledStateLwrGreen = valueToSet;
       }
-      if (ledMask & LED_YELLOW)
+      if (ledMask & LED_LWR_YELLOW)
       {
         ledStateLwrRed = valueToSet;
         ledStateLwrGreen = valueToSet;
       }
-      if (ledMask & LED_GREEN1)
+      if (ledMask & LED_UPR_GREEN)
       {
         ledStateUprGreen = valueToSet;
       }
-      if (ledMask & LED_BLUE)
+      if (ledMask & LED_UPR_BLUE)
       {
         ledStateUprBlue = valueToSet;
       }
@@ -244,24 +246,24 @@ static void updateLedState(led_mode updateMode, uint8_t ledMask)
     }
     else
     {
-      if (ledMask & LED_RED)
+      if (ledMask & LED_LWR_RED)
       {
         ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
       }
-      if (ledMask & LED_GREEN0)
+      if (ledMask & LED_LWR_GREEN)
       {
         ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
       }
-      if (ledMask & LED_YELLOW)
+      if (ledMask & LED_LWR_YELLOW)
       {
         ledStateLwrRed = ledStateLwrRed == LED_PWM_ON ? 0 : LED_PWM_ON;
         ledStateLwrGreen = ledStateLwrGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
       }
-      if (ledMask & LED_GREEN1)
+      if (ledMask & LED_UPR_GREEN)
       {
         ledStateUprGreen = ledStateUprGreen == LED_PWM_ON ? 0 : LED_PWM_ON;
       }
-      if (ledMask & LED_BLUE)
+      if (ledMask & LED_UPR_BLUE)
       {
         ledStateUprBlue = ledStateUprBlue == LED_PWM_ON ? 0 : LED_PWM_ON;
       }
@@ -296,23 +298,23 @@ void Board_ledOn(uint8_t ledMask)
 #elif if defined(SHIMMER4_SDK)
 void Board_ledOn(uint8_t ledMask)
 {
-  if (ledMask & LED_RED)
+  if (ledMask & LED_LWR_RED)
   {
     HAL_GPIO_WritePin(LED_RED_GPIO, LED_RED_PIN, GPIO_PIN_RESET); //red
   }
-  if (ledMask & LED_GREEN0)
+  if (ledMask & LED_LWR_GREEN)
   {
     HAL_GPIO_WritePin(LED_GR0_GPIO, LED_GR0_PIN, GPIO_PIN_RESET); //green0
   }
-  if (ledMask & LED_YELLOW)
+  if (ledMask & LED_LWR_YELLOW)
   {
     HAL_GPIO_WritePin(LED_YEL_GPIO, LED_YEL_PIN, GPIO_PIN_RESET); //orange
   }
-  if (ledMask & LED_GREEN1)
+  if (ledMask & LED_UPR_GREEN)
   {
     HAL_GPIO_WritePin(LED_GR1_GPIO, LED_GR1_PIN, GPIO_PIN_RESET); //green1
   }
-  if (ledMask & LED_BLUE)
+  if (ledMask & LED_UPR_BLUE)
   {
     HAL_GPIO_WritePin(LED_BLU_GPIO, LED_BLU_PIN, GPIO_PIN_RESET); //blue
   }
@@ -334,23 +336,23 @@ void Board_ledOff(uint8_t ledMask)
 #elif if defined(SHIMMER4_SDK)
 void Board_ledOff(uint8_t ledMask)
 {
-  if (ledMask & LED_RED)
+  if (ledMask & LED_LWR_RED)
   {
     HAL_GPIO_WritePin(LED_RED_GPIO, LED_RED_PIN, GPIO_PIN_SET); //red
   }
-  if (ledMask & LED_GREEN0)
+  if (ledMask & LED_LWR_GREEN)
   {
     HAL_GPIO_WritePin(LED_GR0_GPIO, LED_GR0_PIN, GPIO_PIN_SET); //green0
   }
-  if (ledMask & LED_YELLOW)
+  if (ledMask & LED_LWR_YELLOW)
   {
     HAL_GPIO_WritePin(LED_YEL_GPIO, LED_YEL_PIN, GPIO_PIN_SET); //orange
   }
-  if (ledMask & LED_GREEN1)
+  if (ledMask & LED_UPR_GREEN)
   {
     HAL_GPIO_WritePin(LED_GR1_GPIO, LED_GR1_PIN, GPIO_PIN_SET); //green1
   }
-  if (ledMask & LED_BLUE)
+  if (ledMask & LED_UPR_BLUE)
   {
     HAL_GPIO_WritePin(LED_BLU_GPIO, LED_BLU_PIN, GPIO_PIN_SET); //blue
   }
@@ -372,23 +374,23 @@ void Board_ledToggle(uint8_t ledMask)
 #elif if defined(SHIMMER4_SDK)
 void Board_ledToggle(uint8_t ledMask)
 {
-  if (ledMask & LED_RED)
+  if (ledMask & LED_LWR_RED)
   {
     HAL_GPIO_TogglePin(LED_RED_GPIO, LED_RED_PIN); //red
   }
-  if (ledMask & LED_GREEN0)
+  if (ledMask & LED_LWR_GREEN)
   {
     HAL_GPIO_TogglePin(LED_GR0_GPIO, LED_GR0_PIN); //green0
   }
-  if (ledMask & LED_YELLOW)
+  if (ledMask & LED_LWR_YELLOW)
   {
     HAL_GPIO_TogglePin(LED_YEL_GPIO, LED_YEL_PIN); //orange
   }
-  if (ledMask & LED_GREEN1)
+  if (ledMask & LED_UPR_GREEN)
   {
     HAL_GPIO_TogglePin(LED_GR1_GPIO, LED_GR1_PIN); //green1
   }
-  if (ledMask & LED_BLUE)
+  if (ledMask & LED_UPR_BLUE)
   {
     HAL_GPIO_TogglePin(LED_BLU_GPIO, LED_BLU_PIN); //blue
   }

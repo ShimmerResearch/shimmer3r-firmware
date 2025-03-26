@@ -21,7 +21,8 @@
 #include "tim.h"
 
 /* USER CODE BEGIN 0 */
-#include "s4_led.h"
+#include <LEDs/shimmer_leds.h>
+#include <log_and_stream_common.h>
 
 //static void ledBlinkTimerCallback(void);
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim);
@@ -351,7 +352,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
 //void ledBlinkTimerCallback(void)
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
-  S4Led_Blink();
+  LogAndStream_blinkTimerCommon();
 }
 
 /* USER CODE END 1 */

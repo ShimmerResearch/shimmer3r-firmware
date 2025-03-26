@@ -29,7 +29,6 @@
 #define USE_FREERTOS          0
 #define SENS_CLK_RTC0TIM1     0
 
-#define USE_DEFAULT_LED       1
 #define USE_I2C_VBATT_REPORT  1
 #define USE_VBATT_ALWAYS      0
 #define HAL_TEST_INFOMEM      0
