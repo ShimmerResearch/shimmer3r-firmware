@@ -120,13 +120,14 @@ int _write(int file, char *ptr, int len)
 
 void Init()
 {
+  LogAndStream_init();
+  shimmerStatus.initialising = 1; /* led flag, in initialisation period */
+
 #if defined(SHIMMER3R)
   Board_ledTimersStart(&htim3, &htim2, &htim6);
 #endif
 
   setBootStage(BOOT_STAGE_START);
-  ShimBatt_init();
-  shimmerStatus.configuring = 1;
 
   ShimBrd_setHwId(DEVICE_VER);
 
@@ -134,11 +135,7 @@ void Init()
   TIM_init();
 #endif
   InfoMem_init();
-  ShimTask_init();
-  ShimSens_init();
 
-  ShimSdDataFile_init();
-  ShimSdCfgFile_init();
   //GPIO_init();
   S4_ADC_init();
 
@@ -198,9 +195,11 @@ void Init()
   /* Take initial measurement to update LED state */
   manageReadBatt(1);
 
-  shimmerStatus.configuring = 0;
   //Enable dock comms now that sensor is ready to communicate
   DockUart_enable();
+
+  shimmerStatus.initialising = 0;
+  setBootStage(BOOT_STAGE_END);
 }
 
 /* USER CODE END 0 */
@@ -217,10 +216,6 @@ int main(void)
   uint32_t i = 0;
   while (i++ < 1000000)
     ;
-
-  memset((uint8_t *) &batteryStatus, 0, sizeof(BattStatus));
-  memset((uint8_t *) &shimmerStatus, 0, sizeof(STATTypeDef));
-  shimmerStatus.initialising = 1;
 
   /* USER CODE END 1 */
 
@@ -258,12 +253,10 @@ int main(void)
 #endif
 
   Init();
-  shimmerStatus.initialising = 0;
-  setBootStage(BOOT_STAGE_END);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
-  //run_factory_test();
+  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+  run_factory_test();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -563,11 +556,11 @@ void SetupDock(void)
       HAL_Delay(120); //120ms
                       //Board_sdPower(1);
 
-      ShimSdCfgFile_sync();
+      LogAndStream_syncConfigAndCalibOnSd();
     }
     else
     {
-      ShimSdCfgFile_setSdInfoSyncDelayed(1);
+      LogAndStream_setSdInfoSyncDelayed(1);
     }
   }
   setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
