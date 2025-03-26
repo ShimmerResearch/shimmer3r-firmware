@@ -152,8 +152,14 @@ void TIMER0IntHandler(uint8_t *dataRx);
 
 self_test_result_t ads7028_self_test(void);
 void swI2C4PpgOnAds7028(uint8_t state);
+<<<<<<< HEAD
 void ads7028Configure(uint8_t ChannelIDs);
 void ads7028DataGet(uint8_t *dataRx);
+=======
+void ads7028_configureChannels(void);
+void ads7028Configure(uint8_t *dataRx);
+void ads7028DataGet(uint8_t *dataRx, uint8_t channelIDs);
+>>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 void ads7028ProcessData(uint8_t ChID, uint16_t data);
 void Ads7028GsrTestInit(void);
 void configureAutoSequenceChannel(uint8_t ChannelID);
