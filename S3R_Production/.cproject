@@ -110,7 +110,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="FATFS/Target"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Middlewares"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="S4_App"/>
-						<entry excluding="RN42|LSM303AH/lsm303ah.c|STC3100_OLD.c|SR7/sr7.c|BMP280_driver/bmp280_support.c|BMP3/BMP3_SensorAPI/examples|STC3100.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Shimmer_Driver"/>
+						<entry excluding="BMP180|BMP280_driver|SR7|LSM303DLHC|MPU9250|STC3100|STC3100/STC3100.c|STC3100/STC3100_OLD.c|RN42|LSM303AH/lsm303ah.c|STC3100_OLD.c|SR7/sr7.c|BMP280_driver/bmp280_support.c|BMP3/BMP3_SensorAPI/examples|STC3100.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Shimmer_Driver"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="log-and-stream-common"/>
 					</sourceEntries>
 				</configuration>

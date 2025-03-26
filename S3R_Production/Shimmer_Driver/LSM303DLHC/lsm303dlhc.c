@@ -40,7 +40,7 @@
  * @date May, 2016
  */
 
-#include "lsm303dlhc.h"
+#include <LSM303DLHC/lsm303dlhc.h>
 #include "stm32u5xx_hal.h"
 
 static I2C_HandleTypeDef *hi2c_LSM303DLHC;

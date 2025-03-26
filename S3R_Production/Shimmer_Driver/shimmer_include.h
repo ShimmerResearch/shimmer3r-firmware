@@ -17,16 +17,11 @@
 #include "s4_adc.h"
 #include "shimmer_definitions.h"
 #if defined(SHIMMER4_SDK)
-#include "STC3100.h"
+#include <STC3100/STC3100.h>
 #endif
 #if defined(SHIMMER3R)
 #include <CYW20820/CYW20820.h>
 #include <CYW20820/EZ-Serial/handlers.h>
-#elif defined(SHIMMER4_SDK)
-#include "RN42.h"
-#endif
-#if defined(SHIMMER3R)
-#include "../Shimmer_Driver/ADXL371/adxl371.h"
 #include "../Shimmer_Driver/BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #include "../Shimmer_Driver/BMP3/hal_bmp3.h"
 #include "ADXL371/hal_adxl371.h"
@@ -42,19 +37,21 @@
 #include <LSM6DSV/hal_lsm6dsv.h>
 #include <LSM6DSV/lsm6dsv-pid/lsm6dsv_reg.h>
 #include <LSM6DSV/lsm6dsv.h>
-#endif
+#elif defined(SHIMMER4_SDK)
+#include "RN42.h"
 #include "BMP280_driver\bmp280.h"
+#include "bmp180.h"
+#include <LSM303DLHC/lsm303dlhc.h>
+#include <MPU9250/mpu9250.h>
+#endif
 #include "CAT24C16/CAT24C16.h"
 #include "CAT24C16/hal_CAT24C16.h"
 #include "EXG\exg.h"
 #include "GSRTestRig/gsrTestRig.h"
-#include "bmp180.h"
 #include "hal_Board.h"
 #include "hal_CRC.h"
 #include "hal_FactoryTest.h"
 #include "hal_Infomem.h"
-#include "lsm303dlhc.h"
-#include "mpu9250.h"
 
 #include "adc.h"
 #if defined(SHIMMER4_SDK)
