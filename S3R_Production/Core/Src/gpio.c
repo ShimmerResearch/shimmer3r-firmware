@@ -283,9 +283,9 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
   {
 #if !SR48_6_0_PATCH_VBUS_SENSE
   case USB_VBUS_Pin:
-    if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
+    if (!(ShimTask_getList() & TASK_USB_SETUP))
     {
-      S4_Task_set(TASK_USB_SETUP);
+      ShimTask_set(TASK_USB_SETUP);
     }
     break;
 #endif
