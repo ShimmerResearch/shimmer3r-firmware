@@ -40,8 +40,8 @@
  * @date May, 2016
  */
 
-#include <MPU9250/mpu9250.h>
 #include "stm32u5xx_hal.h"
+#include <MPU9250/mpu9250.h>
 
 I2C_HandleTypeDef *hi2c_MPU9250;
 uint8_t *mpu9250_mag_data_ptr;
