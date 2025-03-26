@@ -109,7 +109,7 @@ void GSR_output(uint32_t *buf)
   uint16_t ADC_val;
 
   ADC_val = *buf;
-  if (((gsr_range & 0x0E) >> 1) == gsr_autoRange)
+  if (gsr_range == gsr_autoRange)
   {
     if (GSR_smoothTransition(&current_active_resistor, gsr_samplingRate))
     {
@@ -357,4 +357,9 @@ uint32_t GSR_smoothSample(uint32_t resistance, uint8_t active_resistor)
 uint8_t GSR_getCurrentActiveResistor(void)
 {
   return gsrActiveRes;
+}
+uint8_t isGSREnabled(void)
+{
+  gConfigBytes *storedConfig = S4Ram_getStoredConfig();
+  return storedConfig->chEnGsr;
 }

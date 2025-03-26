@@ -45,14 +45,15 @@
 
 /** Array used to recall device register map configurations */
 static uint8_t registerMap[MAX_REGISTER_ADDRESS + 1];
-uint16_t adcData = 0;
+int16_t adcData = 0;
 //****************************************************************************
 //
 // Internal Function prototypes
 //
 //****************************************************************************
 static void restoreRegisterDefaults(void);
-static int16_t signExtend(const uint8_t dataBytes[]);
+
+//static int16_t signExtend(const uint8_t dataBytes[]);
 
 //****************************************************************************
 //
@@ -123,19 +124,20 @@ void resetDevice()
 void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond)
 {
   //Select manual mode
-  //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
-  setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT);
-  setRegisterBits(SEQUENCE_CFG_ADDRESS,SEQUENCE_CFG_SEQ_MODE_MANUAL);
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
+  //setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT);
+  //setRegisterBits(SEQUENCE_CFG_ADDRESS,SEQUENCE_CFG_SEQ_MODE_MANUAL);
 
   //Configure pin as analog input
   //setChannelAsAnalogInput(channelID);
 
   //Select channel as MUX input
-  //writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
-  setRegisterBits(CHANNEL_SEL_ADDRESS, CHANNEL_SEL_MANUAL_CHID_3);
+  writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
+  //setRegisterBits(CHANNEL_SEL_ADDRESS, channelID);
 
-  setRegisterBits(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_START_ENABLED);
+  writeSingleRegister(DATA_CFG_ADDRESS, DATA_CFG_APPEND_STATUS_FOUR_BIT_CHID);
   //Set nCS pin LOW, next rising edge will trigger start of conversion
+  uint8_t status = readSingleRegister(DATA_CFG_ADDRESS);
   setCS(LOW);
 
   //Start conversion timer
@@ -154,8 +156,8 @@ void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond)
 void stopConversions(void)
 {
   //Stop conversion timer
-  stopTimer();
-
+  //stopTimer();
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS,SEQUENCE_CFG_SEQ_START_DISABLED);
   //Set nCS pin HIGH, allows MCU to communicate with other devices on SPI bus
   setCS(HIGH);
 }
@@ -171,28 +173,33 @@ void stopConversions(void)
 //!\return int16_t (sign-extended data).
 //
 //*****************************************************************************
-int16_t readData(/*uint8_t* dataTx, */uint8_t* dataRx/*,  uint8_t numberOfBytes*/)
+int16_t readData(uint8_t *dataRx)
 {
-  uint8_t dataTx[4] = {0};
-  dataTx[0] = OPCODE_RREG;
-  dataTx[1] = CHANNEL_SEL_MANUAL_CHID_3;
-  dataTx[2] = OPCODE_NULL;
-  dataTx[3] = OPCODE_NULL;
-/*  if (SPI_CRC_ENABLED)
+  uint8_t dataTx[4] = { 0 };
+  uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
+  /*  dataTx[0] = OPCODE_RREG;
+    dataTx[1] = CHANNEL_SEL_MANUAL_CHID_3;
+    dataTx[2] = 0;*/
+  dataTx[0] = SPI_READ_REGISTER;
+  if (SPI_CRC_ENABLED)
   {
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
-  }*/
+  }
 
 #if defined(MSP432E401Y)
   spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
 #else
-  setCS(LOW);
-  HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], &dataRx[0], 4U);
-  setCS(HIGH);
-   adcData = signExtend(dataRx);
+  //setCS(LOW);
+  HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], dataRx, 3);
+  //setCS(HIGH);
+  //spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  delay_us(3);
+  //spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  adcData = signExtend(dataRx);
+  return adcData;
 
 #endif
-  return 0;// signExtend(dataRx);
+  //signExtend(dataRx);
 }
 
 //*****************************************************************************
@@ -671,7 +678,7 @@ static void restoreRegisterDefaults(void)
 //!\return Returns the signed-extend 16-bit result.
 //
 //*****************************************************************************
-static int16_t signExtend(const uint8_t dataBytes[])
+uint16_t signExtend(uint8_t *dataBytes)
 {
   int16_t upperByte = ((int32_t) dataBytes[0] << 8);
   int16_t lowerByte = ((int32_t) dataBytes[1] << 0);

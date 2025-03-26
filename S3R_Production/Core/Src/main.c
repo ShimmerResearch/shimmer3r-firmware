@@ -249,6 +249,7 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM6_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();

@@ -65,7 +65,7 @@ uint16_t adcBufSens[8]; //max 8 channels, each of 16 bits
 uint32_t adc_battVal, adcBufSens[12], adcBufResv[12]; //max 12 channels, each of 16 bits
 #endif
 //uint32_t adcBuf3[12];
-uint8_t gsrActiveResistor;
+//uint8_t gsrActiveResistor;
 
 #if defined(SHIMMER4_SDK)
 uint8_t adcConfig;
@@ -1269,7 +1269,7 @@ void resetGsrPwrAndRange(void)
   Board_SW_GSR(0);
 #endif
   GSR_setRange(HW_RES_40K);
-  gsrActiveResistor = HW_RES_40K;
+  //gsrActiveResistor = HW_RES_40K;
 }
 
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr)

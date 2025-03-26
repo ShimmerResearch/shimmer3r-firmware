@@ -51,11 +51,10 @@ void TIMER0IntHandler(void);
 #include "gpio.h"
 #include "stm32u5xx_hal.h"
 
-
-#define nCS_PORT   (CS_ADS7028_GPIO_Port)
-#define nCS_PIN    (CS_ADS7028_Pin)
+#define nCS_PORT (CS_ADS7028_GPIO_Port)
+#define nCS_PIN  (CS_ADS7028_Pin)
 #endif
-uint8_t* dataADC = 0;
+uint8_t dataADC[4] = { 0 };
 //****************************************************************************
 //
 // Function Definitions
@@ -204,7 +203,8 @@ static void initTIMER(void)
 //!\return None.
 //
 //*****************************************************************************
-void spiSendReceiveArray(const uint8_t dataTx[], uint8_t dataRx[], const uint8_t byteLength)
+//void spiSendReceiveArray(const uint8_t dataTx[], uint8_t dataRx[], const uint8_t byteLength)
+void spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, const uint8_t byteLength)
 {
   /*  --- INSERT YOUR CODE HERE ---
    *
@@ -306,7 +306,7 @@ void startTimer(uint32_t timerFreqHz)
 #else
   //TODO decide how to handle timer configuration for STM32 if needed
   //HAL_Delay(1);
-  TIMER0IntHandler();
+  //TIMER0IntHandler();
 #endif
 }
 
@@ -338,7 +338,7 @@ void stopTimer(void)
 // The interrupt handler for the timer interrupt.
 //
 //*****************************************************************************
-void TIMER0IntHandler(void)
+void TIMER0IntHandler(uint8_t *dataRx)
 {
 #if defined(MSP432E401Y)
   //Clear the timer interrupt
@@ -349,18 +349,18 @@ void TIMER0IntHandler(void)
 
   //Array to store ADC conversion results
 
-
   //Start conversion
   setCS(HIGH);
 
   //Wait for conversion to complete
   //IMPORTANT: This delay will need to be modified if averaging is enabled!
   //delay_us(3);
-
+  //delay_us(3);
   //Read data
-//#if defined(MSP432E401Y)
-  readData(dataADC);
-//#endif
+  //#if defined(MSP432E401Y)
+  readData(dataRx);
+
+  //#endif
 }
 
 //****************************************************************************
@@ -471,9 +471,9 @@ void delay_ms(const uint32_t delay_time_ms)
 //!\return None.
 //
 //*****************************************************************************
-void delay_us(const uint32_t delay_time_us)
+/*void delay_us(const uint32_t delay_time_us)
 {
-  /* --- INSERT YOUR CODE HERE --- */
+   --- INSERT YOUR CODE HERE ---
 
 #if defined(MSP432E401Y)
   const uint32_t cycles_per_loop = 3;
@@ -482,7 +482,7 @@ void delay_us(const uint32_t delay_time_us)
   //TODO currently limited to millisecond timer
   HAL_Delay(1);
 #endif
-}
+}*/
 
 //*****************************************************************************
 // Shimmer code start
@@ -529,36 +529,30 @@ void swI2C4PpgOnAds7028(uint8_t state)
   }
 }
 
-
-
-void ads7028Configure(uint8_t *dataRx)
+void ads7028Configure(uint8_t ChannelIDs)
 {
   //setCS(LOW);
- setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT); //Set all Channels as Analog Inputs.
-  //setRegisterBits(DATA_CFG_ADDRESS, DATA_CFG_APPEND_STATUS_FOUR_BIT_CHID); //Append Channel ID to ADC data
-  //setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS, ChannelIDs);
-  //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
-  //uint8_t status = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);
-  //uint8_t status1 = readSingleRegister(GENERAL_CFG_ADDRESS);
- // uint8_t status2 = readSingleRegister(DATA_CFG_ADDRESS);
-  //setCS(HIGH);
- ads7028DataGet(dataRx, CHANNEL_SEL_MANUAL_CHID_3);
+  writeSingleRegister(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT); //Set all Channels as Analog Inputs.
+
+  //writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelIDs); // Select enabled channels for auto-sequencing.
+
+                        //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
 }
 
-void ads7028DataGet(uint8_t *dataRx, uint8_t channelIDs)
+void ads7028DataGet(uint8_t *dataRx)
 {
   HAL_StatusTypeDef ret;
-  uint8_t numberOfBytes = adc.sensorLen * 2 + 1/*SPI_CRC_ENABLED ? 4 : 3*/;
+  uint8_t numberOfBytes = adc.sensorLen * 2 + 1 /*SPI_CRC_ENABLED ? 4 : 3*/;
+  //dataTx[0] = SPI_READ_REGISTER;
+  //writeSingleRegister(DATA_CFG_ADDRESS, DATA_CFG_APPEND_STATUS_FOUR_BIT_CHID);
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_START_ENABLED); //start conversion
+  uint8_t ChID = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);
+  setCS(LOW);
+  uint16_t res = readData(dataRx);
+  setCS(HIGH);
+  //startManualConversions(channelIDs, 51U);
 
-  uint8_t dataTx[17] = {0};
-  dataADC = dataRx;
-//dataTx[0] = SPI_READ_REGISTER;
-/*  setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
-  setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS, channelIDs);
-  uint8_t status = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);*/
- // uint16_t res = readData(dataRx);
-startManualConversions(channelIDs, 51U);
-  //setCS(HIGH);
+  //setCS(LOW);
 }
 
 void ads7028ProcessData(uint8_t ChID, uint16_t data)
@@ -608,5 +602,10 @@ void ads7028ProcessData(uint8_t ChID, uint16_t data)
 void Ads7028GsrTestInit(void)
 {
   //set channel 3 for auto sequencing conversion.
-  setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS,AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED );
+  setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
+}
+
+void configureAutoSequenceChannel(uint8_t ChannelID)
+{
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID);
 }

@@ -54,6 +54,7 @@
 
 #include "hal_FactoryTest.h"
 #include "spi.h"
+#include "tim.h"
 #endif
 
 #if defined(MSP432E401Y)
@@ -133,7 +134,8 @@ enum ads7028_ch_ID
 #if defined(MSP432E401Y)
 void initAdcPeripherals(void);
 #endif
-void spiSendReceiveArray(const uint8_t DataTx[], uint8_t DataRx[], const uint8_t byteLength);
+//void spiSendReceiveArray(const uint8_t DataTx[], uint8_t DataRx[], const uint8_t byteLength);
+void spiSendReceiveArray(const uint8_t *DataTx, uint8_t *DataRx, const uint8_t byteLength);
 #if defined(MSP432E401Y)
 uint8_t spiSendReceiveByte(const uint8_t dataTx);
 #endif
@@ -144,16 +146,15 @@ bool getCS(void); /*  Used for testing only */
 
 /* Timing functions */
 void delay_ms(const uint32_t delay_time_ms);
-void delay_us(const uint32_t delay_time_us);
 void startTimer(uint32_t timerFreq);
 void stopTimer(void);
-void TIMER0IntHandler(void);
+void TIMER0IntHandler(uint8_t *dataRx);
 
 self_test_result_t ads7028_self_test(void);
 void swI2C4PpgOnAds7028(uint8_t state);
-void ads7028_configureChannels(void);
-void ads7028Configure(uint8_t* dataRx);
-void ads7028DataGet(uint8_t *dataRx , uint8_t channelIDs);
+void ads7028Configure(uint8_t ChannelIDs);
+void ads7028DataGet(uint8_t *dataRx);
 void ads7028ProcessData(uint8_t ChID, uint16_t data);
 void Ads7028GsrTestInit(void);
+void configureAutoSequenceChannel(uint8_t ChannelID);
 #endif /* HAL_ADC7028_38_H_ */

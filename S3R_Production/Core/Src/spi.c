@@ -48,6 +48,8 @@ uint8_t adcChannelId = 0;
 uint8_t enabledAds7028Channels = 0;
 #endif
 
+uint8_t gsrActiveResistor;
+uint32_t adcTempbuf = 0;
 void (*SPI_gatherDataDone_cb)(void);
 
 /* USER CODE END 0 */
@@ -751,7 +753,6 @@ void SPI_configureChannels()
     ads7028_configureChannels();
     if (areAdcChannelsEnabled())
     {
-      spi1Sens.sensorList[spi1Sens.sensorLen] = SPI1_ADS7028;
       spi1Sens.sensorLen += adc.sensorLen;
     }
   }
@@ -902,7 +903,26 @@ void SPI_startSensing()
   }
   if (isAds7028Present() && areAdcChannelsEnabled()) //External ADC ADS7028
   {
-    ads7028Configure(spi1Sens_buf.Ads2078Buf);
+    if (configBytes->chEnGsr)
+    {
+      GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks, GSR_AUTORANGE);
+      if (configBytes->gsrRange <= HW_RES_3M3)
+      {
+        GSR_setRange(configBytes->gsrRange);
+        gsrActiveResistor = configBytes->gsrRange;
+      }
+      else
+      {
+        GSR_setRange(HW_RES_40K);
+        gsrActiveResistor = HW_RES_40K;
+      }
+    }
+
+    ads7028Configure(enabledAds7028Channels);
+    if(configBytes-> chEnPpg)
+    {
+    Board_SW_EXP_BRD_POWER(1);
+    }
   }
   /* SPI2 */
   if (configBytes->chEnWrAccel)
@@ -1040,6 +1060,8 @@ void SPI_stopSensing()
     //HAL_SPI_MspDeInit(hspiExg);//this may save .2-.3 mA?
   }
 
+  resetGsrPwrAndRange();
+
   SPI1_DeInit();
   SPI2_DeInit();
   SPI3_DeInit();
@@ -1176,15 +1198,85 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       retVal = 1;
     }
     break;
-  case SPI1_ADS7028:
-    if (isAds7028Present() && areAdcChannelsEnabled())
-    {
-      spiSensingInfo->status = SPI_STAT_ADS7028_GET;
-      ads7028DataGet(spi1Sens_buf.Ads2078Buf, enabledAds7028Channels);
-      //ads7028DataGet(spi1Sens_buf.Ads2078Buf, enabledAds7028Channels);
+  case SPI1_ADS7028_EXT_EXP0:
+    /*if (isAds7028Present() && areAdcChannelsEnabled())
+    {*/
+      spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP0_GET;
+      configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
+      ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+      //TIMER0IntHandler(spi1Sens_buf.Ads2078Buf);
+
+/*      uint32_t buf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                         | spi1Sens_buf.Ads2078Buf[1] >> 4)
+          & 0x0FFF;*/
+
+      //if (configBytes->chEnGsr)
+      //{
+      //  union
+      //  {
+      //    uint8_t u8[4];
+      //    uint32_t u32;
+      //  } gsr_buf;
+      //
+      //  gsr_buf.u8[0] = buf & 0xFF;
+      //  gsr_buf.u8[1] = (buf >> 8) & 0xFF;
+      //  GSR_output(&gsr_buf.u32);
+      //
+      //sensing.dataBuf[sensing.ptr.gsr + 0] = gsr_buf.u8[0];
+      //sensing.dataBuf[sensing.ptr.gsr + 1] = gsr_buf.u8[1];
+
+      //GSR_output(&buf);
+
+/*      sensing.dataBuf[sensing.ptr.intADC1 + 0] = buf & 0xFF;
+      sensing.dataBuf[sensing.ptr.intADC1 + 1] = (buf >> 8) & 0xFF;*/
+      //}
+
       retVal = 1;
-    }
+      //}
+      break;
+  case SPI1_ADS7028_EXT_EXP1:
+    spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP1_GET;
+    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED);
+    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    retVal = 1;
     break;
+  case SPI1_ADS7028_EXT_EXP2:
+    spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP2_GET;
+    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED);
+    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    retVal = 1;
+    break;
+  case SPI1_ADS7028_INT_EXP0:
+    spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP0_GET;
+    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH0_ENABLED);
+    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    retVal = 1;
+    break;
+  case SPI1_ADS7028_INT_EXP1:
+     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP1_GET;
+     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH1_ENABLED);
+     ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+     retVal = 1;
+     break;
+  case SPI1_ADS7028_INT_EXP2:
+     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP2_GET;
+     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH2_ENABLED);
+     ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+     retVal = 1;
+     break;
+  case SPI1_ADS7028_INT_EXP3:
+     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP3_GET;
+     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
+     ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+     retVal = 1;
+     break;
+  case SPI1_ADS7028_VBATT_SENSE:
+     spiSensingInfo->status = SPI_STAT_ADS7028_VBATT_GET;
+     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH7_ENABLED);
+     ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+     retVal = 1;
+     break;
+
   case SPI2_LIS2DW12_ACCEL:
 #if defined(LIS2DW12_INT1_Pin)
     if (!lis2dw12_is_drdy_int_enabled() || LIS2DW12_INT1)
@@ -1220,6 +1312,12 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 
 void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+  if(areAdcChannelsEnabled())
+  {
+    adcTempbuf  = 0;
+    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                              | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;
+  }
   switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
   {
   case SPI1_LSM6DSV_GYRO_AND_ACCEL:
@@ -1257,16 +1355,80 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;
-  case SPI1_ADS7028:
-/*      for (uint8_t i = 0; i <= adc.sensorLen; i++)
-      {
-        adcChannelId = (spi1Sens_buf.Ads2078Buf[i] >> 12) & 0x0F; //channel ID
-        spi1Sens_buf.Ads2078Buf[i] &= 0x0FFF;                     //ADC data
-        ads7028ProcessData(adcChannelId, spi1Sens_buf.Ads2078Buf[i]);
-      }*/
-    memcpy(sensing.dataBuf + sensing.ptr.extADC0,
+  case SPI1_ADS7028_INT_EXP0:
+    /*      for (uint8_t i = 0; i <= adc.sensorLen; i++)
+          {
+            adcChannelId = (spi1Sens_buf.Ads2078Buf[i] >> 12) & 0x0F; //channel
+       ID spi1Sens_buf.Ads2078Buf[i] &= 0x0FFF;                     //ADC data
+            ads7028ProcessData(adcChannelId, spi1Sens_buf.Ads2078Buf[i]);
+          }*/
+/*    memcpy(sensing.dataBuf + sensing.ptr.extADC0,
         &spi1Sens_buf.Ads2078Buf[SPI_DMA_TXRX_OFFSET],
-        sizeof(spi1Sens_buf.Ads2078Buf) - SPI_DMA_TXRX_OFFSET);
+        sizeof(spi1Sens_buf.Ads2078Buf) - SPI_DMA_TXRX_OFFSET);*/
+
+/*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                       | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
+
+    sensing.dataBuf[sensing.ptr.intADC0 + 0] = adcTempbuf & 0xFF;
+    sensing.dataBuf[sensing.ptr.intADC0 + 1] = (adcTempbuf >> 8) & 0xFF;
+    break;
+  case SPI1_ADS7028_INT_EXP1:
+/*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                           | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
+    uint8_t b0 =(adcTempbuf >> 4) & 0xFF;
+    uint8_t b1 = (adcTempbuf & 0xFF);
+    sensing.dataBuf[sensing.ptr.intADC1 + 0] = adcTempbuf & 0xFF;
+    sensing.dataBuf[sensing.ptr.intADC1 + 1] = (adcTempbuf >> 8) & 0xFF;
+    break;
+  case SPI1_ADS7028_INT_EXP2:
+/*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                       | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
+
+    sensing.dataBuf[sensing.ptr.intADC2 + 0] = adcTempbuf & 0xFF;
+    sensing.dataBuf[sensing.ptr.intADC2 + 1] = (adcTempbuf >> 8) & 0xFF;
+    break;
+  case SPI1_ADS7028_INT_EXP3:
+/*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                       | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
+    if (isGSREnabled())
+    {
+      GSR_output(&adcTempbuf);
+      sensing.dataBuf[sensing.ptr.gsr + 0] = adcTempbuf & 0xFF;
+      sensing.dataBuf[sensing.ptr.gsr + 1] = (adcTempbuf >> 8) & 0xFF;
+    }
+    else
+    {
+      sensing.dataBuf[sensing.ptr.intADC3 + 0] = adcTempbuf & 0xFF;
+      sensing.dataBuf[sensing.ptr.intADC3 + 1] = (adcTempbuf >> 8) & 0xFF;
+    }
+    break;
+  case SPI1_ADS7028_EXT_EXP0:
+/*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                       | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
+
+    sensing.dataBuf[sensing.ptr.extADC0 + 0] = adcTempbuf & 0xFF;
+    sensing.dataBuf[sensing.ptr.extADC0 + 1] = (adcTempbuf >> 8) & 0xFF;
+    break;
+  case SPI1_ADS7028_EXT_EXP1:
+ /*   adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                       | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
+
+    sensing.dataBuf[sensing.ptr.extADC1 + 0] = adcTempbuf & 0xFF;
+    sensing.dataBuf[sensing.ptr.extADC1 + 1] = (adcTempbuf >> 8) & 0xFF;
+    break;
+  case SPI1_ADS7028_EXT_EXP2:
+/*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                       | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
+
+    sensing.dataBuf[sensing.ptr.extADC2 + 0] = adcTempbuf & 0xFF;
+    sensing.dataBuf[sensing.ptr.extADC2 + 1] = (adcTempbuf >> 8) & 0xFF;
+    break;
+  case SPI1_ADS7028_VBATT_SENSE:
+/*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                       | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
+
+    sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = adcTempbuf & 0xFF;
+    sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = (adcTempbuf >> 8) & 0xFF;
     break;
   default:
     break;
@@ -1274,6 +1436,10 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
   spi1Sens.status = SPI_STAT_IDLE;
   SpiSensing(&spi1Sens, SPI_NEXT_SENSOR);
+  if(areAdcChannelsEnabled())
+  {
+    stopConversions();
+  }
 }
 
 void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
@@ -1394,6 +1560,7 @@ void ads7028_configureChannels(void)
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = VBATT;
     enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH7_ENABLED;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_VBATT_SENSE;
   }
   //External ADC 0
   if (configBytes->chEnExtADC0)
@@ -1404,6 +1571,7 @@ void ads7028_configureChannels(void)
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_0;
     enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_EXT_EXP0;
   }
 
   //External ADC 1
@@ -1415,6 +1583,7 @@ void ads7028_configureChannels(void)
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_1;
     enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_EXT_EXP1;
   }
 
   //External ADC 2
@@ -1426,6 +1595,7 @@ void ads7028_configureChannels(void)
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_2;
     enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH6_ENABLED;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_EXT_EXP2;
   }
 
   //Internal ADC 0
@@ -1437,6 +1607,7 @@ void ads7028_configureChannels(void)
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_0;
     enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH0_ENABLED;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP0;
   }
   //Internal ADC 1
   if (configBytes->chEnIntADC1)
@@ -1447,6 +1618,7 @@ void ads7028_configureChannels(void)
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_1;
     enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH1_ENABLED;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP1;
   }
 
   //Internal ADC 2
@@ -1458,6 +1630,7 @@ void ads7028_configureChannels(void)
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_2;
     enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH2_ENABLED;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP2;
   }
 
   //Internal ADC 3
@@ -1474,8 +1647,9 @@ void ads7028_configureChannels(void)
       *channel_contents_ptr++ = INTERNAL_ADC_3;
       sensing.ptr.intADC3 = sensing.dataLen;
       adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
-      enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED;
     }
+    enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP3;
     nbr_adc_chans += 1;
     sensing.dataLen += 2;
   }
