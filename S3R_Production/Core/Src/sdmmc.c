@@ -226,7 +226,7 @@ void printSdCardInfo(char *outputStr)
   sprintf(outputStr + strlen(outputStr), ", Size=%.2lfGB",
       (hsd1.SdCard.BlockSize * ((float) hsd1.SdCard.BlockNbr / 1024 / 1024 / 1024)));
   sprintf(outputStr + strlen(outputStr), ", Manufacture Date=%d-%02d",
-      (pCID.ManufactDate / 10) + 1990, pCID.ManufactDate % 10);
+      (pCID.ManufactDate >> 4) + 2000, pCID.ManufactDate & 0x0F);
 
   sprintf(outputStr + strlen(outputStr), "\r\n");
 }

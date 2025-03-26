@@ -286,8 +286,20 @@ void S4_NORM_ADC_configureChannels(void)
   }
 #endif
 
+  //Strain gauge
+  if (configBytes->chEnBridgeAmp)
+  {
+    *channel_contents_ptr++ = STRAIN_HIGH;
+    *channel_contents_ptr++ = STRAIN_LOW;
+    nbr_adc_chans += 2;
+    sensing.ptr.strainGauge = sensing.dataLen;
+    sensing.dataLen += 4;
+    adc.sensorList[adc.sensorLen++] = STRAIN_HIGH;
+    adc.sensorList[adc.sensorLen++] = STRAIN_LOW;
+  }
+
   //Internal ADC 1
-  if (configBytes->chEnIntADC1)
+  if (configBytes->chEnIntADC1 && !configBytes->chEnBridgeAmp)
   {
     *channel_contents_ptr++ = INTERNAL_ADC_1;
     nbr_adc_chans += 1;
@@ -297,7 +309,7 @@ void S4_NORM_ADC_configureChannels(void)
   }
 
   //Internal ADC 2
-  if (configBytes->chEnIntADC2)
+  if (configBytes->chEnIntADC2 && !configBytes->chEnBridgeAmp)
   {
     *channel_contents_ptr++ = INTERNAL_ADC_2;
     nbr_adc_chans += 1;
@@ -329,6 +341,7 @@ void S4_NORM_ADC_configureChannels(void)
   sensing.ccLen += nbr_adc_chans;
 }
 
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_startSensing(void)
 {
   gConfigBytes *configBytes = ShimConfig_getStoredConfig();
@@ -626,6 +639,7 @@ void S4_NORM_ADC_gatherDataStart(void)
 
   HAL_ADC_Start_DMA(hadcSensPtr, (uint32_t *) adcBufSens, (uint32_t) adc.sensorLen);
 }
+#endif
 
 void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
 {
@@ -1105,8 +1119,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
     if (shimmerStatus.sensing)
     {
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
+#endif
     }
     else
     {
@@ -1192,15 +1208,21 @@ HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample
   return status;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrResistance(ADC_HandleTypeDef *hadc, uint32_t *gsrResistance)
+HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *gsrResistance)
 {
   uint32_t adcValue = 0;
+  ADC_HandleTypeDef *hadc = getHadc2();
 
   HAL_StatusTypeDef status = getSingleAdcChSample(hadc, &adcValue);
   if (status == HAL_OK)
   {
+#ifdef SR48_6_0
     int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
         hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
+#else
+    //TODO for ADS7028
+    int32_t gsrMv = 0;
+#endif
 
     *gsrResistance = GSR_calcResistance(gsrMv);
 
@@ -1210,14 +1232,14 @@ HAL_StatusTypeDef getFactoryTestGsrResistance(ADC_HandleTypeDef *hadc, uint32_t 
   return status;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrResistance)
+HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
 {
   HAL_StatusTypeDef status;
   uint32_t gsrResistanceAvg = 0;
 
   for (uint8_t i = 0; i < 13; i++)
   {
-    status = getFactoryTestGsrResistance(hadc, gsrResistance);
+    status = getFactoryTestGsrResistance(gsrResistance);
 
     //Skip first 3 measurements to account for range changing
     if (i > 2)
@@ -1234,7 +1256,9 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrRes
 
 void resetGsrPwrAndRange(void)
 {
+#ifdef SR48_6_0
   Board_SW_GSR(0);
+#endif
   GSR_setActiveResistor(HW_RES_40K);
 }
 

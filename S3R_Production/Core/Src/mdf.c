@@ -140,7 +140,7 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef *mdfHandle)
     PF3     ------> ADF1_CCK0
     PF4     ------> ADF1_SDI0
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_3 | GPIO_PIN_4;
+    GPIO_InitStruct.Pin = MIC_CK_Pin | MIC_SD_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -171,7 +171,7 @@ void HAL_MDF_MspDeInit(MDF_HandleTypeDef *mdfHandle)
     PF3     ------> ADF1_CCK0
     PF4     ------> ADF1_SDI0
     */
-    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_3 | GPIO_PIN_4);
+    HAL_GPIO_DeInit(GPIOF, MIC_CK_Pin | MIC_SD_Pin);
 
     /* ADF1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(ADF1_IRQn);

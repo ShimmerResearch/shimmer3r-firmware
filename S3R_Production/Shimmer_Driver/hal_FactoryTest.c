@@ -599,7 +599,7 @@ void SPI_test(void)
   }
   else
   {
-    self_test_result = lsm6dsv_self_test();
+    self_test_result = ads7028_self_test();
     if (self_test_result)
     {
       shimmerStatus.testResult |= S3R_TEST_0019;
@@ -724,17 +724,23 @@ void SPI_test(void)
   if (ShimBrd_isAds1292Present())
   {
     MX_SPI3_Init();
-
-    //EXG_init(hspiExg);
-    //ret_val |= EXG_test();
-
-    send_test_report(
-        " - S3R_TEST_0025 - WARNING: ADS1292R test not implemented yet\r\n");
-    //if (self_test_result)
-    //{
-    //  shimmerStatus.testResult |= S3R_TEST_0025;
-    //}
-
+    uint8_t test_result = EXG_self_test();
+    if (!test_result)
+    {
+      self_test_result = SELF_TEST_PASS;
+    }
+    else
+    {
+      self_test_result = 10;
+    }
+    print_chip_test_result("S3R_TEST_0025", "ADS1292", self_test_result,
+        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
+    /* send_test_report(
+         " - S3R_TEST_0025 - WARNING: ADS1292R test not implemented yet\r\n");*/
+    if (self_test_result)
+    {
+      shimmerStatus.testResult |= S3R_TEST_0025;
+    }
     SPI3_DeInit();
   }
   else
@@ -832,19 +838,25 @@ uint8_t runGsrFactoryTest(void)
   uint8_t i = 0;
   HAL_StatusTypeDef status;
 
+#ifdef SR48_6_0
   Board_SW_GSR(1);
+#endif
   gsrTestRigInit(&hi2c4);
 
   GSR_setActiveResistor(HW_RES_40K);
+#ifdef SR48_6_0
   initGsrAdc();
   ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc2();
+#else
+  //TODO for ADS7028
+#endif
 
   for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
   {
     setGsrTestRigResistance(testGsrResistances[i]);
     HAL_Delay(100);
 
-    status = getFactoryTestGsrAvg(hadcFactoryTestPtr, &gsrResistance);
+    status = getFactoryTestGsrAvg(&gsrResistance);
 
     uint32_t gsrBuffer = gsrResistance * GSR_TEST_TOLERANCE;
     if (status != HAL_OK || (gsrResistance < (testGsrResistances[i] - gsrBuffer))
@@ -855,11 +867,15 @@ uint8_t runGsrFactoryTest(void)
     }
   }
 
+#ifdef SR48_6_0
   //Stop ADC
   HAL_ADC_Stop(hadcFactoryTestPtr);
   HAL_ADC_DeInit(hadcFactoryTestPtr);
 
   Board_SW_GSR(0);
+#else
+  //TODO for ADS7028
+#endif
 
   return returnVal;
 }
