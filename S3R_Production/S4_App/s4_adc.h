@@ -48,21 +48,21 @@ typedef struct
 #define S4_ADC_readBatt          S4_RTOS_ADC_readBatt
 #define S4_ADC_rankBatt          S4_RTOS_ADC_rankBatt
 #else
-#define S4_ADC_init           S4_NORM_ADC_init
-#define S4_ADC_init1          S4_NORM_ADC_init1
-#define S4_ADC_init2          S4_NORM_ADC_init2
+#define S4_ADC_init  S4_NORM_ADC_init
+#define S4_ADC_init1 S4_NORM_ADC_init1
+#define S4_ADC_init2 S4_NORM_ADC_init2
 #if defined(SHIMMER4_SDK)
-#define S4_ADC_initBatt       S4_NORM_ADC_initBatt
+#define S4_ADC_initBatt S4_NORM_ADC_initBatt
 #endif
 #define ADC_configureChannels S4_NORM_ADC_configureChannels
 #if defined(SHIMMER4_SDK) || defined(SR48_6_0)
-#define ADC_startSensing      S4_NORM_ADC_startSensing
-#define S4_ADC_bufPoll        S4_NORM_ADC_bufPoll
-#define ADC_stopSensing       S4_NORM_ADC_stopSensing
-#define ADC_gatherDataCb      S4_NORM_ADC_gatherDataCb
-#define ADC_gatherDataStart   S4_NORM_ADC_gatherDataStart
+#define ADC_startSensing    S4_NORM_ADC_startSensing
+#define S4_ADC_bufPoll      S4_NORM_ADC_bufPoll
+#define ADC_stopSensing     S4_NORM_ADC_stopSensing
+#define ADC_gatherDataCb    S4_NORM_ADC_gatherDataCb
+#define ADC_gatherDataStart S4_NORM_ADC_gatherDataStart
 #endif
-#define S4_ADC_readBatt       S4_NORM_ADC_readBatt
+#define S4_ADC_readBatt S4_NORM_ADC_readBatt
 #endif //USE_FREERTOS
 
 void S4_RTOS_ADC_init(void);

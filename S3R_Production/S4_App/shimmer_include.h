@@ -25,9 +25,9 @@
 #include "ADXL371/hal_adxl371.h"
 #include "LIS2DW12/hal_lis2dw12.h"
 #include "LIS2DW12/lis2dw12-pid/lis2dw12_reg.h"
+#include <ADS7028_38/ads7028_38.h>
 #include <CYW20820/CYW20820.h>
 #include <CYW20820/EZ-Serial/handlers.h>
-#include <ADS7028_38/ads7028_38.h>
 #include <LIS2DW12/lis2dw12.h>
 #include <LIS2MDL/hal_lis2mdl.h>
 #include <LIS2MDL/lis2mdl-pid/lis2mdl_reg.h>
