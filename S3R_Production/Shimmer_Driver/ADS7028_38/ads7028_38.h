@@ -1148,7 +1148,7 @@ void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond);
 void stopConversions(void);
 
 <<<<<<< HEAD
-int16_t readData(uint8_t *dataRx );
+int16_t readData(uint8_t *dataRx);
 =======
 int16_t readData(/*uint8_t* dataTx,*/ uint8_t *dataRx /*, uint8_t numberOfBytes*/);
 >>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git

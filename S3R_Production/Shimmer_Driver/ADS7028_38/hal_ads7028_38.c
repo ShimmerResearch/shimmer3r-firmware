@@ -54,8 +54,7 @@ void TIMER0IntHandler(void);
 #define nCS_PORT (CS_ADS7028_GPIO_Port)
 #define nCS_PIN  (CS_ADS7028_Pin)
 #endif
-<<<<<<< HEAD
-uint8_t dataADC[4] = { 0 };
+<<<<<<< HEAD uint8_t dataADC[4] = { 0 };
 =======
 uint8_t *dataADC = 0;
 >>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
@@ -538,8 +537,10 @@ void swI2C4PpgOnAds7028(uint8_t state)
 }
 
 <<<<<<< HEAD
+
 void ads7028Configure(uint8_t ChannelIDs)
 =======
+
 void ads7028Configure(uint8_t *dataRx)
 >>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 {
@@ -549,7 +550,7 @@ void ads7028Configure(uint8_t *dataRx)
 
   //writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelIDs); // Select enabled channels for auto-sequencing.
 
-                        //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
+  //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
 =======
   setRegisterBits(PIN_CFG_ADDRESS,
       PIN_CFG_DEFAULT); //Set all Channels as Analog Inputs.

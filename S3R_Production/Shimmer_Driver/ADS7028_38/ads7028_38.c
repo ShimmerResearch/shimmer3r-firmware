@@ -163,7 +163,7 @@ void stopConversions(void)
 {
   //Stop conversion timer
   //stopTimer();
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS,SEQUENCE_CFG_SEQ_START_DISABLED);
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_START_DISABLED);
   //Set nCS pin HIGH, allows MCU to communicate with other devices on SPI bus
   setCS(HIGH);
 }
@@ -210,9 +210,9 @@ int16_t readData(/*uint8_t* dataTx, */ uint8_t *dataRx /*,  uint8_t numberOfByte
 #if defined(MSP432E401Y)
   spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
 #else
-<<<<<<< HEAD
-  //setCS(LOW);
-  HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], dataRx, 3);
+  <<<<<<< HEAD
+      //setCS(LOW);
+      HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], dataRx, 3);
   //setCS(HIGH);
   //spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
   delay_us(3);
@@ -227,10 +227,10 @@ int16_t readData(/*uint8_t* dataTx, */ uint8_t *dataRx /*,  uint8_t numberOfByte
 >>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 
 #endif
-<<<<<<< HEAD
-  //signExtend(dataRx);
+  <<<<<<< HEAD
+      //signExtend(dataRx);
 =======
-  return 0; //signExtend(dataRx);
+      return 0; //signExtend(dataRx);
 >>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 }
 

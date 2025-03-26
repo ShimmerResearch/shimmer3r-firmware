@@ -358,6 +358,7 @@ uint8_t GSR_getCurrentActiveResistor(void)
 {
   return gsrActiveRes;
 }
+
 uint8_t isGSREnabled(void)
 {
   gConfigBytes *storedConfig = S4Ram_getStoredConfig();
