@@ -137,7 +137,8 @@ void Init()
   ShimTask_init();
   ShimSens_init();
 
-  ShimSd_init();
+  ShimSdDataFile_init();
+  ShimSdCfgFile_init();
   //GPIO_init();
   S4_ADC_init();
 
@@ -562,11 +563,11 @@ void SetupDock(void)
       HAL_Delay(120); //120ms
                       //Board_sdPower(1);
 
-      ShimSd_sdInfoSync();
+      ShimSdCfgFile_sync();
     }
     else
     {
-      ShimSd_setSdInfoSyncDelayed(1);
+      ShimSdCfgFile_setSdInfoSyncDelayed(1);
     }
   }
   setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
