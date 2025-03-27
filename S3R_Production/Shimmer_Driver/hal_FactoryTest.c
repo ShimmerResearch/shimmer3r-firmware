@@ -40,7 +40,7 @@ uint32_t run_factory_test(void)
     print_date_and_time();
     send_test_report("\r\n");
 
-    sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f\xB0 C\r\n",
+    sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f\xC2\xB0 C\r\n",
         TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER, TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
     send_test_report(buffer);
     send_test_report("\r\n");
@@ -207,7 +207,7 @@ void print_mcu_details(void)
 
   testPass = (adcDebugInfo.temperature > TEST_THRESHOLD_MV_MCU_TEMPERATURE_LOWER
       && adcDebugInfo.temperature < TEST_THRESHOLD_MV_MCU_TEMPERATURE_UPPER);
-  sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xB0 C\r\n",
+  sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xC2\xB0 C\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   send_test_report(buffer);
   if (!testPass)
@@ -802,7 +802,7 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
   }
   else
   {
-    sprintf(buffer, " - %s - %s: %s%s (%.2f\xB0 C)\r\n", testId,
+    sprintf(buffer, " - %s - %s: %s%s (%.2f\xC2\xB0 C)\r\n", testId,
         selfTestResultStr, chipId, selfTestDetailsStr, tempCal);
   }
   send_test_report(buffer);
