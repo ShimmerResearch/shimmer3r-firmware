@@ -1374,12 +1374,10 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     data ads7028ProcessData(adcChannelId, spi1Sens_buf.Ads2078Buf[i]);
               }*/
 
+    /*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                           | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
 
-        /*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
-                               | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
-
-        sensing.dataBuf[sensing.ptr.intADC0 + 0]
-        = adcTempbuf & 0xFF;
+    sensing.dataBuf[sensing.ptr.intADC0 + 0] = adcTempbuf & 0xFF;
     sensing.dataBuf[sensing.ptr.intADC0 + 1] = (adcTempbuf >> 8) & 0xFF;
     break;
   case SPI1_ADS7028_INT_EXP1:

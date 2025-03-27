@@ -177,8 +177,7 @@ void stopConversions(void)
 
 int16_t readData(uint8_t *dataRx)
 {
-  uint8_t dataTx[4] =
-  { 0 };
+  uint8_t dataTx[4] = { 0 };
 
   uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
   /*  dataTx[0] = OPCODE_RREG;
