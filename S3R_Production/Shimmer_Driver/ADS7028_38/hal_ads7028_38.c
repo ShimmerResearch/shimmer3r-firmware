@@ -54,10 +54,8 @@ void TIMER0IntHandler(void);
 #define nCS_PORT (CS_ADS7028_GPIO_Port)
 #define nCS_PIN  (CS_ADS7028_Pin)
 #endif
-<<<<<<< HEAD uint8_t dataADC[4] = { 0 };
-=======
+
 uint8_t *dataADC = 0;
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 //****************************************************************************
 //
 // Function Definitions
@@ -361,12 +359,7 @@ void TIMER0IntHandler(uint8_t *dataRx)
   //delay_us(3);
   //Read data
   //#if defined(MSP432E401Y)
-<<<<<<< HEAD
   readData(dataRx);
-
-=======
-  readData(dataADC);
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
   //#endif
 }
 
@@ -536,40 +529,21 @@ void swI2C4PpgOnAds7028(uint8_t state)
   }
 }
 
-<<<<<<< HEAD
-
-void ads7028Configure(uint8_t ChannelIDs)
-=======
-
 void ads7028Configure(uint8_t *dataRx)
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
+
 {
   //setCS(LOW);
-<<<<<<< HEAD
   writeSingleRegister(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT); //Set all Channels as Analog Inputs.
 
   //writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelIDs); // Select enabled channels for auto-sequencing.
 
   //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
-=======
-  setRegisterBits(PIN_CFG_ADDRESS,
-      PIN_CFG_DEFAULT); //Set all Channels as Analog Inputs.
-                        //setRegisterBits(DATA_CFG_ADDRESS, DATA_CFG_APPEND_STATUS_FOUR_BIT_CHID); //Append Channel ID to ADC data
-                        //setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS, ChannelIDs);
-                        //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
-                        //uint8_t status = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);
-                        //uint8_t status1 = readSingleRegister(GENERAL_CFG_ADDRESS);
-  //uint8_t status2 = readSingleRegister(DATA_CFG_ADDRESS);
-  //setCS(HIGH);
-  ads7028DataGet(dataRx, CHANNEL_SEL_MANUAL_CHID_3);
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 }
 
 void ads7028DataGet(uint8_t *dataRx)
 {
   HAL_StatusTypeDef ret;
   uint8_t numberOfBytes = adc.sensorLen * 2 + 1 /*SPI_CRC_ENABLED ? 4 : 3*/;
-<<<<<<< HEAD
   //dataTx[0] = SPI_READ_REGISTER;
   //writeSingleRegister(DATA_CFG_ADDRESS, DATA_CFG_APPEND_STATUS_FOUR_BIT_CHID);
   writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_START_ENABLED); //start conversion
@@ -578,22 +552,6 @@ void ads7028DataGet(uint8_t *dataRx)
   uint16_t res = readData(dataRx);
   setCS(HIGH);
   //startManualConversions(channelIDs, 51U);
-=======
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
-
-<<<<<<< HEAD
-  //setCS(LOW);
-=======
-  uint8_t dataTx[17] = { 0 };
-  dataADC = dataRx;
-  //dataTx[0] = SPI_READ_REGISTER;
-  /*  setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED,
-    SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS,
-    channelIDs); uint8_t status = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);*/
-  //uint16_t res = readData(dataRx);
-  startManualConversions(channelIDs, 51U);
-  //setCS(HIGH);
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 }
 
 void ads7028ProcessData(uint8_t ChID, uint16_t data)
@@ -644,12 +602,9 @@ void Ads7028GsrTestInit(void)
 {
   //set channel 3 for auto sequencing conversion.
   setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
-<<<<<<< HEAD
 }
 
 void configureAutoSequenceChannel(uint8_t ChannelID)
 {
   writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID);
-=======
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 }

@@ -124,15 +124,10 @@ void resetDevice()
 void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond)
 {
   //Select manual mode
-<<<<<<< HEAD
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
-  //setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT);
-  //setRegisterBits(SEQUENCE_CFG_ADDRESS,SEQUENCE_CFG_SEQ_MODE_MANUAL);
-=======
+
   //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
   setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT);
   setRegisterBits(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 
   //Configure pin as analog input
   //setChannelAsAnalogInput(channelID);
@@ -179,59 +174,37 @@ void stopConversions(void)
 //!\return int16_t (sign-extended data).
 //
 //*****************************************************************************
-<<<<<<< HEAD
+
 int16_t readData(uint8_t *dataRx)
-=======
-int16_t readData(/*uint8_t* dataTx, */ uint8_t *dataRx /*,  uint8_t numberOfBytes*/)
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 {
-  uint8_t dataTx[4] = { 0 };
-<<<<<<< HEAD
+  uint8_t dataTx[4] =
+  { 0 };
+
   uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
   /*  dataTx[0] = OPCODE_RREG;
-    dataTx[1] = CHANNEL_SEL_MANUAL_CHID_3;
-    dataTx[2] = 0;*/
+   dataTx[1] = CHANNEL_SEL_MANUAL_CHID_3;
+   dataTx[2] = 0;*/
   dataTx[0] = SPI_READ_REGISTER;
-  if (SPI_CRC_ENABLED)
-  {
-    dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
-  }
-=======
-  dataTx[0] = OPCODE_RREG;
-  dataTx[1] = CHANNEL_SEL_MANUAL_CHID_3;
-  dataTx[2] = OPCODE_NULL;
-  dataTx[3] = OPCODE_NULL;
+
   /*  if (SPI_CRC_ENABLED)
-    {
-      dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
-    }*/
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
+   {
+   dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
+   }*/
 
 #if defined(MSP432E401Y)
   spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
 #else
-  <<<<<<< HEAD
-      //setCS(LOW);
-      HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], dataRx, 3);
+
+  //setCS(LOW);
+  HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], dataRx, 3);
   //setCS(HIGH);
   //spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
-  delay_us(3);
+  //delay_us(3);
   //spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
   adcData = signExtend(dataRx);
   return adcData;
-=======
-  setCS(LOW);
-  HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], &dataRx[0], 4U);
-  setCS(HIGH);
-  adcData = signExtend(dataRx);
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
-
 #endif
-  <<<<<<< HEAD
-      //signExtend(dataRx);
-=======
-      return 0; //signExtend(dataRx);
->>>>>>> branch 'DEV-72_RC' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
+  //signExtend(dataRx);
 }
 
 //*****************************************************************************
