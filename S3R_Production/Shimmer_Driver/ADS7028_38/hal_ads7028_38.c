@@ -529,7 +529,7 @@ void swI2C4PpgOnAds7028(uint8_t state)
   }
 }
 
-void ads7028Configure(uint8_t *dataRx)
+void ads7028Configure(void)
 
 {
   //setCS(LOW);
@@ -538,6 +538,7 @@ void ads7028Configure(uint8_t *dataRx)
   //writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelIDs); // Select enabled channels for auto-sequencing.
 
   //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
+  //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ);
 }
 
 void ads7028DataGet(uint8_t *dataRx)
@@ -546,8 +547,9 @@ void ads7028DataGet(uint8_t *dataRx)
   uint8_t numberOfBytes = adc.sensorLen * 2 + 1 /*SPI_CRC_ENABLED ? 4 : 3*/;
   //dataTx[0] = SPI_READ_REGISTER;
   //writeSingleRegister(DATA_CFG_ADDRESS, DATA_CFG_APPEND_STATUS_FOUR_BIT_CHID);
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_START_ENABLED); //start conversion
-  uint8_t ChID = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED); //start conversion
+  //delay_us(5);
+  uint8_t CHid = readSingleRegister(SEQUENCE_CFG_ADDRESS);
   setCS(LOW);
   uint16_t res = readData(dataRx);
   setCS(HIGH);
@@ -606,5 +608,8 @@ void Ads7028GsrTestInit(void)
 
 void configureAutoSequenceChannel(uint8_t ChannelID)
 {
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS,SEQUENCE_CFG_DEFAULT);
+//  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ);
   writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID);
+  uint8_t chid = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);
 }

@@ -186,22 +186,22 @@ int16_t readData(uint8_t *dataRx)
    dataTx[2] = 0;*/
   dataTx[0] = SPI_READ_REGISTER;
 
-  /*  if (SPI_CRC_ENABLED)
+    if (SPI_CRC_ENABLED)
    {
    dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
-   }*/
+   }
 
 #if defined(MSP432E401Y)
   spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
 #else
 
   //setCS(LOW);
-  HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], dataRx, 3);
-  //setCS(HIGH);
+  HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], dataRx, numberOfBytes);
+ // setCS(HIGH);
   //spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
-  //delay_us(3);
-  //spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  //uint8_t chId = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);
   adcData = signExtend(dataRx);
+  //setCS(LOW);
   return adcData;
 #endif
   //signExtend(dataRx);

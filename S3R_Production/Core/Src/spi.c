@@ -751,10 +751,6 @@ void SPI_configureChannels()
   if (isAds7028Present()) //External ADC ADS7028
   {
     ads7028_configureChannels();
-    if (areAdcChannelsEnabled())
-    {
-      spi1Sens.sensorLen += adc.sensorLen;
-    }
   }
 
   if (configBytes->chEnWrAccel)
@@ -918,7 +914,7 @@ void SPI_startSensing()
       }
     }
 
-    ads7028Configure(enabledAds7028Channels);
+    ads7028Configure();
     if (configBytes->chEnPpg)
     {
       Board_SW_EXP_BRD_POWER(1);
@@ -1062,6 +1058,9 @@ void SPI_stopSensing()
 
   resetGsrPwrAndRange();
 
+   Board_SW_EXP_BRD_POWER(0);
+
+
   SPI1_DeInit();
   SPI2_DeInit();
   SPI3_DeInit();
@@ -1202,7 +1201,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     /*if (isAds7028Present() && areAdcChannelsEnabled())
     {*/
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP0_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
+    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED);
     ads7028DataGet(spi1Sens_buf.Ads2078Buf);
     //TIMER0IntHandler(spi1Sens_buf.Ads2078Buf);
 
@@ -1236,13 +1235,13 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     break;
   case SPI1_ADS7028_EXT_EXP1:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP1_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED);
+    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED);
     ads7028DataGet(spi1Sens_buf.Ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP2:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP2_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED);
+    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH6_ENABLED);
     ads7028DataGet(spi1Sens_buf.Ads2078Buf);
     retVal = 1;
     break;
@@ -1316,8 +1315,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   {
     adcTempbuf = 0;
     adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
-                     | spi1Sens_buf.Ads2078Buf[1] >> 4)
-        & 0x0FFF;
+                     | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;
   }
   switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
   {
@@ -1367,15 +1365,15 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     /*    memcpy(sensing.dataBuf + sensing.ptr.extADC0,
     =======
       case SPI1_ADS7028:
-        /*      for (uint8_t i = 0; i <= adc.sensorLen; i++)
+             for (uint8_t i = 0; i <= adc.sensorLen; i++)
               {
                 adcChannelId = (spi1Sens_buf.Ads2078Buf[i] >> 12) & 0x0F;
     //channel ID spi1Sens_buf.Ads2078Buf[i] &= 0x0FFF;                     //ADC
     data ads7028ProcessData(adcChannelId, spi1Sens_buf.Ads2078Buf[i]);
-              }*/
+              }
 
 
-        /*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+            adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
                                | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
 
         sensing.dataBuf[sensing.ptr.intADC0 + 0]
@@ -1405,7 +1403,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
       GSR_output(&adcTempbuf);
       sensing.dataBuf[sensing.ptr.gsr + 0] = adcTempbuf & 0xFF;
       sensing.dataBuf[sensing.ptr.gsr + 1] = (adcTempbuf >> 8) & 0xFF;
-    }
+   }
     else
     {
       sensing.dataBuf[sensing.ptr.intADC3 + 0] = adcTempbuf & 0xFF;
@@ -1559,10 +1557,9 @@ void ads7028_configureChannels(void)
   adc.sensorLen = 0; //adc.sensorCnt = 0;
   adc.chanCntSens = adc.chanCntBatt = 0;
   //Configure pin as analog input
-  gConfigBytes *storedConfig = S4Ram_getStoredConfig();
 
   //Select channel  and enable as per config
-  if (storedConfig->chEnVBattery)
+  if (configBytes->chEnVBattery)
   {
     *channel_contents_ptr++ = VBATT;
     nbr_adc_chans += 1;

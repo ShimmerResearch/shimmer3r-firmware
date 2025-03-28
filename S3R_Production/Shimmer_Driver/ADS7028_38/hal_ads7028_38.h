@@ -155,7 +155,7 @@ void swI2C4PpgOnAds7028(uint8_t state);
 void ads7028DataGet(uint8_t *dataRx);
 
 void ads7028_configureChannels(void);
-void ads7028Configure(uint8_t *dataRx);
+void ads7028Configure(void);
 void ads7028ProcessData(uint8_t ChID, uint16_t data);
 void Ads7028GsrTestInit(void);
 void configureAutoSequenceChannel(uint8_t ChannelID);
