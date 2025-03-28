@@ -177,8 +177,7 @@ void stopConversions(void)
 
 int16_t readData(uint8_t *dataRx)
 {
-  uint8_t dataTx[4] =
-  { 0 };
+  uint8_t dataTx[4] = { 0 };
 
   uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
   /*  dataTx[0] = OPCODE_RREG;
@@ -186,10 +185,10 @@ int16_t readData(uint8_t *dataRx)
    dataTx[2] = 0;*/
   dataTx[0] = SPI_READ_REGISTER;
 
-    if (SPI_CRC_ENABLED)
-   {
-   dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
-   }
+  if (SPI_CRC_ENABLED)
+  {
+    dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
+  }
 
 #if defined(MSP432E401Y)
   spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
@@ -197,7 +196,7 @@ int16_t readData(uint8_t *dataRx)
 
   //setCS(LOW);
   HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], dataRx, numberOfBytes);
- // setCS(HIGH);
+  //setCS(HIGH);
   //spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
   //uint8_t chId = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);
   adcData = signExtend(dataRx);

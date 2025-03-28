@@ -1058,8 +1058,7 @@ void SPI_stopSensing()
 
   resetGsrPwrAndRange();
 
-   Board_SW_EXP_BRD_POWER(0);
-
+  Board_SW_EXP_BRD_POWER(0);
 
   SPI1_DeInit();
   SPI2_DeInit();
@@ -1315,7 +1314,8 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   {
     adcTempbuf = 0;
     adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
-                     | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;
+                     | spi1Sens_buf.Ads2078Buf[1] >> 4)
+        & 0x0FFF;
   }
   switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
   {
@@ -1400,7 +1400,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
       GSR_output(&adcTempbuf);
       sensing.dataBuf[sensing.ptr.gsr + 0] = adcTempbuf & 0xFF;
       sensing.dataBuf[sensing.ptr.gsr + 1] = (adcTempbuf >> 8) & 0xFF;
-   }
+    }
     else
     {
       sensing.dataBuf[sensing.ptr.intADC3 + 0] = adcTempbuf & 0xFF;
