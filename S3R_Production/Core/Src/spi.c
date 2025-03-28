@@ -1365,19 +1365,16 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     /*    memcpy(sensing.dataBuf + sensing.ptr.extADC0,
     =======
       case SPI1_ADS7028:
-             for (uint8_t i = 0; i <= adc.sensorLen; i++)
-              {
+      for (uint8_t i = 0; i <= adc.sensorLen; i++)
+      {
                 adcChannelId = (spi1Sens_buf.Ads2078Buf[i] >> 12) & 0x0F;
     //channel ID spi1Sens_buf.Ads2078Buf[i] &= 0x0FFF;                     //ADC
     data ads7028ProcessData(adcChannelId, spi1Sens_buf.Ads2078Buf[i]);
               }
-
-
-            adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
-                               | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
-
-        sensing.dataBuf[sensing.ptr.intADC0 + 0]
-        = adcTempbuf & 0xFF;
+/*    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                           | spi1Sens_buf.Ads2078Buf[1] >> 4) & 0x0FFF;*/
+    sensing.dataBuf[sensing.ptr.intADC0 + 0] = adcTempbuf & 0xFF;
+    sensing.dataBuf[sensing.ptr.intADC0 + 0] = adcTempbuf & 0xFF;
     sensing.dataBuf[sensing.ptr.intADC0 + 1] = (adcTempbuf >> 8) & 0xFF;
     break;
   case SPI1_ADS7028_INT_EXP1:
