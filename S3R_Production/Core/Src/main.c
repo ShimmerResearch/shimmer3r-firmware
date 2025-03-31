@@ -514,7 +514,7 @@ void SetupDock(void)
     {
       Board_sd2Arm();
 
-      if(!shimmerStatus.sdBadFile)
+      if (!shimmerStatus.sdBadFile)
       {
         shimmerStatus.sdlogReady = 1;
       }
@@ -614,7 +614,8 @@ void InitialiseBtAfterBoot(void)
 {
   //TODO implement a shorted boot sequence as this is not the first time the BT
   //has been booted at this point. btInit(baudToTry, factoryReset);
-  SHIMMER_PRINTF("TODO: need to implemented BT initialise after boot function\r\n");
+  SHIMMER_PRINTF(
+      "TODO: need to implemented BT initialise after boot function\r\n");
 }
 
 uint8_t getDefaultBaudForBtVersion(void)
