@@ -151,7 +151,7 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 /* SR48-6-0 patch for dock detection - start */
 #define INT_LINE_SR48_6_0_BOOT0_USER_BTN EXTI3_IRQn //Only used on SR48-6-0
 /* SR48-6-0 patch for dock detection - end */
-#endif // SUPPORT_SR48_6_0
+#endif //SUPPORT_SR48_6_0
 #define INT_LINE_GPIO_INTERNAL1    EXTI4_IRQn
 /* Either GPIO_ADC_INT_EXP0 or GPIO_INTERNAL2 can be used on line 5 */
 #define INT_LINE_GPIO_ADC_INT_EXP0 EXTI5_IRQn
@@ -273,9 +273,10 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define Board_SW_PV_SENSE_IO(x) \
   HAL_GPIO_WritePin(SW_SENSE_IO_GPIO_Port, SW_SENSE_IO_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #if SUPPORT_SR48_6_0
-#define Board_SW_GSR(x) \
-  HAL_GPIO_WritePin(SR48_6_0_SW_GSR_GPIO_Port, SR48_6_0_SW_GSR_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#endif // SUPPORT_SR48_6_0
+#define Board_SW_GSR(x)                                             \
+  HAL_GPIO_WritePin(SR48_6_0_SW_GSR_GPIO_Port, SR48_6_0_SW_GSR_Pin, \
+      x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#endif //SUPPORT_SR48_6_0
 #define Board_SW_EXP_BRD_POWER(x) \
   HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 //TODO confirm which pin is going to be used
@@ -290,10 +291,10 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
  * Output low = I2C4 is connected to PPG connector
  * Output high = I2C4 is disconnected from PPG connector */
 #if SUPPORT_SR48_6_0
-#define Board_SW_I2C4_ON_PPG(x)                                         \
-  HAL_GPIO_WritePin(SR48_6_0_GPIO_ADC_INT_EXP2_GPIO_Port, SR48_6_0_GPIO_ADC_INT_EXP2_Pin, \
-      x ? GPIO_PIN_RESET : GPIO_PIN_SET)
-#endif // SUPPORT_SR48_6_0
+#define Board_SW_I2C4_ON_PPG(x)                           \
+  HAL_GPIO_WritePin(SR48_6_0_GPIO_ADC_INT_EXP2_GPIO_Port, \
+      SR48_6_0_GPIO_ADC_INT_EXP2_Pin, x ? GPIO_PIN_RESET : GPIO_PIN_SET)
+#endif //SUPPORT_SR48_6_0
 
 /* 0/1 = power off/on */
 #define Board_SW_BT(x) \
@@ -364,7 +365,7 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
   HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT2_GPIO_Port, SR48_6_0_CHG_STAT2_Pin)
 #define LM3658SD_STAT1_SR48_6_0 \
   HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT1_GPIO_Port, SR48_6_0_CHG_STAT1_Pin)
-#endif // SUPPORT_SR48_6_0
+#endif //SUPPORT_SR48_6_0
 #define LM3658SD_STAT2 HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)
 #define LM3658SD_STAT1 HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)
 

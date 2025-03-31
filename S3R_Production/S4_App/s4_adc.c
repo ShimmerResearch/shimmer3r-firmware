@@ -1216,7 +1216,7 @@ HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *gsrResistance)
   {
     int32_t gsrMv;
 #if SUPPORT_SR48_6_0
-    if(ShimBrd_isBoardSr48_6_0())
+    if (ShimBrd_isBoardSr48_6_0())
     {
       gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
           hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
@@ -1264,7 +1264,7 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
 void resetGsrPwrAndRange(void)
 {
 #if SUPPORT_SR48_6_0
-  if(ShimBrd_isBoardSr48_6_0())
+  if (ShimBrd_isBoardSr48_6_0())
   {
     Board_SW_GSR(0);
   }
@@ -1287,9 +1287,9 @@ void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *h
   {
     ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
   }
-#else // SUPPORT_SR48_6_0
+#else  //SUPPORT_SR48_6_0
   ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
-#endif // SUPPORT_SR48_6_0
+#endif //SUPPORT_SR48_6_0
 }
 
 /* USER CODE END 1 */

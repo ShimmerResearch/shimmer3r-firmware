@@ -106,49 +106,49 @@ void MX_USART3_UART_Init(void)
   /* USER CODE BEGIN USART3_Init 1 */
 
 #if SUPPORT_SR48_6_0
-    huart3.Instance = USART3;
-    huart3.Init.BaudRate = 1000000;
-    huart3.Init.WordLength = UART_WORDLENGTH_8B;
-    huart3.Init.StopBits = UART_STOPBITS_1;
-    huart3.Init.Parity = UART_PARITY_NONE;
-    huart3.Init.Mode = UART_MODE_TX_RX;
-    if(ShimBrd_isBoardSr48_6_0())
-    {
-      huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-    }
-    else
-    {
-      huart3.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
-    }
-    huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-    huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-    huart3.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-    if(ShimBrd_isBoardSr48_6_0())
-    {
-      huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_SWAP_INIT;
-      huart3.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
-    }
-    else
-    {
-      huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-    }
-    if (HAL_UART_Init(&huart3) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    if (HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    if (HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    if (HAL_UARTEx_EnableFifoMode(&huart3) != HAL_OK)
-    {
-      Error_Handler();
-    }
-#else // SUPPORT_SR48_6_0
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 1000000;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  }
+  else
+  {
+    huart3.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
+  }
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_SWAP_INIT;
+    huart3.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
+  }
+  else
+  {
+    huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  }
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_EnableFifoMode(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#else //SUPPORT_SR48_6_0
 
   /* USER CODE END USART3_Init 1 */
   huart3.Instance = USART3;
@@ -180,7 +180,7 @@ void MX_USART3_UART_Init(void)
   }
   /* USER CODE BEGIN USART3_Init 2 */
 
-#endif // SUPPORT_SR48_6_0
+#endif //SUPPORT_SR48_6_0
 
   MX_CRC_Init();
 
@@ -324,11 +324,11 @@ void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle)
     /* USER CODE BEGIN USART3_MspInit 1 */
 
 #if SUPPORT_SR48_6_0
-    if(ShimBrd_isBoardSr48_6_0())
+    if (ShimBrd_isBoardSr48_6_0())
     {
       HAL_GPIO_DeInit(GPIOD, BT_CTS_Pin | BT_RTS_Pin);
     }
-#endif // SUPPORT_SR48_6_0
+#endif //SUPPORT_SR48_6_0
 
     /* USER CODE END USART3_MspInit 1 */
   }
@@ -419,7 +419,7 @@ void BtUart_init(uint32_t baudRate, uint32_t hwFlowCtrl)
   huartBt->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huartBt->Init.ClockPrescaler = UART_PRESCALER_DIV1;
 #if SUPPORT_SR48_6_0
-  if(ShimBrd_isBoardSr48_6_0())
+  if (ShimBrd_isBoardSr48_6_0())
   {
     huartBt->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_SWAP_INIT;
     huartBt->AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
@@ -612,26 +612,26 @@ uint8_t DockUart_interruptCheck(void)
 
 #if TEST_UNDOCKED
   shimmerStatus.isDocked = 1;
-#else // TEST_UNDOCKED
+#else //TEST_UNDOCKED
 #if SUPPORT_SR48_6_0
-    if(ShimBrd_isBoardSr48_6_0())
-    {
-      /* SR48-6-0 patch for dock detection - start */
-      /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
-      shimmerStatus.docked = HAL_GPIO_ReadPin(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, SR48_6_0_BOOT0_USER_BTN_Pin)
-          == GPIO_PIN_SET;
-      /* SR48-6-0 patch for dock detection - end */
-    }
-    else
-    {
-      shimmerStatus.docked
-          = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
-    }
-#else // SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    /* SR48-6-0 patch for dock detection - start */
+    /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
+    shimmerStatus.docked = HAL_GPIO_ReadPin(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, SR48_6_0_BOOT0_USER_BTN_Pin)
+        == GPIO_PIN_SET;
+    /* SR48-6-0 patch for dock detection - end */
+  }
+  else
+  {
     shimmerStatus.docked
         = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
-#endif // SUPPORT_SR48_6_0
-#endif // TEST_UNDOCKED
+  }
+#else  //SUPPORT_SR48_6_0
+  shimmerStatus.docked
+      = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
+#endif //SUPPORT_SR48_6_0
+#endif //TEST_UNDOCKED
 
   return shimmerStatus.docked;
 }

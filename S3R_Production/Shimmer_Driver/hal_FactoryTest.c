@@ -193,13 +193,14 @@ void print_mcu_details(void)
     shimmerStatus.testResult |= S3R_TEST_0008;
   }
 
-  if(ShimBrd_isBoardSr48_6_0())
+  if (ShimBrd_isBoardSr48_6_0())
   {
     testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_MV_VBATT_PIN_LOWER_SR48_6_0
         && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_MV_VBATT_PIN_UPPER_SR48_6_0);
     sprintf(buffer, " - S3R_TEST_0009 - %s: VBatt pin = %ldmV (%d-%dmV)\r\n",
         testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
-        TEST_THRESHOLD_MV_VBATT_PIN_LOWER_SR48_6_0, TEST_THRESHOLD_MV_VBATT_PIN_UPPER_SR48_6_0);
+        TEST_THRESHOLD_MV_VBATT_PIN_LOWER_SR48_6_0,
+        TEST_THRESHOLD_MV_VBATT_PIN_UPPER_SR48_6_0);
   }
   else
   {

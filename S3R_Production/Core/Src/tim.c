@@ -267,10 +267,10 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *timHandle)
     /* USER CODE BEGIN TIM2_MspPostInit 1 */
 
 #if SUPPORT_SR48_6_0
-    if(ShimBrd_isBoardSr48_6_0())
+    if (ShimBrd_isBoardSr48_6_0())
     {
-      /* SR48-6-0 has LED_UPR_GR and LED_UPR_BLU connections attached to different
-       *  MCU pins */
+      /* SR48-6-0 has LED_UPR_GR and LED_UPR_BLU connections attached to
+       * different MCU pins */
       HAL_GPIO_DeInit(GPIOB, LED_UPR_GR_Pin | LED_UPR_BLU_Pin);
 
       GPIO_InitStruct.Pin = SR48_6_0_LED_UPR_GR_Pin | SR48_6_0_LED_UPR_BLU_Pin;

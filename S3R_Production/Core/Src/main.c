@@ -380,11 +380,11 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
   uint32_t baudToTry = BAUD_TO_USE;
 
 #if SUPPORT_SR48_6_0
-  if(ShimBrd_isBoardSr48_6_0())
+  if (ShimBrd_isBoardSr48_6_0())
   {
     baudToTry = BAUD_TO_USE_SR48_6_0;
   }
-#endif // SUPPORT_SR48_6_0
+#endif //SUPPORT_SR48_6_0
 
   SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
 

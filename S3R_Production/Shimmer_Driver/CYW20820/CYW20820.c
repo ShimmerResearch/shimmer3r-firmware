@@ -260,11 +260,11 @@ void btInitCommands(void)
       printf("Update UART Stage2\r\n");
       uint32_t baudToUse = rsp_system_get_uart_parameters_ref.baud;
 #if SUPPORT_SR48_6_0
-      if(ShimBrd_isBoardSr48_6_0())
+      if (ShimBrd_isBoardSr48_6_0())
       {
         baudToUse = BAUD_TO_USE_SR48_6_0;
       }
-#endif // SUPPORT_SR48_6_0
+#endif //SUPPORT_SR48_6_0
       uint8_t flowCtrl = baudToUse == 115200 ? 0 : FLOW_CONTROL;
 
       printf("Setting Baud to %lu\r\n", baudToUse);
@@ -272,8 +272,7 @@ void btInitCommands(void)
       setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
       ezs_cmd_system_set_uart_parameters(baudToUse,
           rsp_system_get_uart_parameters_ref.autobaud,
-          rsp_system_get_uart_parameters_ref.autocorrect,
-          flowCtrl,
+          rsp_system_get_uart_parameters_ref.autocorrect, flowCtrl,
           rsp_system_get_uart_parameters_ref.databits,
           rsp_system_get_uart_parameters_ref.parity,
           rsp_system_get_uart_parameters_ref.stopbits, UART_TYPE_PUART);
@@ -289,11 +288,11 @@ void btInitCommands(void)
       printf("Update UART Stage3\r\n");
       uint32_t baudToUse = rsp_system_get_uart_parameters_ref.baud;
 #if SUPPORT_SR48_6_0
-      if(ShimBrd_isBoardSr48_6_0())
+      if (ShimBrd_isBoardSr48_6_0())
       {
         baudToUse = BAUD_TO_USE_SR48_6_0;
       }
-#endif // SUPPORT_SR48_6_0
+#endif //SUPPORT_SR48_6_0
       uint8_t flowCtrl = baudToUse == 115200 ? 0 : FLOW_CONTROL;
       BtUart_update(baudToUse, flowCtrl);
     }
@@ -325,18 +324,17 @@ void btInitCommands(void)
 
       uint32_t baudToUse = rsp_system_get_uart_parameters_ref.baud;
 #if SUPPORT_SR48_6_0
-      if(ShimBrd_isBoardSr48_6_0())
+      if (ShimBrd_isBoardSr48_6_0())
       {
         baudToUse = BAUD_TO_USE_SR48_6_0;
       }
-#endif // SUPPORT_SR48_6_0
+#endif //SUPPORT_SR48_6_0
       uint8_t flowCtrl = baudToUse == 115200 ? 0 : FLOW_CONTROL;
 
       setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
       ezs_fcmd_system_set_uart_parameters(baudToUse,
           rsp_system_get_uart_parameters_ref.autobaud,
-          rsp_system_get_uart_parameters_ref.autocorrect,
-          flowCtrl,
+          rsp_system_get_uart_parameters_ref.autocorrect, flowCtrl,
           rsp_system_get_uart_parameters_ref.databits,
           rsp_system_get_uart_parameters_ref.parity,
           rsp_system_get_uart_parameters_ref.stopbits, UART_TYPE_PUART);

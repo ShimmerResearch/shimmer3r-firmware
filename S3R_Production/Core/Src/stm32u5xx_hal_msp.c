@@ -75,7 +75,7 @@ void HAL_MspInit(void)
 #if SUPPORT_SR48_6_0
   __HAL_RCC_PWR_CLK_ENABLE();
   HAL_PWREx_EnableVddA();
-#else // SUPPORT_SR48_6_0
+#else //SUPPORT_SR48_6_0
 
   /* USER CODE END MspInit 0 */
 
@@ -88,7 +88,7 @@ void HAL_MspInit(void)
 
   /* USER CODE BEGIN MspInit 1 */
 
-#endif // SUPPORT_SR48_6_0
+#endif //SUPPORT_SR48_6_0
 
   /* USER CODE END MspInit 1 */
 }

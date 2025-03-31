@@ -609,7 +609,7 @@ void ADF1_IRQHandler(void)
 void EXTI0_IRQHandler(void)
 {
 #if SUPPORT_SR48_6_0
-  if(ShimBrd_isBoardSr48_6_0())
+  if (ShimBrd_isBoardSr48_6_0())
   {
     HAL_GPIO_EXTI_IRQHandler(SR48_6_0_GPIO_ADC_INT_EXP1_Pin);
   }
@@ -631,7 +631,7 @@ void EXTI2_IRQHandler(void)
 void EXTI3_IRQHandler(void)
 {
 #if SUPPORT_SR48_6_0
-  if(ShimBrd_isBoardSr48_6_0())
+  if (ShimBrd_isBoardSr48_6_0())
   {
     HAL_GPIO_EXTI_IRQHandler(SR48_6_0_BOOT0_USER_BTN_Pin);
   }
@@ -652,7 +652,7 @@ void EXTI4_IRQHandler(void)
 void EXTI5_IRQHandler(void)
 {
 #if SUPPORT_SR48_6_0
-  if(ShimBrd_isBoardSr48_6_0())
+  if (ShimBrd_isBoardSr48_6_0())
   {
     HAL_GPIO_EXTI_IRQHandler(SR48_6_0_GPIO_ADC_INT_EXP0_Pin);
   }
