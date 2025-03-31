@@ -173,7 +173,7 @@ void stopAds7028Conversions(void)
 //
 //*****************************************************************************
 
-int16_t readData(uint8_t *dataRx, SPI_HandleTypeDef * handle)
+int16_t readData(uint8_t *dataRx, SPI_HandleTypeDef *handle)
 {
   uint8_t dataTx[4] = { 0 };
   uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;

@@ -1051,11 +1051,11 @@ void SPI_stopSensing()
   }
 
   resetGsrPwrAndRange();
-if(areAdcChannelsEnabled())
-{
-  Board_SW_EXP_BRD_POWER(0);
-  stopAds7028Conversions();
-}
+  if (areAdcChannelsEnabled())
+  {
+    Board_SW_EXP_BRD_POWER(0);
+    stopAds7028Conversions();
+  }
   SPI1_DeInit();
   SPI2_DeInit();
   SPI3_DeInit();
@@ -1471,7 +1471,7 @@ bool areSpiChannelsEnabled(void)
   return (spi1Sens.sensorLen + spi2Sens.sensorLen + spi3Sens.sensorLen) > 0 ? true : false;
 }
 
-void ads7028_configureChannels(uint8_t** channel_contents_ptr)
+void ads7028_configureChannels(uint8_t **channel_contents_ptr)
 {
   //uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
   uint8_t nbr_adc_chans = 0;

@@ -202,7 +202,7 @@ void SpiStepDone(void);
   void SPI_ErrorCallback(SPI_HandleTypeDef *hspi);
 
   bool areSpiChannelsEnabled(void);
-  void ads7028_configureChannels(uint8_t** channel_contents_ptr);
+  void ads7028_configureChannels(uint8_t **channel_contents_ptr);
 #endif
 
   /* USER CODE END Prototypes */

@@ -51,8 +51,8 @@ void TIMER0IntHandler(void);
 #include "gpio.h"
 #include "stm32u5xx_hal.h"
 
-#define nCS_PORT (CS_ADS7028_GPIO_Port)
-#define nCS_PIN  (CS_ADS7028_Pin)
+#define nCS_PORT   (CS_ADS7028_GPIO_Port)
+#define nCS_PIN    (CS_ADS7028_Pin)
 #define SENSOR_BUS hspi1
 #endif
 
@@ -531,7 +531,8 @@ void swI2C4PpgOnAds7028(uint8_t state)
 void ads7028DataGet(uint8_t *dataRx)
 {
   //select auto sequencing mode and start conversion
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS,
+      SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
   //TODO : Is this delay needed?
   delay_us(3);
   uint16_t res = readData(dataRx, &SENSOR_BUS);

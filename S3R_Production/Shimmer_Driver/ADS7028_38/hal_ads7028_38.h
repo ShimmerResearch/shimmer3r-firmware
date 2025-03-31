@@ -101,7 +101,6 @@
 /** Alias used for setting GPIOs pins to the logic "low" state */
 #define LOW  ((bool) false)
 
-
 /* SPI Peripheral Macros */
 #if defined(MSP432E401Y)
 #define SSI_BASE_ADDR   (SSI3_BASE)
