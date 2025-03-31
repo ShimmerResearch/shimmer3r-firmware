@@ -53,6 +53,7 @@ void TIMER0IntHandler(void);
 
 #define nCS_PORT (CS_ADS7028_GPIO_Port)
 #define nCS_PIN  (CS_ADS7028_Pin)
+#define SENSOR_BUS hspi1
 #endif
 
 uint8_t *dataADC = 0;
@@ -359,7 +360,7 @@ void TIMER0IntHandler(uint8_t *dataRx)
   //delay_us(3);
   //Read data
   //#if defined(MSP432E401Y)
-  readData(dataRx);
+  readData(dataRx, &SENSOR_BUS);
   //#endif
 }
 
@@ -493,13 +494,11 @@ self_test_result_t ads7028_self_test(void)
 {
   self_test_result_t self_test_result = SELF_TEST_PASS;
 
-  //initADS7038();
   uint8_t sysStatus = readSingleRegister(SYSTEM_STATUS_ADDRESS);
   if (sysStatus != SYSTEM_STATUS_DEFAULT)
   {
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
-
   return self_test_result;
 }
 
@@ -529,76 +528,13 @@ void swI2C4PpgOnAds7028(uint8_t state)
   }
 }
 
-void ads7028Configure(void)
-
-{
-  //setCS(LOW);
-  writeSingleRegister(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT); //Set all Channels as Analog Inputs.
-
-  //writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelIDs); // Select enabled channels for auto-sequencing.
-
-  //setRegisterBits(SEQUENCE_CFG_SEQ_START_ENABLED, SEQUENCE_CFG_SEQ_START_MASK); //Start Conversion
-  //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ);
-}
-
 void ads7028DataGet(uint8_t *dataRx)
 {
-  HAL_StatusTypeDef ret;
-  uint8_t numberOfBytes = adc.sensorLen * 2 + 1 /*SPI_CRC_ENABLED ? 4 : 3*/;
-  //dataTx[0] = SPI_READ_REGISTER;
-  //writeSingleRegister(DATA_CFG_ADDRESS, DATA_CFG_APPEND_STATUS_FOUR_BIT_CHID);
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS,
-      SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED); //start conversion
-  //delay_us(5);
-  uint8_t CHid = readSingleRegister(SEQUENCE_CFG_ADDRESS);
-  setCS(LOW);
-  uint16_t res = readData(dataRx);
-  setCS(HIGH);
-  //startManualConversions(channelIDs, 51U);
-}
-
-void ads7028ProcessData(uint8_t ChID, uint16_t data)
-{
-  if (ChID == ADS7028_INT_EXP0)
-  {
-    sensing.dataBuf[sensing.ptr.intADC0 + 0] = data & 0xFF;
-    sensing.dataBuf[sensing.ptr.intADC0 + 1] = (data >> 8) & 0xFF;
-  }
-  else if (ChID == ADS7028_INT_EXP1)
-  {
-    sensing.dataBuf[sensing.ptr.intADC1 + 0] = data & 0xFF;
-    sensing.dataBuf[sensing.ptr.intADC1 + 1] = (data >> 8) & 0xFF;
-  }
-  else if (ChID == ADS7028_INT_EXP2)
-  {
-    sensing.dataBuf[sensing.ptr.intADC2 + 0] = data & 0xFF;
-    sensing.dataBuf[sensing.ptr.intADC2 + 1] = (data >> 8) & 0xFF;
-  }
-  else if (ChID == ADS7028_INT_EXP3)
-  {
-    sensing.dataBuf[sensing.ptr.intADC3 + 0] = data & 0xFF;
-    sensing.dataBuf[sensing.ptr.intADC3 + 1] = (data >> 8) & 0xFF;
-  }
-  else if (ChID == ADS7028_EXT_EXP0)
-  {
-    sensing.dataBuf[sensing.ptr.extADC0 + 0] = data & 0xFF;
-    sensing.dataBuf[sensing.ptr.extADC0 + 1] = (data >> 8) & 0xFF;
-  }
-  else if (ChID == ADS7028_EXT_EXP1)
-  {
-    sensing.dataBuf[sensing.ptr.extADC1 + 0] = data & 0xFF;
-    sensing.dataBuf[sensing.ptr.extADC1 + 1] = (data >> 8) & 0xFF;
-  }
-  else if (ChID == ADS7028_EXT_EXP2)
-  {
-    sensing.dataBuf[sensing.ptr.extADC2 + 0] = data & 0xFF;
-    sensing.dataBuf[sensing.ptr.extADC2 + 1] = (data >> 8) & 0xFF;
-  }
-  else if (ChID == ADS7028_VBATT)
-  {
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = data & 0xFF;
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = (data >> 8) & 0xFF;
-  }
+  //select auto sequencing mode and start conversion
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
+  //TODO : Is this delay needed?
+  delay_us(3);
+  uint16_t res = readData(dataRx, &SENSOR_BUS);
 }
 
 void Ads7028GsrTestInit(void)
@@ -609,8 +545,6 @@ void Ads7028GsrTestInit(void)
 
 void configureAutoSequenceChannel(uint8_t ChannelID)
 {
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_DEFAULT);
-  //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ);
-  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID);
-  uint8_t chid = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_DEFAULT); //put all chaneels to default
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID); //select channel for auto-sequencing
 }

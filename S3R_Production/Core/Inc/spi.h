@@ -80,8 +80,9 @@ extern "C"
   //} SPI3_CHIP_INDEX;
 
   typedef enum
-  { //i2c
-    SPI1_LSM6DSV_GYRO_AND_ACCEL = 0,
+  {
+    EMPTY = 0,
+    SPI1_LSM6DSV_GYRO_AND_ACCEL,
     SPI1_LSM6DSV_ACCEL_ONLY,
     SPI1_LSM6DSV_GYRO_ONLY,
     SPI1_ADXL371_ACCEL,
@@ -109,13 +110,13 @@ extern "C"
     SPI_STAT_LSM6DSV_GYRO_GET,
     SPI_STAT_ADXL371_ACCEL_GET,
     SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET,
-    SPI_STAT_ADS7028_EXT_EXP0_GET,
-    SPI_STAT_ADS7028_EXT_EXP1_GET,
-    SPI_STAT_ADS7028_EXT_EXP2_GET,
     SPI_STAT_ADS7028_INT_EXP0_GET,
     SPI_STAT_ADS7028_INT_EXP1_GET,
     SPI_STAT_ADS7028_INT_EXP2_GET,
     SPI_STAT_ADS7028_INT_EXP3_GET,
+    SPI_STAT_ADS7028_EXT_EXP0_GET,
+    SPI_STAT_ADS7028_EXT_EXP1_GET,
+    SPI_STAT_ADS7028_EXT_EXP2_GET,
     SPI_STAT_ADS7028_VBATT_GET,
     SPI_STAT_LIS2DW12_ACCEL_GET,
     SPI_STAT_LIS3MDL_MAG_GET,
@@ -201,7 +202,7 @@ void SpiStepDone(void);
   void SPI_ErrorCallback(SPI_HandleTypeDef *hspi);
 
   bool areSpiChannelsEnabled(void);
-  void ads7028_configureChannels(void);
+  void ads7028_configureChannels(uint8_t** channel_contents_ptr);
 #endif
 
   /* USER CODE END Prototypes */

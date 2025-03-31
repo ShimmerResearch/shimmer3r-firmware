@@ -53,7 +53,6 @@
 #include <stdbool.h>
 
 #include "hal_FactoryTest.h"
-#include "spi.h"
 #include "tim.h"
 #endif
 
@@ -102,6 +101,7 @@
 /** Alias used for setting GPIOs pins to the logic "low" state */
 #define LOW  ((bool) false)
 
+
 /* SPI Peripheral Macros */
 #if defined(MSP432E401Y)
 #define SSI_BASE_ADDR   (SSI3_BASE)
@@ -121,8 +121,6 @@ enum ads7028_ch_ID
   ADS7028_EXT_EXP2,
   ADS7028_VBATT
 };
-
-#define SENSOR_BUS hspi1
 
 //*****************************************************************************
 //
@@ -153,10 +151,6 @@ void TIMER0IntHandler(uint8_t *dataRx);
 self_test_result_t ads7028_self_test(void);
 void swI2C4PpgOnAds7028(uint8_t state);
 void ads7028DataGet(uint8_t *dataRx);
-
-void ads7028_configureChannels(void);
-void ads7028Configure(void);
-void ads7028ProcessData(uint8_t ChID, uint16_t data);
 void Ads7028GsrTestInit(void);
 void configureAutoSequenceChannel(uint8_t ChannelID);
 #endif /* HAL_ADC7028_38_H_ */

@@ -154,10 +154,8 @@ void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond)
 //!\return None.
 //
 //*****************************************************************************
-void stopConversions(void)
+void stopAds7028Conversions(void)
 {
-  //Stop conversion timer
-  //stopTimer();
   writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_START_DISABLED);
   //Set nCS pin HIGH, allows MCU to communicate with other devices on SPI bus
   setCS(HIGH);
@@ -175,35 +173,28 @@ void stopConversions(void)
 //
 //*****************************************************************************
 
-int16_t readData(uint8_t *dataRx)
+int16_t readData(uint8_t *dataRx, SPI_HandleTypeDef * handle)
 {
   uint8_t dataTx[4] = { 0 };
-
   uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
-  /*  dataTx[0] = OPCODE_RREG;
-   dataTx[1] = CHANNEL_SEL_MANUAL_CHID_3;
-   dataTx[2] = 0;*/
+
   dataTx[0] = SPI_READ_REGISTER;
 
   if (SPI_CRC_ENABLED)
   {
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
-
 #if defined(MSP432E401Y)
   spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
 #else
 
-  //setCS(LOW);
-  HAL_SPI_TransmitReceive_DMA(&SENSOR_BUS, &dataTx[0], dataRx, numberOfBytes);
-  //setCS(HIGH);
-  //spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
-  //uint8_t chId = readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS);
+  setCS(LOW);
+  HAL_SPI_TransmitReceive_DMA(handle, &dataTx[0], dataRx, numberOfBytes);
+  setCS(HIGH);
+
   adcData = signExtend(dataRx);
-  //setCS(LOW);
   return adcData;
 #endif
-  //signExtend(dataRx);
 }
 
 //*****************************************************************************

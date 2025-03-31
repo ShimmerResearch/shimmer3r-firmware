@@ -42,7 +42,6 @@
 #include "battery.h"
 #include "log_and_stream_definitions.h"
 #include "log_and_stream_externs.h"
-#include <ADS7028_38/ads7028_38.h>
 #include <LIS2DW12/lis2dw12.h>
 #include <LIS2MDL/hal_lis2mdl.h>
 #include <LIS2MDL/lis2mdl-pid/lis2mdl_reg.h>
@@ -53,6 +52,7 @@
 #include <LSM6DSV/hal_lsm6dsv.h>
 #include <LSM6DSV/lsm6dsv-pid/lsm6dsv_reg.h>
 #include <LSM6DSV/lsm6dsv.h>
+#include <ADS7028_38/ads7028_38.h>
 #endif
 #include "BMP280_driver\bmp280.h"
 #include "CAT24C16/CAT24C16.h"
