@@ -266,17 +266,20 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *timHandle)
 
     /* USER CODE BEGIN TIM2_MspPostInit 1 */
 
-#ifdef SR48_6_0
-    /* SR48-6-0 has LED_UPR_GR and LED_UPR_BLU connections attached to different
-     *  MCU pins */
-    HAL_GPIO_DeInit(GPIOB, LED_UPR_GR_Pin | LED_UPR_BLU_Pin);
+#if SUPPORT_SR48_6_0
+    if(ShimBrd_isBoardSr48_6_0())
+    {
+      /* SR48-6-0 has LED_UPR_GR and LED_UPR_BLU connections attached to different
+       *  MCU pins */
+      HAL_GPIO_DeInit(GPIOB, LED_UPR_GR_Pin | LED_UPR_BLU_Pin);
 
-    GPIO_InitStruct.Pin = SR48_6_0_LED_UPR_GR_Pin | SR48_6_0_LED_UPR_BLU_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+      GPIO_InitStruct.Pin = SR48_6_0_LED_UPR_GR_Pin | SR48_6_0_LED_UPR_BLU_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    }
 #endif
 
     /* USER CODE END TIM2_MspPostInit 1 */

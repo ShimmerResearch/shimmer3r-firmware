@@ -193,12 +193,22 @@ void print_mcu_details(void)
     shimmerStatus.testResult |= S3R_TEST_0008;
   }
 
-  //Specification = 1.9V from voltage external regulator
-  testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_MV_VBATT_PIN_LOWER
-      && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
-  sprintf(buffer, " - S3R_TEST_0009 - %s: VBatt pin = %ldmV (%d-%dmV)\r\n",
-      testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
-      TEST_THRESHOLD_MV_VBATT_PIN_LOWER, TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
+  if(ShimBrd_isBoardSr48_6_0())
+  {
+    testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_MV_VBATT_PIN_LOWER_SR48_6_0
+        && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_MV_VBATT_PIN_UPPER_SR48_6_0);
+    sprintf(buffer, " - S3R_TEST_0009 - %s: VBatt pin = %ldmV (%d-%dmV)\r\n",
+        testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
+        TEST_THRESHOLD_MV_VBATT_PIN_LOWER_SR48_6_0, TEST_THRESHOLD_MV_VBATT_PIN_UPPER_SR48_6_0);
+  }
+  else
+  {
+    testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_MV_VBATT_PIN_LOWER
+        && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
+    sprintf(buffer, " - S3R_TEST_0009 - %s: VBatt pin = %ldmV (%d-%dmV)\r\n",
+        testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
+        TEST_THRESHOLD_MV_VBATT_PIN_LOWER, TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
+  }
   send_test_report(buffer);
   if (!testPass)
   {
@@ -838,15 +848,25 @@ uint8_t runGsrFactoryTest(void)
   uint8_t i = 0;
   HAL_StatusTypeDef status;
 
-#ifdef SR48_6_0
-  Board_SW_GSR(1);
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    Board_SW_GSR(1);
+  }
 #endif
   gsrTestRigInit(&hi2c4);
 
   GSR_setActiveResistor(HW_RES_40K);
-#ifdef SR48_6_0
-  initGsrAdc();
+#if SUPPORT_SR48_6_0
   ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc2();
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    initGsrAdc();
+  }
+  else
+  {
+    //TODO for ADS7028
+  }
 #else
   //TODO for ADS7028
 #endif
@@ -867,12 +887,19 @@ uint8_t runGsrFactoryTest(void)
     }
   }
 
-#ifdef SR48_6_0
-  //Stop ADC
-  HAL_ADC_Stop(hadcFactoryTestPtr);
-  HAL_ADC_DeInit(hadcFactoryTestPtr);
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    //Stop ADC
+    HAL_ADC_Stop(hadcFactoryTestPtr);
+    HAL_ADC_DeInit(hadcFactoryTestPtr);
 
-  Board_SW_GSR(0);
+    Board_SW_GSR(0);
+  }
+  else
+  {
+    //TODO for ADS7028
+  }
 #else
   //TODO for ADS7028
 #endif
