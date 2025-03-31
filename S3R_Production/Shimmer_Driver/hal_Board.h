@@ -102,8 +102,8 @@ void Board_ledUprSetColour(uint32_t ledMask);
 void Board_ledUprSetColourRgb(int16_t red, int16_t green, int16_t blue);
 void Board_ledUprToggleColourRgb(uint32_t ledMask);
 
-uint8_t isLedOnUprBlue(void);
-uint8_t isLedOnUprGreen(void);
+uint8_t Board_isLedOnUprBlue(void);
+uint8_t Board_isLedOnUprGreen(void);
 #endif
 
 extern void Board_ledOn(uint8_t ledMask);

@@ -271,12 +271,12 @@ static void updateLedState(led_mode updateMode, uint8_t ledMask)
   }
 }
 
-uint8_t isLedOnUprBlue(void)
+uint8_t Board_isLedOnUprBlue(void)
 {
   return ledStateUprBlue == LED_PWM_ON ? 1 : 0;
 }
 
-uint8_t isLedOnUprGreen(void)
+uint8_t Board_isLedOnUprGreen(void)
 {
   return ledStateUprGreen == LED_PWM_ON ? 1 : 0;
 }

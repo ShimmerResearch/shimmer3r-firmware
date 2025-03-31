@@ -145,6 +145,10 @@ void Init()
   Board_delayMicrosInit();
   DockUart_interruptCheck();
   CheckSdInslot();
+  //TODO ShimSd_mount() is normally done CheckSdInslot() for Shimmer3 but that feels like a hack
+  Board_sd2Arm();
+  ShimSd_mount(shimmerStatus.sdInserted);
+
   //GPIO_userButtonCheck();
 
 #if defined(SHIMMER3R)
@@ -506,10 +510,14 @@ void SetupDock(void)
     //SendStatusByte();
     ShimBt_instreamStatusRespSend();
     //Board_sdPower(0);
-    //if (CheckSdInslot() && !shimmerStatus.isSensing && !shimmerStatus.badFile)
     if (CheckSdInslot() && !shimmerStatus.sensing)
     {
       Board_sd2Arm();
+
+      if(!shimmerStatus.sdBadFile)
+      {
+        shimmerStatus.sdlogReady = 1;
+      }
 
       HAL_Delay(120); //120ms
                       //Board_sdPower(1);
@@ -518,6 +526,7 @@ void SetupDock(void)
     }
     else
     {
+      shimmerStatus.sdlogReady = 0;
       LogAndStream_setSdInfoSyncDelayed(1);
     }
   }
@@ -605,6 +614,7 @@ void InitialiseBtAfterBoot(void)
 {
   //TODO implement a shorted boot sequence as this is not the first time the BT
   //has been booted at this point. btInit(baudToTry, factoryReset);
+  SHIMMER_PRINTF("TODO: need to implemented BT initialise after boot function\r\n");
 }
 
 uint8_t getDefaultBaudForBtVersion(void)
