@@ -11,10 +11,10 @@
 #include <math.h>
 #include <stdint.h>
 
-#define DELAY_BETWEEN_LED_CHANGES_MS               2000
+#define DELAY_BETWEEN_LED_CHANGES_MS  2000
 
-#define TEST_THRESHOLD_VREF_LOWER                  (VREF_EXTERNAL_SUPPLY_MV - 80)
-#define TEST_THRESHOLD_VREF_UPPER                  (VREF_EXTERNAL_SUPPLY_MV + 80)
+#define TEST_THRESHOLD_VREF_LOWER     (VREF_EXTERNAL_SUPPLY_MV - 80)
+#define TEST_THRESHOLD_VREF_UPPER     (VREF_EXTERNAL_SUPPLY_MV + 80)
 /*
  * Range 1 (VCORE = 1.2 V) with CPU and peripherals running at up to 160 MHz
  * Range 2 (VCORE = 1.1 V) with CPU and peripherals running at up to 110 MHz
@@ -23,10 +23,15 @@
  * */
 /* TODO values we're measuring (1376mV at time of writing) don't match values
 given above */
-#define TEST_THRESHOLD_MV_VCORE_LOWER              900
-#define TEST_THRESHOLD_MV_VCORE_UPPER              1800
-#define TEST_THRESHOLD_MV_VBATT_PIN_LOWER          1850
-#define TEST_THRESHOLD_MV_VBATT_PIN_UPPER          1950
+#define TEST_THRESHOLD_MV_VCORE_LOWER 900
+#define TEST_THRESHOLD_MV_VCORE_UPPER 1800
+#if defined(SR48_6_0)
+#define TEST_THRESHOLD_MV_VBATT_PIN_LOWER 1850
+#define TEST_THRESHOLD_MV_VBATT_PIN_UPPER 1950
+#else
+#define TEST_THRESHOLD_MV_VBATT_PIN_LOWER 1750
+#define TEST_THRESHOLD_MV_VBATT_PIN_UPPER 1850
+#endif
 #define TEST_THRESHOLD_MV_MCU_TEMPERATURE_LOWER    10
 #define TEST_THRESHOLD_MV_MCU_TEMPERATURE_UPPER    35
 #define TEST_THRESHOLD_MV_VBATT_LOWER              2980
