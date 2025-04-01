@@ -937,7 +937,15 @@ void S4_NORM_ADC_bufPoll()
     sensing.dataBuf[sensing.ptr.intADC2 + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
-  if (configBytes->chEnIntADC3)
+  if (configBytes->chEnGsr)
+  {
+    sensing.dataBuf[sensing.ptr.gsr + 0]
+        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    sensing.dataBuf[sensing.ptr.gsr + 1]
+        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    GSR_range(&sensing.dataBuf[sensing.ptr.gsr]);
+  }
+  else if (configBytes->chEnIntADC3)
   {
     sensing.dataBuf[sensing.ptr.intADC3 + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
@@ -956,12 +964,6 @@ void S4_NORM_ADC_bufPoll()
   //   sensing.dataBuf[sensing.ptr.strainGauge + 2] = *((uint8_t*)adcBufSens + adc_offset_sens++);
   //   sensing.dataBuf[sensing.ptr.strainGauge + 3] = *((uint8_t*)adcBufSens + adc_offset_sens++);
   //}
-
-  //GSR
-  if (configBytes->chEnGsr)
-  {
-    GSR_range(&sensing.dataBuf[sensing.ptr.gsr]);
-  }
 }
 
 //void ADC_stopSensing()
