@@ -15,6 +15,7 @@
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
 #include "PCM/pcm_config.h"
 #include "bmp3_defs.h"
+#include "usbd_cdc_acm_if.h"
 
 factory_test_target_t factoryTestTarget = PRINT_TO_DEBUGGER;
 factory_test_t factoryTestToRun;
@@ -40,7 +41,7 @@ uint32_t run_factory_test(void)
     print_date_and_time();
     send_test_report("\r\n");
 
-    sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f\xB0 C\r\n",
+    sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f\xC2\xB0 C\r\n",
         TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER, TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
     send_test_report(buffer);
     send_test_report("\r\n");
@@ -207,7 +208,7 @@ void print_mcu_details(void)
 
   testPass = (adcDebugInfo.temperature > TEST_THRESHOLD_MV_MCU_TEMPERATURE_LOWER
       && adcDebugInfo.temperature < TEST_THRESHOLD_MV_MCU_TEMPERATURE_UPPER);
-  sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xB0 C\r\n",
+  sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xC2\xB0 C\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   send_test_report(buffer);
   if (!testPass)
@@ -796,7 +797,7 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
   }
   else
   {
-    sprintf(buffer, " - %s - %s: %s%s (%.2f\xB0 C)\r\n", testId,
+    sprintf(buffer, " - %s - %s: %s%s (%.2f\xC2\xB0 C)\r\n", testId,
         selfTestResultStr, chipId, selfTestDetailsStr, tempCal);
   }
   send_test_report(buffer);
@@ -810,7 +811,14 @@ void send_test_report(char *str)
     SHIMMER_PRINTF(str);
     break;
   case PRINT_TO_DOCK_UART:
-    DockUart_writeBlocking((uint8_t *) str, strlen(str));
+    if (shimmerStatus.usbPluggedIn)
+    {
+      CDC_Transmit(0, (uint8_t *) str, strlen(str));
+    }
+    else if (shimmerStatus.docked)
+    {
+      DockUart_writeBlocking((uint8_t *) str, strlen(str));
+    }
     break;
   case PRINT_TO_BT_UART:
     BT_write((uint8_t *) str, strlen(str));
