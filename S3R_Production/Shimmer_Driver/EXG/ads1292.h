@@ -48,7 +48,8 @@
 
 //initialise the SPI and other pins for use with the ADS1292
 //void ADS1292_init(void);
-void ADS1292_init(SPI_HandleTypeDef *hspi_exg);
+void ADS1292_init(void);
+void setSpiHandle(SPI_HandleTypeDef *hspi);
 void ADS1292_enableChip2(uint8_t en);
 void ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata);
 void ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata);

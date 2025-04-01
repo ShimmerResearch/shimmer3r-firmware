@@ -554,46 +554,37 @@ void gpioInitPerBoard(void)
   }
   else if (daughtCardId->exp_brd_id == EXP_BRD_EXG_UNIFIED)
   {
-    /*Configure GPIO_INTERNAL4 pin (ECG CS)  Output Level */
-    HAL_GPIO_WritePin(GPIO_INTERNAL4_GPIO_Port, GPIO_INTERNAL4_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = GPIO_INTERNAL4_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIO_INTERNAL4_GPIO_Port, &GPIO_InitStruct);
-
-    /*Configure GPIO_INTERNAL3 (RESP CS)  pin Output Level */
-    HAL_GPIO_WritePin(GPIO_INTERNAL3_GPIO_Port, GPIO_INTERNAL3_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = GPIO_INTERNAL3_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIO_INTERNAL3_GPIO_Port, &GPIO_InitStruct);
-
-    /*Configure GPIO pins : SW_EXP_Pin (RESET, PE0) */
-    HAL_GPIO_WritePin(SW_EXP_GPIO_Port, SW_EXP_pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = SW_EXP_pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(SW_EXP_GPIO_Port, &GPIO_InitStruct);
-
-    /* configure ECG_INT_Pin (drdy) or  GPIO_INTERNAL_1 */
-    HAL_GPIO_WritePin(ECG_INT_GPIO_Port, ECG_INT_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = ECG_INT_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    ;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(ECG_INT_GPIO_Port, &GPIO_InitStruct);
-
-    /* configure RSP_INT_Pin (drdy) or  GPIO_INTERNAL_0 */
-    HAL_GPIO_WritePin(RSP_INT_GPIO_PORT, RSP_INT_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = RSP_INT_Pin;
+    /*Configure GPIO_INTERNAL1 pin */
+    GPIO_InitStruct.Pin = EXG_CHIP1_DRDY_N_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(EXG_CHIP1_DRDY_N_GPIO_Port, &GPIO_InitStruct);
+
+    /*Configure GPIO_INTERNAL0 pin */
+    GPIO_InitStruct.Pin = EXG_CHIP2_DRDY_N_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(EXG_CHIP2_DRDY_N_GPIO_Port, &GPIO_InitStruct);
+
+    /*Configure GPIO_INTERNAL4 pin (ExG Chip 1 / ECG CS) */
+    GPIO_InitStruct.Pin = EXG_CHIP1_CS_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(EXG_CHIP1_CS_GPIO_PORT, &GPIO_InitStruct);
+
+    /*Configure GPIO_INTERNAL3 pin (ExG Chip 2 / RESP CS) */
+    GPIO_InitStruct.Pin = EXG_CHIP2_CS_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(EXG_CHIP2_CS_GPIO_PORT, &GPIO_InitStruct);
+
+    /* EXG_RESET_N */
+    HAL_GPIO_WritePin(EXG_RESET_N_GPIO_Port, EXG_RESET_N_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_RESET_N_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(RSP_INT_GPIO_PORT, &GPIO_InitStruct);
+    HAL_GPIO_Init(EXG_RESET_N_GPIO_Port, &GPIO_InitStruct);
   }
 }
 

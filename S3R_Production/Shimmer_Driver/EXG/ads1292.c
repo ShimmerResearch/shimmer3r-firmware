@@ -49,7 +49,7 @@
 //#ifndef USE_843_75KHZ
 //#define USE_13_5MHZ
 //#endif
-uint8_t USE_843_75KHZ;
+//uint8_t USE_843_75KHZ;
 
 void (*ADS1292_dataReadDone_cb)(void);
 
@@ -62,25 +62,44 @@ uint8_t chip1CurrentFullBuffer, chip2CurrentFullBuffer;
 uint8_t rxCount, chip1ReadPending, chip2ReadPending, chip2Enabled, chipBusy;
 SPI_HandleTypeDef *hspi_exg;
 
-void ADS1292_init(SPI_HandleTypeDef *hspi)
+void ADS1292_init(void)
 {
-  hspi_exg = hspi;
-  if (hspi_exg->Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
-  {
-    USE_843_75KHZ = 1;
-  }
-  else
-  { //if (hspi_exg.Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
-    USE_843_75KHZ = 1;
-  }
-
-  Board_EXG_RESET_N(0);
-  Board_ExG_CS(1); /* leave as is for now not sure whats the use */
-  Board_ECG_CS(1);
-  Board_RESP_CS(1);
+//  hspi_exg = hspi;
+//  if (hspi_exg->Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
+//  {
+//    USE_843_75KHZ = 1;
+//  }
+//  else
+//  { //if (hspi_exg.Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
+//    USE_843_75KHZ = 1;
+//  }
+//
+//  Board_EXG_RESET_N(1);
+//  Board_ECG_CS(1);
+//  Board_RESP_CS(1);
 
   //uint8_t tx_buf[] = {0xf0};
   //HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 1);
+
+
+  Board_EXG_RESET_N(1);
+  HAL_Delay(1000); // Datasheet states to wait 1s for power-on reset
+
+  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+
+  ADS1292_chip1CsEnable(0);
+  GPIO_InitStruct.Pin = EXG_CHIP1_CS_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(EXG_CHIP1_CS_GPIO_PORT, &GPIO_InitStruct);
+
+  ADS1292_chip2CsEnable(0);
+  GPIO_InitStruct.Pin = EXG_CHIP2_CS_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(EXG_CHIP2_CS_GPIO_PORT, &GPIO_InitStruct);
 
   activeBuffer = chip1Buffer1;
   chip1ReadPending = 0;
@@ -88,9 +107,15 @@ void ADS1292_init(SPI_HandleTypeDef *hspi)
   chip1CurrentFullBuffer = 0;
   chip2CurrentFullBuffer = 0;
   rxCount = 0;
+
   chip2Enabled = 0;
   chipBusy = 0;
   //UCA0_isrActivate(UCA0_isrRegister(ads1292Uca0RxIsr, ads1292Uca0TxIsr));
+}
+
+void setSpiHandle(SPI_HandleTypeDef *hspi)
+{
+  hspi_exg = hspi;
 }
 
 void ADS1292_enableChip2(uint8_t en)
@@ -100,48 +125,60 @@ void ADS1292_enableChip2(uint8_t en)
 
 void ADS1292_Tx1Byte(uint8_t data)
 {
-  //one byte write needs 7.8us in total
+//  //one byte write needs 7.8us in total
+//  uint8_t tx_buf[] = { data };
+//  if (USE_843_75KHZ == 1)
+//  {
+//    Board_delayMicros(8);
+//    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //9.48us
+//  }
+//  else
+//  {
+//    Board_delayMicros(8);
+//    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //0.59us
+//                                              //Board_delayMicros(8);
+//  }
+
+//  Board_delayMicros(8);
+  HAL_Delay(1);
   uint8_t tx_buf[] = { data };
-  if (USE_843_75KHZ == 1)
-  {
-    Board_delayMicros(8);
-    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //9.48us
-  }
-  else
-  {
-    Board_delayMicros(8);
-    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //0.59us
-                                              //Board_delayMicros(8);
-  }
+  HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 100);
 }
 
 void ADS1292_Rx1Byte(uint8_t *buf)
 {
-  //one byte read needs 7.8us in total
-  if (USE_843_75KHZ == 1)
-  {
-    Board_delayMicros(8);
-    HAL_SPI_Receive(hspi_exg, buf, 1, 5); //9.48us
-  }
-  else
-  {
-    Board_delayMicros(8);
-    HAL_SPI_Receive(hspi_exg, buf, 1, 5); //0.59us
-                                          //Board_delayMicros(8);
-  }
+//  //one byte read needs 7.8us in total
+//  if (USE_843_75KHZ == 1)
+//  {
+//    Board_delayMicros(8);
+//    HAL_SPI_Receive(hspi_exg, buf, 1, 5); //9.48us
+//  }
+//  else
+//  {
+//    Board_delayMicros(8);
+//    HAL_SPI_Receive(hspi_exg, buf, 1, 5); //0.59us
+//                                          //Board_delayMicros(8);
+//  }
+
+  HAL_SPI_Receive(hspi_exg, buf, 1, 5);
 }
 
 void ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata)
 {
-  uint8_t tx_buf[2];
+  uint8_t tx_buf[3] = {0, }, rx_buf[3] = {0, };
   tx_buf[0] = startaddress | RREG;
   tx_buf[1] = size - 1;
-  ADS1292_Tx1Byte(tx_buf[0]);
-  ADS1292_Tx1Byte(tx_buf[1]);
-  while (size--)
-  {
-    ADS1292_Rx1Byte(rdata++);
-  }
+
+//  ADS1292_Tx1Byte(tx_buf[0]);
+//  ADS1292_Tx1Byte(tx_buf[1]);
+//  while (size--)
+//  {
+//    ADS1292_Rx1Byte(rdata++);
+//  }
+
+  HAL_SPI_TransmitReceive(hspi_exg, tx_buf, rx_buf, size, 100);
+
+   *rdata = rx_buf[2];
 }
 
 void ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata)
@@ -149,8 +186,9 @@ void ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata)
   uint8_t tx_buf[2];
   tx_buf[0] = startaddress | WREG;
   tx_buf[1] = size - 1;
-  ADS1292_Tx1Byte(tx_buf[0]);
-  ADS1292_Tx1Byte(tx_buf[1]);
+//  ADS1292_Tx1Byte(tx_buf[0]);
+//  ADS1292_Tx1Byte(tx_buf[1]);
+  HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100); //9.48us
   while (size--)
   {
     ADS1292_Tx1Byte(*(wdata++));
@@ -185,16 +223,15 @@ void ADS1292_chip1CsEnable(uint8_t enable)
 {
   if (enable)
   {
-    Board_ExG_CS(0);
     //Ensure chip 2 is not enabled
-    if (HAL_GPIO_ReadPin(RESP_CS_GPIO, RESP_CS_PIN) == GPIO_PIN_RESET)
+    if (HAL_GPIO_ReadPin(EXG_CHIP2_CS_GPIO_PORT, EXG_CHIP2_CS_PIN) == GPIO_PIN_RESET)
     {
       //Disable chip 2
       Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
                             //i.e. 3tCLKs (5.86us)
-      Board_RESP_CS(1);
+      Board_EXG_CHIP2_CS(1);
     }
-    Board_ECG_CS(0);
+    Board_EXG_CHIP1_CS(0);
     //need to wait 10ns here, 2 clk cycles @ 216MHz
     while (0)
       ;
@@ -203,8 +240,7 @@ void ADS1292_chip1CsEnable(uint8_t enable)
   {
     Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
                           //i.e. 3tCLKs (5.86us)
-    Board_ECG_CS(1);
-    Board_ExG_CS(1);
+    Board_EXG_CHIP1_CS(1);
   }
 }
 
@@ -212,16 +248,15 @@ void ADS1292_chip2CsEnable(uint8_t enable)
 {
   if (enable)
   {
-    Board_ExG_CS(0);
     //Ensure chip 1 is not enabled
-    if (HAL_GPIO_ReadPin(ECG_CS_GPIO, ECG_CS_PIN) == GPIO_PIN_RESET)
+    if (HAL_GPIO_ReadPin(EXG_CHIP1_CS_GPIO_PORT, EXG_CHIP1_CS_PIN) == GPIO_PIN_RESET)
     {
       //Disable chip 2
       Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
                             //i.e. 3tCLKs (5.86us)
-      Board_ECG_CS(1);
+      Board_EXG_CHIP1_CS(1);
     }
-    Board_RESP_CS(0);
+    Board_EXG_CHIP2_CS(0);
     //need to wait 10ns here, 2 clk cycles @ 216MHz
     while (0)
       ;
@@ -230,8 +265,7 @@ void ADS1292_chip2CsEnable(uint8_t enable)
   {
     Board_delayMicros(6); //wait 5.875us  (assuming 24MHz clock)
                           //i.e. 3tCLKs (5.86us)
-    Board_RESP_CS(1);
-    Board_ExG_CS(1);
+    Board_EXG_CHIP2_CS(1);
   }
 }
 
@@ -278,8 +312,10 @@ void ADS1292_offsetCal(void)
 
 void ADS1292_enableInternalReference(void)
 {
-  uint8_t tx_buf = 0xA0;
-  ADS1292_Tx1Byte(tx_buf);
+  uint8_t data[] = { 0x88 };
+
+  ADS1292_regWrite(ADS1x9x_REG_CONFIG2, 1, data);
+
   HAL_Delay(100);
 }
 
@@ -295,16 +331,16 @@ void ADS1292_enableDrdyInterrupts(uint8_t mask)
    }*/
   if (mask & ADS1292_DRDY_INT_CHIP1)
   {
-    if (!ADS1292_ECG_DRDY)
+    if (!ADS1292_EXG_CHIP1_DRDY)
     {
-      HAL_GPIO_WritePin(ECG_INT_GPIO_Port, ECG_INT_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(EXG_CHIP1_DRDY_N_GPIO_Port, EXG_CHIP1_DRDY_N_Pin, GPIO_PIN_SET);
     }
   }
   if (mask & ADS1292_DRDY_INT_CHIP2)
   {
-    if (!ADS1292_RSP_DRDY)
+    if (!ADS1292_EXG_CHIP2_DRDY)
     {
-      HAL_GPIO_WritePin(RSP_INT_GPIO_PORT, RSP_INT_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(EXG_CHIP2_DRDY_N_GPIO_Port, EXG_CHIP2_DRDY_N_Pin, GPIO_PIN_SET);
     }
   }
 }
@@ -323,16 +359,16 @@ void ADS1292_disableDrdyInterrupts(uint8_t mask)
 
   if (mask & ADS1292_DRDY_INT_CHIP1)
   {
-    if (ADS1292_ECG_DRDY)
+    if (ADS1292_EXG_CHIP1_DRDY)
     {
-      HAL_GPIO_WritePin(ECG_INT_GPIO_Port, ECG_INT_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(EXG_CHIP1_DRDY_N_GPIO_Port, EXG_CHIP1_DRDY_N_Pin, GPIO_PIN_RESET);
     }
   }
   if (mask & ADS1292_DRDY_INT_CHIP2)
   {
-    if (ADS1292_RSP_DRDY)
+    if (ADS1292_EXG_CHIP2_DRDY)
     {
-      HAL_GPIO_WritePin(RSP_INT_GPIO_PORT, RSP_INT_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(EXG_CHIP2_DRDY_N_GPIO_Port, EXG_CHIP2_DRDY_N_Pin, GPIO_PIN_RESET);
     }
   }
 }
@@ -419,31 +455,33 @@ void ADS1292_dataReadFromChip1()
     }
     rxCount = 0;
 
-    if (HAL_GPIO_ReadPin(ECG_CS_GPIO, ECG_CS_PIN) == GPIO_PIN_SET)
+    if (HAL_GPIO_ReadPin(EXG_CHIP1_CS_GPIO_PORT, EXG_CHIP1_CS_PIN) == GPIO_PIN_SET)
     {
       ADS1292_chip1CsEnable(1);
     }
-    if (USE_843_75KHZ == 1)
-    {
-      memset(activeBuffer, 0, ADS1292_DATA_PACKET_LENGTH);
-      HAL_SPI_DMAStop(hspi_exg);
-      //Board_delayMicros(6);
-      while (HAL_SPI_GetState(hspi_exg) != HAL_SPI_STATE_READY)
-        ;
-#if defined(SHIMMER3R)
-      while (HAL_DMA_GetState(hspi_exg->hdmarx) != HAL_DMA_STATE_READY)
-        ;
-#elif defined(SHIMMER4_SDK)
-      while (HAL_DMA_GetState(&hdma_spi1_rx) != HAL_DMA_STATE_READY)
-        ;
-#endif
-      HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
-    }
-    else
-    {
-      ads1292_bbuf = 0;
-      HAL_SPI_Receive_DMA(hspi_exg, &ads1292_bbuf, 1);
-    }
+//    if (USE_843_75KHZ == 1)
+//    {
+//      memset(activeBuffer, 0, ADS1292_DATA_PACKET_LENGTH);
+//      HAL_SPI_DMAStop(hspi_exg);
+//      //Board_delayMicros(6);
+//      while (HAL_SPI_GetState(hspi_exg) != HAL_SPI_STATE_READY)
+//        ;
+//#if defined(SHIMMER3R)
+//      while (HAL_DMA_GetState(hspi_exg->hdmarx) != HAL_DMA_STATE_READY)
+//        ;
+//#elif defined(SHIMMER4_SDK)
+//      while (HAL_DMA_GetState(&hdma_spi1_rx) != HAL_DMA_STATE_READY)
+//        ;
+//#endif
+//      HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
+//    }
+//    else
+//    {
+//      ads1292_bbuf = 0;
+//      HAL_SPI_Receive_DMA(hspi_exg, &ads1292_bbuf, 1);
+//    }
+
+    HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
   }
   __enable_irq();
 }
@@ -464,32 +502,34 @@ void ADS1292_dataReadFromChip2()
     }
     rxCount = 0;
 
-    if (HAL_GPIO_ReadPin(RESP_CS_GPIO, RESP_CS_PIN) == GPIO_PIN_SET)
+    if (HAL_GPIO_ReadPin(EXG_CHIP2_CS_GPIO_PORT, EXG_CHIP2_CS_PIN) == GPIO_PIN_SET)
     {
       ADS1292_chip2CsEnable(1);
     }
 
-    if (USE_843_75KHZ == 1)
-    {
-      memset(activeBuffer, 0, ADS1292_DATA_PACKET_LENGTH);
-      HAL_SPI_DMAStop(hspi_exg);
-      //Board_delayMicros(6);
-      while (HAL_SPI_GetState(hspi_exg) != HAL_SPI_STATE_READY)
-        ;
-#if defined(SHIMMER3R)
-      while (HAL_DMA_GetState(hspi_exg->hdmarx) != HAL_DMA_STATE_READY)
-        ;
-#elif defined(SHIMMER4_SDK)
-      while (HAL_DMA_GetState(&hdma_spi1_rx) != HAL_DMA_STATE_READY)
-        ;
-#endif
+//    if (USE_843_75KHZ == 1)
+//    {
+//      memset(activeBuffer, 0, ADS1292_DATA_PACKET_LENGTH);
+//      HAL_SPI_DMAStop(hspi_exg);
+//      //Board_delayMicros(6);
+//      while (HAL_SPI_GetState(hspi_exg) != HAL_SPI_STATE_READY)
+//        ;
+//#if defined(SHIMMER3R)
+//      while (HAL_DMA_GetState(hspi_exg->hdmarx) != HAL_DMA_STATE_READY)
+//        ;
+//#elif defined(SHIMMER4_SDK)
+//      while (HAL_DMA_GetState(&hdma_spi1_rx) != HAL_DMA_STATE_READY)
+//        ;
+//#endif
+//
+//      HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
+//    }
+//    else
+//    {
+//    }
 
-      HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
-    }
-    else
-    {
-    }
-  }
+    HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
+}
   __enable_irq();
 }
 
