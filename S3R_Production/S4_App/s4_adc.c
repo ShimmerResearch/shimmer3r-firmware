@@ -939,10 +939,8 @@ void S4_NORM_ADC_bufPoll()
   }
   if (configBytes->chEnGsr)
   {
-    sensing.dataBuf[sensing.ptr.gsr + 0]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.gsr + 1]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    sensing.dataBuf[sensing.ptr.gsr + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    sensing.dataBuf[sensing.ptr.gsr + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
     GSR_range(&sensing.dataBuf[sensing.ptr.gsr]);
   }
   else if (configBytes->chEnIntADC3)
