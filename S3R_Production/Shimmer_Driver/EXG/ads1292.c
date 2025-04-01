@@ -92,14 +92,14 @@ void ADS1292_init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(EXG_CHIP1_CS_GPIO_PORT, &GPIO_InitStruct);
+  HAL_GPIO_Init(EXG_CHIP1_CS_GPIO_Port, &GPIO_InitStruct);
 
   ADS1292_chip2CsEnable(0);
   GPIO_InitStruct.Pin = EXG_CHIP2_CS_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(EXG_CHIP2_CS_GPIO_PORT, &GPIO_InitStruct);
+  HAL_GPIO_Init(EXG_CHIP2_CS_GPIO_Port, &GPIO_InitStruct);
 
   activeBuffer = chip1Buffer1;
   chip1ReadPending = 0;
@@ -224,7 +224,7 @@ void ADS1292_chip1CsEnable(uint8_t enable)
   if (enable)
   {
     //Ensure chip 2 is not enabled
-    if (HAL_GPIO_ReadPin(EXG_CHIP2_CS_GPIO_PORT, EXG_CHIP2_CS_PIN) == GPIO_PIN_RESET)
+    if (HAL_GPIO_ReadPin(EXG_CHIP2_CS_GPIO_Port, EXG_CHIP2_CS_PIN) == GPIO_PIN_RESET)
     {
       //Disable chip 2
       Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
@@ -249,7 +249,7 @@ void ADS1292_chip2CsEnable(uint8_t enable)
   if (enable)
   {
     //Ensure chip 1 is not enabled
-    if (HAL_GPIO_ReadPin(EXG_CHIP1_CS_GPIO_PORT, EXG_CHIP1_CS_PIN) == GPIO_PIN_RESET)
+    if (HAL_GPIO_ReadPin(EXG_CHIP1_CS_GPIO_Port, EXG_CHIP1_CS_PIN) == GPIO_PIN_RESET)
     {
       //Disable chip 2
       Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
@@ -455,7 +455,7 @@ void ADS1292_dataReadFromChip1()
     }
     rxCount = 0;
 
-    if (HAL_GPIO_ReadPin(EXG_CHIP1_CS_GPIO_PORT, EXG_CHIP1_CS_PIN) == GPIO_PIN_SET)
+    if (HAL_GPIO_ReadPin(EXG_CHIP1_CS_GPIO_Port, EXG_CHIP1_CS_PIN) == GPIO_PIN_SET)
     {
       ADS1292_chip1CsEnable(1);
     }
@@ -502,7 +502,7 @@ void ADS1292_dataReadFromChip2()
     }
     rxCount = 0;
 
-    if (HAL_GPIO_ReadPin(EXG_CHIP2_CS_GPIO_PORT, EXG_CHIP2_CS_PIN) == GPIO_PIN_SET)
+    if (HAL_GPIO_ReadPin(EXG_CHIP2_CS_GPIO_Port, EXG_CHIP2_CS_PIN) == GPIO_PIN_SET)
     {
       ADS1292_chip2CsEnable(1);
     }

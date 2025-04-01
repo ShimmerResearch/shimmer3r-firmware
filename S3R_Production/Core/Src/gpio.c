@@ -570,13 +570,13 @@ void gpioInitPerBoard(void)
     GPIO_InitStruct.Pin = EXG_CHIP1_CS_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(EXG_CHIP1_CS_GPIO_PORT, &GPIO_InitStruct);
+    HAL_GPIO_Init(EXG_CHIP1_CS_GPIO_Port, &GPIO_InitStruct);
 
     /*Configure GPIO_INTERNAL3 pin (ExG Chip 2 / RESP CS) */
     GPIO_InitStruct.Pin = EXG_CHIP2_CS_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(EXG_CHIP2_CS_GPIO_PORT, &GPIO_InitStruct);
+    HAL_GPIO_Init(EXG_CHIP2_CS_GPIO_Port, &GPIO_InitStruct);
 
     /* EXG_RESET_N */
     HAL_GPIO_WritePin(EXG_RESET_N_GPIO_Port, EXG_RESET_N_Pin, GPIO_PIN_RESET);
