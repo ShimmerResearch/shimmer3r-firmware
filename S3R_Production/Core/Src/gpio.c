@@ -620,6 +620,7 @@ void vbusPinStateCheck(void)
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   if (pin == GPIO_PIN_SET)
   {
+    shimmerStatus.usbPluggedIn = 1;
     if (hUsbDevice.pDesc == NULL)
     {
       //Enable USB peripheral
@@ -654,6 +655,8 @@ void vbusPinStateCheck(void)
   }
   else if (pin == GPIO_PIN_RESET)
   {
+    shimmerStatus.usbPluggedIn = 0;
+
 #if SUPPORT_SR48_6_0
     /* SR48-6-0 patch for VBUS sense - start */
     if (ShimBrd_isBoardSr48_6_0())
@@ -766,6 +769,7 @@ void setBtPower(uint8_t state)
   shimmerStatus.btPowerOn = state;
 }
 
+/* TODO decide if we want to go this route to optimise current consumption
 void initSpi1CsOutputs(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
@@ -786,5 +790,6 @@ void initSpi1CsOutputs(void)
 void deinitSpi1CsOutputs(void)
 {
 }
+*/
 
 /* USER CODE END 2 */

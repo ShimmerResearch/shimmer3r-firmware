@@ -677,11 +677,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void dockUartRxCallback(UART_HandleTypeDef *huart)
 {
-  //Board_ledToggle(LED_YELLOW);
-
   ShimDock_rxCallback(uartDockRxBuf[0]);
-
-  //HAL_UART_Receive_DMA(huartDock, uartDockRxBuf, 1);
   HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
 }
 

@@ -15,6 +15,7 @@
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
 #include "PCM/pcm_config.h"
 #include "bmp3_defs.h"
+#include "usbd_cdc_acm_if.h"
 
 factory_test_target_t factoryTestTarget = PRINT_TO_DEBUGGER;
 factory_test_t factoryTestToRun;
@@ -827,7 +828,14 @@ void send_test_report(char *str)
     SHIMMER_PRINTF(str);
     break;
   case PRINT_TO_DOCK_UART:
-    DockUart_writeBlocking((uint8_t *) str, strlen(str));
+    if (shimmerStatus.usbPluggedIn)
+    {
+      CDC_Transmit(0, (uint8_t *) str, strlen(str));
+    }
+    else if (shimmerStatus.docked)
+    {
+      DockUart_writeBlocking((uint8_t *) str, strlen(str));
+    }
     break;
   case PRINT_TO_BT_UART:
     ShimBt_writeToTxBufAndSend((uint8_t *) str, strlen(str), SHIMMER_CMD);
