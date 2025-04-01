@@ -639,8 +639,8 @@ void vbusPinStateCheck(void)
         MX_USB_OTG_HS_PCD_Init();
       }
       /* SR48-6-0 patch for VBUS sense - end */
-#else //SUPPORT_SR48_6_0
-      //Disable GPIO interrupt on pin so that USB peripheral can take control
+#else  //SUPPORT_SR48_6_0
+       //Disable GPIO interrupt on pin so that USB peripheral can take control
       GPIO_usbVbusIntInit(0);
       //Clear interrupt flag else it triggers multiple times.
       __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
