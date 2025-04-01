@@ -64,26 +64,25 @@ SPI_HandleTypeDef *hspi_exg;
 
 void ADS1292_init(void)
 {
-//  hspi_exg = hspi;
-//  if (hspi_exg->Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
-//  {
-//    USE_843_75KHZ = 1;
-//  }
-//  else
-//  { //if (hspi_exg.Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
-//    USE_843_75KHZ = 1;
-//  }
-//
-//  Board_EXG_RESET_N(1);
-//  Board_ECG_CS(1);
-//  Board_RESP_CS(1);
+  //hspi_exg = hspi;
+  //if (hspi_exg->Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
+  //{
+  //  USE_843_75KHZ = 1;
+  //}
+  //else
+  //{ //if (hspi_exg.Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
+  //  USE_843_75KHZ = 1;
+  //}
+  //
+  //Board_EXG_RESET_N(1);
+  //Board_ECG_CS(1);
+  //Board_RESP_CS(1);
 
   //uint8_t tx_buf[] = {0xf0};
   //HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 1);
 
-
   Board_EXG_RESET_N(1);
-  HAL_Delay(1000); // Datasheet states to wait 1s for power-on reset
+  HAL_Delay(1000); //Datasheet states to wait 1s for power-on reset
 
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
 
@@ -125,21 +124,21 @@ void ADS1292_enableChip2(uint8_t en)
 
 void ADS1292_Tx1Byte(uint8_t data)
 {
-//  //one byte write needs 7.8us in total
-//  uint8_t tx_buf[] = { data };
-//  if (USE_843_75KHZ == 1)
-//  {
-//    Board_delayMicros(8);
-//    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //9.48us
-//  }
-//  else
-//  {
-//    Board_delayMicros(8);
-//    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //0.59us
-//                                              //Board_delayMicros(8);
-//  }
+  ////one byte write needs 7.8us in total
+  //uint8_t tx_buf[] = { data };
+  //if (USE_843_75KHZ == 1)
+  //{
+  //  Board_delayMicros(8);
+  //  HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //9.48us
+  //}
+  //else
+  //{
+  //  Board_delayMicros(8);
+  //  HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //0.59us
+  //                                            //Board_delayMicros(8);
+  //}
 
-//  Board_delayMicros(8);
+  //Board_delayMicros(8);
   HAL_Delay(1);
   uint8_t tx_buf[] = { data };
   HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 100);
@@ -147,18 +146,18 @@ void ADS1292_Tx1Byte(uint8_t data)
 
 void ADS1292_Rx1Byte(uint8_t *buf)
 {
-//  //one byte read needs 7.8us in total
-//  if (USE_843_75KHZ == 1)
-//  {
-//    Board_delayMicros(8);
-//    HAL_SPI_Receive(hspi_exg, buf, 1, 5); //9.48us
-//  }
-//  else
-//  {
-//    Board_delayMicros(8);
-//    HAL_SPI_Receive(hspi_exg, buf, 1, 5); //0.59us
-//                                          //Board_delayMicros(8);
-//  }
+  ////one byte read needs 7.8us in total
+  //if (USE_843_75KHZ == 1)
+  //{
+  //  Board_delayMicros(8);
+  //  HAL_SPI_Receive(hspi_exg, buf, 1, 5); //9.48us
+  //}
+  //else
+  //{
+  //  Board_delayMicros(8);
+  //  HAL_SPI_Receive(hspi_exg, buf, 1, 5); //0.59us
+  //                                        //Board_delayMicros(8);
+  //}
 
   HAL_SPI_Receive(hspi_exg, buf, 1, 5);
 }
@@ -169,16 +168,16 @@ void ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata)
   tx_buf[0] = startaddress | RREG;
   tx_buf[1] = size - 1;
 
-//  ADS1292_Tx1Byte(tx_buf[0]);
-//  ADS1292_Tx1Byte(tx_buf[1]);
-//  while (size--)
-//  {
-//    ADS1292_Rx1Byte(rdata++);
-//  }
+  //ADS1292_Tx1Byte(tx_buf[0]);
+  //ADS1292_Tx1Byte(tx_buf[1]);
+  //while (size--)
+  //{
+  //  ADS1292_Rx1Byte(rdata++);
+  //}
 
   HAL_SPI_TransmitReceive(hspi_exg, tx_buf, rx_buf, size, 100);
 
-   *rdata = rx_buf[2];
+  *rdata = rx_buf[2];
 }
 
 void ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata)
@@ -186,8 +185,8 @@ void ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata)
   uint8_t tx_buf[2];
   tx_buf[0] = startaddress | WREG;
   tx_buf[1] = size - 1;
-//  ADS1292_Tx1Byte(tx_buf[0]);
-//  ADS1292_Tx1Byte(tx_buf[1]);
+  //ADS1292_Tx1Byte(tx_buf[0]);
+  //ADS1292_Tx1Byte(tx_buf[1]);
   HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100); //9.48us
   while (size--)
   {
@@ -459,27 +458,27 @@ void ADS1292_dataReadFromChip1()
     {
       ADS1292_chip1CsEnable(1);
     }
-//    if (USE_843_75KHZ == 1)
-//    {
-//      memset(activeBuffer, 0, ADS1292_DATA_PACKET_LENGTH);
-//      HAL_SPI_DMAStop(hspi_exg);
-//      //Board_delayMicros(6);
-//      while (HAL_SPI_GetState(hspi_exg) != HAL_SPI_STATE_READY)
-//        ;
-//#if defined(SHIMMER3R)
-//      while (HAL_DMA_GetState(hspi_exg->hdmarx) != HAL_DMA_STATE_READY)
-//        ;
-//#elif defined(SHIMMER4_SDK)
-//      while (HAL_DMA_GetState(&hdma_spi1_rx) != HAL_DMA_STATE_READY)
-//        ;
-//#endif
-//      HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
-//    }
-//    else
-//    {
-//      ads1292_bbuf = 0;
-//      HAL_SPI_Receive_DMA(hspi_exg, &ads1292_bbuf, 1);
-//    }
+    //if (USE_843_75KHZ == 1)
+    //{
+    //  memset(activeBuffer, 0, ADS1292_DATA_PACKET_LENGTH);
+    //  HAL_SPI_DMAStop(hspi_exg);
+    //  //Board_delayMicros(6);
+    //  while (HAL_SPI_GetState(hspi_exg) != HAL_SPI_STATE_READY)
+    //    ;
+    //#if defined(SHIMMER3R)
+    //  while (HAL_DMA_GetState(hspi_exg->hdmarx) != HAL_DMA_STATE_READY)
+    //    ;
+    //#elif defined(SHIMMER4_SDK)
+    //  while (HAL_DMA_GetState(&hdma_spi1_rx) != HAL_DMA_STATE_READY)
+    //    ;
+    //#endif
+    //  HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
+    //}
+    //else
+    //{
+    //  ads1292_bbuf = 0;
+    //  HAL_SPI_Receive_DMA(hspi_exg, &ads1292_bbuf, 1);
+    //}
 
     HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
   }
@@ -507,29 +506,29 @@ void ADS1292_dataReadFromChip2()
       ADS1292_chip2CsEnable(1);
     }
 
-//    if (USE_843_75KHZ == 1)
-//    {
-//      memset(activeBuffer, 0, ADS1292_DATA_PACKET_LENGTH);
-//      HAL_SPI_DMAStop(hspi_exg);
-//      //Board_delayMicros(6);
-//      while (HAL_SPI_GetState(hspi_exg) != HAL_SPI_STATE_READY)
-//        ;
-//#if defined(SHIMMER3R)
-//      while (HAL_DMA_GetState(hspi_exg->hdmarx) != HAL_DMA_STATE_READY)
-//        ;
-//#elif defined(SHIMMER4_SDK)
-//      while (HAL_DMA_GetState(&hdma_spi1_rx) != HAL_DMA_STATE_READY)
-//        ;
-//#endif
-//
-//      HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
-//    }
-//    else
-//    {
-//    }
+    //if (USE_843_75KHZ == 1)
+    //{
+    //  memset(activeBuffer, 0, ADS1292_DATA_PACKET_LENGTH);
+    //  HAL_SPI_DMAStop(hspi_exg);
+    //  //Board_delayMicros(6);
+    //  while (HAL_SPI_GetState(hspi_exg) != HAL_SPI_STATE_READY)
+    //    ;
+    //#if defined(SHIMMER3R)
+    //  while (HAL_DMA_GetState(hspi_exg->hdmarx) != HAL_DMA_STATE_READY)
+    //    ;
+    //#elif defined(SHIMMER4_SDK)
+    //  while (HAL_DMA_GetState(&hdma_spi1_rx) != HAL_DMA_STATE_READY)
+    //    ;
+    //#endif
+    //
+    //  HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
+    //}
+    //else
+    //{
+    //}
 
     HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
-}
+  }
   __enable_irq();
 }
 
