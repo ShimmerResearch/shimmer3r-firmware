@@ -182,46 +182,46 @@ extern "C"
 #define BSL_RX_Pin               GPIO_PIN_3
 #define BSL_RX_GPIO_Port         GPIOA
 
-#if SR48_6_0_PATCH_DOCK_DETECT
-#define SR48_6_0_BOOT0_USER_BTN_Pin       GPIO_PIN_3
-#define SR48_6_0_BOOT0_USER_BTN_GPIO_Port GPIOH
-#endif
+#if SUPPORT_SR48_6_0
+/* SR48-6-0 patch for dock detection - start */
+#define SR48_6_0_BOOT0_USER_BTN_Pin          GPIO_PIN_3
+#define SR48_6_0_BOOT0_USER_BTN_GPIO_Port    GPIOH
+  /* SR48-6-0 patch for dock detection - end */
 
-#ifdef SR48_6_0
-#define SR48_6_0_LED_UPR_GR_Pin        GPIO_PIN_2
-#define SR48_6_0_LED_UPR_GR_GPIO_Port  GPIOA
-#define SR48_6_0_LED_UPR_BLU_Pin       GPIO_PIN_3
-#define SR48_6_0_LED_UPR_BLU_GPIO_Port GPIOA
+#define SR48_6_0_LED_UPR_GR_Pin              GPIO_PIN_2
+#define SR48_6_0_LED_UPR_GR_GPIO_Port        GPIOA
+#define SR48_6_0_LED_UPR_BLU_Pin             GPIO_PIN_3
+#define SR48_6_0_LED_UPR_BLU_GPIO_Port       GPIOA
 
-#define SR48_6_0_CHG_STAT1_Pin         GPIO_PIN_10
-#define SR48_6_0_CHG_STAT1_GPIO_Port   GPIOB
-#define SR48_6_0_CHG_STAT2_Pin         GPIO_PIN_11
-#define SR48_6_0_CHG_STAT2_GPIO_Port   GPIOB
+#define SR48_6_0_CHG_STAT1_Pin               GPIO_PIN_10
+#define SR48_6_0_CHG_STAT1_GPIO_Port         GPIOB
+#define SR48_6_0_CHG_STAT2_Pin               GPIO_PIN_11
+#define SR48_6_0_CHG_STAT2_GPIO_Port         GPIOB
 
-#define SW_GSR_Pin                     GPIO_PIN_0
-#define SW_GSR_GPIO_Port               GPIOE
+#define SR48_6_0_SW_GSR_Pin                  GPIO_PIN_0
+#define SR48_6_0_SW_GSR_GPIO_Port            GPIOE
 
-#define GPIO_ADC_INT_EXP3_Pin          GPIO_PIN_2
-#define GPIO_ADC_INT_EXP3_GPIO_Port    GPIOB
+#define SR48_6_0_GPIO_ADC_INT_EXP3_Pin       GPIO_PIN_2
+#define SR48_6_0_GPIO_ADC_INT_EXP3_GPIO_Port GPIOB
 
-#define GPIO_ADC_INT_EXP2_Pin          GPIO_PIN_1
-#define GPIO_ADC_INT_EXP2_GPIO_Port    GPIOB
+#define SR48_6_0_GPIO_ADC_INT_EXP2_Pin       GPIO_PIN_1
+#define SR48_6_0_GPIO_ADC_INT_EXP2_GPIO_Port GPIOB
 
-#define GPIO_ADC_INT_EXP1_Pin          GPIO_PIN_0
-#define GPIO_ADC_INT_EXP1_GPIO_Port    GPIOB
+#define SR48_6_0_GPIO_ADC_INT_EXP1_Pin       GPIO_PIN_0
+#define SR48_6_0_GPIO_ADC_INT_EXP1_GPIO_Port GPIOB
 
-#define GPIO_ADC_EXT_EXP0_Pin          GPIO_PIN_4
-#define GPIO_ADC_EXT_EXP0_GPIO_Port    GPIOA
+#define SR48_6_0_GPIO_ADC_EXT_EXP0_Pin       GPIO_PIN_4
+#define SR48_6_0_GPIO_ADC_EXT_EXP0_GPIO_Port GPIOA
 
-#define GPIO_ADC_EXT_EXP1_Pin          GPIO_PIN_1
-#define GPIO_ADC_EXT_EXP1_GPIO_Port    GPIOC
+#define SR48_6_0_GPIO_ADC_EXT_EXP1_Pin       GPIO_PIN_1
+#define SR48_6_0_GPIO_ADC_EXT_EXP1_GPIO_Port GPIOC
 
-#define GPIO_ADC_EXT_EXP2_Pin          GPIO_PIN_7
-#define GPIO_ADC_EXT_EXP2_GPIO_Port    GPIOA
+#define SR48_6_0_GPIO_ADC_EXT_EXP2_Pin       GPIO_PIN_7
+#define SR48_6_0_GPIO_ADC_EXT_EXP2_GPIO_Port GPIOA
 
-#define GPIO_ADC_INT_EXP0_Pin          GPIO_PIN_5
-#define GPIO_ADC_INT_EXP0_GPIO_Port    GPIOA
-#endif
+#define SR48_6_0_GPIO_ADC_INT_EXP0_Pin       GPIO_PIN_5
+#define SR48_6_0_GPIO_ADC_INT_EXP0_GPIO_Port GPIOA
+#endif //SUPPORT_SR48_6_0
 
 //TODO add these to CubeMx one ADS7028 code is developed
 #define CS_EXG_EU4_Pin        GPIO_PIN_2

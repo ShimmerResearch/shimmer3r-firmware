@@ -232,8 +232,16 @@ void GPIO_usbVbusIntInit(uint8_t state)
     GPIO_InitTypeDef GPIO_InitStruct = { 0 };
     __HAL_RCC_GPIOA_CLK_ENABLE();
     GPIO_InitStruct.Pin = USB_VBUS_Pin;
-#if SR48_6_0_PATCH_VBUS_SENSE
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+#if SUPPORT_SR48_6_0
+    /* SR48-6-0 patch for dock detection */
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+    }
+    else
+    {
+      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+    }
 #else
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
 #endif
@@ -290,14 +298,26 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin)
   {
-#if !SR48_6_0_PATCH_VBUS_SENSE
+#if SUPPORT_SR48_6_0
+  /* SR48-6-0 patch for VBUS sense - start */
+  case USB_VBUS_Pin:
+    if (!ShimBrd_isBoardSr48_6_0())
+    {
+      if (!(ShimTask_getList() & TASK_USB_SETUP))
+      {
+        ShimTask_set(TASK_USB_SETUP);
+      }
+      break;
+    }
+    /* SR48-6-0 patch for VBUS sense - end */
+#else  //SUPPORT_SR48_6_0
   case USB_VBUS_Pin:
     if (!(ShimTask_getList() & TASK_USB_SETUP))
     {
       ShimTask_set(TASK_USB_SETUP);
     }
     break;
-#endif
+#endif //SUPPORT_SR48_6_0
   default:
     gpioExtiCommon(GPIO_Pin, 1);
     break;
@@ -356,27 +376,35 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     DockUart_interruptCheck();
     ShimTask_set(TASK_SETUP_DOCK);
     break;
-#if SR48_6_0_PATCH_DOCK_DETECT
+#if SUPPORT_SR48_6_0
+    /* SR48-6-0 patch for dock detection - start */
   case SR48_6_0_BOOT0_USER_BTN_Pin:
-    /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
-    DockUart_interruptCheck();
-    ShimTask_set(TASK_SETUP_DOCK);
-    break;
-#endif
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
+      DockUart_interruptCheck();
+      ShimTask_set(TASK_SETUP_DOCK);
+      break;
+    }
+    /* SR48-6-0 patch for dock detection - end */
+    /* SR48-6-0 patch for VBUS sense - start */
+  case USB_VBUS_Pin:
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      if (!(ShimTask_getList() & TASK_USB_SETUP))
+      {
+        ShimTask_set(TASK_USB_SETUP);
+      }
+      break;
+    }
+    /* SR48-6-0 patch for VBUS sense - end */
+#endif //SUPPORT_SR48_6_0
   case USER_BTN_Pin:
     GPIO_userButtonCheck();
     break;
   case SD_DETECT_N_Pin:
     CheckSdInslot();
     break;
-#if SR48_6_0_PATCH_VBUS_SENSE
-  case USB_VBUS_Pin:
-    if (!(ShimTask_getList() & TASK_USB_SETUP))
-    {
-      ShimTask_set(TASK_USB_SETUP);
-    }
-    break;
-#endif
   default:
     break;
   }
@@ -473,15 +501,23 @@ void gpioInitPerBoard(void)
      * GPIO_ADC_INT_EXP1_Pin:
      * PPG ADCs. Also connected to I2C4. Allow code ADC to manage. */
 
-#ifdef SR48_6_0
-    /* GPIO_ADC_INT_EXP2_Pin
-     * Controls whether I2C4 connected to PPG connector */
-    Board_SW_I2C4_ON_PPG(0);
-    GPIO_InitStruct.Pin = GPIO_ADC_INT_EXP2_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIO_ADC_INT_EXP2_GPIO_Port, &GPIO_InitStruct);
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      /* GPIO_ADC_INT_EXP2_Pin
+       * Controls whether I2C4 connected to PPG connector */
+      Board_SW_I2C4_ON_PPG(0);
+      GPIO_InitStruct.Pin = SR48_6_0_GPIO_ADC_INT_EXP2_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      HAL_GPIO_Init(SR48_6_0_GPIO_ADC_INT_EXP2_GPIO_Port, &GPIO_InitStruct);
+    }
+#else
+    if (!ShimBrd_isBoardSr48_7_0())
+    {
+      //TODO GPIO_INTERNAL3? to control I2C on PPG connector
+    }
 #endif
 
     /* GPIO_ADC_INT_EXP3_Pin:
@@ -514,61 +550,65 @@ void gpioInitPerBoard(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIO_INTERNAL2_GPIO_Port, &GPIO_InitStruct);
 
-#if SR48_6_0_PATCH_DOCK_DETECT
-    /* SR48-6-0 S3R prototype has incorrect dock pin handling so we need to
-     * re-purpose the dock detect pin as an output to let the dock know when a
-     * Shimmer is docked. */
-    HAL_NVIC_DisableIRQ(INT_LINE_DOCK_DETECT);
-    HAL_GPIO_DeInit(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin);
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      /* SR48-6-0 patch for dock detection - start */
 
-    HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, GPIO_PIN_SET);
-    GPIO_InitStruct.Pin = DOCK_DETECT_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(DOCK_DETECT_GPIO_Port, &GPIO_InitStruct);
+      /* SR48-6-0 S3R prototype has incorrect dock pin handling so we need to
+       * re-purpose the dock detect pin as an output to let the dock know when a
+       * Shimmer is docked. */
+      HAL_NVIC_DisableIRQ(INT_LINE_DOCK_DETECT);
+      HAL_GPIO_DeInit(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin);
 
-    /* SR48-6-0 doesn't have a DETECT_N pin so deinit */
-    HAL_GPIO_DeInit(DETECT_N_GPIO_Port, DETECT_N_Pin);
+      HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, GPIO_PIN_SET);
+      GPIO_InitStruct.Pin = DOCK_DETECT_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      HAL_GPIO_Init(DOCK_DETECT_GPIO_Port, &GPIO_InitStruct);
 
-    /* SR48-6-0 has user button connected to BOOT0 pin PH3 and nothing connected
-     * to INT6 so disabling it here and using BOOT0 as an interrupt instead for
-     * dock detection. */
-    HAL_NVIC_DisableIRQ(INT_LINE_USER_BTN);
-    HAL_GPIO_DeInit(USER_BTN_GPIO_Port, USER_BTN_Pin);
+      /* SR48-6-0 doesn't have a DETECT_N pin so deinit */
+      HAL_GPIO_DeInit(DETECT_N_GPIO_Port, DETECT_N_Pin);
 
-    GPIO_InitStruct.Pin = SR48_6_0_BOOT0_USER_BTN_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, &GPIO_InitStruct);
+      /* SR48-6-0 has user button connected to BOOT0 pin PH3 and nothing
+       * connected to INT6 so disabling it here and using BOOT0 as an interrupt
+       * instead for dock detection. */
+      HAL_NVIC_DisableIRQ(INT_LINE_USER_BTN);
+      HAL_GPIO_DeInit(USER_BTN_GPIO_Port, USER_BTN_Pin);
 
-    HAL_NVIC_SetPriority(INT_LINE_SR48_6_0_BOOT0_USER_BTN, 0, 0);
-    HAL_NVIC_EnableIRQ(INT_LINE_SR48_6_0_BOOT0_USER_BTN);
-#endif
+      GPIO_InitStruct.Pin = SR48_6_0_BOOT0_USER_BTN_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      HAL_GPIO_Init(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, &GPIO_InitStruct);
 
-#ifdef SR48_6_0
-    /* SR48-6-0 has CHG_STAT connections attached to different MCU pins */
-    HAL_GPIO_DeInit(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin);
-    HAL_GPIO_DeInit(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin);
+      HAL_NVIC_SetPriority(INT_LINE_SR48_6_0_BOOT0_USER_BTN, 0, 0);
+      HAL_NVIC_EnableIRQ(INT_LINE_SR48_6_0_BOOT0_USER_BTN);
 
-    GPIO_InitStruct.Pin = SR48_6_0_CHG_STAT1_Pin | SR48_6_0_CHG_STAT2_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+      /* SR48-6-0 patch for dock detection - end */
 
-    /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(SW_GSR_GPIO_Port, SW_GSR_Pin, GPIO_PIN_RESET);
+      /* SR48-6-0 has CHG_STAT connections attached to different MCU pins */
+      HAL_GPIO_DeInit(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin);
+      HAL_GPIO_DeInit(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin);
 
-    /*Configure GPIO pins : SW_GSR_Pin */
-    GPIO_InitStruct.Pin = SW_GSR_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+      GPIO_InitStruct.Pin = SR48_6_0_CHG_STAT1_Pin | SR48_6_0_CHG_STAT2_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    /* SR48-6-0 uses MCU pins for ADC channels and not the ADS7028 */
-    HAL_GPIO_DeInit(CS_ADS7028_GPIO_Port, CS_ADS7028_Pin);
+      /*Configure GPIO pin Output Level */
+      HAL_GPIO_WritePin(SR48_6_0_SW_GSR_GPIO_Port, SR48_6_0_SW_GSR_Pin, GPIO_PIN_RESET);
 
+      /*Configure GPIO pins : SW_GSR_Pin */
+      GPIO_InitStruct.Pin = SR48_6_0_SW_GSR_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+      /* SR48-6-0 uses MCU pins for ADC channels and not the ADS7028 */
+      HAL_GPIO_DeInit(CS_ADS7028_GPIO_Port, CS_ADS7028_Pin);
+    }
 #endif
 
     GSR_setActiveResistor(HW_RES_40K);
@@ -583,45 +623,79 @@ void vbusPinStateCheck(void)
     if (hUsbDevice.pDesc == NULL)
     {
       //Enable USB peripheral
-#if SR48_6_0_PATCH_VBUS_SENSE
-      MX_USB_OTG_HS_PCD_Init_NoVbusSense();
-#else
-      //Disable GPIO interrupt on pin so that USB peripheral can take control
+#if SUPPORT_SR48_6_0
+      /* SR48-6-0 patch for VBUS sense - start */
+      if (ShimBrd_isBoardSr48_6_0())
+      {
+        MX_USB_OTG_HS_PCD_Init_NoVbusSense();
+      }
+      else
+      {
+        //Disable GPIO interrupt on pin so that USB peripheral can take control
+        GPIO_usbVbusIntInit(0);
+        //Clear interrupt flag else it triggers multiple times.
+        __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
+
+        MX_USB_OTG_HS_PCD_Init();
+      }
+      /* SR48-6-0 patch for VBUS sense - end */
+#else  //SUPPORT_SR48_6_0
+       //Disable GPIO interrupt on pin so that USB peripheral can take control
       GPIO_usbVbusIntInit(0);
       //Clear interrupt flag else it triggers multiple times.
       __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
 
       MX_USB_OTG_HS_PCD_Init();
-#endif
+#endif //SUPPORT_SR48_6_0
 #if !USE_USBX
       MX_USB_DEVICE_Init();
-#endif
+#endif //USE_USBX
     }
   }
   else if (pin == GPIO_PIN_RESET)
   {
-#if SR48_6_0_PATCH_VBUS_SENSE
-    if (hUsbDevice.pDesc != NULL)
+#if SUPPORT_SR48_6_0
+    /* SR48-6-0 patch for VBUS sense - start */
+    if (ShimBrd_isBoardSr48_6_0())
     {
+      if (hUsbDevice.pDesc != NULL)
+      {
 #if !USE_USBX
-      USBD_DeInit(&hUsbDevice);
+        USBD_DeInit(&hUsbDevice);
 #endif
-      HAL_PCD_MspDeInit_NoVbusSense(&hpcd_USB_OTG_HS);
+        HAL_PCD_MspDeInit_NoVbusSense(&hpcd_USB_OTG_HS);
+      }
     }
-#else
+    else
+    {
+      USB_STATE state = usbPlugInState();
+      if (state == USB_CABLE_UNPLUGGED)
+      {
+        //Disable USB peripheral
+#if !USE_USBX
+        USBD_DeInit(&hUsbDevice);
+#endif //USE_USBX
+        HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS);
+
+        //Re-enable GPIO interrupt on pin
+        GPIO_usbVbusIntInit(1);
+      }
+    }
+    /* SR48-6-0 patch for VBUS sense - end */
+#else //SUPPORT_SR48_6_0
     USB_STATE state = usbPlugInState();
     if (state == USB_CABLE_UNPLUGGED)
     {
       //Disable USB peripheral
 #if !USE_USBX
       USBD_DeInit(&hUsbDevice);
-#endif
+#endif //USE_USBX
       HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS);
 
       //Re-enable GPIO interrupt on pin
       GPIO_usbVbusIntInit(1);
     }
-#endif
+#endif //SUPPORT_SR48_6_0
   }
 }
 

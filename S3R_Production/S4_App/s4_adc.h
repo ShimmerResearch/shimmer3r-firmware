@@ -55,7 +55,7 @@ typedef struct
 #define S4_ADC_initBatt S4_NORM_ADC_initBatt
 #endif
 #define ADC_configureChannels S4_NORM_ADC_configureChannels
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
+#if defined(SHIMMER4_SDK) || SUPPORT_SR48_6_0
 #define ADC_startSensing    S4_NORM_ADC_startSensing
 #define S4_ADC_bufPoll      S4_NORM_ADC_bufPoll
 #define ADC_stopSensing     S4_NORM_ADC_stopSensing
@@ -85,12 +85,12 @@ void S4_NORM_ADC_init2(void);
 void S4_NORM_ADC_initBatt(void);
 #endif
 void S4_NORM_ADC_configureChannels(void);
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
+#if defined(SHIMMER4_SDK) || SUPPORT_SR48_6_0
 void S4_NORM_ADC_startSensing(void);
 void shimmerAdcGpioSetup(uint8_t init);
 #endif
 void initSensAdc(uint32_t numChannels);
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
+#if defined(SHIMMER4_SDK) || SUPPORT_SR48_6_0
 void initGsrAdc(void);
 void S4_NORM_ADC_bufPoll(void);
 void S4_NORM_ADC_stopSensing(void);

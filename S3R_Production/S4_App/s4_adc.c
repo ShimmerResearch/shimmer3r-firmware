@@ -341,7 +341,7 @@ void S4_NORM_ADC_configureChannels(void)
   sensing.ccLen += nbr_adc_chans;
 }
 
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
+#if defined(SHIMMER4_SDK) || SUPPORT_SR48_6_0
 void S4_NORM_ADC_startSensing(void)
 {
   gConfigBytes *configBytes = ShimConfig_getStoredConfig();
@@ -554,31 +554,31 @@ void shimmerAdcGpioSetup(uint8_t init)
 
   if (configBytes->chEnExtADC0)
   {
-    adcPinsPortA |= GPIO_ADC_EXT_EXP0_Pin;
+    adcPinsPortA |= SR48_6_0_GPIO_ADC_EXT_EXP0_Pin;
   }
   if (configBytes->chEnExtADC1)
   {
-    adcPinsPortC |= GPIO_ADC_EXT_EXP1_Pin;
+    adcPinsPortC |= SR48_6_0_GPIO_ADC_EXT_EXP1_Pin;
   }
   if (configBytes->chEnExtADC2)
   {
-    adcPinsPortA |= GPIO_ADC_EXT_EXP2_Pin;
+    adcPinsPortA |= SR48_6_0_GPIO_ADC_EXT_EXP2_Pin;
   }
   if (configBytes->chEnIntADC0)
   {
-    adcPinsPortA |= GPIO_ADC_INT_EXP0_Pin;
+    adcPinsPortA |= SR48_6_0_GPIO_ADC_INT_EXP0_Pin;
   }
   if (configBytes->chEnIntADC1)
   {
-    adcPinsPortB |= GPIO_ADC_INT_EXP1_Pin;
+    adcPinsPortB |= SR48_6_0_GPIO_ADC_INT_EXP1_Pin;
   }
   if (configBytes->chEnIntADC2)
   {
-    adcPinsPortB |= GPIO_ADC_INT_EXP2_Pin;
+    adcPinsPortB |= SR48_6_0_GPIO_ADC_INT_EXP2_Pin;
   }
   if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
   {
-    adcPinsPortB |= GPIO_ADC_INT_EXP3_Pin;
+    adcPinsPortB |= SR48_6_0_GPIO_ADC_INT_EXP3_Pin;
   }
 
   /*GPIO init as per configuration*/
@@ -937,7 +937,13 @@ void S4_NORM_ADC_bufPoll()
     sensing.dataBuf[sensing.ptr.intADC2 + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
-  if (configBytes->chEnIntADC3)
+  if (configBytes->chEnGsr)
+  {
+    sensing.dataBuf[sensing.ptr.gsr + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    sensing.dataBuf[sensing.ptr.gsr + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    GSR_range(&sensing.dataBuf[sensing.ptr.gsr]);
+  }
+  else if (configBytes->chEnIntADC3)
   {
     sensing.dataBuf[sensing.ptr.intADC3 + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
@@ -956,12 +962,6 @@ void S4_NORM_ADC_bufPoll()
   //   sensing.dataBuf[sensing.ptr.strainGauge + 2] = *((uint8_t*)adcBufSens + adc_offset_sens++);
   //   sensing.dataBuf[sensing.ptr.strainGauge + 3] = *((uint8_t*)adcBufSens + adc_offset_sens++);
   //}
-
-  //GSR
-  if (configBytes->chEnGsr)
-  {
-    GSR_range(&sensing.dataBuf[sensing.ptr.gsr]);
-  }
 }
 
 //void ADC_stopSensing()
@@ -1119,10 +1119,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
     if (shimmerStatus.sensing)
     {
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
-#endif
     }
     else
     {
@@ -1216,12 +1214,21 @@ HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *gsrResistance)
   HAL_StatusTypeDef status = getSingleAdcChSample(hadc, &adcValue);
   if (status == HAL_OK)
   {
-#ifdef SR48_6_0
-    int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
-        hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
+    int32_t gsrMv;
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
+          hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
+    }
+    else
+    {
+      //TODO for ADS7028
+      gsrMv = 0;
+    }
 #else
     //TODO for ADS7028
-    int32_t gsrMv = 0;
+    gsrMv = 0;
 #endif
 
     *gsrResistance = GSR_calcResistance(gsrMv);
@@ -1256,8 +1263,11 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
 
 void resetGsrPwrAndRange(void)
 {
-#ifdef SR48_6_0
-  Board_SW_GSR(0);
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    Board_SW_GSR(0);
+  }
 #endif
   GSR_setActiveResistor(HW_RES_40K);
 }
@@ -1268,7 +1278,18 @@ void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *h
   uint16_t battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, VREF_EXTERNAL_SUPPLY_MV,
                            adcBattVal, hadcSensPtr->Init.Resolution)
       * 2;
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1_SR48_6_0, LM3658SD_STAT2_SR48_6_0);
+  }
+  else
+  {
+    ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
+  }
+#else  //SUPPORT_SR48_6_0
   ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
+#endif //SUPPORT_SR48_6_0
 }
 
 /* USER CODE END 1 */
