@@ -45,7 +45,6 @@
 
 static uint8_t data[9];
 
-
 void EXG_init(SPI_HandleTypeDef *hspi)
 {
   /*  ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 +
@@ -56,13 +55,12 @@ void EXG_init(SPI_HandleTypeDef *hspi)
     ADS1292_chip2CsEnable(1);
     ADS1292_readDataContinuousMode(0);
     ADS1292_chip2CsEnable(0); */
-//  ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
-//  ADS1292_init(hspi);
-//  ADS1292_resetPulse();
-//  ADS1292_chip1CsEnable(0);
-//  ADS1292_chip2CsEnable(0);
+  //ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 +
+  //ADS1292_DRDY_INT_CHIP2); ADS1292_init(hspi); ADS1292_resetPulse();
+  //ADS1292_chip1CsEnable(0);
+  //ADS1292_chip2CsEnable(0);
 
-//  ADS1292_init();
+  //ADS1292_init();
 
   setSpiHandle(hspi);
 
@@ -70,10 +68,10 @@ void EXG_init(SPI_HandleTypeDef *hspi)
 
   ADS1292_chip1CsEnable(1);
   ADS1292_readDataContinuousMode(0);
-//  if (ShimBrd_areADS1292RClockLinesTied())
-//  {
-    ADS1292_enableInternalReference();
-//  }
+  //if (ShimBrd_areADS1292RClockLinesTied())
+  //{
+  ADS1292_enableInternalReference();
+  //}
 
   ADS1292_chip2CsEnable(1);
   ADS1292_readDataContinuousMode(0);
