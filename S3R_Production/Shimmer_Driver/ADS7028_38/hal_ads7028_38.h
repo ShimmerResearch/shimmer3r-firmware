@@ -120,6 +120,17 @@ enum ads7028_ch_ID
   ADS7028_EXT_EXP2,
   ADS7028_VBATT
 };
+ typedef struct
+ { //adc - Sensors
+   uint8_t rxBuf[130];
+   uint8_t sensorList[8];
+   uint8_t sensorLen;
+   uint8_t sensorCnt;
+   uint8_t chanCntSens;
+   uint8_t chanCntBatt;
+ } SPI_ADCTypeDef;
+
+ extern SPI_ADCTypeDef spiAdc;
 
 //*****************************************************************************
 //
@@ -152,4 +163,5 @@ void swI2C4PpgOnAds7028(uint8_t state);
 void ads7028DataGet(uint8_t *dataRx);
 void Ads7028GsrTestInit(void);
 void configureAutoSequenceChannel(uint8_t ChannelID);
+bool areSpiAdcChannelsEnabled(void);
 #endif /* HAL_ADC7028_38_H_ */

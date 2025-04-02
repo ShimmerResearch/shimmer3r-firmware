@@ -105,7 +105,7 @@ void adcGpioInit(uint32_t pin, GPIO_TypeDef *port);
 void manageReadBatt(uint8_t isBlockingRead);
 
 #if defined(SHIMMER3R)
-bool areAdcChannelsEnabled(void);
+bool areMcuAdcChannelsEnabled(void);
 #endif
 
 HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample);

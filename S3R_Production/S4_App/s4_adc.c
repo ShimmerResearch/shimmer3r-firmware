@@ -1114,7 +1114,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
 }
 
 #if defined(SHIMMER3R)
-bool areAdcChannelsEnabled(void)
+bool areMcuAdcChannelsEnabled(void)
 {
   return adc.sensorLen > 0;
 }

@@ -43,6 +43,8 @@ SPITypeDef spi2Sens;
 SPITypeDef spi3Sens;
 
 uint8_t expectedSpiBusCbFlags = 0, currentSpiBusCbFlags = 0;
+
+SPI_ADCTypeDef spiAdc;
 #endif
 
 uint8_t gsrActiveResistor;
@@ -828,7 +830,7 @@ void SPI_configureChannels()
   }
   if (isAds7028Present()) //External ADC ADS7028
   {
-    ads7028_configureChannels(&channel_contents_ptr);
+    ads7028_configureChannels(channel_contents_ptr);
   }
   sensing.ccLen += nbr_spi_chans;
   sensing.nbrDigiChans += nbr_spi_chans;
@@ -893,7 +895,7 @@ void SPI_startSensing()
   {
     adxl371_configure(configBytes->altAccelRate);
   }
-  if (isAds7028Present() && areAdcChannelsEnabled()) //External ADC ADS7028
+  if (isAds7028Present() && areSpiAdcChannelsEnabled()) //External ADC ADS7028
   {
     if (configBytes->chEnGsr)
     {
@@ -909,10 +911,11 @@ void SPI_startSensing()
         gsrActiveResistor = HW_RES_40K;
       }
     }
-    if (configBytes->chEnPpg)
+    if (configBytes->expansionBoardPower)
     {
       Board_SW_EXP_BRD_POWER(1);
     }
+    MX_TIM1_Init(); //init TIM1 for us delay
   }
   /* SPI2 */
   if (configBytes->chEnWrAccel)
@@ -1051,10 +1054,11 @@ void SPI_stopSensing()
   }
 
   resetGsrPwrAndRange();
-  if (areAdcChannelsEnabled())
+  if (areSpiAdcChannelsEnabled())
   {
     Board_SW_EXP_BRD_POWER(0);
     stopAds7028Conversions();
+    HAL_TIM_Base_MspDeInit(&htim1);
   }
   SPI1_DeInit();
   SPI2_DeInit();
@@ -1275,7 +1279,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 
 void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  if (areAdcChannelsEnabled())
+  if (areSpiAdcChannelsEnabled())
   {
     adcTempbuf = 0;
     adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
@@ -1366,7 +1370,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
   spi1Sens.status = SPI_STAT_IDLE;
   SpiSensing(&spi1Sens, SPI_NEXT_SENSOR);
-  if (areAdcChannelsEnabled())
+  if (areSpiAdcChannelsEnabled())
   {
     stopAds7028Conversions();
   }
@@ -1471,44 +1475,44 @@ bool areSpiChannelsEnabled(void)
   return (spi1Sens.sensorLen + spi2Sens.sensorLen + spi3Sens.sensorLen) > 0 ? true : false;
 }
 
-void ads7028_configureChannels(uint8_t **channel_contents_ptr)
+void ads7028_configureChannels(uint8_t *channel_contents_ptr)
 {
   //uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
   uint8_t nbr_adc_chans = 0;
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  adc.sensorLen = 0; //adc.sensorCnt = 0;
-  adc.chanCntSens = adc.chanCntBatt = 0;
+  spiAdc.sensorLen = 0; //adc.sensorCnt = 0;
+  spiAdc.chanCntSens = spiAdc.chanCntBatt = 0;
   //Configure pin as analog input
 
   //Select channel  and enable as per config
   //Internal ADC 0
   if (configBytes->chEnIntADC0)
   {
-    **channel_contents_ptr++ = INTERNAL_ADC_0;
+    *channel_contents_ptr++ = INTERNAL_ADC_0;
     nbr_adc_chans += 1;
     sensing.ptr.intADC0 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_0;
+    spiAdc.sensorList[spiAdc.sensorLen++] = INTERNAL_ADC_0;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP0;
   }
   //Internal ADC 1
   if (configBytes->chEnIntADC1)
   {
-    **channel_contents_ptr++ = INTERNAL_ADC_1;
+    *channel_contents_ptr++ = INTERNAL_ADC_1;
     nbr_adc_chans += 1;
     sensing.ptr.intADC1 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_1;
+    spiAdc.sensorList[spiAdc.sensorLen++] = INTERNAL_ADC_1;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP1;
   }
   //Internal ADC 2
   if (configBytes->chEnIntADC2)
   {
-    **channel_contents_ptr++ = INTERNAL_ADC_2;
+    *channel_contents_ptr++ = INTERNAL_ADC_2;
     nbr_adc_chans += 1;
     sensing.ptr.intADC2 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_2;
+    spiAdc.sensorList[spiAdc.sensorLen++] = INTERNAL_ADC_2;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP2;
   }
   //Internal ADC 3
@@ -1516,15 +1520,15 @@ void ads7028_configureChannels(uint8_t **channel_contents_ptr)
   {
     if (configBytes->chEnGsr)
     {
-      **channel_contents_ptr++ = GSR_RAW;
+      *channel_contents_ptr++ = GSR_RAW;
       sensing.ptr.gsr = sensing.dataLen;
-      adc.sensorList[adc.sensorLen++] = GSR_RAW;
+      spiAdc.sensorList[spiAdc.sensorLen++] = GSR_RAW;
     }
     else
     {
-      **channel_contents_ptr++ = INTERNAL_ADC_3;
+      *channel_contents_ptr++ = INTERNAL_ADC_3;
       sensing.ptr.intADC3 = sensing.dataLen;
-      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
+      spiAdc.sensorList[spiAdc.sensorLen++] = INTERNAL_ADC_3;
     }
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP3;
     nbr_adc_chans += 1;
@@ -1533,40 +1537,40 @@ void ads7028_configureChannels(uint8_t **channel_contents_ptr)
   //External ADC 0
   if (configBytes->chEnExtADC0)
   {
-    **channel_contents_ptr++ = EXTERNAL_ADC_0;
+    *channel_contents_ptr++ = EXTERNAL_ADC_0;
     nbr_adc_chans += 1;
     sensing.ptr.extADC0 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_0;
+    spiAdc.sensorList[spiAdc.sensorLen++] = EXTERNAL_ADC_0;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_EXT_EXP0;
   }
   //External ADC 1
   if (configBytes->chEnExtADC1)
   {
-    **channel_contents_ptr++ = EXTERNAL_ADC_1;
+    *channel_contents_ptr++ = EXTERNAL_ADC_1;
     nbr_adc_chans += 1;
     sensing.ptr.extADC1 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_1;
+    spiAdc.sensorList[spiAdc.sensorLen++] = EXTERNAL_ADC_1;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_EXT_EXP1;
   }
   //External ADC 2
   if (configBytes->chEnExtADC2)
   {
-    **channel_contents_ptr++ = EXTERNAL_ADC_2;
+    *channel_contents_ptr++ = EXTERNAL_ADC_2;
     nbr_adc_chans += 1;
     sensing.ptr.extADC2 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_2;
+    spiAdc.sensorList[spiAdc.sensorLen++] = EXTERNAL_ADC_2;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_EXT_EXP2;
   }
   if (configBytes->chEnVBattery)
   {
-    **channel_contents_ptr++ = VBATT;
+    *channel_contents_ptr++ = VBATT;
     nbr_adc_chans += 1;
     sensing.ptr.batteryAnalog = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = VBATT;
+    spiAdc.sensorList[spiAdc.sensorLen++] = VBATT;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_VBATT_SENSE;
   }
   sensing.nbrAdcChans += nbr_adc_chans;

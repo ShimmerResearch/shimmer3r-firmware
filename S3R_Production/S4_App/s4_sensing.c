@@ -95,12 +95,10 @@ void S4Sens_configureChannels(void)
 
 #if defined(SHIMMER3R)
   expectedCbFlags = 0;
-#if defined(SR48_6_0)
-  if (areAdcChannelsEnabled())
+  if (areMcuAdcChannelsEnabled())
   {
     expectedCbFlags |= STAT_PERI_ADC;
   }
-#endif
   if (areI2cChannelsEnabled())
   {
     expectedCbFlags |= STAT_PERI_I2C_SENS;
@@ -252,7 +250,7 @@ void S4Sens_startSensing(void)
     S4Sens_stepInit();
 
 #if defined(SHIMMER4_SDK) || defined(SR48_6_0)
-    if (areAdcChannelsEnabled())
+    if (areMcuAdcChannelsEnabled())
     {
       S4_ADC_startSensing();
     }
@@ -391,7 +389,7 @@ void S4Sens_stopPeripherals(void)
 #endif
 
 #if defined(SHIMMER4_SDK) || defined(SR48_6_0)
-  if (areAdcChannelsEnabled())
+  if (areMcuAdcChannelsEnabled())
   {
     S4_ADC_stopSensing();
   }
@@ -441,7 +439,7 @@ void S4Sens_streamData(void)
 void S4Sens_bufPoll()
 {
 #if defined(SHIMMER4_SDK) || defined(SR48_6_0)
-  if (areAdcChannelsEnabled())
+  if (areMcuAdcChannelsEnabled())
   {
     S4_ADC_gatherDataStart();
   }
