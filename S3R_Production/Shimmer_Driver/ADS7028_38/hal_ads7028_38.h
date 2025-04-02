@@ -120,17 +120,18 @@ enum ads7028_ch_ID
   ADS7028_EXT_EXP2,
   ADS7028_VBATT
 };
- typedef struct
- { //adc - Sensors
-   uint8_t rxBuf[130];
-   uint8_t sensorList[8];
-   uint8_t sensorLen;
-   uint8_t sensorCnt;
-   uint8_t chanCntSens;
-   uint8_t chanCntBatt;
- } SPI_ADCTypeDef;
 
- extern SPI_ADCTypeDef spiAdc;
+typedef struct
+{ //adc - Sensors
+  uint8_t rxBuf[130];
+  uint8_t sensorList[8];
+  uint8_t sensorLen;
+  uint8_t sensorCnt;
+  uint8_t chanCntSens;
+  uint8_t chanCntBatt;
+} SPI_ADCTypeDef;
+
+extern SPI_ADCTypeDef spiAdc;
 
 //*****************************************************************************
 //
