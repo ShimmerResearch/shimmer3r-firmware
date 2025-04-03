@@ -88,8 +88,8 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pins : PG12 PG10 PG6 PG7
                            PG8 PG4 PG2 PG3
                            PG5 PG1 PG0 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_10 | GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8
-      | GPIO_PIN_4 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_5 | GPIO_PIN_1 | GPIO_PIN_0;
+  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_10 | GPIO_PIN_6 | GPIO_PIN_7 |
+      GPIO_PIN_8 | GPIO_PIN_4| GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_5 | GPIO_PIN_1 | GPIO_PIN_0;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
@@ -464,11 +464,20 @@ uint8_t isSdPowerOn(void)
  * */
 void gpioInitPerBoard(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+
   shimmer_expansion_brd *daughtCardId = getDaughtCardId();
   if (daughtCardId->exp_brd_id == EXP_BRD_GSR_UNIFIED)
   {
-    GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-
     /* GPIO_ADC_INT_EXP0_Pin:
      * GPIO_ADC_INT_EXP1_Pin:
      * PPG ADCs. Also connected to I2C4. Allow code ADC to manage. */
@@ -554,6 +563,44 @@ void gpioInitPerBoard(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 #endif
+  }
+  else if (daughtCardId->exp_brd_id == EXP_BRD_EXG_UNIFIED)
+  {
+    /*Configure GPIO_INTERNAL1 pin */
+    HAL_GPIO_WritePin(EXG_CHIP1_DRDY_N_GPIO_Port, EXG_CHIP1_DRDY_N_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_CHIP1_DRDY_N_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(EXG_CHIP1_DRDY_N_GPIO_Port, &GPIO_InitStruct);
+
+    /*Configure GPIO_INTERNAL0 pin */
+    HAL_GPIO_WritePin(EXG_CHIP2_DRDY_N_GPIO_Port, EXG_CHIP2_DRDY_N_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_CHIP2_DRDY_N_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(EXG_CHIP2_DRDY_N_GPIO_Port, &GPIO_InitStruct);
+
+    /*Configure GPIO_INTERNAL4 pin (ExG Chip 1 / ECG CS) */
+    HAL_GPIO_WritePin(EXG_CHIP1_CS_GPIO_Port, EXG_CHIP1_CS_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_CHIP1_CS_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(EXG_CHIP1_CS_GPIO_Port, &GPIO_InitStruct);
+
+    /*Configure GPIO_INTERNAL3 pin (ExG Chip 2 / RESP CS) */
+    HAL_GPIO_WritePin(EXG_CHIP2_CS_GPIO_Port, EXG_CHIP2_CS_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_CHIP2_CS_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(EXG_CHIP2_CS_GPIO_Port, &GPIO_InitStruct);
+
+    /* EXG_RESET_N */
+    HAL_GPIO_WritePin(EXG_RESET_N_GPIO_Port, EXG_RESET_N_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_RESET_N_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(EXG_RESET_N_GPIO_Port, &GPIO_InitStruct);
   }
 }
 

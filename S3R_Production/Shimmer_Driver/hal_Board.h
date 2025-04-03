@@ -132,10 +132,20 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #endif
 
 #if defined(SHIMMER3R)
-#define ECG_CS_GPIO               GPIO_ADC_INT_EXP1_GPIO_Port
-#define ECG_CS_PIN                GPIO_ADC_INT_EXP1_Pin
-#define RESP_CS_GPIO              GPIO_ADC_INT_EXP0_GPIO_Port
-#define RESP_CS_PIN               GPIO_ADC_INT_EXP0_Pin
+#define GPIO_INTERNAL4_Pin                   GPIO_PIN_2
+#define GPIO_INTERNAL4_GPIO_Port             GPIOB
+#define GPIO_INTERNAL3_Pin                   GPIO_PIN_1
+#define GPIO_INTERNAL3_GPIO_Port             GPIOB
+#define EXG_RESET_N_Pin                      SW_GSR_Pin
+#define EXG_RESET_N_GPIO_Port                SW_GSR_GPIO_Port
+#define EXG_CHIP1_CS_GPIO_Port               GPIO_INTERNAL4_GPIO_Port
+#define EXG_CHIP1_CS_Pin                     GPIO_INTERNAL4_Pin
+#define EXG_CHIP2_CS_GPIO_Port               GPIO_INTERNAL3_GPIO_Port
+#define EXG_CHIP2_CS_Pin                     GPIO_INTERNAL3_Pin
+#define EXG_CHIP1_DRDY_N_Pin                 GPIO_INTERNAL1_Pin
+#define EXG_CHIP1_DRDY_N_GPIO_Port           GPIO_INTERNAL1_GPIO_Port
+#define EXG_CHIP2_DRDY_N_Pin                 GPIO_INTERNAL0_Pin
+#define EXG_CHIP2_DRDY_N_GPIO_Port           GPIO_INTERNAL0_GPIO_Port
 
 #define GSR_RANGE_A0_Pin          GPIO_INTERNAL0_Pin
 #define GSR_RANGE_A0_GPIO_Port    GPIO_INTERNAL0_GPIO_Port
@@ -148,6 +158,7 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define SW_BRIDGE_AMP_GPIO_Port   GPIO_INTERNAL0_GPIO_Port
 #define SW_PPG_EN_Pin             GPIO_INTERNAL1_Pin
 #define SW_PPG_EN_GPIO_Port       GPIO_INTERNAL1_GPIO_Port
+
 
 #if defined(SHIMMER3R)
 /* Interrupts */
@@ -224,10 +235,10 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define LED_BLU_GPIO              LED_BLU_GPIO_Port
 #define LED_BLU_PIN               LED_BLU_Pin
 
-#define ECG_CS_GPIO               ECG_NSEL_GPIO_Port
-#define ECG_CS_PIN                ECG_NSEL_Pin
-#define RESP_CS_GPIO              RESP_NSEL_GPIO_Port
-#define RESP_CS_PIN               RESP_NSEL_Pin
+#define EXG_CHIP1_CS_GPIO_PORT    ECG_NSEL_GPIO_Port
+#define EXG_CHIP1_CS_PIN          ECG_NSEL_Pin
+#define EXG_CHIP2_CS_GPIO_PORT    RESP_NSEL_GPIO_Port
+#define EXG_CHIP2_CS_PIN          RESP_NSEL_Pin
 
 #define GSR_RANGE_A0_Pin          GPIO_INTERNAL3_Pin
 #define GSR_RANGE_A1_Pin          GPIO_INTERNAL2_Pin
@@ -286,8 +297,6 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 //TODO confirm which pin is going to be used
 #define Board_SW_STRAIN_GUAGE(x) \
   HAL_GPIO_WritePin(GPIO_INTERNAL1_GPIO_Port, GPIO_INTERNAL1_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define Board_EXG_RESET_N(x) \
-  HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_SW_MIC(x) \
   HAL_GPIO_WritePin(SW_MIC_GPIO_Port, SW_MIC_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
@@ -328,6 +337,8 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define LIS2DW12_INT1 \
   HAL_GPIO_ReadPin(LIS2DW12_INT1_GPIO_Port, LIS2DW12_INT1_Pin)
 #endif
+#define ADS1292_EXG_CHIP1_DRDY HAL_GPIO_ReadPin(EXG_CHIP1_DRDY_N_GPIO_Port, EXG_CHIP1_DRDY_N_Pin)
+#define ADS1292_EXG_CHIP2_DRDY HAL_GPIO_ReadPin(EXG_CHIP2_DRDY_N_GPIO_Port, EXG_CHIP2_DRDY_N_Pin)
 
 #elif defined(SHIMMER4_SDK)
 #define Board_SW_EXP(x) \
@@ -338,12 +349,12 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
   HAL_GPIO_WritePin(SW_I2C_GPIO_Port, SW_I2C_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #endif
 
-#define Board_ExG_CS(x) \
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define Board_ECG_CS(x) \
-  HAL_GPIO_WritePin(ECG_CS_GPIO, ECG_CS_PIN, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define Board_RESP_CS(x) \
-  HAL_GPIO_WritePin(RESP_CS_GPIO, RESP_CS_PIN, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_EXG_CHIP1_CS(x) \
+  HAL_GPIO_WritePin(EXG_CHIP1_CS_GPIO_Port, EXG_CHIP1_CS_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_EXG_CHIP2_CS(x) \
+  HAL_GPIO_WritePin(EXG_CHIP2_CS_GPIO_Port, EXG_CHIP2_CS_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_EXG_RESET_N(x) \
+  HAL_GPIO_WritePin(EXG_RESET_N_GPIO_Port, EXG_RESET_N_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
 #if defined(SHIMMER3R)
 #define Board_sdMcu0Dock1(x)                                      \
