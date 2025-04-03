@@ -21,6 +21,7 @@
 #include "tim.h"
 
 /* USER CODE BEGIN 0 */
+#include <Boards/shimmer_boards.h>
 #include <LEDs/shimmer_leds.h>
 #include <log_and_stream_common.h>
 

@@ -22,7 +22,9 @@
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "shimmer_definitions.h"
+
+#include <Boards/shimmer_boards.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
