@@ -736,10 +736,6 @@ void SPI_test(void)
     else
     {
       uint8_t ads1292RTestResult = EXG_self_test();
-      for (int i = 0; i < 5; i++)
-      {
-        ads1292RTestResult = EXG_self_test();
-      }
 
       sprintf(buffer, " - S3R_TEST_0025 - %s: ADS1292R Chip1 detect\r\n",
           (ads1292RTestResult & 0x01) ? "FAIL" : "PASS");
