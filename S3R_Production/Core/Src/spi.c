@@ -465,10 +465,10 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     __HAL_RCC_SPI3_CLK_ENABLE();
 
     __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOG_CLK_ENABLE();
     /**SPI3 GPIO Configuration
     PB4 (NJTRST)     ------> SPI3_MISO
-    PC10     ------> SPI3_SCK
+    PG9     ------> SPI3_SCK
     PB5     ------> SPI3_MOSI
     */
     GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5;
@@ -478,12 +478,12 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_10;
+    GPIO_InitStruct.Pin = GPIO_PIN_9;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
     GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
     /* USER CODE BEGIN SPI3_MspInit 1 */
 
@@ -554,12 +554,12 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *spiHandle)
 
     /**SPI3 GPIO Configuration
     PB4 (NJTRST)     ------> SPI3_MISO
-    PC10     ------> SPI3_SCK
+    PG9     ------> SPI3_SCK
     PB5     ------> SPI3_MOSI
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_4 | GPIO_PIN_5);
 
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_10);
+    HAL_GPIO_DeInit(GPIOG, GPIO_PIN_9);
 
     /* USER CODE BEGIN SPI3_MspDeInit 1 */
 

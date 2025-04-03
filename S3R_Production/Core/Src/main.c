@@ -278,41 +278,6 @@ int main(void)
     run_factory_test();
   }
   /* USER CODE END 3 */
-
-  //Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
-  ///* USER CODE END 2 */
-  //HAL_PWREx_EnableVddIO2();
-  ////      MX_SPI1_Init();
-  ////     MX_SPI2_Init();
-  ////     __HAL_RCC_SPI2_CLK_ENABLE();
-  //MX_SPI3_Init();
-  //
-  ///* Infinite loop */
-  ///* USER CODE BEGIN WHILE */
-  //uint8_t tx_data1[] = {1, 1, 1, 1};
-  //HAL_StatusTypeDef status1 = HAL_ERROR;
-  //uint8_t tx_data2[] = {2, 2, 2, 2};
-  //HAL_StatusTypeDef status2 = HAL_ERROR;
-  //uint8_t tx_data3[] = {3, 3, 3, 3};
-  //HAL_StatusTypeDef status3 = HAL_ERROR;
-  //__HAL_SPI_ENABLE(&hspi3);
-  ///* SPI3 clock enable */
-  //__HAL_RCC_SPI3_CLK_ENABLE();
-  //
-  ///* USER CODE END 2 */
-  //
-  ///* Infinite loop */
-  ///* USER CODE BEGIN WHILE */
-  //while (1)
-  //{
-  ////     status1 = HAL_SPI_Transmit(&hspi1, tx_data1, sizeof(tx_data1), 10); // Returns ok
-  ////     status2 = HAL_SPI_Transmit(&hspi2, tx_data2, sizeof(tx_data2), 10); // Returns ok
-  //status3 = HAL_SPI_Transmit(&hspi3, tx_data3, sizeof(tx_data3), 10); //Returns error!
-  //__NOP();
-  ///* USER CODE END WHILE */
-  //
-  ///* USER CODE BEGIN 3 */
-  //}
 }
 
 /**
@@ -374,6 +339,7 @@ void SystemClock_Config(void)
  */
 static void SystemPower_Config(void)
 {
+  HAL_PWREx_EnableVddIO2();
 
   /*
    * Disable the internal Pull-Up in Dead Battery pins of UCPD peripheral

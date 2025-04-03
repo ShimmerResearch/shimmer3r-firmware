@@ -81,6 +81,7 @@ void HAL_MspInit(void)
 
   __HAL_RCC_PWR_CLK_ENABLE();
   HAL_PWREx_EnableVddUSB();
+  HAL_PWREx_EnableVddIO2();
   HAL_PWREx_EnableVddA();
 
   /* System interrupt init*/
