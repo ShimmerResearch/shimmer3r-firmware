@@ -47,15 +47,14 @@ static uint8_t data[9];
 
 uint8_t EXG_init(SPI_HandleTypeDef *hspi)
 {
-  /*ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
-  ADS1292_init(hspi);
-  ADS1292_resetPulse();
+  /*ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 +
+  ADS1292_DRDY_INT_CHIP2); ADS1292_init(hspi); ADS1292_resetPulse();
   ADS1292_chip1CsEnable(1);
   ADS1292_readDataContinuousMode(0);
   ADS1292_chip2CsEnable(1);
   ADS1292_readDataContinuousMode(0);
   ADS1292_chip2CsEnable(0);*/
-  // ADS1292_init();
+  //ADS1292_init();
   HAL_StatusTypeDef res = HAL_OK;
   setSpiHandle(hspi);
   ADS1292_resetPulse();
@@ -85,17 +84,19 @@ uint8_t EXG_init(SPI_HandleTypeDef *hspi)
 
 uint8_t EXG_self_test(void)
 {
-  uint8_t temp_buf[13] = {0,};
+  uint8_t temp_buf[13] = {
+    0,
+  };
   uint8_t ret_val = 0;
   HAL_StatusTypeDef res = HAL_OK;
   res = EXG_readRegs(0, ADS1292R_DEVID, 1, &temp_buf[0]);
-  if(res != HAL_OK)
+  if (res != HAL_OK)
   {
     return 0xFF;
   }
   else if (temp_buf[0] != (uint8_t) 0x73)
   {
-     ret_val |= 0x01;
+    ret_val |= 0x01;
   }
   memset(temp_buf, 0, 13);
   res = EXG_readRegs(1, ADS1292R_DEVID, 1, &temp_buf[0]);

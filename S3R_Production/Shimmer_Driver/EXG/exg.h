@@ -108,7 +108,8 @@ void EXG_offsetCal(uint8_t chip);
 //startaddress = address of first register to read from
 //size = number of bytes to read
 //rdata = location to store read bytes
-HAL_StatusTypeDef  EXG_readRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *rdata);
+HAL_StatusTypeDef
+EXG_readRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *rdata);
 
 //Write ADS1292 register
 //chip = which of the two ADS1292R chips to write to
@@ -117,7 +118,8 @@ HAL_StatusTypeDef  EXG_readRegs(uint8_t chip, uint8_t startaddress, uint8_t size
 //startaddress = address of first register to write to
 //size = number of bytes to write
 //wdata = location of bytes to write
-HAL_StatusTypeDef  EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wdata);
+HAL_StatusTypeDef
+EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wdata);
 
 //read most recently sampled data into buf
 //chip = which of the two ADS1292R chips to read
