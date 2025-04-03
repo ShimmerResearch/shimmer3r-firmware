@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -58,8 +59,8 @@
 
 /* USER CODE END 0 */
 /**
-  * Initializes the Global MSP.
-  */
+ * Initializes the Global MSP.
+ */
 void HAL_MspInit(void)
 {
 
@@ -71,10 +72,10 @@ void HAL_MspInit(void)
    * Additionally EnableVddUSB will not work at this point with the SR48-6-0
    * prototypes due to a fault in the design. Sectioning off the CubeMX changes
    * for the moment.*/
-//#if defined(SR48_6_0_PATCH_VBUS_SENSE)
-//  __HAL_RCC_PWR_CLK_ENABLE();
-//  HAL_PWREx_EnableVddA();
-//#else
+  //#if defined(SR48_6_0_PATCH_VBUS_SENSE)
+  //  __HAL_RCC_PWR_CLK_ENABLE();
+  //  HAL_PWREx_EnableVddA();
+  //#else
 
   /* USER CODE END MspInit 0 */
 
@@ -86,7 +87,7 @@ void HAL_MspInit(void)
 
   /* USER CODE BEGIN MspInit 1 */
 
-//#endif
+  //#endif
 
   /* USER CODE END MspInit 1 */
 }

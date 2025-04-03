@@ -175,26 +175,26 @@ HAL_StatusTypeDef ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *r
   tx_buf[0] = startaddress | RREG;
   tx_buf[1] = size - 1;
 
-//  res = ADS1292_Tx1Byte(tx_buf[0]);
-//  if (res != HAL_OK)
-//  {
-//    return res;
-//  }
-//  res = ADS1292_Tx1Byte(tx_buf[1]);
-//  if (res != HAL_OK)
-//  {
-//    return res;
-//  }
-//  while (size--)
-//  {
-//    res = ADS1292_Rx1Byte(rdata++);
-//    if (res != HAL_OK)
-//    {
-//      return res;
-//    }
-//  }
+  //res = ADS1292_Tx1Byte(tx_buf[0]);
+  //if (res != HAL_OK)
+  //{
+  //  return res;
+  //}
+  //res = ADS1292_Tx1Byte(tx_buf[1]);
+  //if (res != HAL_OK)
+  //{
+  //  return res;
+  //}
+  //while (size--)
+  //{
+  //  res = ADS1292_Rx1Byte(rdata++);
+  //  if (res != HAL_OK)
+  //  {
+  //    return res;
+  //  }
+  //}
 
-//  res = HAL_SPI_TransmitReceive(hspi_exg, tx_buf, rx_buf, size, 100);
+  //res = HAL_SPI_TransmitReceive(hspi_exg, tx_buf, rx_buf, size, 100);
 
   res = HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100);
   if (res != HAL_OK)
@@ -214,7 +214,7 @@ HAL_StatusTypeDef ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *
   tx_buf[1] = size - 1;
   ADS1292_Tx1Byte(tx_buf[0]);
   ADS1292_Tx1Byte(tx_buf[1]);
-//  res = HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100); //9.48us
+  //res = HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100); //9.48us
   if (res != HAL_OK)
   {
     return res;

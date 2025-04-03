@@ -22,27 +22,28 @@
 #define __MDF_H__
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* USER CODE BEGIN Includes */
+  /* USER CODE BEGIN Includes */
 
-/* USER CODE END Includes */
+  /* USER CODE END Includes */
 
-extern MDF_HandleTypeDef AdfHandle0;
+  extern MDF_HandleTypeDef AdfHandle0;
 
-extern MDF_FilterConfigTypeDef AdfFilterConfig0;
+  extern MDF_FilterConfigTypeDef AdfFilterConfig0;
 
 /* USER CODE BEGIN Private defines */
 #define MAX_BUFFER_SIZE 32000
-/* USER CODE END Private defines */
+  /* USER CODE END Private defines */
 
-void MX_ADF1_Init(void);
+  void MX_ADF1_Init(void);
 
-/* USER CODE BEGIN Prototypes */
+  /* USER CODE BEGIN Prototypes */
 
   void MDF1_DeInit(void);
   void micStartSensing(void);
@@ -51,11 +52,10 @@ void MX_ADF1_Init(void);
   void micStopSensing(void);
   uint8_t micTest(void);
 
-/* USER CODE END Prototypes */
+  /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __MDF_H__ */
-

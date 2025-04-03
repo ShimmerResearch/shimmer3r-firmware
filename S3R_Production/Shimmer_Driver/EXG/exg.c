@@ -121,7 +121,7 @@ uint8_t EXG_self_test(void)
     ret_val |= 0x01;
   }
 
-//  temp_buf = 0;
+  //temp_buf = 0;
   memset(temp_buf, 0, 13);
   res = EXG_readRegs(1, ADS1292R_DEVID, 1, &temp_buf[0]);
   if (res != HAL_OK)
