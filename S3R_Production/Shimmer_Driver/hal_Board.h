@@ -133,16 +133,16 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 
 #if defined(SHIMMER3R)
 //TODO change SW_GSR to be generic name in CubeMX when ready
-#define EXG_RESET_N_Pin                      SW_GSR_Pin
-#define EXG_RESET_N_GPIO_Port                SW_GSR_GPIO_Port
-#define EXG_CHIP1_CS_GPIO_Port               GPIO_INTERNAL4_GPIO_Port
-#define EXG_CHIP1_CS_PIN                     GPIO_INTERNAL4_Pin
-#define EXG_CHIP2_CS_GPIO_Port               GPIO_INTERNAL3_GPIO_Port
-#define EXG_CHIP2_CS_PIN                     GPIO_INTERNAL3_Pin
-#define EXG_CHIP1_DRDY_N_Pin                 GPIO_INTERNAL1_Pin
-#define EXG_CHIP1_DRDY_N_GPIO_Port           GPIO_INTERNAL1_GPIO_Port
-#define EXG_CHIP2_DRDY_N_Pin                 GPIO_INTERNAL0_Pin
-#define EXG_CHIP2_DRDY_N_GPIO_Port           GPIO_INTERNAL0_GPIO_Port
+#define EXG_RESET_N_Pin            SW_GSR_Pin
+#define EXG_RESET_N_GPIO_Port      SW_GSR_GPIO_Port
+#define EXG_CHIP1_CS_GPIO_Port     GPIO_INTERNAL4_GPIO_Port
+#define EXG_CHIP1_CS_PIN           GPIO_INTERNAL4_Pin
+#define EXG_CHIP2_CS_GPIO_Port     GPIO_INTERNAL3_GPIO_Port
+#define EXG_CHIP2_CS_PIN           GPIO_INTERNAL3_Pin
+#define EXG_CHIP1_DRDY_N_Pin       GPIO_INTERNAL1_Pin
+#define EXG_CHIP1_DRDY_N_GPIO_Port GPIO_INTERNAL1_GPIO_Port
+#define EXG_CHIP2_DRDY_N_Pin       GPIO_INTERNAL0_Pin
+#define EXG_CHIP2_DRDY_N_GPIO_Port GPIO_INTERNAL0_GPIO_Port
 
 #define GSR_RANGE_A0_Pin           GPIO_INTERNAL0_Pin
 #define GSR_RANGE_A0_GPIO_Port     GPIO_INTERNAL0_GPIO_Port
@@ -231,10 +231,10 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define LED_BLU_GPIO              LED_BLU_GPIO_Port
 #define LED_BLU_PIN               LED_BLU_Pin
 
-#define EXG_CHIP1_CS_GPIO_Port               ECG_NSEL_GPIO_Port
-#define EXG_CHIP1_CS_PIN                ECG_NSEL_Pin
-#define EXG_CHIP2_CS_GPIO_Port              RESP_NSEL_GPIO_Port
-#define EXG_CHIP2_CS_PIN               RESP_NSEL_Pin
+#define EXG_CHIP1_CS_GPIO_Port    ECG_NSEL_GPIO_Port
+#define EXG_CHIP1_CS_PIN          ECG_NSEL_Pin
+#define EXG_CHIP2_CS_GPIO_Port    RESP_NSEL_GPIO_Port
+#define EXG_CHIP2_CS_PIN          RESP_NSEL_Pin
 
 #define GSR_RANGE_A0_Pin          GPIO_INTERNAL3_Pin
 #define GSR_RANGE_A1_Pin          GPIO_INTERNAL2_Pin

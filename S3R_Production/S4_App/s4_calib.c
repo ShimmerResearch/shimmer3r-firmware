@@ -103,52 +103,52 @@ uint8_t *ShimmerCalib_getRam(void)
 
 void ShimmerCalib_ram2File(void)
 {
-//  char cal_file_name[48] = "";
-//  DIR gdc;
-//  FIL gfc;
-//  //sc_t sc1;
-//  UINT bw;
-//  FRESULT res;
-//  uint8_t this_write_size;
-//
-//  shimmerCalib_ramLen = min(*(uint16_t *) shimmerCalib_ram, SHIMMER_CALIB_RAM_MAX - 2);
-//
-//  if (shimmerCalib_ramLen > 0)
-//  {
-//    strcpy((char *) cal_file_name, "/Calibration");
-//    if ((res = f_opendir(&gdc, "/Calibration")))
-//    {
-//      if ((res = f_opendir(&gdc, "/calibration")))
-//      {
-//        if (res == FR_NO_PATH)
-//        { //we'll have to make /Calibration first
-//          res = f_mkdir("/Calibration");
-//        }
-//      }
-//      else
-//      {
-//        strcpy((char *) cal_file_name, "/calibration");
-//      }
-//    }
-//    strcat(cal_file_name, "/calib_");
-//    strcat(cal_file_name, (char *) shimmerCalib_macId);
-//
-//    res = f_open(&gfc, cal_file_name, (FA_WRITE | FA_CREATE_ALWAYS));
-//    if (res == FR_NO_FILE)
-//    {
-//      return;
-//    }
-//
-//    while (gfc.fptr < shimmerCalib_ramLen + 2)
-//    {
-//      this_write_size = min(shimmerCalib_ramLen + 2 - gfc.fptr, SHIMMER_CALIB_COPY_SIZE);
-//      f_write(&gfc, shimmerCalib_ram + gfc.fptr, this_write_size, &bw);
-//    }
-//
-//    f_close(&gfc);
-//    HAL_Delay(50); //50ms
-//    set_file_timestamp(cal_file_name);
-//  }
+  //char cal_file_name[48] = "";
+  //DIR gdc;
+  //FIL gfc;
+  ////sc_t sc1;
+  //UINT bw;
+  //FRESULT res;
+  //uint8_t this_write_size;
+  //
+  //shimmerCalib_ramLen = min(*(uint16_t *) shimmerCalib_ram, SHIMMER_CALIB_RAM_MAX - 2);
+  //
+  //if (shimmerCalib_ramLen > 0)
+  //{
+  //  strcpy((char *) cal_file_name, "/Calibration");
+  //  if ((res = f_opendir(&gdc, "/Calibration")))
+  //  {
+  //    if ((res = f_opendir(&gdc, "/calibration")))
+  //    {
+  //      if (res == FR_NO_PATH)
+  //      { //we'll have to make /Calibration first
+  //        res = f_mkdir("/Calibration");
+  //      }
+  //    }
+  //    else
+  //    {
+  //      strcpy((char *) cal_file_name, "/calibration");
+  //    }
+  //  }
+  //  strcat(cal_file_name, "/calib_");
+  //  strcat(cal_file_name, (char *) shimmerCalib_macId);
+  //
+  //  res = f_open(&gfc, cal_file_name, (FA_WRITE | FA_CREATE_ALWAYS));
+  //  if (res == FR_NO_FILE)
+  //  {
+  //    return;
+  //  }
+  //
+  //  while (gfc.fptr < shimmerCalib_ramLen + 2)
+  //  {
+  //    this_write_size = min(shimmerCalib_ramLen + 2 - gfc.fptr, SHIMMER_CALIB_COPY_SIZE);
+  //    f_write(&gfc, shimmerCalib_ram + gfc.fptr, this_write_size, &bw);
+  //  }
+  //
+  //  f_close(&gfc);
+  //  HAL_Delay(50); //50ms
+  //  set_file_timestamp(cal_file_name);
+  //}
 }
 
 /*
@@ -157,54 +157,53 @@ void ShimmerCalib_ram2File(void)
  */
 uint8_t ShimmerCalib_file2Ram()
 {
-//#if USE_FATFS
-//  char cal_file_name[48] = "";
-//  DIR gdc;
-//  FIL gfc;
-//  FILINFO calibFileInfo;
-//  UINT bw;
-//  FRESULT res;
-//  uint8_t this_read_size;
-//  uint16_t offset = 0;
-//  strcpy(cal_file_name, "/Calibration"); //"/Calibration/calibParams"
-//  if (f_opendir(&gdc, "/Calibration"))
-//  {
-//    if (f_opendir(&gdc, "/calibration"))
-//    {
-//      //CalibDefault(sensor);
-//      return 1;
-//    }
-//    else
-//    {
-//      strcpy(cal_file_name, "/calibration");
-//    }
-//  }
-//  strcat(cal_file_name, "/calib_");
-//  strcat(cal_file_name, (char *) shimmerCalib_macId);
-//
-//  res = f_open(&gfc, cal_file_name, (FA_OPEN_EXISTING | FA_READ));
-//  if (res == FR_NO_FILE)
-//  {
-//    return 1;
-//  }
-//
-//  f_stat(cal_file_name, &calibFileInfo);
-//
-//  //if file not successfully open, don't wipe the previous dump RAM
-//  shimmerCalib_ramLen = 0;
-//  memset(shimmerCalib_ram, 0, SHIMMER_CALIB_RAM_MAX);
-//
-//  while (gfc.fptr != calibFileInfo.fsize)
-//  {
-//    this_read_size = min(calibFileInfo.fsize - gfc.fptr, SHIMMER_CALIB_COPY_SIZE);
-//    res = f_read(&gfc, shimmerCalib_ram + offset, this_read_size, &bw);
-//    offset += this_read_size;
-//  }
-//  shimmerCalib_ramLen = min(*(uint16_t *) shimmerCalib_ram, SHIMMER_CALIB_RAM_MAX - 2);
-//  f_close(&gfc);
-//  HAL_Delay(50);
-//  set_file_timestamp(cal_file_name);
-//#endif
+  //#if USE_FATFS
+  //  char cal_file_name[48] = "";
+  //  DIR gdc;
+  //  FIL gfc;
+  //  FILINFO calibFileInfo;
+  //  UINT bw;
+  //  FRESULT res;
+  //  uint8_t this_read_size;
+  //  uint16_t offset = 0;
+  //  strcpy(cal_file_name, "/Calibration"); //"/Calibration/calibParams"
+  //  if (f_opendir(&gdc, "/Calibration"))
+  //  {
+  //    if (f_opendir(&gdc, "/calibration"))
+  //    {
+  //      //CalibDefault(sensor);
+  //      return 1;
+  //    }
+  //    else
+  //    {
+  //      strcpy(cal_file_name, "/calibration");
+  //    }
+  //  }
+  //  strcat(cal_file_name, "/calib_");
+  //  strcat(cal_file_name, (char *) shimmerCalib_macId);
+  //
+  //  res = f_open(&gfc, cal_file_name, (FA_OPEN_EXISTING | FA_READ));
+  //  if (res == FR_NO_FILE)
+  //  {
+  //    return 1;
+  //  }
+  //
+  //  f_stat(cal_file_name, &calibFileInfo);
+  //
+  //  //if file not successfully open, don't wipe the previous dump RAM
+  //  shimmerCalib_ramLen = 0;
+  //  memset(shimmerCalib_ram, 0, SHIMMER_CALIB_RAM_MAX);
+  //
+  //  while (gfc.fptr != calibFileInfo.fsize)
+  //  {
+  //    this_read_size = min(calibFileInfo.fsize - gfc.fptr,
+  //    SHIMMER_CALIB_COPY_SIZE); res = f_read(&gfc, shimmerCalib_ram + offset,
+  //    this_read_size, &bw); offset += this_read_size;
+  //  }
+  //  shimmerCalib_ramLen = min(*(uint16_t *) shimmerCalib_ram,
+  //  SHIMMER_CALIB_RAM_MAX - 2); f_close(&gfc); HAL_Delay(50);
+  //  set_file_timestamp(cal_file_name);
+  //#endif
 
   return 0;
 }

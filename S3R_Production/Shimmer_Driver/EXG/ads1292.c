@@ -214,7 +214,7 @@ HAL_StatusTypeDef ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *
   tx_buf[1] = size - 1;
   ADS1292_Tx1Byte(tx_buf[0]);
   ADS1292_Tx1Byte(tx_buf[1]);
-//  res = HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100); //9.48us
+  //res = HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100); //9.48us
   if (res != HAL_OK)
   {
     return res;

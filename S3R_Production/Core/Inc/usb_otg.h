@@ -22,21 +22,22 @@
 #define __USB_OTG_H__
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* USER CODE BEGIN Includes */
+  /* USER CODE BEGIN Includes */
 
 #include "usbd_def.h"
 
-/* USER CODE END Includes */
+  /* USER CODE END Includes */
 
-extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
+  extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 
-/* USER CODE BEGIN Private defines */
+  /* USER CODE BEGIN Private defines */
 
   extern USBD_HandleTypeDef hUsbDevice;
 
@@ -47,11 +48,11 @@ extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
     USB_CABLE_PLUGGED = 2U
   } USB_STATE;
 
-/* USER CODE END Private defines */
+  /* USER CODE END Private defines */
 
-void MX_USB_OTG_HS_PCD_Init(void);
+  void MX_USB_OTG_HS_PCD_Init(void);
 
-/* USER CODE BEGIN Prototypes */
+  /* USER CODE BEGIN Prototypes */
 
 #ifdef SR48_6_0
   void MX_USB_OTG_HS_PCD_Init_NoVbusSense(void);
@@ -60,11 +61,10 @@ void MX_USB_OTG_HS_PCD_Init(void);
 #endif
 
   USB_STATE usbPlugInState(void);
-/* USER CODE END Prototypes */
+  /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __USB_OTG_H__ */
-
