@@ -434,9 +434,9 @@ void Board_sd2Pc(void)
   Board_setSdPower(1);
   HAL_Delay(50);
   Board_detectN(0);
-  SD_mount(0);
+//  SD_mount(0);
 
-  mmc1DeInit();
+//  mmc1DeInit();
 }
 
 /**
@@ -454,13 +454,13 @@ void Board_sd2Arm(void)
   Board_setSdPower(1);
   HAL_Delay(50);
 
-  MX_SDMMC1_SD_Init();
-#if USE_FATFS
-  MX_FATFS_Init();
-#endif
-
-  SD_mount(0);
-  SD_mount(1);
+//  MX_SDMMC1_SD_Init();
+//#if USE_FATFS
+//  MX_FATFS_Init();
+//#endif
+//
+//  SD_mount(0);
+//  SD_mount(1);
 }
 
 /***************************************************************************/

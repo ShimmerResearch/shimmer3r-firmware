@@ -45,7 +45,7 @@
 
 static uint8_t data[9];
 
-void EXG_init(SPI_HandleTypeDef *hspi)
+uint8_t EXG_init(SPI_HandleTypeDef *hspi)
 {
   /*  ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 +
     ADS1292_DRDY_INT_CHIP2); ADS1292_init(hspi); ADS1292_resetPulse();
@@ -62,20 +62,37 @@ void EXG_init(SPI_HandleTypeDef *hspi)
 
   //ADS1292_init();
 
+  HAL_StatusTypeDef res = HAL_OK;
+
   setSpiHandle(hspi);
 
   ADS1292_resetPulse();
 
   ADS1292_chip1CsEnable(1);
-  ADS1292_readDataContinuousMode(0);
+  res = ADS1292_readDataContinuousMode(0);
+  if (res != HAL_OK)
+  {
+    ADS1292_chip1CsEnable(0);
+    return 1;
+  }
   //if (ShimBrd_areADS1292RClockLinesTied())
   //{
-  ADS1292_enableInternalReference();
+  res = ADS1292_enableInternalReference();
+  if (res != HAL_OK)
+  {
+    ADS1292_chip1CsEnable(0);
+    return 1;
+  }
   //}
 
   ADS1292_chip2CsEnable(1);
-  ADS1292_readDataContinuousMode(0);
+  res = ADS1292_readDataContinuousMode(0);
   ADS1292_chip2CsEnable(0);
+  if (res != HAL_OK)
+  {
+    return 1;
+  }
+  return 0;
 }
 
 void EXG_startSensing(void)
@@ -91,17 +108,27 @@ void EXG_startSensing(void)
 
 uint8_t EXG_self_test(void)
 {
-  uint8_t temp_buf = 0, ret_val = 0;
+  HAL_StatusTypeDef res = HAL_OK;
+  uint8_t temp_buf[13] = {0, }, ret_val = 0;
 
-  EXG_readRegs(0, ADS1292R_DEVID, 1, &temp_buf);
-  if (temp_buf != (uint8_t) 0x73)
+  res = EXG_readRegs(0, ADS1292R_DEVID, 1, &temp_buf[0]);
+  if (res != HAL_OK)
+  {
+    return 0xFF;
+  }
+  else if (temp_buf[0] != (uint8_t) 0x73)
   {
     ret_val |= 0x01;
   }
 
-  temp_buf = 0;
-  EXG_readRegs(1, ADS1292R_DEVID, 1, &temp_buf);
-  if (temp_buf != (uint8_t) 0x73)
+//  temp_buf = 0;
+  memset(temp_buf, 0, 13);
+  res = EXG_readRegs(1, ADS1292R_DEVID, 1, &temp_buf[0]);
+  if (res != HAL_OK)
+  {
+    return 0xFF;
+  }
+  else if (temp_buf[0] != (uint8_t) 0x73)
   {
     ret_val |= 0x02;
   }
@@ -226,8 +253,10 @@ void EXG_offsetCal(uint8_t chip)
   }
 }
 
-void EXG_readRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *rdata)
+HAL_StatusTypeDef EXG_readRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *rdata)
 {
+  HAL_StatusTypeDef res = HAL_OK;
+
   if (chip)
   {
     ADS1292_chip2CsEnable(1);
@@ -237,7 +266,7 @@ void EXG_readRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *rda
     ADS1292_chip1CsEnable(1);
   }
 
-  ADS1292_regRead(startaddress, size, rdata);
+  res = ADS1292_regRead(startaddress, size, rdata);
 
   if (chip)
   {
@@ -247,10 +276,13 @@ void EXG_readRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *rda
   {
     ADS1292_chip1CsEnable(0);
   }
+
+  return res;
 }
 
-void EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wdata)
+HAL_StatusTypeDef EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wdata)
 {
+  HAL_StatusTypeDef res = HAL_OK;
   if (chip)
   {
     ADS1292_chip2CsEnable(1);
@@ -260,7 +292,7 @@ void EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wd
     ADS1292_chip1CsEnable(1);
   }
 
-  ADS1292_regWrite(startaddress, size, wdata);
+  res = ADS1292_regWrite(startaddress, size, wdata);
 
   if (chip)
   {
@@ -270,6 +302,8 @@ void EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wd
   {
     ADS1292_chip1CsEnable(0);
   }
+
+  return res;
 }
 
 void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf)

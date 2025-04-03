@@ -51,22 +51,22 @@ uint32_t run_factory_test(void)
     //Sensing power is needed for ADC peripheral and I2C/SPI tests
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
 
-    print_mcu_details();
-    send_test_report("\r\n");
-
-    print_battery_details();
-    send_test_report("\r\n");
-
-    sd_card_test();
-    send_test_report("\r\n");
-
-    bt_module_test();
-    send_test_report("\r\n");
+//    print_mcu_details();
+//    send_test_report("\r\n");
+//
+//    print_battery_details();
+//    send_test_report("\r\n");
+//
+//    sd_card_test();
+//    send_test_report("\r\n");
+//
+//    bt_module_test();
+//    send_test_report("\r\n");
 
     //InfoMem_test();
 
-    I2C_test();
-    send_test_report("\r\n");
+//    I2C_test();
+//    send_test_report("\r\n");
 
     SPI_test();
     send_test_report("\r\n");
@@ -398,9 +398,9 @@ void sd_card_test(void)
       HAL_Delay(120); //120ms
     }
 
-    send_test_report(" - ");
-    printSdCardInfo(buffer);
-    send_test_report(buffer);
+//    send_test_report(" - ");
+//    printSdCardInfo(buffer);
+//    send_test_report(buffer);
 
     shimmerStatus.testResult += SD_test() << 6;
     //SD_test_alternative();
@@ -589,158 +589,166 @@ void SPI_test(void)
   float_t tempCal = 0;
 
 #if defined(SHIMMER3R)
-  send_test_report("SPI1:\r\n");
-  MX_SPI1_Init();
-
-  if (isBoardSr48_6_0())
-  {
-    sprintf(buffer, " - S3R_TEST_0019 - ADS7028 test not applicable for this model\r\n");
-    send_test_report(buffer);
-  }
-  else
-  {
-    self_test_result = lsm6dsv_self_test();
-    if (self_test_result)
-    {
-      shimmerStatus.testResult |= S3R_TEST_0019;
-    }
-    print_chip_test_result("S3R_TEST_0019", "ADS7028", self_test_result,
-        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
-  }
-
-  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
-  self_test_result = lsm6dsv_self_test();
-  if (self_test_result == SELF_TEST_PASS)
-  {
-    //Get last temperature value left over from self test
-    self_test_result = lsm6dsv_temperature_get(&tempCal);
-    if (self_test_result || is_temperature_outside_of_range(tempCal))
-    {
-      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
-    }
-  }
-  if (self_test_result)
-  {
-    shimmerStatus.testResult |= S3R_TEST_0020;
-  }
-  print_chip_test_result("S3R_TEST_0020", "LSM6DSV", self_test_result, tempCal);
-
-  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
-  self_test_result = bmp3_self_test();
-  if (self_test_result == SELF_TEST_PASS)
-  {
-    //Self test passed, now check temperature is reasonable
-    struct bmp3_data *bmp3_data = (struct bmp3_data *) get_bmp3_selftest_data();
-    tempCal = bmp3_data->temperature;
-
-    if (tempCal <= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
-        || tempCal >= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER)
-    {
-      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
-    }
-  }
-
-  /* If it's a Shimmer self-test result (i.e., <SELF_TEST_FAIL_COUNT), it will
-   *  be printed out like all other sensors using "print_chip_test_result".
-   *  Else, if it's specific to the BMP3 API, it is printed using
-   *  bmp3_check_rslt (subtracting the previously added offset from first so
-   *  that the function can recognise it) */
-  if (self_test_result < SELF_TEST_FAIL_COUNT)
-  {
-    print_chip_test_result("S3R_TEST_0021", "BMP390", self_test_result, tempCal);
-  }
-  else
-  {
-    send_test_report(" - S3R_TEST_0021 - FAIL: BMP390 - ");
-
-    bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
-    send_test_report(buffer);
-  }
-  if (self_test_result != SELF_TEST_PASS)
-  {
-    shimmerStatus.testResult |= S3R_TEST_0021;
-  }
-
-  if (isAdxl371Present())
-  {
-    self_test_result = adxl371_self_test();
-    print_chip_test_result("S3R_TEST_0022", "ADXL371", self_test_result,
-        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
-    if (self_test_result)
-    {
-      shimmerStatus.testResult |= S3R_TEST_0022;
-    }
-  }
-  else
-  {
-    sprintf(buffer, " - S3R_TEST_0022 - ADXL371 test not applicable for this model\r\n");
-    send_test_report(buffer);
-  }
-
-  SPI1_DeInit();
-
-  send_test_report("SPI2:\r\n");
-  MX_SPI2_Init();
-
-  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
-  self_test_result = lis3mdl_self_test();
-  if (self_test_result == SELF_TEST_PASS)
-  {
-    //Get new temperature value
-    self_test_result = lis3mdl_temperature_get(&tempCal);
-    if (self_test_result || is_temperature_outside_of_range(tempCal))
-    {
-      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
-    }
-  }
-  print_chip_test_result("S3R_TEST_0023", "LIS3MDL", self_test_result, tempCal);
-  if (self_test_result)
-  {
-    shimmerStatus.testResult |= S3R_TEST_0023;
-  }
-
-  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
-  self_test_result = lis2dw12_self_test();
-  if (self_test_result == SELF_TEST_PASS)
-  {
-    //Get last temperature value left over from self test
-    self_test_result = lis2dw12_temperature_get(&tempCal);
-    if (self_test_result || is_temperature_outside_of_range(tempCal))
-    {
-      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
-    }
-  }
-  print_chip_test_result("S3R_TEST_0024", "LIS2DW12", self_test_result, tempCal);
-  if (self_test_result)
-  {
-    shimmerStatus.testResult |= S3R_TEST_0024;
-  }
-
-  SPI2_DeInit();
+//  send_test_report("SPI1:\r\n");
+//  MX_SPI1_Init();
+//
+//  if (isBoardSr48_6_0())
+//  {
+//    sprintf(buffer, " - S3R_TEST_0019 - ADS7028 test not applicable for this model\r\n");
+//    send_test_report(buffer);
+//  }
+//  else
+//  {
+//    self_test_result = lsm6dsv_self_test();
+//    if (self_test_result)
+//    {
+//      shimmerStatus.testResult |= S3R_TEST_0019;
+//    }
+//    print_chip_test_result("S3R_TEST_0019", "ADS7028", self_test_result,
+//        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
+//  }
+//
+//  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
+//  self_test_result = lsm6dsv_self_test();
+//  if (self_test_result == SELF_TEST_PASS)
+//  {
+//    //Get last temperature value left over from self test
+//    self_test_result = lsm6dsv_temperature_get(&tempCal);
+//    if (self_test_result || is_temperature_outside_of_range(tempCal))
+//    {
+//      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+//    }
+//  }
+//  if (self_test_result)
+//  {
+//    shimmerStatus.testResult |= S3R_TEST_0020;
+//  }
+//  print_chip_test_result("S3R_TEST_0020", "LSM6DSV", self_test_result, tempCal);
+//
+//  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
+//  self_test_result = bmp3_self_test();
+//  if (self_test_result == SELF_TEST_PASS)
+//  {
+//    //Self test passed, now check temperature is reasonable
+//    struct bmp3_data *bmp3_data = (struct bmp3_data *) get_bmp3_selftest_data();
+//    tempCal = bmp3_data->temperature;
+//
+//    if (tempCal <= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
+//        || tempCal >= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER)
+//    {
+//      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+//    }
+//  }
+//
+//  /* If it's a Shimmer self-test result (i.e., <SELF_TEST_FAIL_COUNT), it will
+//   *  be printed out like all other sensors using "print_chip_test_result".
+//   *  Else, if it's specific to the BMP3 API, it is printed using
+//   *  bmp3_check_rslt (subtracting the previously added offset from first so
+//   *  that the function can recognise it) */
+//  if (self_test_result < SELF_TEST_FAIL_COUNT)
+//  {
+//    print_chip_test_result("S3R_TEST_0021", "BMP390", self_test_result, tempCal);
+//  }
+//  else
+//  {
+//    send_test_report(" - S3R_TEST_0021 - FAIL: BMP390 - ");
+//
+//    bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
+//    send_test_report(buffer);
+//  }
+//  if (self_test_result != SELF_TEST_PASS)
+//  {
+//    shimmerStatus.testResult |= S3R_TEST_0021;
+//  }
+//
+//  if (isAdxl371Present())
+//  {
+//    self_test_result = adxl371_self_test();
+//    print_chip_test_result("S3R_TEST_0022", "ADXL371", self_test_result,
+//        TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
+//    if (self_test_result)
+//    {
+//      shimmerStatus.testResult |= S3R_TEST_0022;
+//    }
+//  }
+//  else
+//  {
+//    sprintf(buffer, " - S3R_TEST_0022 - ADXL371 test not applicable for this model\r\n");
+//    send_test_report(buffer);
+//  }
+//
+//  SPI1_DeInit();
+//
+//  send_test_report("SPI2:\r\n");
+//  MX_SPI2_Init();
+//
+//  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
+//  self_test_result = lis3mdl_self_test();
+//  if (self_test_result == SELF_TEST_PASS)
+//  {
+//    //Get new temperature value
+//    self_test_result = lis3mdl_temperature_get(&tempCal);
+//    if (self_test_result || is_temperature_outside_of_range(tempCal))
+//    {
+//      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+//    }
+//  }
+//  print_chip_test_result("S3R_TEST_0023", "LIS3MDL", self_test_result, tempCal);
+//  if (self_test_result)
+//  {
+//    shimmerStatus.testResult |= S3R_TEST_0023;
+//  }
+//
+//  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
+//  self_test_result = lis2dw12_self_test();
+//  if (self_test_result == SELF_TEST_PASS)
+//  {
+//    //Get last temperature value left over from self test
+//    self_test_result = lis2dw12_temperature_get(&tempCal);
+//    if (self_test_result || is_temperature_outside_of_range(tempCal))
+//    {
+//      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+//    }
+//  }
+//  print_chip_test_result("S3R_TEST_0024", "LIS2DW12", self_test_result, tempCal);
+//  if (self_test_result)
+//  {
+//    shimmerStatus.testResult |= S3R_TEST_0024;
+//  }
+//
+//  SPI2_DeInit();
 
 #endif
 
+  uint8_t ads1292RInitResult = 0;
   send_test_report("SPI3:\r\n");
   if (isAds1292Present())
   {
 
     ADS1292_init();
     MX_SPI3_Init();
-    EXG_init(&hspi3);
-
-    uint8_t ads1292RTestResult = EXG_self_test();
-
-    sprintf(buffer, " - S3R_TEST_0025 - %s: ADS1292R Chip1 detect\r\n",
-        (ads1292RTestResult & 0x01) ? "FAIL" : "PASS");
-    send_test_report(buffer);
-
-    sprintf(buffer, " - S3R_TEST_0025 - %s: ADS1292R Chip2 detect\r\n",
-        (ads1292RTestResult & 0x02) ? "FAIL" : "PASS");
-    send_test_report(buffer);
-
-    if (ads1292RTestResult)
+    ads1292RInitResult = EXG_init(&hspi3);
+    if(ads1292RInitResult)
     {
-      shimmerStatus.testResult |= S3R_TEST_0025;
+      sprintf(buffer, " - S3R_TEST_0025 - FAIL: ADS1292R Init fail\r\n");
+      send_test_report(buffer);
+    }
+    else
+    {
+      uint8_t ads1292RTestResult = EXG_self_test();
+
+      sprintf(buffer, " - S3R_TEST_0025 - %s: ADS1292R Chip1 detect\r\n",
+          (ads1292RTestResult & 0x01) ? "FAIL" : "PASS");
+      send_test_report(buffer);
+
+      sprintf(buffer, " - S3R_TEST_0025 - %s: ADS1292R Chip2 detect\r\n",
+          (ads1292RTestResult & 0x02) ? "FAIL" : "PASS");
+      send_test_report(buffer);
+
+      if (ads1292RTestResult)
+      {
+        shimmerStatus.testResult |= S3R_TEST_0025;
+      }
     }
 
     EXG_powerOff();

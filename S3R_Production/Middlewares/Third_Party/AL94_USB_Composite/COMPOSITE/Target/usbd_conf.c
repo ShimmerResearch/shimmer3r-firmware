@@ -30,10 +30,7 @@
 #else
 #include "usb_otg.h"
 #endif
-
-#include "s4_taskList.h"
 /* USER CODE END Includes */
-
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -222,11 +219,6 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 #endif /* USE_HAL_PCD_REGISTER_CALLBACKS */
 {
   /* USER CODE BEGIN 3 */
-
-  USBD_LL_Resume((USBD_HandleTypeDef *)hpcd->pData);
-  //TODO only call if unplugged
-  S4_Task_set(TASK_USB_SETUP);
-  return;
 
   /* USER CODE END 3 */
   USBD_LL_Resume((USBD_HandleTypeDef *)hpcd->pData);

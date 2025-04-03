@@ -122,8 +122,10 @@ void ADS1292_enableChip2(uint8_t en)
   chip2Enabled = en;
 }
 
-void ADS1292_Tx1Byte(uint8_t data)
+HAL_StatusTypeDef ADS1292_Tx1Byte(uint8_t data)
 {
+  HAL_StatusTypeDef res = HAL_OK;
+
   ////one byte write needs 7.8us in total
   //uint8_t tx_buf[] = { data };
   //if (USE_843_75KHZ == 1)
@@ -141,11 +143,13 @@ void ADS1292_Tx1Byte(uint8_t data)
   //Board_delayMicros(8);
   HAL_Delay(1);
   uint8_t tx_buf[] = { data };
-  HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 100);
+  res = HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 100);
+  return res;
 }
 
-void ADS1292_Rx1Byte(uint8_t *buf)
+HAL_StatusTypeDef ADS1292_Rx1Byte(uint8_t *buf)
 {
+  HAL_StatusTypeDef res = HAL_OK;
   ////one byte read needs 7.8us in total
   //if (USE_843_75KHZ == 1)
   //{
@@ -159,38 +163,69 @@ void ADS1292_Rx1Byte(uint8_t *buf)
   //                                        //Board_delayMicros(8);
   //}
 
-  HAL_SPI_Receive(hspi_exg, buf, 1, 5);
+  res = HAL_SPI_Receive(hspi_exg, buf, 1, 100);
+  return res;
 }
 
-void ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata)
+HAL_StatusTypeDef ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata)
 {
+  HAL_StatusTypeDef res = HAL_OK;
+
   uint8_t tx_buf[3] = {0, }, rx_buf[3] = {0, };
   tx_buf[0] = startaddress | RREG;
   tx_buf[1] = size - 1;
 
-  //ADS1292_Tx1Byte(tx_buf[0]);
-  //ADS1292_Tx1Byte(tx_buf[1]);
-  //while (size--)
-  //{
-  //  ADS1292_Rx1Byte(rdata++);
-  //}
+//  res = ADS1292_Tx1Byte(tx_buf[0]);
+//  if (res != HAL_OK)
+//  {
+//    return res;
+//  }
+//  res = ADS1292_Tx1Byte(tx_buf[1]);
+//  if (res != HAL_OK)
+//  {
+//    return res;
+//  }
+//  while (size--)
+//  {
+//    res = ADS1292_Rx1Byte(rdata++);
+//    if (res != HAL_OK)
+//    {
+//      return res;
+//    }
+//  }
 
-  HAL_SPI_TransmitReceive(hspi_exg, tx_buf, rx_buf, size, 100);
+//  res = HAL_SPI_TransmitReceive(hspi_exg, tx_buf, rx_buf, size, 100);
 
-  *rdata = rx_buf[2];
+  res = HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100);
+  if (res != HAL_OK)
+  {
+    return res;
+  }
+  res = HAL_SPI_Receive(hspi_exg, rdata, size, 100);
+  return res;
 }
 
-void ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata)
+HAL_StatusTypeDef ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata)
 {
+  HAL_StatusTypeDef res = HAL_OK;
+
   uint8_t tx_buf[2];
   tx_buf[0] = startaddress | WREG;
   tx_buf[1] = size - 1;
-  //ADS1292_Tx1Byte(tx_buf[0]);
-  //ADS1292_Tx1Byte(tx_buf[1]);
-  HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100); //9.48us
+  ADS1292_Tx1Byte(tx_buf[0]);
+  ADS1292_Tx1Byte(tx_buf[1]);
+//  res = HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100); //9.48us
+  if (res != HAL_OK)
+  {
+    return res;
+  }
   while (size--)
   {
-    ADS1292_Tx1Byte(*(wdata++));
+    res = ADS1292_Tx1Byte(*(wdata++));
+    if (res != HAL_OK)
+    {
+      return res;
+    }
   }
 }
 
@@ -268,8 +303,9 @@ void ADS1292_chip2CsEnable(uint8_t enable)
   }
 }
 
-void ADS1292_readDataContinuousMode(uint8_t enable)
+HAL_StatusTypeDef ADS1292_readDataContinuousMode(uint8_t enable)
 {
+  HAL_StatusTypeDef res = HAL_OK;
   uint8_t tx_buf;
   if (enable)
   {
@@ -279,11 +315,13 @@ void ADS1292_readDataContinuousMode(uint8_t enable)
   {
     tx_buf = SDATAC;
   }
-  ADS1292_Tx1Byte(tx_buf);
+  res = ADS1292_Tx1Byte(tx_buf);
+  return res;
 }
 
-void ADS1292_start(uint8_t start)
+HAL_StatusTypeDef ADS1292_start(uint8_t start)
 {
+  HAL_StatusTypeDef res = HAL_OK;
   uint8_t tx_buf;
   if (start)
   {
@@ -293,29 +331,36 @@ void ADS1292_start(uint8_t start)
   {
     tx_buf = STOP;
   }
-  ADS1292_Tx1Byte(tx_buf);
+  res = ADS1292_Tx1Byte(tx_buf);
+  return res;
 }
 
-void ADS1292_resetRegs(void)
+HAL_StatusTypeDef ADS1292_resetRegs(void)
 {
+  HAL_StatusTypeDef res = HAL_OK;
   uint8_t tx_buf = RESET;
   ADS1292_Tx1Byte(tx_buf);
   Board_delayMicros(65); //wait 65us
+  return res;
 }
 
-void ADS1292_offsetCal(void)
+HAL_StatusTypeDef ADS1292_offsetCal(void)
 {
+  HAL_StatusTypeDef res = HAL_OK;
   uint8_t tx_buf = OFFSETCAL;
   ADS1292_Tx1Byte(tx_buf);
+  return res;
 }
 
-void ADS1292_enableInternalReference(void)
+HAL_StatusTypeDef ADS1292_enableInternalReference(void)
 {
+  HAL_StatusTypeDef res = HAL_OK;
   uint8_t data[] = { 0x88 };
 
   ADS1292_regWrite(ADS1x9x_REG_CONFIG2, 1, data);
 
   HAL_Delay(100);
+  return res;
 }
 
 void ADS1292_enableDrdyInterrupts(uint8_t mask)

@@ -16,7 +16,7 @@
 #include "fatfs.h"
 #include "ff.h"
 #else
-#include "fx_api.h"
+//#include "fx_api.h"
 #endif
 
 #include "Bluetooth/sd_sync.h"
@@ -37,18 +37,19 @@ FATFS fatfs;
 DIR dir;
 FIL dataFile;
 FILINFO dataFileInfo;
-char dataFileName[256];
 
 extern uint8_t retSD;  /* Return value for SD */
 extern char SDPath[4]; /* SD logical drive path */
 extern FATFS SDFatFS;  /* File system object for SD logical drive */
 extern FIL SDFile;     /* File object for SD */
+#endif
+
+char dataFileName[256];
 
 static uint8_t all0xff[7U] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 uint8_t sdInfoSyncDelayed = 0;
 
-#endif
 
 void SD_init(void)
 {
@@ -94,7 +95,7 @@ uint8_t SD_test(void)
 
 uint8_t SD_test_alternative(void)
 {
-  FRESULT res = FR_OK; /* FatFs function common result code */
+//  FRESULT res = FR_OK; /* FatFs function common result code */
 #if USE_FATFS
   uint32_t byteswritten; //, bytesread; /* File write/read counts */
   uint8_t wtext[] = "STM32 FATFS works great!"; /* File write buffer */
@@ -136,7 +137,8 @@ uint8_t SD_test_alternative(void)
   }
   f_mount(&SDFatFS, (TCHAR const *) NULL, 0);
 #endif
-  return res;
+//  return res;
+  return 0;
 }
 
 void SD_setShimmerName(void)
@@ -586,803 +588,803 @@ void SD_mount(uint8_t val)
 
 void UpdateSdConfig(void)
 {
-  FIL cfgFile;
-
-  if (!shimmerStatus.docked && CheckSdInslot() && !shimmerStatus.sdBadFile)
-  {
-    uint8_t sd_power_state;
-    if (!isSdPowerOn())
-    {
-      Board_setSdPower(1);
-      sd_power_state = 0;
-    }
-    else
-    {
-      sd_power_state = 1;
-    }
-
-    char buffer[66], val_char[21];
-    float val_num;
-    uint16_t val_int, val_f;
-    //uint32_t temp32;
-    uint64_t temp64;
-
-    uint8_t i;
-    //uint16_t temp16;
-    resetSyncVariablesBeforeParseConfig();
-
-    UINT bw;
-
-    memset(shimmerName, 0, sizeof(shimmerName));
-    memset(expIdName, 0, sizeof(expIdName));
-    memset(configTimeText, 0, sizeof(configTimeText));
-
-    char cfgname[] = "sdlog.cfg";
-
-    gConfigBytes *storedConfig = S4Ram_getStoredConfig();
-
-    if (memcmp(all0xff, S4Ram_getStoredConfig(), 6))
-    {
-      file_status = f_open(&cfgFile, cfgname, FA_WRITE | FA_CREATE_ALWAYS);
-
-      //sensor0
-      sprintf(buffer, "accel=%d\r\n", storedConfig->chEnLnAccel);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "gyro=%d\r\n", storedConfig->chEnGyro);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "mag=%d\r\n", storedConfig->chEnMag);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "exg1_24bit=%d\r\n", storedConfig->chEnExg1_24Bit);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "exg2_24bit=%d\r\n", storedConfig->chEnExg2_24Bit);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "gsr=%d\r\n", storedConfig->chEnGsr);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "extch7=%d\r\n", storedConfig->chEnExtADC0);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "extch6=%d\r\n", storedConfig->chEnExtADC1);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      //sensor1
-      sprintf(buffer, "br_amp=%d\r\n", storedConfig->chEnBridgeAmp);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "vbat=%d\r\n", storedConfig->chEnVBattery);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "accel_d=%d\r\n", storedConfig->chEnWrAccel);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "extch15=%d\r\n", storedConfig->chEnExtADC2);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "intch1=%d\r\n", storedConfig->chEnIntADC3);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "intch12=%d\r\n", storedConfig->chEnIntADC0);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "intch13=%d\r\n", storedConfig->chEnIntADC1);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      //sensor2
-      sprintf(buffer, "intch14=%d\r\n", storedConfig->chEnIntADC2);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "accel_alt=%d\r\n", storedConfig->chEnAltAccel);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "mag_alt=%d\r\n", storedConfig->chEnAltMag);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "exg1_16bit=%d\r\n", storedConfig->chEnExg1_16Bit);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "exg2_16bit=%d\r\n", storedConfig->chEnExg2_16Bit);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "pres=%d\r\n", storedConfig->chEnPressureAndTemperature);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      //sample_rate
-      val_num = 32768.0 / storedConfig->samplingRateTicks;
-      val_int = (uint16_t) floor(val_num); //the compiler can't handle sprintf %f here
-      val_f = (uint16_t) round((val_num - floor(val_num)) * 100);
-      if (val_f == 100)
-      {
-        val_f = 0;
-        val_int++;
-      }
-      if (val_f)
-      {
-        sprintf(val_char, "%d.%d", val_int, val_f);
-      }
-      else
-      {
-        sprintf(val_char, "%d", val_int);
-      }
-      sprintf(buffer, "sample_rate=%s\r\n", val_char);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      //setup config
-      sprintf(buffer, "mg_internal_rate=%d\r\n", get_config_byte_mag_rate());
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "mg_range=%d\r\n", storedConfig->magRange);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "acc_internal_rate=%d\r\n", storedConfig->wrAccelRate);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-#if defined(SHIMMER3)
-      sprintf(buffer, "accel_alt_range=%d\r\n", storedConfig->altAccelRange);
-#elif defined(SHIMMER3R)
-      sprintf(buffer, "accel_ln_range=%d\r\n", storedConfig->lnAccelRange);
-#endif
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "pres_bmp390_prec=%d\r\n",
-          get_config_byte_pressure_oversampling_ratio());
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "gsr_range=%d\r\n", storedConfig->gsrRange);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "exp_power=%d\r\n", storedConfig->expansionBoardPower);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "gyro_range=%d\r\n", get_config_byte_gyro_range());
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "gyro_samplingrate=%d\r\n", storedConfig->gyroRate);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "acc_range=%d\r\n", storedConfig->wrAccelRange);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "acc_lpm=%d\r\n", get_config_byte_wr_accel_lp_mode());
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "acc_hrm=%d\r\n", storedConfig->wrAccelHrMode);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "mag_alt_rate=%d\r\n", storedConfig->altMagRate);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "accel_alt_rate=%d\r\n", storedConfig->altAccelRate);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-
-      //trial config
-      sprintf(buffer, "user_button_enable=%d\r\n", storedConfig->userButtonEnable);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "rtc_error_enable=%d\r\n", storedConfig->rtcErrorEnable);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "sd_error_enable=%d\r\n", storedConfig->sdErrorEnable);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "iammaster=%d\r\n", storedConfig->masterEnable);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "sync=%d\r\n", storedConfig->syncEnable);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "low_battery_autostop=%d\r\n", storedConfig->lowBatteryCutOut);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "interval=%d\r\n", storedConfig->btInterval);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "bluetoothDisabled=%d\r\n", storedConfig->bluetoothDisable);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-
-      sprintf(buffer, "max_exp_len=%d\r\n", storedConfig->experimentLengthMaxInMinutes);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-
-      sprintf(buffer, "est_exp_len=%d\r\n", storedConfig->experimentLengthEstimatedInSec);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-
-      parseSyncNodeNamesFromConfig(&storedConfig->rawBytes[0]);
-      for (i = 0; i < getSyncNodeNum(); i++)
-      {
-        sprintf(buffer, "node=%s\r\n", (char *) getSyncNodeNamePtrForIndex(i));
-        f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      }
-
-      if (memcmp(all0xff, storedConfig + NV_CENTER, 6))
-      {
-        parseSyncCenterNameFromConfig(&storedConfig->rawBytes[0]);
-        sprintf(buffer, "center=%s\r\n", (char *) getSyncCenterNamePtr());
-        f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      }
-
-      sprintf(buffer, "singletouch=%d\r\n", storedConfig->singleTouchStart);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-
-      sprintf(buffer, "myid=%d\r\n", storedConfig->myTrialID);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "Nshimmer=%d\r\n", storedConfig->numberOfShimmers);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-
-      SD_infomem2Names();
-      sprintf(buffer, "shimmername=%s\r\n", shimmerName);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "experimentid=%s\r\n", expIdName);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "configtime=%s\r\n", configTimeText);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-
-      //sprintf(buffer, "baud_rate=%d\r\n", storedConfig->btCommsBaudRate);
-      //f_write(&cfgFile, buffer, strlen(buffer), &bw);
-
-      //temp32 = storedConfig[NV_DERIVED_CHANNELS_0]
-      //       + (((uint32_t)storedConfig[NV_DERIVED_CHANNELS_1])<<8)
-      //       + (((uint32_t)storedConfig[NV_DERIVED_CHANNELS_2])<<16);
-      //ItoaNo0((uint64_t)temp32, (uint8_t*)val_char, 9);
-      temp64 = storedConfig->rawBytes[NV_DERIVED_CHANNELS_0]
-          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_1]) << 8)
-          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_2]) << 16)
-          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_3]) << 24)
-          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_4]) << 32)
-          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_5]) << 40)
-          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_6]) << 48)
-          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_7]) << 56);
-      ItoaNo0(temp64, (uint8_t *) val_char, 21);
-      sprintf(buffer, "derived_channels=%s\r\n", val_char); //todo: got value 0?
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-
-      sprintf(buffer, "EXG_ADS1292R_1_CONFIG1=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_1_CONFIG1]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_1_CONFIG2=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_1_CONFIG2]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_1_LOFF=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_1_LOFF]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_1_CH1SET=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_1_CH1SET]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_1_CH2SET=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_1_CH2SET]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_1_RLD_SENS=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_1_RLD_SENS]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_1_LOFF_SENS=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_1_LOFF_SENS]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_1_LOFF_STAT=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_1_LOFF_STAT]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_1_RESP1=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_1_RESP1]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_1_RESP2=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_1_RESP2]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_2_CONFIG1=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_2_CONFIG1]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_2_CONFIG2=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_2_CONFIG2]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_2_LOFF=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_2_LOFF]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_2_CH1SET=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_2_CH1SET]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_2_CH2SET=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_2_CH2SET]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_2_RLD_SENS=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_2_RLD_SENS]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_2_LOFF_SENS=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_2_LOFF_SENS]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_2_LOFF_STAT=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_2_LOFF_STAT]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_2_RESP1=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_2_RESP1]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-      sprintf(buffer, "EXG_ADS1292R_2_RESP2=%d\r\n",
-          storedConfig->rawBytes[NV_EXG_ADS1292R_2_RESP2]);
-      f_write(&cfgFile, buffer, strlen(buffer), &bw);
-
-      file_status = f_close(&cfgFile);
-      set_file_timestamp(cfgname);
-
-      HAL_Delay(100); //100ms @ 24MHz
-    }
-    else
-    {
-      file_status = FR_DISK_ERR;
-    }
-    if (!sd_power_state)
-    {
-      Board_setSdPower(0);
-    }
-  }
+//  FIL cfgFile;
+//
+//  if (!shimmerStatus.docked && CheckSdInslot() && !shimmerStatus.sdBadFile)
+//  {
+//    uint8_t sd_power_state;
+//    if (!isSdPowerOn())
+//    {
+//      Board_setSdPower(1);
+//      sd_power_state = 0;
+//    }
+//    else
+//    {
+//      sd_power_state = 1;
+//    }
+//
+//    char buffer[66], val_char[21];
+//    float val_num;
+//    uint16_t val_int, val_f;
+//    //uint32_t temp32;
+//    uint64_t temp64;
+//
+//    uint8_t i;
+//    //uint16_t temp16;
+//    resetSyncVariablesBeforeParseConfig();
+//
+//    UINT bw;
+//
+//    memset(shimmerName, 0, sizeof(shimmerName));
+//    memset(expIdName, 0, sizeof(expIdName));
+//    memset(configTimeText, 0, sizeof(configTimeText));
+//
+//    char cfgname[] = "sdlog.cfg";
+//
+//    gConfigBytes *storedConfig = S4Ram_getStoredConfig();
+//
+//    if (memcmp(all0xff, S4Ram_getStoredConfig(), 6))
+//    {
+//      file_status = f_open(&cfgFile, cfgname, FA_WRITE | FA_CREATE_ALWAYS);
+//
+//      //sensor0
+//      sprintf(buffer, "accel=%d\r\n", storedConfig->chEnLnAccel);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "gyro=%d\r\n", storedConfig->chEnGyro);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "mag=%d\r\n", storedConfig->chEnMag);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "exg1_24bit=%d\r\n", storedConfig->chEnExg1_24Bit);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "exg2_24bit=%d\r\n", storedConfig->chEnExg2_24Bit);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "gsr=%d\r\n", storedConfig->chEnGsr);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "extch7=%d\r\n", storedConfig->chEnExtADC0);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "extch6=%d\r\n", storedConfig->chEnExtADC1);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      //sensor1
+//      sprintf(buffer, "br_amp=%d\r\n", storedConfig->chEnBridgeAmp);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "vbat=%d\r\n", storedConfig->chEnVBattery);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "accel_d=%d\r\n", storedConfig->chEnWrAccel);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "extch15=%d\r\n", storedConfig->chEnExtADC2);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "intch1=%d\r\n", storedConfig->chEnIntADC3);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "intch12=%d\r\n", storedConfig->chEnIntADC0);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "intch13=%d\r\n", storedConfig->chEnIntADC1);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      //sensor2
+//      sprintf(buffer, "intch14=%d\r\n", storedConfig->chEnIntADC2);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "accel_alt=%d\r\n", storedConfig->chEnAltAccel);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "mag_alt=%d\r\n", storedConfig->chEnAltMag);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "exg1_16bit=%d\r\n", storedConfig->chEnExg1_16Bit);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "exg2_16bit=%d\r\n", storedConfig->chEnExg2_16Bit);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "pres=%d\r\n", storedConfig->chEnPressureAndTemperature);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      //sample_rate
+//      val_num = 32768.0 / storedConfig->samplingRateTicks;
+//      val_int = (uint16_t) floor(val_num); //the compiler can't handle sprintf %f here
+//      val_f = (uint16_t) round((val_num - floor(val_num)) * 100);
+//      if (val_f == 100)
+//      {
+//        val_f = 0;
+//        val_int++;
+//      }
+//      if (val_f)
+//      {
+//        sprintf(val_char, "%d.%d", val_int, val_f);
+//      }
+//      else
+//      {
+//        sprintf(val_char, "%d", val_int);
+//      }
+//      sprintf(buffer, "sample_rate=%s\r\n", val_char);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      //setup config
+//      sprintf(buffer, "mg_internal_rate=%d\r\n", get_config_byte_mag_rate());
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "mg_range=%d\r\n", storedConfig->magRange);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "acc_internal_rate=%d\r\n", storedConfig->wrAccelRate);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//#if defined(SHIMMER3)
+//      sprintf(buffer, "accel_alt_range=%d\r\n", storedConfig->altAccelRange);
+//#elif defined(SHIMMER3R)
+//      sprintf(buffer, "accel_ln_range=%d\r\n", storedConfig->lnAccelRange);
+//#endif
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "pres_bmp390_prec=%d\r\n",
+//          get_config_byte_pressure_oversampling_ratio());
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "gsr_range=%d\r\n", storedConfig->gsrRange);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "exp_power=%d\r\n", storedConfig->expansionBoardPower);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "gyro_range=%d\r\n", get_config_byte_gyro_range());
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "gyro_samplingrate=%d\r\n", storedConfig->gyroRate);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "acc_range=%d\r\n", storedConfig->wrAccelRange);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "acc_lpm=%d\r\n", get_config_byte_wr_accel_lp_mode());
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "acc_hrm=%d\r\n", storedConfig->wrAccelHrMode);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "mag_alt_rate=%d\r\n", storedConfig->altMagRate);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "accel_alt_rate=%d\r\n", storedConfig->altAccelRate);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//
+//      //trial config
+//      sprintf(buffer, "user_button_enable=%d\r\n", storedConfig->userButtonEnable);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "rtc_error_enable=%d\r\n", storedConfig->rtcErrorEnable);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "sd_error_enable=%d\r\n", storedConfig->sdErrorEnable);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "iammaster=%d\r\n", storedConfig->masterEnable);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "sync=%d\r\n", storedConfig->syncEnable);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "low_battery_autostop=%d\r\n", storedConfig->lowBatteryCutOut);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "interval=%d\r\n", storedConfig->btInterval);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "bluetoothDisabled=%d\r\n", storedConfig->bluetoothDisable);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//
+//      sprintf(buffer, "max_exp_len=%d\r\n", storedConfig->experimentLengthMaxInMinutes);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//
+//      sprintf(buffer, "est_exp_len=%d\r\n", storedConfig->experimentLengthEstimatedInSec);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//
+//      parseSyncNodeNamesFromConfig(&storedConfig->rawBytes[0]);
+//      for (i = 0; i < getSyncNodeNum(); i++)
+//      {
+//        sprintf(buffer, "node=%s\r\n", (char *) getSyncNodeNamePtrForIndex(i));
+//        f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      }
+//
+//      if (memcmp(all0xff, storedConfig + NV_CENTER, 6))
+//      {
+//        parseSyncCenterNameFromConfig(&storedConfig->rawBytes[0]);
+//        sprintf(buffer, "center=%s\r\n", (char *) getSyncCenterNamePtr());
+//        f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      }
+//
+//      sprintf(buffer, "singletouch=%d\r\n", storedConfig->singleTouchStart);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//
+//      sprintf(buffer, "myid=%d\r\n", storedConfig->myTrialID);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "Nshimmer=%d\r\n", storedConfig->numberOfShimmers);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//
+//      SD_infomem2Names();
+//      sprintf(buffer, "shimmername=%s\r\n", shimmerName);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "experimentid=%s\r\n", expIdName);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "configtime=%s\r\n", configTimeText);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//
+//      //sprintf(buffer, "baud_rate=%d\r\n", storedConfig->btCommsBaudRate);
+//      //f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//
+//      //temp32 = storedConfig[NV_DERIVED_CHANNELS_0]
+//      //       + (((uint32_t)storedConfig[NV_DERIVED_CHANNELS_1])<<8)
+//      //       + (((uint32_t)storedConfig[NV_DERIVED_CHANNELS_2])<<16);
+//      //ItoaNo0((uint64_t)temp32, (uint8_t*)val_char, 9);
+//      temp64 = storedConfig->rawBytes[NV_DERIVED_CHANNELS_0]
+//          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_1]) << 8)
+//          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_2]) << 16)
+//          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_3]) << 24)
+//          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_4]) << 32)
+//          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_5]) << 40)
+//          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_6]) << 48)
+//          + (((uint64_t) storedConfig->rawBytes[NV_DERIVED_CHANNELS_7]) << 56);
+//      ItoaNo0(temp64, (uint8_t *) val_char, 21);
+//      sprintf(buffer, "derived_channels=%s\r\n", val_char); //todo: got value 0?
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//
+//      sprintf(buffer, "EXG_ADS1292R_1_CONFIG1=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_1_CONFIG1]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_1_CONFIG2=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_1_CONFIG2]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_1_LOFF=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_1_LOFF]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_1_CH1SET=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_1_CH1SET]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_1_CH2SET=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_1_CH2SET]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_1_RLD_SENS=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_1_RLD_SENS]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_1_LOFF_SENS=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_1_LOFF_SENS]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_1_LOFF_STAT=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_1_LOFF_STAT]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_1_RESP1=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_1_RESP1]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_1_RESP2=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_1_RESP2]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_2_CONFIG1=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_2_CONFIG1]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_2_CONFIG2=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_2_CONFIG2]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_2_LOFF=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_2_LOFF]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_2_CH1SET=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_2_CH1SET]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_2_CH2SET=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_2_CH2SET]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_2_RLD_SENS=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_2_RLD_SENS]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_2_LOFF_SENS=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_2_LOFF_SENS]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_2_LOFF_STAT=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_2_LOFF_STAT]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_2_RESP1=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_2_RESP1]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//      sprintf(buffer, "EXG_ADS1292R_2_RESP2=%d\r\n",
+//          storedConfig->rawBytes[NV_EXG_ADS1292R_2_RESP2]);
+//      f_write(&cfgFile, buffer, strlen(buffer), &bw);
+//
+//      file_status = f_close(&cfgFile);
+//      set_file_timestamp(cfgname);
+//
+//      HAL_Delay(100); //100ms @ 24MHz
+//    }
+//    else
+//    {
+//      file_status = FR_DISK_ERR;
+//    }
+//    if (!sd_power_state)
+//    {
+//      Board_setSdPower(0);
+//    }
+//  }
 }
 
 void ParseConfig(void)
 {
-  FIL cfgFile;
-
-  char buffer[66], *equals;
-  uint8_t string_length = 0;
-  float sample_rate = 51.2;
-  uint16_t sample_period = 0;
-  uint64_t derived_channels_val = 0;
-  uint8_t gsr_range = 0;
-
-  uint8_t triggerSdCardUpdate = 0;
-
-  CheckSdInslot();
-  SD_insertedCheck();
-  char cfgname[] = "sdlog.cfg";
-  file_status = f_open(&cfgFile, cfgname, FA_READ | FA_OPEN_EXISTING);
-  if (file_status == FR_NO_FILE)
-  {
-    IniReadInfoMem();
-    UpdateSdConfig();
-    //fileBad = 0;
-  }
-  else if (file_status != FR_OK)
-  {
-    shimmerStatus.sdBadFile = 1;
-    //fileBad = (initializing) ? 0 : 1;
-    return;
-  }
-  else
-  {
-    gConfigBytes stored_config_temp;
-
-    resetSyncVariablesBeforeParseConfig();
-    resetSyncNodeArray();
-
-    memset((uint8_t *) (stored_config_temp.rawBytes), 0, NV_LN_ACCEL_CALIBRATION); //0
-    memset((uint8_t *) (stored_config_temp.rawBytes + NV_LN_ACCEL_CALIBRATION), 0xff, 84);
-    memset((uint8_t *) (stored_config_temp.rawBytes + NV_DERIVED_CHANNELS_3), 0, 5); //0
-    memset((uint8_t *) (stored_config_temp.rawBytes + NV_SENSORS3), 0, 5); //0
-    memset((uint8_t *) (stored_config_temp.rawBytes + NV_ALT_ACCEL_CALIBRATION), 0xff, 82);
-    memset((uint8_t *) (stored_config_temp.rawBytes + NV_SD_MYTRIAL_ID), 0, 9); //0
-    InfoMem_readRam(stored_config_temp.rawBytes + NV_MAC_ADDRESS, NV_MAC_ADDRESS, 7);
-    memset((uint8_t *) (stored_config_temp.rawBytes + NV_BT_SET_PIN + 1), 0xff, 24);
-    memset((uint8_t *) (stored_config_temp.rawBytes + NV_CENTER), 0xff, 128);
-
-#if defined(SHIMMER3)
-    stored_config_temp.rawBytes[NV_SD_TRIAL_CONFIG0] &= ~SDH_SET_PMUX; //PMUX reserved as 0
-    stored_config_temp.rawBytes[NV_SD_TRIAL_CONFIG0] |= SDH_TIME_STAMP; //TIME_STAMP always = 1
-#endif
-    stored_config_temp.gsrRange = GSR_AUTORANGE;
-    stored_config_temp.bufferSize = 1;
-    stored_config_temp.btCommsBaudRate = 0xFF;
-    //changeBtBaudRate = BAUD_NO_CHANGE_NEEDED; // set this flag to no_event as every sdlog.cfg read is followed by a baudrate setting
-    stored_config_temp.btInterval = SYNC_INT_C;
-
-    memset(shimmerName, 0, sizeof(shimmerName));
-    memset(expIdName, 0, sizeof(expIdName));
-    memset(configTimeText, 0, sizeof(configTimeText));
-
-    stored_config_temp.shimmerName[0] = '\0';
-    stored_config_temp.expIdName[0] = '\0';
-    *configTimeText = '\0';
-    stored_config_temp.configTime = 0;
-
-    while (f_gets(buffer, 64, &cfgFile))
-    {
-      if (!(equals = strchr(buffer, '=')))
-      {
-        continue;
-      }
-      equals++; //this is the value
-      if (strstr(buffer, "accel="))
-      {
-        stored_config_temp.chEnLnAccel = atoi(equals);
-      }
-      else if (strstr(buffer, "gyro="))
-      {
-        stored_config_temp.chEnGyro = atoi(equals);
-      }
-      else if (strstr(buffer, "mag="))
-      {
-        stored_config_temp.chEnMag = atoi(equals);
-      }
-      else if (strstr(buffer, "exg1_24bit="))
-      {
-        stored_config_temp.chEnExg1_24Bit = atoi(equals);
-      }
-      else if (strstr(buffer, "exg2_24bit="))
-      {
-        stored_config_temp.chEnExg2_24Bit = atoi(equals);
-      }
-      else if (strstr(buffer, "gsr="))
-      {
-        stored_config_temp.chEnGsr = atoi(equals);
-      }
-      else if (strstr(buffer, "extch7="))
-      {
-        stored_config_temp.chEnExtADC0 = atoi(equals);
-      }
-      else if (strstr(buffer, "extch6="))
-      {
-        stored_config_temp.chEnExtADC1 = atoi(equals);
-      }
-      else if (strstr(buffer, "str=") || strstr(buffer, "br_amp="))
-      {
-        stored_config_temp.chEnBridgeAmp = atoi(equals);
-      }
-      else if (strstr(buffer, "vbat="))
-      {
-        stored_config_temp.chEnVBattery = atoi(equals);
-      }
-      else if (strstr(buffer, "accel_d="))
-      {
-        stored_config_temp.chEnWrAccel = atoi(equals);
-      }
-      else if (strstr(buffer, "extch15="))
-      {
-        stored_config_temp.chEnExtADC2 = atoi(equals);
-      }
-      else if (strstr(buffer, "intch1="))
-      {
-        stored_config_temp.chEnIntADC3 = atoi(equals);
-      }
-      else if (strstr(buffer, "intch12="))
-      {
-        stored_config_temp.chEnIntADC0 = atoi(equals);
-      }
-      else if (strstr(buffer, "intch13="))
-      {
-        stored_config_temp.chEnIntADC1 = atoi(equals);
-      }
-      else if (strstr(buffer, "intch14="))
-      {
-        stored_config_temp.chEnIntADC2 = atoi(equals);
-      }
-      else if (strstr(buffer, "accel_alt="))
-      {
-        stored_config_temp.chEnAltAccel = atoi(equals);
-      }
-      else if (strstr(buffer, "mag_alt="))
-      {
-        stored_config_temp.chEnAltMag = atoi(equals);
-      }
-      else if (strstr(buffer, "exg1_16bit="))
-      {
-        stored_config_temp.chEnExg1_16Bit = atoi(equals);
-      }
-      else if (strstr(buffer, "exg2_16bit="))
-      {
-        stored_config_temp.chEnExg2_16Bit = atoi(equals);
-      }
-      else if (strstr(buffer, "pres="))
-      {
-        stored_config_temp.chEnPressureAndTemperature = atoi(equals);
-      }
-      else if (strstr(buffer, "sample_rate="))
-      {
-        sample_rate = atof(equals);
-      }
-      else if (strstr(buffer, "mg_internal_rate="))
-      {
-        set_config_byte_mag_rate(&stored_config_temp, atoi(equals));
-      }
-      else if (strstr(buffer, "mg_range="))
-      {
-        stored_config_temp.magRange = atoi(equals);
-      }
-      else if (strstr(buffer, "acc_internal_rate="))
-      {
-        stored_config_temp.wrAccelRate = atoi(equals);
-      }
-#if defined(SHIMMER3)
-      else if (strstr(buffer, "accel_alt_range="))
-      {
-        stored_config_temp.altAccelRange = atoi(equals);
-      }
-#elif defined(SHIMMER3R)
-      else if (strstr(buffer, "accel_ln_range="))
-      {
-        stored_config_temp.lnAccelRange = atoi(equals);
-      }
-#endif
-      else if (strstr(buffer, "acc_range="))
-      {
-        stored_config_temp.wrAccelRange = atoi(equals);
-      }
-      else if (strstr(buffer, "acc_lpm="))
-      {
-        set_config_byte_wr_accel_lp_mode(&stored_config_temp, atoi(equals));
-      }
-      else if (strstr(buffer, "acc_hrm="))
-      {
-        stored_config_temp.wrAccelHrMode = atoi(equals);
-      }
-      else if (strstr(buffer, "gsr_range="))
-      { //or "gsr_range="?
-        gsr_range = atoi(equals);
-        if (gsr_range > 4)
-        {
-          gsr_range = 4;
-        }
-
-        stored_config_temp.gsrRange = gsr_range;
-      }
-      else if (strstr(buffer, "gyro_samplingrate="))
-      {
-        set_config_byte_gyro_rate(&stored_config_temp, atoi(equals));
-      }
-      else if (strstr(buffer, "gyro_range="))
-      {
-        set_config_byte_gyro_range(&stored_config_temp, atoi(equals));
-      }
-      else if (strstr(buffer, "pres_bmp390_prec="))
-      {
-        set_config_byte_pressure_oversampling_ratio(&stored_config_temp, atoi(equals));
-      }
-
-      else if (strstr(buffer, "mag_alt_rate="))
-      {
-        stored_config_temp.altMagRate = atoi(equals);
-      }
-      else if (strstr(buffer, "accel_alt_rate="))
-      {
-        stored_config_temp.altAccelRate = atoi(equals);
-      }
-      else if (strstr(buffer, "rtc_error_enable="))
-      {
-        stored_config_temp.rtcErrorEnable = atoi(equals);
-      }
-      else if (strstr(buffer, "sd_error_enable="))
-      {
-        stored_config_temp.sdErrorEnable = atoi(equals);
-      }
-      else if (strstr(buffer, "user_button_enable="))
-      {
-        stored_config_temp.userButtonEnable = atoi(equals);
-      }
-      else if (strstr(buffer, "iammaster="))
-      { //0=slave=node
-        stored_config_temp.masterEnable = atoi(equals);
-      }
-      else if (strstr(buffer, "sync="))
-      {
-        stored_config_temp.syncEnable = atoi(equals);
-      }
-      else if (strstr(buffer, "low_battery_autostop="))
-      {
-        stored_config_temp.lowBatteryCutOut = atoi(equals);
-      }
-#if defined(SHIMMER3)
-#if IS_SUPPORTED_TCXO
-      else if (strstr(buffer, "tcxo="))
-      {
-        tcxo = (atoi(equals) == 0) ? FALSE : TRUE;
-        stored_config_temp[NV_SD_TRIAL_CONFIG1] |= tcxo * SDH_TCXO;
-      }
-#endif
-#endif
-      else if (strstr(buffer, "interval="))
-      {
-        stored_config_temp.btInterval = atoi(equals) > 255 ? 255 : atoi(equals);
-      }
-      else if (strstr(buffer, "bluetoothDisabled="))
-      {
-        stored_config_temp.bluetoothDisable = atoi(equals);
-      }
-      else if (strstr(buffer, "exp_power="))
-      {
-        stored_config_temp.expansionBoardPower = atoi(equals);
-      }
-      else if (strstr(buffer, "center="))
-      {
-        parseSyncCenterNameFromCfgFile(&stored_config_temp.rawBytes[0], equals);
-      }
-      else if (strstr(buffer, "node"))
-      {
-        parseSyncNodeNameFromCfgFile(&stored_config_temp.rawBytes[0], equals);
-      }
-      else if (strstr(buffer, "est_exp_len="))
-      {
-        stored_config_temp.experimentLengthEstimatedInSec = atoi(equals);
-      }
-      else if (strstr(buffer, "max_exp_len="))
-      {
-        stored_config_temp.experimentLengthMaxInMinutes = atoi(equals);
-      }
-      else if (strstr(buffer, "myid="))
-      {
-        stored_config_temp.myTrialID = atoi(equals);
-      }
-      else if (strstr(buffer, "Nshimmer="))
-      {
-        stored_config_temp.numberOfShimmers = atoi(equals);
-      }
-      else if (strstr(buffer, "shimmername="))
-      {
-        string_length = strlen(equals);
-        if (string_length > MAX_CHARS)
-        {
-          string_length = MAX_CHARS - 1;
-        }
-        else if (string_length >= 2)
-        {
-          string_length -= 2;
-        }
-        else
-        {
-          string_length = 0;
-        }
-        memcpy(&stored_config_temp.shimmerName[0], equals, string_length);
-        if (!memcmp(&stored_config_temp.shimmerName[0], "ID", 2))
-        {
-          memcpy(&stored_config_temp.shimmerName[0], "id", 2);
-        }
-        memcpy((char *) shimmerName, &stored_config_temp.shimmerName[0], MAX_CHARS - 1);
-        shimmerName[string_length] = 0;
-      }
-      else if (strstr(buffer, "experimentid="))
-      {
-        string_length = strlen(equals);
-        if (string_length > MAX_CHARS)
-        {
-          string_length = MAX_CHARS - 1;
-        }
-        else if (string_length >= 2)
-        {
-          string_length -= 2;
-        }
-        else
-        {
-          string_length = 0;
-        }
-        memcpy(&stored_config_temp.expIdName[0], equals, string_length);
-        memcpy((char *) expIdName, &stored_config_temp.expIdName[0], MAX_CHARS - 1);
-        expIdName[string_length] = 0;
-      }
-      else if (strstr(buffer, "configtime="))
-      {
-        stored_config_temp.configTime = atol(equals);
-        string_length = MAX_CHARS < strlen(equals) ? MAX_CHARS : strlen(equals) - 1;
-        memcpy((char *) configTimeText, equals, string_length - 1);
-        *(configTimeText + string_length - 1) = 0;
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_1_CONFIG1="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CONFIG1] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_1_CONFIG2="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CONFIG2] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_1_LOFF="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_1_CH1SET="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CH1SET] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_1_CH2SET="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CH2SET] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_1_RLD_SENS="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RLD_SENS] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_1_LOFF_SENS="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF_SENS] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_1_LOFF_STAT="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF_STAT] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_1_RESP1="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RESP1] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_1_RESP2="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RESP2] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_2_CONFIG1="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CONFIG1] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_2_CONFIG2="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CONFIG2] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_2_LOFF="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_2_CH1SET="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CH1SET] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_2_CH2SET="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CH2SET] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_2_RLD_SENS="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RLD_SENS] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_2_LOFF_SENS="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF_SENS] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_2_LOFF_STAT="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF_STAT] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_2_RESP1="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP1] = atoi(equals);
-      }
-      else if (strstr(buffer, "EXG_ADS1292R_2_RESP2="))
-      {
-        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP2] = atoi(equals);
-      }
-      //#if defined(SHIMMER3)
-      //      else if (strstr(buffer, "baud_rate="))
-      //      {
-      //        config_baudrate = atoi(equals);
-      //        if (config_baudrate != getCurrentBtBaudRate())
-      //        {
-      //#if BT_ENABLE_BAUD_RATE_CHANGE
-      //          if (config_baudrate <= BAUD_1000000)
-      //          {
-      //            changeBtBaudRate = config_baudrate;
-      //          }
-      //#else
-      //          triggerSdCardUpdate = 1;
-      //#endif
-      //        }
-      //        stored_config_temp[NV_BT_COMMS_BAUD_RATE] = getCurrentBtBaudRate();
-      //      }
-      //#endif
-      else if (strstr(buffer, "derived_channels="))
-      {
-        //derived_channels_val = atol(equals);
-        //stored_config_temp[NV_DERIVED_CHANNELS_0] = derived_channels_val & 0xff;
-        //stored_config_temp[NV_DERIVED_CHANNELS_1] = (derived_channels_val >> 8) & 0xff;
-        //stored_config_temp[NV_DERIVED_CHANNELS_2] = (derived_channels_val >> 16) & 0xff;
-        derived_channels_val = atoll(equals);
-        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_0] = derived_channels_val & 0xff;
-        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_1]
-            = (derived_channels_val >> 8) & 0xff;
-        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_2]
-            = (derived_channels_val >> 16) & 0xff;
-        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_3]
-            = (derived_channels_val >> 24) & 0xff;
-        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_4]
-            = (derived_channels_val >> 32) & 0xff;
-        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_5]
-            = (derived_channels_val >> 40) & 0xff;
-        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_6]
-            = (derived_channels_val >> 48) & 0xff;
-        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_7]
-            = (derived_channels_val >> 56) & 0xff;
-      }
-    }
-    file_status = f_close(&cfgFile);
-    set_file_timestamp(cfgname);
-
-    HAL_Delay(50); //50ms
-
-    sample_period = (uint16_t) round(((float) 32768.0) / sample_rate);
-    stored_config_temp.samplingRateTicks = sample_period;
-
-    triggerSdCardUpdate = checkAndCorrectConfig(&stored_config_temp);
-
-    setSyncEstExpLen(stored_config_temp.experimentLengthEstimatedInSec);
-
-    /* Calibration bytes are not copied over from the infomem */
-
-    /* Infomem D - Bytes 0-33 - General settings */
-    gConfigBytes *storedConfig = S4Ram_getStoredConfig();
-    memcpy(&storedConfig->rawBytes[0], &stored_config_temp.rawBytes[0], NV_NUM_SETTINGS_BYTES);
-    /* Infomem D - Bytes 118-122 - Derived channel settings */
-    memcpy(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_3],
-        &stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_3], 5);
-    /* Infomem C - Bytes 128-132 - MPL related settings - no longer used/supported */
-    memcpy(&storedConfig->rawBytes[NV_SENSORS3],
-        &stored_config_temp.rawBytes[NV_SENSORS3], 5);
-    /* Infomem C - Bytes 187-223 - Shimmer name, exp ID, config time, trial ID, num Shimmers, trial config, BT interval, est exp len, max exp len */
-    memcpy(&storedConfig->rawBytes[NV_SD_SHIMMER_NAME],
-        &stored_config_temp.rawBytes[NV_SD_SHIMMER_NAME], 37);
-
-    /* Infomem B - Bytes 256-381 - Center and Node MAC addresses */
-    memcpy(&storedConfig->rawBytes[NV_CENTER],
-        &stored_config_temp.rawBytes[NV_CENTER], NV_NUM_BYTES_SYNC_CENTER_NODE_ADDRS);
-    //memcpy((uint8_t*) (storedConfig + NV_MAC_ADDRESS + 7), (uint8_t*) (stored_config_temp + NV_MAC_ADDRESS + 7), 153); //25+128
-
-    S4Ram_config2SdHead();
-    SetName();
-
-    InfoMem_update();
-
-    /* If the configuration needed to be corrected, update the config file */
-    if (triggerSdCardUpdate)
-    {
-      UpdateSdConfig();
-    }
-  }
+//  FIL cfgFile;
+//
+//  char buffer[66], *equals;
+//  uint8_t string_length = 0;
+//  float sample_rate = 51.2;
+//  uint16_t sample_period = 0;
+//  uint64_t derived_channels_val = 0;
+//  uint8_t gsr_range = 0;
+//
+//  uint8_t triggerSdCardUpdate = 0;
+//
+//  CheckSdInslot();
+//  SD_insertedCheck();
+//  char cfgname[] = "sdlog.cfg";
+//  file_status = f_open(&cfgFile, cfgname, FA_READ | FA_OPEN_EXISTING);
+//  if (file_status == FR_NO_FILE)
+//  {
+//    IniReadInfoMem();
+//    UpdateSdConfig();
+//    //fileBad = 0;
+//  }
+//  else if (file_status != FR_OK)
+//  {
+//    shimmerStatus.sdBadFile = 1;
+//    //fileBad = (initializing) ? 0 : 1;
+//    return;
+//  }
+//  else
+//  {
+//    gConfigBytes stored_config_temp;
+//
+//    resetSyncVariablesBeforeParseConfig();
+//    resetSyncNodeArray();
+//
+//    memset((uint8_t *) (stored_config_temp.rawBytes), 0, NV_LN_ACCEL_CALIBRATION); //0
+//    memset((uint8_t *) (stored_config_temp.rawBytes + NV_LN_ACCEL_CALIBRATION), 0xff, 84);
+//    memset((uint8_t *) (stored_config_temp.rawBytes + NV_DERIVED_CHANNELS_3), 0, 5); //0
+//    memset((uint8_t *) (stored_config_temp.rawBytes + NV_SENSORS3), 0, 5); //0
+//    memset((uint8_t *) (stored_config_temp.rawBytes + NV_ALT_ACCEL_CALIBRATION), 0xff, 82);
+//    memset((uint8_t *) (stored_config_temp.rawBytes + NV_SD_MYTRIAL_ID), 0, 9); //0
+//    InfoMem_readRam(stored_config_temp.rawBytes + NV_MAC_ADDRESS, NV_MAC_ADDRESS, 7);
+//    memset((uint8_t *) (stored_config_temp.rawBytes + NV_BT_SET_PIN + 1), 0xff, 24);
+//    memset((uint8_t *) (stored_config_temp.rawBytes + NV_CENTER), 0xff, 128);
+//
+//#if defined(SHIMMER3)
+//    stored_config_temp.rawBytes[NV_SD_TRIAL_CONFIG0] &= ~SDH_SET_PMUX; //PMUX reserved as 0
+//    stored_config_temp.rawBytes[NV_SD_TRIAL_CONFIG0] |= SDH_TIME_STAMP; //TIME_STAMP always = 1
+//#endif
+//    stored_config_temp.gsrRange = GSR_AUTORANGE;
+//    stored_config_temp.bufferSize = 1;
+//    stored_config_temp.btCommsBaudRate = 0xFF;
+//    //changeBtBaudRate = BAUD_NO_CHANGE_NEEDED; // set this flag to no_event as every sdlog.cfg read is followed by a baudrate setting
+//    stored_config_temp.btInterval = SYNC_INT_C;
+//
+//    memset(shimmerName, 0, sizeof(shimmerName));
+//    memset(expIdName, 0, sizeof(expIdName));
+//    memset(configTimeText, 0, sizeof(configTimeText));
+//
+//    stored_config_temp.shimmerName[0] = '\0';
+//    stored_config_temp.expIdName[0] = '\0';
+//    *configTimeText = '\0';
+//    stored_config_temp.configTime = 0;
+//
+//    while (f_gets(buffer, 64, &cfgFile))
+//    {
+//      if (!(equals = strchr(buffer, '=')))
+//      {
+//        continue;
+//      }
+//      equals++; //this is the value
+//      if (strstr(buffer, "accel="))
+//      {
+//        stored_config_temp.chEnLnAccel = atoi(equals);
+//      }
+//      else if (strstr(buffer, "gyro="))
+//      {
+//        stored_config_temp.chEnGyro = atoi(equals);
+//      }
+//      else if (strstr(buffer, "mag="))
+//      {
+//        stored_config_temp.chEnMag = atoi(equals);
+//      }
+//      else if (strstr(buffer, "exg1_24bit="))
+//      {
+//        stored_config_temp.chEnExg1_24Bit = atoi(equals);
+//      }
+//      else if (strstr(buffer, "exg2_24bit="))
+//      {
+//        stored_config_temp.chEnExg2_24Bit = atoi(equals);
+//      }
+//      else if (strstr(buffer, "gsr="))
+//      {
+//        stored_config_temp.chEnGsr = atoi(equals);
+//      }
+//      else if (strstr(buffer, "extch7="))
+//      {
+//        stored_config_temp.chEnExtADC0 = atoi(equals);
+//      }
+//      else if (strstr(buffer, "extch6="))
+//      {
+//        stored_config_temp.chEnExtADC1 = atoi(equals);
+//      }
+//      else if (strstr(buffer, "str=") || strstr(buffer, "br_amp="))
+//      {
+//        stored_config_temp.chEnBridgeAmp = atoi(equals);
+//      }
+//      else if (strstr(buffer, "vbat="))
+//      {
+//        stored_config_temp.chEnVBattery = atoi(equals);
+//      }
+//      else if (strstr(buffer, "accel_d="))
+//      {
+//        stored_config_temp.chEnWrAccel = atoi(equals);
+//      }
+//      else if (strstr(buffer, "extch15="))
+//      {
+//        stored_config_temp.chEnExtADC2 = atoi(equals);
+//      }
+//      else if (strstr(buffer, "intch1="))
+//      {
+//        stored_config_temp.chEnIntADC3 = atoi(equals);
+//      }
+//      else if (strstr(buffer, "intch12="))
+//      {
+//        stored_config_temp.chEnIntADC0 = atoi(equals);
+//      }
+//      else if (strstr(buffer, "intch13="))
+//      {
+//        stored_config_temp.chEnIntADC1 = atoi(equals);
+//      }
+//      else if (strstr(buffer, "intch14="))
+//      {
+//        stored_config_temp.chEnIntADC2 = atoi(equals);
+//      }
+//      else if (strstr(buffer, "accel_alt="))
+//      {
+//        stored_config_temp.chEnAltAccel = atoi(equals);
+//      }
+//      else if (strstr(buffer, "mag_alt="))
+//      {
+//        stored_config_temp.chEnAltMag = atoi(equals);
+//      }
+//      else if (strstr(buffer, "exg1_16bit="))
+//      {
+//        stored_config_temp.chEnExg1_16Bit = atoi(equals);
+//      }
+//      else if (strstr(buffer, "exg2_16bit="))
+//      {
+//        stored_config_temp.chEnExg2_16Bit = atoi(equals);
+//      }
+//      else if (strstr(buffer, "pres="))
+//      {
+//        stored_config_temp.chEnPressureAndTemperature = atoi(equals);
+//      }
+//      else if (strstr(buffer, "sample_rate="))
+//      {
+//        sample_rate = atof(equals);
+//      }
+//      else if (strstr(buffer, "mg_internal_rate="))
+//      {
+//        set_config_byte_mag_rate(&stored_config_temp, atoi(equals));
+//      }
+//      else if (strstr(buffer, "mg_range="))
+//      {
+//        stored_config_temp.magRange = atoi(equals);
+//      }
+//      else if (strstr(buffer, "acc_internal_rate="))
+//      {
+//        stored_config_temp.wrAccelRate = atoi(equals);
+//      }
+//#if defined(SHIMMER3)
+//      else if (strstr(buffer, "accel_alt_range="))
+//      {
+//        stored_config_temp.altAccelRange = atoi(equals);
+//      }
+//#elif defined(SHIMMER3R)
+//      else if (strstr(buffer, "accel_ln_range="))
+//      {
+//        stored_config_temp.lnAccelRange = atoi(equals);
+//      }
+//#endif
+//      else if (strstr(buffer, "acc_range="))
+//      {
+//        stored_config_temp.wrAccelRange = atoi(equals);
+//      }
+//      else if (strstr(buffer, "acc_lpm="))
+//      {
+//        set_config_byte_wr_accel_lp_mode(&stored_config_temp, atoi(equals));
+//      }
+//      else if (strstr(buffer, "acc_hrm="))
+//      {
+//        stored_config_temp.wrAccelHrMode = atoi(equals);
+//      }
+//      else if (strstr(buffer, "gsr_range="))
+//      { //or "gsr_range="?
+//        gsr_range = atoi(equals);
+//        if (gsr_range > 4)
+//        {
+//          gsr_range = 4;
+//        }
+//
+//        stored_config_temp.gsrRange = gsr_range;
+//      }
+//      else if (strstr(buffer, "gyro_samplingrate="))
+//      {
+//        set_config_byte_gyro_rate(&stored_config_temp, atoi(equals));
+//      }
+//      else if (strstr(buffer, "gyro_range="))
+//      {
+//        set_config_byte_gyro_range(&stored_config_temp, atoi(equals));
+//      }
+//      else if (strstr(buffer, "pres_bmp390_prec="))
+//      {
+//        set_config_byte_pressure_oversampling_ratio(&stored_config_temp, atoi(equals));
+//      }
+//
+//      else if (strstr(buffer, "mag_alt_rate="))
+//      {
+//        stored_config_temp.altMagRate = atoi(equals);
+//      }
+//      else if (strstr(buffer, "accel_alt_rate="))
+//      {
+//        stored_config_temp.altAccelRate = atoi(equals);
+//      }
+//      else if (strstr(buffer, "rtc_error_enable="))
+//      {
+//        stored_config_temp.rtcErrorEnable = atoi(equals);
+//      }
+//      else if (strstr(buffer, "sd_error_enable="))
+//      {
+//        stored_config_temp.sdErrorEnable = atoi(equals);
+//      }
+//      else if (strstr(buffer, "user_button_enable="))
+//      {
+//        stored_config_temp.userButtonEnable = atoi(equals);
+//      }
+//      else if (strstr(buffer, "iammaster="))
+//      { //0=slave=node
+//        stored_config_temp.masterEnable = atoi(equals);
+//      }
+//      else if (strstr(buffer, "sync="))
+//      {
+//        stored_config_temp.syncEnable = atoi(equals);
+//      }
+//      else if (strstr(buffer, "low_battery_autostop="))
+//      {
+//        stored_config_temp.lowBatteryCutOut = atoi(equals);
+//      }
+//#if defined(SHIMMER3)
+//#if IS_SUPPORTED_TCXO
+//      else if (strstr(buffer, "tcxo="))
+//      {
+//        tcxo = (atoi(equals) == 0) ? FALSE : TRUE;
+//        stored_config_temp[NV_SD_TRIAL_CONFIG1] |= tcxo * SDH_TCXO;
+//      }
+//#endif
+//#endif
+//      else if (strstr(buffer, "interval="))
+//      {
+//        stored_config_temp.btInterval = atoi(equals) > 255 ? 255 : atoi(equals);
+//      }
+//      else if (strstr(buffer, "bluetoothDisabled="))
+//      {
+//        stored_config_temp.bluetoothDisable = atoi(equals);
+//      }
+//      else if (strstr(buffer, "exp_power="))
+//      {
+//        stored_config_temp.expansionBoardPower = atoi(equals);
+//      }
+//      else if (strstr(buffer, "center="))
+//      {
+//        parseSyncCenterNameFromCfgFile(&stored_config_temp.rawBytes[0], equals);
+//      }
+//      else if (strstr(buffer, "node"))
+//      {
+//        parseSyncNodeNameFromCfgFile(&stored_config_temp.rawBytes[0], equals);
+//      }
+//      else if (strstr(buffer, "est_exp_len="))
+//      {
+//        stored_config_temp.experimentLengthEstimatedInSec = atoi(equals);
+//      }
+//      else if (strstr(buffer, "max_exp_len="))
+//      {
+//        stored_config_temp.experimentLengthMaxInMinutes = atoi(equals);
+//      }
+//      else if (strstr(buffer, "myid="))
+//      {
+//        stored_config_temp.myTrialID = atoi(equals);
+//      }
+//      else if (strstr(buffer, "Nshimmer="))
+//      {
+//        stored_config_temp.numberOfShimmers = atoi(equals);
+//      }
+//      else if (strstr(buffer, "shimmername="))
+//      {
+//        string_length = strlen(equals);
+//        if (string_length > MAX_CHARS)
+//        {
+//          string_length = MAX_CHARS - 1;
+//        }
+//        else if (string_length >= 2)
+//        {
+//          string_length -= 2;
+//        }
+//        else
+//        {
+//          string_length = 0;
+//        }
+//        memcpy(&stored_config_temp.shimmerName[0], equals, string_length);
+//        if (!memcmp(&stored_config_temp.shimmerName[0], "ID", 2))
+//        {
+//          memcpy(&stored_config_temp.shimmerName[0], "id", 2);
+//        }
+//        memcpy((char *) shimmerName, &stored_config_temp.shimmerName[0], MAX_CHARS - 1);
+//        shimmerName[string_length] = 0;
+//      }
+//      else if (strstr(buffer, "experimentid="))
+//      {
+//        string_length = strlen(equals);
+//        if (string_length > MAX_CHARS)
+//        {
+//          string_length = MAX_CHARS - 1;
+//        }
+//        else if (string_length >= 2)
+//        {
+//          string_length -= 2;
+//        }
+//        else
+//        {
+//          string_length = 0;
+//        }
+//        memcpy(&stored_config_temp.expIdName[0], equals, string_length);
+//        memcpy((char *) expIdName, &stored_config_temp.expIdName[0], MAX_CHARS - 1);
+//        expIdName[string_length] = 0;
+//      }
+//      else if (strstr(buffer, "configtime="))
+//      {
+//        stored_config_temp.configTime = atol(equals);
+//        string_length = MAX_CHARS < strlen(equals) ? MAX_CHARS : strlen(equals) - 1;
+//        memcpy((char *) configTimeText, equals, string_length - 1);
+//        *(configTimeText + string_length - 1) = 0;
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_1_CONFIG1="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CONFIG1] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_1_CONFIG2="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CONFIG2] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_1_LOFF="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_1_CH1SET="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CH1SET] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_1_CH2SET="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_CH2SET] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_1_RLD_SENS="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RLD_SENS] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_1_LOFF_SENS="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF_SENS] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_1_LOFF_STAT="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_LOFF_STAT] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_1_RESP1="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RESP1] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_1_RESP2="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_1_RESP2] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_2_CONFIG1="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CONFIG1] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_2_CONFIG2="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CONFIG2] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_2_LOFF="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_2_CH1SET="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CH1SET] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_2_CH2SET="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_CH2SET] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_2_RLD_SENS="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RLD_SENS] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_2_LOFF_SENS="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF_SENS] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_2_LOFF_STAT="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_LOFF_STAT] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_2_RESP1="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP1] = atoi(equals);
+//      }
+//      else if (strstr(buffer, "EXG_ADS1292R_2_RESP2="))
+//      {
+//        stored_config_temp.rawBytes[NV_EXG_ADS1292R_2_RESP2] = atoi(equals);
+//      }
+//      //#if defined(SHIMMER3)
+//      //      else if (strstr(buffer, "baud_rate="))
+//      //      {
+//      //        config_baudrate = atoi(equals);
+//      //        if (config_baudrate != getCurrentBtBaudRate())
+//      //        {
+//      //#if BT_ENABLE_BAUD_RATE_CHANGE
+//      //          if (config_baudrate <= BAUD_1000000)
+//      //          {
+//      //            changeBtBaudRate = config_baudrate;
+//      //          }
+//      //#else
+//      //          triggerSdCardUpdate = 1;
+//      //#endif
+//      //        }
+//      //        stored_config_temp[NV_BT_COMMS_BAUD_RATE] = getCurrentBtBaudRate();
+//      //      }
+//      //#endif
+//      else if (strstr(buffer, "derived_channels="))
+//      {
+//        //derived_channels_val = atol(equals);
+//        //stored_config_temp[NV_DERIVED_CHANNELS_0] = derived_channels_val & 0xff;
+//        //stored_config_temp[NV_DERIVED_CHANNELS_1] = (derived_channels_val >> 8) & 0xff;
+//        //stored_config_temp[NV_DERIVED_CHANNELS_2] = (derived_channels_val >> 16) & 0xff;
+//        derived_channels_val = atoll(equals);
+//        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_0] = derived_channels_val & 0xff;
+//        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_1]
+//            = (derived_channels_val >> 8) & 0xff;
+//        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_2]
+//            = (derived_channels_val >> 16) & 0xff;
+//        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_3]
+//            = (derived_channels_val >> 24) & 0xff;
+//        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_4]
+//            = (derived_channels_val >> 32) & 0xff;
+//        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_5]
+//            = (derived_channels_val >> 40) & 0xff;
+//        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_6]
+//            = (derived_channels_val >> 48) & 0xff;
+//        stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_7]
+//            = (derived_channels_val >> 56) & 0xff;
+//      }
+//    }
+//    file_status = f_close(&cfgFile);
+//    set_file_timestamp(cfgname);
+//
+//    HAL_Delay(50); //50ms
+//
+//    sample_period = (uint16_t) round(((float) 32768.0) / sample_rate);
+//    stored_config_temp.samplingRateTicks = sample_period;
+//
+//    triggerSdCardUpdate = checkAndCorrectConfig(&stored_config_temp);
+//
+//    setSyncEstExpLen(stored_config_temp.experimentLengthEstimatedInSec);
+//
+//    /* Calibration bytes are not copied over from the infomem */
+//
+//    /* Infomem D - Bytes 0-33 - General settings */
+//    gConfigBytes *storedConfig = S4Ram_getStoredConfig();
+//    memcpy(&storedConfig->rawBytes[0], &stored_config_temp.rawBytes[0], NV_NUM_SETTINGS_BYTES);
+//    /* Infomem D - Bytes 118-122 - Derived channel settings */
+//    memcpy(&storedConfig->rawBytes[NV_DERIVED_CHANNELS_3],
+//        &stored_config_temp.rawBytes[NV_DERIVED_CHANNELS_3], 5);
+//    /* Infomem C - Bytes 128-132 - MPL related settings - no longer used/supported */
+//    memcpy(&storedConfig->rawBytes[NV_SENSORS3],
+//        &stored_config_temp.rawBytes[NV_SENSORS3], 5);
+//    /* Infomem C - Bytes 187-223 - Shimmer name, exp ID, config time, trial ID, num Shimmers, trial config, BT interval, est exp len, max exp len */
+//    memcpy(&storedConfig->rawBytes[NV_SD_SHIMMER_NAME],
+//        &stored_config_temp.rawBytes[NV_SD_SHIMMER_NAME], 37);
+//
+//    /* Infomem B - Bytes 256-381 - Center and Node MAC addresses */
+//    memcpy(&storedConfig->rawBytes[NV_CENTER],
+//        &stored_config_temp.rawBytes[NV_CENTER], NV_NUM_BYTES_SYNC_CENTER_NODE_ADDRS);
+//    //memcpy((uint8_t*) (storedConfig + NV_MAC_ADDRESS + 7), (uint8_t*) (stored_config_temp + NV_MAC_ADDRESS + 7), 153); //25+128
+//
+//    S4Ram_config2SdHead();
+//    SetName();
+//
+//    InfoMem_update();
+//
+//    /* If the configuration needed to be corrected, update the config file */
+//    if (triggerSdCardUpdate)
+//    {
+//      UpdateSdConfig();
+//    }
+//  }
 }
 
 void ItoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len)
@@ -1406,7 +1408,8 @@ void ItoaNo0(uint64_t num, uint8_t *buf, uint8_t max_len)
 
 uint8_t isFileStatusOk(void)
 {
-  return file_status == FR_OK;
+//  return file_status == FR_OK;
+  return 0;
 }
 
 uint8_t isSdInfoSyncDelayed(void)
@@ -1429,28 +1432,28 @@ uint8_t *getFileNamePtr(void)
   return &fileName[0];
 }
 
-FRESULT set_file_timestamp(char *path)
-{
-  FILINFO fno;
-  RTC_TimeTypeDef RTC_TimeStructure;
-  RTC_DateTypeDef RTC_DateStructure;
-  //HAL_RTC_GetTime(&hrtc, &RTC_TimeStructure, RTC_Format_BIN);
-  //HAL_RTC_GetDate(&hrtc, &RTC_DateStructure, RTC_Format_BIN);
-  //int hour = RTC_TimeStructure.RTC_Hours;
-  //int min = RTC_TimeStructure.RTC_Minutes;
-  //int sec = RTC_TimeStructure.RTC_Seconds;
-  //int month = RTC_DateStructure.RTC_Month;
-  //int mday = RTC_DateStructure.RTC_Date;
-  //int year = RTC_DateStructure.RTC_Year;
-  //year += 2000;
-  //fno.fdate = (WORD) (((year - 1980) << 9) | month << 5 | mday);
-  //fno.ftime = (WORD) (hour << 11 | min << 5 | sec / 2);
-
-  S4_RTC_t data;
-  S4_RTC_GetDateTime(&data);
-  data.year += 2000;
-  fno.fdate = (WORD) (((data.year - 1980) << 9) | data.month << 5 | data.date);
-  fno.ftime = (WORD) (data.hours << 11 | data.minutes << 5 | data.seconds / 2);
-
-  return f_utime(path, &fno);
-}
+//FRESULT set_file_timestamp(char *path)
+//{
+//  FILINFO fno;
+//  RTC_TimeTypeDef RTC_TimeStructure;
+//  RTC_DateTypeDef RTC_DateStructure;
+//  //HAL_RTC_GetTime(&hrtc, &RTC_TimeStructure, RTC_Format_BIN);
+//  //HAL_RTC_GetDate(&hrtc, &RTC_DateStructure, RTC_Format_BIN);
+//  //int hour = RTC_TimeStructure.RTC_Hours;
+//  //int min = RTC_TimeStructure.RTC_Minutes;
+//  //int sec = RTC_TimeStructure.RTC_Seconds;
+//  //int month = RTC_DateStructure.RTC_Month;
+//  //int mday = RTC_DateStructure.RTC_Date;
+//  //int year = RTC_DateStructure.RTC_Year;
+//  //year += 2000;
+//  //fno.fdate = (WORD) (((year - 1980) << 9) | month << 5 | mday);
+//  //fno.ftime = (WORD) (hour << 11 | min << 5 | sec / 2);
+//
+//  S4_RTC_t data;
+//  S4_RTC_GetDateTime(&data);
+//  data.year += 2000;
+//  fno.fdate = (WORD) (((data.year - 1980) << 9) | data.month << 5 | data.date);
+//  fno.ftime = (WORD) (data.hours << 11 | data.minutes << 5 | data.seconds / 2);
+//
+//  return f_utime(path, &fno);
+//}

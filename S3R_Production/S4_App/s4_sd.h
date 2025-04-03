@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-#include "ff.h"
+//#include "ff.h"
 
 #define CheckSdInslot             SD_insertedCheck
 #define BIN_FILE_SPLIT_TIME_TICKS (32768 * 3600)
@@ -44,6 +44,6 @@ uint8_t *getConfigTimeTextPtr(void);
 uint8_t *getFileNamePtr(void);
 uint8_t *getShimmerNamePtr(void);
 uint8_t *getExpIdPtr(void);
-FRESULT set_file_timestamp(char *path);
+//FRESULT set_file_timestamp(char *path);
 
 #endif /* S4_SD_H_ */

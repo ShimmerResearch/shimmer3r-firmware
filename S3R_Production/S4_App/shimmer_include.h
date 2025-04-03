@@ -73,13 +73,13 @@
 #include "dma.h"
 #endif
 #if USE_FATFS
-#include "fatfs.h"
+//#include "fatfs.h"
 #endif
 #include "i2c.h"
 //#include "iwdg.h"
 #include "rng.h"
 #include "rtc.h"
-#include "sdmmc.h"
+//#include "sdmmc.h"
 #include "spi.h"
 //#include "tim.h"
 #include "usart.h"

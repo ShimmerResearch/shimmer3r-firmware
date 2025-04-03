@@ -19,12 +19,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "gpdma.h"
-#include "gpio.h"
 #include "icache.h"
 #include "memorymap.h"
 #include "rng.h"
 #include "rtc.h"
 #include "tim.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -203,9 +203,9 @@ void Init()
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
 
@@ -258,9 +258,11 @@ int main(void)
   shimmerStatus.initialising = 0;
   setBootStage(BOOT_STAGE_END);
 
+  Board_setDockAccessToSd(0);
+
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
-  //run_factory_test();
+//  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+//  run_factory_test();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -270,36 +272,74 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    S4_Task_manage();
+//    S4_Task_manage();
+
+    setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+    run_factory_test();
   }
   /* USER CODE END 3 */
+
+//  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
+// /* USER CODE END 2 */
+//  HAL_PWREx_EnableVddIO2();
+////      MX_SPI1_Init();
+////     MX_SPI2_Init();
+////     __HAL_RCC_SPI2_CLK_ENABLE();
+//     MX_SPI3_Init();
+//
+// /* Infinite loop */
+// /* USER CODE BEGIN WHILE */
+// uint8_t tx_data1[] = {1, 1, 1, 1};
+//   HAL_StatusTypeDef status1 = HAL_ERROR;
+//   uint8_t tx_data2[] = {2, 2, 2, 2};
+//   HAL_StatusTypeDef status2 = HAL_ERROR;
+//   uint8_t tx_data3[] = {3, 3, 3, 3};
+//   HAL_StatusTypeDef status3 = HAL_ERROR;
+//   __HAL_SPI_ENABLE(&hspi3);
+//   /* SPI3 clock enable */
+//   __HAL_RCC_SPI3_CLK_ENABLE();
+//
+//   /* USER CODE END 2 */
+//
+//   /* Infinite loop */
+//   /* USER CODE BEGIN WHILE */
+//   while (1)
+//   {
+////     status1 = HAL_SPI_Transmit(&hspi1, tx_data1, sizeof(tx_data1), 10); // Returns ok
+////     status2 = HAL_SPI_Transmit(&hspi2, tx_data2, sizeof(tx_data2), 10); // Returns ok
+//     status3 = HAL_SPI_Transmit(&hspi3, tx_data3, sizeof(tx_data3), 10); //Returns error!
+//     __NOP();
+//     /* USER CODE END WHILE */
+//
+//     /* USER CODE BEGIN 3 */
+//   }
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-   */
+  */
   if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE2) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Configure LSE Drive Capability
-   */
+  */
   HAL_PWR_EnableBkUpAccess();
   __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48
-      | RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI;
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSE
+                              |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
@@ -313,9 +353,10 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
-      | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3;
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
+                              |RCC_CLOCKTYPE_PCLK3;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -329,12 +370,11 @@ void SystemClock_Config(void)
 }
 
 /**
- * @brief Power Configuration
- * @retval None
- */
+  * @brief Power Configuration
+  * @retval None
+  */
 static void SystemPower_Config(void)
 {
-  HAL_PWREx_EnableVddIO2();
 
   /*
    * Disable the internal Pull-Up in Dead Battery pins of UCPD peripheral
@@ -348,8 +388,8 @@ static void SystemPower_Config(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN PWR */
-  /* USER CODE END PWR */
+/* USER CODE BEGIN PWR */
+/* USER CODE END PWR */
 }
 
 /* USER CODE BEGIN 4 */
@@ -720,9 +760,9 @@ void HAL_Delay(uint32_t Delay)
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -734,14 +774,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */

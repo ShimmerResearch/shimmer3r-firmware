@@ -51,8 +51,8 @@
 void ADS1292_init(void);
 void setSpiHandle(SPI_HandleTypeDef *hspi);
 void ADS1292_enableChip2(uint8_t en);
-void ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata);
-void ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata);
+HAL_StatusTypeDef ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata);
+HAL_StatusTypeDef ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata);
 void ADS1292_powerOn(void);
 void ADS1292_powerOff(void);
 
@@ -69,23 +69,23 @@ void ADS1292_chip2CsEnable(uint8_t enable);
 //if enable=1 enable read data continuous mode (RDATAC mode)
 //if enable=0 disable read data continuous mode (SDATAC mode)
 //chip select must be enabled
-void ADS1292_readDataContinuousMode(uint8_t enable);
+HAL_StatusTypeDef ADS1292_readDataContinuousMode(uint8_t enable);
 
 //if start=1 send START opcode
 //if start=0 send STOP opcode
 //chip select must be enabled
-void ADS1292_start(uint8_t start);
+HAL_StatusTypeDef ADS1292_start(uint8_t start);
 
 //Reset all registers to default value
-void ADS1292_resetRegs(void);
+HAL_StatusTypeDef ADS1292_resetRegs(void);
 
 //Channel offset calibration
 //Must be sent every time there is a change in the PGA gain settings
-void ADS1292_offsetCal(void);
+HAL_StatusTypeDef ADS1292_offsetCal(void);
 
 //must be in SDATAC mode before calling this command
 //and chip select must be enabled
-void ADS1292_enableInternalReference(void);
+HAL_StatusTypeDef ADS1292_enableInternalReference(void);
 
 #define ADS1292_DRDY_INT_CHIP1 0x01
 #define ADS1292_DRDY_INT_CHIP2 0x02
