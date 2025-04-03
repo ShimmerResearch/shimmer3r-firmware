@@ -194,14 +194,14 @@ HAL_StatusTypeDef ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *r
     }
   }
 
-////  res = HAL_SPI_TransmitReceive(hspi_exg, tx_buf, rx_buf, size, 100);
-//
-//  res = HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100);
-//  if (res != HAL_OK)
-//  {
-//    return res;
-//  }
-//  res = HAL_SPI_Receive(hspi_exg, rdata, size, 100);
+  ////  res = HAL_SPI_TransmitReceive(hspi_exg, tx_buf, rx_buf, size, 100);
+  //
+  //  res = HAL_SPI_Transmit(hspi_exg, tx_buf, 2, 100);
+  //  if (res != HAL_OK)
+  //  {
+  //    return res;
+  //  }
+  //  res = HAL_SPI_Receive(hspi_exg, rdata, size, 100);
   return res;
 }
 

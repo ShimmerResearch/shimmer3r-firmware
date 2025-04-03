@@ -641,40 +641,40 @@ void SPI_test(void)
   //}
   //
   ///* If it's a Shimmer self-test result (i.e., <SELF_TEST_FAIL_COUNT), it will
-  // *  be printed out like all other sensors using "print_chip_test_result".
-  // *  Else, if it's specific to the BMP3 API, it is printed using
-  // *  bmp3_check_rslt (subtracting the previously added offset from first so
-  // *  that the function can recognise it) */
+  //*  be printed out like all other sensors using "print_chip_test_result".
+  //*  Else, if it's specific to the BMP3 API, it is printed using
+  //*  bmp3_check_rslt (subtracting the previously added offset from first so
+  //*  that the function can recognise it) */
   //if (self_test_result < SELF_TEST_FAIL_COUNT)
   //{
-  //  print_chip_test_result("S3R_TEST_0021", "BMP390", self_test_result, tempCal);
+  // print_chip_test_result("S3R_TEST_0021", "BMP390", self_test_result, tempCal);
   //}
   //else
   //{
-  //  send_test_report(" - S3R_TEST_0021 - FAIL: BMP390 - ");
+  // send_test_report(" - S3R_TEST_0021 - FAIL: BMP390 - ");
   //
-  //  bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
-  //  send_test_report(buffer);
+  // bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
+  // send_test_report(buffer);
   //}
   //if (self_test_result != SELF_TEST_PASS)
   //{
-  //  shimmerStatus.testResult |= S3R_TEST_0021;
+  // shimmerStatus.testResult |= S3R_TEST_0021;
   //}
   //
   //if (isAdxl371Present())
   //{
-  //  self_test_result = adxl371_self_test();
-  //  print_chip_test_result("S3R_TEST_0022", "ADXL371", self_test_result,
-  //      TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
-  //  if (self_test_result)
-  //  {
-  //    shimmerStatus.testResult |= S3R_TEST_0022;
-  //  }
+  // self_test_result = adxl371_self_test();
+  // print_chip_test_result("S3R_TEST_0022", "ADXL371", self_test_result,
+  //     TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
+  // if (self_test_result)
+  // {
+  //   shimmerStatus.testResult |= S3R_TEST_0022;
+  // }
   //}
   //else
   //{
-  //  sprintf(buffer, " - S3R_TEST_0022 - ADXL371 test not applicable for this model\r\n");
-  //  send_test_report(buffer);
+  // sprintf(buffer, " - S3R_TEST_0022 - ADXL371 test not applicable for this model\r\n");
+  // send_test_report(buffer);
   //}
   //
   //SPI1_DeInit();
@@ -686,34 +686,34 @@ void SPI_test(void)
   //self_test_result = lis3mdl_self_test();
   //if (self_test_result == SELF_TEST_PASS)
   //{
-  //  //Get new temperature value
-  //  self_test_result = lis3mdl_temperature_get(&tempCal);
-  //  if (self_test_result || is_temperature_outside_of_range(tempCal))
-  //  {
-  //    self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
-  //  }
+  // //Get new temperature value
+  // self_test_result = lis3mdl_temperature_get(&tempCal);
+  // if (self_test_result || is_temperature_outside_of_range(tempCal))
+  // {
+  //   self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+  // }
   //}
   //print_chip_test_result("S3R_TEST_0023", "LIS3MDL", self_test_result, tempCal);
   //if (self_test_result)
   //{
-  //  shimmerStatus.testResult |= S3R_TEST_0023;
+  // shimmerStatus.testResult |= S3R_TEST_0023;
   //}
   //
   //tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
   //self_test_result = lis2dw12_self_test();
   //if (self_test_result == SELF_TEST_PASS)
   //{
-  //  //Get last temperature value left over from self test
-  //  self_test_result = lis2dw12_temperature_get(&tempCal);
-  //  if (self_test_result || is_temperature_outside_of_range(tempCal))
-  //  {
-  //    self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
-  //  }
+  // //Get last temperature value left over from self test
+  // self_test_result = lis2dw12_temperature_get(&tempCal);
+  // if (self_test_result || is_temperature_outside_of_range(tempCal))
+  // {
+  //   self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+  // }
   //}
   //print_chip_test_result("S3R_TEST_0024", "LIS2DW12", self_test_result, tempCal);
   //if (self_test_result)
   //{
-  //  shimmerStatus.testResult |= S3R_TEST_0024;
+  // shimmerStatus.testResult |= S3R_TEST_0024;
   //}
   //
   //SPI2_DeInit();
