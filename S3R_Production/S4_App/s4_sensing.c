@@ -233,6 +233,10 @@ void S4Sens_startSensing(void)
       shimmerStatus.sensing = 0;
       return;
     }
+    if(isExpansionBoardEnabled())
+    {
+      Board_SW_EXP_BRD_POWER(1);
+    }
 
     uint16_t samplingRateTicks = S4Ram_getStoredConfig()->samplingRateTicks;
     sensing.freq = get_shimmer_sampling_freq();
@@ -400,6 +404,8 @@ void S4Sens_stopPeripherals(void)
   SPI_stopSensing();
 
   Board_enableSensingPower(SENSE_PWR_SENSING, 0);
+
+  Board_SW_EXP_BRD_POWER(0);
 
   if (isMicrophoneEnabled())
   {

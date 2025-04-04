@@ -22,27 +22,26 @@
 #define __SPI_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-  /* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */
 
 #include "shimmer_definitions.h"
 #include <shimmer_include.h>
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi1;
 
-  extern SPI_HandleTypeDef hspi2;
+extern SPI_HandleTypeDef hspi2;
 
-  extern SPI_HandleTypeDef hspi3;
+extern SPI_HandleTypeDef hspi3;
 
-  /* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
 
 #define SPI_DMA_TXRX_OFFSET 1
 #define SPI_READ_REGISTER   0x80
@@ -98,7 +97,7 @@ extern "C"
     SPI2_LIS2DW12_ACCEL,
     SPI2_LIS3MDL_MAG,
     SPI3_ADS1292R_EXG1,
-    SPI3_ADS1292R_EXG2,
+    SPI3_ADS1292R_EXG2
   } SPI_SENSOR;
 
   typedef enum
@@ -121,7 +120,7 @@ extern "C"
     SPI_STAT_LIS2DW12_ACCEL_GET,
     SPI_STAT_LIS3MDL_MAG_GET,
     SPI_STAT_ADS1292R_EXG1_GET,
-    SPI_STAT_ADS1292R_EXG2_GET,
+    SPI_STAT_ADS1292R_EXG2_GET
   } SPI_STATUS;
 
   typedef enum
@@ -163,13 +162,13 @@ extern "C"
 
 #endif
 
-  /* USER CODE END Private defines */
+/* USER CODE END Private defines */
 
-  void MX_SPI1_Init(void);
-  void MX_SPI2_Init(void);
-  void MX_SPI3_Init(void);
+void MX_SPI1_Init(void);
+void MX_SPI2_Init(void);
+void MX_SPI3_Init(void);
 
-  /* USER CODE BEGIN Prototypes */
+/* USER CODE BEGIN Prototypes */
 
   void SPI1_DeInit(void);
   void SPI2_DeInit(void);
@@ -205,10 +204,11 @@ void SpiStepDone(void);
   void ads7028_configureChannels(uint8_t *channel_contents_ptr);
 #endif
 
-  /* USER CODE END Prototypes */
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __SPI_H__ */
+

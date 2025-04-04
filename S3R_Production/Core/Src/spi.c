@@ -75,7 +75,7 @@ void MX_SPI1_Init(void)
 
   /* USER CODE END SPI1_Init 0 */
 
-  SPI_AutonomousModeConfTypeDef HAL_SPI_AutonomousMode_Cfg_Struct = { 0 };
+  SPI_AutonomousModeConfTypeDef HAL_SPI_AutonomousMode_Cfg_Struct = {0};
 
   /* USER CODE BEGIN SPI1_Init 1 */
 
@@ -127,8 +127,8 @@ void MX_SPI1_Init(void)
   HAL_Delay(BOOT_TIME);
 
   /* USER CODE END SPI1_Init 2 */
-}
 
+}
 /* SPI2 init function */
 void MX_SPI2_Init(void)
 {
@@ -140,7 +140,7 @@ void MX_SPI2_Init(void)
 
   /* USER CODE END SPI2_Init 0 */
 
-  SPI_AutonomousModeConfTypeDef HAL_SPI_AutonomousMode_Cfg_Struct = { 0 };
+  SPI_AutonomousModeConfTypeDef HAL_SPI_AutonomousMode_Cfg_Struct = {0};
 
   /* USER CODE BEGIN SPI2_Init 1 */
 
@@ -191,8 +191,8 @@ void MX_SPI2_Init(void)
   HAL_Delay(BOOT_TIME);
 
   /* USER CODE END SPI2_Init 2 */
-}
 
+}
 /* SPI3 init function */
 void MX_SPI3_Init(void)
 {
@@ -201,47 +201,47 @@ void MX_SPI3_Init(void)
   if (isAds1292Present())
   {
 
-    /* USER CODE END SPI3_Init 0 */
+  /* USER CODE END SPI3_Init 0 */
 
-    SPI_AutonomousModeConfTypeDef HAL_SPI_AutonomousMode_Cfg_Struct = { 0 };
+  SPI_AutonomousModeConfTypeDef HAL_SPI_AutonomousMode_Cfg_Struct = {0};
 
-    /* USER CODE BEGIN SPI3_Init 1 */
+  /* USER CODE BEGIN SPI3_Init 1 */
 
-    /* USER CODE END SPI3_Init 1 */
-    hspi3.Instance = SPI3;
-    hspi3.Init.Mode = SPI_MODE_MASTER;
-    hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-    hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
-    hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
-    hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
-    hspi3.Init.NSS = SPI_NSS_SOFT;
-    hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
-    hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
-    hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
-    hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-    hspi3.Init.CRCPolynomial = 0x7;
-    hspi3.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
-    hspi3.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
-    hspi3.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
-    hspi3.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
-    hspi3.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
-    hspi3.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
-    hspi3.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE;
-    hspi3.Init.IOSwap = SPI_IO_SWAP_DISABLE;
-    hspi3.Init.ReadyMasterManagement = SPI_RDY_MASTER_MANAGEMENT_INTERNALLY;
-    hspi3.Init.ReadyPolarity = SPI_RDY_POLARITY_HIGH;
-    if (HAL_SPI_Init(&hspi3) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    HAL_SPI_AutonomousMode_Cfg_Struct.TriggerState = SPI_AUTO_MODE_DISABLE;
-    HAL_SPI_AutonomousMode_Cfg_Struct.TriggerSelection = SPI_GRP2_LPDMA_CH0_TCF_TRG;
-    HAL_SPI_AutonomousMode_Cfg_Struct.TriggerPolarity = SPI_TRIG_POLARITY_RISING;
-    if (HAL_SPIEx_SetConfigAutonomousMode(&hspi3, &HAL_SPI_AutonomousMode_Cfg_Struct) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    /* USER CODE BEGIN SPI3_Init 2 */
+  /* USER CODE END SPI3_Init 1 */
+  hspi3.Instance = SPI3;
+  hspi3.Init.Mode = SPI_MODE_MASTER;
+  hspi3.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
+  hspi3.Init.NSS = SPI_NSS_SOFT;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+  hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi3.Init.CRCPolynomial = 0x7;
+  hspi3.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  hspi3.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
+  hspi3.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
+  hspi3.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
+  hspi3.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
+  hspi3.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
+  hspi3.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE;
+  hspi3.Init.IOSwap = SPI_IO_SWAP_DISABLE;
+  hspi3.Init.ReadyMasterManagement = SPI_RDY_MASTER_MANAGEMENT_INTERNALLY;
+  hspi3.Init.ReadyPolarity = SPI_RDY_POLARITY_HIGH;
+  if (HAL_SPI_Init(&hspi3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  HAL_SPI_AutonomousMode_Cfg_Struct.TriggerState = SPI_AUTO_MODE_DISABLE;
+  HAL_SPI_AutonomousMode_Cfg_Struct.TriggerSelection = SPI_GRP2_LPDMA_CH0_TCF_TRG;
+  HAL_SPI_AutonomousMode_Cfg_Struct.TriggerPolarity = SPI_TRIG_POLARITY_RISING;
+  if (HAL_SPIEx_SetConfigAutonomousMode(&hspi3, &HAL_SPI_AutonomousMode_Cfg_Struct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI3_Init 2 */
 
     //TODO switch over approach to match that being implemented by SPI1 and SPI2
     //HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI3_TxRxCpltCallback);
@@ -253,21 +253,22 @@ void MX_SPI3_Init(void)
   }
 
   /* USER CODE END SPI3_Init 2 */
+
 }
 
-void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
+void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
-  if (spiHandle->Instance == SPI1)
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  if(spiHandle->Instance==SPI1)
   {
-    /* USER CODE BEGIN SPI1_MspInit 0 */
+  /* USER CODE BEGIN SPI1_MspInit 0 */
 
-    /* USER CODE END SPI1_MspInit 0 */
+  /* USER CODE END SPI1_MspInit 0 */
 
-    /** Initializes the peripherals clock
-     */
+  /** Initializes the peripherals clock
+  */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SPI1;
     PeriphClkInit.Spi1ClockSelection = RCC_SPI1CLKSOURCE_SYSCLK;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -284,7 +285,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     PE15     ------> SPI1_MOSI
     PE13     ------> SPI1_SCK
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_14 | GPIO_PIN_15 | GPIO_PIN_13;
+    GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_15|GPIO_PIN_13;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
@@ -304,8 +305,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     handle_GPDMA1_Channel5.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
     handle_GPDMA1_Channel5.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel5.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel5.Init.TransferAllocatedPort
-        = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel5.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
     handle_GPDMA1_Channel5.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel5.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel5) != HAL_OK)
@@ -332,8 +332,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     handle_GPDMA1_Channel4.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
     handle_GPDMA1_Channel4.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel4.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel4.Init.TransferAllocatedPort
-        = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel4.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
     handle_GPDMA1_Channel4.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel4.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel4) != HAL_OK)
@@ -351,18 +350,18 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     /* SPI1 interrupt Init */
     HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(SPI1_IRQn);
-    /* USER CODE BEGIN SPI1_MspInit 1 */
+  /* USER CODE BEGIN SPI1_MspInit 1 */
 
-    /* USER CODE END SPI1_MspInit 1 */
+  /* USER CODE END SPI1_MspInit 1 */
   }
-  else if (spiHandle->Instance == SPI2)
+  else if(spiHandle->Instance==SPI2)
   {
-    /* USER CODE BEGIN SPI2_MspInit 0 */
+  /* USER CODE BEGIN SPI2_MspInit 0 */
 
-    /* USER CODE END SPI2_MspInit 0 */
+  /* USER CODE END SPI2_MspInit 0 */
 
-    /** Initializes the peripherals clock
-     */
+  /** Initializes the peripherals clock
+  */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SPI2;
     PeriphClkInit.Spi2ClockSelection = RCC_SPI2CLKSOURCE_SYSCLK;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -379,7 +378,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     PB14     ------> SPI2_MISO
     PB15     ------> SPI2_MOSI
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
+    GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
@@ -399,8 +398,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     handle_GPDMA1_Channel7.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
     handle_GPDMA1_Channel7.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel7.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel7.Init.TransferAllocatedPort
-        = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel7.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
     handle_GPDMA1_Channel7.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel7.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel7) != HAL_OK)
@@ -427,8 +425,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     handle_GPDMA1_Channel6.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
     handle_GPDMA1_Channel6.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel6.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel6.Init.TransferAllocatedPort
-        = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel6.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
     handle_GPDMA1_Channel6.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel6.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel6) != HAL_OK)
@@ -446,18 +443,18 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     /* SPI2 interrupt Init */
     HAL_NVIC_SetPriority(SPI2_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(SPI2_IRQn);
-    /* USER CODE BEGIN SPI2_MspInit 1 */
+  /* USER CODE BEGIN SPI2_MspInit 1 */
 
-    /* USER CODE END SPI2_MspInit 1 */
+  /* USER CODE END SPI2_MspInit 1 */
   }
-  else if (spiHandle->Instance == SPI3)
+  else if(spiHandle->Instance==SPI3)
   {
-    /* USER CODE BEGIN SPI3_MspInit 0 */
+  /* USER CODE BEGIN SPI3_MspInit 0 */
 
-    /* USER CODE END SPI3_MspInit 0 */
+  /* USER CODE END SPI3_MspInit 0 */
 
-    /** Initializes the peripherals clock
-     */
+  /** Initializes the peripherals clock
+  */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SPI3;
     PeriphClkInit.Spi3ClockSelection = RCC_SPI3CLKSOURCE_SYSCLK;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -475,7 +472,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     PG9     ------> SPI3_SCK
     PB5     ------> SPI3_MOSI
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5;
+    GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
@@ -502,8 +499,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     handle_GPDMA1_Channel9.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
     handle_GPDMA1_Channel9.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel9.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel9.Init.TransferAllocatedPort
-        = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel9.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
     handle_GPDMA1_Channel9.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel9.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel9) != HAL_OK)
@@ -530,8 +526,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     handle_GPDMA1_Channel8.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
     handle_GPDMA1_Channel8.Init.SrcBurstLength = 1;
     handle_GPDMA1_Channel8.Init.DestBurstLength = 1;
-    handle_GPDMA1_Channel8.Init.TransferAllocatedPort
-        = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    handle_GPDMA1_Channel8.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
     handle_GPDMA1_Channel8.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
     handle_GPDMA1_Channel8.Init.Mode = DMA_NORMAL;
     if (HAL_DMA_Init(&handle_GPDMA1_Channel8) != HAL_OK)
@@ -549,20 +544,20 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
     /* SPI3 interrupt Init */
     HAL_NVIC_SetPriority(SPI3_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(SPI3_IRQn);
-    /* USER CODE BEGIN SPI3_MspInit 1 */
+  /* USER CODE BEGIN SPI3_MspInit 1 */
 
-    /* USER CODE END SPI3_MspInit 1 */
+  /* USER CODE END SPI3_MspInit 1 */
   }
 }
 
-void HAL_SPI_MspDeInit(SPI_HandleTypeDef *spiHandle)
+void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 {
 
-  if (spiHandle->Instance == SPI1)
+  if(spiHandle->Instance==SPI1)
   {
-    /* USER CODE BEGIN SPI1_MspDeInit 0 */
+  /* USER CODE BEGIN SPI1_MspDeInit 0 */
 
-    /* USER CODE END SPI1_MspDeInit 0 */
+  /* USER CODE END SPI1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_SPI1_CLK_DISABLE();
 
@@ -571,7 +566,7 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *spiHandle)
     PE15     ------> SPI1_MOSI
     PE13     ------> SPI1_SCK
     */
-    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_14 | GPIO_PIN_15 | GPIO_PIN_13);
+    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_14|GPIO_PIN_15|GPIO_PIN_13);
 
     /* SPI1 DMA DeInit */
     HAL_DMA_DeInit(spiHandle->hdmatx);
@@ -579,15 +574,15 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *spiHandle)
 
     /* SPI1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(SPI1_IRQn);
-    /* USER CODE BEGIN SPI1_MspDeInit 1 */
+  /* USER CODE BEGIN SPI1_MspDeInit 1 */
 
-    /* USER CODE END SPI1_MspDeInit 1 */
+  /* USER CODE END SPI1_MspDeInit 1 */
   }
-  else if (spiHandle->Instance == SPI2)
+  else if(spiHandle->Instance==SPI2)
   {
-    /* USER CODE BEGIN SPI2_MspDeInit 0 */
+  /* USER CODE BEGIN SPI2_MspDeInit 0 */
 
-    /* USER CODE END SPI2_MspDeInit 0 */
+  /* USER CODE END SPI2_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_SPI2_CLK_DISABLE();
 
@@ -596,7 +591,7 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *spiHandle)
     PB14     ------> SPI2_MISO
     PB15     ------> SPI2_MOSI
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15);
 
     /* SPI2 DMA DeInit */
     HAL_DMA_DeInit(spiHandle->hdmatx);
@@ -604,15 +599,15 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *spiHandle)
 
     /* SPI2 interrupt Deinit */
     HAL_NVIC_DisableIRQ(SPI2_IRQn);
-    /* USER CODE BEGIN SPI2_MspDeInit 1 */
+  /* USER CODE BEGIN SPI2_MspDeInit 1 */
 
-    /* USER CODE END SPI2_MspDeInit 1 */
+  /* USER CODE END SPI2_MspDeInit 1 */
   }
-  else if (spiHandle->Instance == SPI3)
+  else if(spiHandle->Instance==SPI3)
   {
-    /* USER CODE BEGIN SPI3_MspDeInit 0 */
+  /* USER CODE BEGIN SPI3_MspDeInit 0 */
 
-    /* USER CODE END SPI3_MspDeInit 0 */
+  /* USER CODE END SPI3_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_SPI3_CLK_DISABLE();
 
@@ -621,7 +616,7 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *spiHandle)
     PG9     ------> SPI3_SCK
     PB5     ------> SPI3_MOSI
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_4 | GPIO_PIN_5);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_4|GPIO_PIN_5);
 
     HAL_GPIO_DeInit(GPIOG, GPIO_PIN_9);
 
@@ -631,9 +626,9 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *spiHandle)
 
     /* SPI3 interrupt Deinit */
     HAL_NVIC_DisableIRQ(SPI3_IRQn);
-    /* USER CODE BEGIN SPI3_MspDeInit 1 */
+  /* USER CODE BEGIN SPI3_MspDeInit 1 */
 
-    /* USER CODE END SPI3_MspDeInit 1 */
+  /* USER CODE END SPI3_MspDeInit 1 */
   }
 }
 
@@ -911,11 +906,8 @@ void SPI_startSensing()
         gsrActiveResistor = HW_RES_40K;
       }
     }
-    if (configBytes->expansionBoardPower)
-    {
-      Board_SW_EXP_BRD_POWER(1);
-    }
-    MX_TIM1_Init(); //init TIM1 for us delay
+    //MX_TIM1_Init(); //init TIM1 for us delay
+    //configureAutoSequenceChannel(enabledAdcChannels);
   }
   /* SPI2 */
   if (configBytes->chEnWrAccel)
@@ -1056,9 +1048,8 @@ void SPI_stopSensing()
   resetGsrPwrAndRange();
   if (areSpiAdcChannelsEnabled())
   {
-    Board_SW_EXP_BRD_POWER(0);
     stopAds7028Conversions();
-    HAL_TIM_Base_MspDeInit(&htim1);
+   // HAL_TIM_Base_MspDeInit(&htim1);
   }
   SPI1_DeInit();
   SPI2_DeInit();

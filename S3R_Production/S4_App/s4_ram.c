@@ -654,3 +654,7 @@ uint8_t isMicrophoneEnabled(void)
 {
   return storedConfig.chEnMicrophone;
 }
+uint8_t isExpansionBoardEnabled(void)
+{
+  return storedConfig.expansionBoardPower;
+}
