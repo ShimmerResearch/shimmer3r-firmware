@@ -233,7 +233,7 @@ void S4Sens_startSensing(void)
       shimmerStatus.sensing = 0;
       return;
     }
-    if(isExpansionBoardEnabled())
+    if (isExpansionBoardEnabled())
     {
       Board_SW_EXP_BRD_POWER(1);
     }
