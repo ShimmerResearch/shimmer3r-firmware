@@ -90,7 +90,7 @@ void ADS1292_init()
   rxCount = 0;
   chip2Enabled = 0;
   chipBusy = 0;
- //UCA0_isrActivate(UCA0_isrRegister(ads1292Uca0RxIsr, ads1292Uca0TxIsr));
+  //UCA0_isrActivate(UCA0_isrRegister(ads1292Uca0RxIsr, ads1292Uca0TxIsr));
 }
 
 void setSpiHandle(SPI_HandleTypeDef *hspi)
