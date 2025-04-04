@@ -130,8 +130,8 @@ extern "C"
 
   typedef struct
   {
-    uint8_t ads1292rExg1Buf[SPI_DMA_TXRX_OFFSET + 7];
-    uint8_t ads1292rExg2Buf[SPI_DMA_TXRX_OFFSET + 7];
+    uint8_t ads1292rExg1Buf[ADS1292_DATA_PACKET_LENGTH];
+    uint8_t ads1292rExg2Buf[ADS1292_DATA_PACKET_LENGTH];
   } spi3ReadBuf;
 
   typedef struct

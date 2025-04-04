@@ -108,11 +108,13 @@ uint8_t ADS1292_readDataChip2(uint8_t *data);
 //Tell the driver that the data is ready to be read from chipX
 void ADS1292_dataReadyChip1(void);
 
-void ADS1292_dataReadFromChip1(void);
-void ADS1292_dataReadFromChip2(void);
+//void ADS1292_dataReadFromChip1(void);
+//void ADS1292_dataReadFromChip2(void);
+void ADS1292_dataReadFromChip1(uint8_t *buf);
+void ADS1292_dataReadFromChip2(uint8_t *buf);
 
 void ADS1292_gatherDataInit(void (*done_cb)(void));
-void ADS1292_gatherDataStart(void);
+//void ADS1292_gatherDataStart(void);
 void ADS1292_gatherDataDone(void);
 
 #define ADS1292_DATA_PACKET_LENGTH 9
