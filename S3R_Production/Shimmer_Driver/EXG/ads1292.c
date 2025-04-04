@@ -158,16 +158,12 @@ HAL_StatusTypeDef ADS1292_Rx1Byte(uint8_t *buf)
 
 HAL_StatusTypeDef ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata)
 {
-  //uint8_t tx_buf[2];
-  uint8_t tx_buf[3] = {
-    0,
-  };
-  uint8_t rx_buf[3] = {
-    0,
-  };
   HAL_StatusTypeDef res = HAL_OK;
+
+  uint8_t tx_buf[2];
   tx_buf[0] = startaddress | RREG;
   tx_buf[1] = size - 1;
+
   res = ADS1292_Tx1Byte(tx_buf[0]);
   if (res != HAL_OK)
   {
@@ -191,11 +187,17 @@ HAL_StatusTypeDef ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *r
 
 HAL_StatusTypeDef ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata)
 {
+  HAL_StatusTypeDef res = HAL_OK;
+
   uint8_t tx_buf[2];
   tx_buf[0] = startaddress | WREG;
   tx_buf[1] = size - 1;
-  HAL_StatusTypeDef res = HAL_OK;
+
   res = ADS1292_Tx1Byte(tx_buf[0]);
+  if (res != HAL_OK)
+  {
+    return res;
+  }
   res = ADS1292_Tx1Byte(tx_buf[1]);
   if (res != HAL_OK)
   {
@@ -216,6 +218,7 @@ HAL_StatusTypeDef ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *
 void ADS1292_powerOn(void)
 {
   Board_EXG_RESET_N(1);
+  //TODO flow chart in datasheet says to wait 1s after setting the reset pin high
   HAL_Delay(10);
 }
 

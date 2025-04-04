@@ -55,10 +55,11 @@ uint8_t EXG_init(SPI_HandleTypeDef *hspi)
   ADS1292_readDataContinuousMode(0);
   ADS1292_chip2CsEnable(0);*/
   //ADS1292_init();
+
   HAL_StatusTypeDef res = HAL_OK;
+
   setSpiHandle(hspi);
   ADS1292_resetPulse();
-  HAL_Delay(5);
   ADS1292_chip1CsEnable(1);
   res = ADS1292_readDataContinuousMode(0);
   if (res != HAL_OK)
@@ -66,13 +67,13 @@ uint8_t EXG_init(SPI_HandleTypeDef *hspi)
     ADS1292_chip1CsEnable(0);
     return 1;
   }
-  ADS1292_chip2CsEnable(1);
   res = ADS1292_enableInternalReference();
   if (res != HAL_OK)
   {
     ADS1292_chip1CsEnable(0);
     return 1;
   }
+  ADS1292_chip2CsEnable(1);
   res = ADS1292_readDataContinuousMode(0);
   ADS1292_chip2CsEnable(0);
   if (res != HAL_OK)
