@@ -134,7 +134,7 @@ void EXG_start(uint8_t chip)
   {
     ADS1292_chip1CsEnable(1);
     ADS1292_readDataContinuousMode(1);
-//    ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1);
+    //ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1);
     ADS1292_start(1);
     ADS1292_chip1CsEnable(0);
   }
@@ -142,7 +142,7 @@ void EXG_start(uint8_t chip)
   {
     ADS1292_chip2CsEnable(1);
     ADS1292_readDataContinuousMode(1);
-//    ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP2);
+    //ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP2);
     ADS1292_start(1);
     ADS1292_chip2CsEnable(0);
   }
@@ -154,7 +154,7 @@ void EXG_start(uint8_t chip)
     ADS1292_readDataContinuousMode(1);
     ADS1292_chip1CsEnable(1);
     ADS1292_readDataContinuousMode(1);
-//    ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
+    //ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
     ADS1292_start(1);
     ADS1292_chip2CsEnable(1);
     ADS1292_start(1);

@@ -572,23 +572,27 @@ void ADS1292_gatherDataInit(void (*done_cb)(void))
 void ADS1292_dataReadFromChip1(uint8_t *buf)
 {
   HAL_StatusTypeDef ret;
-  uint8_t tx_buf[9] = {0,};
+  uint8_t tx_buf[9] = {
+    0,
+  };
 
   ADS1292_chip1CsEnable(1);
   ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
-//  ret = HAL_SPI_Receive_DMA(hspi_exg, buf, ADS1292_DATA_PACKET_LENGTH);
-//  return ret;
+  //ret = HAL_SPI_Receive_DMA(hspi_exg, buf, ADS1292_DATA_PACKET_LENGTH);
+  //return ret;
 }
 
 void ADS1292_dataReadFromChip2(uint8_t *buf)
 {
   HAL_StatusTypeDef ret;
-  uint8_t tx_buf[9] = {0,};
+  uint8_t tx_buf[9] = {
+    0,
+  };
 
   ADS1292_chip2CsEnable(1);
   ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
-//  ret = HAL_SPI_Receive_DMA(hspi_exg, buf, ADS1292_DATA_PACKET_LENGTH);
-//  return ret;
+  //ret = HAL_SPI_Receive_DMA(hspi_exg, buf, ADS1292_DATA_PACKET_LENGTH);
+  //return ret;
 }
 
 //uint8_t ADS1292_spiRxIsr(void)
