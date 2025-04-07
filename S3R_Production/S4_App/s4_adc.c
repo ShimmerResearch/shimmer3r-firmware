@@ -286,25 +286,39 @@ if (configBytes->chEnIntADC4)
 }
 #endif
 
-//Internal ADC 1
-if (configBytes->chEnIntADC1)
-{
-  *channel_contents_ptr++ = INTERNAL_ADC_1;
-  nbr_adc_chans += 1;
-  sensing.ptr.intADC1 = sensing.dataLen;
-  sensing.dataLen += 2;
-  adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_1;
-}
+  //Strain gauge
+  if (configBytes->chEnBridgeAmp)
+  {
+    *channel_contents_ptr++ = STRAIN_HIGH;
+    *channel_contents_ptr++ = STRAIN_LOW;
+    nbr_adc_chans += 2;
+    sensing.ptr.strainGauge = sensing.dataLen;
+    sensing.dataLen += 4;
+    adc.sensorList[adc.sensorLen++] = STRAIN_HIGH;
+    adc.sensorList[adc.sensorLen++] = STRAIN_LOW;
+  }
+  else
+  {
+  //Internal ADC 1
+  if (configBytes->chEnIntADC1)
+  {
+    *channel_contents_ptr++ = INTERNAL_ADC_1;
+    nbr_adc_chans += 1;
+    sensing.ptr.intADC1 = sensing.dataLen;
+    sensing.dataLen += 2;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_1;
+  }
 
-//Internal ADC 2
-if (configBytes->chEnIntADC2)
-{
-  *channel_contents_ptr++ = INTERNAL_ADC_2;
-  nbr_adc_chans += 1;
-  sensing.ptr.intADC2 = sensing.dataLen;
-  sensing.dataLen += 2;
-  adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_2;
-}
+  //Internal ADC 2
+  if (configBytes->chEnIntADC2)
+  {
+    *channel_contents_ptr++ = INTERNAL_ADC_2;
+    nbr_adc_chans += 1;
+    sensing.ptr.intADC2 = sensing.dataLen;
+    sensing.dataLen += 2;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_2;
+  }
+  }
 
 //Internal ADC 3
 if (configBytes->chEnIntADC3 || configBytes->chEnGsr)

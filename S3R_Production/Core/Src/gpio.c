@@ -179,7 +179,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin : DOCK_DETECT_Pin */
   GPIO_InitStruct.Pin = DOCK_DETECT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(DOCK_DETECT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BT_CONNECTION_Pin */
@@ -377,6 +377,9 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
 #if SR48_6_0_PATCH_VBUS_SENSE
   case USB_VBUS_Pin:
+#if defined(SHIMMER3R)
+    Usb_interruptCheck();
+#endif
     if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
     {
       S4_Task_set(TASK_USB_SETUP);
