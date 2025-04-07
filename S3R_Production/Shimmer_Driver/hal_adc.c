@@ -1289,7 +1289,6 @@ void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *h
 #endif //SUPPORT_SR48_6_0
 }
 
-
 /* USER CODE END 1 */
 
 /**
