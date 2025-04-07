@@ -286,19 +286,19 @@ if (configBytes->chEnIntADC4)
 }
 #endif
 
-  //Strain gauge
-  if (configBytes->chEnBridgeAmp)
-  {
-    *channel_contents_ptr++ = STRAIN_HIGH;
-    *channel_contents_ptr++ = STRAIN_LOW;
-    nbr_adc_chans += 2;
-    sensing.ptr.strainGauge = sensing.dataLen;
-    sensing.dataLen += 4;
-    adc.sensorList[adc.sensorLen++] = STRAIN_HIGH;
-    adc.sensorList[adc.sensorLen++] = STRAIN_LOW;
-  }
-  else
-  {
+//Strain gauge
+if (configBytes->chEnBridgeAmp)
+{
+  *channel_contents_ptr++ = STRAIN_HIGH;
+  *channel_contents_ptr++ = STRAIN_LOW;
+  nbr_adc_chans += 2;
+  sensing.ptr.strainGauge = sensing.dataLen;
+  sensing.dataLen += 4;
+  adc.sensorList[adc.sensorLen++] = STRAIN_HIGH;
+  adc.sensorList[adc.sensorLen++] = STRAIN_LOW;
+}
+else
+{
   //Internal ADC 1
   if (configBytes->chEnIntADC1)
   {
@@ -318,7 +318,7 @@ if (configBytes->chEnIntADC4)
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_2;
   }
-  }
+}
 
 //Internal ADC 3
 if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
