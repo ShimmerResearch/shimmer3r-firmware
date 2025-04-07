@@ -728,11 +728,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void dockUartRxCallback(UART_HandleTypeDef *huart)
 {
-  //Board_ledToggle(LED_YELLOW);
-
   DockUart_rxCallback(uartDockRxBuf[0]);
-
-  //HAL_UART_Receive_DMA(huartDock, uartDockRxBuf, 1);
   HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
 }
 
@@ -748,4 +744,18 @@ void DockUart_writeText(char *str)
   DockUart_writeBlocking((uint8_t *) str, strlen(str));
 }
 
+#if defined(SHIMMER3R)
+uint8_t Usb_interruptCheck(void)
+{
+  if (HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_SET)
+  {
+    shimmerStatus.usbPluggedIn = 1;
+  }
+  else
+  {
+    shimmerStatus.usbPluggedIn = 0;
+  }
+  return shimmerStatus.usbPluggedIn;
+}
+#endif
 /* USER CODE END 1 */

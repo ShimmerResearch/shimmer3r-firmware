@@ -24,6 +24,7 @@
 #else
 #include "log_and_stream_definitions.h"
 #include "s4_taskList.h"
+#include "usbd_cdc_acm_if.h"
 
 #include "stm32u5xx_hal_uart.h"
 #endif
@@ -36,6 +37,7 @@ uint8_t uartSendRspMac, uartSendRspVer, uartSendRspBat,
     uartSendRspRtcConfigTime, uartSendRspCurrentTime, uartSendRspGdi,
     uartSendRspGdm, uartSendRspGim, uartSendRspBtVer, uartSendRspAck,
     uartSendRspBadCmd, uartSendRspBadArg, uartSendRspBadCrc;
+
 #if EN_CALIB_DUMP_RSP
 uint8_t uartSendRspCalibDump;
 #endif
@@ -783,7 +785,16 @@ void DockUart_sendRsp(void)
     *(uartRespBuf + uart_resp_len++) = 0x0a;
   }
 
-  DockUart_writeBlocking(uartRespBuf, uart_resp_len);
+  if (shimmerStatus.usbPluggedIn)
+  {
+    /* respond to commands via usb */
+    CDC_Transmit(0, uartRespBuf, uart_resp_len);
+  }
+  else if (shimmerStatus.docked)
+  {
+    /* respond to commands via dock usart */
+    DockUart_writeBlocking(uartRespBuf, uart_resp_len);
+  }
 }
 
 uint8_t UartCheckCrc(uint8_t len)
