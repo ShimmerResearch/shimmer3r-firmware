@@ -546,7 +546,7 @@ void Ads7028GsrTestInit(void)
 
 void configureAutoSequenceChannel(uint8_t ChannelID)
 {
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_DEFAULT); //put all chaneels to default
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_DEFAULT); //put all channels to default
   writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID); //select channel for auto-sequencing
 }
 

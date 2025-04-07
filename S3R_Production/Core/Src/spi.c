@@ -1185,51 +1185,52 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
   case SPI1_ADS7028_INT_EXP0:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP0_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH0_ENABLED);
-    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    ads7028DataGet(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_INT_EXP1:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP1_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH1_ENABLED);
-    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    ads7028DataGet(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_INT_EXP2:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP2_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH2_ENABLED);
-    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    ads7028DataGet(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_INT_EXP3:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP3_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
-    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    ads7028DataGet(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP0:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP0_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED);
-    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    ads7028DataGet(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP1:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP1_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED);
-    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    ads7028DataGet(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP2:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP2_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH6_ENABLED);
-    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    ads7028DataGet(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_VBATT_SENSE:
     spiSensingInfo->status = SPI_STAT_ADS7028_VBATT_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH7_ENABLED);
-    ads7028DataGet(spi1Sens_buf.Ads2078Buf);
+    ads7028DataGet(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
+
   case SPI2_LIS2DW12_ACCEL:
 #if defined(LIS2DW12_INT1_Pin)
     if (!lis2dw12_is_drdy_int_enabled() || LIS2DW12_INT1)
@@ -1250,6 +1251,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       retVal = 1;
     }
     break;
+
   case SPI3_ADS1292R_EXG1:
     //TODO
     break;
@@ -1314,8 +1316,8 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
     /* Original ADC data is MSB order and left-aligned whereas Shimmer normally
      * uses LSB order right-aligned */
-    uint16_t adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
-                              | spi1Sens_buf.Ads2078Buf[1] >> 4)
+    uint16_t adcTempbuf = (((uint16_t) spi1Sens_buf.ads2078Buf[0]) << 4
+                              | spi1Sens_buf.ads2078Buf[1] >> 4)
         & 0x0FFF;
 
     switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
