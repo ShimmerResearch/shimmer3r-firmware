@@ -1358,7 +1358,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     sensing.dataBuf[dataBufIndex + 0] = adcTempbuf & 0xFF;
     sensing.dataBuf[dataBufIndex + 1] = (adcTempbuf >> 8) & 0xFF;
 
-    if(spi1Sens.sensorList[spi1Sens.sensorCnt] == SPI1_ADS7028_INT_EXP3
+    if (spi1Sens.sensorList[spi1Sens.sensorCnt] == SPI1_ADS7028_INT_EXP3
         && ShimConfig_isGSREnabled())
     {
       GSR_range(&sensing.dataBuf[dataBufIndex]);
