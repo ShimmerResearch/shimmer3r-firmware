@@ -535,7 +535,7 @@ void ads7028DataGet(uint8_t *dataRx)
       SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
   //TODO : Is this delay needed?
   delay_us(3);
-  uint16_t res = readData(dataRx, &SENSOR_BUS);
+  readDataDma(dataRx, &SENSOR_BUS);
 }
 
 void Ads7028GsrTestInit(void)
