@@ -48,7 +48,7 @@ SPI_ADCTypeDef spiAdc;
 #endif
 
 uint8_t gsrActiveResistor;
-uint32_t adcTempbuf = 0;
+
 void (*SPI_gatherDataDone_cb)(void);
 
 /* USER CODE END 0 */
@@ -828,10 +828,13 @@ void SPI_configureChannels()
       }
     }
   }
-  if (isAds7028Present()) //External ADC ADS7028
+
+  //External ADC ADS7028
+  if (isAds7028Present())
   {
     ads7028_configureChannels(channel_contents_ptr);
   }
+
   sensing.ccLen += nbr_spi_chans;
   sensing.nbrDigiChans += nbr_spi_chans;
 
@@ -1275,13 +1278,6 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 
 void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  if (areSpiAdcChannelsEnabled())
-  {
-    adcTempbuf = 0;
-    adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
-                     | spi1Sens_buf.Ads2078Buf[1] >> 4)
-        & 0x0FFF;
-  }
   switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
   {
   case SPI1_LSM6DSV_GYRO_AND_ACCEL:
@@ -1320,45 +1316,62 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;
   case SPI1_ADS7028_INT_EXP0:
-    sensing.dataBuf[sensing.ptr.intADC0 + 0] = adcTempbuf & 0xFF;
-    sensing.dataBuf[sensing.ptr.intADC0 + 1] = (adcTempbuf >> 8) & 0xFF;
-    break;
   case SPI1_ADS7028_INT_EXP1:
-    sensing.dataBuf[sensing.ptr.intADC1 + 0] = adcTempbuf & 0xFF;
-    sensing.dataBuf[sensing.ptr.intADC1 + 1] = (adcTempbuf >> 8) & 0xFF;
-    break;
   case SPI1_ADS7028_INT_EXP2:
-    sensing.dataBuf[sensing.ptr.intADC2 + 0] = adcTempbuf & 0xFF;
-    sensing.dataBuf[sensing.ptr.intADC2 + 1] = (adcTempbuf >> 8) & 0xFF;
-    break;
   case SPI1_ADS7028_INT_EXP3:
-    if (isGSREnabled())
-    {
-      GSR_output(&adcTempbuf);
-      sensing.dataBuf[sensing.ptr.gsr + 0] = adcTempbuf & 0xFF;
-      sensing.dataBuf[sensing.ptr.gsr + 1] = (adcTempbuf >> 8) & 0xFF;
-    }
-    else
-    {
-      sensing.dataBuf[sensing.ptr.intADC3 + 0] = adcTempbuf & 0xFF;
-      sensing.dataBuf[sensing.ptr.intADC3 + 1] = (adcTempbuf >> 8) & 0xFF;
-    }
-    break;
   case SPI1_ADS7028_EXT_EXP0:
-    sensing.dataBuf[sensing.ptr.extADC0 + 0] = adcTempbuf & 0xFF;
-    sensing.dataBuf[sensing.ptr.extADC0 + 1] = (adcTempbuf >> 8) & 0xFF;
-    break;
   case SPI1_ADS7028_EXT_EXP1:
-    sensing.dataBuf[sensing.ptr.extADC1 + 0] = adcTempbuf & 0xFF;
-    sensing.dataBuf[sensing.ptr.extADC1 + 1] = (adcTempbuf >> 8) & 0xFF;
-    break;
   case SPI1_ADS7028_EXT_EXP2:
-    sensing.dataBuf[sensing.ptr.extADC2 + 0] = adcTempbuf & 0xFF;
-    sensing.dataBuf[sensing.ptr.extADC2 + 1] = (adcTempbuf >> 8) & 0xFF;
-    break;
   case SPI1_ADS7028_VBATT_SENSE:
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = adcTempbuf & 0xFF;
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = (adcTempbuf >> 8) & 0xFF;
+    /* Original ADC data is MSB order and left-aligned whereas Shimmer normally
+     * uses LSB order right-aligned */
+    uint32_t adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
+                     | spi1Sens_buf.Ads2078Buf[1] >> 4)
+        & 0x0FFF;
+    uint8_t dataBufIndex = 0;
+
+    switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
+    {
+    case SPI1_ADS7028_INT_EXP0:
+      dataBufIndex = sensing.ptr.intADC0;
+      break;
+    case SPI1_ADS7028_INT_EXP1:
+      dataBufIndex = sensing.ptr.intADC1;
+      break;
+    case SPI1_ADS7028_INT_EXP2:
+      dataBufIndex = sensing.ptr.intADC2;
+      break;
+    case SPI1_ADS7028_INT_EXP3:
+      if (isGSREnabled())
+      {
+        GSR_output(&adcTempbuf);
+        dataBufIndex = sensing.ptr.gsr;
+      }
+      else
+      {
+        dataBufIndex = sensing.ptr.intADC3;
+      }
+      break;
+    case SPI1_ADS7028_EXT_EXP0:
+      dataBufIndex = sensing.ptr.extADC0;
+      break;
+    case SPI1_ADS7028_EXT_EXP1:
+      dataBufIndex = sensing.ptr.extADC1;
+      break;
+    case SPI1_ADS7028_EXT_EXP2:
+      dataBufIndex = sensing.ptr.extADC2;
+      break;
+    case SPI1_ADS7028_VBATT_SENSE:
+      dataBufIndex = sensing.ptr.batteryAnalog;
+      break;
+    default:
+      break;
+    }
+
+    sensing.dataBuf[dataBufIndex + 0] = adcTempbuf & 0xFF;
+    sensing.dataBuf[dataBufIndex + 1] = (adcTempbuf >> 8) & 0xFF;
+
+    stopAds7028Conversions();
     break;
   default:
     break;
@@ -1366,10 +1379,6 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
   spi1Sens.status = SPI_STAT_IDLE;
   SpiSensing(&spi1Sens, SPI_NEXT_SENSOR);
-  if (areSpiAdcChannelsEnabled())
-  {
-    stopAds7028Conversions();
-  }
 }
 
 void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
@@ -1473,12 +1482,9 @@ bool areSpiChannelsEnabled(void)
 
 void ads7028_configureChannels(uint8_t *channel_contents_ptr)
 {
-  //uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
   uint8_t nbr_adc_chans = 0;
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  spiAdc.sensorLen = 0; //adc.sensorCnt = 0;
-  spiAdc.chanCntSens = spiAdc.chanCntBatt = 0;
-  //Configure pin as analog input
+  memset(&spiAdc, 0x00, sizeof(spiAdc));
 
   //Select channel  and enable as per config
   //Internal ADC 0

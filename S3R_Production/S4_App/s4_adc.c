@@ -335,11 +335,6 @@ void S4_NORM_ADC_startSensing(void)
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
   ADC_ChannelConfTypeDef sConfig = { 0 };
 
-  if (configBytes->expansionBoardPower)
-  {
-    Board_SW_EXP_BRD_POWER(1);
-  }
-
 #if defined(SHIMMER3R)
   uint8_t adc_counter_sens = 0; //adc channel rank counter
 #elif defined(SHIMMER4_SDK)
