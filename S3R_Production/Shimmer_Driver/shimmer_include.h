@@ -14,7 +14,7 @@
 #include "log_and_stream_includes.h"
 
 #include "hal_Power.h"
-#include "s4_adc.h"
+#include "hal_adc.h"
 #include "shimmer_definitions.h"
 #if defined(SHIMMER4_SDK)
 #include <STC3100/STC3100.h>
@@ -25,6 +25,7 @@
 #include "ADXL371/hal_adxl371.h"
 #include "LIS2DW12/hal_lis2dw12.h"
 #include "LIS2DW12/lis2dw12-pid/lis2dw12_reg.h"
+#include <ADS7028_38/ads7028_38.h>
 #include <CYW20820/CYW20820.h>
 #include <CYW20820/EZ-Serial/handlers.h>
 #include <LIS2DW12/lis2dw12.h>

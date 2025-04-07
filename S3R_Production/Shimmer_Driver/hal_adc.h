@@ -2,7 +2,7 @@
 #ifndef S4_ADC_H
 #define S4_ADC_H
 
-#include "shimmer_include.h"
+#include <shimmer_include.h>
 #include "stm32u5xx_hal.h"
 //#include "main.h"
 
@@ -21,6 +21,8 @@ typedef struct
   uint8_t chanCntSens;
   uint8_t chanCntBatt;
 } ADCTypeDef;
+
+extern ADCTypeDef adc;
 
 typedef struct
 {
@@ -103,7 +105,7 @@ void adcGpioInit(uint32_t pin, GPIO_TypeDef *port);
 void manageReadBatt(uint8_t isBlockingRead);
 
 #if defined(SHIMMER3R)
-bool areAdcChannelsEnabled(void);
+bool areMcuAdcChannelsEnabled(void);
 #endif
 
 HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample);

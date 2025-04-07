@@ -41,7 +41,8 @@
 #define ADS7038_H_
 
 //Standard libraries
-#include <ADS7028_38/hal_ads7028_38.h>
+#include "hal_ads7028_38.h"
+#include "spi.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -1145,9 +1146,9 @@
 void initADS7038(void);
 void resetDevice();
 void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond);
-void stopConversions(void);
+void stopAds7028Conversions(void);
 
-int16_t readData(uint8_t dataRx[]);
+int16_t readData(uint8_t *dataRx, SPI_HandleTypeDef *handle);
 uint8_t readSingleRegister(uint8_t address);
 uint8_t getRegisterValue(uint8_t address);
 
@@ -1158,5 +1159,7 @@ void clearRegisterBits(uint8_t address, uint8_t bitMask);
 /* Helper Functions */
 uint8_t calculateCRC(const uint8_t dataBytes[], uint8_t numberBytes, uint8_t initialValue);
 void setChannelAsAnalogInput(uint8_t channelID);
+
+uint16_t signExtend(uint8_t *dataBytes);
 
 #endif /* ADS7038_H_ */

@@ -23,7 +23,7 @@
 /* USER CODE BEGIN 0 */
 
 #include "gpdma.h"
-#include "s4_adc.h"
+#include "hal_adc.h"
 
 /* USER CODE END 0 */
 

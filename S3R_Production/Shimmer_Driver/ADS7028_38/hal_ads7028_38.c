@@ -49,15 +49,14 @@ static void initTIMER(void);
 void TIMER0IntHandler(void);
 #else
 #include "gpio.h"
-#include "spi.h"
 #include "stm32u5xx_hal.h"
-
-#define SENSOR_BUS hspi1
 
 #define nCS_PORT   (CS_ADS7028_GPIO_Port)
 #define nCS_PIN    (CS_ADS7028_Pin)
+#define SENSOR_BUS hspi1
 #endif
 
+uint8_t *dataADC = 0;
 //****************************************************************************
 //
 // Function Definitions
@@ -206,7 +205,8 @@ static void initTIMER(void)
 //!\return None.
 //
 //*****************************************************************************
-void spiSendReceiveArray(const uint8_t dataTx[], uint8_t dataRx[], const uint8_t byteLength)
+//void spiSendReceiveArray(const uint8_t dataTx[], uint8_t dataRx[], const uint8_t byteLength)
+void spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, const uint8_t byteLength)
 {
   /*  --- INSERT YOUR CODE HERE ---
    *
@@ -307,6 +307,8 @@ void startTimer(uint32_t timerFreqHz)
   TimerEnable(TIMER0_BASE, TIMER_A);
 #else
   //TODO decide how to handle timer configuration for STM32 if needed
+  //HAL_Delay(1);
+  //TIMER0IntHandler();
 #endif
 }
 
@@ -338,7 +340,7 @@ void stopTimer(void)
 // The interrupt handler for the timer interrupt.
 //
 //*****************************************************************************
-void TIMER0IntHandler(void)
+void TIMER0IntHandler(uint8_t *dataRx)
 {
 #if defined(MSP432E401Y)
   //Clear the timer interrupt
@@ -348,17 +350,18 @@ void TIMER0IntHandler(void)
 #endif
 
   //Array to store ADC conversion results
-  uint8_t data[4] = { 0 };
 
   //Start conversion
   setCS(HIGH);
 
   //Wait for conversion to complete
   //IMPORTANT: This delay will need to be modified if averaging is enabled!
-  delay_us(3);
-
+  //delay_us(3);
+  //delay_us(3);
   //Read data
-  readData(data);
+  //#if defined(MSP432E401Y)
+  readData(dataRx, &SENSOR_BUS);
+  //#endif
 }
 
 //****************************************************************************
@@ -421,11 +424,11 @@ void setCS(const bool state)
   }
 #else
   //TODO decide delay time based on example above
-  HAL_Delay(1); //Arbitrary delay
+  //HAL_Delay(1); //Arbitrary delay
   GPIO_PinState value = (state ? GPIO_PIN_SET : GPIO_PIN_RESET);
   HAL_GPIO_WritePin(nCS_PORT, nCS_PIN, value);
   //TODO decide delay time based on example above
-  HAL_Delay(1); //Arbitrary delay
+  //HAL_Delay(1); //Arbitrary delay
 #endif
 }
 
@@ -469,9 +472,9 @@ void delay_ms(const uint32_t delay_time_ms)
 //!\return None.
 //
 //*****************************************************************************
-void delay_us(const uint32_t delay_time_us)
+/*void delay_us(const uint32_t delay_time_us)
 {
-  /* --- INSERT YOUR CODE HERE --- */
+   --- INSERT YOUR CODE HERE ---
 
 #if defined(MSP432E401Y)
   const uint32_t cycles_per_loop = 3;
@@ -480,7 +483,7 @@ void delay_us(const uint32_t delay_time_us)
   //TODO currently limited to millisecond timer
   HAL_Delay(1);
 #endif
-}
+}*/
 
 //*****************************************************************************
 // Shimmer code start
@@ -491,13 +494,11 @@ self_test_result_t ads7028_self_test(void)
 {
   self_test_result_t self_test_result = SELF_TEST_PASS;
 
-  //initADS7038();
   uint8_t sysStatus = readSingleRegister(SYSTEM_STATUS_ADDRESS);
   if (sysStatus != SYSTEM_STATUS_DEFAULT)
   {
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
-
   return self_test_result;
 }
 
@@ -525,4 +526,31 @@ void swI2C4PpgOnAds7028(uint8_t state)
     setRegisterBits(GPO_OUTPUT_VALUE_ADDRESS, GPO_OUTPUT_VALUE_GPO_OUTPUT_VALUE_CH2_HIGH);
     setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_PIN_CFG_CH2_ANALOG_INPUT);
   }
+}
+
+void ads7028DataGet(uint8_t *dataRx)
+{
+  //select auto sequencing mode and start conversion
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS,
+      SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
+  //TODO : Is this delay needed?
+  delay_us(3);
+  uint16_t res = readData(dataRx, &SENSOR_BUS);
+}
+
+void Ads7028GsrTestInit(void)
+{
+  //set channel 3 for auto sequencing conversion.
+  setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
+}
+
+void configureAutoSequenceChannel(uint8_t ChannelID)
+{
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_DEFAULT); //put all chaneels to default
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID); //select channel for auto-sequencing
+}
+
+bool areSpiAdcChannelsEnabled(void)
+{
+  return spiAdc.sensorLen > 0;
 }

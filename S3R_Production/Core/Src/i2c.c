@@ -1371,7 +1371,7 @@ void enableI2cOnInternalExpansionBrd(uint8_t state)
 {
   if (state)
   {
-    Board_SW_EXP_BRD_POWER(1);
+    Board_setExpansionBrdPower(1);
     if (ShimBrd_isBoardSr48_7_0())
     {
       //SPI is needed to change GPIO state in ADS7028
@@ -1387,7 +1387,7 @@ void enableI2cOnInternalExpansionBrd(uint8_t state)
   else
   {
     I2C4_DeInit();
-    Board_SW_EXP_BRD_POWER(0);
+    Board_setExpansionBrdPower(0);
     if (ShimBrd_isBoardSr48_7_0())
     {
       swI2C4PpgOnAds7028(0);

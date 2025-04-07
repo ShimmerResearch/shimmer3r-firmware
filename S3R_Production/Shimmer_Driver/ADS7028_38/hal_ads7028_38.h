@@ -53,6 +53,7 @@
 #include <stdbool.h>
 
 #include "hal_FactoryTest.h"
+#include "tim.h"
 #endif
 
 #if defined(MSP432E401Y)
@@ -108,6 +109,26 @@
 #define SYSTEM_CLOCK_HZ ((uint32_t) 120000000)
 #endif
 
+enum ads7028_ch_ID
+{
+  ADS7028_INT_EXP0,
+  ADS7028_INT_EXP1,
+  ADS7028_INT_EXP2,
+  ADS7028_INT_EXP3,
+  ADS7028_EXT_EXP0,
+  ADS7028_EXT_EXP1,
+  ADS7028_EXT_EXP2,
+  ADS7028_VBATT
+};
+
+typedef struct
+{ //adc - Sensors
+  uint8_t sensorList[8];
+  uint8_t sensorLen;
+} SPI_ADCTypeDef;
+
+extern SPI_ADCTypeDef spiAdc;
+
 //*****************************************************************************
 //
 // Function Prototypes
@@ -118,7 +139,8 @@
 #if defined(MSP432E401Y)
 void initAdcPeripherals(void);
 #endif
-void spiSendReceiveArray(const uint8_t DataTx[], uint8_t DataRx[], const uint8_t byteLength);
+//void spiSendReceiveArray(const uint8_t DataTx[], uint8_t DataRx[], const uint8_t byteLength);
+void spiSendReceiveArray(const uint8_t *DataTx, uint8_t *DataRx, const uint8_t byteLength);
 #if defined(MSP432E401Y)
 uint8_t spiSendReceiveByte(const uint8_t dataTx);
 #endif
@@ -129,11 +151,14 @@ bool getCS(void); /*  Used for testing only */
 
 /* Timing functions */
 void delay_ms(const uint32_t delay_time_ms);
-void delay_us(const uint32_t delay_time_us);
 void startTimer(uint32_t timerFreq);
 void stopTimer(void);
-void TIMER0IntHandler(void);
+void TIMER0IntHandler(uint8_t *dataRx);
 
 self_test_result_t ads7028_self_test(void);
 void swI2C4PpgOnAds7028(uint8_t state);
+void ads7028DataGet(uint8_t *dataRx);
+void Ads7028GsrTestInit(void);
+void configureAutoSequenceChannel(uint8_t ChannelID);
+bool areSpiAdcChannelsEnabled(void);
 #endif /* HAL_ADC7028_38_H_ */

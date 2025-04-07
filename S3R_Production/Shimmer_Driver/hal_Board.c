@@ -556,3 +556,9 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state)
   }
 }
 #endif
+
+void Board_setExpansionBrdPower(uint8_t state)
+{
+  Board_SW_EXP_BRD_POWER(state);
+  shimmerStatus.pinPvExt = state;
+}

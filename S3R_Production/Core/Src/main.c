@@ -244,6 +244,7 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM6_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();
@@ -252,8 +253,8 @@ int main(void)
   Init();
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
-  run_factory_test();
+  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+  //run_factory_test();
   /* USER CODE END 2 */
 
   /* Infinite loop */
