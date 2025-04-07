@@ -1326,7 +1326,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     /* Original ADC data is MSB order and left-aligned whereas Shimmer normally
      * uses LSB order right-aligned */
     uint32_t adcTempbuf = (((uint16_t) spi1Sens_buf.Ads2078Buf[0]) << 4
-                     | spi1Sens_buf.Ads2078Buf[1] >> 4)
+                              | spi1Sens_buf.Ads2078Buf[1] >> 4)
         & 0x0FFF;
     uint8_t dataBufIndex = 0;
 
