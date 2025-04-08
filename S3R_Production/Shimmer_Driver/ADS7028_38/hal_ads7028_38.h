@@ -153,12 +153,13 @@ bool getCS(void); /*  Used for testing only */
 void delay_ms(const uint32_t delay_time_ms);
 void startTimer(uint32_t timerFreq);
 void stopTimer(void);
-void TIMER0IntHandler(uint8_t *dataRx);
+void TIMER0IntHandler(void);
 
-self_test_result_t ads7028_self_test(void);
-void swI2C4PpgOnAds7028(uint8_t state);
-void ads7028DataGet(uint8_t *dataRx);
-void Ads7028GsrTestInit(void);
+self_test_result_t ads7028_factoryTestChipId(void);
+void ads7028_swI2C4PpgOn(uint8_t state);
+void ads7028_dataGetDma(uint8_t *dataRx);
 void configureAutoSequenceChannel(uint8_t ChannelID);
-bool areSpiAdcChannelsEnabled(void);
+bool ads7028_areAnyChannelsEnabled(void);
+void ads7028_factoryTestGsrInit(void);
+HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance);
 #endif /* HAL_ADC7028_38_H_ */

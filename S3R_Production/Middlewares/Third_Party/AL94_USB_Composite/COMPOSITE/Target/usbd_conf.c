@@ -31,7 +31,7 @@
 #include "usb_otg.h"
 #endif
 
-#include "s4_taskList.h"
+#include <TaskList/shimmer_taskList.h>
 /* USER CODE END Includes */
 
 
@@ -225,7 +225,7 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 
   USBD_LL_Resume((USBD_HandleTypeDef *)hpcd->pData);
   //TODO only call if unplugged
-  S4_Task_set(TASK_USB_SETUP);
+  ShimTask_set(TASK_USB_SETUP);
   return;
 
   /* USER CODE END 3 */

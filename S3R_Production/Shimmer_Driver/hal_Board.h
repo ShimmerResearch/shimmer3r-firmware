@@ -55,89 +55,16 @@
 #define VREF_EXTERNAL_SUPPLY_MV 3000
 #endif
 
-typedef enum
-{
-  SENSE_PWR_VBATT = (0x01 << 0),
-  SENSE_PWR_SENSING = (0x01 << 1),
-  SENSE_PWR_EEPROM = (0x01 << 2),
-  SENSE_PWR_FACTORY_TEST = (0x01 << 3)
-} sense_pwr_flg_t;
-
-//Legacy approach for 5 individual LEDs before two RGB LEDs were introduced
-#define LED_RED      0x01 //== BATT_LOW
-#define LED_YELLOW   0x02 //== BATT_MID
-#define LED_GREEN0   0x04 //== BATT_HIGH
-#define LED_ALL_BATT (LED_RED + LED_YELLOW + LED_GREEN0)
-#define LED_GREEN1   0x08
-#define LED_BLUE     0x10
-#define LED_ALL      0xFF
-
-#if defined(SHIMMER3R)
-typedef enum
-{
-  LED_RGB_ALL_OFF = 0x000000,
-  LED_RGB_RED = 0xFF0000,
-  LED_RGB_GREEN = 0x00FF00,
-  LED_RGB_BLUE = 0x0000FF,
-  LED_RGB_YELLOW = 0xFFFF00,
-  LED_RGB_PURPLE = 0x800080,
-  LED_RGB_ALL_ON = 0xFFFFFF,
-} led_rgb_t;
-
-typedef enum
-{
-  LED_MODE_OFF,
-  LED_MODE_ON,
-  LED_MODE_TOGGLE
-} led_mode;
-
 #define LED_PWM_ON  255
 #define LED_PWM_OFF 0
-
-void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
-    TIM_HandleTypeDef *htimUprLeds,
-    TIM_HandleTypeDef *htimLedBlink);
-
-void startLedBlinkTimer(void);
-void stopLedBlinkTimer(void);
-
-void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue);
-void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
-
-void Board_ledLwrSetColour(uint32_t ledMask);
-void Board_ledLwrSetColourRgb(int16_t red, int16_t green, int16_t blue);
-void Board_ledLwrToggleColourRgb(uint32_t ledMask);
-void Board_ledUprSetColour(uint32_t ledMask);
-void Board_ledUprSetColourRgb(int16_t red, int16_t green, int16_t blue);
-void Board_ledUprToggleColourRgb(uint32_t ledMask);
-
-uint8_t isLedOnUprBlue(void);
-uint8_t isLedOnUprGreen(void);
-#endif
-
-extern void Board_ledOn(uint8_t ledMask);
-extern void Board_ledOff(uint8_t ledMask);
-extern void Board_ledToggle(uint8_t ledMask);
-
-extern void Board_sdPowerCycle(void);
-extern void Board_sd2Pc(void);
-extern void Board_sd2Arm(void);
-void Board_setSdPower(uint8_t state);
-void Board_setDockAccessToSd(uint8_t mcu0dock1);
-
-extern void Board_delayMicrosInit(void);
-extern void Board_delayMicros(uint32_t micros);
-#if defined(SHIMMER3R)
-void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
-#endif
 
 #if defined(SHIMMER3R)
 #define GPIO_INTERNAL4_Pin         GPIO_PIN_2
 #define GPIO_INTERNAL4_GPIO_Port   GPIOB
 #define GPIO_INTERNAL3_Pin         GPIO_PIN_1
 #define GPIO_INTERNAL3_GPIO_Port   GPIOB
-#define EXG_RESET_N_Pin            SW_GSR_Pin
-#define EXG_RESET_N_GPIO_Port      SW_GSR_GPIO_Port
+#define EXG_RESET_N_Pin            SR48_6_0_SW_GSR_Pin
+#define EXG_RESET_N_GPIO_Port      SR48_6_0_SW_GSR_GPIO_Port
 #define EXG_CHIP1_CS_GPIO_Port     GPIO_INTERNAL4_GPIO_Port
 #define EXG_CHIP1_CS_Pin           GPIO_INTERNAL4_Pin
 #define EXG_CHIP2_CS_GPIO_Port     GPIO_INTERNAL3_GPIO_Port
@@ -166,9 +93,11 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 //#define INT_LINE_SD_DETECT_N       EXTI0_IRQn
 #define INT_LINE_DOCK_DETECT       EXTI1_IRQn //Enabled by CubeMX
 #define INT_LINE_LIS3MDL_DRDY      EXTI2_IRQn
-#ifdef SR48_6_0_PATCH_DOCK_DETECT
+#if SUPPORT_SR48_6_0
+/* SR48-6-0 patch for dock detection - start */
 #define INT_LINE_SR48_6_0_BOOT0_USER_BTN EXTI3_IRQn //Only used on SR48-6-0
-#endif
+/* SR48-6-0 patch for dock detection - end */
+#endif //SUPPORT_SR48_6_0
 #define INT_LINE_GPIO_INTERNAL1    EXTI4_IRQn
 /* Either GPIO_ADC_INT_EXP0 or GPIO_INTERNAL2 can be used on line 5 */
 #define INT_LINE_GPIO_ADC_INT_EXP0 EXTI5_IRQn
@@ -196,7 +125,7 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define DAQ_CH_GPIO_ADC_INT_EXP0   DAC1_CHANNEL_2
 
 /* ADC Channels */
-#ifdef SR48_6_0
+#ifdef SUPPORT_SR48_6_0
 #define ADC_CHANNEL_VBATT  ADC_CHANNEL_4
 #define ADC_CHANNEL_EXT_A0 ADC_CHANNEL_9
 #define ADC_CHANNEL_EXT_A1 ADC_CHANNEL_11
@@ -291,10 +220,11 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
   HAL_GPIO_WritePin(SW_SENSE_GPIO_Port, SW_SENSE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_SW_PV_SENSE_IO(x) \
   HAL_GPIO_WritePin(SW_SENSE_IO_GPIO_Port, SW_SENSE_IO_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#ifdef SR48_6_0
-#define Board_SW_GSR(x) \
-  HAL_GPIO_WritePin(SW_GSR_GPIO_Port, SW_GSR_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#endif
+#if SUPPORT_SR48_6_0
+#define Board_SW_GSR(x)                                             \
+  HAL_GPIO_WritePin(SR48_6_0_SW_GSR_GPIO_Port, SR48_6_0_SW_GSR_Pin, \
+      x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#endif //SUPPORT_SR48_6_0
 #define Board_SW_EXP_BRD_POWER(x) \
   HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 //TODO confirm which pin is going to be used
@@ -306,11 +236,11 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 /* Specific to Shimmer3R GSR+ model:
  * Output low = I2C4 is connected to PPG connector
  * Output high = I2C4 is disconnected from PPG connector */
-#if defined(SR48_6_0)
-#define Board_SW_I2C4_ON_PPG(x)                                         \
-  HAL_GPIO_WritePin(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin, \
-      x ? GPIO_PIN_RESET : GPIO_PIN_SET)
-#endif
+#if SUPPORT_SR48_6_0
+#define Board_SW_I2C4_ON_PPG(x)                           \
+  HAL_GPIO_WritePin(SR48_6_0_GPIO_ADC_INT_EXP2_GPIO_Port, \
+      SR48_6_0_GPIO_ADC_INT_EXP2_Pin, x ? GPIO_PIN_RESET : GPIO_PIN_SET)
+#endif //SUPPORT_SR48_6_0
 
 /* 0/1 = power off/on */
 #define Board_SW_BT(x) \
@@ -380,14 +310,79 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #endif
 
-#ifdef SR48_6_0
-#define LM3658SD_STAT2 \
+#if SUPPORT_SR48_6_0
+#define LM3658SD_STAT2_SR48_6_0 \
   HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT2_GPIO_Port, SR48_6_0_CHG_STAT2_Pin)
-#define LM3658SD_STAT1 \
+#define LM3658SD_STAT1_SR48_6_0 \
   HAL_GPIO_ReadPin(SR48_6_0_CHG_STAT1_GPIO_Port, SR48_6_0_CHG_STAT1_Pin)
-#else
+#endif //SUPPORT_SR48_6_0
 #define LM3658SD_STAT2 HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)
 #define LM3658SD_STAT1 HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)
+
+typedef enum
+{
+  SENSE_PWR_VBATT = (0x01 << 0),
+  SENSE_PWR_SENSING = (0x01 << 1),
+  SENSE_PWR_EEPROM = (0x01 << 2),
+  SENSE_PWR_FACTORY_TEST = (0x01 << 3)
+} sense_pwr_flg_t;
+
+#if defined(SHIMMER3R)
+typedef enum
+{
+  LED_RGB_ALL_OFF = 0x000000,
+  LED_RGB_RED = 0xFF0000,
+  LED_RGB_GREEN = 0x00FF00,
+  LED_RGB_BLUE = 0x0000FF,
+  LED_RGB_YELLOW = 0xFFFF00,
+  LED_RGB_PURPLE = 0x800080,
+  LED_RGB_ALL_ON = 0xFFFFFF,
+} led_rgb_t;
+
+typedef enum
+{
+  LED_MODE_OFF,
+  LED_MODE_ON,
+  LED_MODE_TOGGLE
+} led_mode;
+
+void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
+    TIM_HandleTypeDef *htimUprLeds,
+    TIM_HandleTypeDef *htimLedBlink);
+
+void startLedBlinkTimer(void);
+void stopLedBlinkTimer(void);
+
+void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue);
+void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
+
+void Board_ledLwrSetColour(uint32_t ledMask);
+void Board_ledLwrSetColourRgb(int16_t red, int16_t green, int16_t blue);
+void Board_ledLwrToggleColourRgb(uint32_t ledMask);
+void Board_ledUprSetColour(uint32_t ledMask);
+void Board_ledUprSetColourRgb(int16_t red, int16_t green, int16_t blue);
+void Board_ledUprToggleColourRgb(uint32_t ledMask);
+
+uint8_t Board_isLedOnUprBlue(void);
+uint8_t Board_isLedOnUprGreen(void);
 #endif
+
+extern void Board_ledOn(uint8_t ledMask);
+extern void Board_ledOff(uint8_t ledMask);
+extern void Board_ledToggle(uint8_t ledMask);
+
+extern void Board_sdPowerCycle(void);
+extern void Board_sd2Pc(void);
+extern void Board_sd2Arm(void);
+void Board_setSdPower(uint8_t state);
+void Board_setDockAccessToSd(uint8_t mcu0dock1);
+
+extern void Board_delayMicrosInit(void);
+extern void Board_delayMicros(uint32_t micros);
+#if defined(SHIMMER3R)
+void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
+#endif
+void Board_setExpansionBrdPower(uint8_t state);
+void resetGsrPwrAndRange(void);
 
 #endif

@@ -72,10 +72,10 @@ void HAL_MspInit(void)
    * Additionally EnableVddUSB will not work at this point with the SR48-6-0
    * prototypes due to a fault in the design. Sectioning off the CubeMX changes
    * for the moment.*/
-#if defined(SR48_6_0_PATCH_VBUS_SENSE)
+#if SUPPORT_SR48_6_0
   __HAL_RCC_PWR_CLK_ENABLE();
   HAL_PWREx_EnableVddA();
-#else
+#else //SUPPORT_SR48_6_0
 
   /* USER CODE END MspInit 0 */
 
@@ -88,7 +88,7 @@ void HAL_MspInit(void)
 
   /* USER CODE BEGIN MspInit 1 */
 
-#endif
+#endif //SUPPORT_SR48_6_0
 
   /* USER CODE END MspInit 1 */
 }

@@ -162,7 +162,7 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef *pcdHandle)
 
 /* USER CODE BEGIN 1 */
 
-#ifdef SR48_6_0
+#if SUPPORT_SR48_6_0
 void MX_USB_OTG_HS_PCD_Init_NoVbusSense(void)
 {
 

@@ -43,11 +43,12 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "s4_adc.h"
-#include "battery.h"
 #include "gpdma.h"
 #include "log_and_stream_externs.h"
 #include "shimmer_definitions.h"
+#include <Battery/shimmer_battery.h>
+#include <GSR/gsr.h>
+#include <hal_adc.h>
 
 ADCTypeDef adc;
 #if defined(SHIMMER4_SDK)
@@ -65,7 +66,6 @@ uint16_t adcBufSens[8]; //max 8 channels, each of 16 bits
 uint32_t adc_battVal, adcBufSens[12], adcBufResv[12]; //max 12 channels, each of 16 bits
 #endif
 //uint32_t adcBuf3[12];
-//uint8_t gsrActiveResistor;
 
 #if defined(SHIMMER4_SDK)
 uint8_t adcConfig;
@@ -160,7 +160,7 @@ void S4_NORM_ADC_configureChannels(void)
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
   uint8_t nbr_adc_chans = 0;
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   adc.sensorLen = 0; //adc.sensorCnt = 0;
 #if defined(SHIMMER3R)
@@ -339,14 +339,14 @@ if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
   sensing.dataLen += 2;
 }
 
-sensing.nbrAdcChans += nbr_adc_chans;
+sensing.nbrMcuAdcChans += nbr_adc_chans;
 sensing.ccLen += nbr_adc_chans;
 }
 
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
+#if defined(SHIMMER4_SDK) || SUPPORT_SR48_6_0
 void S4_NORM_ADC_startSensing(void)
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
   ADC_ChannelConfTypeDef sConfig = { 0 };
 
 #if defined(SHIMMER3R)
@@ -436,17 +436,7 @@ void S4_NORM_ADC_startSensing(void)
 #endif
 
     Board_SW_GSR(1);
-    GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks, GSR_AUTORANGE);
-    if (configBytes->gsrRange <= HW_RES_3M3)
-    {
-      GSR_setRange(configBytes->gsrRange);
-      gsrActiveResistor = configBytes->gsrRange;
-    }
-    else
-    {
-      GSR_setRange(HW_RES_40K);
-      gsrActiveResistor = HW_RES_40K;
-    }
+    GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks);
   }
 
 #if USE_VBATT_ALWAYS
@@ -557,35 +547,35 @@ void shimmerAdcGpioSetup(uint8_t init)
   uint32_t adcPinsPortA = 0;
   uint32_t adcPinsPortB = 0;
   uint32_t adcPinsPortC = 0;
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   if (configBytes->chEnExtADC0)
   {
-    adcPinsPortA |= GPIO_ADC_EXT_EXP0_Pin;
+    adcPinsPortA |= SR48_6_0_GPIO_ADC_EXT_EXP0_Pin;
   }
   if (configBytes->chEnExtADC1)
   {
-    adcPinsPortC |= GPIO_ADC_EXT_EXP1_Pin;
+    adcPinsPortC |= SR48_6_0_GPIO_ADC_EXT_EXP1_Pin;
   }
   if (configBytes->chEnExtADC2)
   {
-    adcPinsPortA |= GPIO_ADC_EXT_EXP2_Pin;
+    adcPinsPortA |= SR48_6_0_GPIO_ADC_EXT_EXP2_Pin;
   }
   if (configBytes->chEnIntADC0)
   {
-    adcPinsPortA |= GPIO_ADC_INT_EXP0_Pin;
+    adcPinsPortA |= SR48_6_0_GPIO_ADC_INT_EXP0_Pin;
   }
   if (configBytes->chEnIntADC1)
   {
-    adcPinsPortB |= GPIO_ADC_INT_EXP1_Pin;
+    adcPinsPortB |= SR48_6_0_GPIO_ADC_INT_EXP1_Pin;
   }
   if (configBytes->chEnIntADC2)
   {
-    adcPinsPortB |= GPIO_ADC_INT_EXP2_Pin;
+    adcPinsPortB |= SR48_6_0_GPIO_ADC_INT_EXP2_Pin;
   }
   if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
   {
-    adcPinsPortB |= GPIO_ADC_INT_EXP3_Pin;
+    adcPinsPortB |= SR48_6_0_GPIO_ADC_INT_EXP3_Pin;
   }
 
   /*GPIO init as per configuration*/
@@ -791,8 +781,9 @@ void initSensAdc(uint32_t numChannels)
   adcLinkedListConfig(hadcSensPtr);
 #endif
 }
-#if defined(SR48_6_0)
-void initGsrAdc(void)
+
+#ifdef SUPPORT_SR48_6_0
+void initGsrMcuAdc(void)
 {
   ADC_ChannelConfTypeDef sConfig = { 0 };
 
@@ -839,12 +830,13 @@ void initGsrAdc(void)
     Error_Handler();
   }
 }
-#endif
+#endif //SUPPORT_SR48_6_0
+
 void S4_NORM_ADC_bufPoll()
 {
   uint8_t adc_offset_sens = 0; //, adc_offset_resv = 0;
   //uint8_t adc_vbattery[2];
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   //if(adc.chanCntBatt > 0){
   //   ADC_readBatt();
@@ -944,7 +936,13 @@ void S4_NORM_ADC_bufPoll()
     sensing.dataBuf[sensing.ptr.intADC2 + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
-  if (configBytes->chEnIntADC3)
+  if (configBytes->chEnGsr)
+  {
+    sensing.dataBuf[sensing.ptr.gsr + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    sensing.dataBuf[sensing.ptr.gsr + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    GSR_range(&sensing.dataBuf[sensing.ptr.gsr]);
+  }
+  else if (configBytes->chEnIntADC3)
   {
     sensing.dataBuf[sensing.ptr.intADC3 + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
@@ -963,22 +961,6 @@ void S4_NORM_ADC_bufPoll()
   //   sensing.dataBuf[sensing.ptr.strainGauge + 2] = *((uint8_t*)adcBufSens + adc_offset_sens++);
   //   sensing.dataBuf[sensing.ptr.strainGauge + 3] = *((uint8_t*)adcBufSens + adc_offset_sens++);
   //}
-  //GSR
-  if (configBytes->chEnGsr)
-  {
-    union
-    {
-      uint8_t u8[4];
-      uint32_t u32;
-    } gsr_buf;
-
-    gsr_buf.u8[0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    gsr_buf.u8[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    GSR_output(&gsr_buf.u32);
-
-    sensing.dataBuf[sensing.ptr.gsr + 0] = gsr_buf.u8[0];
-    sensing.dataBuf[sensing.ptr.gsr + 1] = gsr_buf.u8[1];
-  }
 }
 
 //void ADC_stopSensing()
@@ -1016,12 +998,10 @@ void S4_NORM_ADC_bufPoll()
 
 void S4_NORM_ADC_stopSensing()
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   HAL_ADC_Stop_DMA(hadcSensPtr);
   HAL_ADC_DeInit(hadcSensPtr);
-
-  Board_SW_EXP_BRD_POWER(0);
 
 #if defined(SHIMMER4_SDK)
   //Analog Accel (KXRB5-2042)
@@ -1136,10 +1116,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
     if (shimmerStatus.sensing)
     {
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
-#endif
     }
     else
     {
@@ -1186,7 +1164,7 @@ void manageReadBatt(uint8_t isBlockingRead)
     return;
   }
 
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
   if (shimmerStatus.sensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
     saveBatteryVoltageAndUpdateStatus(
@@ -1209,7 +1187,8 @@ void manageReadBatt(uint8_t isBlockingRead)
 //   }
 //}
 
-HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample)
+#if SUPPORT_SR48_6_0
+HAL_StatusTypeDef getSingleMcuAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample)
 {
   HAL_StatusTypeDef status = HAL_ADC_Start(hadc);
   status = HAL_ADC_PollForConversion(hadc, 100);
@@ -1225,23 +1204,18 @@ HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample
   return status;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *gsrResistance)
+HAL_StatusTypeDef getFactoryTestGsrResistanceMcuAdc(uint32_t *gsrResistance)
 {
   uint32_t adcValue = 0;
   ADC_HandleTypeDef *hadc = getHadc2();
 
-  HAL_StatusTypeDef status = getSingleAdcChSample(hadc, &adcValue);
+  HAL_StatusTypeDef status = getSingleMcuAdcChSample(hadc, &adcValue);
   if (status == HAL_OK)
   {
-#ifdef SR48_6_0
     int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
         hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
-#else
-    //TODO for ADS7028
-    int32_t gsrMv = 0;
-#endif
 
-    *gsrResistance = GSR_calcResistance(gsrMv, GSR_getCurrentActiveResistor());
+    *gsrResistance = GSR_calcResistance(gsrMv);
 
     GSR_controlRange(adcValue);
   }
@@ -1249,37 +1223,12 @@ HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *gsrResistance)
   return status;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
+void deinitGsrMcuAdc(void)
 {
-  HAL_StatusTypeDef status;
-  uint32_t gsrResistanceAvg = 0;
-
-  for (uint8_t i = 0; i < 13; i++)
-  {
-    uint8_t range = GSR_getCurrentActiveResistor();
-    status = getFactoryTestGsrResistance(gsrResistance);
-
-    //Skip first 3 measurements to account for range changing
-    if (i > 2)
-    {
-      gsrResistanceAvg += *gsrResistance;
-    }
-
-    HAL_Delay(10);
-  }
-
-  *gsrResistance = gsrResistanceAvg / 10;
-  return status;
+  HAL_ADC_Stop(&hadc2);
+  HAL_ADC_DeInit(&hadc2);
 }
-
-void resetGsrPwrAndRange(void)
-{
-#ifdef SR48_6_0
-  Board_SW_GSR(0);
 #endif
-  GSR_setRange(HW_RES_40K);
-  //gsrActiveResistor = HW_RES_40K;
-}
 
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr)
 {
@@ -1287,7 +1236,18 @@ void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *h
   uint16_t battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, VREF_EXTERNAL_SUPPLY_MV,
                            adcBattVal, hadcSensPtr->Init.Resolution)
       * 2;
-  updateBatteryStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1_SR48_6_0, LM3658SD_STAT2_SR48_6_0);
+  }
+  else
+  {
+    ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
+  }
+#else  //SUPPORT_SR48_6_0
+  ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
+#endif //SUPPORT_SR48_6_0
 }
 
 /* USER CODE END 1 */

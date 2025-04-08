@@ -44,10 +44,9 @@
 
 #include "stm32u5xx.h"
 
-#include "../../S4_App/shimmer_definitions.h"
-#include "../EZ-Serial/handlers.h"
-#include "../shimmer_bt_comms.h"
 #include "log_and_stream_externs.h"
+#include <CYW20820/EZ-Serial/handlers.h>
+#include <Comms/shimmer_bt_uart.h>
 
 uint8_t pending_response = 0;
 //uint8_t timer_active = 0;
@@ -66,32 +65,7 @@ char btBootMsg[160] = { 0 }; //Measured to be 150 chars with v1.4.12.12
 uint8_t btBootMsgIndex = 0;
 uint8_t btBootMsgLineCount = 0;
 
-/* Buffer read / write macros                                                 */
-#define RINGFIFO_RESET(ringFifo)         \
-  {                                      \
-    ringFifo.rdIdx = ringFifo.wrIdx = 0; \
-  }
-#define RINGFIFO_WR(ringFifo, dataIn, mask)            \
-  {                                                    \
-    ringFifo.data[mask & ringFifo.wrIdx++] = (dataIn); \
-  }
-#define RINGFIFO_RD(ringFifo, dataOut, mask)              \
-  {                                                       \
-    ringFifo.rdIdx++;                                     \
-    dataOut = ringFifo.data[mask & (ringFifo.rdIdx - 1)]; \
-  }
-#define RINGFIFO_EMPTY(ringFifo) (ringFifo.rdIdx == ringFifo.wrIdx)
-#define RINGFIFO_FULL(ringFifo, mask) \
-  ((mask & ringFifo.rdIdx) == (mask & (ringFifo.wrIdx + 1)))
-#define RINGFIFO_COUNT(ringFifo, mask) \
-  (mask & (ringFifo.wrIdx - ringFifo.rdIdx))
-
-volatile RingFifoTx_t gBtTxFifo;
-
-volatile uint8_t messageInProgress;
-
-uint8_t dataRateTestState;
-uint8_t dataRateTestTxPacket[] = { DATA_RATE_TEST_RESPONSE, 0, 0, 0, 0 };
+uint16_t btRxWaitByteCount = 0;
 
 /*******************************************************************************
  * Interrupt Handler Name: TimerInterruptHandler
@@ -293,17 +267,17 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
      * parse is ideal and the header byte is a Shimmer packet header byte,
      * parse as Shimmer packet */
-    else if (isWaitingForArgs()
+    else if (ShimBt_isWaitingForArgs()
         || (getEzsPacketLength() == 0 && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
             && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
             && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
     {
       //Parse as Shimmer packet
       SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
-      count = getBtRxShimmerCommsWaitByteCount();
-      Dma2ConversionDone(&rxBuf[i]);
+      count = btRxWaitByteCount;
+      ShimBt_dmaConversionDone(&rxBuf[i]);
       i += count;
-      count = getBtRxShimmerCommsWaitByteCount();
+      count = btRxWaitByteCount;
     }
     else
     {
@@ -352,225 +326,13 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if (shimmerStatus.btConnected)
-  {
-    if (dataRateTestState)
-    {
-      loadBtTxBufForDataRateTest();
-    }
-    else
-    {
-      sendNextChar();
-    }
-  }
-  else
-  {
-    clearBtTxBuf(0);
-  }
+  ShimBt_TxCpltCallback();
 }
 
-void sendNextCharIfNotInProgress(void)
+HAL_StatusTypeDefShimmer BtTransmit(uint8_t *buf, uint8_t len)
 {
-  if (!messageInProgress)
-  {
-    sendNextChar();
-  }
-}
-
-void sendNextChar(void)
-{
-  if (!RINGFIFO_EMPTY(gBtTxFifo)
-      //#if BT_FLUSH_TX_BUF_IF_RN4678_RTS_LOCK_DETECTED
-      //            && (rn4678RtsLockDetected || !isBtModuleOverflowPinHigh())
-      //#else
-      //            && !isBtModuleOverflowPinHigh())
-      //#endif
-  )
-  {
-    messageInProgress = 1;
-    /* commenting out while loop as individual bytes are sent based on
-     * interrupt firing so no need to wait here. */
-    //ensure no tx interrupt is pending
-    //while (UCA1IFG & UCTXIFG);
-    //uint8_t bt_txBuf;
-
-    //RINGFIFO_RD(gBtTxFifo, bt_txBuf[0], BT_TX_BUF_MASK);
-    //HAL_StatusTypeDef ret_val = HAL_UART_Transmit_IT(huart, &bt_txBuf[0], 1);
-
-    HAL_StatusTypeDef ret_val;
-    uint8_t numBytes;
-
-    uint8_t rdIdx = (gBtTxFifo.rdIdx & BT_TX_BUF_MASK);
-    uint8_t wrIdx = (gBtTxFifo.wrIdx & BT_TX_BUF_MASK);
-
-    if (rdIdx < wrIdx)
-    {
-      numBytes = wrIdx - rdIdx;
-    }
-    else
-    {
-      numBytes = BT_TX_BUF_SIZE - rdIdx;
-    }
-    gBtTxFifo.rdIdx += numBytes;
-    ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *) &gBtTxFifo.data[rdIdx], numBytes);
-  }
-  else
-  {
-    messageInProgress = 0; //false
-  }
-}
-
-void clearBtTxBuf(uint8_t isCalledFromMain)
-{
-  //uint16_t i;
-  /* We don't want to be clearing the TX buffer if main is in the middle to
-   * streaming bytes to it */
-  //if (isCalledFromMain)
-  //{
-  RINGFIFO_RESET(gBtTxFifo);
-
-  //Reset all bytes in the buffer -> only used during debugging
-  //for(i=BT_TX_BUF_SIZE-1;i<BT_TX_BUF_SIZE;i--)
-  //{
-  //    *(&gBtTxFifo.data[0]+i) = 0xFF;
-  //}
-  //}
-  //else
-  //{
-  //setBtClearTxBufFlag(1);
-  //}
-}
-
-void pushByteToBtTxBuf(uint8_t c)
-{
-  if (!RINGFIFO_FULL(gBtTxFifo, BT_TX_BUF_MASK))
-  {
-    RINGFIFO_WR(gBtTxFifo, c, BT_TX_BUF_MASK);
-  }
-}
-
-void pushBytesToBtTxBuf(uint8_t *buf, uint8_t len)
-{
-  //uint8_t i;
-  //for (i = 0; i < len; i++)
-  //{
-  //    pushByteToBtTxBuf(*(buf + i));
-  //}
-
-  /* if enough space at after head, copy it in */
-  uint16_t spaceAfterHead = BT_TX_BUF_SIZE - (gBtTxFifo.wrIdx & BT_TX_BUF_MASK);
-  if (spaceAfterHead > len)
-  {
-    memcpy_vout(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf, len);
-    gBtTxFifo.wrIdx += len;
-  }
-  else
-  {
-    /* Fill from head to end of buf */
-    memcpy_vout(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)], buf, spaceAfterHead);
-    gBtTxFifo.wrIdx += spaceAfterHead;
-
-    /* Fill from start of buf. We already checked above whether there is
-     * enough space in the buf (getSpaceInBtTxBuf()) so we don't need to
-     * worry about the tail position. */
-    uint16_t remaining = len - spaceAfterHead;
-    memcpy_vout(&gBtTxFifo.data[(gBtTxFifo.wrIdx & BT_TX_BUF_MASK)],
-        buf + spaceAfterHead, remaining);
-    gBtTxFifo.wrIdx += remaining;
-  }
-}
-
-//https://stackoverflow.com/questions/54964154/is-memcpyvoid-dest-src-n-with-a-volatile-array-safe
-volatile void *memcpy_vout(volatile void *dest, const void *src, size_t n)
-{
-  const uint8_t *src_c = (const uint8_t *) src;
-  volatile uint8_t *dest_c = (volatile uint8_t *) dest;
-
-  for (size_t i = 0; i < n; i++)
-  {
-    dest_c[i] = src_c[i];
-  }
-
-  return dest;
-}
-
-uint16_t getUsedSpaceInBtTxBuf(void)
-{
-  return RINGFIFO_COUNT(gBtTxFifo, BT_TX_BUF_MASK);
-}
-
-uint16_t getSpaceInBtTxBuf(void)
-{
-  //Minus 1 as we always need to leave 1 empty byte in the rolling buffer
-  return BT_TX_BUF_SIZE - 1 - getUsedSpaceInBtTxBuf();
-}
-
-void setBtDataRateTestState(uint8_t state)
-{
-  dataRateTestState = state;
-  *((uint32_t *) &dataRateTestTxPacket[1]) = 0;
-}
-
-uint8_t getBtDataRateTestState(void)
-{
-  return dataRateTestState;
-}
-
-void loadBtTxBufForDataRateTest(void)
-{
-  //uint16_t spaceInTxBuf = getSpaceInBtTxBuf();
-  //uint16_t i;
-  //if (spaceInTxBuf > sizeof(btDataRateTestCounter) + 1U)
-  //{
-  //  for (i = 0; i < (spaceInTxBuf / (sizeof(btDataRateTestCounter) + 1U)); i++)
-  //  {
-  //    pushByteToBtTxBuf(DATA_RATE_TEST_RESPONSE);
-  //    pushBytesToBtTxBuf((uint8_t *) &btDataRateTestCounter, sizeof(btDataRateTestCounter));
-  //    dataRateTestCounter++;
-  //  }
-  //}
-
-  //if (getSpaceInBtTxBuf() > (sizeof(dataRateTestCounter) + 1U))
-  //{
-  //  pushByteToBtTxBuf(DATA_RATE_TEST_RESPONSE);
-  //  pushBytesToBtTxBuf((uint8_t*) &dataRateTestCounter,
-  //  sizeof(dataRateTestCounter)); dataRateTestCounter++;
-  //}
-
-  HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(
-      huartBtPtr, &dataRateTestTxPacket[0], sizeof(dataRateTestTxPacket));
-  (*((uint32_t *) &dataRateTestTxPacket[1]))++;
-}
-
-//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-//{
-////  HAL_UART_Transmit_DMA(&huart1,(uint8_t *) "Message Received!\r\n", sizeof("Message Received!\r\n"));
-////  HAL_UART_Receive_DMA(&huart1, pRxBuff, 10);
-//}
-
-HAL_StatusTypeDef BT_write(uint8_t *buf, uint8_t len)
-{
-  //HAL_StatusTypeDef ret_val;
-  //memcpy(bt_txBuf, buf, len);
-  //ret_val = HAL_UART_Transmit_DMA(huart, bt_txBuf, len);
-
-  //SHIMMER_PRINTF("BT_write=%d\n", len);
-
-  if (getSpaceInBtTxBuf() <= len)
-  {
-    return HAL_ERROR; //fail
-  }
-
-  pushBytesToBtTxBuf(buf, len);
-
-  sendNextCharIfNotInProgress();
-
-  //ret_val = HAL_UART_Transmit_IT(huart, bt_txBuf, len);
-  //if(ret_val == HAL_OK){
-  //   PeriStat_Set(STAT_PERI_BT);
-  //}
-  //return ret_val;
-  return HAL_OK;
+  HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
+  return (HAL_StatusTypeDefShimmer) ret_val;
 }
 
 void resetEzsPendingResponse(void)
@@ -597,4 +359,9 @@ void setWaitingForBtBoot(uint8_t state)
 char *getBtBootMsgPtr(void)
 {
   return &btBootMsg[0];
+}
+
+void setDmaWaitingForResponse(uint16_t count)
+{
+  btRxWaitByteCount = count;
 }

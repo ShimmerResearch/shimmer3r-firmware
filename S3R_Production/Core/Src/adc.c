@@ -23,7 +23,7 @@
 /* USER CODE BEGIN 0 */
 
 #include "gpdma.h"
-#include "s4_adc.h"
+#include "hal_adc.h"
 
 /* USER CODE END 0 */
 
@@ -346,8 +346,11 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle)
 
     /* USER CODE BEGIN ADC1_MspDeInit 1 */
 
-#ifdef SR48_6_0
-    shimmerAdcGpioSetup(0);
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      shimmerAdcGpioSetup(0);
+    }
 #endif
 
     /* USER CODE END ADC1_MspDeInit 1 */

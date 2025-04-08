@@ -51,7 +51,7 @@ extern "C"
   void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising);
 #endif
 
-  uint8_t SD_insertedCheck(void);
+  uint8_t CheckSdInslot(void);
   uint8_t isSdPowerOn(void);
   void gpioInitPerBoard(void);
   void vbusPinStateCheck(void);

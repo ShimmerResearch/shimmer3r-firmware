@@ -22,7 +22,9 @@
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "shimmer_definitions.h"
+
+#include <Boards/shimmer_boards.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -608,8 +610,11 @@ void ADF1_IRQHandler(void)
  */
 void EXTI0_IRQHandler(void)
 {
-#if defined(SR48_6_0)
-  HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP1_Pin);
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    HAL_GPIO_EXTI_IRQHandler(SR48_6_0_GPIO_ADC_INT_EXP1_Pin);
+  }
 #endif
   //HAL_GPIO_EXTI_IRQHandler(SD_DETECT_N_Pin);
 }
@@ -627,8 +632,11 @@ void EXTI2_IRQHandler(void)
  */
 void EXTI3_IRQHandler(void)
 {
-#if SR48_6_0_PATCH_DOCK_DETECT
-  HAL_GPIO_EXTI_IRQHandler(SR48_6_0_BOOT0_USER_BTN_Pin);
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    HAL_GPIO_EXTI_IRQHandler(SR48_6_0_BOOT0_USER_BTN_Pin);
+  }
 #endif
 }
 
@@ -645,8 +653,11 @@ void EXTI4_IRQHandler(void)
  */
 void EXTI5_IRQHandler(void)
 {
-#if defined(SR48_6_0)
-  HAL_GPIO_EXTI_IRQHandler(GPIO_ADC_INT_EXP0_Pin);
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    HAL_GPIO_EXTI_IRQHandler(SR48_6_0_GPIO_ADC_INT_EXP0_Pin);
+  }
 #endif
   //No plans to use GPIO_INTERNAL2_Pin as interrupt
   //HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL2_Pin);

@@ -6,16 +6,13 @@
  */
 
 #include "stm32u5xx.h"
-
-#include "CYW20820.h"
+#include <CYW20820/CYW20820.h>
+#include <CYW20820/EZ-Serial/ezsapi.h>
+#include <CYW20820/EZ-Serial/handlers.h>
 
 #include "stdio.h"
 #include "string.h"
 
-#include "EZ-Serial/ezsapi.h"
-#include "EZ-Serial/handlers.h"
-
-//TODO remove the need for this include
 #include "main.h"
 #include "usart.h"
 
@@ -261,13 +258,21 @@ void btInitCommands(void)
         != 0)
     {
       printf("Update UART Stage2\r\n");
-      printf("Setting Baud to %lu\r\n", rsp_system_get_uart_parameters_ref.baud);
+      uint32_t baudToUse = rsp_system_get_uart_parameters_ref.baud;
+#if SUPPORT_SR48_6_0
+      if (ShimBrd_isBoardSr48_6_0())
+      {
+        baudToUse = BAUD_TO_USE_SR48_6_0;
+      }
+#endif //SUPPORT_SR48_6_0
+      uint8_t flowCtrl = baudToUse == 115200 ? 0 : FLOW_CONTROL;
+
+      printf("Setting Baud to %lu\r\n", baudToUse);
       btUartSettingsChanged = true;
       setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
-      ezs_cmd_system_set_uart_parameters(rsp_system_get_uart_parameters_ref.baud,
+      ezs_cmd_system_set_uart_parameters(baudToUse,
           rsp_system_get_uart_parameters_ref.autobaud,
-          rsp_system_get_uart_parameters_ref.autocorrect,
-          rsp_system_get_uart_parameters_ref.flow,
+          rsp_system_get_uart_parameters_ref.autocorrect, flowCtrl,
           rsp_system_get_uart_parameters_ref.databits,
           rsp_system_get_uart_parameters_ref.parity,
           rsp_system_get_uart_parameters_ref.stopbits, UART_TYPE_PUART);
@@ -281,9 +286,15 @@ void btInitCommands(void)
     if (btUartSettingsChanged)
     {
       printf("Update UART Stage3\r\n");
-      //TODO resolve reference
-      BtUart_update(rsp_system_get_uart_parameters_ref.baud,
-          rsp_system_get_uart_parameters_ref.flow);
+      uint32_t baudToUse = rsp_system_get_uart_parameters_ref.baud;
+#if SUPPORT_SR48_6_0
+      if (ShimBrd_isBoardSr48_6_0())
+      {
+        baudToUse = BAUD_TO_USE_SR48_6_0;
+      }
+#endif //SUPPORT_SR48_6_0
+      uint8_t flowCtrl = baudToUse == 115200 ? 0 : FLOW_CONTROL;
+      BtUart_update(baudToUse, flowCtrl);
     }
   }
 
@@ -311,11 +322,19 @@ void btInitCommands(void)
     {
       printf("Update UART Stage5\r\n");
 
+      uint32_t baudToUse = rsp_system_get_uart_parameters_ref.baud;
+#if SUPPORT_SR48_6_0
+      if (ShimBrd_isBoardSr48_6_0())
+      {
+        baudToUse = BAUD_TO_USE_SR48_6_0;
+      }
+#endif //SUPPORT_SR48_6_0
+      uint8_t flowCtrl = baudToUse == 115200 ? 0 : FLOW_CONTROL;
+
       setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS);
-      ezs_fcmd_system_set_uart_parameters(rsp_system_get_uart_parameters_ref.baud,
+      ezs_fcmd_system_set_uart_parameters(baudToUse,
           rsp_system_get_uart_parameters_ref.autobaud,
-          rsp_system_get_uart_parameters_ref.autocorrect,
-          rsp_system_get_uart_parameters_ref.flow,
+          rsp_system_get_uart_parameters_ref.autocorrect, flowCtrl,
           rsp_system_get_uart_parameters_ref.databits,
           rsp_system_get_uart_parameters_ref.parity,
           rsp_system_get_uart_parameters_ref.stopbits, UART_TYPE_PUART);
@@ -1125,10 +1144,10 @@ void setBtCysppState(bool state)
   //HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, btCysppState? GPIO_PIN_SET:GPIO_PIN_RESET);
 
   //TODO move out of this driver file and make common with implementation in shimmer_bt_comms.c
-  if (!state && getBtDataRateTestState())
+  if (!state && ShimBt_getDataRateTestState())
   {
-    setBtDataRateTestState(0);
-    clearBtTxBuf(1);
+    ShimBt_setDataRateTestState(0);
+    ShimBt_clearBtTxBuf(1);
   }
 }
 

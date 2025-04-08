@@ -126,13 +126,13 @@ void print_date_and_time(void)
 void print_shimmer_model(void)
 {
   send_test_report("Shimmer model:\r\n");
-  if (isDaughterCardIdSet())
+  if (ShimBrd_isDaughterCardIdSet())
   {
-    sprintf(buffer, " - S3R_TEST_0003 - PASS: %s", getDaughtCardIdStrPtr());
+    sprintf(buffer, " - S3R_TEST_0003 - PASS: %s", ShimBrd_getDaughtCardIdStrPtr());
     send_test_report(buffer);
-    shimmer_expansion_brd *daughterCardId = getDaughtCardId();
+    shimmer_expansion_brd *daughterCardId = ShimBrd_getDaughtCardId();
     sprintf(buffer, " (SR%d-%d-%d)\r\n", daughterCardId->exp_brd_id,
-        daughterCardId->exp_brd_rev, daughterCardId->exp_brd_special_rev);
+        daughterCardId->exp_brd_major, daughterCardId->exp_brd_minor);
     send_test_report(buffer);
   }
   else
@@ -194,12 +194,23 @@ void print_mcu_details(void)
     shimmerStatus.testResult |= S3R_TEST_0008;
   }
 
-  //Specification = 1.9V from voltage external regulator
-  testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_MV_VBATT_PIN_LOWER
-      && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
-  sprintf(buffer, " - S3R_TEST_0009 - %s: VBatt pin = %ldmV (%d-%dmV)\r\n",
-      testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
-      TEST_THRESHOLD_MV_VBATT_PIN_LOWER, TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_MV_VBATT_PIN_LOWER_SR48_6_0
+        && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_MV_VBATT_PIN_UPPER_SR48_6_0);
+    sprintf(buffer, " - S3R_TEST_0009 - %s: VBatt pin = %ldmV (%d-%dmV)\r\n",
+        testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
+        TEST_THRESHOLD_MV_VBATT_PIN_LOWER_SR48_6_0,
+        TEST_THRESHOLD_MV_VBATT_PIN_UPPER_SR48_6_0);
+  }
+  else
+  {
+    testPass = (adcDebugInfo.vBattPinMV > TEST_THRESHOLD_MV_VBATT_PIN_LOWER
+        && adcDebugInfo.vBattPinMV < TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
+    sprintf(buffer, " - S3R_TEST_0009 - %s: VBatt pin = %ldmV (%d-%dmV)\r\n",
+        testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
+        TEST_THRESHOLD_MV_VBATT_PIN_LOWER, TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
+  }
   send_test_report(buffer);
   if (!testPass)
   {
@@ -403,7 +414,7 @@ void sd_card_test(void)
     printSdCardInfo(buffer);
     send_test_report(buffer);
 
-    shimmerStatus.testResult += SD_test() << 6;
+    shimmerStatus.testResult += ShimSd_test1() << 6;
     //SD_test_alternative();
     sprintf(buffer, " - S3R_TEST_0013 - %s: MCU read/write test\r\n",
         shimmerStatus.sdBadFile ? "FAIL" : "PASS");
@@ -427,11 +438,11 @@ void bt_module_test(void)
   if (isBtIsInitialised())
   {
     send_test_report(" - MAC ID: ");
-    BT_getMacAddressAscii(buffer);
+    memcpy(&buffer[0], ShimBt_macIdStrPtrGet(), 12);
+    sprintf(&buffer[12], "\r\n");
     send_test_report(buffer);
-    send_test_report("\r\n");
 
-    sprintf(buffer, " - %s\r\n", getBtVerStrPtr());
+    sprintf(buffer, " - %s\r\n", ShimBt_getBtVerStrPtr());
     send_test_report(buffer);
 
     sprintf(buffer, " - S3R_TEST_0014 - %s BT firmware version\r\n",
@@ -519,7 +530,7 @@ void I2C_test(void)
 
 #if defined(SHIMMER3R)
   send_test_report("I2C4:\r\n");
-  if (isI2c4Supported())
+  if (ShimBrd_isI2c4Supported())
   {
     uint8_t i2c4_result = 0;
 
@@ -527,7 +538,7 @@ void I2C_test(void)
     HAL_Delay(2); //2ms as per Shimmer3 code
     I2C_scan_internal_expansion_bus(test_i2c_addr_list, &test_i2c_addr_list_len);
 
-    if (test_i2c_addr_list_len == 0)
+    if (test_i2c_addr_list_len == 0) //Nothing detected on I2C bus
     {
       send_test_report(
           " - S3R_TEST_0017 - FAIL: I2C4 - no test rig detected\r\n");
@@ -535,7 +546,7 @@ void I2C_test(void)
           " - S3R_TEST_0018 - FAIL: GSR - no test rig detected\r\n");
       i2c4_result = 1;
     }
-    else if (test_i2c_addr_list_len == 3)
+    else if (test_i2c_addr_list_len == 3) //GSR Test Rig detected
     {
       send_test_report(" - S3R_TEST_0017 - PASS: I2C4\r\n");
 
@@ -549,7 +560,7 @@ void I2C_test(void)
         shimmerStatus.testResult |= S3R_TEST_0018;
       }
     }
-    else if (test_i2c_addr_list_len == 8)
+    else if (test_i2c_addr_list_len == 8) //EEPROM detected
     {
       altEepromInit(&hi2c4);
       i2c4_result = altEepromTest();
@@ -593,14 +604,14 @@ void SPI_test(void)
   send_test_report("SPI1:\r\n");
   MX_SPI1_Init();
 
-  if (isBoardSr48_6_0())
+  if (ShimBrd_isBoardSr48_6_0())
   {
     sprintf(buffer, " - S3R_TEST_0019 - ADS7028 test not applicable for this model\r\n");
     send_test_report(buffer);
   }
   else
   {
-    self_test_result = ads7028_self_test();
+    self_test_result = ads7028_factoryTestChipId();
     if (self_test_result)
     {
       shimmerStatus.testResult |= S3R_TEST_0019;
@@ -662,7 +673,7 @@ void SPI_test(void)
     shimmerStatus.testResult |= S3R_TEST_0021;
   }
 
-  if (isAdxl371Present())
+  if (ShimBrd_isAdxl371Present())
   {
     self_test_result = adxl371_self_test();
     print_chip_test_result("S3R_TEST_0022", "ADXL371", self_test_result,
@@ -722,7 +733,7 @@ void SPI_test(void)
 #endif
 
   send_test_report("SPI3:\r\n");
-  if (isAds1292Present())
+  if (ShimBrd_isAds1292Present())
   {
     uint8_t ads1292RInitResult = 0;
     ADS1292_init();
@@ -833,9 +844,9 @@ void send_test_report(char *str)
     }
     break;
   case PRINT_TO_BT_UART:
-    BT_write((uint8_t *) str, strlen(str));
+    ShimBt_writeToTxBufAndSend((uint8_t *) str, strlen(str), SHIMMER_CMD);
     //wait for msg to finish transmitting
-    while (getUsedSpaceInBtTxBuf() > 0)
+    while (ShimBt_getUsedSpaceInBtTxBuf() > 0)
     {
       HAL_Delay(100);
     }
@@ -852,16 +863,26 @@ uint8_t runGsrFactoryTest(void)
   uint8_t i = 0;
   HAL_StatusTypeDef status;
 
-#ifdef SR48_6_0
-  Board_SW_GSR(1);
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    Board_SW_GSR(1);
+  }
 #endif
   gsrTestRigInit(&hi2c4);
 
-  GSR_setRange(HW_RES_40K);
-#ifdef SR48_6_0
-  initGsrAdc();
+  GSR_setActiveResistor(HW_RES_40K);
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    initGsrMcuAdc();
+  }
+  else
+  {
+    ads7028_factoryTestGsrInit();
+  }
 #else
-  //TODO for ADS7028
+  ads7028_factoryTestGsrInit();
 #endif
 
   for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
@@ -871,26 +892,64 @@ uint8_t runGsrFactoryTest(void)
 
     status = getFactoryTestGsrAvg(&gsrResistance);
 
-    uint32_t buffer = gsrResistance * GSR_TEST_TOLERANCE;
-    if (status != HAL_OK || (gsrResistance < (testGsrResistances[i] - buffer))
-        || (gsrResistance > (testGsrResistances[i] + buffer)))
+    uint32_t gsrBuffer = gsrResistance * GSR_TEST_TOLERANCE;
+    if (status != HAL_OK || (gsrResistance < (testGsrResistances[i] - gsrBuffer))
+        || (gsrResistance > (testGsrResistances[i] + gsrBuffer)))
     {
       returnVal = 1;
       break;
     }
+
+    //sprintf(buffer, "Test %lu, Measured %lu, Tolerance +-%lu\r\n", testGsrResistances[i],
+    //    gsrResistance, gsrBuffer);
+    //send_test_report(buffer);
   }
 
-#ifdef SR48_6_0
-  //Stop ADC
-  HAL_ADC_Stop(hadcFactoryTestPtr);
-  HAL_ADC_DeInit(hadcFactoryTestPtr);
+  resetGsrPwrAndRange();
 
-  Board_SW_GSR(0);
-#else
-  //TODO for ADS7028
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    //Stop ADC
+    deinitGsrMcuAdc();
+    Board_SW_GSR(0);
+  }
 #endif
 
   return returnVal;
+}
+
+HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
+{
+  HAL_StatusTypeDef status;
+  uint32_t gsrResistanceAvg = 0;
+
+  for (uint8_t i = 0; i < 13; i++)
+  {
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      status = getFactoryTestGsrResistanceMcuAdc(gsrResistance);
+    }
+    else
+    {
+      status = ads7028_factoryTestGetGsrResistance(gsrResistance);
+    }
+#else
+    status = ads7028_factoryTestGetGsrResistance(gsrResistance);
+#endif
+
+    //Skip first 3 measurements to account for range changing
+    if (i > 2)
+    {
+      gsrResistanceAvg += *gsrResistance;
+    }
+
+    HAL_Delay(10);
+  }
+
+  *gsrResistance = gsrResistanceAvg / 10;
+  return status;
 }
 
 uint8_t runMicrophoneTest(void)

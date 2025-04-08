@@ -41,11 +41,6 @@
 #include "usb_device.h"
 #endif
 
-#define TIM_MEASURE_START time_start = SysTick->VAL
-#define TIM_MEASURE_END    \
-  time_end = SysTick->VAL; \
-  time_diff = time_start - time_end
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -61,13 +56,20 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+#define TIM_MEASURE_START time_start = SysTick->VAL
+#define TIM_MEASURE_END    \
+  time_end = SysTick->VAL; \
+  time_diff = time_start - time_end
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
 
-uint8_t dcID[16];
+volatile uint32_t time_start, time_end, time_diff;
+
+extern UART_HandleTypeDef *huartBt;
 
 /* USER CODE END PV */
 
@@ -77,34 +79,26 @@ static void SystemPower_Config(void);
 /* USER CODE BEGIN PFP */
 
 void Init(void);
-//TODO move out of here
-#if defined(SHIMMER3R)
-void setBootStage(boot_stage_t bootStageNew);
-boot_stage_t getBootStage(void);
 void btInitialise(void);
 void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
-void loadSensorConfigurationAndCalibration(void);
 void SetupDock(void);
-uint8_t CheckOnDefault(void);
-void ReadSdConfiguration(void);
 #if USE_CUSTOM_HAL_DELAY
 void HAL_Delay(uint32_t Delay);
 #endif
-#endif
+void sleepWhenNoTask(void);
+
+void BtStop(uint8_t isCalledFromMain);
+float samplingClockFreqGet(void);
+void InitialiseBtAfterBoot(void);
+uint8_t getDefaultBaudForBtVersion(void);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-volatile uint32_t time_start, time_end, time_diff;
-
-boot_stage_t bootStage;
-
-extern UART_HandleTypeDef *huartBt;
 
 int _write(int file, char *ptr, int len)
 {
@@ -119,24 +113,22 @@ int _write(int file, char *ptr, int len)
 
 void Init()
 {
+  LogAndStream_init();
+  shimmerStatus.initialising = 1; /* led flag, in initialisation period */
+
 #if defined(SHIMMER3R)
   Board_ledTimersStart(&htim3, &htim2, &htim6);
 #endif
 
   setBootStage(BOOT_STAGE_START);
-  batteryInit();
-  shimmerStatus.configuring = 1;
 
-  setHwId(DEVICE_VER);
+  ShimBrd_setHwId(DEVICE_VER);
 
 #if defined(SHIMMER4_SDK)
   TIM_init();
 #endif
   InfoMem_init();
-  S4_Task_init();
-  S4Sens_init();
 
-  SD_init();
   //GPIO_init();
   S4_ADC_init();
 
@@ -152,15 +144,20 @@ void Init()
 
   Board_delayMicrosInit();
   DockUart_interruptCheck();
-  SD_insertedCheck();
+  CheckSdInslot();
+  //TODO ShimSd_mount() is normally done CheckSdInslot() for Shimmer3 but that feels like a hack
+  Board_sd2Arm();
+  ShimSd_mount(shimmerStatus.sdInserted);
+
   //GPIO_userButtonCheck();
 
 #if defined(SHIMMER3R)
   setBootStage(BOOT_STAGE_BLUETOOTH);
-  btCommsProtocolInit(setTaskNewBtCmdToProcess);
+  ShimBt_btCommsProtocolInit();
   //btFactoryResetViaFw();
   btInitialise();
-  updateBtVer();
+  ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
+  BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
 //btDeinit();
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
@@ -171,7 +168,7 @@ void Init()
    * order to know which default calib to set for attached chips.
    * It also needs to be loaded after the BT is initialised so that the
    * MAC ID can be used for default Shimmer name and calibration file names.*/
-  loadSensorConfigurationAndCalibration();
+  ShimConfig_loadSensorConfigAndCalib();
 
   SetupDock();
   //Disable dock comms until sensor is ready to communicate
@@ -191,16 +188,15 @@ void Init()
   //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
   GPIO_usbVbusIntInit(1);
   vbusPinStateCheck();
-#if defined(SHIMMER3R)
-  Usb_interruptCheck();
-#endif
 
   /* Take initial measurement to update LED state */
   manageReadBatt(1);
 
-  shimmerStatus.configuring = 0;
   //Enable dock comms now that sensor is ready to communicate
   DockUart_enable();
+
+  shimmerStatus.initialising = 0;
+  setBootStage(BOOT_STAGE_END);
 }
 
 /* USER CODE END 0 */
@@ -217,10 +213,6 @@ int main(void)
   uint32_t i = 0;
   while (i++ < 1000000)
     ;
-
-  memset((uint8_t *) &batteryStatus, 0, sizeof(BattStatus));
-  memset((uint8_t *) &shimmerStatus, 0, sizeof(STATTypeDef));
-  shimmerStatus.initialising = 1;
 
   /* USER CODE END 1 */
 
@@ -259,12 +251,10 @@ int main(void)
 #endif
 
   Init();
-  shimmerStatus.initialising = 0;
-  setBootStage(BOOT_STAGE_END);
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
-  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
-  //run_factory_test();
+  setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
+  run_factory_test();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -274,7 +264,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    S4_Task_manage();
+    ShimTask_manage();
   }
   /* USER CODE END 3 */
 }
@@ -358,41 +348,6 @@ static void SystemPower_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-void setBootStage(boot_stage_t bootStageNew)
-{
-  bootStage = bootStageNew;
-
-  switch (bootStage)
-  {
-  case BOOT_STAGE_START:
-    Board_ledOn(LED_ALL);
-    break;
-  case BOOT_STAGE_I2C:
-    Board_ledOff(LED_ALL);
-    break;
-  case BOOT_STAGE_BLUETOOTH:
-    Board_ledOn(LED_ALL);
-    break;
-  case BOOT_STAGE_BLUETOOTH_FAILURE:
-    Board_ledOff(LED_ALL);
-    break;
-  case BOOT_STAGE_CONFIGURATION:
-    Board_ledOn(LED_ALL);
-    break;
-  case BOOT_STAGE_END:
-    Board_ledOff(LED_ALL);
-    break;
-  default:
-    break;
-  }
-  return;
-}
-
-boot_stage_t getBootStage(void)
-{
-  return bootStage;
-}
-
 STATTypeDef *GetStatus()
 {
   return &shimmerStatus;
@@ -406,16 +361,6 @@ void btInitialise(void)
 
   //20 * 100ms = 2s per baud rate attempt
   btCommWithDiffBaudRates(false, 50U);
-
-  if (isBtIsInitialised())
-  {
-    char temp_btMacAscii[14];
-    uint8_t temp_btMacHex[6];
-    BT_getMacAddressHex(temp_btMacHex);
-    S4Ram_btMacHexSet(temp_btMacHex);
-    BT_getMacAddressAscii(temp_btMacAscii);
-    S4Ram_btMacAsciiSet(temp_btMacAscii);
-  }
 
   SHIMMER_PRINTF("BT init end\r\n");
 }
@@ -438,6 +383,13 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
   uint8_t failCount = 0U;
   uint8_t resetCntCurrent = resetCnt;
   uint32_t baudToTry = BAUD_TO_USE;
+
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    baudToTry = BAUD_TO_USE_SR48_6_0;
+  }
+#endif //SUPPORT_SR48_6_0
 
   SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
 
@@ -526,7 +478,7 @@ void setBtConnectionState(bool state)
   shimmerStatus.btConnected = state;
   //HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
 
-  HandleBtRfCommStateChange(shimmerStatus.btConnected);
+  ShimBt_handleBtRfCommStateChange(shimmerStatus.btConnected);
 }
 
 bool isBtConnected(void)
@@ -536,59 +488,14 @@ bool isBtConnected(void)
 
 #endif
 
-void loadSensorConfigurationAndCalibration(void)
-{
-  ShimmerCalib_init();
-  ShimmerCalibInitFromInfoAll();
-
-  if (!shimmerStatus.docked && CheckSdInslot())
-  { //sd card ready to access
-    if (!isSdPowerOn())
-    {
-      //Hits here when undocked
-      Board_setSdPower(1);
-    }
-    if (GetSdCfgFlag())
-    { //info > sdcard
-      S4Ram_init();
-      UpdateSdConfig();
-      SetSdCfgFlag(0);
-      if (!isFileStatusOk())
-      {
-        shimmerStatus.sdlogReady = 0;
-        shimmerStatus.sdBadFile = 1;
-      }
-    }
-    else
-    {
-      //Hits here when undocked
-      ReadSdConfiguration();
-    }
-
-    if (ShimmerCalib_file2Ram())
-    {
-      //fail, i.e. no such file. use current DumpRam to generate a file
-      ShimmerCalib_ram2File();
-      S4Ram_init();
-    }
-  }
-  else
-  { //sd card not available
-    S4Ram_init();
-    //CalibFromInfoAll();
-  }
-
-  ShimmerCalibSyncFromDumpRamAll();
-}
-
 void SetupDock(void)
 {
   shimmerStatus.configuring = 1;
 
   if (shimmerStatus.docked)
   {
-    setBatteryInterval(BATT_INTERVAL_DOCKED);
-    resetBatteryCriticalCount();
+    ShimBatt_setBatteryInterval(BATT_INTERVAL_DOCKED);
+    ShimBatt_resetBatteryCriticalCount();
     manageReadBatt(1);
 
     shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
@@ -600,97 +507,39 @@ void SetupDock(void)
       //Board_sdPowerCycle();
     }
     MX_USART1_UART_Init();
-    BtsdSelfcmd();
+    ShimBt_instreamStatusRespSend();
   }
   else
   {
-    setBatteryInterval(BATT_INTERVAL_UNDOCKED);
+    ShimBatt_setBatteryInterval(BATT_INTERVAL_UNDOCKED);
     DockUart_deint();
     //Board_sdcard_arm0pc1(0);
 
     //SendStatusByte();
-    BtsdSelfcmd();
+    ShimBt_instreamStatusRespSend();
     //Board_sdPower(0);
-    //if (CheckSdInslot() && !shimmerStatus.isSensing && !shimmerStatus.badFile)
     if (CheckSdInslot() && !shimmerStatus.sensing)
     {
       Board_sd2Arm();
 
+      if (!shimmerStatus.sdBadFile)
+      {
+        shimmerStatus.sdlogReady = 1;
+      }
+
       HAL_Delay(120); //120ms
                       //Board_sdPower(1);
 
-      SdInfoSync();
+      LogAndStream_syncConfigAndCalibOnSd();
     }
     else
     {
-      setSdInfoSyncDelayed(1);
+      shimmerStatus.sdlogReady = 0;
+      LogAndStream_setSdInfoSyncDelayed(1);
     }
   }
   setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
   shimmerStatus.configuring = 0;
-}
-
-void SdInfoSync(void)
-{
-  setSdInfoSyncDelayed(0);
-  if (GetSdCfgFlag())
-  { //info > sdcard
-    IniReadInfoMem();
-    UpdateSdConfig();
-    SetSdCfgFlag(0);
-  }
-  else
-  {
-    ReadSdConfiguration();
-  }
-
-  if (GetRamCalibFlag())
-  {
-    ShimmerCalib_ram2File();
-    SetRamCalibFlag(0);
-  }
-  else
-  {
-    if (ShimmerCalib_file2Ram())
-    {
-      ShimmerCalib_ram2File();
-    }
-    else
-    {
-      //only need to do this when file2Ram succeeds
-      ShimmerCalibSyncFromDumpRamAll();
-    }
-  }
-
-  S4Sens_configureChannels();
-#if BT_ENABLE_BAUD_RATE_CHANGE
-  ChangeBtBaudRateFunc();
-#endif
-  CheckOnDefault();
-}
-
-uint8_t CheckOnDefault(void)
-{
-  if (!S4Ram_getStoredConfig()->singleTouchStart && !S4Ram_getStoredConfig()->userButtonEnable
-      && shimmerStatus.sdlogReady && !shimmerStatus.sensing && !shimmerStatus.sdBadFile)
-  { //state == BTSD_IDLESD
-    //startSensing = 1;
-    setStartSensing();
-    //sdlogCmd = (SD_ERROR) ? 0 : 1;
-    shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
-    shimmerStatus.sensing = 1;
-    BtsdSelfcmd();
-    shimmerStatus.sensing = 0;
-    return 1;
-  }
-  return 0;
-}
-
-void ReadSdConfiguration(void)
-{
-  S4_Task_clear(TASK_STREAMDATA); //this will skip one sample
-  Board_setSdPower(1);
-  ParseConfig();
 }
 
 #if USE_CUSTOM_HAL_DELAY
@@ -720,6 +569,71 @@ void HAL_Delay(uint32_t Delay)
   }
 }
 #endif
+
+void sleepWhenNoTask(void)
+{
+  /* Only wake MCU when new Task is set. See corresponding
+   * HAL_PWR_DisableSleepOnExit() in ShimTask_set() */
+  HAL_PWR_EnableSleepOnExit();
+
+  Power_SleepUntilInterrupt();
+
+  //if(shimmerStatus.isBtConnected && !shimmerStatus.isSensing){
+  //   Power_SleepUntilInterrupt();
+  //
+  //   __NOP();
+  //   __NOP();
+  //   __NOP();
+  //}else{
+  //   if(shimmerStatus.periStat == 0)
+  //   {
+  ////            static uint8_t green1_cnt = 0;
+  ////            if(!green1_cnt++){
+  ////               Board_ledToggle(LED_GREEN1);
+  ////            }
+  //Power_StopUntilInterrupt();
+  //}
+  //else
+  //{
+  //static uint8_t blue_cnt = 0;
+  //if(!blue_cnt++){
+  //   Board_ledToggle(LED_BLUE);
+  //}
+  //__NOP();
+  //__NOP();
+  //__NOP();
+  //Power_SleepUntilInterrupt();
+  //}
+  //}
+}
+
+void BtStop(uint8_t isCalledFromMain)
+{
+  //TODO tidy this flow up
+  btDeinit();
+}
+
+float samplingClockFreqGet(void)
+{
+  return 32768.0f;
+}
+
+void InitialiseBtAfterBoot(void)
+{
+  //TODO implement a shorted boot sequence as this is not the first time the BT
+  //has been booted at this point. btInit(baudToTry, factoryReset);
+  SHIMMER_PRINTF(
+      "TODO: need to implemented BT initialise after boot function\r\n");
+}
+
+uint8_t getDefaultBaudForBtVersion(void)
+{
+  return 12; //To represent 2M baud rate
+}
+
+void stopSensingWrapup(void)
+{
+}
 
 /* USER CODE END 4 */
 
