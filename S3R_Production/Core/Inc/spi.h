@@ -31,9 +31,9 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
+#include "EXG/ads1292.h"
 #include "shimmer_definitions.h"
 #include <shimmer_include.h>
-#include "EXG/ads1292.h"
 
   /* USER CODE END Includes */
 
