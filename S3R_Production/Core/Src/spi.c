@@ -245,10 +245,9 @@ void MX_SPI3_Init(void)
 
     //TODO switch over approach to match that being implemented by SPI1 and SPI2
     //HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI3_TxRxCpltCallback);
-    HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_COMPLETE_CB_ID, SPI3_TxCpltCallback);
-    HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_RX_COMPLETE_CB_ID, SPI3_RxCpltCallback);
-    HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
-
+    //HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_COMPLETE_CB_ID, SPI3_TxCpltCallback);
+    //HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_RX_COMPLETE_CB_ID, SPI3_RxCpltCallback);
+    // HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
     hspiExg = &hspi3;
   }
 
@@ -467,7 +466,6 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
 
     /* SPI3 clock enable */
     __HAL_RCC_SPI3_CLK_ENABLE();
-
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOG_CLK_ENABLE();
     /**SPI3 GPIO Configuration
@@ -665,6 +663,8 @@ void SPI3_DeInit(void)
   //ads1292r_exg2_unselectDevice();
 
   //Board_SW_SPI2(0);
+  ADS1292_chip1CsEnable(1);
+  ADS1292_chip2CsEnable(1);
 }
 
 void SPI_configureChannels()
@@ -1009,6 +1009,7 @@ void SPI_pollSensors(void)
 
 #endif
 
+  /*
   //ExG (SPI)
   if (isAds1292Present())
   {
@@ -1023,6 +1024,7 @@ void SPI_pollSensors(void)
       EXG_readData(1, 0, sensing.dataBuf + sensing.ptr.exg2);
     }
   }
+  */
 }
 
 void SPI_stopSensing()
@@ -1413,14 +1415,16 @@ void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     //TODO harmonise the "UnselectDevice" approach being implemented for SPI1
     //and SPI2 with the #defines as was previously implemented for the
     //Shimmer4_SDK ads1292r_exg1_UnselectDevice();
-    Board_ECG_CS(0);
+    //Board_ECG_CS(0);
+    Board_EXG_CHIP1_CS(1);
     memcpy(sensing.dataBuf + sensing.ptr.exg1,
         &spi3Sens_buf.ads1292rExg1Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi3Sens_buf.ads1292rExg1Buf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI3_ADS1292R_EXG2:
     //ads1292r_exg2_UnselectDevice();
-    Board_RESP_CS(0);
+    // Board_RESP_CS(0);
+    Board_EXG_CHIP2_CS(1);
     memcpy(sensing.dataBuf + sensing.ptr.exg2,
         &spi3Sens_buf.ads1292rExg2Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi3Sens_buf.ads1292rExg2Buf) - SPI_DMA_TXRX_OFFSET);
