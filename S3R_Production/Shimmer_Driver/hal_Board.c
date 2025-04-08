@@ -573,4 +573,3 @@ void resetGsrPwrAndRange(void)
 #endif
   GSR_setActiveResistor(HW_RES_40K);
 }
-

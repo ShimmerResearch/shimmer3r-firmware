@@ -538,7 +538,7 @@ void I2C_test(void)
     HAL_Delay(2); //2ms as per Shimmer3 code
     I2C_scan_internal_expansion_bus(test_i2c_addr_list, &test_i2c_addr_list_len);
 
-    if (test_i2c_addr_list_len == 0) // Nothing detected on I2C bus
+    if (test_i2c_addr_list_len == 0) //Nothing detected on I2C bus
     {
       send_test_report(
           " - S3R_TEST_0017 - FAIL: I2C4 - no test rig detected\r\n");
@@ -546,7 +546,7 @@ void I2C_test(void)
           " - S3R_TEST_0018 - FAIL: GSR - no test rig detected\r\n");
       i2c4_result = 1;
     }
-    else if (test_i2c_addr_list_len == 3)  // GSR Test Rig detected
+    else if (test_i2c_addr_list_len == 3) //GSR Test Rig detected
     {
       send_test_report(" - S3R_TEST_0017 - PASS: I2C4\r\n");
 
@@ -560,7 +560,7 @@ void I2C_test(void)
         shimmerStatus.testResult |= S3R_TEST_0018;
       }
     }
-    else if (test_i2c_addr_list_len == 8)  // EEPROM detected
+    else if (test_i2c_addr_list_len == 8) //EEPROM detected
     {
       altEepromInit(&hi2c4);
       i2c4_result = altEepromTest();
