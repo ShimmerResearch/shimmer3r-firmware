@@ -247,7 +247,6 @@ void MX_SPI3_Init(void)
     //HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_RX_COMPLETE_CB_ID, SPI3_RxCpltCallback);
     HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
     hspiExg = &hspi3;
-    EXG_init(hspiExg);
   }
 
   /* USER CODE END SPI3_Init 2 */
@@ -1410,7 +1409,7 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   switch (spi3Sens.sensorList[spi3Sens.sensorCnt])
   {

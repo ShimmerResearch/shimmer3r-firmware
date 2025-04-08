@@ -349,53 +349,25 @@ HAL_StatusTypeDef ADS1292_enableInternalReference(void)
 
 void ADS1292_enableDrdyInterrupts(uint8_t mask)
 {
-  /*if (mask & ADS1292_DRDY_INT_CHIP1)
-  {
-    HAL_NVIC_EnableIRQ(EXTI3_IRQn);
-  }
-  if (mask & ADS1292_DRDY_INT_CHIP2)
-  {
-    //HAL_NVIC_EnableIRQ(EXTI5_IRQn);
-  } */
   if (mask & ADS1292_DRDY_INT_CHIP1)
   {
-    if (!ADS1292_EXG_CHIP1_DRDY)
-    {
-      HAL_GPIO_WritePin(EXG_CHIP1_DRDY_N_GPIO_Port, EXG_CHIP1_DRDY_N_Pin, GPIO_PIN_SET);
-    }
+    HAL_NVIC_EnableIRQ(INT_LINE_GPIO_INTERNAL1);
   }
   if (mask & ADS1292_DRDY_INT_CHIP2)
   {
-    if (!ADS1292_EXG_CHIP2_DRDY)
-    {
-      HAL_GPIO_WritePin(EXG_CHIP2_DRDY_N_GPIO_Port, EXG_CHIP2_DRDY_N_Pin, GPIO_PIN_SET);
-    }
+    HAL_NVIC_EnableIRQ(INT_LINE_GPIO_INTERNAL0);
   }
 }
 
 void ADS1292_disableDrdyInterrupts(uint8_t mask)
 {
-  /*if (mask & ADS1292_DRDY_INT_CHIP1)
-  {
-    HAL_NVIC_EnableIRQ(EXTI3_IRQn);
-  }
-  if (mask & ADS1292_DRDY_INT_CHIP2)
-  {
-    //HAL_NVIC_EnableIRQ(EXTI5_IRQn);
-  } */
   if (mask & ADS1292_DRDY_INT_CHIP1)
   {
-    if (ADS1292_EXG_CHIP1_DRDY)
-    {
-      HAL_GPIO_WritePin(EXG_CHIP1_DRDY_N_GPIO_Port, EXG_CHIP1_DRDY_N_Pin, GPIO_PIN_RESET);
-    }
+    HAL_NVIC_EnableIRQ(INT_LINE_GPIO_INTERNAL1);
   }
   if (mask & ADS1292_DRDY_INT_CHIP2)
   {
-    if (ADS1292_EXG_CHIP2_DRDY)
-    {
-      HAL_GPIO_WritePin(EXG_CHIP2_DRDY_N_GPIO_Port, EXG_CHIP2_DRDY_N_Pin, GPIO_PIN_RESET);
-    }
+    HAL_NVIC_EnableIRQ(INT_LINE_GPIO_INTERNAL0);
   }
 }
 

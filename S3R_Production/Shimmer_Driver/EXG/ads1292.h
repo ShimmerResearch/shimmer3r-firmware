@@ -89,11 +89,11 @@ HAL_StatusTypeDef ADS1292_enableInternalReference(void);
 
 #define ADS1292_DRDY_INT_CHIP1 0x01
 #define ADS1292_DRDY_INT_CHIP2 0x02
-//If bit0 of mask is 1 then data ready interrupt for chip 1 is enabled (P2.0)
-//If bit1 of mask is 1 then data ready interrupt for chip 2 is enabled (P1.4)
+//If bit0 of mask is 1 then data ready interrupt for chip 1 is enabled
+//If bit1 of mask is 1 then data ready interrupt for chip 2 is enabled
 void ADS1292_enableDrdyInterrupts(uint8_t mask);
-//If bit0 of mask is 1 then data ready interrupt for chip 1 is disabled (P2.0)
-//If bit1 of mask is 1 then data ready interrupt for chip 2 is disabled (P1.4)
+//If bit0 of mask is 1 then data ready interrupt for chip 1 is disabled
+//If bit1 of mask is 1 then data ready interrupt for chip 2 is disabled
 void ADS1292_disableDrdyInterrupts(uint8_t mask);
 
 //returns 72bits (9 bytes) in data
