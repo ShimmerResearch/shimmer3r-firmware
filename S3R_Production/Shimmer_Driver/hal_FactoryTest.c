@@ -893,6 +893,10 @@ uint8_t runGsrFactoryTest(void)
       returnVal = 1;
       break;
     }
+
+//    sprintf(buffer, "Test %lu, Measured %lu, Tolerance +-%lu\r\n", testGsrResistances[i],
+//        gsrResistance, gsrBuffer);
+//    send_test_report(buffer);
   }
 
   resetGsrPwrAndRange();

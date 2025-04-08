@@ -554,7 +554,7 @@ bool ads7028_areAnyChannelsEnabled(void)
 void ads7028_factoryTestGsrInit(void)
 {
   //GSR channel
-  uint8_t channelID = AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED;
+  uint8_t channelID = CHANNEL_SEL_MANUAL_CHID_3;
 
   resetDevice();
 
@@ -588,7 +588,6 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   //Read data
   adcValueSigned = readData(data);
 
-  //uint16_t adcValue = (((uint16_t) data[0]) << 4 | data[1] >> 4) & 0x0FFF;
   uint16_t adcValue = ((uint16_t) adcValueSigned) & 0x0FFF;
 
   int32_t gsrMv = ((uint32_t) (adcValue * 1000)) / (4095 / 3); //convert to mV
