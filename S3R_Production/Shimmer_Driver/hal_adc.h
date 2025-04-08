@@ -2,8 +2,8 @@
 #ifndef S4_ADC_H
 #define S4_ADC_H
 
-#include "shimmer_include.h"
 #include "stm32u5xx_hal.h"
+#include <shimmer_include.h>
 //#include "main.h"
 
 #include "linked_list.h"
@@ -21,8 +21,6 @@ typedef struct
   uint8_t chanCntSens;
   uint8_t chanCntBatt;
 } ADCTypeDef;
-
-extern ADCTypeDef adc;
 
 typedef struct
 {
@@ -42,11 +40,11 @@ typedef struct
 #define S4_ADC_init2             S4_RTOS_ADC_init2
 #define S4_ADC_initBatt          S4_RTOS_ADC_initBatt
 #define S4_ADC_configureChannels S4_RTOS_ADC_configureChannels
-#define S4_ADC_startSensing      S4_RTOS_ADC_startSensing
+#define ADC_startSensing         S4_RTOS_ADC_startSensing
 #define S4_ADC_bufPoll           S4_RTOS_ADC_bufPoll
-#define S4_ADC_stopSensing       S4_RTOS_ADC_stopSensing
-#define S4_ADC_gatherDataCb      S4_RTOS_ADC_gatherDataCb
-#define S4_ADC_gatherDataStart   S4_RTOS_ADC_gatherDataStart
+#define ADC_stopSensing          S4_RTOS_ADC_stopSensing
+#define ADC_gatherDataCb         S4_RTOS_ADC_gatherDataCb
+#define ADC_gatherDataStart      S4_RTOS_ADC_gatherDataStart
 #define S4_ADC_readBatt          S4_RTOS_ADC_readBatt
 #define S4_ADC_rankBatt          S4_RTOS_ADC_rankBatt
 #else
@@ -56,13 +54,13 @@ typedef struct
 #if defined(SHIMMER4_SDK)
 #define S4_ADC_initBatt S4_NORM_ADC_initBatt
 #endif
-#define S4_ADC_configureChannels S4_NORM_ADC_configureChannels
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
-#define S4_ADC_startSensing    S4_NORM_ADC_startSensing
-#define S4_ADC_bufPoll         S4_NORM_ADC_bufPoll
-#define S4_ADC_stopSensing     S4_NORM_ADC_stopSensing
-#define S4_ADC_gatherDataCb    S4_NORM_ADC_gatherDataCb
-#define S4_ADC_gatherDataStart S4_NORM_ADC_gatherDataStart
+#define ADC_configureChannels S4_NORM_ADC_configureChannels
+#if defined(SHIMMER4_SDK) || SUPPORT_SR48_6_0
+#define ADC_startSensing    S4_NORM_ADC_startSensing
+#define S4_ADC_bufPoll      S4_NORM_ADC_bufPoll
+#define ADC_stopSensing     S4_NORM_ADC_stopSensing
+#define ADC_gatherDataCb    S4_NORM_ADC_gatherDataCb
+#define ADC_gatherDataStart S4_NORM_ADC_gatherDataStart
 #endif
 #define S4_ADC_readBatt S4_NORM_ADC_readBatt
 #endif //USE_FREERTOS
@@ -87,13 +85,13 @@ void S4_NORM_ADC_init2(void);
 void S4_NORM_ADC_initBatt(void);
 #endif
 void S4_NORM_ADC_configureChannels(void);
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
+#if defined(SHIMMER4_SDK) || SUPPORT_SR48_6_0
 void S4_NORM_ADC_startSensing(void);
 void shimmerAdcGpioSetup(uint8_t init);
 #endif
 void initSensAdc(uint32_t numChannels);
-#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
-void initGsrAdc(void);
+#if defined(SHIMMER4_SDK) || SUPPORT_SR48_6_0
+void initGsrMcuAdc(void);
 void S4_NORM_ADC_bufPoll(void);
 void S4_NORM_ADC_stopSensing(void);
 void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void));
@@ -108,10 +106,11 @@ void manageReadBatt(uint8_t isBlockingRead);
 bool areMcuAdcChannelsEnabled(void);
 #endif
 
-HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample);
-HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *resistance);
-HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance);
-void resetGsrPwrAndRange(void);
+#if SUPPORT_SR48_6_0
+HAL_StatusTypeDef getSingleMcuAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample);
+HAL_StatusTypeDef getFactoryTestGsrResistanceMcuAdc(uint32_t *resistance);
+void deinitGsrMcuAdc(void);
+#endif
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr);
 
 #endif /* S4_ADC_H */

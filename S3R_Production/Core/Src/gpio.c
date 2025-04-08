@@ -26,7 +26,8 @@
 #include "usb_device.h"
 #include "usbd_core.h"
 
-#include "log_and_stream_externs.h"
+#include <TaskList/shimmer_taskList.h>
+#include <log_and_stream_externs.h>
 
 /* USER CODE END 0 */
 
@@ -35,7 +36,7 @@
 /*----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 
-uint64_t GPIO_tsPress = 0, GPIO_tsLastRelease = 0, GPIO_tsRelease = 0;
+uint64_t GPIO_tsLastRelease = 0, GPIO_tsRelease = 0;
 
 /* USER CODE END 1 */
 
@@ -204,7 +205,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : USER_BTN_Pin */
   GPIO_InitStruct.Pin = USER_BTN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(USER_BTN_GPIO_Port, &GPIO_InitStruct);
 
@@ -231,8 +232,16 @@ void GPIO_usbVbusIntInit(uint8_t state)
     GPIO_InitTypeDef GPIO_InitStruct = { 0 };
     __HAL_RCC_GPIOA_CLK_ENABLE();
     GPIO_InitStruct.Pin = USB_VBUS_Pin;
-#if SR48_6_0_PATCH_VBUS_SENSE
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+#if SUPPORT_SR48_6_0
+    /* SR48-6-0 patch for dock detection */
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+    }
+    else
+    {
+      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+    }
 #else
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
 #endif
@@ -254,29 +263,22 @@ void GPIO_userButtonCheck()
   if (pinState == GPIO_PIN_SET)
   { //pressed
     shimmerStatus.buttonPressed = 1;
-#if defined(SHIMMER4_SDK)
-    Board_ledOn(LED_YELLOW);
-#endif
-    GPIO_tsPress = RTC_get64();
   }
   else
   {
     shimmerStatus.buttonPressed = 0;
-#if defined(SHIMMER4_SDK)
-    Board_ledOff(LED_YELLOW);
-#endif
     GPIO_tsRelease = RTC_get64();
     if (GPIO_tsRelease - GPIO_tsLastRelease > 3277)
     {
       if (shimmerStatus.sensing == 0)
       {
         shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
-        S4_Task_set(TASK_STARTSENSING);
+        ShimTask_set(TASK_STARTSENSING);
       }
       else
       {
         shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_STOP;
-        S4_Task_set(TASK_STOPSENSING);
+        ShimTask_set(TASK_STOPSENSING);
       }
     }
     GPIO_tsLastRelease = GPIO_tsRelease;
@@ -296,14 +298,26 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin)
   {
-#if !SR48_6_0_PATCH_VBUS_SENSE
+#if SUPPORT_SR48_6_0
+  /* SR48-6-0 patch for VBUS sense - start */
   case USB_VBUS_Pin:
-    if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
+    if (!ShimBrd_isBoardSr48_6_0())
     {
-      S4_Task_set(TASK_USB_SETUP);
+      if (!(ShimTask_getList() & TASK_USB_SETUP))
+      {
+        ShimTask_set(TASK_USB_SETUP);
+      }
+      break;
+    }
+    /* SR48-6-0 patch for VBUS sense - end */
+#else  //SUPPORT_SR48_6_0
+  case USB_VBUS_Pin:
+    if (!(ShimTask_getList() & TASK_USB_SETUP))
+    {
+      ShimTask_set(TASK_USB_SETUP);
     }
     break;
-#endif
+#endif //SUPPORT_SR48_6_0
   default:
     gpioExtiCommon(GPIO_Pin, 1);
     break;
@@ -360,32 +374,37 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
   case DOCK_DETECT_Pin:
     DockUart_interruptCheck();
-    S4_Task_set(TASK_DOCKSETUP);
+    ShimTask_set(TASK_SETUP_DOCK);
     break;
-#if SR48_6_0_PATCH_DOCK_DETECT
+#if SUPPORT_SR48_6_0
+    /* SR48-6-0 patch for dock detection - start */
   case SR48_6_0_BOOT0_USER_BTN_Pin:
-    /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
-    DockUart_interruptCheck();
-    S4_Task_set(TASK_DOCKSETUP);
-    break;
-#endif
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
+      DockUart_interruptCheck();
+      ShimTask_set(TASK_SETUP_DOCK);
+      break;
+    }
+    /* SR48-6-0 patch for dock detection - end */
+    /* SR48-6-0 patch for VBUS sense - start */
+  case USB_VBUS_Pin:
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      if (!(ShimTask_getList() & TASK_USB_SETUP))
+      {
+        ShimTask_set(TASK_USB_SETUP);
+      }
+      break;
+    }
+    /* SR48-6-0 patch for VBUS sense - end */
+#endif //SUPPORT_SR48_6_0
   case USER_BTN_Pin:
     GPIO_userButtonCheck();
     break;
   case SD_DETECT_N_Pin:
-    SD_insertedCheck();
+    CheckSdInslot();
     break;
-#if SR48_6_0_PATCH_VBUS_SENSE
-  case USB_VBUS_Pin:
-#if defined(SHIMMER3R)
-    Usb_interruptCheck();
-#endif
-    if (!(S4_NORM_Task_getList() & TASK_USB_SETUP))
-    {
-      S4_Task_set(TASK_USB_SETUP);
-    }
-    break;
-#endif
   default:
     break;
   }
@@ -435,7 +454,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     GPIO_userButtonCheck();
     break;
   case SD_DETECT_N_Pin:
-    SD_insertedCheck();
+    CheckSdInslot();
     break;
   default:
     break;
@@ -443,7 +462,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 #endif
 
-uint8_t SD_insertedCheck()
+uint8_t CheckSdInslot(void)
 {
   if (HAL_GPIO_ReadPin(SD_DETECT_N_GPIO_Port, SD_DETECT_N_Pin) == GPIO_PIN_RESET)
   { //inserted
@@ -479,22 +498,30 @@ void gpioInitPerBoard(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  shimmer_expansion_brd *daughtCardId = getDaughtCardId();
+  shimmer_expansion_brd *daughtCardId = ShimBrd_getDaughtCardId();
   if (daughtCardId->exp_brd_id == EXP_BRD_GSR_UNIFIED)
   {
     /* GPIO_ADC_INT_EXP0_Pin:
      * GPIO_ADC_INT_EXP1_Pin:
      * PPG ADCs. Also connected to I2C4. Allow code ADC to manage. */
 
-#ifdef SR48_6_0
-    /* GPIO_ADC_INT_EXP2_Pin
-     * Controls whether I2C4 connected to PPG connector */
-    Board_SW_I2C4_ON_PPG(0);
-    GPIO_InitStruct.Pin = GPIO_ADC_INT_EXP2_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIO_ADC_INT_EXP2_GPIO_Port, &GPIO_InitStruct);
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      /* GPIO_ADC_INT_EXP2_Pin
+       * Controls whether I2C4 connected to PPG connector */
+      Board_SW_I2C4_ON_PPG(0);
+      GPIO_InitStruct.Pin = SR48_6_0_GPIO_ADC_INT_EXP2_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      HAL_GPIO_Init(SR48_6_0_GPIO_ADC_INT_EXP2_GPIO_Port, &GPIO_InitStruct);
+    }
+#else
+    if (!ShimBrd_isBoardSr48_7_0())
+    {
+      //TODO GPIO_INTERNAL3? to control I2C on PPG connector
+    }
 #endif
 
     /* GPIO_ADC_INT_EXP3_Pin:
@@ -527,62 +554,108 @@ void gpioInitPerBoard(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIO_INTERNAL2_GPIO_Port, &GPIO_InitStruct);
 
-#if SR48_6_0_PATCH_DOCK_DETECT
-    /* SR48-6-0 S3R prototype has incorrect dock pin handling so we need to
-     * re-purpose the dock detect pin as an output to let the dock know when a
-     * Shimmer is docked. */
-    HAL_NVIC_DisableIRQ(INT_LINE_DOCK_DETECT);
-    HAL_GPIO_DeInit(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin);
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      /* SR48-6-0 patch for dock detection - start */
 
-    HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, GPIO_PIN_SET);
-    GPIO_InitStruct.Pin = DOCK_DETECT_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(DOCK_DETECT_GPIO_Port, &GPIO_InitStruct);
+      /* SR48-6-0 S3R prototype has incorrect dock pin handling so we need to
+       * re-purpose the dock detect pin as an output to let the dock know when a
+       * Shimmer is docked. */
+      HAL_NVIC_DisableIRQ(INT_LINE_DOCK_DETECT);
+      HAL_GPIO_DeInit(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin);
 
-    /* SR48-6-0 doesn't have a DETECT_N pin so deinit */
-    HAL_GPIO_DeInit(DETECT_N_GPIO_Port, DETECT_N_Pin);
+      HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, GPIO_PIN_SET);
+      GPIO_InitStruct.Pin = DOCK_DETECT_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      HAL_GPIO_Init(DOCK_DETECT_GPIO_Port, &GPIO_InitStruct);
 
-    /* SR48-6-0 has user button connected to BOOT0 pin PH3 and nothing connected
-     * to INT6 so disabling it here and using BOOT0 as an interrupt instead for
-     * dock detection. */
-    HAL_NVIC_DisableIRQ(INT_LINE_USER_BTN);
-    HAL_GPIO_DeInit(USER_BTN_GPIO_Port, USER_BTN_Pin);
+      /* SR48-6-0 doesn't have a DETECT_N pin so deinit */
+      HAL_GPIO_DeInit(DETECT_N_GPIO_Port, DETECT_N_Pin);
 
-    GPIO_InitStruct.Pin = SR48_6_0_BOOT0_USER_BTN_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, &GPIO_InitStruct);
+      /* SR48-6-0 has user button connected to BOOT0 pin PH3 and nothing
+       * connected to INT6 so disabling it here and using BOOT0 as an interrupt
+       * instead for dock detection. */
+      HAL_NVIC_DisableIRQ(INT_LINE_USER_BTN);
+      HAL_GPIO_DeInit(USER_BTN_GPIO_Port, USER_BTN_Pin);
 
-    HAL_NVIC_SetPriority(INT_LINE_SR48_6_0_BOOT0_USER_BTN, 0, 0);
-    HAL_NVIC_EnableIRQ(INT_LINE_SR48_6_0_BOOT0_USER_BTN);
+      GPIO_InitStruct.Pin = SR48_6_0_BOOT0_USER_BTN_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      HAL_GPIO_Init(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, &GPIO_InitStruct);
+
+      HAL_NVIC_SetPriority(INT_LINE_SR48_6_0_BOOT0_USER_BTN, 0, 0);
+      HAL_NVIC_EnableIRQ(INT_LINE_SR48_6_0_BOOT0_USER_BTN);
+
+      /* SR48-6-0 patch for dock detection - end */
+
+      /* SR48-6-0 has CHG_STAT connections attached to different MCU pins */
+      HAL_GPIO_DeInit(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin);
+      HAL_GPIO_DeInit(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin);
+
+      GPIO_InitStruct.Pin = SR48_6_0_CHG_STAT1_Pin | SR48_6_0_CHG_STAT2_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+      /*Configure GPIO pin Output Level */
+      HAL_GPIO_WritePin(SR48_6_0_SW_GSR_GPIO_Port, SR48_6_0_SW_GSR_Pin, GPIO_PIN_RESET);
+
+      /*Configure GPIO pins : SW_GSR_Pin */
+      GPIO_InitStruct.Pin = SR48_6_0_SW_GSR_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+      /* SR48-6-0 uses MCU pins for ADC channels and not the ADS7028 */
+      HAL_GPIO_DeInit(CS_ADS7028_GPIO_Port, CS_ADS7028_Pin);
+    }
 #endif
 
-#ifdef SR48_6_0
-    /* SR48-6-0 has CHG_STAT connections attached to different MCU pins */
-    HAL_GPIO_DeInit(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin);
-    HAL_GPIO_DeInit(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin);
-
-    GPIO_InitStruct.Pin = SR48_6_0_CHG_STAT1_Pin | SR48_6_0_CHG_STAT2_Pin;
+    GSR_setActiveResistor(HW_RES_40K);
+  }
+  else if (daughtCardId->exp_brd_id == EXP_BRD_EXG_UNIFIED)
+  {
+    /*Configure GPIO_INTERNAL1 pin */
+    HAL_GPIO_WritePin(EXG_CHIP1_DRDY_N_GPIO_Port, EXG_CHIP1_DRDY_N_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_CHIP1_DRDY_N_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(EXG_CHIP1_DRDY_N_GPIO_Port, &GPIO_InitStruct);
 
-    /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(SW_GSR_GPIO_Port, SW_GSR_Pin, GPIO_PIN_RESET);
+    /*Configure GPIO_INTERNAL0 pin */
+    HAL_GPIO_WritePin(EXG_CHIP2_DRDY_N_GPIO_Port, EXG_CHIP2_DRDY_N_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_CHIP2_DRDY_N_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(EXG_CHIP2_DRDY_N_GPIO_Port, &GPIO_InitStruct);
 
-    /*Configure GPIO pins : SW_GSR_Pin */
-    GPIO_InitStruct.Pin = SW_GSR_Pin;
+    /*Configure GPIO_INTERNAL4 pin (ExG Chip 1 / ECG CS) */
+    HAL_GPIO_WritePin(EXG_CHIP1_CS_GPIO_Port, EXG_CHIP1_CS_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_CHIP1_CS_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+    HAL_GPIO_Init(EXG_CHIP1_CS_GPIO_Port, &GPIO_InitStruct);
 
-    /* SR48-6-0 uses MCU pins for ADC channels and not the ADS7028 */
-    HAL_GPIO_DeInit(CS_ADS7028_GPIO_Port, CS_ADS7028_Pin);
+    /*Configure GPIO_INTERNAL3 pin (ExG Chip 2 / RESP CS) */
+    HAL_GPIO_WritePin(EXG_CHIP2_CS_GPIO_Port, EXG_CHIP2_CS_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_CHIP2_CS_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(EXG_CHIP2_CS_GPIO_Port, &GPIO_InitStruct);
 
-#endif
+    /* EXG_RESET_N */
+    HAL_GPIO_WritePin(EXG_RESET_N_GPIO_Port, EXG_RESET_N_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = EXG_RESET_N_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(EXG_RESET_N_GPIO_Port, &GPIO_InitStruct);
   }
   else if (daughtCardId->exp_brd_id == EXP_BRD_EXG_UNIFIED)
   {
@@ -631,48 +704,85 @@ void vbusPinStateCheck(void)
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   if (pin == GPIO_PIN_SET)
   {
+    shimmerStatus.usbPluggedIn = 1;
     if (hUsbDevice.pDesc == NULL)
     {
       //Enable USB peripheral
-#if SR48_6_0_PATCH_VBUS_SENSE
-      MX_USB_OTG_HS_PCD_Init_NoVbusSense();
-#else
-      //Disable GPIO interrupt on pin so that USB peripheral can take control
+#if SUPPORT_SR48_6_0
+      /* SR48-6-0 patch for VBUS sense - start */
+      if (ShimBrd_isBoardSr48_6_0())
+      {
+        MX_USB_OTG_HS_PCD_Init_NoVbusSense();
+      }
+      else
+      {
+        //Disable GPIO interrupt on pin so that USB peripheral can take control
+        GPIO_usbVbusIntInit(0);
+        //Clear interrupt flag else it triggers multiple times.
+        __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
+
+        MX_USB_OTG_HS_PCD_Init();
+      }
+      /* SR48-6-0 patch for VBUS sense - end */
+#else  //SUPPORT_SR48_6_0
+       //Disable GPIO interrupt on pin so that USB peripheral can take control
       GPIO_usbVbusIntInit(0);
       //Clear interrupt flag else it triggers multiple times.
       __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
 
       MX_USB_OTG_HS_PCD_Init();
-#endif
+#endif //SUPPORT_SR48_6_0
 #if !USE_USBX
       MX_USB_DEVICE_Init();
-#endif
+#endif //USE_USBX
     }
   }
   else if (pin == GPIO_PIN_RESET)
   {
-#if SR48_6_0_PATCH_VBUS_SENSE
-    if (hUsbDevice.pDesc != NULL)
+    shimmerStatus.usbPluggedIn = 0;
+
+#if SUPPORT_SR48_6_0
+    /* SR48-6-0 patch for VBUS sense - start */
+    if (ShimBrd_isBoardSr48_6_0())
     {
+      if (hUsbDevice.pDesc != NULL)
+      {
 #if !USE_USBX
-      USBD_DeInit(&hUsbDevice);
+        USBD_DeInit(&hUsbDevice);
 #endif
-      HAL_PCD_MspDeInit_NoVbusSense(&hpcd_USB_OTG_HS);
+        HAL_PCD_MspDeInit_NoVbusSense(&hpcd_USB_OTG_HS);
+      }
     }
-#else
+    else
+    {
+      USB_STATE state = usbPlugInState();
+      if (state == USB_CABLE_UNPLUGGED)
+      {
+        //Disable USB peripheral
+#if !USE_USBX
+        USBD_DeInit(&hUsbDevice);
+#endif //USE_USBX
+        HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS);
+
+        //Re-enable GPIO interrupt on pin
+        GPIO_usbVbusIntInit(1);
+      }
+    }
+    /* SR48-6-0 patch for VBUS sense - end */
+#else //SUPPORT_SR48_6_0
     USB_STATE state = usbPlugInState();
     if (state == USB_CABLE_UNPLUGGED)
     {
       //Disable USB peripheral
 #if !USE_USBX
       USBD_DeInit(&hUsbDevice);
-#endif
+#endif //USE_USBX
       HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS);
 
       //Re-enable GPIO interrupt on pin
       GPIO_usbVbusIntInit(1);
     }
-#endif
+#endif //SUPPORT_SR48_6_0
   }
 }
 
@@ -743,6 +853,7 @@ void setBtPower(uint8_t state)
   shimmerStatus.btPowerOn = state;
 }
 
+/* TODO decide if we want to go this route to optimise current consumption
 void initSpi1CsOutputs(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
@@ -763,5 +874,6 @@ void initSpi1CsOutputs(void)
 void deinitSpi1CsOutputs(void)
 {
 }
+*/
 
 /* USER CODE END 2 */

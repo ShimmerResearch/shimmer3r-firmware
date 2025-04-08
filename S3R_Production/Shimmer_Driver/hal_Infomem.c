@@ -60,8 +60,8 @@ FLASH_EraseInitTypeDef pEraseInit = { .TypeErase = FLASH_TYPEERASE_PAGES,
 
 void InfoMem_init(void)
 {
-  infoMem_p_storedConfig = S4Ram_getStoredConfig();
-  infoMem_p_shimmerCalib_ram = ShimmerCalib_getRam();
+  infoMem_p_storedConfig = ShimConfig_getStoredConfig();
+  infoMem_p_shimmerCalib_ram = ShimCalib_getRam();
 }
 
 //void InfoMem_initRam(uint8_t* buf){
@@ -191,7 +191,7 @@ void InfoMem_updateFrom(uint8_t *buf)
   HAL_FLASH_Lock();
 }
 
-uint8_t InfoMem_readRam(uint8_t *buf, uint16_t addr, uint16_t size)
+uint8_t InfoMem_read(uint16_t addr, uint8_t *buf, uint16_t size)
 {
   if (addr + size > INFOMEM_CONFIG_SIZE)
   {
@@ -264,7 +264,7 @@ uint8_t InfoMem_test(void)
 }
 #endif //HAL_TEST_INFOMEM
 
-uint8_t InfoMem_write(uint8_t addr, uint8_t *buf, uint16_t size)
+uint8_t InfoMem_write(uint16_t addr, uint8_t *buf, uint16_t size)
 {
   /*TODO STM32 flash has to be erased per 8KB page size even if we only want to update a small number of bytes.
    * Revisit if we move Infomem to being stored on EEPROM where we can erase/write 16 byte pages. */

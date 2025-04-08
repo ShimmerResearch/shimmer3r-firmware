@@ -420,7 +420,7 @@ void I2cSens_configureChannels(void)
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
   uint8_t nbr_i2c1_chans = 0;
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
 #if defined(SHIMMER3R)
   memset((uint8_t *) &i2c1Sens, 0, sizeof(i2c1Sens));
@@ -517,7 +517,7 @@ void I2cSens_configureChannels(void)
   }
 #endif
   sensing.ccLen += nbr_i2c1_chans;
-  sensing.nbrDigiChans += nbr_i2c1_chans;
+  sensing.nbrI2cChans = nbr_i2c1_chans;
 
 #if defined(SHIMMER3R)
   expectedI2cBusCbFlags = 0;
@@ -563,8 +563,8 @@ void I2cBatt_configureChannels(void)
 
 void I2C_startSensing(void)
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  float shimmerSamplingFreq = get_shimmer_sampling_freq();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
+  float shimmerSamplingFreq = ShimConfig_getShimmerSamplingFreq();
 
   memset((uint8_t *) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
 
@@ -673,7 +673,7 @@ void I2C_stopSensing(void)
 
 void I2cSens_stopSensing(void)
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
 #if defined(SHIMMER3R)
 //if (configBytes->chEnMag)
@@ -1362,8 +1362,8 @@ void loadDaughterCardIdFromEeprom(void)
 {
   uint8_t daughterCardIdBuf[CAT24C16_PAGE_SIZE];
   eepromRead(0, CAT24C16_PAGE_SIZE, &daughterCardIdBuf[0]);
-  setDaugherCardIdPage(daughterCardIdBuf);
-  parseDaughterCardId(getDaughtCardId()->exp_brd_id);
+  ShimBrd_setDaugherCardIdPage(daughterCardIdBuf);
+  ShimBrd_parseDaughterCardId();
   HAL_Delay(5); //5ms to ensure no writes pending
 }
 
@@ -1371,25 +1371,32 @@ void enableI2cOnInternalExpansionBrd(uint8_t state)
 {
   if (state)
   {
-    Board_SW_EXP_BRD_POWER(1);
-#ifdef SR48_6_0
-    Board_SW_I2C4_ON_PPG(1);
-#else
-    MX_SPI1_Init(); //SPI is needed to change GPIO state in ADS7028
-    swI2C4PpgOnAds7028(1);
-#endif
+    Board_setExpansionBrdPower(1);
+    if (ShimBrd_isBoardSr48_7_0())
+    {
+      //SPI is needed to change GPIO state in ADS7028
+      MX_SPI1_Init();
+      ads7028_swI2C4PpgOn(1);
+    }
+    else
+    {
+      Board_SW_I2C4_ON_PPG(1);
+    }
     MX_I2C4_Init();
   }
   else
   {
     I2C4_DeInit();
-    Board_SW_EXP_BRD_POWER(0);
-#ifdef SR48_6_0
-    Board_SW_I2C4_ON_PPG(0);
-#else
-    swI2C4PpgOnAds7028(0);
-    SPI1_DeInit();
-#endif
+    Board_setExpansionBrdPower(0);
+    if (ShimBrd_isBoardSr48_7_0())
+    {
+      ads7028_swI2C4PpgOn(0);
+      SPI1_DeInit();
+    }
+    else
+    {
+      Board_SW_I2C4_ON_PPG(0);
+    }
   }
 }
 

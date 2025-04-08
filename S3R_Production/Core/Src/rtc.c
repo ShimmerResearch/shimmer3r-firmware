@@ -22,8 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
-#include "log_and_stream_externs.h"
 #include "shimmer_definitions.h"
+#include <TaskList/shimmer_taskList.h>
+#include <log_and_stream_externs.h>
 
 uint64_t rwcConfigTime64;
 uint32_t S4_RTC_Status = RTC_STATUS_ZERO;
@@ -708,7 +709,7 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 //   Board_ledToggle(LED_GREEN0);
 //}
 #if !SENS_CLK_RTC0TIM1
-    S4Sens_gatherData();
+    ShimSens_gatherData();
 #endif
   }
 #if defined(SHIMMER4_SDK)
@@ -732,7 +733,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   __HAL_RTC_ALARMA_DISABLE(hrtc);
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
 
-  S4_Task_set(TASK_BATT_READ_FROM_ALARM);
+  ShimTask_set(TASK_BATT_READ);
 #if defined(SHIMMER4_SDK)
 #if RTC_FAST
   //rtc64_reg += 0x8000; // this is not working well as the interrupt priority is not the highest
@@ -756,7 +757,7 @@ void setupNextRtcMinuteAlarm(void)
   sAlarm.AlarmTime.Seconds = 0x0;
   sAlarm.AlarmTime.SubSeconds = 0x0;
   /* If docked alarm fires every 30s and if un-docked fires every 10 minutes*/
-  battAlarmInterval_t battAlarm = getBatteryInterval();
+  battAlarmInterval_t battAlarm = ShimBatt_getBatteryInterval();
   if (battAlarm == BATT_INTERVAL_DOCKED) //docked
   {
     sAlarm.AlarmTime.Seconds = sTime.Seconds > 28 ? 0 : sTime.Seconds + 30U;

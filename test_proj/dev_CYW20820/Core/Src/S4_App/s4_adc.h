@@ -28,11 +28,11 @@ typedef struct {//adc - Sensors
 #define S4_ADC_init2             S4_RTOS_ADC_init2
 #define S4_ADC_initBatt          S4_RTOS_ADC_initBatt
 #define S4_ADC_configureChannels S4_RTOS_ADC_configureChannels
-#define S4_ADC_startSensing      S4_RTOS_ADC_startSensing
+#define ADC_startSensing      S4_RTOS_ADC_startSensing
 #define S4_ADC_bufPoll           S4_RTOS_ADC_bufPoll
-#define S4_ADC_stopSensing       S4_RTOS_ADC_stopSensing
-#define S4_ADC_gatherDataCb      S4_RTOS_ADC_gatherDataCb
-#define S4_ADC_gatherDataStart   S4_RTOS_ADC_gatherDataStart
+#define ADC_stopSensing       S4_RTOS_ADC_stopSensing
+#define ADC_gatherDataCb      S4_RTOS_ADC_gatherDataCb
+#define ADC_gatherDataStart   S4_RTOS_ADC_gatherDataStart
 #define S4_ADC_readBatt          S4_RTOS_ADC_readBatt
 #define S4_ADC_rankBatt          S4_RTOS_ADC_rankBatt
 #else
@@ -41,11 +41,11 @@ typedef struct {//adc - Sensors
 #define S4_ADC_init2             S4_NORM_ADC_init2
 #define S4_ADC_initBatt          S4_NORM_ADC_initBatt
 #define S4_ADC_configureChannels S4_NORM_ADC_configureChannels
-#define S4_ADC_startSensing      S4_NORM_ADC_startSensing
+#define ADC_startSensing      S4_NORM_ADC_startSensing
 #define S4_ADC_bufPoll           S4_NORM_ADC_bufPoll
-#define S4_ADC_stopSensing       S4_NORM_ADC_stopSensing
-#define S4_ADC_gatherDataCb      S4_NORM_ADC_gatherDataCb
-#define S4_ADC_gatherDataStart   S4_NORM_ADC_gatherDataStart
+#define ADC_stopSensing       S4_NORM_ADC_stopSensing
+#define ADC_gatherDataCb      S4_NORM_ADC_gatherDataCb
+#define ADC_gatherDataStart   S4_NORM_ADC_gatherDataStart
 #define S4_ADC_readBatt          S4_NORM_ADC_readBatt
 #define S4_ADC_rankBatt          S4_NORM_ADC_rankBatt
 #endif //USE_FREERTOS

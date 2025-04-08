@@ -89,10 +89,6 @@ extern "C"
   void DockUart_writeBlocking(uint8_t *buf, uint8_t len);
   void DockUart_writeText(char *str);
 
-#if defined(SHIMMER3R)
-  uint8_t Usb_interruptCheck(void);
-#endif
-
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

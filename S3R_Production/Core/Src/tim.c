@@ -21,7 +21,9 @@
 #include "tim.h"
 
 /* USER CODE BEGIN 0 */
-#include "s4_led.h"
+#include <Boards/shimmer_boards.h>
+#include <LEDs/shimmer_leds.h>
+#include <log_and_stream_common.h>
 
 //static void ledBlinkTimerCallback(void);
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim);
@@ -310,17 +312,20 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *timHandle)
 
     /* USER CODE BEGIN TIM2_MspPostInit 1 */
 
-#ifdef SR48_6_0
-    /* SR48-6-0 has LED_UPR_GR and LED_UPR_BLU connections attached to different
-     *  MCU pins */
-    HAL_GPIO_DeInit(GPIOB, LED_UPR_GR_Pin | LED_UPR_BLU_Pin);
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      /* SR48-6-0 has LED_UPR_GR and LED_UPR_BLU connections attached to
+       * different MCU pins */
+      HAL_GPIO_DeInit(GPIOB, LED_UPR_GR_Pin | LED_UPR_BLU_Pin);
 
-    GPIO_InitStruct.Pin = SR48_6_0_LED_UPR_GR_Pin | SR48_6_0_LED_UPR_BLU_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+      GPIO_InitStruct.Pin = SR48_6_0_LED_UPR_GR_Pin | SR48_6_0_LED_UPR_BLU_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    }
 #endif
 
     /* USER CODE END TIM2_MspPostInit 1 */
@@ -407,7 +412,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
 //void ledBlinkTimerCallback(void)
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
-  S4Led_Blink();
+  LogAndStream_blinkTimerCommon();
 }
 
 void delay_us(uint16_t us)

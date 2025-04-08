@@ -45,7 +45,7 @@
 
 /** Array used to recall device register map configurations */
 static uint8_t registerMap[MAX_REGISTER_ADDRESS + 1];
-int16_t adcData = 0;
+
 //****************************************************************************
 //
 // Internal Function prototypes
@@ -173,7 +173,21 @@ void stopAds7028Conversions(void)
 //
 //*****************************************************************************
 
-int16_t readData(uint8_t *dataRx, SPI_HandleTypeDef *handle)
+int16_t readData(uint8_t *dataRx)
+{
+  uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
+
+  uint8_t dataTx[4] = { 0 };
+  if (SPI_CRC_ENABLED)
+  {
+    dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
+  }
+  spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+
+  return signExtend(dataRx);
+}
+
+void readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle)
 {
   uint8_t dataTx[4] = { 0 };
   uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
@@ -184,17 +198,9 @@ int16_t readData(uint8_t *dataRx, SPI_HandleTypeDef *handle)
   {
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
-#if defined(MSP432E401Y)
-  spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
-#else
 
   setCS(LOW);
   HAL_SPI_TransmitReceive_DMA(handle, &dataTx[0], dataRx, numberOfBytes);
-  setCS(HIGH);
-
-  adcData = signExtend(dataRx);
-  return adcData;
-#endif
 }
 
 //*****************************************************************************
