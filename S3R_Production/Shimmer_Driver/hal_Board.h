@@ -55,72 +55,8 @@
 #define VREF_EXTERNAL_SUPPLY_MV 3000
 #endif
 
-typedef enum
-{
-  SENSE_PWR_VBATT = (0x01 << 0),
-  SENSE_PWR_SENSING = (0x01 << 1),
-  SENSE_PWR_EEPROM = (0x01 << 2),
-  SENSE_PWR_FACTORY_TEST = (0x01 << 3)
-} sense_pwr_flg_t;
-
-#if defined(SHIMMER3R)
-typedef enum
-{
-  LED_RGB_ALL_OFF = 0x000000,
-  LED_RGB_RED = 0xFF0000,
-  LED_RGB_GREEN = 0x00FF00,
-  LED_RGB_BLUE = 0x0000FF,
-  LED_RGB_YELLOW = 0xFFFF00,
-  LED_RGB_PURPLE = 0x800080,
-  LED_RGB_ALL_ON = 0xFFFFFF,
-} led_rgb_t;
-
-typedef enum
-{
-  LED_MODE_OFF,
-  LED_MODE_ON,
-  LED_MODE_TOGGLE
-} led_mode;
-
 #define LED_PWM_ON  255
 #define LED_PWM_OFF 0
-
-void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
-    TIM_HandleTypeDef *htimUprLeds,
-    TIM_HandleTypeDef *htimLedBlink);
-
-void startLedBlinkTimer(void);
-void stopLedBlinkTimer(void);
-
-void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue);
-void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
-
-void Board_ledLwrSetColour(uint32_t ledMask);
-void Board_ledLwrSetColourRgb(int16_t red, int16_t green, int16_t blue);
-void Board_ledLwrToggleColourRgb(uint32_t ledMask);
-void Board_ledUprSetColour(uint32_t ledMask);
-void Board_ledUprSetColourRgb(int16_t red, int16_t green, int16_t blue);
-void Board_ledUprToggleColourRgb(uint32_t ledMask);
-
-uint8_t Board_isLedOnUprBlue(void);
-uint8_t Board_isLedOnUprGreen(void);
-#endif
-
-extern void Board_ledOn(uint8_t ledMask);
-extern void Board_ledOff(uint8_t ledMask);
-extern void Board_ledToggle(uint8_t ledMask);
-
-extern void Board_sdPowerCycle(void);
-extern void Board_sd2Pc(void);
-extern void Board_sd2Arm(void);
-void Board_setSdPower(uint8_t state);
-void Board_setDockAccessToSd(uint8_t mcu0dock1);
-
-extern void Board_delayMicrosInit(void);
-extern void Board_delayMicros(uint32_t micros);
-#if defined(SHIMMER3R)
-void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
-#endif
 
 #if defined(SHIMMER3R)
 #define ECG_CS_GPIO               CS_EXG_EU4_GPIO_Port
@@ -370,5 +306,71 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #endif //SUPPORT_SR48_6_0
 #define LM3658SD_STAT2 HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)
 #define LM3658SD_STAT1 HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)
+
+typedef enum
+{
+  SENSE_PWR_VBATT = (0x01 << 0),
+  SENSE_PWR_SENSING = (0x01 << 1),
+  SENSE_PWR_EEPROM = (0x01 << 2),
+  SENSE_PWR_FACTORY_TEST = (0x01 << 3)
+} sense_pwr_flg_t;
+
+#if defined(SHIMMER3R)
+typedef enum
+{
+  LED_RGB_ALL_OFF = 0x000000,
+  LED_RGB_RED = 0xFF0000,
+  LED_RGB_GREEN = 0x00FF00,
+  LED_RGB_BLUE = 0x0000FF,
+  LED_RGB_YELLOW = 0xFFFF00,
+  LED_RGB_PURPLE = 0x800080,
+  LED_RGB_ALL_ON = 0xFFFFFF,
+} led_rgb_t;
+
+typedef enum
+{
+  LED_MODE_OFF,
+  LED_MODE_ON,
+  LED_MODE_TOGGLE
+} led_mode;
+
+void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
+    TIM_HandleTypeDef *htimUprLeds,
+    TIM_HandleTypeDef *htimLedBlink);
+
+void startLedBlinkTimer(void);
+void stopLedBlinkTimer(void);
+
+void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue);
+void rgb_led_upr_color(uint8_t red, uint8_t green, uint8_t blue);
+
+void Board_ledLwrSetColour(uint32_t ledMask);
+void Board_ledLwrSetColourRgb(int16_t red, int16_t green, int16_t blue);
+void Board_ledLwrToggleColourRgb(uint32_t ledMask);
+void Board_ledUprSetColour(uint32_t ledMask);
+void Board_ledUprSetColourRgb(int16_t red, int16_t green, int16_t blue);
+void Board_ledUprToggleColourRgb(uint32_t ledMask);
+
+uint8_t Board_isLedOnUprBlue(void);
+uint8_t Board_isLedOnUprGreen(void);
+#endif
+
+extern void Board_ledOn(uint8_t ledMask);
+extern void Board_ledOff(uint8_t ledMask);
+extern void Board_ledToggle(uint8_t ledMask);
+
+extern void Board_sdPowerCycle(void);
+extern void Board_sd2Pc(void);
+extern void Board_sd2Arm(void);
+void Board_setSdPower(uint8_t state);
+void Board_setDockAccessToSd(uint8_t mcu0dock1);
+
+extern void Board_delayMicrosInit(void);
+extern void Board_delayMicros(uint32_t micros);
+#if defined(SHIMMER3R)
+void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
+#endif
+void Board_setExpansionBrdPower(uint8_t state);
+void resetGsrPwrAndRange(void);
 
 #endif

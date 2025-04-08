@@ -897,7 +897,7 @@ void SPI_startSensing()
     adxl371_configure(configBytes->altAccelRate);
   }
 
-  if (isAds7028Present() && areSpiAdcChannelsEnabled()) //External ADC ADS7028
+  if (isAds7028Present() && ads7028_areAnyChannelsEnabled()) //External ADC ADS7028
   {
     if (configBytes->chEnGsr)
     {
@@ -1041,7 +1041,7 @@ void SPI_stopSensing()
   }
 
   resetGsrPwrAndRange();
-  if (areSpiAdcChannelsEnabled())
+  if (ads7028_areAnyChannelsEnabled())
   {
     stopAds7028Conversions();
     //HAL_TIM_Base_MspDeInit(&htim1);
@@ -1185,49 +1185,49 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
   case SPI1_ADS7028_INT_EXP0:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP0_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH0_ENABLED);
-    ads7028DataGet(spi1Sens_buf.ads2078Buf);
+    ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_INT_EXP1:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP1_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH1_ENABLED);
-    ads7028DataGet(spi1Sens_buf.ads2078Buf);
+    ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_INT_EXP2:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP2_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH2_ENABLED);
-    ads7028DataGet(spi1Sens_buf.ads2078Buf);
+    ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_INT_EXP3:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP3_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
-    ads7028DataGet(spi1Sens_buf.ads2078Buf);
+    ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP0:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP0_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED);
-    ads7028DataGet(spi1Sens_buf.ads2078Buf);
+    ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP1:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP1_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED);
-    ads7028DataGet(spi1Sens_buf.ads2078Buf);
+    ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP2:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP2_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH6_ENABLED);
-    ads7028DataGet(spi1Sens_buf.ads2078Buf);
+    ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_VBATT_SENSE:
     spiSensingInfo->status = SPI_STAT_ADS7028_VBATT_GET;
     configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH7_ENABLED);
-    ads7028DataGet(spi1Sens_buf.ads2078Buf);
+    ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
 

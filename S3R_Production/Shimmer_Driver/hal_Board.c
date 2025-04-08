@@ -562,3 +562,15 @@ void Board_setExpansionBrdPower(uint8_t state)
   Board_SW_EXP_BRD_POWER(state);
   shimmerStatus.pinPvExt = state;
 }
+
+void resetGsrPwrAndRange(void)
+{
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    Board_SW_GSR(0);
+  }
+#endif
+  GSR_setActiveResistor(HW_RES_40K);
+}
+

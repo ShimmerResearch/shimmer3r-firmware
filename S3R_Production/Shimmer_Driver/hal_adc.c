@@ -783,7 +783,7 @@ void initSensAdc(uint32_t numChannels)
 }
 
 #ifdef SUPPORT_SR48_6_0
-void initGsrAdc(void)
+void initGsrMcuAdc(void)
 {
   ADC_ChannelConfTypeDef sConfig = { 0 };
 
@@ -1187,7 +1187,8 @@ void manageReadBatt(uint8_t isBlockingRead)
 //   }
 //}
 
-HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample)
+#if SUPPORT_SR48_6_0
+HAL_StatusTypeDef getSingleMcuAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample)
 {
   HAL_StatusTypeDef status = HAL_ADC_Start(hadc);
   status = HAL_ADC_PollForConversion(hadc, 100);
@@ -1203,30 +1204,16 @@ HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample
   return status;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *gsrResistance)
+HAL_StatusTypeDef getFactoryTestGsrResistanceMcuAdc(uint32_t *gsrResistance)
 {
   uint32_t adcValue = 0;
   ADC_HandleTypeDef *hadc = getHadc2();
 
-  HAL_StatusTypeDef status = getSingleAdcChSample(hadc, &adcValue);
+  HAL_StatusTypeDef status = getSingleMcuAdcChSample(hadc, &adcValue);
   if (status == HAL_OK)
   {
-    int32_t gsrMv;
-#if SUPPORT_SR48_6_0
-    if (ShimBrd_isBoardSr48_6_0())
-    {
-      gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
-          hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
-    }
-    else
-    {
-      //TODO for ADS7028
-      gsrMv = 0;
-    }
-#else
-    //TODO for ADS7028
-    gsrMv = 0;
-#endif
+    int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
+        hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
 
     *gsrResistance = GSR_calcResistance(gsrMv);
 
@@ -1236,38 +1223,12 @@ HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *gsrResistance)
   return status;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
+void deinitGsrMcuAdc(void)
 {
-  HAL_StatusTypeDef status;
-  uint32_t gsrResistanceAvg = 0;
-
-  for (uint8_t i = 0; i < 13; i++)
-  {
-    status = getFactoryTestGsrResistance(gsrResistance);
-
-    //Skip first 3 measurements to account for range changing
-    if (i > 2)
-    {
-      gsrResistanceAvg += *gsrResistance;
-    }
-
-    HAL_Delay(10);
-  }
-
-  *gsrResistance = gsrResistanceAvg / 10;
-  return status;
+  HAL_ADC_Stop(&hadc2);
+  HAL_ADC_DeInit(&hadc2);
 }
-
-void resetGsrPwrAndRange(void)
-{
-#if SUPPORT_SR48_6_0
-  if (ShimBrd_isBoardSr48_6_0())
-  {
-    Board_SW_GSR(0);
-  }
 #endif
-  GSR_setActiveResistor(HW_RES_40K);
-}
 
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr)
 {

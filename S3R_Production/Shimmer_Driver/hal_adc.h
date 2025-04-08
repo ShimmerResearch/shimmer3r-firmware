@@ -91,7 +91,7 @@ void shimmerAdcGpioSetup(uint8_t init);
 #endif
 void initSensAdc(uint32_t numChannels);
 #if defined(SHIMMER4_SDK) || SUPPORT_SR48_6_0
-void initGsrAdc(void);
+void initGsrMcuAdc(void);
 void S4_NORM_ADC_bufPoll(void);
 void S4_NORM_ADC_stopSensing(void);
 void S4_NORM_ADC_gatherDataCb(void (*done_cb)(void));
@@ -106,10 +106,11 @@ void manageReadBatt(uint8_t isBlockingRead);
 bool areMcuAdcChannelsEnabled(void);
 #endif
 
-HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample);
-HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *resistance);
-HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance);
-void resetGsrPwrAndRange(void);
+#if SUPPORT_SR48_6_0
+HAL_StatusTypeDef getSingleMcuAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample);
+HAL_StatusTypeDef getFactoryTestGsrResistanceMcuAdc(uint32_t *resistance);
+void deinitGsrMcuAdc(void);
+#endif
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr);
 
 #endif /* S4_ADC_H */

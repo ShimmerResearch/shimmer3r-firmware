@@ -57,6 +57,9 @@ void TIMER0IntHandler(void);
 #endif
 
 uint8_t *dataADC = 0;
+
+HAL_StatusTypeDef status = HAL_OK;
+
 //****************************************************************************
 //
 // Function Definitions
@@ -235,7 +238,7 @@ void spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, const uint8_t b
     dataRx[i] = spiSendReceiveByte(dataTx[i]);
   }
 #else
-  HAL_SPI_TransmitReceive(&SENSOR_BUS, dataTx, dataRx, byteLength, 1000);
+  status = HAL_SPI_TransmitReceive(&SENSOR_BUS, dataTx, dataRx, byteLength, 1000);
 #endif
 
   //Set the nCS pin HIGH
@@ -340,28 +343,27 @@ void stopTimer(void)
 // The interrupt handler for the timer interrupt.
 //
 //*****************************************************************************
-void TIMER0IntHandler(uint8_t *dataRx)
+void TIMER0IntHandler(void)
 {
 #if defined(MSP432E401Y)
-  //Clear the timer interrupt
-  MAP_TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+    // Clear the timer interrupt
+    MAP_TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 #else
   //TODO decide how to handle timer configuration for STM32 if needed
 #endif
 
-  //Array to store ADC conversion results
+    // Array to store ADC conversion results
+    uint8_t data[4] = {0};
 
-  //Start conversion
-  setCS(HIGH);
+    // Start conversion
+    setCS(HIGH);
 
-  //Wait for conversion to complete
-  //IMPORTANT: This delay will need to be modified if averaging is enabled!
-  //delay_us(3);
-  //delay_us(3);
-  //Read data
-  //#if defined(MSP432E401Y)
-  readData(dataRx, &SENSOR_BUS);
-  //#endif
+    // Wait for conversion to complete
+    // IMPORTANT: This delay will need to be modified if averaging is enabled!
+    delay_us(3);
+
+    // Read data
+    readData(data);
 }
 
 //****************************************************************************
@@ -490,7 +492,7 @@ void delay_ms(const uint32_t delay_time_ms)
 // TODO decide where to put this
 //*****************************************************************************
 
-self_test_result_t ads7028_self_test(void)
+self_test_result_t ads7028_factoryTestChipId(void)
 {
   self_test_result_t self_test_result = SELF_TEST_PASS;
 
@@ -513,7 +515,7 @@ self_test_result_t ads7028_self_test(void)
 //!\return None.
 //
 //*****************************************************************************
-void swI2C4PpgOnAds7028(uint8_t state)
+void ads7028_swI2C4PpgOn(uint8_t state)
 {
   if (state)
   {
@@ -528,7 +530,7 @@ void swI2C4PpgOnAds7028(uint8_t state)
   }
 }
 
-void ads7028DataGet(uint8_t *dataRx)
+void ads7028_dataGetDma(uint8_t *dataRx)
 {
   //select auto sequencing mode and start conversion
   writeSingleRegister(SEQUENCE_CFG_ADDRESS,
@@ -538,19 +540,60 @@ void ads7028DataGet(uint8_t *dataRx)
   readDataDma(dataRx, &SENSOR_BUS);
 }
 
-void Ads7028GsrTestInit(void)
-{
-  //set channel 3 for auto sequencing conversion.
-  setRegisterBits(AUTO_SEQ_CHSEL_ADDRESS, AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
-}
-
 void configureAutoSequenceChannel(uint8_t ChannelID)
 {
   writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_DEFAULT); //put all channels to default
   writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID); //select channel for auto-sequencing
 }
 
-bool areSpiAdcChannelsEnabled(void)
+bool ads7028_areAnyChannelsEnabled(void)
 {
   return spiAdc.sensorLen > 0;
+}
+
+void ads7028_factoryTestGsrInit(void)
+{
+  // GSR channel
+  uint8_t channelID = AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED;
+
+  resetDevice();
+
+  // Select manual mode
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
+
+  // Configure pin as analog input
+  setChannelAsAnalogInput(channelID);
+
+  // Select channel as MUX input
+  writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
+
+  // Set nCS pin LOW, next rising edge will trigger start of conversion
+  setCS(LOW);
+}
+
+HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
+{
+  int16_t adcValueSigned = 0;
+
+  // Array to store ADC conversion results
+  uint8_t data[4] = {0};
+
+  // Start conversion
+  setCS(HIGH);
+
+  // Wait for conversion to complete
+  // IMPORTANT: This delay will need to be modified if averaging is enabled!
+  delay_us(3);
+
+  // Read data
+  adcValueSigned = readData(data);
+
+//  uint16_t adcValue = (((uint16_t) data[0]) << 4 | data[1] >> 4) & 0x0FFF;
+  uint16_t adcValue = ((uint16_t)adcValueSigned) & 0x0FFF;
+
+  int32_t gsrMv = ((uint32_t) (adcValue *1000)) / (4095/3); // convert to mV
+  *gsrResistance = GSR_calcResistance(gsrMv);
+  GSR_controlRange(adcValue);
+
+  return status;
 }

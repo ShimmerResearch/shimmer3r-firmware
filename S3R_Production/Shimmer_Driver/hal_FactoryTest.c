@@ -538,7 +538,7 @@ void I2C_test(void)
     HAL_Delay(2); //2ms as per Shimmer3 code
     I2C_scan_internal_expansion_bus(test_i2c_addr_list, &test_i2c_addr_list_len);
 
-    if (test_i2c_addr_list_len == 0)
+    if (test_i2c_addr_list_len == 0) // Nothing detected on I2C bus
     {
       send_test_report(
           " - S3R_TEST_0017 - FAIL: I2C4 - no test rig detected\r\n");
@@ -546,7 +546,7 @@ void I2C_test(void)
           " - S3R_TEST_0018 - FAIL: GSR - no test rig detected\r\n");
       i2c4_result = 1;
     }
-    else if (test_i2c_addr_list_len == 3)
+    else if (test_i2c_addr_list_len == 3)  // GSR Test Rig detected
     {
       send_test_report(" - S3R_TEST_0017 - PASS: I2C4\r\n");
 
@@ -560,7 +560,7 @@ void I2C_test(void)
         shimmerStatus.testResult |= S3R_TEST_0018;
       }
     }
-    else if (test_i2c_addr_list_len == 8)
+    else if (test_i2c_addr_list_len == 8)  // EEPROM detected
     {
       altEepromInit(&hi2c4);
       i2c4_result = altEepromTest();
@@ -611,7 +611,7 @@ void SPI_test(void)
   }
   else
   {
-    self_test_result = ads7028_self_test();
+    self_test_result = ads7028_factoryTestChipId();
     if (self_test_result)
     {
       shimmerStatus.testResult |= S3R_TEST_0019;
@@ -867,17 +867,16 @@ uint8_t runGsrFactoryTest(void)
 
   GSR_setActiveResistor(HW_RES_40K);
 #if SUPPORT_SR48_6_0
-  ADC_HandleTypeDef *hadcFactoryTestPtr = getHadc2();
   if (ShimBrd_isBoardSr48_6_0())
   {
-    initGsrAdc();
+    initGsrMcuAdc();
   }
   else
   {
-    //TODO for ADS7028
+    ads7028_factoryTestGsrInit();
   }
 #else
-  //TODO for ADS7028
+  ads7028_factoryTestGsrInit();
 #endif
 
   for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
@@ -896,24 +895,51 @@ uint8_t runGsrFactoryTest(void)
     }
   }
 
+  resetGsrPwrAndRange();
+
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
   {
     //Stop ADC
-    HAL_ADC_Stop(hadcFactoryTestPtr);
-    HAL_ADC_DeInit(hadcFactoryTestPtr);
-
+    deinitGsrMcuAdc();
     Board_SW_GSR(0);
   }
-  else
-  {
-    //TODO for ADS7028
-  }
-#else
-  //TODO for ADS7028
 #endif
 
   return returnVal;
+}
+
+HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
+{
+  HAL_StatusTypeDef status;
+  uint32_t gsrResistanceAvg = 0;
+
+  for (uint8_t i = 0; i < 13; i++)
+  {
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      status = getFactoryTestGsrResistanceMcuAdc(gsrResistance);
+    }
+    else
+    {
+      status = ads7028_factoryTestGetGsrResistance(gsrResistance);
+    }
+#else
+    status = ads7028_factoryTestGetGsrResistance(gsrResistance);
+#endif
+
+    //Skip first 3 measurements to account for range changing
+    if (i > 2)
+    {
+      gsrResistanceAvg += *gsrResistance;
+    }
+
+    HAL_Delay(10);
+  }
+
+  *gsrResistance = gsrResistanceAvg / 10;
+  return status;
 }
 
 uint8_t runMicrophoneTest(void)
