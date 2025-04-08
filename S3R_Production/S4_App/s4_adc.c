@@ -65,7 +65,7 @@ uint16_t adcBufSens[8]; //max 8 channels, each of 16 bits
 uint32_t adc_battVal, adcBufSens[12], adcBufResv[12]; //max 12 channels, each of 16 bits
 #endif
 //uint32_t adcBuf3[12];
-uint8_t gsrActiveResistor;
+//uint8_t gsrActiveResistor;
 
 #if defined(SHIMMER4_SDK)
 uint8_t adcConfig;
@@ -231,75 +231,76 @@ void S4_NORM_ADC_configureChannels(void)
     sensing.ptr.batteryAnalog = sensing.dataLen;
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = VBATT;
-  }
 #endif
+}
 
-  //External ADC 0
-  if (configBytes->chEnExtADC0)
-  {
-    *channel_contents_ptr++ = EXTERNAL_ADC_0;
-    nbr_adc_chans += 1;
-    sensing.ptr.extADC0 = sensing.dataLen;
-    sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_0;
-  }
+//External ADC 0
+if (configBytes->chEnExtADC0)
+{
+  *channel_contents_ptr++ = EXTERNAL_ADC_0;
+  nbr_adc_chans += 1;
+  sensing.ptr.extADC0 = sensing.dataLen;
+  sensing.dataLen += 2;
+  adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_0;
+}
 
-  //External ADC 1
-  if (configBytes->chEnExtADC1)
-  {
-    *channel_contents_ptr++ = EXTERNAL_ADC_1;
-    nbr_adc_chans += 1;
-    sensing.ptr.extADC1 = sensing.dataLen;
-    sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_1;
-  }
+//External ADC 1
+if (configBytes->chEnExtADC1)
+{
+  *channel_contents_ptr++ = EXTERNAL_ADC_1;
+  nbr_adc_chans += 1;
+  sensing.ptr.extADC1 = sensing.dataLen;
+  sensing.dataLen += 2;
+  adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_1;
+}
 
-  //External ADC 2
-  if (configBytes->chEnExtADC2)
-  {
-    *channel_contents_ptr++ = EXTERNAL_ADC_2;
-    nbr_adc_chans += 1;
-    sensing.ptr.extADC2 = sensing.dataLen;
-    sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_2;
-  }
+//External ADC 2
+if (configBytes->chEnExtADC2)
+{
+  *channel_contents_ptr++ = EXTERNAL_ADC_2;
+  nbr_adc_chans += 1;
+  sensing.ptr.extADC2 = sensing.dataLen;
+  sensing.dataLen += 2;
+  adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_2;
+}
 
-  //Internal ADC 0
-  if (configBytes->chEnIntADC0)
-  {
-    *channel_contents_ptr++ = INTERNAL_ADC_0;
-    nbr_adc_chans += 1;
-    sensing.ptr.intADC0 = sensing.dataLen;
-    sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_0;
-  }
+//Internal ADC 0
+if (configBytes->chEnIntADC0)
+{
+  *channel_contents_ptr++ = INTERNAL_ADC_0;
+  nbr_adc_chans += 1;
+  sensing.ptr.intADC0 = sensing.dataLen;
+  sensing.dataLen += 2;
+  adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_0;
+}
 
 #if defined(SHIMMER4_SDK)
-  //Internal ADC 4
-  if (configBytes->chEnIntADC4)
-  {
-    *channel_contents_ptr++ = INT_ADC_4;
-    nbr_adc_chans += 1;
-    sensing.ptr.intADC4 = sensing.dataLen;
-    sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INT_ADC_4;
-  }
+//Internal ADC 4
+if (configBytes->chEnIntADC4)
+{
+  *channel_contents_ptr++ = INT_ADC_4;
+  nbr_adc_chans += 1;
+  sensing.ptr.intADC4 = sensing.dataLen;
+  sensing.dataLen += 2;
+  adc.sensorList[adc.sensorLen++] = INT_ADC_4;
+}
 #endif
 
-  //Strain gauge
-  if (configBytes->chEnBridgeAmp)
-  {
-    *channel_contents_ptr++ = STRAIN_HIGH;
-    *channel_contents_ptr++ = STRAIN_LOW;
-    nbr_adc_chans += 2;
-    sensing.ptr.strainGauge = sensing.dataLen;
-    sensing.dataLen += 4;
-    adc.sensorList[adc.sensorLen++] = STRAIN_HIGH;
-    adc.sensorList[adc.sensorLen++] = STRAIN_LOW;
-  }
-
+//Strain gauge
+if (configBytes->chEnBridgeAmp)
+{
+  *channel_contents_ptr++ = STRAIN_HIGH;
+  *channel_contents_ptr++ = STRAIN_LOW;
+  nbr_adc_chans += 2;
+  sensing.ptr.strainGauge = sensing.dataLen;
+  sensing.dataLen += 4;
+  adc.sensorList[adc.sensorLen++] = STRAIN_HIGH;
+  adc.sensorList[adc.sensorLen++] = STRAIN_LOW;
+}
+else
+{
   //Internal ADC 1
-  if (configBytes->chEnIntADC1 && !configBytes->chEnBridgeAmp)
+  if (configBytes->chEnIntADC1)
   {
     *channel_contents_ptr++ = INTERNAL_ADC_1;
     nbr_adc_chans += 1;
@@ -309,7 +310,7 @@ void S4_NORM_ADC_configureChannels(void)
   }
 
   //Internal ADC 2
-  if (configBytes->chEnIntADC2 && !configBytes->chEnBridgeAmp)
+  if (configBytes->chEnIntADC2)
   {
     *channel_contents_ptr++ = INTERNAL_ADC_2;
     nbr_adc_chans += 1;
@@ -317,39 +318,36 @@ void S4_NORM_ADC_configureChannels(void)
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_2;
   }
-
-  //Internal ADC 3
-  if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
-  {
-    if (configBytes->chEnGsr)
-    {
-      *channel_contents_ptr++ = GSR_RAW;
-      sensing.ptr.gsr = sensing.dataLen;
-      adc.sensorList[adc.sensorLen++] = GSR_RAW;
-    }
-    else
-    {
-      *channel_contents_ptr++ = INTERNAL_ADC_3;
-      sensing.ptr.intADC3 = sensing.dataLen;
-      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
-    }
-    nbr_adc_chans += 1;
-    sensing.dataLen += 2;
-  }
-
-  sensing.nbrAdcChans += nbr_adc_chans;
-  sensing.ccLen += nbr_adc_chans;
 }
 
+//Internal ADC 3
+if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
+{
+  if (configBytes->chEnGsr)
+  {
+    *channel_contents_ptr++ = GSR_RAW;
+    sensing.ptr.gsr = sensing.dataLen;
+    adc.sensorList[adc.sensorLen++] = GSR_RAW;
+  }
+  else
+  {
+    *channel_contents_ptr++ = INTERNAL_ADC_3;
+    sensing.ptr.intADC3 = sensing.dataLen;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
+  }
+  nbr_adc_chans += 1;
+  sensing.dataLen += 2;
+}
+
+sensing.nbrAdcChans += nbr_adc_chans;
+sensing.ccLen += nbr_adc_chans;
+}
+
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
 void S4_NORM_ADC_startSensing(void)
 {
   gConfigBytes *configBytes = S4Ram_getStoredConfig();
   ADC_ChannelConfTypeDef sConfig = { 0 };
-
-  if (configBytes->expansionBoardPower)
-  {
-    Board_SW_EXP_BRD_POWER(1);
-  }
 
 #if defined(SHIMMER3R)
   uint8_t adc_counter_sens = 0; //adc channel rank counter
@@ -648,6 +646,7 @@ void S4_NORM_ADC_gatherDataStart(void)
 
   HAL_ADC_Start_DMA(hadcSensPtr, (uint32_t *) adcBufSens, (uint32_t) adc.sensorLen);
 }
+#endif
 
 void getherMcuDebugInfo(ADCDebugInfo_t *adcDebugInfo)
 {
@@ -792,7 +791,7 @@ void initSensAdc(uint32_t numChannels)
   adcLinkedListConfig(hadcSensPtr);
 #endif
 }
-
+#if defined(SR48_6_0)
 void initGsrAdc(void)
 {
   ADC_ChannelConfTypeDef sConfig = { 0 };
@@ -840,7 +839,7 @@ void initGsrAdc(void)
     Error_Handler();
   }
 }
-
+#endif
 void S4_NORM_ADC_bufPoll()
 {
   uint8_t adc_offset_sens = 0; //, adc_offset_resv = 0;
@@ -1124,7 +1123,7 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
 }
 
 #if defined(SHIMMER3R)
-bool areAdcChannelsEnabled(void)
+bool areMcuAdcChannelsEnabled(void)
 {
   return adc.sensorLen > 0;
 }
@@ -1137,8 +1136,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
     if (shimmerStatus.sensing)
     {
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
+#endif
     }
     else
     {
@@ -1224,15 +1225,21 @@ HAL_StatusTypeDef getSingleAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample
   return status;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrResistance(ADC_HandleTypeDef *hadc, uint32_t *gsrResistance)
+HAL_StatusTypeDef getFactoryTestGsrResistance(uint32_t *gsrResistance)
 {
   uint32_t adcValue = 0;
+  ADC_HandleTypeDef *hadc = getHadc2();
 
   HAL_StatusTypeDef status = getSingleAdcChSample(hadc, &adcValue);
   if (status == HAL_OK)
   {
+#ifdef SR48_6_0
     int32_t gsrMv = __HAL_ADC_CALC_DATA_TO_VOLTAGE(
         hadc, VREF_EXTERNAL_SUPPLY_MV, adcValue, hadc->Init.Resolution);
+#else
+    //TODO for ADS7028
+    int32_t gsrMv = 0;
+#endif
 
     *gsrResistance = GSR_calcResistance(gsrMv, GSR_getCurrentActiveResistor());
 
@@ -1242,7 +1249,7 @@ HAL_StatusTypeDef getFactoryTestGsrResistance(ADC_HandleTypeDef *hadc, uint32_t 
   return status;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrResistance)
+HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
 {
   HAL_StatusTypeDef status;
   uint32_t gsrResistanceAvg = 0;
@@ -1250,7 +1257,7 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrRes
   for (uint8_t i = 0; i < 13; i++)
   {
     uint8_t range = GSR_getCurrentActiveResistor();
-    status = getFactoryTestGsrResistance(hadc, gsrResistance);
+    status = getFactoryTestGsrResistance(gsrResistance);
 
     //Skip first 3 measurements to account for range changing
     if (i > 2)
@@ -1267,9 +1274,11 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(ADC_HandleTypeDef *hadc, uint32_t *gsrRes
 
 void resetGsrPwrAndRange(void)
 {
+#ifdef SR48_6_0
   Board_SW_GSR(0);
+#endif
   GSR_setRange(HW_RES_40K);
-  gsrActiveResistor = HW_RES_40K;
+  //gsrActiveResistor = HW_RES_40K;
 }
 
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr)
