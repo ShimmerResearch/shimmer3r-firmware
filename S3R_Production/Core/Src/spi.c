@@ -985,19 +985,19 @@ void SPI_pollSensors(void)
 #endif
 
   //ExG (SPI)
- /* if (isAds1292Present())
-  {
-    //exg
-    gConfigBytes *configBytes = S4Ram_getStoredConfig();
-    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
-    {
-      EXG_readData(0, 0, sensing.dataBuf + sensing.ptr.exg1);
-    }
-    if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
-    {
-      EXG_readData(1, 0, sensing.dataBuf + sensing.ptr.exg2);
-    }
-  } */
+  /* if (isAds1292Present())
+   {
+     //exg
+     gConfigBytes *configBytes = S4Ram_getStoredConfig();
+     if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+     {
+       EXG_readData(0, 0, sensing.dataBuf + sensing.ptr.exg1);
+     }
+     if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+     {
+       EXG_readData(1, 0, sensing.dataBuf + sensing.ptr.exg2);
+     }
+   } */
 }
 
 void SPI_stopSensing()
