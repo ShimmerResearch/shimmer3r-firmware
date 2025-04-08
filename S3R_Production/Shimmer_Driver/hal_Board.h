@@ -196,14 +196,16 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #define DAQ_CH_GPIO_ADC_INT_EXP0   DAC1_CHANNEL_2
 
 /* ADC Channels */
-#define ADC_CHANNEL_VBATT          ADC_CHANNEL_4
-#define ADC_CHANNEL_EXT_A0         ADC_CHANNEL_9
-#define ADC_CHANNEL_EXT_A1         ADC_CHANNEL_11
-#define ADC_CHANNEL_EXT_A2         ADC_CHANNEL_12
-#define ADC_CHANNEL_INT_A0         ADC_CHANNEL_10
-#define ADC_CHANNEL_INT_A1         ADC_CHANNEL_15
-#define ADC_CHANNEL_INT_A2         ADC_CHANNEL_16
-#define ADC_CHANNEL_INT_A3         ADC_CHANNEL_17
+#ifdef SR48_6_0
+#define ADC_CHANNEL_VBATT  ADC_CHANNEL_4
+#define ADC_CHANNEL_EXT_A0 ADC_CHANNEL_9
+#define ADC_CHANNEL_EXT_A1 ADC_CHANNEL_11
+#define ADC_CHANNEL_EXT_A2 ADC_CHANNEL_12
+#define ADC_CHANNEL_INT_A0 ADC_CHANNEL_10
+#define ADC_CHANNEL_INT_A1 ADC_CHANNEL_15
+#define ADC_CHANNEL_INT_A2 ADC_CHANNEL_16
+#define ADC_CHANNEL_INT_A3 ADC_CHANNEL_17
+#endif
 
 #elif defined(SHIMMER4_SDK)
 #define ADC_CHANNEL_ACCEL_X ADC_CHANNEL_0
@@ -289,8 +291,10 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
   HAL_GPIO_WritePin(SW_SENSE_GPIO_Port, SW_SENSE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define Board_SW_PV_SENSE_IO(x) \
   HAL_GPIO_WritePin(SW_SENSE_IO_GPIO_Port, SW_SENSE_IO_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#ifdef SR48_6_0
 #define Board_SW_GSR(x) \
   HAL_GPIO_WritePin(SW_GSR_GPIO_Port, SW_GSR_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#endif
 #define Board_SW_EXP_BRD_POWER(x) \
   HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 //TODO confirm which pin is going to be used
@@ -302,9 +306,11 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 /* Specific to Shimmer3R GSR+ model:
  * Output low = I2C4 is connected to PPG connector
  * Output high = I2C4 is disconnected from PPG connector */
+#if defined(SR48_6_0)
 #define Board_SW_I2C4_ON_PPG(x)                                         \
   HAL_GPIO_WritePin(GPIO_ADC_INT_EXP2_GPIO_Port, GPIO_ADC_INT_EXP2_Pin, \
       x ? GPIO_PIN_RESET : GPIO_PIN_SET)
+#endif
 
 /* 0/1 = power off/on */
 #define Board_SW_BT(x) \

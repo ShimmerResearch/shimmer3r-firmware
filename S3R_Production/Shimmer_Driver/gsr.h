@@ -100,5 +100,5 @@ uint8_t GSR_smoothTransition(uint8_t *dummy_active_resistor, uint32_t sampling_p
 uint32_t GSR_smoothSample(uint32_t resistance, uint8_t active_resistor);
 
 uint8_t GSR_getCurrentActiveResistor(void);
-
+uint8_t isGSREnabled(void);
 #endif //GSR_H

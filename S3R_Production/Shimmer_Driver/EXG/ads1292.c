@@ -91,20 +91,6 @@ void ADS1292_init()
   chip2Enabled = 0;
   chipBusy = 0;
   //UCA0_isrActivate(UCA0_isrRegister(ads1292Uca0RxIsr, ads1292Uca0TxIsr));
-
-  ADS1292_chip1CsEnable(0);
-  GPIO_InitStruct.Pin = EXG_CHIP1_CS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(EXG_CHIP1_CS_GPIO_Port, &GPIO_InitStruct);
-
-  ADS1292_chip2CsEnable(0);
-  GPIO_InitStruct.Pin = EXG_CHIP2_CS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(EXG_CHIP2_CS_GPIO_Port, &GPIO_InitStruct);
 }
 
 void setSpiHandle(SPI_HandleTypeDef *hspi)

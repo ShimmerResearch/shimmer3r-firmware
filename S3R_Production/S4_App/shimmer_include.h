@@ -42,6 +42,7 @@
 #include "battery.h"
 #include "log_and_stream_definitions.h"
 #include "log_and_stream_externs.h"
+#include <ADS7028_38/ads7028_38.h>
 #include <LIS2DW12/lis2dw12.h>
 #include <LIS2MDL/hal_lis2mdl.h>
 #include <LIS2MDL/lis2mdl-pid/lis2mdl_reg.h>

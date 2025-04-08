@@ -85,13 +85,17 @@ void S4Sens_configureChannels(void)
   overwriteDefaultConfig();
 #endif
 
+#if (defined(SHIMMER3R) && defined(SR48_6_0))
   S4_ADC_configureChannels();
+#else
+
+#endif
   I2C_configureChannels();
   SPI_configureChannels();
 
 #if defined(SHIMMER3R)
   expectedCbFlags = 0;
-  if (areAdcChannelsEnabled())
+  if (areMcuAdcChannelsEnabled())
   {
     expectedCbFlags |= STAT_PERI_ADC;
   }
@@ -229,6 +233,10 @@ void S4Sens_startSensing(void)
       shimmerStatus.sensing = 0;
       return;
     }
+    if (isExpansionBoardEnabled())
+    {
+      Board_SW_EXP_BRD_POWER(1);
+    }
 
     uint16_t samplingRateTicks = S4Ram_getStoredConfig()->samplingRateTicks;
     sensing.freq = get_shimmer_sampling_freq();
@@ -245,10 +253,12 @@ void S4Sens_startSensing(void)
     DockUart_disable();
     S4Sens_stepInit();
 
-    if (areAdcChannelsEnabled())
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
+    if (areMcuAdcChannelsEnabled())
     {
       S4_ADC_startSensing();
     }
+#endif
     I2C_startSensing();
     SPI_startSensing();
 
@@ -382,16 +392,20 @@ void S4Sens_stopPeripherals(void)
 
 #endif
 
-  if (areAdcChannelsEnabled())
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
+  if (areMcuAdcChannelsEnabled())
   {
     S4_ADC_stopSensing();
   }
+#endif
   //HAL_Delay(10); //Send ACK command needs delay here...
   //BtUart_sendRsp();
   I2C_stopSensing();
   SPI_stopSensing();
 
   Board_enableSensingPower(SENSE_PWR_SENSING, 0);
+
+  Board_SW_EXP_BRD_POWER(0);
 
   if (isMicrophoneEnabled())
   {
@@ -430,10 +444,12 @@ void S4Sens_streamData(void)
 
 void S4Sens_bufPoll()
 {
-  if (areAdcChannelsEnabled())
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
+  if (areMcuAdcChannelsEnabled())
   {
     S4_ADC_gatherDataStart();
   }
+#endif
 
   I2C_pollSensors();
 
@@ -473,7 +489,9 @@ void S4Sens_gatherData(void)
 void S4Sens_stepInit(void)
 {
 #if defined(SHIMMER3R)
+#if defined(SHIMMER4_SDK) || defined(SR48_6_0)
   S4_ADC_gatherDataCb(sensing_adcCompleteCb);
+#endif
   I2cSens_gatherDataCb(sensing_i2cCompleteCb);
   SPI_gatherDataCb(sensing_spiCompleteCb);
 #elif defined(SHIMMER4_SDK)

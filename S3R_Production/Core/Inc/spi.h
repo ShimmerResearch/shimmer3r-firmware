@@ -80,12 +80,21 @@ extern "C"
   //} SPI3_CHIP_INDEX;
 
   typedef enum
-  { //i2c
-    SPI1_LSM6DSV_GYRO_AND_ACCEL = 0,
+  {
+    EMPTY = 0,
+    SPI1_LSM6DSV_GYRO_AND_ACCEL,
     SPI1_LSM6DSV_ACCEL_ONLY,
     SPI1_LSM6DSV_GYRO_ONLY,
     SPI1_ADXL371_ACCEL,
     SPI1_BMP390_PRESSURE_TEMP,
+    SPI1_ADS7028_INT_EXP0, //External ADC
+    SPI1_ADS7028_INT_EXP1,
+    SPI1_ADS7028_INT_EXP2,
+    SPI1_ADS7028_INT_EXP3,
+    SPI1_ADS7028_EXT_EXP0,
+    SPI1_ADS7028_EXT_EXP1,
+    SPI1_ADS7028_EXT_EXP2,
+    SPI1_ADS7028_VBATT_SENSE,
     SPI2_LIS2DW12_ACCEL,
     SPI2_LIS3MDL_MAG,
     SPI3_ADS1292R_EXG1,
@@ -101,6 +110,14 @@ extern "C"
     SPI_STAT_LSM6DSV_GYRO_GET,
     SPI_STAT_ADXL371_ACCEL_GET,
     SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET,
+    SPI_STAT_ADS7028_INT_EXP0_GET,
+    SPI_STAT_ADS7028_INT_EXP1_GET,
+    SPI_STAT_ADS7028_INT_EXP2_GET,
+    SPI_STAT_ADS7028_INT_EXP3_GET,
+    SPI_STAT_ADS7028_EXT_EXP0_GET,
+    SPI_STAT_ADS7028_EXT_EXP1_GET,
+    SPI_STAT_ADS7028_EXT_EXP2_GET,
+    SPI_STAT_ADS7028_VBATT_GET,
     SPI_STAT_LIS2DW12_ACCEL_GET,
     SPI_STAT_LIS3MDL_MAG_GET,
     SPI_STAT_ADS1292R_EXG1_GET,
@@ -120,6 +137,7 @@ extern "C"
     uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t adxl371Buf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET + 1 + 6]; //+1 for BMP390 dummy byte
+    uint8_t Ads2078Buf[SPI_DMA_TXRX_OFFSET + 3]; //grabbing  only 1 channel at a time.
   } spi1ReadBuf;
 
   typedef struct
@@ -184,6 +202,7 @@ void SpiStepDone(void);
   void SPI_ErrorCallback(SPI_HandleTypeDef *hspi);
 
   bool areSpiChannelsEnabled(void);
+  void ads7028_configureChannels(uint8_t *channel_contents_ptr);
 #endif
 
   /* USER CODE END Prototypes */
