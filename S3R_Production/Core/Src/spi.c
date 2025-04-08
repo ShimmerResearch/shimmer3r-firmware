@@ -479,7 +479,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
 
     GPIO_InitStruct.Pin = GPIO_PIN_9;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
     GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
     HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
@@ -985,7 +985,7 @@ void SPI_pollSensors(void)
 #endif
 
   //ExG (SPI)
-  if (isAds1292Present())
+ /* if (isAds1292Present())
   {
     //exg
     gConfigBytes *configBytes = S4Ram_getStoredConfig();
@@ -997,7 +997,7 @@ void SPI_pollSensors(void)
     {
       EXG_readData(1, 0, sensing.dataBuf + sensing.ptr.exg2);
     }
-  }
+  } */
 }
 
 void SPI_stopSensing()
