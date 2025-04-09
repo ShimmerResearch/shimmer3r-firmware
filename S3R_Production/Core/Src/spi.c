@@ -994,7 +994,7 @@ void SPI_pollSensors(void)
   }
   if (spi3Sens.sensorLen > 0)
   {
-   // SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
+    //SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
     EXG_enableInterrupts(0x03);
   }
 

@@ -162,9 +162,9 @@ extern "C"
     SPI_BUS_INDEX busId;
   } SPITypeDef;
 
- extern SPITypeDef spi1Sens;
- extern SPITypeDef spi2Sens;
- extern SPITypeDef spi3Sens;
+  extern SPITypeDef spi1Sens;
+  extern SPITypeDef spi2Sens;
+  extern SPITypeDef spi3Sens;
 
 #endif
 
