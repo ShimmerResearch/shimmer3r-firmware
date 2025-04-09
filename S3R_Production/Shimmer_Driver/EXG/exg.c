@@ -365,6 +365,16 @@ void EXG_prepareData(uint8_t chip, uint8_t *data, uint8_t *buf, uint8_t size)
   }
 }
 
+void EXG_enableInterrupts(uint8_t mask)
+{
+  ADS1292_enableDrdyInterrupts(mask);
+}
+
+void EXG_disableInterrupts(uint8_t mask)
+{
+  ADS1292_disableDrdyInterrupts(mask);
+}
+
 //void EXG_dataReadyChip1() {
 //   ADS1292_dataReadyChip1();
 //}

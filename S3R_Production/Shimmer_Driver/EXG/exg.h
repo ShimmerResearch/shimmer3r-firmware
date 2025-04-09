@@ -47,6 +47,7 @@
 #include "stm32u5xx_hal.h"
 #include <stdint.h>
 
+
 //ADS1292R registers
 //There are two of these chips on the ExG board
 #define ADS1292R_DEVID     0x00
@@ -66,6 +67,8 @@
 //leave both in SDATAC mode
 uint8_t EXG_init(SPI_HandleTypeDef *hspi);
 uint8_t EXG_self_test(void);
+void EXG_enableInterrupts(uint8_t mask);
+void EXG_disableInterrupts(uint8_t mask);
 void EXG_setRdatac(uint8_t chip, uint8_t en);
 
 //put ADS1292R chip in RDATAC mode and start sampling

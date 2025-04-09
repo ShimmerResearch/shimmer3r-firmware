@@ -328,7 +328,8 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin)
   {
-    //case GPIO_INTERNAL1_Pin:
+    case GPIO_INTERNAL1_Pin:
+    SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
     //  //TODO check if product is ExG unit
     //  //EXG1 DRDY active low
     //  if (shimmerStatus.sensing)
@@ -343,8 +344,9 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
     //    }
     //    EXG_gatherDataStart();
     //  }
-    //  break;
-    //case GPIO_INTERNAL0_Pin:
+    break;
+    case GPIO_INTERNAL0_Pin:
+      SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
     //  //TODO check if product is ExG unit
     //  //EXG2 DRDY active low
     //  if (shimmerStatus.sensing)
@@ -355,7 +357,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
     //    __NOP();
     //    //EXG_dataReadyChip2();
     //  }
-    //  break;
+      break;
   default:
     gpioExtiCommon(GPIO_Pin, 0);
     break;
