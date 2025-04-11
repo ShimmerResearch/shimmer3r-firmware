@@ -32,15 +32,10 @@
 #define BT_TX_POWER                    8
 
 uint8_t advNameMacIdStartIdx = 11;
-static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r',
+static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
   '-', 'X', 'X', 'X', 'X', '-', 'B', 'T' };
-static char advNameBle[] = { 18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'r',
+static char advNameBle[] = { 18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
   '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E' };
-
-//uint8_t advNameMacIdStartIdx = 10;
-//static char advNameBt[] = {16, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', '-',
-//'X', 'X', 'X', 'X', '-', 'B', 'T'}; static char advNameBle[] = {17, 'S', 'h',
-//'i', 'm', 'm', 'e', 'r', '3', '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E'};
 
 uint16_t expectedResponseIdx;
 
