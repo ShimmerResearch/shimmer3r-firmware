@@ -79,7 +79,7 @@ uint8_t EXG_init(SPI_HandleTypeDef *hspi)
   {
     return 1;
   }
- // ADS1292_enableDrdyInterrupts(0x1);
+  //ADS1292_enableDrdyInterrupts(0x1);
   return 0;
 }
 
