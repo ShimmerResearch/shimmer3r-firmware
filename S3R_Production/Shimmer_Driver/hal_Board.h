@@ -60,53 +60,53 @@
 
 #if defined(SHIMMER3R)
 /* Shimmer3R ExG SR47 */
-#define EXG_RESET_N_Pin            GPIO_INTERNAL5_Pin
-#define EXG_RESET_N_GPIO_Port      GPIO_INTERNAL5_GPIO_Port
-#define EXG_CHIP1_CS_Pin           GPIO_INTERNAL4_Pin
-#define EXG_CHIP1_CS_GPIO_Port     GPIO_INTERNAL4_GPIO_Port
-#define EXG_CHIP2_CS_Pin           GPIO_INTERNAL3_Pin
-#define EXG_CHIP2_CS_GPIO_Port     GPIO_INTERNAL3_GPIO_Port
-#define EXG_CHIP1_DRDY_N_Pin       GPIO_INTERNAL1_Pin
-#define EXG_CHIP1_DRDY_N_GPIO_Port GPIO_INTERNAL1_GPIO_Port
-#define EXG_CHIP2_DRDY_N_Pin       GPIO_INTERNAL0_Pin
-#define EXG_CHIP2_DRDY_N_GPIO_Port GPIO_INTERNAL0_GPIO_Port
+#define EXG_RESET_N_Pin                   GPIO_INTERNAL5_Pin
+#define EXG_RESET_N_GPIO_Port             GPIO_INTERNAL5_GPIO_Port
+#define EXG_CHIP1_CS_Pin                  GPIO_INTERNAL4_Pin
+#define EXG_CHIP1_CS_GPIO_Port            GPIO_INTERNAL4_GPIO_Port
+#define EXG_CHIP2_CS_Pin                  GPIO_INTERNAL3_Pin
+#define EXG_CHIP2_CS_GPIO_Port            GPIO_INTERNAL3_GPIO_Port
+#define EXG_CHIP1_DRDY_N_Pin              GPIO_INTERNAL1_Pin
+#define EXG_CHIP1_DRDY_N_GPIO_Port        GPIO_INTERNAL1_GPIO_Port
+#define EXG_CHIP2_DRDY_N_Pin              GPIO_INTERNAL0_Pin
+#define EXG_CHIP2_DRDY_N_GPIO_Port        GPIO_INTERNAL0_GPIO_Port
 
 /* Shimmer3R GSR+ SR48 */
-#define GSR_RANGE_A0_Pin           GPIO_INTERNAL0_Pin
-#define GSR_RANGE_A0_GPIO_Port     GPIO_INTERNAL0_GPIO_Port
-#define GSR_RANGE_A1_Pin           GPIO_INTERNAL1_Pin
-#define GSR_RANGE_A1_GPIO_Port     GPIO_INTERNAL1_GPIO_Port
-#define SW_PPG_PWR_Pin              GPIO_INTERNAL2_Pin
-#define SW_PPG_PWR_GPIO_Port        GPIO_INTERNAL2_GPIO_Port
-#define SW_I2C4_ON_PPG_Pin         GPIO_INTERNAL3_Pin
-#define SW_I2C4_ON_PPG_GPIO_Port         GPIO_INTERNAL3_GPIO_Port
+#define GSR_RANGE_A0_Pin                  GPIO_INTERNAL0_Pin
+#define GSR_RANGE_A0_GPIO_Port            GPIO_INTERNAL0_GPIO_Port
+#define GSR_RANGE_A1_Pin                  GPIO_INTERNAL1_Pin
+#define GSR_RANGE_A1_GPIO_Port            GPIO_INTERNAL1_GPIO_Port
+#define SW_PPG_PWR_Pin                    GPIO_INTERNAL2_Pin
+#define SW_PPG_PWR_GPIO_Port              GPIO_INTERNAL2_GPIO_Port
+#define SW_I2C4_ON_PPG_Pin                GPIO_INTERNAL3_Pin
+#define SW_I2C4_ON_PPG_GPIO_Port          GPIO_INTERNAL3_GPIO_Port
 
 /* Shimmer3R Bridge Amp SR49 */
-#define SW_BRIDGE_AMP_PWR_Pin        GPIO_INTERNAL1_Pin
-#define SW_BRIDGE_AMP_PWR_GPIO_Port  GPIO_INTERNAL1_GPIO_Port
-#define SW_VOLTAGE_DIVIDER_HIGH_Pin        GPIO_INTERNAL5_Pin
-#define SW_VOLTAGE_DIVIDER_HIGH_GPIO_Port  GPIO_INTERNAL5_GPIO_Port
+#define SW_BRIDGE_AMP_PWR_Pin             GPIO_INTERNAL1_Pin
+#define SW_BRIDGE_AMP_PWR_GPIO_Port       GPIO_INTERNAL1_GPIO_Port
+#define SW_VOLTAGE_DIVIDER_HIGH_Pin       GPIO_INTERNAL5_Pin
+#define SW_VOLTAGE_DIVIDER_HIGH_GPIO_Port GPIO_INTERNAL5_GPIO_Port
 
 /* Shimmer3R Proto3 Deluxe SR38 */
-#define PV_REGSW_Pin           GPIO_INTERNAL0_Pin
-#define PV_REGSW_GPIO_Port     GPIO_INTERNAL0_GPIO_Port
-#define J3_PWM_SOURCE_Pin           GPIO_INTERNAL3_Pin
-#define J3_PWM_SOURCE_Port     GPIO_INTERNAL3_GPIO_Port
-#define J2_SW_I2C4_Pin              GPIO_INTERNAL2_Pin
-#define J2_SW_I2C4_GPIO_Port        GPIO_INTERNAL2_GPIO_Port
+#define PV_REGSW_Pin                      GPIO_INTERNAL0_Pin
+#define PV_REGSW_GPIO_Port                GPIO_INTERNAL0_GPIO_Port
+#define J3_PWM_SOURCE_Pin                 GPIO_INTERNAL3_Pin
+#define J3_PWM_SOURCE_Port                GPIO_INTERNAL3_GPIO_Port
+#define J2_SW_I2C4_Pin                    GPIO_INTERNAL2_Pin
+#define J2_SW_I2C4_GPIO_Port              GPIO_INTERNAL2_GPIO_Port
 #define J2_PWR_FOR_I2C_SWITCH_Pin         GPIO_INTERNAL5_Pin
-#define J2_PWR_FOR_I2C_SWITCH_GPIO_Port         GPIO_INTERNAL5_GPIO_Port
-#define J10_SPI3_CS_Pin              GPIO_INTERNAL4_Pin
-#define J10_SPI3_CS_GPIO_Port        GPIO_INTERNAL4_GPIO_Port
-#define J4_GPIO_INTERNAL6_Pin GPIO_PIN_4
-#define J4_GPIO_INTERNAL6_GPIO_Port GPIOA
+#define J2_PWR_FOR_I2C_SWITCH_GPIO_Port   GPIO_INTERNAL5_GPIO_Port
+#define J10_SPI3_CS_Pin                   GPIO_INTERNAL4_Pin
+#define J10_SPI3_CS_GPIO_Port             GPIO_INTERNAL4_GPIO_Port
+#define J4_GPIO_INTERNAL6_Pin             GPIO_PIN_4
+#define J4_GPIO_INTERNAL6_GPIO_Port       GPIOA
 
 /* Interrupts */
 /* Either GPIO_ADC_INT_EXP1 or SD_DETECT_N can be used on line 0 */
-#define INT_LINE_GPIO_ADC_INT_EXP1 EXTI0_IRQn
+#define INT_LINE_GPIO_ADC_INT_EXP1        EXTI0_IRQn
 //#define INT_LINE_SD_DETECT_N       EXTI0_IRQn
-#define INT_LINE_DOCK_DETECT       EXTI1_IRQn //Enabled by CubeMX
-#define INT_LINE_LIS3MDL_DRDY      EXTI2_IRQn
+#define INT_LINE_DOCK_DETECT              EXTI1_IRQn //Enabled by CubeMX
+#define INT_LINE_LIS3MDL_DRDY             EXTI2_IRQn
 #if SUPPORT_SR48_6_0
 /* SR48-6-0 patch for dock detection - start */
 #define INT_LINE_SR48_6_0_BOOT0_USER_BTN EXTI3_IRQn //Only used on SR48-6-0
@@ -152,79 +152,78 @@
 
 #elif defined(SHIMMER4_SDK)
 
-#define LED_RED_GPIO              GPIOG
-#define LED_RED_PIN               LED_RD_Pin
-#define LED_GR0_GPIO              GPIOC
-#define LED_GR0_PIN               LED_GR_Pin
-#define LED_YEL_GPIO              GPIOC
-#define LED_YEL_PIN               LED_YE_Pin
-#define LED_GR1_GPIO              LED_GR1_GPIO_Port
-#define LED_GR1_PIN               LED_GR1_Pin
-#define LED_BLU_GPIO              LED_BLU_GPIO_Port
-#define LED_BLU_PIN               LED_BLU_Pin
+#define LED_RED_GPIO                GPIOG
+#define LED_RED_PIN                 LED_RD_Pin
+#define LED_GR0_GPIO                GPIOC
+#define LED_GR0_PIN                 LED_GR_Pin
+#define LED_YEL_GPIO                GPIOC
+#define LED_YEL_PIN                 LED_YE_Pin
+#define LED_GR1_GPIO                LED_GR1_GPIO_Port
+#define LED_GR1_PIN                 LED_GR1_Pin
+#define LED_BLU_GPIO                LED_BLU_GPIO_Port
+#define LED_BLU_PIN                 LED_BLU_Pin
 
-#define EXG_CHIP1_CS_GPIO_PORT    ECG_NSEL_GPIO_Port
-#define EXG_CHIP1_CS_PIN          ECG_NSEL_Pin
-#define EXG_CHIP2_CS_GPIO_PORT    RESP_NSEL_GPIO_Port
-#define EXG_CHIP2_CS_PIN          RESP_NSEL_Pin
+#define EXG_CHIP1_CS_GPIO_PORT      ECG_NSEL_GPIO_Port
+#define EXG_CHIP1_CS_PIN            ECG_NSEL_Pin
+#define EXG_CHIP2_CS_GPIO_PORT      RESP_NSEL_GPIO_Port
+#define EXG_CHIP2_CS_PIN            RESP_NSEL_Pin
 
-#define GSR_RANGE_A0_Pin          GPIO_INTERNAL3_Pin
-#define GSR_RANGE_A1_Pin          GPIO_INTERNAL2_Pin
+#define GSR_RANGE_A0_Pin            GPIO_INTERNAL3_Pin
+#define GSR_RANGE_A1_Pin            GPIO_INTERNAL2_Pin
 
-#define BT_RTS_GPIO_Port          BTH_RTS_GPIO_Port
-#define BT_RTS_Pin                BTH_RTS_Pin
+#define BT_RTS_GPIO_Port            BTH_RTS_GPIO_Port
+#define BT_RTS_Pin                  BTH_RTS_Pin
 
-#define USER_BTN_N_GPIO_Port      USER_N_GPIO_Port
-#define USER_BTN_N_Pin            USER_BTN_N_Pin
+#define USER_BTN_N_GPIO_Port        USER_N_GPIO_Port
+#define USER_BTN_N_Pin              USER_BTN_N_Pin
 
-#define BT_CONNECTION_Pin         BTH_STATUS_Pin
-#define DOCK_DETECT_Pin           DOCK_Pin
+#define BT_CONNECTION_Pin           BTH_STATUS_Pin
+#define DOCK_DETECT_Pin             DOCK_Pin
 
-#define GPIO_INTERNAL0_Pin        GPIO_INTERNAL_Pin
+#define GPIO_INTERNAL0_Pin          GPIO_INTERNAL_Pin
 
-#define SW_I2C_GPIO_Port          SW_I2C_GPIO_Port
-#define SW_I2C_Pin                SW_I2C_Pin
+#define SW_I2C_GPIO_Port            SW_I2C_GPIO_Port
+#define SW_I2C_Pin                  SW_I2C_Pin
 
-#define SW_I2C2_GPIO_Port         SW_I2C_GPIO_Port
-#define SW_I2C2_Pin               SW_I2C_Pin
+#define SW_I2C2_GPIO_Port           SW_I2C_GPIO_Port
+#define SW_I2C2_Pin                 SW_I2C_Pin
 
-#define SD_PC_SWITCH_Pin          EXT_MEM_Pin
+#define SD_PC_SWITCH_Pin            EXT_MEM_Pin
 
 #define SW_BRIDGE_AMP_PWR_Pin       GPIO_INTERNAL4_Pin
 #define SW_BRIDGE_AMP_PWR_GPIO_Port GPIOB
-#define SW_PPG_PWR_Pin             PPG_EN_Pin
-#define SW_PPG_PWR_GPIO_Port       GPIOF
-#define GPIOF                     GPIO_INTERNAL1_GPIO_Port
+#define SW_PPG_PWR_Pin              PPG_EN_Pin
+#define SW_PPG_PWR_GPIO_Port        GPIOF
+#define GPIOF                       GPIO_INTERNAL1_GPIO_Port
 
-#define ADC_CHANNEL_ACCEL_X ADC_CHANNEL_0
-#define ADC_CHANNEL_ACCEL_Y ADC_CHANNEL_1
-#define ADC_CHANNEL_ACCEL_Z ADC_CHANNEL_2
-#define ADC_CHANNEL_VBATT   ADC_CHANNEL_VBAT
+#define ADC_CHANNEL_ACCEL_X         ADC_CHANNEL_0
+#define ADC_CHANNEL_ACCEL_Y         ADC_CHANNEL_1
+#define ADC_CHANNEL_ACCEL_Z         ADC_CHANNEL_2
+#define ADC_CHANNEL_VBATT           ADC_CHANNEL_VBAT
 
 //TODO check Shimmer4 channel numbers
-#define ADC_CHANNEL_EXT_A0  ADC_CHANNEL_9
-#define ADC_CHANNEL_EXT_A1  ADC_CHANNEL_10
-#define ADC_CHANNEL_EXT_A2  ADC_CHANNEL_11
-#define ADC_CHANNEL_INT_A0  ADC_CHANNEL_12
-#define ADC_CHANNEL_INT_A1  ADC_CHANNEL_15
-#define ADC_CHANNEL_INT_A2  ADC_CHANNEL_16
-#define ADC_CHANNEL_INT_A3  ADC_CHANNEL_17
+#define ADC_CHANNEL_EXT_A0          ADC_CHANNEL_9
+#define ADC_CHANNEL_EXT_A1          ADC_CHANNEL_10
+#define ADC_CHANNEL_EXT_A2          ADC_CHANNEL_11
+#define ADC_CHANNEL_INT_A0          ADC_CHANNEL_12
+#define ADC_CHANNEL_INT_A1          ADC_CHANNEL_15
+#define ADC_CHANNEL_INT_A2          ADC_CHANNEL_16
+#define ADC_CHANNEL_INT_A3          ADC_CHANNEL_17
 
-
-#define ADC_CHANNEL_ACCEL_X       ADC_CHANNEL_13
-#define ADC_CHANNEL_ACCEL_Y       ADC_CHANNEL_14
-#define ADC_CHANNEL_ACCEL_Z       ADC_CHANNEL_15
-#define ADC_CHANNEL_VBATT         ADC_CHANNEL_3
+#define ADC_CHANNEL_ACCEL_X         ADC_CHANNEL_13
+#define ADC_CHANNEL_ACCEL_Y         ADC_CHANNEL_14
+#define ADC_CHANNEL_ACCEL_Z         ADC_CHANNEL_15
+#define ADC_CHANNEL_VBATT           ADC_CHANNEL_3
 
 //TODO update Ax number to be more generic in the code between hardware
-#define ADC_CHANNEL_EXT_A0        ADC_CHANNEL_9
-#define ADC_CHANNEL_EXT_A1        ADC_CHANNEL_8
-#define ADC_CHANNEL_EXT_A2        ADC_CHANNEL_1
-#define ADC_CHANNEL_INT_A0        ADC_CHANNEL_10
-#define ADC_CHANNEL_INT_A1        ADC_CHANNEL_11
-#define ADC_CHANNEL_INT_A2        ADC_CHANNEL_0
-#define ADC_CHANNEL_INT_A3        ADC_CHANNEL_2
-#define ADC_CHANNEL_INT_A4        ADC_CHANNEL_12
+#define ADC_CHANNEL_EXT_A0          ADC_CHANNEL_9
+#define ADC_CHANNEL_EXT_A1          ADC_CHANNEL_8
+#define ADC_CHANNEL_EXT_A2          ADC_CHANNEL_1
+#define ADC_CHANNEL_INT_A0          ADC_CHANNEL_10
+#define ADC_CHANNEL_INT_A1          ADC_CHANNEL_11
+#define ADC_CHANNEL_INT_A2          ADC_CHANNEL_0
+#define ADC_CHANNEL_INT_A3          ADC_CHANNEL_2
+#define ADC_CHANNEL_INT_A4          ADC_CHANNEL_12
 #endif
 
 #if defined(SHIMMER3R)
@@ -281,7 +280,7 @@
 
 /* Shimmer3R GSR+ SR48 */
 #if SUPPORT_SR48_6_0
-#define Board_SR48_6_0_SW_GSR(x)                                             \
+#define Board_SR48_6_0_SW_GSR(x)                                    \
   HAL_GPIO_WritePin(SR48_6_0_SW_GSR_GPIO_Port, SR48_6_0_SW_GSR_Pin, \
       x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #endif //SUPPORT_SR48_6_0
@@ -292,19 +291,21 @@
  * Output low = I2C4 is connected to PPG connector
  * Output high = I2C4 is disconnected from PPG connector */
 #if SUPPORT_SR48_6_0
-#define Board_SR48_6_0_SW_I2C4_ON_PPG(x)                           \
+#define Board_SR48_6_0_SW_I2C4_ON_PPG(x)                  \
   HAL_GPIO_WritePin(SR48_6_0_GPIO_ADC_INT_EXP2_GPIO_Port, \
       SR48_6_0_GPIO_ADC_INT_EXP2_Pin, x ? GPIO_PIN_RESET : GPIO_PIN_SET)
 #endif //SUPPORT_SR48_6_0
-#define Board_SW_I2C4_ON_PPG(x)                           \
-  HAL_GPIO_WritePin(SW_I2C4_ON_PPG_GPIO_Port, \
-      SW_I2C4_ON_PPG_Pin, x ? GPIO_PIN_RESET : GPIO_PIN_SET)
+#define Board_SW_I2C4_ON_PPG(x)                                   \
+  HAL_GPIO_WritePin(SW_I2C4_ON_PPG_GPIO_Port, SW_I2C4_ON_PPG_Pin, \
+      x ? GPIO_PIN_RESET : GPIO_PIN_SET)
 
 /* Shimmer3R Bridge Amp SR49 */
-#define Board_SW_BRIDGE_AMP_PWR(x) \
-  HAL_GPIO_WritePin(SW_BRIDGE_AMP_PWR_GPIO_Port, SW_BRIDGE_AMP_PWR_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define Board_SW_VOLTAGE_DIVIDER_PWR(x) \
-  HAL_GPIO_WritePin(SW_VOLTAGE_DIVIDER_HIGH_GPIO_Port, SW_VOLTAGE_DIVIDER_HIGH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_SW_BRIDGE_AMP_PWR(x)                                      \
+  HAL_GPIO_WritePin(SW_BRIDGE_AMP_PWR_GPIO_Port, SW_BRIDGE_AMP_PWR_Pin, \
+      x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define Board_SW_VOLTAGE_DIVIDER_PWR(x)                \
+  HAL_GPIO_WritePin(SW_VOLTAGE_DIVIDER_HIGH_GPIO_Port, \
+      SW_VOLTAGE_DIVIDER_HIGH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
 #elif defined(SHIMMER4_SDK)
 #define Board_SW_EXP(x) \

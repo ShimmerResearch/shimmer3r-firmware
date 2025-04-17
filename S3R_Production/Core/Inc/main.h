@@ -192,7 +192,7 @@ extern "C"
 /* SR48-6-0 patch for dock detection - start */
 #define SR48_6_0_BOOT0_USER_BTN_Pin          GPIO_PIN_3
 #define SR48_6_0_BOOT0_USER_BTN_GPIO_Port    GPIOH
-/* SR48-6-0 patch for dock detection - end */
+  /* SR48-6-0 patch for dock detection - end */
 
 #define SR48_6_0_LED_UPR_GR_Pin              GPIO_PIN_2
 #define SR48_6_0_LED_UPR_GR_GPIO_Port        GPIOA
@@ -229,7 +229,7 @@ extern "C"
 #define SR48_6_0_GPIO_ADC_INT_EXP0_GPIO_Port GPIOA
 #endif //SUPPORT_SR48_6_0
 
-/* USER CODE END Private defines */
+  /* USER CODE END Private defines */
 
 #ifdef __cplusplus
 }

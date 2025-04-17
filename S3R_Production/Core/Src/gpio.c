@@ -535,7 +535,7 @@ void gpioInitPerBoard(void)
 #endif
     else if (ShimBrd_isBoardSr48_7_0())
     {
-      // External ADC controls I2C4 switch
+      //External ADC controls I2C4 switch
     }
     else
     {
