@@ -330,7 +330,6 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   {
   case GPIO_INTERNAL1_Pin:
     //SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
-    // EXG_readDataFromChip(0,(spi3Sens_buf.ads1292rExg1Buf));
     ADS1292_dataReadFromChip1(spi3Sens_buf.ads1292rExg1Buf);
     //TODO check if product is ExG unit
     ////EXG1 DRDY active low

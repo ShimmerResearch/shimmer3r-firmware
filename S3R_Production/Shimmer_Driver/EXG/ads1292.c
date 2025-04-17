@@ -90,8 +90,7 @@ void ADS1292_init()
   rxCount = 0;
   chip2Enabled = 0;
   chipBusy = 0;
-  //ADS1292_enableDrdyInterrupts(0x3);
-  //UCA0_isrActivate(UCA0_isrRegister(ads1292Uca0RxIsr, ads1292Uca0TxIsr));
+ //UCA0_isrActivate(UCA0_isrRegister(ads1292Uca0RxIsr, ads1292Uca0TxIsr));
 }
 
 void setSpiHandle(SPI_HandleTypeDef *hspi)
@@ -538,8 +537,6 @@ void ADS1292_dataReadFromChip1(uint8_t *buf)
   ADS1292_chip1CsEnable(1);
   ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
   //ret = HAL_SPI_Receive_DMA(hspi_exg, buf, ADS1292_DATA_PACKET_LENGTH);
-  //return ret;
-  //ret = HAL_SPI_TransmitReceive(hspi_exg, tx_buf, buf,ADS1292_DATA_PACKET_LENGTH, 10);
 }
 
 void ADS1292_dataReadFromChip2(uint8_t *buf)
@@ -552,9 +549,7 @@ void ADS1292_dataReadFromChip2(uint8_t *buf)
   ADS1292_chip2CsEnable(1);
   ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
   //ret = HAL_SPI_Receive_DMA(hspi_exg, buf, ADS1292_DATA_PACKET_LENGTH);
-  //return ret;
-  //ret = HAL_SPI_TransmitReceive(hspi_exg, tx_buf, buf,ADS1292_DATA_PACKET_LENGTH, 10);
-}
+ }
 
 //uint8_t ADS1292_spiRxIsr(void)
 //{
