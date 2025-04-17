@@ -69,8 +69,6 @@
 
 volatile uint32_t time_start, time_end, time_diff;
 
-extern UART_HandleTypeDef *huartBt;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -178,7 +176,6 @@ void Init()
 #if FULL_TEST_MODE
   FullTest();
 #endif
-  //BT_disable(huartBt);
   //S4Sens_stopPeripherals();
   S4_RTC_WakeUpOff();
 #if defined(SHIMMER4_SDK)

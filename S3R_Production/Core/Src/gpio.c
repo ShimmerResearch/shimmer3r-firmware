@@ -309,6 +309,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
       }
       break;
     }
+    /* no break */
     /* SR48-6-0 patch for VBUS sense - end */
 #else  //SUPPORT_SR48_6_0
   case USB_VBUS_Pin:
@@ -384,6 +385,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
       /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
       DockUart_interruptCheck();
       ShimTask_set(TASK_SETUP_DOCK);
+      /* no break */
       break;
     }
     /* SR48-6-0 patch for dock detection - end */
@@ -398,6 +400,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
       break;
     }
     /* SR48-6-0 patch for VBUS sense - end */
+    /* no break */
 #endif //SUPPORT_SR48_6_0
   case USER_BTN_Pin:
     GPIO_userButtonCheck();
@@ -616,46 +619,6 @@ void gpioInitPerBoard(void)
 #endif
 
     GSR_setActiveResistor(HW_RES_40K);
-  }
-  else if (daughtCardId->exp_brd_id == EXP_BRD_EXG_UNIFIED)
-  {
-    /*Configure GPIO_INTERNAL1 pin */
-    HAL_GPIO_WritePin(EXG_CHIP1_DRDY_N_GPIO_Port, EXG_CHIP1_DRDY_N_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = EXG_CHIP1_DRDY_N_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(EXG_CHIP1_DRDY_N_GPIO_Port, &GPIO_InitStruct);
-
-    /*Configure GPIO_INTERNAL0 pin */
-    HAL_GPIO_WritePin(EXG_CHIP2_DRDY_N_GPIO_Port, EXG_CHIP2_DRDY_N_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = EXG_CHIP2_DRDY_N_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(EXG_CHIP2_DRDY_N_GPIO_Port, &GPIO_InitStruct);
-
-    /*Configure GPIO_INTERNAL4 pin (ExG Chip 1 / ECG CS) */
-    HAL_GPIO_WritePin(EXG_CHIP1_CS_GPIO_Port, EXG_CHIP1_CS_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = EXG_CHIP1_CS_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(EXG_CHIP1_CS_GPIO_Port, &GPIO_InitStruct);
-
-    /*Configure GPIO_INTERNAL3 pin (ExG Chip 2 / RESP CS) */
-    HAL_GPIO_WritePin(EXG_CHIP2_CS_GPIO_Port, EXG_CHIP2_CS_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = EXG_CHIP2_CS_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(EXG_CHIP2_CS_GPIO_Port, &GPIO_InitStruct);
-
-    /* EXG_RESET_N */
-    HAL_GPIO_WritePin(EXG_RESET_N_GPIO_Port, EXG_RESET_N_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = EXG_RESET_N_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(EXG_RESET_N_GPIO_Port, &GPIO_InitStruct);
   }
   else if (daughtCardId->exp_brd_id == EXP_BRD_EXG_UNIFIED)
   {
