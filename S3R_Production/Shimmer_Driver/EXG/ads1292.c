@@ -90,6 +90,7 @@ void ADS1292_init()
   rxCount = 0;
   chip2Enabled = 0;
   chipBusy = 0;
+//  ADS1292_enableDrdyInterrupts(0x3);
   //UCA0_isrActivate(UCA0_isrRegister(ads1292Uca0RxIsr, ads1292Uca0TxIsr));
 }
 
@@ -363,11 +364,11 @@ void ADS1292_disableDrdyInterrupts(uint8_t mask)
 {
   if (mask & ADS1292_DRDY_INT_CHIP1)
   {
-    HAL_NVIC_EnableIRQ(INT_LINE_GPIO_INTERNAL1);
+    HAL_NVIC_DisableIRQ(INT_LINE_GPIO_INTERNAL1);
   }
   if (mask & ADS1292_DRDY_INT_CHIP2)
   {
-    HAL_NVIC_EnableIRQ(INT_LINE_GPIO_INTERNAL0);
+    HAL_NVIC_DisableIRQ(INT_LINE_GPIO_INTERNAL0);
   }
 }
 
@@ -538,6 +539,7 @@ void ADS1292_dataReadFromChip1(uint8_t *buf)
   ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
   //ret = HAL_SPI_Receive_DMA(hspi_exg, buf, ADS1292_DATA_PACKET_LENGTH);
   //return ret;
+// ret = HAL_SPI_TransmitReceive(hspi_exg, tx_buf, buf,ADS1292_DATA_PACKET_LENGTH, 10);
 }
 
 void ADS1292_dataReadFromChip2(uint8_t *buf)
@@ -551,6 +553,7 @@ void ADS1292_dataReadFromChip2(uint8_t *buf)
   ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
   //ret = HAL_SPI_Receive_DMA(hspi_exg, buf, ADS1292_DATA_PACKET_LENGTH);
   //return ret;
+ // ret = HAL_SPI_TransmitReceive(hspi_exg, tx_buf, buf,ADS1292_DATA_PACKET_LENGTH, 10);
 }
 
 //uint8_t ADS1292_spiRxIsr(void)

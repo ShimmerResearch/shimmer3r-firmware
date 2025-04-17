@@ -57,7 +57,6 @@ uint8_t EXG_init(SPI_HandleTypeDef *hspi)
   //ADS1292_init();
 
   HAL_StatusTypeDef res = HAL_OK;
-
   setSpiHandle(hspi);
   ADS1292_resetPulse();
   ADS1292_chip1CsEnable(1);
@@ -80,6 +79,7 @@ uint8_t EXG_init(SPI_HandleTypeDef *hspi)
   {
     return 1;
   }
+ // ADS1292_enableDrdyInterrupts(0x1);
   return 0;
 }
 
