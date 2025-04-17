@@ -292,7 +292,7 @@ void I2cBatt_sensorNext(void);
 
   void loadDaughterCardIdFromEeprom(void);
 
-  void enableI2cOnInternalExpansionBrd(uint8_t state);
+  void enableI2cOnSr48PpgSocket(uint8_t state);
 
   /* USER CODE END Prototypes */
 

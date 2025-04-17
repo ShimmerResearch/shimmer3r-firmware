@@ -559,7 +559,14 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state)
 
 void Board_setExpansionBrdPower(uint8_t state)
 {
-  Board_SW_EXP_BRD_POWER(state);
+  if (ShimBrd_isExpBrdId(EXP_BRD_GSR_UNIFIED))
+  {
+    Board_SW_PPG_POWER(state);
+  }
+  else
+  {
+    //TODO
+  }
   shimmerStatus.pinPvExt = state;
 }
 
@@ -568,7 +575,7 @@ void resetGsrPwrAndRange(void)
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
   {
-    Board_SW_GSR(0);
+    Board_SR48_6_0_SW_GSR(0);
   }
 #endif
   GSR_setActiveResistor(HW_RES_40K);

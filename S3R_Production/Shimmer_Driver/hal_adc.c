@@ -435,7 +435,7 @@ void S4_NORM_ADC_startSensing(void)
     configBytes->chEnIntADC3 = 1;
 #endif
 
-    Board_SW_GSR(1);
+    Board_SR48_6_0_SW_GSR(1);
     GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks);
   }
 

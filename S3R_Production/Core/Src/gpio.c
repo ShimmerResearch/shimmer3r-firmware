@@ -81,8 +81,8 @@ void MX_GPIO_Init(void)
       SW_BT_Pin | CS_LSM6DSV_Pin | CS_ADS7028_Pin | DETECT_N_Pin | SW_SD_MCU_DOCK_Pin,
       GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PE1 PE0 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_0;
+  /*Configure GPIO pin : PE1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
@@ -135,6 +135,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIO_INTERNAL0_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : GPIO_INTERNAL5_Pin */
+  GPIO_InitStruct.Pin = GPIO_INTERNAL5_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIO_INTERNAL5_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SD_DETECT_N_Pin */
   GPIO_InitStruct.Pin = SD_DETECT_N_Pin;
@@ -197,9 +203,9 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB2 PB1 PB0 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_1 | GPIO_PIN_0;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  /*Configure GPIO pins : GPIO_INTERNAL4_Pin GPIO_INTERNAL3_Pin */
+  GPIO_InitStruct.Pin = GPIO_INTERNAL4_Pin | GPIO_INTERNAL3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -214,6 +220,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(LIS2DW12_INT1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
@@ -513,49 +525,57 @@ void gpioInitPerBoard(void)
     {
       /* GPIO_ADC_INT_EXP2_Pin
        * Controls whether I2C4 connected to PPG connector */
-      Board_SW_I2C4_ON_PPG(0);
+      Board_SR48_6_0_SW_I2C4_ON_PPG(0);
       GPIO_InitStruct.Pin = SR48_6_0_GPIO_ADC_INT_EXP2_Pin;
       GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
       GPIO_InitStruct.Pull = GPIO_NOPULL;
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
       HAL_GPIO_Init(SR48_6_0_GPIO_ADC_INT_EXP2_GPIO_Port, &GPIO_InitStruct);
     }
-#else
-    if (!ShimBrd_isBoardSr48_7_0())
-    {
-      //TODO GPIO_INTERNAL3? to control I2C on PPG connector
-    }
 #endif
+    else if (ShimBrd_isBoardSr48_7_0())
+    {
+      // External ADC controls I2C4 switch
+    }
+    else
+    {
+      Board_SW_I2C4_ON_PPG(0);
+      GPIO_InitStruct.Pin = SW_I2C4_ON_PPG_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      HAL_GPIO_Init(SW_I2C4_ON_PPG_GPIO_Port, &GPIO_InitStruct);
+    }
 
     /* GPIO_ADC_INT_EXP3_Pin:
      * GSR ADC. Allow code ADC to manage. */
 
     /* GPIO_INTERNAL0_Pin:
      * GSR Range A0 */
-    HAL_GPIO_WritePin(GPIO_INTERNAL0_GPIO_Port, GPIO_INTERNAL0_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = GPIO_INTERNAL0_Pin;
+    HAL_GPIO_WritePin(GSR_RANGE_A0_GPIO_Port, GSR_RANGE_A0_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = GSR_RANGE_A0_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIO_INTERNAL0_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(GSR_RANGE_A0_GPIO_Port, &GPIO_InitStruct);
 
     /* GPIO_INTERNAL1_Pin:
      * GSR Range A1 */
-    HAL_GPIO_WritePin(GPIO_INTERNAL1_GPIO_Port, GPIO_INTERNAL1_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = GPIO_INTERNAL1_Pin;
+    HAL_GPIO_WritePin(GSR_RANGE_A1_GPIO_Port, GSR_RANGE_A1_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = GSR_RANGE_A1_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIO_INTERNAL1_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(GSR_RANGE_A1_GPIO_Port, &GPIO_InitStruct);
 
     /* GPIO_INTERNAL2_Pin:
      * PPG connector power. 0 = power off, 1 = power on */
-    HAL_GPIO_WritePin(GPIO_INTERNAL2_GPIO_Port, GPIO_INTERNAL2_Pin, GPIO_PIN_RESET);
-    GPIO_InitStruct.Pin = GPIO_INTERNAL2_Pin;
+    HAL_GPIO_WritePin(SW_PPG_PWR_GPIO_Port, SW_PPG_PWR_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin = SW_PPG_PWR_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIO_INTERNAL2_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(SW_PPG_PWR_GPIO_Port, &GPIO_InitStruct);
 
 #if SUPPORT_SR48_6_0
     if (ShimBrd_isBoardSr48_6_0())
