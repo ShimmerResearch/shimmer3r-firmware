@@ -31,6 +31,7 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
+#include "EXG/ads1292.h"
 #include "shimmer_definitions.h"
 #include <shimmer_include.h>
 
@@ -148,8 +149,8 @@ extern "C"
 
   typedef struct
   {
-    uint8_t ads1292rExg1Buf[SPI_DMA_TXRX_OFFSET + 7];
-    uint8_t ads1292rExg2Buf[SPI_DMA_TXRX_OFFSET + 7];
+    uint8_t ads1292rExg1Buf[ADS1292_DATA_PACKET_LENGTH];
+    uint8_t ads1292rExg2Buf[ADS1292_DATA_PACKET_LENGTH];
   } spi3ReadBuf;
 
   typedef struct
@@ -160,6 +161,9 @@ extern "C"
     uint8_t sensorCnt;
     SPI_BUS_INDEX busId;
   } SPITypeDef;
+
+  extern SPITypeDef spi3Sens;
+  extern spi3ReadBuf spi3Sens_buf;
 
 #endif
 
