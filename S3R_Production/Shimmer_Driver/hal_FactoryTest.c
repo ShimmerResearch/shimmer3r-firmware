@@ -534,7 +534,7 @@ void I2C_test(void)
   {
     uint8_t i2c4_result = 0;
 
-    enableI2cOnInternalExpansionBrd(1);
+    enableI2cOnSr48PpgSocket(1);
     HAL_Delay(2); //2ms as per Shimmer3 code
     I2C_scan_internal_expansion_bus(test_i2c_addr_list, &test_i2c_addr_list_len);
 
@@ -580,7 +580,7 @@ void I2C_test(void)
       i2c4_result = 1;
     }
 
-    enableI2cOnInternalExpansionBrd(0);
+    enableI2cOnSr48PpgSocket(0);
 
     if (i2c4_result)
     {
@@ -866,7 +866,7 @@ uint8_t runGsrFactoryTest(void)
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
   {
-    Board_SW_GSR(1);
+    Board_SR48_6_0_SW_GSR(1);
   }
 #endif
   gsrTestRigInit(&hi2c4);
@@ -912,7 +912,7 @@ uint8_t runGsrFactoryTest(void)
   {
     //Stop ADC
     deinitGsrMcuAdc();
-    Board_SW_GSR(0);
+    Board_SR48_6_0_SW_GSR(0);
   }
 #endif
 

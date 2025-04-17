@@ -463,6 +463,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *spiHandle)
 
     /* SPI3 clock enable */
     __HAL_RCC_SPI3_CLK_ENABLE();
+
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOG_CLK_ENABLE();
     /**SPI3 GPIO Configuration

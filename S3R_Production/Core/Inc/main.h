@@ -90,6 +90,8 @@ extern "C"
 #define CS_LIS3MDL_GPIO_Port     GPIOE
 #define GPIO_INTERNAL0_Pin       GPIO_PIN_13
 #define GPIO_INTERNAL0_GPIO_Port GPIOC
+#define GPIO_INTERNAL5_Pin       GPIO_PIN_0
+#define GPIO_INTERNAL5_GPIO_Port GPIOE
 #define SW_SENSE_Pin             GPIO_PIN_3
 #define SW_SENSE_GPIO_Port       GPIOD
 #define SD_DETECT_N_Pin          GPIO_PIN_0
@@ -150,6 +152,8 @@ extern "C"
 #define BT_CTS_GPIO_Port         GPIOD
 #define BT_RTS_Pin               GPIO_PIN_12
 #define BT_RTS_GPIO_Port         GPIOD
+#define GPIO_INTERNAL4_Pin       GPIO_PIN_2
+#define GPIO_INTERNAL4_GPIO_Port GPIOB
 #define LSM6DSV_INT1_Pin         GPIO_PIN_7
 #define LSM6DSV_INT1_GPIO_Port   GPIOE
 #define LED_UPR_GR_Pin           GPIO_PIN_10
@@ -157,6 +161,8 @@ extern "C"
 #define USER_BTN_Pin             GPIO_PIN_6
 #define USER_BTN_GPIO_Port       GPIOA
 #define USER_BTN_EXTI_IRQn       EXTI6_IRQn
+#define GPIO_INTERNAL3_Pin       GPIO_PIN_1
+#define GPIO_INTERNAL3_GPIO_Port GPIOB
 #define BMP390_INT_Pin           GPIO_PIN_11
 #define BMP390_INT_GPIO_Port     GPIOE
 #define LED_UPR_BLU_Pin          GPIO_PIN_11
@@ -198,8 +204,8 @@ extern "C"
 #define SR48_6_0_CHG_STAT2_Pin               GPIO_PIN_11
 #define SR48_6_0_CHG_STAT2_GPIO_Port         GPIOB
 
-#define SR48_6_0_SW_GSR_Pin                  GPIO_PIN_0
-#define SR48_6_0_SW_GSR_GPIO_Port            GPIOE
+#define SR48_6_0_SW_GSR_Pin                  GPIO_INTERNAL5_Pin
+#define SR48_6_0_SW_GSR_GPIO_Port            GPIO_INTERNAL5_GPIO_Port
 
 #define SR48_6_0_GPIO_ADC_INT_EXP3_Pin       GPIO_PIN_2
 #define SR48_6_0_GPIO_ADC_INT_EXP3_GPIO_Port GPIOB
@@ -222,12 +228,6 @@ extern "C"
 #define SR48_6_0_GPIO_ADC_INT_EXP0_Pin       GPIO_PIN_5
 #define SR48_6_0_GPIO_ADC_INT_EXP0_GPIO_Port GPIOA
 #endif //SUPPORT_SR48_6_0
-
-//TODO add these to CubeMx one ADS7028 code is developed
-#define CS_EXG_EU4_Pin        GPIO_PIN_2
-#define CS_EXG_EU4_GPIO_Port  GPIOB
-#define CS_RESP_EU3_Pin       GPIO_PIN_1
-#define CS_RESP_EU3_GPIO_Port GPIOB
 
   /* USER CODE END Private defines */
 

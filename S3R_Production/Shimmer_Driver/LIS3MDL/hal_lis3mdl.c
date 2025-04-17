@@ -591,7 +591,7 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
  * @param  len           number of byte to send
  *
  */
-static void tx_com(uint8_t *tx_buffer, uint16_t len)
+static void tx_com(uint8_t *tx_buffer, uint16_t len) //@suppress("Unused static function")
 {
 #if defined(NUCLEO_F411RE)
   HAL_UART_Transmit(&huart2, tx_buffer, len, 1000);
