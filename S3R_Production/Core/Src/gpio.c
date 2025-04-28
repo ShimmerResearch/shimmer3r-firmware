@@ -342,12 +342,12 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   switch (GPIO_Pin)
   {
   case GPIO_INTERNAL1_Pin:
-    if(!spi3Sens_buf.exg1Data_read)
+    if (!spi3Sens_buf.exg1Data_read)
     {
       ADS1292_dataReadFromChip1(spi3Sens_buf.ads1292rExg1Buf);
       spi3Sens_buf.exg1Data_read = 1;
     }
-  //  ADS1292_dataReadFromChip1(spi3Sens_buf.ads1292rExg1Buf);
+    //ADS1292_dataReadFromChip1(spi3Sens_buf.ads1292rExg1Buf);
     //TODO check if product is ExG unit
     ////EXG1 DRDY active low
     //if (shimmerStatus.sensing)
@@ -364,12 +364,12 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
     //}
     break;
   case GPIO_INTERNAL0_Pin:
-   if(!spi3Sens_buf.exg2Data_read)
+    if (!spi3Sens_buf.exg2Data_read)
     {
       ADS1292_dataReadFromChip2(spi3Sens_buf.ads1292rExg2Buf);
       spi3Sens_buf.exg2Data_read = 1;
     }
-    // ADS1292_dataReadFromChip2(spi3Sens_buf.ads1292rExg2Buf);
+    //ADS1292_dataReadFromChip2(spi3Sens_buf.ads1292rExg2Buf);
     //SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
     ////TODO check if product is ExG unit
     ////EXG2 DRDY active low
