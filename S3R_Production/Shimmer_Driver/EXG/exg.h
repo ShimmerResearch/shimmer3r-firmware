@@ -61,6 +61,13 @@
 #define ADS1292R_RESP1     0x09
 #define ADS1292R_RESP2     0x0A
 
+  typedef enum
+  {
+    EXG_CHIP1_DATA_READ_DONE = 0x01,
+    EXG_CHIP2_DATA_READ_DONE = 0x01,
+    EXG_DATA_AVAILABLE  = 0x03
+  } ExGDAtaStatus;
+
 //initialize both ADS1292R chips on ExG board
 //i.e. power them on and enable internal reference
 //leave both in SDATAC mode
