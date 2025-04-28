@@ -231,7 +231,6 @@ void ADS1292_chip1CsEnable(uint8_t enable)
 {
   if (enable)
   {
-    //Board_ExG_CS(0);
     //Ensure chip 2 is not enabled
     if (HAL_GPIO_ReadPin(EXG_CHIP2_CS_GPIO_Port, EXG_CHIP2_CS_Pin) == GPIO_PIN_RESET)
     {
@@ -241,7 +240,6 @@ void ADS1292_chip1CsEnable(uint8_t enable)
       //Board_RESP_CS(1);
       Board_EXG_CHIP2_CS(1);
     }
-    //Board_ECG_CS(0);
     Board_EXG_CHIP1_CS(0);
     //need to wait 10ns here, 2 clk cycles @ 216MHz
     while (0)

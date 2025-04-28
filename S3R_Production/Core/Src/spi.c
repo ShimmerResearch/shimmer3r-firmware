@@ -41,7 +41,9 @@ spi3ReadBuf spi3Sens_buf;
 SPITypeDef spi1Sens;
 SPITypeDef spi2Sens;
 SPITypeDef spi3Sens;
-
+uint8_t temp_exg1_data[9] = {0,};
+uint8_t temp_exg2_data[9] = {0,};
+uint8_t flag = 1;
 uint8_t expectedSpiBusCbFlags = 0, currentSpiBusCbFlags = 0;
 SPI_ADCTypeDef spiAdc;
 #endif
@@ -994,7 +996,7 @@ void SPI_pollSensors(void)
   }
   if (spi3Sens.sensorLen > 0)
   {
-    uint8_t flag = 1;
+
     if (flag)
     {
       EXG_enableInterrupts(0x03);
@@ -1263,23 +1265,50 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     break;
 
   case SPI3_ADS1292R_EXG1:
+
     spiSensingInfo->status = SPI_STAT_ADS1292R_EXG1_GET;
-    //ADS1292_dataReadFromChip1(spi3Sens_buf.ads1292rExg1Buf);
-    Board_EXG_CHIP1_CS(1);
+    if(spi3Sens_buf.exg1Data_read)
+    {
+      Board_EXG_CHIP1_CS(1);
+      EXG_prepareData(0, spi3Sens_buf.ads1292rExg1Buf,
+          temp_exg1_data,configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit);
+      spi3Sens_buf.exg1Data_read = 0;
+      spi3Sens_buf.isDataAvailable |= 0x1;
+    }
+    if(spi3Sens_buf.isDataAvailable == (uint8_t)(0x03))
+    {
+      memcpy(sensing.dataBuf + sensing.ptr.exg1, &(temp_exg1_data[0]), 9);
+      memcpy(sensing.dataBuf + sensing.ptr.exg2, &(temp_exg2_data[0]), 9);
+      spi3Sens_buf.isDataAvailable = 0;
+    }
+  /*  Board_EXG_CHIP1_CS(1);
     EXG_prepareData(0, spi3Sens_buf.ads1292rExg1Buf,
-        sensing.dataBuf + sensing.ptr.exg1,
-        configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit);
+         sensing.dataBuf + sensing.ptr.exg1,
+         configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit); */
     retVal = 1;
     break;
   case SPI3_ADS1292R_EXG2:
     spiSensingInfo->status = SPI_STAT_ADS1292R_EXG2_GET;
-    //ADS1292_dataReadFromChip2(spi3Sens_buf.ads1292rExg2Buf);
-    Board_EXG_CHIP2_CS(1);
-    EXG_prepareData(1, spi3Sens_buf.ads1292rExg2Buf,
-        sensing.dataBuf + sensing.ptr.exg2,
-        configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit);
+      if(spi3Sens_buf.exg2Data_read)
+    {
+      Board_EXG_CHIP2_CS(1);
+      EXG_prepareData(1, spi3Sens_buf.ads1292rExg2Buf,
+          temp_exg2_data,configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit);
+      spi3Sens_buf.isDataAvailable |= 0x2;
+      spi3Sens_buf.exg2Data_read = 0;
+    }
+    if(spi3Sens_buf.isDataAvailable == (uint8_t)(0x03))
+    {
+      memcpy(sensing.dataBuf + sensing.ptr.exg1, &(temp_exg1_data[0]), 9);
+      memcpy(sensing.dataBuf + sensing.ptr.exg2, &(temp_exg2_data[0]), 9);
+      spi3Sens_buf.isDataAvailable = 0;
+    }
+  /*  Board_EXG_CHIP2_CS(1);
+        EXG_prepareData(1, spi3Sens_buf.ads1292rExg2Buf,
+            sensing.dataBuf + sensing.ptr.exg2,
+            configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit); */
     retVal = 1;
-    break;
+     break;
   default:
 
     break;

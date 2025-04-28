@@ -151,6 +151,9 @@ extern "C"
   {
     uint8_t ads1292rExg1Buf[ADS1292_DATA_PACKET_LENGTH];
     uint8_t ads1292rExg2Buf[ADS1292_DATA_PACKET_LENGTH];
+    uint8_t exg1Data_read;
+    uint8_t exg2Data_read;
+    uint8_t isDataAvailable;
   } spi3ReadBuf;
 
   typedef struct
