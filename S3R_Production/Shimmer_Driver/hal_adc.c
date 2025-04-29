@@ -231,116 +231,116 @@ void S4_NORM_ADC_configureChannels(void)
     sensing.ptr.batteryAnalog = sensing.dataLen;
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = VBATT;
-#endif
-}
-
-//External ADC 0
-if (configBytes->chEnExtADC0)
-{
-  *channel_contents_ptr++ = EXTERNAL_ADC_0;
-  nbr_adc_chans += 1;
-  sensing.ptr.extADC0 = sensing.dataLen;
-  sensing.dataLen += 2;
-  adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_0;
-}
-
-//External ADC 1
-if (configBytes->chEnExtADC1)
-{
-  *channel_contents_ptr++ = EXTERNAL_ADC_1;
-  nbr_adc_chans += 1;
-  sensing.ptr.extADC1 = sensing.dataLen;
-  sensing.dataLen += 2;
-  adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_1;
-}
-
-//External ADC 2
-if (configBytes->chEnExtADC2)
-{
-  *channel_contents_ptr++ = EXTERNAL_ADC_2;
-  nbr_adc_chans += 1;
-  sensing.ptr.extADC2 = sensing.dataLen;
-  sensing.dataLen += 2;
-  adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_2;
-}
-
-//Internal ADC 0
-if (configBytes->chEnIntADC0)
-{
-  *channel_contents_ptr++ = INTERNAL_ADC_0;
-  nbr_adc_chans += 1;
-  sensing.ptr.intADC0 = sensing.dataLen;
-  sensing.dataLen += 2;
-  adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_0;
-}
-
-#if defined(SHIMMER4_SDK)
-//Internal ADC 4
-if (configBytes->chEnIntADC4)
-{
-  *channel_contents_ptr++ = INT_ADC_4;
-  nbr_adc_chans += 1;
-  sensing.ptr.intADC4 = sensing.dataLen;
-  sensing.dataLen += 2;
-  adc.sensorList[adc.sensorLen++] = INT_ADC_4;
-}
+  }
 #endif
 
-//Strain gauge
-if (configBytes->chEnBridgeAmp)
-{
-  *channel_contents_ptr++ = STRAIN_HIGH;
-  *channel_contents_ptr++ = STRAIN_LOW;
-  nbr_adc_chans += 2;
-  sensing.ptr.strainGauge = sensing.dataLen;
-  sensing.dataLen += 4;
-  adc.sensorList[adc.sensorLen++] = STRAIN_HIGH;
-  adc.sensorList[adc.sensorLen++] = STRAIN_LOW;
-}
-else
-{
-  //Internal ADC 1
-  if (configBytes->chEnIntADC1)
+  //External ADC 0
+  if (configBytes->chEnExtADC0)
   {
-    *channel_contents_ptr++ = INTERNAL_ADC_1;
+    *channel_contents_ptr++ = EXTERNAL_ADC_0;
     nbr_adc_chans += 1;
-    sensing.ptr.intADC1 = sensing.dataLen;
+    sensing.ptr.extADC0 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_1;
+    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_0;
   }
 
-  //Internal ADC 2
-  if (configBytes->chEnIntADC2)
+  //External ADC 1
+  if (configBytes->chEnExtADC1)
   {
-    *channel_contents_ptr++ = INTERNAL_ADC_2;
+    *channel_contents_ptr++ = EXTERNAL_ADC_1;
     nbr_adc_chans += 1;
-    sensing.ptr.intADC2 = sensing.dataLen;
+    sensing.ptr.extADC1 = sensing.dataLen;
     sensing.dataLen += 2;
-    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_2;
+    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_1;
   }
-}
 
-//Internal ADC 3
-if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
-{
-  if (configBytes->chEnGsr)
+  //External ADC 2
+  if (configBytes->chEnExtADC2)
   {
-    *channel_contents_ptr++ = GSR_RAW;
-    sensing.ptr.gsr = sensing.dataLen;
-    adc.sensorList[adc.sensorLen++] = GSR_RAW;
+    *channel_contents_ptr++ = EXTERNAL_ADC_2;
+    nbr_adc_chans += 1;
+    sensing.ptr.extADC2 = sensing.dataLen;
+    sensing.dataLen += 2;
+    adc.sensorList[adc.sensorLen++] = EXTERNAL_ADC_2;
+  }
+
+  //Internal ADC 0
+  if (configBytes->chEnIntADC0)
+  {
+    *channel_contents_ptr++ = INTERNAL_ADC_0;
+    nbr_adc_chans += 1;
+    sensing.ptr.intADC0 = sensing.dataLen;
+    sensing.dataLen += 2;
+    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_0;
+  }
+
+  #if defined(SHIMMER4_SDK)
+  //Internal ADC 4
+  if (configBytes->chEnIntADC4)
+  {
+    *channel_contents_ptr++ = INT_ADC_4;
+    nbr_adc_chans += 1;
+    sensing.ptr.intADC4 = sensing.dataLen;
+    sensing.dataLen += 2;
+    adc.sensorList[adc.sensorLen++] = INT_ADC_4;
+  }
+  #endif
+
+  //Strain gauge
+  if (configBytes->chEnBridgeAmp)
+  {
+    *channel_contents_ptr++ = STRAIN_HIGH;
+    *channel_contents_ptr++ = STRAIN_LOW;
+    nbr_adc_chans += 2;
+    sensing.ptr.strainGauge = sensing.dataLen;
+    sensing.dataLen += 4;
+    adc.sensorList[adc.sensorLen++] = STRAIN_HIGH;
+    adc.sensorList[adc.sensorLen++] = STRAIN_LOW;
   }
   else
   {
-    *channel_contents_ptr++ = INTERNAL_ADC_3;
-    sensing.ptr.intADC3 = sensing.dataLen;
-    adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
-  }
-  nbr_adc_chans += 1;
-  sensing.dataLen += 2;
-}
+    //Internal ADC 1
+    if (configBytes->chEnIntADC1)
+    {
+      *channel_contents_ptr++ = INTERNAL_ADC_1;
+      nbr_adc_chans += 1;
+      sensing.ptr.intADC1 = sensing.dataLen;
+      sensing.dataLen += 2;
+      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_1;
+    }
 
-sensing.nbrMcuAdcChans += nbr_adc_chans;
-sensing.ccLen += nbr_adc_chans;
+    //Internal ADC 2
+    if (configBytes->chEnIntADC2)
+    {
+      *channel_contents_ptr++ = INTERNAL_ADC_2;
+      nbr_adc_chans += 1;
+      sensing.ptr.intADC2 = sensing.dataLen;
+      sensing.dataLen += 2;
+      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_2;
+    }
+  }
+
+  //Internal ADC 3
+  if (configBytes->chEnIntADC3 || configBytes->chEnGsr)
+  {
+    if (configBytes->chEnGsr)
+    {
+      *channel_contents_ptr++ = GSR_RAW;
+      sensing.ptr.gsr = sensing.dataLen;
+      adc.sensorList[adc.sensorLen++] = GSR_RAW;
+    }
+    else
+    {
+      *channel_contents_ptr++ = INTERNAL_ADC_3;
+      sensing.ptr.intADC3 = sensing.dataLen;
+      adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_3;
+    }
+    nbr_adc_chans += 1;
+    sensing.dataLen += 2;
+  }
+
+  sensing.nbrMcuAdcChans += nbr_adc_chans;
+  sensing.ccLen += nbr_adc_chans;
 }
 
 #if defined(SHIMMER4_SDK) || SUPPORT_SR48_6_0
@@ -1101,13 +1101,6 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead)
   }
 #endif
 }
-
-#if defined(SHIMMER3R)
-bool areMcuAdcChannelsEnabled(void)
-{
-  return adc.sensorLen > 0;
-}
-#endif
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
