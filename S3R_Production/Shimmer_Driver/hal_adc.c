@@ -274,7 +274,7 @@ void S4_NORM_ADC_configureChannels(void)
     adc.sensorList[adc.sensorLen++] = INTERNAL_ADC_0;
   }
 
-  #if defined(SHIMMER4_SDK)
+#if defined(SHIMMER4_SDK)
   //Internal ADC 4
   if (configBytes->chEnIntADC4)
   {
@@ -284,7 +284,7 @@ void S4_NORM_ADC_configureChannels(void)
     sensing.dataLen += 2;
     adc.sensorList[adc.sensorLen++] = INT_ADC_4;
   }
-  #endif
+#endif
 
   //Strain gauge
   if (configBytes->chEnBridgeAmp)
