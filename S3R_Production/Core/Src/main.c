@@ -262,7 +262,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     //TODO only here for test purposes, will be moved elsewhere
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 128); //50% duty cycle
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 128); // 50% duty cycle
     HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
     HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
     HAL_Delay(1000);
@@ -354,11 +354,12 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
   if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
   {
-    //Action after PWM pulse completes
+    // Action after PWM pulse completes
     HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
     //printf("PWM pulse finished\r\n");
   }
 }
+
 
 STATTypeDef *GetStatus()
 {

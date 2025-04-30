@@ -60,7 +60,7 @@ void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  //htim2.Instance->CR1 |= TIM_CR1_OPM; //timer to stop after one PWM cycle
+ // htim2.Instance->CR1 |= TIM_CR1_OPM; //timer to stop after one PWM cycle
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
   {
