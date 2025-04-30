@@ -102,7 +102,6 @@ void MX_RTC_Init(void)
     sDate.Month = RTC_MONTH_JANUARY;
     sDate.Date = 0x1;
     sDate.Year = 0x70;
-
     if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
     {
       Error_Handler();
@@ -119,6 +118,15 @@ void MX_RTC_Init(void)
     sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
     sAlarm.AlarmDateWeekDay = 0x1;
     sAlarm.Alarm = RTC_ALARM_A;
+    if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /** Enable the Alarm B
+     */
+    sAlarm.AlarmTime.Minutes = 0x10;
+    sAlarm.Alarm = RTC_ALARM_B;
     if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
     {
       Error_Handler();
