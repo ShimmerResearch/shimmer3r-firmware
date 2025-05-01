@@ -63,9 +63,9 @@
 
 typedef enum
 {
-  EXG_CHIP1_DATA_READ_DONE = 0x01,
-  EXG_CHIP2_DATA_READ_DONE = 0x02,
-  EXG_DATA_AVAILABLE = 0x03
+  EXG_CHIP1 = 0x01,
+  EXG_CHIP2 = 0x02,
+  EXG_CHIP1_AND_CHIP2 = 0x03
 } ExGDAtaStatus;
 
 //initialize both ADS1292R chips on ExG board

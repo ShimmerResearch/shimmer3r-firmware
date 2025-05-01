@@ -342,51 +342,44 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   switch (GPIO_Pin)
   {
   case GPIO_INTERNAL1_Pin:
-    if (!spi3Sens_buf.exg1Data_read)
+    if (ShimBrd_isAds1292Present() && !spi3Sens_buf.exg1Data_read
+        && shimmerStatus.sensing && spi3Sens.sensorCnt == 0)
     {
-      ADS1292_dataReadFromChip1(spi3Sens_buf.ads1292rExg1Buf);
       spi3Sens_buf.exg1Data_read = 1;
+      checkIfExgDataReady();
     }
-    //ADS1292_dataReadFromChip1(spi3Sens_buf.ads1292rExg1Buf);
-    //TODO check if product is ExG unit
-    ////EXG1 DRDY active low
-    //if (shimmerStatus.sensing)
-    //{
-    //  //EXG_dataReadyChip1();
-    //  ext_cnt1++;
-    //  if (!(ext_cnt1 % 100))
-    //  {
-    //    __NOP();
-    //    __NOP();
-    //    __NOP();
-    //  }
-    //  EXG_gatherDataStart();
-    //}
     break;
   case GPIO_INTERNAL0_Pin:
-    if (!spi3Sens_buf.exg2Data_read)
+    if (ShimBrd_isAds1292Present() && !spi3Sens_buf.exg2Data_read
+        && shimmerStatus.sensing && spi3Sens.sensorCnt == 0)
     {
-      ADS1292_dataReadFromChip2(spi3Sens_buf.ads1292rExg2Buf);
       spi3Sens_buf.exg2Data_read = 1;
+      checkIfExgDataReady();
     }
-    //ADS1292_dataReadFromChip2(spi3Sens_buf.ads1292rExg2Buf);
-    //SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
-    ////TODO check if product is ExG unit
-    ////EXG2 DRDY active low
-    //if (shimmerStatus.sensing)
-    //{
-    //  //EXG_gatherDataStart();
-    //  __NOP();
-    //  __NOP();
-    //  __NOP();
-    //  //EXG_dataReadyChip2();
-    //}
     break;
   default:
     gpioExtiCommon(GPIO_Pin, 0);
     break;
   }
 }
+
+void checkIfExgDataReady(void)
+{
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
+
+  if (((configBytes->chEnExg1_16Bit || configBytes->chEnExg1_24Bit)
+      && !spi3Sens_buf.exg1Data_read)
+      || ((configBytes->chEnExg2_16Bit || configBytes->chEnExg2_24Bit)
+          && !spi3Sens_buf.exg2Data_read))
+  {
+    // Do nothing
+  }
+  else
+  {
+    SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
+  }
+}
+
 
 void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
 {
