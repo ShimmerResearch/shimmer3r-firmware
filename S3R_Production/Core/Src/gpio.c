@@ -342,44 +342,27 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   switch (GPIO_Pin)
   {
   case GPIO_INTERNAL1_Pin:
-    if (ShimBrd_isAds1292Present() && !spi3Sens_buf.exg1Data_read
-        && shimmerStatus.sensing && spi3Sens.sensorCnt == 0)
+    if (ShimBrd_isAds1292Present() && shimmerStatus.sensing)
     {
-      spi3Sens_buf.exg1Data_read = 1;
-      checkIfExgDataReady();
+      ADS1292_dataReadyChip1();
+#if EXG_USE_SINGLE_INT
+      ADS1292_dataReadyChip2();
+#endif
     }
     break;
   case GPIO_INTERNAL0_Pin:
-    if (ShimBrd_isAds1292Present() && !spi3Sens_buf.exg2Data_read
-        && shimmerStatus.sensing && spi3Sens.sensorCnt == 0)
+#if !EXG_USE_SINGLE_INT
+    if (ShimBrd_isAds1292Present() && shimmerStatus.sensing)
     {
-      spi3Sens_buf.exg2Data_read = 1;
-      checkIfExgDataReady();
+      ADS1292_dataReadyChip2();
     }
+#endif
     break;
   default:
     gpioExtiCommon(GPIO_Pin, 0);
     break;
   }
 }
-
-void checkIfExgDataReady(void)
-{
-  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
-
-  if (((configBytes->chEnExg1_16Bit || configBytes->chEnExg1_24Bit)
-      && !spi3Sens_buf.exg1Data_read)
-      || ((configBytes->chEnExg2_16Bit || configBytes->chEnExg2_24Bit)
-          && !spi3Sens_buf.exg2Data_read))
-  {
-    // Do nothing
-  }
-  else
-  {
-    SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
-  }
-}
-
 
 void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
 {
