@@ -786,4 +786,13 @@ void setupNextRtcMinuteAlarm(void)
   }
 }
 
+void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
+{
+//  __HAL_RTC_ALARMB_DISABLE(hrtc);
+//  __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRB);
+
+
+    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
+    //printf("Alarm B fired!\r\n");           // Debug print
+}
 /* USER CODE END 1 */
