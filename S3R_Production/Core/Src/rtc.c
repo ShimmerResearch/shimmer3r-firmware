@@ -786,13 +786,54 @@ void setupNextRtcMinuteAlarm(void)
   }
 }
 
+void setupAndStart10MinAlarm(void)
+{
+  RTC_AlarmTypeDef sAlarmB;
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef sDate;
+
+  // Always updating current time before scheduling
+  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);  // Required to unlock time registers
+
+  // Schedule Alarm B 10 minutes from now
+  sAlarmB.AlarmTime.Hours = sTime.Hours;
+
+  // Handle 10-minute wrap-around
+  if (sTime.Minutes > 49) {
+      sAlarmB.AlarmTime.Minutes = (sTime.Minutes + 10) % 60;
+      sAlarmB.AlarmTime.Hours = (sTime.Hours + 1) % 24;  // wrap hour if needed
+  } else {
+      sAlarmB.AlarmTime.Minutes = sTime.Minutes + 10;
+  }
+  sAlarmB.AlarmTime.Seconds = 0;  // clean base trigger
+
+  sAlarmB.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_SECONDS;
+  sAlarmB.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  sAlarmB.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarmB.AlarmDateWeekDay = 1;
+  sAlarmB.Alarm = RTC_ALARM_B;
+
+  // Retry until alarm is set
+  while (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarmB, RTC_FORMAT_BIN) != HAL_OK)
+  {
+  }
+}
+
 void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  //__HAL_RTC_ALARMB_DISABLE(hrtc);
-  //__HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRB);
-
+  stop10MinAlarm(); //stopping from triggering the Alarm multiple times.
   HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
   //printf("Alarm B fired!\r\n");           // Debug print
+
+  //setupandStart10MinAlarm(); // for the next interval (testing purposes)
+}
+
+void stop10MinAlarm(void)
+{
+  __HAL_RTC_ALARMB_DISABLE(hrtc); //disable Alarm B
+  __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRB); //disable Alarm trigger
+
 }
 
 /* USER CODE END 1 */
