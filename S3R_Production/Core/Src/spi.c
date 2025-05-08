@@ -1527,6 +1527,7 @@ void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     spi3Sens.sensorCnt = 0;
   }
 #endif
+>>>>>>> branch 'DEV-211_EXG_DMA_on_both_chips' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 }
 
 void SPI3_TxCpltCallback(SPI_HandleTypeDef *hspi)

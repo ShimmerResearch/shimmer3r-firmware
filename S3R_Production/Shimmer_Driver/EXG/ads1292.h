@@ -47,7 +47,7 @@
 #include <stdint.h>
 
 #define IS_EXG_DATA_READ_BLOCKING 0
-#define EXG_USE_SINGLE_INT 1
+#define EXG_USE_SINGLE_INT        1
 
 //initialise the SPI and other pins for use with the ADS1292
 //void ADS1292_init(void);
