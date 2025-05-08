@@ -1518,7 +1518,6 @@ void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     break;
   }
 
-<<<<<<< HEAD
 //  spi3Sens.status = SPI_STAT_IDLE;
 //  SpiSensing(&spi3Sens, SPI_NEXT_SENSOR);
 
@@ -1528,10 +1527,6 @@ void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     spi3Sens.sensorCnt = 0;
   }
 #endif
-=======
-  //spi3Sens.status = SPI_STAT_IDLE;
-  //SpiSensing(&spi3Sens, SPI_NEXT_SENSOR);
->>>>>>> branch 'DEV-211_EXG_DMA_on_both_chips' of https://github.com/ShimmerEngineering/FW_Shimmer3r.git
 }
 
 void SPI3_TxCpltCallback(SPI_HandleTypeDef *hspi)
