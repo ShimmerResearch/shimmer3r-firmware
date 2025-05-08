@@ -66,7 +66,6 @@ uint8_t dummy_tx_buf[9] = {
   0,
 };
 
-
 void ADS1292_init()
 {
   /*hspi_exg = hspi;
@@ -501,7 +500,8 @@ void ADS1292_dataReadFromChip1(uint8_t *buf)
   HAL_StatusTypeDef ret;
   ADS1292_chip1CsEnable(1);
 #if IS_EXG_DATA_READ_BLOCKING
-  ret = HAL_SPI_TransmitReceive(hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH, 1000);
+  ret = HAL_SPI_TransmitReceive(
+      hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH, 1000);
   ADS1292_chip1CsEnable(0);
   ADS1292_readDataComplete();
 #else
@@ -514,7 +514,8 @@ void ADS1292_dataReadFromChip2(uint8_t *buf)
   HAL_StatusTypeDef ret;
   ADS1292_chip2CsEnable(1);
 #if IS_EXG_DATA_READ_BLOCKING
-  ret = HAL_SPI_TransmitReceive(hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH, 1000);
+  ret = HAL_SPI_TransmitReceive(
+      hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH, 1000);
   ADS1292_chip2CsEnable(0);
   ADS1292_readDataComplete();
 #else
