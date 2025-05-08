@@ -796,17 +796,17 @@ void setupAndStartAlarm(void)
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-  // Step 2: Add 30 seconds and handle wraparound
+  //Step 2: Add 30 seconds and handle wraparound
   uint8_t new_seconds = (sTime.Seconds + 30) % 60;
   uint8_t carry_minute = (sTime.Seconds + 30 >= 60) ? 1 : 0;
   uint8_t new_minutes = (sTime.Minutes + carry_minute) % 60;
   uint8_t carry_hour = (carry_minute && sTime.Minutes == 59) ? 1 : 0;
   uint8_t new_hours = (sTime.Hours + carry_hour) % 24;
 
-  // Step 3: Fill alarm time
+  //Step 3: Fill alarm time
   sAlarmB.AlarmTime.Seconds = new_seconds;
   sAlarmB.AlarmTime.Minutes = new_minutes;
-  sAlarmB.AlarmTime.Hours   = new_hours;
+  sAlarmB.AlarmTime.Hours = new_hours;
 
   sAlarmB.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_SECONDS;
   sAlarmB.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
@@ -824,9 +824,9 @@ void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
 {
   stopAlarm(); //stopping from triggering the Alarm multiple times.
   HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
- // printf("Alarm B fired!\r\n");           // Debug print
+  //printf("Alarm B fired!\r\n");           // Debug print
 
-//  setupAndStartAlarm(); // for the next interval (testing purposes)
+  //setupAndStartAlarm(); // for the next interval (testing purposes)
 }
 
 void stopAlarm(void)
