@@ -786,7 +786,7 @@ void setupNextRtcMinuteAlarm(void)
   }
 }
 
-void setupAndStart10MinAlarm(void)
+void setupAndStartAlarm(void)
 {
   RTC_AlarmTypeDef sAlarmB;
   RTC_TimeTypeDef sTime;
@@ -794,22 +794,19 @@ void setupAndStart10MinAlarm(void)
 
   //Always updating current time before scheduling
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN); //Required to unlock time registers
+  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-  //Schedule Alarm B 10 minutes from now
-  sAlarmB.AlarmTime.Hours = sTime.Hours;
+  // Step 2: Add 30 seconds and handle wraparound
+  uint8_t new_seconds = (sTime.Seconds + 30) % 60;
+  uint8_t carry_minute = (sTime.Seconds + 30 >= 60) ? 1 : 0;
+  uint8_t new_minutes = (sTime.Minutes + carry_minute) % 60;
+  uint8_t carry_hour = (carry_minute && sTime.Minutes == 59) ? 1 : 0;
+  uint8_t new_hours = (sTime.Hours + carry_hour) % 24;
 
-  //Handle 10-minute wrap-around
-  if (sTime.Minutes > 49)
-  {
-    sAlarmB.AlarmTime.Minutes = (sTime.Minutes + 10) % 60;
-    sAlarmB.AlarmTime.Hours = (sTime.Hours + 1) % 24; //wrap hour if needed
-  }
-  else
-  {
-    sAlarmB.AlarmTime.Minutes = sTime.Minutes + 10;
-  }
-  sAlarmB.AlarmTime.Seconds = 0; //clean base trigger
+  // Step 3: Fill alarm time
+  sAlarmB.AlarmTime.Seconds = new_seconds;
+  sAlarmB.AlarmTime.Minutes = new_minutes;
+  sAlarmB.AlarmTime.Hours   = new_hours;
 
   sAlarmB.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_SECONDS;
   sAlarmB.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
@@ -825,14 +822,14 @@ void setupAndStart10MinAlarm(void)
 
 void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  stop10MinAlarm(); //stopping from triggering the Alarm multiple times.
+  stopAlarm(); //stopping from triggering the Alarm multiple times.
   HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
-  //printf("Alarm B fired!\r\n");           // Debug print
+ // printf("Alarm B fired!\r\n");           // Debug print
 
-  //setupandStart10MinAlarm(); // for the next interval (testing purposes)
+//  setupAndStartAlarm(); // for the next interval (testing purposes)
 }
 
-void stop10MinAlarm(void)
+void stopAlarm(void)
 {
   __HAL_RTC_ALARMB_DISABLE(hrtc);                //disable Alarm B
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRB); //disable Alarm trigger
