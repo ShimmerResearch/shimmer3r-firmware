@@ -32,7 +32,7 @@
  * BLE:   {-2,0,2,4,6,8,10,10}, */
 #define BT_TX_POWER                    8
 
-#define CONNECTION_TIMEOUT_MS 10000 // 10 seconds timeout
+#define CONNECTION_TIMEOUT_MS          10000 //10 seconds timeout
 
 uint8_t advNameMacIdStartIdx = 11;
 static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
@@ -1074,35 +1074,35 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_BT_CONNECT:
-  #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-      printf("RX: idx_bt_connected: conn_handle=");
-      printHex8(packet->payload.rsp_bt_connect.conn_handle);
-      printf(", Result");
-      printHexMac(packet->payload.rsp_bt_connect.result);
-      printf("\r\n");
-  #endif
-      break;
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: idx_bt_connected: conn_handle=");
+    printHex8(packet->payload.rsp_bt_connect.conn_handle);
+    printf(", Result");
+    printHexMac(packet->payload.rsp_bt_connect.result);
+    printf("\r\n");
+#endif
+    break;
 
-    case EZS_IDX_RSP_BT_CANCEL_CONNECTION:
-  #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-      rsp_bt_cancel_connection = packet->payload.rsp_bt_cancel_connection;
-  #endif
-      break;
-    case EZS_IDX_RSP_BT_DISCONNECT:
-  #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-      rsp_bt_disconnect = packet->payload.rsp_bt_disconnect;
-  #endif
-      break;
+  case EZS_IDX_RSP_BT_CANCEL_CONNECTION:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    rsp_bt_cancel_connection = packet->payload.rsp_bt_cancel_connection;
+#endif
+    break;
+  case EZS_IDX_RSP_BT_DISCONNECT:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    rsp_bt_disconnect = packet->payload.rsp_bt_disconnect;
+#endif
+    break;
 
-    case EZS_IDX_EVT_BT_CONNECTION_FAILED:
-    #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-        printf("RX: idx_bt_connection_fail: conn_handle=");
-        printHex8(packet->payload.evt_bt_connection_failed.conn_handle);
-        printf(", Reason");
-        printHex8(packet->payload.evt_bt_connection_failed.reason);
-        printf("\r\n");
-    #endif
-        break;
+  case EZS_IDX_EVT_BT_CONNECTION_FAILED:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: idx_bt_connection_fail: conn_handle=");
+    printHex8(packet->payload.evt_bt_connection_failed.conn_handle);
+    printf(", Reason");
+    printHex8(packet->payload.evt_bt_connection_failed.reason);
+    printf("\r\n");
+#endif
+    break;
 
     /* -------- Shimmer added end -------- */
 
@@ -1235,7 +1235,7 @@ uint8_t BT_connect(uint8_t *addr)
  0x03 -> Already connected
  else other error*/
 
-  while(1)
+  while (1)
   {
     if (status == 0) //Success case
     {
@@ -1296,8 +1296,9 @@ uint8_t BT_connectionFailed(uint8_t conn_handle, uint16_t reason)
 {
   printf("Connection Failed! Conn Handle: %02X, Reason: %04X\n", conn_handle, reason);
 
-  // Handling failure cases
-  switch (reason) {
+  //Handling failure cases
+  switch (reason)
+  {
   case 0x0001:
     printf("Reason: Authentication Failed\n");
     break;
@@ -1312,4 +1313,3 @@ uint8_t BT_connectionFailed(uint8_t conn_handle, uint16_t reason)
     break;
   }
 }
-

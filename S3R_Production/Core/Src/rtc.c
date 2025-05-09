@@ -800,7 +800,9 @@ void setupAndStartAlarm(void)
   {
     sAlarmB.AlarmTime.Minutes = (sTime.Minutes + 1) % 60;
     if (sTime.Minutes == 59)
-        sAlarmB.AlarmTime.Hours = (sTime.Hours + 1) % 24;
+    {
+      sAlarmB.AlarmTime.Hours = (sTime.Hours + 1) % 24;
+    }
   }
 
   sAlarmB.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_SECONDS;
