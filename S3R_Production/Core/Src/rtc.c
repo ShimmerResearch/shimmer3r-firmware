@@ -796,17 +796,12 @@ void setupAndStartAlarm(void)
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-  //Step 2: Add 30 seconds and handle wraparound
-  uint8_t new_seconds = (sTime.Seconds + 30) % 60;
-  uint8_t carry_minute = (sTime.Seconds + 30 >= 60) ? 1 : 0;
-  uint8_t new_minutes = (sTime.Minutes + carry_minute) % 60;
-  uint8_t carry_hour = (carry_minute && sTime.Minutes == 59) ? 1 : 0;
-  uint8_t new_hours = (sTime.Hours + carry_hour) % 24;
-
-  //Step 3: Fill alarm time
-  sAlarmB.AlarmTime.Seconds = new_seconds;
-  sAlarmB.AlarmTime.Minutes = new_minutes;
-  sAlarmB.AlarmTime.Hours = new_hours;
+  if (sTime.Seconds == 59)
+  {
+    sAlarmB.AlarmTime.Minutes = (sTime.Minutes + 1) % 60;
+    if (sTime.Minutes == 59)
+        sAlarmB.AlarmTime.Hours = (sTime.Hours + 1) % 24;
+  }
 
   sAlarmB.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_SECONDS;
   sAlarmB.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
