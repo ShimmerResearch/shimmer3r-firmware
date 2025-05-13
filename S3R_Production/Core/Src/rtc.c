@@ -820,12 +820,12 @@ void setupAndStartAlarm(void)
 
 void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  alarm_counter ++;
+  alarm_counter++;
   //stopAlarm(); //stopping from triggering the Alarm multiple times.
-//  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
+  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
   //printf("Alarm B fired!\r\n");           // Debug print
 
-  setupAndStartAlarm(); // for the next interval (testing purposes)
+  setupAndStartAlarm(); //for the next interval (testing purposes)
 }
 
 void stopAlarm(void)
