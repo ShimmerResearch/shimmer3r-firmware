@@ -44,13 +44,6 @@
 #include "hal_Board.h"
 #include <string.h>
 
-//use 843.75Khz, not 13.5Mhz
-//#define USE_843_75KHZ 1
-//#ifndef USE_843_75KHZ
-//#define USE_13_5MHZ
-//#endif
-//uint8_t USE_843_75KHZ;
-
 void (*ADS1292_dataReadDone_cb)(void);
 
 uint8_t ads1292Uca0RxIsr(void);
@@ -68,24 +61,8 @@ uint8_t dummy_tx_buf[9] = {
 
 void ADS1292_init()
 {
-  /*hspi_exg = hspi;
-  if (hspi_exg->Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
-  {
-    USE_843_75KHZ = 1;
-  }
-  else
-  { //if (hspi_exg.Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
-    USE_843_75KHZ = 1;
-  }
-
-  Board_EXG_RESET_N(0);
-  Board_ExG_CS(1);
-  Board_ECG_CS(1);
-  Board_RESP_CS(1);
-*/
   Board_EXG_RESET_N(1);
   HAL_Delay(1000); //Datasheet states to wait 1s for power-on reset
-  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
   activeBuffer = chip1Buffer1;
   chip1ReadPending = 0;
   chip2ReadPending = 0;
@@ -94,7 +71,6 @@ void ADS1292_init()
   rxCount = 0;
   chip2Enabled = 0;
   chipBusy = 0;
-  //UCA0_isrActivate(UCA0_isrRegister(ads1292Uca0RxIsr, ads1292Uca0TxIsr));
 }
 
 void setSpiHandle(SPI_HandleTypeDef *hspi)
@@ -112,17 +88,6 @@ HAL_StatusTypeDef ADS1292_Tx1Byte(uint8_t data)
   //one byte write needs 7.8us in total
   uint8_t tx_buf[] = { data };
   HAL_StatusTypeDef res = HAL_OK;
-  /*if (USE_843_75KHZ == 1)
-  {
-    Board_delayMicros(8);
-    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //9.48us
-  }
-  else
-  {
-    Board_delayMicros(8);
-    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //0.59us
-                                              //Board_delayMicros(8);
-  } */
   res = HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 100);
   return res;
 }
@@ -130,26 +95,14 @@ HAL_StatusTypeDef ADS1292_Tx1Byte(uint8_t data)
 HAL_StatusTypeDef ADS1292_Rx1Byte(uint8_t *buf)
 {
   //one byte read needs 7.8us in total
-  /* if (USE_843_75KHZ == 1)
-   {
-     Board_delayMicros(8);
-     HAL_SPI_Receive(hspi_exg, buf, 1, 5); //9.48us
-   }
-   else
-   {
-     Board_delayMicros(8);
-     HAL_SPI_Receive(hspi_exg, buf, 1, 5); //0.59us
-                                           //Board_delayMicros(8);
-   }*/
   HAL_StatusTypeDef res = HAL_OK;
-  res = HAL_SPI_Receive(hspi_exg, buf, 1, 5);
+  res = HAL_SPI_Receive(hspi_exg, buf, 1, 10);
   return res;
 }
 
 HAL_StatusTypeDef ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata)
 {
   HAL_StatusTypeDef res = HAL_OK;
-
   uint8_t tx_buf[2];
   tx_buf[0] = startaddress | RREG;
   tx_buf[1] = size - 1;
@@ -178,7 +131,6 @@ HAL_StatusTypeDef ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *r
 HAL_StatusTypeDef ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata)
 {
   HAL_StatusTypeDef res = HAL_OK;
-
   uint8_t tx_buf[2];
   tx_buf[0] = startaddress | WREG;
   tx_buf[1] = size - 1;
@@ -193,7 +145,6 @@ HAL_StatusTypeDef ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *
   {
     return res;
   }
-
   while (size--)
   {
     res = ADS1292_Tx1Byte(*(wdata++));
@@ -340,8 +291,6 @@ HAL_StatusTypeDef ADS1292_offsetCal(void)
 
 HAL_StatusTypeDef ADS1292_enableInternalReference(void)
 {
-  //uint8_t tx_buf = 0xA0;
-  //ADS1292_Tx1Byte(tx_buf);
   uint8_t data[] = { 0x88 };
   HAL_StatusTypeDef res = HAL_OK;
   res = ADS1292_regWrite(ADS1x9x_REG_CONFIG2, 1, data);
@@ -427,7 +376,6 @@ void ADS1292_dataReadyChip1(void)
       {
         activeBuffer = chip1Buffer1;
       }
-
       ADS1292_dataReadFromChip1(activeBuffer);
     }
   }

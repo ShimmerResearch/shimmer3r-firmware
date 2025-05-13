@@ -50,7 +50,6 @@
 #define EXG_USE_SINGLE_INT        1
 
 //initialise the SPI and other pins for use with the ADS1292
-//void ADS1292_init(void);
 void ADS1292_init();
 void ADS1292_enableChip2(uint8_t en);
 HAL_StatusTypeDef ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata);
