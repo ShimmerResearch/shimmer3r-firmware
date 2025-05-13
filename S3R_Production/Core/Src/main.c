@@ -358,7 +358,7 @@ void btInitialise(void)
 
   //20 * 100ms = 2s per baud rate attempt
   btCommWithDiffBaudRates(false, 50U);
-
+  ShimSdSync_init(InitialiseBtAfterBoot(), BtStop(isCalledFromMain));
   SHIMMER_PRINTF("BT init end\r\n");
 }
 
