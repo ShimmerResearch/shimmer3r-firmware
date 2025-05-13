@@ -1042,7 +1042,7 @@ void SPI_stopSensing()
       EXG_stop(0); //probably not needed
     }
     EXG_powerOff();
-}
+  }
 
   resetGsrPwrAndRange();
   if (ads7028_areAnyChannelsEnabled())
@@ -1427,10 +1427,10 @@ void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     ADS1292_readDataComplete();
     break;
   case SPI3_ADS1292R_EXG2:
-     ADS1292_chip2CsEnable(0);
-     ADS1292_readDataComplete();
+    ADS1292_chip2CsEnable(0);
+    ADS1292_readDataComplete();
     break;
-     default:
+  default:
     break;
   }
   spi3Sens.sensorCnt++;

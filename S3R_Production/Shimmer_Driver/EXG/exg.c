@@ -314,10 +314,10 @@ void EXG_prepareData(uint8_t chip, uint8_t *data, uint8_t *buf, uint8_t size)
     {
       //16-bit
       buf[1] = (uint8_t) (((data[4] >> 7) & 0x01) + ((data[3] << 1) & 0x7E))
-               + (data[3] & 0x80);
+          + (data[3] & 0x80);
       buf[2] = (uint8_t) (((data[5] >> 7) & 0x01) + ((data[4] << 1) & 0xFE));
       buf[3] = (uint8_t) (((data[7] >> 7) & 0x01) + ((data[6] << 1) & 0x7E))
-               + (data[6] & 0x80);
+          + (data[6] & 0x80);
       buf[4] = (uint8_t) (((data[8] >> 7) & 0x01) + ((data[7] << 1) & 0xFE));
     }
     else
