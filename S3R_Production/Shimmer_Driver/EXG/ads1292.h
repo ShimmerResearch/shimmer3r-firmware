@@ -46,6 +46,9 @@
 #include "stm32u5xx_hal.h"
 #include <stdint.h>
 
+#define IS_EXG_DATA_READ_BLOCKING 0
+#define EXG_USE_SINGLE_INT        1
+
 //initialise the SPI and other pins for use with the ADS1292
 //void ADS1292_init(void);
 void ADS1292_init();
@@ -107,15 +110,14 @@ uint8_t ADS1292_readDataChip2(uint8_t *data);
 
 //Tell the driver that the data is ready to be read from chipX
 void ADS1292_dataReadyChip1(void);
+void ADS1292_dataReadyChip2(void);
 
-//void ADS1292_dataReadFromChip1(void);
-//void ADS1292_dataReadFromChip2(void);
+void ADS1292_readDataComplete(void);
+
 void ADS1292_dataReadFromChip1(uint8_t *buf);
 void ADS1292_dataReadFromChip2(uint8_t *buf);
 
 void ADS1292_gatherDataInit(void (*done_cb)(void));
-//void ADS1292_gatherDataStart(void);
-void ADS1292_gatherDataDone(void);
 
 #define ADS1292_DATA_PACKET_LENGTH 9
 /****************************************************************/
