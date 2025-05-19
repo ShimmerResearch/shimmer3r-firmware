@@ -42,8 +42,13 @@ SPITypeDef spi1Sens;
 SPITypeDef spi2Sens;
 SPITypeDef spi3Sens;
 
+//uint8_t temp_exg1_data[ADS1292_DATA_PACKET_LENGTH] = {
+//  0,
+//};
+//uint8_t temp_exg2_data[ADS1292_DATA_PACKET_LENGTH] = {
+//  0,
+//};
 uint8_t expectedSpiBusCbFlags = 0, currentSpiBusCbFlags = 0;
-
 SPI_ADCTypeDef spiAdc;
 #endif
 
@@ -241,13 +246,9 @@ void MX_SPI3_Init(void)
     }
     /* USER CODE BEGIN SPI3_Init 2 */
 
-    //TODO switch over approach to match that being implemented by SPI1 and SPI2
-    //HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI3_TxRxCpltCallback);
-    //HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_COMPLETE_CB_ID, SPI3_TxCpltCallback);
-    //HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_RX_COMPLETE_CB_ID, SPI3_RxCpltCallback);
-    // HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
+    HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_TX_RX_COMPLETE_CB_ID, SPI3_TxRxCpltCallback);
+    HAL_SPI_RegisterCallback(&hspi3, HAL_SPI_ERROR_CB_ID, SPI_ErrorCallback);
     hspiExg = &hspi3;
-    EXG_init(hspiExg);
   }
 
   /* USER CODE END SPI3_Init 2 */
@@ -663,8 +664,8 @@ void SPI3_DeInit(void)
   //ads1292r_exg2_unselectDevice();
 
   //Board_SW_SPI2(0);
-  ADS1292_chip1CsEnable(1);
-  ADS1292_chip2CsEnable(1);
+  ADS1292_chip1CsEnable(0);
+  ADS1292_chip2CsEnable(0);
 }
 
 void SPI_configureChannels()
@@ -871,10 +872,10 @@ void SPI_startSensing()
   {
     MX_SPI2_Init();
   }
-  if (spi3Sens.sensorLen > 0)
-  {
-    MX_SPI3_Init();
-  }
+  //if (spi3Sens.sensorLen > 0)
+  //{
+  //  MX_SPI3_Init();
+  //}
 
 #if defined(SHIMMER3R)
   /* SPI1 */
@@ -928,6 +929,8 @@ void SPI_startSensing()
       && (configBytes->chEnExg1_24Bit || configBytes->chEnExg2_24Bit
           || configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit))
   {
+    ADS1292_init();
+    MX_SPI3_Init();
     EXG_init(hspiExg);
     if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
     {
@@ -976,6 +979,19 @@ void SPI_startSensing()
     {
       EXG_start(1);
     }
+
+    uint8_t intMask = 0;
+    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+    {
+      intMask |= ADS1292_DRDY_INT_CHIP1;
+    }
+#if !EXG_USE_SINGLE_INT
+    if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+    {
+      intMask |= ADS1292_DRDY_INT_CHIP2;
+    }
+#endif
+    EXG_enableInterrupts(intMask);
   }
 }
 
@@ -992,29 +1008,53 @@ void SPI_pollSensors(void)
   {
     SpiSensing(&spi2Sens, SPI_FIRST_SENSOR);
   }
-  if (spi3Sens.sensorLen > 0)
-  {
-    SpiSensing(&spi3Sens, SPI_FIRST_SENSOR);
-  }
 
 #endif
 
-  /*
   //ExG (SPI)
   if (ShimBrd_isAds1292Present())
   {
     //exg
-    gConfigBytes *configBytes = ShimConfig_getStoredConfig();
-    if (configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit)
+    gConfigBytes *storedConfigPtr = ShimConfig_getStoredConfig();
+    //if (storedConfigPtr->chEnExg1_24Bit || storedConfigPtr->chEnExg1_16Bit)
+    //{
+    ////      EXG_readData(0, 0, sensing.dataBuf + sensing.ptr.exg1);
+    //memcpy(temp_exg1_data, spi3Sens_buf.ads1292rExg1Buf, ADS1292_DATA_PACKET_LENGTH);
+    //EXG_prepareData(0, temp_exg1_data, sensing.dataBuf + sensing.ptr.exg1,
+    //    storedConfigPtr->chEnExg1_16Bit || storedConfigPtr->chEnExg2_16Bit);
+    //}
+    //if (storedConfigPtr->chEnExg2_24Bit || storedConfigPtr->chEnExg2_16Bit)
+    //{
+    ////      EXG_readData(1, 0, sensing.dataBuf + sensing.ptr.exg2);
+    //memcpy(temp_exg2_data, spi3Sens_buf.ads1292rExg2Buf, ADS1292_DATA_PACKET_LENGTH);
+    //EXG_prepareData(0, temp_exg2_data, sensing.dataBuf + sensing.ptr.exg2,
+    //    storedConfigPtr->chEnExg1_16Bit || storedConfigPtr->chEnExg2_16Bit);
+    //}
+
+    if (storedConfigPtr->chEnExg1_24Bit)
     {
-      EXG_readData(0, 0, sensing.dataBuf + sensing.ptr.exg1);
+      EXG_readData(0, 0, &sensing.dataBuf[sensing.ptr.exg1]);
     }
-    if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
+    else if (storedConfigPtr->chEnExg1_16Bit)
     {
-      EXG_readData(1, 0, sensing.dataBuf + sensing.ptr.exg2);
+      EXG_readData(0, 1, &sensing.dataBuf[sensing.ptr.exg1]);
     }
+    if (storedConfigPtr->chEnExg2_24Bit)
+    {
+      EXG_readData(1, 0, &sensing.dataBuf[sensing.ptr.exg2]);
+      if (!(sensing.dataBuf[sensing.ptr.exg2 + 1] == 0x00
+              || sensing.dataBuf[sensing.ptr.exg2 + 1] == 0xff))
+      {
+        __NOP();
+      }
+    }
+    else if (storedConfigPtr->chEnExg2_16Bit)
+    {
+      EXG_readData(1, 1, &sensing.dataBuf[sensing.ptr.exg2]);
+    }
+
+    SPI_busGatherDataDone_cb(spi3Sens.busId);
   }
-  */
 }
 
 void SPI_stopSensing()
@@ -1110,7 +1150,15 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
   {
     spiSensingInfo->status = SPI_STAT_IDLE;
     spiSensingInfo->sensorCnt = 0;
-    SPI_busGatherDataDone_cb(spiSensingInfo->busId);
+    if (spiSensingInfo->busId == SPI3_BUS_FLAG)
+    {
+      spi3Sens_buf.exg1Data_read = 0;
+      spi3Sens_buf.exg2Data_read = 0;
+    }
+    else
+    {
+      SPI_busGatherDataDone_cb(spiSensingInfo->busId);
+    }
   }
   else if (spiSensingInfo->sensorCnt < spiSensingInfo->sensorLen)
   {
@@ -1123,7 +1171,17 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
       {
         spiSensingInfo->status = SPI_STAT_IDLE;
         spiSensingInfo->sensorCnt = 0;
-        SPI_busGatherDataDone_cb(spiSensingInfo->busId);
+
+        /* SPI3 complete callback is ha           */
+        if (spiSensingInfo->busId == SPI3_BUS_FLAG)
+        {
+          spi3Sens_buf.exg1Data_read = 0;
+          spi3Sens_buf.exg2Data_read = 0;
+        }
+        else
+        {
+          SPI_busGatherDataDone_cb(spiSensingInfo->busId);
+        }
         break;
       }
     }
@@ -1142,6 +1200,7 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
 uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 {
   uint8_t retVal = 0;
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   switch (spiSensingInfo->sensorList[spiSensingInfo->sensorCnt])
   {
@@ -1252,19 +1311,54 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       spiSensingInfo->status = SPI_STAT_LIS3MDL_MAG_GET;
       lis3mdl_mag_get(spi2Sens_buf.lis3mdlMagBuf);
       retVal = 1;
-    }
-    break;
+    } //break;
 
-  case SPI3_ADS1292R_EXG1:
-    //TODO
-    break;
-  case SPI3_ADS1292R_EXG2:
-    //TODO
-    break;
+    //case SPI3_ADS1292R_EXG1:
+    //  spiSensingInfo->status = SPI_STAT_ADS1292R_EXG1_GET;
+    ////    Board_EXG_CHIP1_CS(0);
+    //ADS1292_dataReadFromChip1(spi3Sens_buf.ads1292rExg1Buf);
+    //
+    ////    if (spi3Sens_buf.exg1Data_read)
+    ////    {
+    ////      Board_EXG_CHIP1_CS(1);
+    ////      EXG_prepareData(0, spi3Sens_buf.ads1292rExg1Buf, temp_exg1_data,
+    ////          configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit);
+    ////      spi3Sens_buf.exg1Data_read = 0;
+    ////      spi3Sens_buf.isDataAvailable |= EXG_CHIP1;
+    ////    }
+    ////    if (spi3Sens_buf.isDataAvailable == EXG_CHIP1_AND_CHIP2)
+    ////    {
+    ////      memcpy(sensing.dataBuf + sensing.ptr.exg1, &(temp_exg1_data[0]),
+    ///ADS1292_DATA_PACKET_LENGTH); /      memcpy(sensing.dataBuf +
+    ///sensing.ptr.exg2, &(temp_exg2_data[0]), ADS1292_DATA_PACKET_LENGTH); /
+    ///spi3Sens_buf.isDataAvailable = 0; /    }
+    //retVal = 1;
+    //break;
+    //case SPI3_ADS1292R_EXG2:
+    //spiSensingInfo->status = SPI_STAT_ADS1292R_EXG2_GET;
+    ////    Board_EXG_CHIP2_CS(0);
+    //ADS1292_dataReadFromChip2(spi3Sens_buf.ads1292rExg2Buf);
+    //
+    ////    if (spi3Sens_buf.exg2Data_read)
+    ////    {
+    ////      Board_EXG_CHIP2_CS(1);
+    ////      EXG_prepareData(1, spi3Sens_buf.ads1292rExg2Buf, temp_exg2_data,
+    ////          configBytes->chEnExg1_16Bit || configBytes->chEnExg2_16Bit);
+    ////      spi3Sens_buf.isDataAvailable |= EXG_CHIP2;
+    ////      spi3Sens_buf.exg2Data_read = 0;
+    ////    }
+    ////    if (spi3Sens_buf.isDataAvailable == EXG_CHIP1_AND_CHIP2)
+    ////    {
+    ////      memcpy(sensing.dataBuf + sensing.ptr.exg1, &(temp_exg1_data[0]),
+    ///ADS1292_DATA_PACKET_LENGTH); /      memcpy(sensing.dataBuf +
+    ///sensing.ptr.exg2, &(temp_exg2_data[0]), ADS1292_DATA_PACKET_LENGTH); /
+    ///spi3Sens_buf.isDataAvailable = 0; /    }
+    //retVal = 1;
+    //break;
   default:
+
     break;
   }
-
   return retVal;
 }
 
@@ -1405,32 +1499,34 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+  //gConfigBytes *configBytes = ShimConfig_getStoredConfig();
+
+#if !IS_EXG_DATA_READ_BLOCKING
   switch (spi3Sens.sensorList[spi3Sens.sensorCnt])
   {
   case SPI3_ADS1292R_EXG1:
-    //TODO harmonise the "UnselectDevice" approach being implemented for SPI1
-    //and SPI2 with the #defines as was previously implemented for the
-    //Shimmer4_SDK ads1292r_exg1_UnselectDevice();
-    //Board_ECG_CS(0);
-    Board_EXG_CHIP1_CS(1);
-    memcpy(sensing.dataBuf + sensing.ptr.exg1,
-        &spi3Sens_buf.ads1292rExg1Buf[SPI_DMA_TXRX_OFFSET],
-        sizeof(spi3Sens_buf.ads1292rExg1Buf) - SPI_DMA_TXRX_OFFSET);
+    ADS1292_chip1CsEnable(0);
+    ///Board_EXG_CHIP1_CS(1);
+    ADS1292_readDataComplete();
     break;
   case SPI3_ADS1292R_EXG2:
-    //ads1292r_exg2_UnselectDevice();
-    // Board_RESP_CS(0);
-    Board_EXG_CHIP2_CS(1);
-    memcpy(sensing.dataBuf + sensing.ptr.exg2,
-        &spi3Sens_buf.ads1292rExg2Buf[SPI_DMA_TXRX_OFFSET],
-        sizeof(spi3Sens_buf.ads1292rExg2Buf) - SPI_DMA_TXRX_OFFSET);
+    ADS1292_chip2CsEnable(0);
+    //Board_EXG_CHIP2_CS(1);
+    ADS1292_readDataComplete();
     break;
   default:
     break;
   }
 
-  spi3Sens.status = SPI_STAT_IDLE;
-  SpiSensing(&spi3Sens, SPI_NEXT_SENSOR);
+  //spi3Sens.status = SPI_STAT_IDLE;
+  //SpiSensing(&spi3Sens, SPI_NEXT_SENSOR);
+
+  spi3Sens.sensorCnt++;
+  if (spi3Sens.sensorCnt == spi3Sens.sensorLen)
+  {
+    spi3Sens.sensorCnt = 0;
+  }
+#endif
 }
 
 void SPI3_TxCpltCallback(SPI_HandleTypeDef *hspi)

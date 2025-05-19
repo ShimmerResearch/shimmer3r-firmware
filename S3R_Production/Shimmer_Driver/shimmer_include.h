@@ -47,7 +47,8 @@
 #endif
 #include "CAT24C16/CAT24C16.h"
 #include "CAT24C16/hal_CAT24C16.h"
-#include "EXG\exg.h"
+#include "EXG/ads1292.h"
+#include "EXG/exg.h"
 #include "GSRTestRig/gsrTestRig.h"
 #include "hal_Board.h"
 #include "hal_CRC.h"
