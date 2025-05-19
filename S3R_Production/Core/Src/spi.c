@@ -758,11 +758,11 @@ void SPI_configureChannels()
     spi2Sens.sensorList[spi2Sens.sensorLen++] = SPI2_LIS2DW12_ACCEL;
   }
 
-  if (configBytes->chEnMag)
+  if (configBytes->chEnAltMag)
   {
-    *channel_contents_ptr++ = X_MAG;
-    *channel_contents_ptr++ = Y_MAG;
-    *channel_contents_ptr++ = Z_MAG;
+    *channel_contents_ptr++ = X_ALT_MAG;
+    *channel_contents_ptr++ = Y_ALT_MAG;
+    *channel_contents_ptr++ = Z_ALT_MAG;
     sensing.nbrSpiChans += 3;
     sensing.ptr.mag2 = sensing.dataLen;
     sensing.dataLen += 6;
@@ -915,10 +915,10 @@ void SPI_startSensing()
         configBytes->wrAccelRange, ShimConfig_wrAccelModeGet());
   }
 
-  if (configBytes->chEnMag)
+  if (configBytes->chEnAltMag)
   {
-    lis3mdl_configure(shimmerSamplingFreq, ShimConfig_configByteMagRateGet(),
-        configBytes->magRange);
+    lis3mdl_configure(shimmerSamplingFreq, ShimConfig_configByteAltMagRateGet(),
+        configBytes->altMagRange);
   }
 
 #endif
