@@ -57,6 +57,7 @@ void TIMER0IntHandler(void);
 #endif
 
 uint8_t *dataADC = 0;
+uint8_t dataX[4] = { 0 };
 
 HAL_StatusTypeDef status = HAL_OK;
 
@@ -556,19 +557,22 @@ void ads7028_factoryTestGsrInit(void)
   //GSR channel
   uint8_t channelID = CHANNEL_SEL_MANUAL_CHID_3;
 
-  resetDevice();
+ // resetDevice();
+  setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT);
 
-  //Select manual mode
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
-
-  //Configure pin as analog input
-  setChannelAsAnalogInput(channelID);
-
-  //Select channel as MUX input
   writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
 
+  //Select manual mode
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL |SEQUENCE_CFG_SEQ_START_ENABLED);
+
+  //Configure pin as analog input
+ // setChannelAsAnalogInput(channelID);
+
+  //Select channel as MUX input
+  //writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
+
   //Set nCS pin LOW, next rising edge will trigger start of conversion
-  setCS(LOW);
+  //setCS(LOW);
 }
 
 HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
@@ -576,7 +580,7 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   int16_t adcValueSigned = 0;
 
   //Array to store ADC conversion results
-  uint8_t data[4] = { 0 };
+ // uint8_t data[4] = { 0 };
 
   //Start conversion
   setCS(HIGH);
@@ -586,13 +590,13 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   delay_us(3);
 
   //Read data
-  adcValueSigned = readData(data);
+  adcValueSigned = readData(dataX);
 
   uint16_t adcValue = ((uint16_t) adcValueSigned) & 0x0FFF;
 
   int32_t gsrMv = ((uint32_t) (adcValue * 1000)) / (4095 / 3); //convert to mV
   *gsrResistance = GSR_calcResistance(gsrMv);
   GSR_controlRange(adcValue);
-
+  //setCS(LOW);
   return status;
 }
