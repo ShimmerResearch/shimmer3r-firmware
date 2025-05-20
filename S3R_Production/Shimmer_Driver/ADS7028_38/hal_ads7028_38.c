@@ -557,16 +557,17 @@ void ads7028_factoryTestGsrInit(void)
   //GSR channel
   uint8_t channelID = CHANNEL_SEL_MANUAL_CHID_3;
 
- // resetDevice();
+  //resetDevice();
   setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT);
 
   writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
 
   //Select manual mode
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL |SEQUENCE_CFG_SEQ_START_ENABLED);
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS,
+      SEQUENCE_CFG_SEQ_MODE_MANUAL | SEQUENCE_CFG_SEQ_START_ENABLED);
 
   //Configure pin as analog input
- // setChannelAsAnalogInput(channelID);
+  //setChannelAsAnalogInput(channelID);
 
   //Select channel as MUX input
   //writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
@@ -580,7 +581,7 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   int16_t adcValueSigned = 0;
 
   //Array to store ADC conversion results
- // uint8_t data[4] = { 0 };
+  //uint8_t data[4] = { 0 };
 
   //Start conversion
   setCS(HIGH);
