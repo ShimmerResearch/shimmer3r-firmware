@@ -607,11 +607,11 @@ void sleepWhenNoTask(void)
 
 void BtStart(void)
 {
-  if(!shimmerStatus.btPowerOn)
+  if (!shimmerStatus.btPowerOn)
   {
     //is watchdog timer function required
   }
-  // BT_startDone_cb(BtStartDone); if not this is just swtiching on BT
+  //BT_startDone_cb(BtStartDone); if not this is just swtiching on BT
   if (!shimmerStatus.sensing)
   {
     shimmerStatus.configuring = 1;
@@ -619,7 +619,7 @@ void BtStart(void)
   ShimBt_resetBtRxVariablesOnConnect(); //is this the same as ShimBt_resetBtRxBuff ?
 
   shimmerStatus.btInSyncMode = shimmerStatus.sdSyncEnabled;
- // BT_start();
+  //BT_start();
 }
 
 void BtStop(uint8_t isCalledFromMain)
@@ -627,16 +627,16 @@ void BtStop(uint8_t isCalledFromMain)
   //TODO tidy this flow up
   ShimBt_clearBtTxBuf(isCalledFromMain);
   ShimTask_clear(TASK_RCNODER10);
-    shimmerStatus.btConnected = 0;
-    shimmerStatus.btPowerOn = 0;
-    shimmerStatus.btInSyncMode = 0;
-   //BT_disable
-    ShimBt_resetBtRxVariablesOnConnect();
+  shimmerStatus.btConnected = 0;
+  shimmerStatus.btPowerOn = 0;
+  shimmerStatus.btInSyncMode = 0;
+  //BT_disable
+  ShimBt_resetBtRxVariablesOnConnect();
 
-//    if (watchDogWasOnDuringBtStart)
-//    {
-//      //Reset Watchdog timer
-//    }
+  //if (watchDogWasOnDuringBtStart)
+  //{
+  //  //Reset Watchdog timer
+  //}
   btDeinit();
 }
 
