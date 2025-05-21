@@ -573,7 +573,7 @@ void ads7028_factoryTestGsrInit(void)
   //writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
 
   //Set nCS pin LOW, next rising edge will trigger start of conversion
-  //setCS(LOW);
+  setCS(LOW);
 }
 
 HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
