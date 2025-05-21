@@ -358,7 +358,8 @@ void btInitialise(void)
 
   //20 * 100ms = 2s per baud rate attempt
   btCommWithDiffBaudRates(false, 50U);
-  ShimSdSync_init(InitialiseBtAfterBoot(), BtStop(isCalledFromMain));
+  ShimSdSync_init(InitialiseBtAfterBoot, BtStop);
+
   SHIMMER_PRINTF("BT init end\r\n");
 }
 
@@ -604,9 +605,38 @@ void sleepWhenNoTask(void)
   //}
 }
 
+void BtStart(void)
+{
+  if(!shimmerStatus.btPowerOn)
+  {
+    //is watchdog timer function required
+  }
+  // BT_startDone_cb(BtStartDone); if not this is just swtiching on BT
+  if (!shimmerStatus.sensing)
+  {
+    shimmerStatus.configuring = 1;
+  }
+  ShimBt_resetBtRxVariablesOnConnect(); //is this the same as ShimBt_resetBtRxBuff ?
+
+  shimmerStatus.btInSyncMode = shimmerStatus.sdSyncEnabled;
+ // BT_start();
+}
+
 void BtStop(uint8_t isCalledFromMain)
 {
   //TODO tidy this flow up
+  ShimBt_clearBtTxBuf(isCalledFromMain);
+  ShimTask_clear(TASK_RCNODER10);
+    shimmerStatus.btConnected = 0;
+    shimmerStatus.btPowerOn = 0;
+    shimmerStatus.btInSyncMode = 0;
+   //BT_disable
+    ShimBt_resetBtRxVariablesOnConnect();
+
+//    if (watchDogWasOnDuringBtStart)
+//    {
+//      //Reset Watchdog timer
+//    }
   btDeinit();
 }
 
@@ -619,6 +649,8 @@ void InitialiseBtAfterBoot(void)
 {
   //TODO implement a shorted boot sequence as this is not the first time the BT
   //has been booted at this point. btInit(baudToTry, factoryReset);
+  btInit(BAUD_TO_USE, FACTORY_RESET);
+  //BtStart(); //need to implement this
   SHIMMER_PRINTF(
       "TODO: need to implemented BT initialise after boot function\r\n");
 }
