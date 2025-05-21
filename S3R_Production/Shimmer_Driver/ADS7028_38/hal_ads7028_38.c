@@ -581,7 +581,7 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   int16_t adcValueSigned = 0;
 
   //Array to store ADC conversion results
-  //uint8_t data[4] = { 0 };
+  uint8_t data[4] = { 0 };
 
   //Start conversion
   setCS(HIGH);
@@ -591,13 +591,12 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   delay_us(3);
 
   //Read data
-  adcValueSigned = readData(dataX);
+  adcValueSigned = readData(data);
 
   uint16_t adcValue = ((uint16_t) adcValueSigned) & 0x0FFF;
 
   int32_t gsrMv = ((uint32_t) (adcValue * 1000)) / (4095 / 3); //convert to mV
   *gsrResistance = GSR_calcResistance(gsrMv);
   GSR_controlRange(adcValue);
-  setCS(LOW);
   return status;
 }
