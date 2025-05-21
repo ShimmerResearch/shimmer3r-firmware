@@ -179,7 +179,7 @@ int16_t readData(uint8_t *dataRx)
 
   uint8_t dataTx[4] = { 0 };
 
-  dataTx[0] = 0x86 ; // e.g., Read single channel CH3
+  dataTx[0] = 0x86; //e.g., Read single channel CH3
   dataTx[1] = 0x00;
   dataTx[2] = 0x00;
   dataTx[3] = 0x00;
