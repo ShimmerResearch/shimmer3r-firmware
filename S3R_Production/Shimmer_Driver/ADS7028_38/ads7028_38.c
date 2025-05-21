@@ -182,7 +182,7 @@ int16_t readData(uint8_t *dataRx)
   dataTx[1] = CHANNEL_SEL_MANUAL_CHID_3;
   dataTx[2] = OPCODE_NULL;
   dataTx[3] = OPCODE_NULL;
-    if (SPI_CRC_ENABLED)
+  if (SPI_CRC_ENABLED)
   {
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
