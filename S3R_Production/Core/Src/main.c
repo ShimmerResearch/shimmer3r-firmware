@@ -276,32 +276,32 @@ HAL_StatusTypeDef ClearnBoot0(void)
   HAL_FLASHEx_OBGetConfig(&OB);
 
   /* OB.USERConfig returns the FLASH_OPTR register */
-  // Use it to check if OB programming is necessary
+  //Use it to check if OB programming is necessary
   if (OB.USERConfig & FLASH_OPTR_nBOOT0_Msk)
   {
 
-      HAL_FLASH_Unlock();
-      HAL_FLASH_OB_Unlock();
+    HAL_FLASH_Unlock();
+    HAL_FLASH_OB_Unlock();
 
-      OB.OptionType = OPTIONBYTE_USER;
-      OB.USERType = OB_USER_NBOOT0;
-      OB.USERConfig = OB_NBOOT0_RESET;
+    OB.OptionType = OPTIONBYTE_USER;
+    OB.USERType = OB_USER_NBOOT0;
+    OB.USERConfig = OB_NBOOT0_RESET;
 
-      if ( HAL_FLASHEx_OBProgram(&OB) != HAL_OK )
-      {
-        HAL_FLASH_OB_Lock();
-        HAL_FLASH_Lock();
-        return HAL_ERROR;
-      }
-
-      HAL_FLASH_OB_Launch();
-
-      /* We should not make it past the Launch, so lock
-       * flash memory and return an error from function
-       */
+    if (HAL_FLASHEx_OBProgram(&OB) != HAL_OK)
+    {
       HAL_FLASH_OB_Lock();
       HAL_FLASH_Lock();
       return HAL_ERROR;
+    }
+
+    HAL_FLASH_OB_Launch();
+
+    /* We should not make it past the Launch, so lock
+     * flash memory and return an error from function
+     */
+    HAL_FLASH_OB_Lock();
+    HAL_FLASH_Lock();
+    return HAL_ERROR;
   }
 
   return HAL_OK;
