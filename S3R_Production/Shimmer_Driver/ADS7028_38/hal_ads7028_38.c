@@ -557,7 +557,7 @@ void ads7028_factoryTestGsrInit(void)
   //GSR channel
   uint8_t channelID = CHANNEL_SEL_MANUAL_CHID_3;
 
-  //resetDevice();
+  resetDevice();
   setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT);
 
   writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
