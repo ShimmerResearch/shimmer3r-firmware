@@ -61,11 +61,20 @@
 #define ADS1292R_RESP1     0x09
 #define ADS1292R_RESP2     0x0A
 
+typedef enum
+{
+  EXG_CHIP1 = 0x01,
+  EXG_CHIP2 = 0x02,
+  EXG_CHIP1_AND_CHIP2 = 0x03
+} ExGDAtaStatus;
+
 //initialize both ADS1292R chips on ExG board
 //i.e. power them on and enable internal reference
 //leave both in SDATAC mode
 uint8_t EXG_init(SPI_HandleTypeDef *hspi);
 uint8_t EXG_self_test(void);
+void EXG_enableInterrupts(uint8_t mask);
+void EXG_disableInterrupts(uint8_t mask);
 void EXG_setRdatac(uint8_t chip, uint8_t en);
 
 //put ADS1292R chip in RDATAC mode and start sampling
@@ -134,17 +143,19 @@ EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wdata);
 //If data is valid MSB of status byte for each chip is 1, else 0
 void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf);
 
+void EXG_prepareData(uint8_t chip, uint8_t *data, uint8_t *buf, uint8_t size);
+
 //Tell the driver that the data is ready to be read from chipX
-#define EXG_dataReadyChip1  ADS1292_dataReadyChip1
+#define EXG_dataReadyChip1 ADS1292_dataReadyChip1
 //#define EXG_dataReadyChip2 ADS1292_dataReadyChip2
 //#define EXG_dataReadFromChip1 ADS1292_dataReadFromChip1
 //#define EXG_dataReadFromChip2 ADS1292_dataReadFromChip2
-#define EXG_gatherDataInit  ADS1292_gatherDataInit
-#define EXG_gatherDataStart ADS1292_gatherDataStart
+#define EXG_gatherDataInit ADS1292_gatherDataInit
+//#define EXG_gatherDataStart ADS1292_gatherDataStart
 
-#define EXG_spiRxIsr        ADS1292_spiRxIsr
-#define EXG_spiTxIsr        ADS1292_spiTxIsr
+#define EXG_spiRxIsr       ADS1292_spiRxIsr
+#define EXG_spiTxIsr       ADS1292_spiTxIsr
 
-#define EXG_enableChip2     ADS1292_enableChip2
+#define EXG_enableChip2    ADS1292_enableChip2
 
 #endif //EXG_H
