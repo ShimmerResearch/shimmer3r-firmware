@@ -699,17 +699,16 @@ uint8_t isRwcTimeSet(void)
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  //static uint8_t green0_cnt = 0;
-
   //TODO carried from Shimmer4, LED blinking only works when not sensing
-
+#if SAVE_DATA_FROM_RTC_INT
   if (shimmerStatus.sensing && !shimmerStatus.configuring)
   {
-//if(!green0_cnt++){
-//   Board_ledToggle(LED_GREEN0);
-//}
+    if(sensing.isSampling == SAMPLING_COMPLETE)
+    {
+      ShimSens_saveData();
+    }
 #if !SENS_CLK_RTC0TIM1
-    ShimSens_gatherData();
+      ShimSens_gatherData();
 #endif
   }
 #if defined(SHIMMER4_SDK)
@@ -718,6 +717,7 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
     S4Led_Blink();
   }
 #endif
+#endif /* SAVE_DATA_FROM_RTC_INT */
   /* Prevent unused argument(s) compilation warning */
   UNUSED(hrtc);
 
