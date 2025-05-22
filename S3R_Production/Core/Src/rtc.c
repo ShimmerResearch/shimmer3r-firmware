@@ -703,12 +703,12 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 #if SAVE_DATA_FROM_RTC_INT
   if (shimmerStatus.sensing && !shimmerStatus.configuring)
   {
-    if(sensing.isSampling == SAMPLING_COMPLETE)
+    if (sensing.isSampling == SAMPLING_COMPLETE)
     {
       ShimSens_saveData();
     }
 #if !SENS_CLK_RTC0TIM1
-      ShimSens_gatherData();
+    ShimSens_gatherData();
 #endif
   }
 #if defined(SHIMMER4_SDK)
