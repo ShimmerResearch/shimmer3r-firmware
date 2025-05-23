@@ -555,25 +555,29 @@ bool ads7028_areAnyChannelsEnabled(void)
 void ads7028_factoryTestGsrInit(void)
 {
   //GSR channel
-  uint8_t channelID = CHANNEL_SEL_MANUAL_CHID_3;
+  uint8_t channelID = AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED;
 
   resetDevice();
+  delay_ms(1);
   setRegisterBits(PIN_CFG_ADDRESS, PIN_CFG_DEFAULT);
 
-  writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
+  //writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, channelID);
 
   //Select manual mode
+  //setCS(LOW);
   writeSingleRegister(SEQUENCE_CFG_ADDRESS,
-      SEQUENCE_CFG_SEQ_MODE_MANUAL | SEQUENCE_CFG_SEQ_START_ENABLED);
+      SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
 
   //Configure pin as analog input
   //setChannelAsAnalogInput(channelID);
 
   //Select channel as MUX input
-  //writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
+  //writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, channelID);
 
   //Set nCS pin LOW, next rising edge will trigger start of conversion
-  setCS(LOW);
+  //setCS(LOW);
+  //setCS(HIGH);
 }
 
 HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
@@ -588,8 +592,8 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
 
   //Wait for conversion to complete
   //IMPORTANT: This delay will need to be modified if averaging is enabled!
-  delay_us(3);
-
+  //delay_us(3);
+  delay_ms(1);
   //Read data
   adcValueSigned = readData(data);
 
