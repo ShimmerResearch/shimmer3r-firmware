@@ -985,29 +985,33 @@ void SPI_pollSensors(void)
     //exg
     gConfigBytes *storedConfigPtr = ShimConfig_getStoredConfig();
 
-    if (storedConfigPtr->chEnExg1_24Bit)
+    if (storedConfigPtr->chEnExg1_24Bit || storedConfigPtr->chEnExg1_16Bit
+        || storedConfigPtr->chEnExg2_24Bit || storedConfigPtr->chEnExg2_16Bit)
     {
-      EXG_readData(0, 0, &sensing.dataBuf[sensing.ptr.exg1]);
-    }
-    else if (storedConfigPtr->chEnExg1_16Bit)
-    {
-      EXG_readData(0, 1, &sensing.dataBuf[sensing.ptr.exg1]);
-    }
-    if (storedConfigPtr->chEnExg2_24Bit)
-    {
-      EXG_readData(1, 0, &sensing.dataBuf[sensing.ptr.exg2]);
-      if (!(sensing.dataBuf[sensing.ptr.exg2 + 1] == 0x00
-              || sensing.dataBuf[sensing.ptr.exg2 + 1] == 0xff))
+      if (storedConfigPtr->chEnExg1_24Bit)
       {
-        __NOP();
+        EXG_readData(0, 0, &sensing.dataBuf[sensing.ptr.exg1]);
       }
-    }
-    else if (storedConfigPtr->chEnExg2_16Bit)
-    {
-      EXG_readData(1, 1, &sensing.dataBuf[sensing.ptr.exg2]);
-    }
+      else if (storedConfigPtr->chEnExg1_16Bit)
+      {
+        EXG_readData(0, 1, &sensing.dataBuf[sensing.ptr.exg1]);
+      }
+      if (storedConfigPtr->chEnExg2_24Bit)
+      {
+        EXG_readData(1, 0, &sensing.dataBuf[sensing.ptr.exg2]);
+        if (!(sensing.dataBuf[sensing.ptr.exg2 + 1] == 0x00
+                || sensing.dataBuf[sensing.ptr.exg2 + 1] == 0xff))
+        {
+          __NOP();
+        }
+      }
+      else if (storedConfigPtr->chEnExg2_16Bit)
+      {
+        EXG_readData(1, 1, &sensing.dataBuf[sensing.ptr.exg2]);
+      }
 
-    SPI_busGatherDataDone_cb(spi3Sens.busId);
+      SPI_busGatherDataDone_cb(spi3Sens.busId);
+    }
   }
 
   if (spi1Sens.sensorLen > 0)
