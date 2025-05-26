@@ -247,7 +247,7 @@ uint8_t readSingleRegister(uint8_t address, uint8_t *buf)
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
   retVal = spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
-  if(retVal != 0)
+  if (retVal != 0)
   {
     //If the read failed, return error code
     return retVal;
@@ -264,7 +264,7 @@ uint8_t readSingleRegister(uint8_t address, uint8_t *buf)
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
   retVal = spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
-  if(retVal != 0)
+  if (retVal != 0)
   {
     //If the read failed, return error code
     return retVal;

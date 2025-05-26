@@ -546,8 +546,8 @@ HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx)
     return returnedStatus;
   }
 
-  //  //TODO : Is this delay needed?
-//  delay_us(3);
+  ////TODO : Is this delay needed?
+  //delay_us(3);
 
   returnedStatus = readDataDma(dataRx, &SENSOR_BUS);
 

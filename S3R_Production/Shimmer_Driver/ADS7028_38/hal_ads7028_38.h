@@ -140,7 +140,8 @@ extern SPI_ADCTypeDef spiAdc;
 void initAdcPeripherals(void);
 #endif
 //void spiSendReceiveArray(const uint8_t DataTx[], uint8_t DataRx[], const uint8_t byteLength);
-HAL_StatusTypeDef spiSendReceiveArray(const uint8_t *DataTx, uint8_t *DataRx, const uint8_t byteLength);
+HAL_StatusTypeDef
+spiSendReceiveArray(const uint8_t *DataTx, uint8_t *DataRx, const uint8_t byteLength);
 #if defined(MSP432E401Y)
 uint8_t spiSendReceiveByte(const uint8_t dataTx);
 #endif

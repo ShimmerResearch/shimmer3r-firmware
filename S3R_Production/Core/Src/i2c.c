@@ -862,7 +862,7 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
   /* If a DMA issue occured, return 0 to skip to next sensor */
   if (halRet != 0xFF && halRet != HAL_OK)
   {
-//    printf("I2C DMA Error: %d, Stage: %d\n", halRet, i2cSensingInfo->status);
+    //printf("I2C DMA Error: %d, Stage: %d\n", halRet, i2cSensingInfo->status);
 
     retVal = 0;
     i2cSensingInfo->status = SPI_STAT_IDLE;
