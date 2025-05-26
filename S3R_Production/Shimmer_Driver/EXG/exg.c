@@ -387,7 +387,7 @@ void EXG_setDrdyInterruptState(uint8_t state, uint8_t exg1En, uint8_t exg2En)
   }
 #endif
 
-  if(state)
+  if (state)
   {
     EXG_enableInterrupts(intMask);
   }
