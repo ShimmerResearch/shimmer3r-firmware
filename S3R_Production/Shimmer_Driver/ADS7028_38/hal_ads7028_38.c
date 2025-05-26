@@ -209,7 +209,7 @@ static void initTIMER(void)
 //
 //*****************************************************************************
 //void spiSendReceiveArray(const uint8_t dataTx[], uint8_t dataRx[], const uint8_t byteLength)
-void spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, const uint8_t byteLength)
+HAL_StatusTypeDef spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, const uint8_t byteLength)
 {
   /*  --- INSERT YOUR CODE HERE ---
    *
@@ -243,6 +243,8 @@ void spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, const uint8_t b
 
   //Set the nCS pin HIGH
   setCS(HIGH);
+
+  return status;
 }
 
 #if defined(MSP432E401Y)
@@ -494,10 +496,11 @@ void delay_ms(const uint32_t delay_time_ms)
 
 self_test_result_t ads7028_factoryTestChipId(void)
 {
+  uint8_t retVal = 0, sysStatus = 0;
   self_test_result_t self_test_result = SELF_TEST_PASS;
 
-  uint8_t sysStatus = readSingleRegister(SYSTEM_STATUS_ADDRESS);
-  if (sysStatus != SYSTEM_STATUS_DEFAULT)
+  retVal = readSingleRegister(SYSTEM_STATUS_ADDRESS, &sysStatus);
+  if (retVal != HAL_OK || sysStatus != SYSTEM_STATUS_DEFAULT)
   {
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
@@ -530,14 +533,25 @@ void ads7028_swI2C4PpgOn(uint8_t state)
   }
 }
 
-void ads7028_dataGetDma(uint8_t *dataRx)
+HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx)
 {
+  HAL_StatusTypeDef returnedStatus = HAL_OK;
+
   //select auto sequencing mode and start conversion
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS,
+  returnedStatus = writeSingleRegister(SEQUENCE_CFG_ADDRESS,
       SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
-  //TODO : Is this delay needed?
-  delay_us(3);
-  readDataDma(dataRx, &SENSOR_BUS);
+
+  if (returnedStatus != HAL_OK)
+  {
+    return returnedStatus;
+  }
+
+  //  //TODO : Is this delay needed?
+//  delay_us(3);
+
+  returnedStatus = readDataDma(dataRx, &SENSOR_BUS);
+
+  return returnedStatus;
 }
 
 void configureAutoSequenceChannel(uint8_t ChannelID)

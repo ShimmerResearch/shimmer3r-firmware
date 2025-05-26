@@ -1145,16 +1145,16 @@
 
 void initADS7038(void);
 void resetDevice();
-void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond);
+uint8_t startManualConversions(uint8_t channelID, uint32_t samplesPerSecond);
 void stopAds7028Conversions(void);
 
 int16_t readData(uint8_t *dataRx);
-void readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle);
-uint8_t readSingleRegister(uint8_t address);
+uint8_t readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle);
+uint8_t readSingleRegister(uint8_t address, uint8_t *buf);
 uint8_t getRegisterValue(uint8_t address);
 
-void writeSingleRegister(uint8_t address, uint8_t data);
-void setRegisterBits(uint8_t address, uint8_t bitMask);
+uint8_t writeSingleRegister(uint8_t address, uint8_t data);
+uint8_t setRegisterBits(uint8_t address, uint8_t bitMask);
 void clearRegisterBits(uint8_t address, uint8_t bitMask);
 
 /* Helper Functions */
