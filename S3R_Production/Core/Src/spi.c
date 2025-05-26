@@ -1289,8 +1289,8 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
   /* If a DMA issue occured, return 0 to skip to next sensor */
   if (halRet != 0xFF && halRet != HAL_OK)
   {
-//    printf("SPI Bus: %d, DMA Error: %d, Stage: %d\n", spiSensingInfo->busId,
-//        halRet, spiSensingInfo->status);
+    //printf("SPI Bus: %d, DMA Error: %d, Stage: %d\n", spiSensingInfo->busId,
+    //    halRet, spiSensingInfo->status);
 
     retVal = 0;
     spiSensingInfo->status = SPI_STAT_IDLE;
