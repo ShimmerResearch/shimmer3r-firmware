@@ -147,7 +147,7 @@ uint8_t spiSendReceiveByte(const uint8_t dataTx);
 #endif
 
 /* GPIO functions */
-void setCS(const bool state);
+void ads7028_setCS(const bool state);
 bool getCS(void); /*  Used for testing only */
 
 /* Timing functions */

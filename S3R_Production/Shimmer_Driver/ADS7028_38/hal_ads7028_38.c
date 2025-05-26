@@ -228,7 +228,7 @@ HAL_StatusTypeDef spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, co
   assert(dataTx && dataRx);
 
   //Set the nCS pin LOW
-  setCS(LOW);
+  ads7028_setCS(LOW);
 
 #if defined(MSP432E401Y)
   //Send all dataTx[] bytes on MOSI, and capture all MISO bytes in dataRx[]
@@ -242,7 +242,7 @@ HAL_StatusTypeDef spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, co
 #endif
 
   //Set the nCS pin HIGH
-  setCS(HIGH);
+  ads7028_setCS(HIGH);
 
   return status;
 }
@@ -358,7 +358,7 @@ void TIMER0IntHandler(void)
   uint8_t data[4] = { 0 };
 
   //Start conversion
-  setCS(HIGH);
+  ads7028_setCS(HIGH);
 
   //Wait for conversion to complete
   //IMPORTANT: This delay will need to be modified if averaging is enabled!
@@ -407,7 +407,7 @@ bool getCS(void)
 //!\return None.
 //
 //*****************************************************************************
-void setCS(const bool state)
+void ads7028_setCS(const bool state)
 {
   /* --- INSERT YOUR CODE HERE --- */
 
@@ -582,7 +582,7 @@ void ads7028_factoryTestGsrInit(void)
   writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
 
   //Set nCS pin LOW, next rising edge will trigger start of conversion
-  setCS(LOW);
+  ads7028_setCS(LOW);
 }
 
 HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
@@ -593,7 +593,7 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   uint8_t data[4] = { 0 };
 
   //Start conversion
-  setCS(HIGH);
+  ads7028_setCS(HIGH);
 
   //Wait for conversion to complete
   //IMPORTANT: This delay will need to be modified if averaging is enabled!

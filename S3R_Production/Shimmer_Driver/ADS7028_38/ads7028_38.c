@@ -141,7 +141,7 @@ uint8_t startManualConversions(uint8_t channelID, uint32_t samplesPerSecond)
   writeSingleRegister(DATA_CFG_ADDRESS, DATA_CFG_APPEND_STATUS_FOUR_BIT_CHID);
   //Set nCS pin LOW, next rising edge will trigger start of conversion
   retVal = readSingleRegister(DATA_CFG_ADDRESS, &status);
-  setCS(LOW);
+  ads7028_setCS(LOW);
 
   //Start conversion timer
   startTimer(samplesPerSecond);
@@ -162,7 +162,7 @@ void stopAds7028Conversions(void)
 {
   writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_START_DISABLED);
   //Set nCS pin HIGH, allows MCU to communicate with other devices on SPI bus
-  setCS(HIGH);
+  ads7028_setCS(HIGH);
 }
 
 //*****************************************************************************
@@ -204,11 +204,11 @@ uint8_t readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle)
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
 
-  setCS(LOW);
+  ads7028_setCS(LOW);
   ret = HAL_SPI_TransmitReceive_DMA(handle, &dataTx[0], dataRx, numberOfBytes);
   if (ret != 0)
   {
-    setCS(HIGH);
+    ads7028_setCS(HIGH);
   }
   return ret;
 }
