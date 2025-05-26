@@ -970,8 +970,7 @@ void SPI_startSensing()
       EXG_start(1);
     }
 
-    EXG_setDrdyInterruptState(1,
-        configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit,
+    EXG_setDrdyInterruptState(1, configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit,
         configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit);
   }
 }
@@ -1046,8 +1045,7 @@ void SPI_stopSensing()
     //}
     //HAL_SPI_MspDeInit(hspiExg);//this may save .2-.3 mA?
 
-    EXG_setDrdyInterruptState(0,
-        configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit,
+    EXG_setDrdyInterruptState(0, configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit,
         configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit);
   }
 
