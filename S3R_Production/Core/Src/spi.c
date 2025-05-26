@@ -71,7 +71,7 @@ void MX_SPI1_Init(void)
   adxl371_unselectDevice();
   bmp3_unselectDevice();
 
-  if(isAds7028Present())
+  if (isAds7028Present())
   {
     ads7028_setCS(1);
   }
@@ -646,7 +646,7 @@ void SPI1_DeInit(void)
   adxl371_selectDevice();
   bmp3_selectDevice();
 
-  if(isAds7028Present())
+  if (isAds7028Present())
   {
     ads7028_setCS(0);
   }
