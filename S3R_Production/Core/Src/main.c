@@ -642,7 +642,7 @@ void InitialiseBtAfterBoot(void)
   //TODO implement a shorted boot sequence as this is not the first time the BT
   //has been booted at this point. btInit(baudToTry, factoryReset);
   btInit(BAUD_TO_USE, FACTORY_RESET);
- // BtStart(); //need to implement this
+  //BtStart(); //need to implement this
   SHIMMER_PRINTF(
       "TODO: need to implemented BT initialise after boot function\r\n");
 }
