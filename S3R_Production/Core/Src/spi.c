@@ -71,6 +71,11 @@ void MX_SPI1_Init(void)
   adxl371_unselectDevice();
   bmp3_unselectDevice();
 
+  if (isAds7028Present())
+  {
+    ads7028_setCS(1);
+  }
+
   /* USER CODE END SPI1_Init 0 */
 
   SPI_AutonomousModeConfTypeDef HAL_SPI_AutonomousMode_Cfg_Struct = { 0 };
@@ -640,6 +645,11 @@ void SPI1_DeInit(void)
   lsm6dsv_selectDevice();
   adxl371_selectDevice();
   bmp3_selectDevice();
+
+  if (isAds7028Present())
+  {
+    ads7028_setCS(0);
+  }
 }
 
 void SPI2_DeInit(void)

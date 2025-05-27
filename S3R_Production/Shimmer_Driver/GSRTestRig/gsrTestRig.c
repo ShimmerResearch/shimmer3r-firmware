@@ -57,29 +57,37 @@ void *handle;
 /*
  *  ADG715 Switch Select
  */
-void setADG715SwitchMode(uint8_t value)
+HAL_StatusTypeDef setADG715SwitchMode(uint8_t value)
 {
+  HAL_StatusTypeDef ret;
   switchModeCurrent = value;
-  HAL_I2C_Master_Transmit(handle, ADDR_U3_ADG715 << 1, &value, 1, 1000);
+  ret = HAL_I2C_Master_Transmit(handle, ADDR_U3_ADG715 << 1, &value, 1, 1000);
+  return ret;
 }
 
-void gsrTestRigInit(I2C_HandleTypeDef *hi2c)
+HAL_StatusTypeDef gsrTestRigInit(I2C_HandleTypeDef *hi2c)
 {
   handle = hi2c;
   //Configure Switch
-  setADG715SwitchMode(ADG715_SWITCH_RESET);
+  HAL_StatusTypeDef ret = setADG715SwitchMode(ADG715_SWITCH_RESET);
+  return ret;
 }
 
 /* TODO implement parallel connected resistors in various combinations (i.e.
  * 2-4 in parallel, 2-3 in parallel with 1-2 in series) */
-void setGsrTestRigResistance(uint32_t resistance)
+HAL_StatusTypeDef setGsrTestRigResistance(uint32_t resistance)
 {
+  HAL_StatusTypeDef ret;
   uint8_t U1_RDAC1 = 0, U1_RDAC2 = 0, U2_RDAC1 = 0, U2_RDAC2 = 0;
   uint32_t res_u1_1 = 0, res_u1_2 = 0, res_u2_1 = 0, res_u2_2 = 0;
 
   uint8_t switchModeToSet = ADG715_SETTING;
 
-  setADG715SwitchMode(ADG715_SWITCH_RESET);
+  ret = setADG715SwitchMode(ADG715_SWITCH_RESET);
+  if (ret != HAL_OK)
+  {
+    return ret; //Return early if error
+  }
 
   if (resistance > 500000)
   {
@@ -142,7 +150,8 @@ void setGsrTestRigResistance(uint32_t resistance)
   U2_RDAC1 = calculateRdacValue(res_u2_1);
   U2_RDAC2 = calculateRdacValue(res_u2_2);
 
-  setGsrTestRig(switchModeToSet, U1_RDAC1, U1_RDAC2, U2_RDAC1, U2_RDAC2);
+  ret = setGsrTestRig(switchModeToSet, U1_RDAC1, U1_RDAC2, U2_RDAC1, U2_RDAC2);
+  return ret;
 }
 
 uint8_t calculateRdacValue(uint32_t resistance)
@@ -156,31 +165,51 @@ uint8_t calculateRdacValue(uint32_t resistance)
   return (uint8_t) round(result);
 }
 
-void setGsrTestRig(uint8_t switchMode, uint8_t u1Rdac1, uint8_t u1Rdac2, uint8_t u2Rdac1, uint8_t u2Rdac2)
+HAL_StatusTypeDef
+setGsrTestRig(uint8_t switchMode, uint8_t u1Rdac1, uint8_t u1Rdac2, uint8_t u2Rdac1, uint8_t u2Rdac2)
 {
+  HAL_StatusTypeDef ret;
+
   if (switchMode != switchModeCurrent)
   {
     //Configure Switch
-    setADG715SwitchMode(switchMode);
+    ret = setADG715SwitchMode(switchMode);
+    if (ret != HAL_OK)
+    {
+      return ret; //Return early if error
+    }
   }
 
   //Now deal with other 4 bytes:
   uint8_t buf[2];
   buf[0] = RDAC1;
   buf[1] = u1Rdac1;
-  HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242 << 1, buf, 2, 1000);
+  ret = HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242 << 1, buf, 2, 1000);
+  if (ret != HAL_OK)
+  {
+    return ret; //Return early if error
+  }
 
   buf[0] = RDAC2;
   buf[1] = u1Rdac2;
-  HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242 << 1, buf, 2, 1000);
+  ret = HAL_I2C_Master_Transmit(handle, ADDR_U1_AD5242 << 1, buf, 2, 1000);
+  if (ret != HAL_OK)
+  {
+    return ret; //Return early if error
+  }
 
   buf[0] = RDAC1;
   buf[1] = u2Rdac1;
-  HAL_I2C_Master_Transmit(handle, ADDR_U2_AD5242 << 1, buf, 2, 1000);
+  ret = HAL_I2C_Master_Transmit(handle, ADDR_U2_AD5242 << 1, buf, 2, 1000);
+  if (ret != HAL_OK)
+  {
+    return ret; //Return early if error
+  }
 
   buf[0] = RDAC2;
   buf[1] = u2Rdac2;
-  HAL_I2C_Master_Transmit(handle, ADDR_U2_AD5242 << 1, buf, 2, 1000);
+  ret = HAL_I2C_Master_Transmit(handle, ADDR_U2_AD5242 << 1, buf, 2, 1000);
+  return ret;
 }
 
 void run_gsrTestRig(uint8_t *config)
