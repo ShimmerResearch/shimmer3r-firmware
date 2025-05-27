@@ -66,10 +66,10 @@ uint32_t run_factory_test(void)
 
     //InfoMem_test();
 
-    I2C_test();
+    SPI_test();
     send_test_report("\r\n");
 
-    SPI_test();
+    I2C_test();
     send_test_report("\r\n");
 
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
@@ -234,8 +234,7 @@ void print_mcu_details(void)
   send_test_report(buffer);
   sprintf(buffer, "    - Button pressed: %s\r\n", shimmerStatus.buttonPressed ? "Yes" : "No");
   send_test_report(buffer);
-  GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
-  sprintf(buffer, "    - USB connected: %s\r\n", pin == GPIO_PIN_SET ? "Yes" : "No");
+  sprintf(buffer, "    - USB connected: %s\r\n", shimmerStatus.usbPluggedIn ? "Yes" : "No");
   send_test_report(buffer);
 }
 
@@ -506,16 +505,16 @@ void I2C_test(void)
   }
   if (self_test_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0015;
+    shimmerStatus.testResult |= S3R_TEST_0022;
   }
-  print_chip_test_result("S3R_TEST_0015", "LIS2MDL", self_test_result, tempCal);
+  print_chip_test_result("S3R_TEST_0022", "LIS2MDL", self_test_result, tempCal);
 
   uint8_t eeprom_result = eepromTest();
-  sprintf(buffer, " - S3R_TEST_0016 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
+  sprintf(buffer, " - S3R_TEST_0023 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
   send_test_report(buffer);
   if (eeprom_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0016;
+    shimmerStatus.testResult |= S3R_TEST_0023;
   }
 #endif
 
@@ -541,23 +540,23 @@ void I2C_test(void)
     if (test_i2c_addr_list_len == 0) //Nothing detected on I2C bus
     {
       send_test_report(
-          " - S3R_TEST_0017 - FAIL: I2C4 - no test rig detected\r\n");
+          " - S3R_TEST_0024 - FAIL: I2C4 - no test rig detected\r\n");
       send_test_report(
-          " - S3R_TEST_0018 - FAIL: GSR - no test rig detected\r\n");
+          " - S3R_TEST_0025 - FAIL: GSR - no test rig detected\r\n");
       i2c4_result = 1;
     }
     else if (test_i2c_addr_list_len == 3) //GSR Test Rig detected
     {
-      send_test_report(" - S3R_TEST_0017 - PASS: I2C4\r\n");
+      send_test_report(" - S3R_TEST_0024 - PASS: I2C4\r\n");
 
       uint8_t gsr_result = runGsrFactoryTest();
-      sprintf(buffer, " - S3R_TEST_0018 - %s: GSR signal test\r\n",
+      sprintf(buffer, " - S3R_TEST_0025 - %s: GSR signal test\r\n",
           gsr_result ? "FAIL" : "PASS");
       send_test_report(buffer);
 
       if (gsr_result)
       {
-        shimmerStatus.testResult |= S3R_TEST_0018;
+        shimmerStatus.testResult |= S3R_TEST_0025;
       }
     }
     else if (test_i2c_addr_list_len == 8) //EEPROM detected
@@ -566,17 +565,17 @@ void I2C_test(void)
       i2c4_result = altEepromTest();
       HAL_Delay(5); //5ms to ensure no writes pending
 
-      sprintf(buffer, " - S3R_TEST_0017 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
+      sprintf(buffer, " - S3R_TEST_0024 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
       send_test_report(buffer);
       send_test_report(
-          " - S3R_TEST_0018 - WARNING: GSR - no test rig detected\r\n");
+          " - S3R_TEST_0025 - WARNING: GSR - no test rig detected\r\n");
     }
     else
     {
       send_test_report(
-          " - S3R_TEST_0017 - FAIL: I2C4 - test rig not recognised\r\n");
+          " - S3R_TEST_0024 - FAIL: I2C4 - test rig not recognised\r\n");
       send_test_report(
-          " - S3R_TEST_0018 - FAIL: GSR - test rig not recognised\r\n");
+          " - S3R_TEST_0025 - FAIL: GSR - test rig not recognised\r\n");
       i2c4_result = 1;
     }
 
@@ -584,13 +583,13 @@ void I2C_test(void)
 
     if (i2c4_result)
     {
-      shimmerStatus.testResult |= S3R_TEST_0017;
+      shimmerStatus.testResult |= S3R_TEST_0024;
     }
   }
   else
   {
     send_test_report(
-        " - S3R_TEST_0017 - I2C4 test not applicable for this model\r\n");
+        " - S3R_TEST_0024 - I2C4 test not applicable for this model\r\n");
   }
 #endif
 }
@@ -606,7 +605,7 @@ void SPI_test(void)
 
   if (ShimBrd_isBoardSr48_6_0())
   {
-    sprintf(buffer, " - S3R_TEST_0019 - ADS7028 test not applicable for this model\r\n");
+    sprintf(buffer, " - S3R_TEST_0015 - ADS7028 test not applicable for this model\r\n");
     send_test_report(buffer);
   }
   else
@@ -614,9 +613,9 @@ void SPI_test(void)
     self_test_result = ads7028_factoryTestChipId();
     if (self_test_result)
     {
-      shimmerStatus.testResult |= S3R_TEST_0019;
+      shimmerStatus.testResult |= S3R_TEST_0015;
     }
-    print_chip_test_result("S3R_TEST_0019", "ADS7028", self_test_result,
+    print_chip_test_result("S3R_TEST_0015", "ADS7028", self_test_result,
         TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
   }
 
@@ -633,9 +632,9 @@ void SPI_test(void)
   }
   if (self_test_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0020;
+    shimmerStatus.testResult |= S3R_TEST_0016;
   }
-  print_chip_test_result("S3R_TEST_0020", "LSM6DSV", self_test_result, tempCal);
+  print_chip_test_result("S3R_TEST_0016", "LSM6DSV", self_test_result, tempCal);
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
   self_test_result = bmp3_self_test();
@@ -659,33 +658,33 @@ void SPI_test(void)
    *  that the function can recognise it) */
   if (self_test_result < SELF_TEST_FAIL_COUNT)
   {
-    print_chip_test_result("S3R_TEST_0021", "BMP390", self_test_result, tempCal);
+    print_chip_test_result("S3R_TEST_0017", "BMP390", self_test_result, tempCal);
   }
   else
   {
-    send_test_report(" - S3R_TEST_0021 - FAIL: BMP390 - ");
+    send_test_report(" - S3R_TEST_0017 - FAIL: BMP390 - ");
 
     bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
     send_test_report(buffer);
   }
   if (self_test_result != SELF_TEST_PASS)
   {
-    shimmerStatus.testResult |= S3R_TEST_0021;
+    shimmerStatus.testResult |= S3R_TEST_0017;
   }
 
   if (ShimBrd_isAdxl371Present())
   {
     self_test_result = adxl371_self_test();
-    print_chip_test_result("S3R_TEST_0022", "ADXL371", self_test_result,
+    print_chip_test_result("S3R_TEST_0018", "ADXL371", self_test_result,
         TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID);
     if (self_test_result)
     {
-      shimmerStatus.testResult |= S3R_TEST_0022;
+      shimmerStatus.testResult |= S3R_TEST_0018;
     }
   }
   else
   {
-    sprintf(buffer, " - S3R_TEST_0022 - ADXL371 test not applicable for this model\r\n");
+    sprintf(buffer, " - S3R_TEST_0018 - ADXL371 test not applicable for this model\r\n");
     send_test_report(buffer);
   }
 
@@ -705,10 +704,10 @@ void SPI_test(void)
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
   }
-  print_chip_test_result("S3R_TEST_0023", "LIS3MDL", self_test_result, tempCal);
+  print_chip_test_result("S3R_TEST_0019", "LIS3MDL", self_test_result, tempCal);
   if (self_test_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0023;
+    shimmerStatus.testResult |= S3R_TEST_0019;
   }
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
@@ -722,10 +721,10 @@ void SPI_test(void)
       self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
     }
   }
-  print_chip_test_result("S3R_TEST_0024", "LIS2DW12", self_test_result, tempCal);
+  print_chip_test_result("S3R_TEST_0020", "LIS2DW12", self_test_result, tempCal);
   if (self_test_result)
   {
-    shimmerStatus.testResult |= S3R_TEST_0024;
+    shimmerStatus.testResult |= S3R_TEST_0020;
   }
 
   SPI2_DeInit();
@@ -741,21 +740,21 @@ void SPI_test(void)
     ads1292RInitResult = EXG_init(&hspi3);
     if (ads1292RInitResult)
     {
-      sprintf(buffer, " - S3R_TEST_0025 - FAIL: ADS1292R Init fail\r\n");
+      sprintf(buffer, " - S3R_TEST_0021 - FAIL: ADS1292R Init fail\r\n");
       send_test_report(buffer);
     }
     else
     {
       uint8_t ads1292RTestResult = EXG_self_test();
-      sprintf(buffer, " - S3R_TEST_0025 - %s: ADS1292R Chip1 detect\r\n",
+      sprintf(buffer, " - S3R_TEST_0021 - %s: ADS1292R Chip1 detect\r\n",
           (ads1292RTestResult & 0x01) ? "FAIL" : "PASS");
       send_test_report(buffer);
-      sprintf(buffer, " - S3R_TEST_0025 - %s: ADS1292R Chip2 detect\r\n",
+      sprintf(buffer, " - S3R_TEST_0021 - %s: ADS1292R Chip2 detect\r\n",
           (ads1292RTestResult & 0x02) ? "FAIL" : "PASS");
       send_test_report(buffer);
       if (ads1292RTestResult)
       {
-        shimmerStatus.testResult |= S3R_TEST_0025;
+        shimmerStatus.testResult |= S3R_TEST_0021;
       }
     }
     EXG_powerOff();
@@ -764,7 +763,7 @@ void SPI_test(void)
   else
   {
     send_test_report(
-        " - S3R_TEST_0025 - ADS1292R test not applicable for this model\r\n");
+        " - S3R_TEST_0021 - ADS1292R test not applicable for this model\r\n");
   }
 }
 
@@ -869,7 +868,12 @@ uint8_t runGsrFactoryTest(void)
     Board_SR48_6_0_SW_GSR(1);
   }
 #endif
-  gsrTestRigInit(&hi2c4);
+  status = gsrTestRigInit(&hi2c4);
+  if (status != HAL_OK)
+  {
+    //send_test_report("Failed to initialise GSR test rig\r\n");
+    return returnVal;
+  }
 
   GSR_setActiveResistor(HW_RES_40K);
 #if SUPPORT_SR48_6_0
@@ -887,7 +891,14 @@ uint8_t runGsrFactoryTest(void)
 
   for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
   {
-    setGsrTestRigResistance(testGsrResistances[i]);
+    status = setGsrTestRigResistance(testGsrResistances[i]);
+    if (status != HAL_OK)
+    {
+      //sprintf(buffer, "Failed to set GSR test rig resistance %lu\r\n",
+      //    testGsrResistances[i]);
+      //send_test_report(buffer);
+      return returnVal;
+    }
     HAL_Delay(100);
 
     status = getFactoryTestGsrAvg(&gsrResistance);

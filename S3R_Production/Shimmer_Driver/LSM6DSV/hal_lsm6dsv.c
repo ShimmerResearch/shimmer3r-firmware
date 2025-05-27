@@ -779,6 +779,10 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
   HAL_StatusTypeDef ret;
   lsm6dsv_selectDevice();
   ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
+  if (ret != HAL_OK)
+  {
+    lsm6dsv_unselectDevice();
+  }
   return ret;
 }
 

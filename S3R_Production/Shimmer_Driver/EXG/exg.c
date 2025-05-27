@@ -373,6 +373,30 @@ void EXG_disableInterrupts(uint8_t mask)
   ADS1292_disableDrdyInterrupts(mask);
 }
 
+void EXG_setDrdyInterruptState(uint8_t state, uint8_t exg1En, uint8_t exg2En)
+{
+  uint8_t intMask = 0;
+  if (exg1En)
+  {
+    intMask |= ADS1292_DRDY_INT_CHIP1;
+  }
+#if !EXG_USE_SINGLE_INT
+  if (exg2En)
+  {
+    intMask |= ADS1292_DRDY_INT_CHIP2;
+  }
+#endif
+
+  if (state)
+  {
+    EXG_enableInterrupts(intMask);
+  }
+  else
+  {
+    EXG_disableInterrupts(intMask);
+  }
+}
+
 //void EXG_dataReadyChip1() {
 //   ADS1292_dataReadyChip1();
 //}

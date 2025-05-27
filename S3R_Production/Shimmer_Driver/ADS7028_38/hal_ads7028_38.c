@@ -51,9 +51,12 @@ void TIMER0IntHandler(void);
 #include "gpio.h"
 #include "stm32u5xx_hal.h"
 
-#define nCS_PORT   (CS_ADS7028_GPIO_Port)
-#define nCS_PIN    (CS_ADS7028_Pin)
-#define SENSOR_BUS hspi1
+//TODO try to get manual mode working
+#define USE_MANUAL_MODE_FOR_FACTORY_TEST 0
+
+#define nCS_PORT                         (CS_ADS7028_GPIO_Port)
+#define nCS_PIN                          (CS_ADS7028_Pin)
+#define SENSOR_BUS                       hspi1
 #endif
 
 uint8_t *dataADC = 0;
@@ -209,7 +212,7 @@ static void initTIMER(void)
 //
 //*****************************************************************************
 //void spiSendReceiveArray(const uint8_t dataTx[], uint8_t dataRx[], const uint8_t byteLength)
-void spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, const uint8_t byteLength)
+HAL_StatusTypeDef spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, const uint8_t byteLength)
 {
   /*  --- INSERT YOUR CODE HERE ---
    *
@@ -228,7 +231,7 @@ void spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, const uint8_t b
   assert(dataTx && dataRx);
 
   //Set the nCS pin LOW
-  setCS(LOW);
+  ads7028_setCS(LOW);
 
 #if defined(MSP432E401Y)
   //Send all dataTx[] bytes on MOSI, and capture all MISO bytes in dataRx[]
@@ -242,7 +245,9 @@ void spiSendReceiveArray(const uint8_t *dataTx, uint8_t *dataRx, const uint8_t b
 #endif
 
   //Set the nCS pin HIGH
-  setCS(HIGH);
+  ads7028_setCS(HIGH);
+
+  return status;
 }
 
 #if defined(MSP432E401Y)
@@ -356,7 +361,7 @@ void TIMER0IntHandler(void)
   uint8_t data[4] = { 0 };
 
   //Start conversion
-  setCS(HIGH);
+  ads7028_setCS(HIGH);
 
   //Wait for conversion to complete
   //IMPORTANT: This delay will need to be modified if averaging is enabled!
@@ -405,7 +410,7 @@ bool getCS(void)
 //!\return None.
 //
 //*****************************************************************************
-void setCS(const bool state)
+void ads7028_setCS(const bool state)
 {
   /* --- INSERT YOUR CODE HERE --- */
 
@@ -494,10 +499,11 @@ void delay_ms(const uint32_t delay_time_ms)
 
 self_test_result_t ads7028_factoryTestChipId(void)
 {
+  uint8_t retVal = 0, sysStatus = 0;
   self_test_result_t self_test_result = SELF_TEST_PASS;
 
-  uint8_t sysStatus = readSingleRegister(SYSTEM_STATUS_ADDRESS);
-  if (sysStatus != SYSTEM_STATUS_DEFAULT)
+  retVal = readSingleRegister(SYSTEM_STATUS_ADDRESS, &sysStatus);
+  if (retVal != HAL_OK || sysStatus != SYSTEM_STATUS_DEFAULT)
   {
     self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
@@ -530,14 +536,25 @@ void ads7028_swI2C4PpgOn(uint8_t state)
   }
 }
 
-void ads7028_dataGetDma(uint8_t *dataRx)
+HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx)
 {
+  HAL_StatusTypeDef returnedStatus = HAL_OK;
+
   //select auto sequencing mode and start conversion
-  writeSingleRegister(SEQUENCE_CFG_ADDRESS,
+  returnedStatus = writeSingleRegister(SEQUENCE_CFG_ADDRESS,
       SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
-  //TODO : Is this delay needed?
-  delay_us(3);
-  readDataDma(dataRx, &SENSOR_BUS);
+
+  if (returnedStatus != HAL_OK)
+  {
+    return returnedStatus;
+  }
+
+  ////TODO : Is this delay needed?
+  //delay_us(3);
+
+  returnedStatus = readDataDma(dataRx, &SENSOR_BUS);
+
+  return returnedStatus;
 }
 
 void configureAutoSequenceChannel(uint8_t ChannelID)
@@ -553,10 +570,9 @@ bool ads7028_areAnyChannelsEnabled(void)
 
 void ads7028_factoryTestGsrInit(void)
 {
+#if USE_MANUAL_MODE_FOR_FACTORY_TEST
   //GSR channel
   uint8_t channelID = CHANNEL_SEL_MANUAL_CHID_3;
-
-  resetDevice();
 
   //Select manual mode
   writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
@@ -568,7 +584,16 @@ void ads7028_factoryTestGsrInit(void)
   writeSingleRegister(CHANNEL_SEL_ADDRESS, channelID);
 
   //Set nCS pin LOW, next rising edge will trigger start of conversion
-  setCS(LOW);
+  ads7028_setCS(LOW);
+#else
+  //GSR channel
+  uint8_t channelID = AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED;
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, channelID);
+
+  //Select auto-sequence mode
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS,
+      SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
+#endif
 }
 
 HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
@@ -579,20 +604,24 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   uint8_t data[4] = { 0 };
 
   //Start conversion
-  setCS(HIGH);
+  ads7028_setCS(HIGH);
 
   //Wait for conversion to complete
   //IMPORTANT: This delay will need to be modified if averaging is enabled!
-  delay_us(3);
+  //TODO investigate what delay is needed
+  //delay_us(3);
+  delay_ms(1);
 
   //Read data
   adcValueSigned = readData(data);
 
   uint16_t adcValue = ((uint16_t) adcValueSigned) & 0x0FFF;
 
-  int32_t gsrMv = ((uint32_t) (adcValue * 1000)) / (4095 / 3); //convert to mV
+  float gsrMv = (((float) adcValue) * 3000) / 4095; //convert to mV
   *gsrResistance = GSR_calcResistance(gsrMv);
   GSR_controlRange(adcValue);
+
+  setCS(LOW);
 
   return status;
 }
