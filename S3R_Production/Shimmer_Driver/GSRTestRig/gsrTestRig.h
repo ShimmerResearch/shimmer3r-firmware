@@ -83,7 +83,8 @@ HAL_StatusTypeDef setADG715SwitchMode(uint8_t value);
 void digital_pot(void);
 HAL_StatusTypeDef gsrTestRigInit(I2C_HandleTypeDef *hi2c);
 HAL_StatusTypeDef setGsrTestRigResistance(uint32_t resistance);
-HAL_StatusTypeDef setGsrTestRig(uint8_t switchMode, uint8_t u1Rdac1, uint8_t u1Rdac2, uint8_t u2Rdac1, uint8_t u2Rdac2);
+HAL_StatusTypeDef
+setGsrTestRig(uint8_t switchMode, uint8_t u1Rdac1, uint8_t u1Rdac2, uint8_t u2Rdac1, uint8_t u2Rdac2);
 uint8_t calculateRdacValue(uint32_t resistance);
 
 void run_gsrTestRig(uint8_t *config);

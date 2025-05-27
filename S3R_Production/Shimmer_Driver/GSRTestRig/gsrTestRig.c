@@ -165,7 +165,8 @@ uint8_t calculateRdacValue(uint32_t resistance)
   return (uint8_t) round(result);
 }
 
-HAL_StatusTypeDef setGsrTestRig(uint8_t switchMode, uint8_t u1Rdac1, uint8_t u1Rdac2, uint8_t u2Rdac1, uint8_t u2Rdac2)
+HAL_StatusTypeDef
+setGsrTestRig(uint8_t switchMode, uint8_t u1Rdac1, uint8_t u1Rdac2, uint8_t u2Rdac1, uint8_t u2Rdac2)
 {
   HAL_StatusTypeDef ret;
 

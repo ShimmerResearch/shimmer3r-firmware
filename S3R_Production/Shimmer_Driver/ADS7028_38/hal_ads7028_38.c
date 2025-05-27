@@ -52,11 +52,11 @@ void TIMER0IntHandler(void);
 #include "stm32u5xx_hal.h"
 
 //TODO try to get manual mode working
-#define USE_MANUAL_MODE_FOR_FACTORY_TEST   0
+#define USE_MANUAL_MODE_FOR_FACTORY_TEST 0
 
-#define nCS_PORT   (CS_ADS7028_GPIO_Port)
-#define nCS_PIN    (CS_ADS7028_Pin)
-#define SENSOR_BUS hspi1
+#define nCS_PORT                         (CS_ADS7028_GPIO_Port)
+#define nCS_PIN                          (CS_ADS7028_Pin)
+#define SENSOR_BUS                       hspi1
 #endif
 
 uint8_t *dataADC = 0;
@@ -579,7 +579,7 @@ void ads7028_factoryTestGsrInit(void)
 
   //Select auto-sequence mode
   writeSingleRegister(SEQUENCE_CFG_ADDRESS,
-  SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
+      SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
 #endif
 }
 
@@ -596,7 +596,7 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   //Wait for conversion to complete
   //IMPORTANT: This delay will need to be modified if averaging is enabled!
   //TODO investigate what delay is needed
-//  delay_us(3);
+  //delay_us(3);
   delay_ms(1);
 
   //Read data
