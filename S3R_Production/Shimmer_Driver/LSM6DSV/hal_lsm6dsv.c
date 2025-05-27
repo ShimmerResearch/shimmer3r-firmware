@@ -451,13 +451,15 @@ uint8_t lsm6dsv_drdy_test(void)
       /* Allow some time for pin to change state */
       platform_delay(1);
       res = LSM6DSV_DRDY ? 0 : 1; //check for pin status, 0 = fail/(PIN_SET), 1 = pass/(PIN_RESET)
-      /* original expected behaviour ( LSM6DSV_DRDY PIN is high,data register is READ and LSM6DSV_DRDY PIN goes low)
-       * however,There is a finite variable delay between the time, when data register is read and the pin status change is captured
-       * hence its not always guaranteed that the correct pin status is captured after each read above.
-       * so code change is to run the loop multiple times (50 in this case) and mark the test as pass if the
+      /* original expected behaviour ( LSM6DSV_DRDY PIN is high,data register is
+       * READ and LSM6DSV_DRDY PIN goes low) however,There is a finite variable
+       * delay between the time, when data register is read and the pin status
+       * change is captured hence its not always guaranteed that the correct pin
+       * status is captured after each read above. so code change is to run the
+       * loop multiple times (50 in this case) and mark the test as pass if the
        * correct pin status change is captured atleast once.
        */
-      if(res)
+      if (res)
       {
         break;
       }
