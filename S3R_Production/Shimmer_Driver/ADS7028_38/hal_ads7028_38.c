@@ -51,9 +51,12 @@ void TIMER0IntHandler(void);
 #include "gpio.h"
 #include "stm32u5xx_hal.h"
 
-#define nCS_PORT   (CS_ADS7028_GPIO_Port)
-#define nCS_PIN    (CS_ADS7028_Pin)
-#define SENSOR_BUS hspi1
+//TODO try to get manual mode working
+#define USE_MANUAL_MODE_FOR_FACTORY_TEST 0
+
+#define nCS_PORT                         (CS_ADS7028_GPIO_Port)
+#define nCS_PIN                          (CS_ADS7028_Pin)
+#define SENSOR_BUS                       hspi1
 #endif
 
 uint8_t *dataADC = 0;
@@ -567,10 +570,9 @@ bool ads7028_areAnyChannelsEnabled(void)
 
 void ads7028_factoryTestGsrInit(void)
 {
+#if USE_MANUAL_MODE_FOR_FACTORY_TEST
   //GSR channel
   uint8_t channelID = CHANNEL_SEL_MANUAL_CHID_3;
-
-  resetDevice();
 
   //Select manual mode
   writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
@@ -583,6 +585,16 @@ void ads7028_factoryTestGsrInit(void)
 
   //Set nCS pin LOW, next rising edge will trigger start of conversion
   setCS(LOW);
+
+#else
+  //GSR channel
+  uint8_t channelID = AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED;
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, channelID);
+
+  //Select auto-sequence mode
+  writeSingleRegister(SEQUENCE_CFG_ADDRESS,
+      SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
+#endif
 }
 
 HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
@@ -597,16 +609,20 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
 
   //Wait for conversion to complete
   //IMPORTANT: This delay will need to be modified if averaging is enabled!
-  delay_us(3);
+  //TODO investigate what delay is needed
+  //delay_us(3);
+  delay_ms(1);
 
   //Read data
   adcValueSigned = readData(data);
 
   uint16_t adcValue = ((uint16_t) adcValueSigned) & 0x0FFF;
 
-  int32_t gsrMv = ((uint32_t) (adcValue * 1000)) / (4095 / 3); //convert to mV
+  float gsrMv = (((float) adcValue) * 3000) / 4095; //convert to mV
   *gsrResistance = GSR_calcResistance(gsrMv);
   GSR_controlRange(adcValue);
+
+  setCS(LOW);
 
   return status;
 }
