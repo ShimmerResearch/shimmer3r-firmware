@@ -621,7 +621,7 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   *gsrResistance = GSR_calcResistance(gsrMv);
   GSR_controlRange(adcValue);
 
-  setCS(LOW);
+  ads7028_setCS(LOW);
 
   return status;
 }
