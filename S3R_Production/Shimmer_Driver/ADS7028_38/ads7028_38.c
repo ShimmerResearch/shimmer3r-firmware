@@ -121,8 +121,10 @@ void resetDevice()
 //!of SPS) \return None.
 //
 //*****************************************************************************
-void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond)
+uint8_t startManualConversions(uint8_t channelID, uint32_t samplesPerSecond)
 {
+  uint8_t retVal = 0;
+  uint8_t status = 0;
   //Select manual mode
 
   //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_MODE_MANUAL);
@@ -138,11 +140,13 @@ void startManualConversions(uint8_t channelID, uint32_t samplesPerSecond)
 
   writeSingleRegister(DATA_CFG_ADDRESS, DATA_CFG_APPEND_STATUS_FOUR_BIT_CHID);
   //Set nCS pin LOW, next rising edge will trigger start of conversion
-  uint8_t status = readSingleRegister(DATA_CFG_ADDRESS);
+  retVal = readSingleRegister(DATA_CFG_ADDRESS, &status);
   setCS(LOW);
 
   //Start conversion timer
   startTimer(samplesPerSecond);
+
+  return retVal;
 }
 
 //*****************************************************************************
@@ -187,8 +191,9 @@ int16_t readData(uint8_t *dataRx)
   return signExtend(dataRx);
 }
 
-void readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle)
+uint8_t readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle)
 {
+  uint8_t ret = 0;
   uint8_t dataTx[4] = { 0 };
   uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
 
@@ -200,7 +205,12 @@ void readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle)
   }
 
   setCS(LOW);
-  HAL_SPI_TransmitReceive_DMA(handle, &dataTx[0], dataRx, numberOfBytes);
+  ret = HAL_SPI_TransmitReceive_DMA(handle, &dataTx[0], dataRx, numberOfBytes);
+  if (ret != 0)
+  {
+    setCS(HIGH);
+  }
+  return ret;
 }
 
 //*****************************************************************************
@@ -214,8 +224,10 @@ void readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle)
 //!\return Returns the 8-bit register read result.
 //
 //*****************************************************************************
-uint8_t readSingleRegister(uint8_t address)
+uint8_t readSingleRegister(uint8_t address, uint8_t *buf)
 {
+  uint8_t retVal = 0;
+
   //Check that the register address is in range
   assert(address <= MAX_REGISTER_ADDRESS);
 
@@ -234,7 +246,12 @@ uint8_t readSingleRegister(uint8_t address)
   {
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
-  spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  retVal = spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  if (retVal != 0)
+  {
+    //If the read failed, return error code
+    return retVal;
+  }
 
   //
   // [FRAME 2] NULL command
@@ -246,7 +263,12 @@ uint8_t readSingleRegister(uint8_t address)
   {
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
-  spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  retVal = spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  if (retVal != 0)
+  {
+    //If the read failed, return error code
+    return retVal;
+  }
 
   //Check for CRC error
   if (SPI_CRC_ENABLED)
@@ -269,7 +291,9 @@ uint8_t readSingleRegister(uint8_t address)
     registerMap[address] = dataRx[0];
   }
 
-  return registerMap[address];
+  *buf = registerMap[address];
+
+  return retVal;
 }
 
 //*****************************************************************************
@@ -306,8 +330,10 @@ uint8_t getRegisterValue(uint8_t address)
 //!\return None.
 //
 //*****************************************************************************
-void writeSingleRegister(uint8_t address, uint8_t data)
+uint8_t writeSingleRegister(uint8_t address, uint8_t data)
 {
+  uint8_t retVal = 0, status = 0;
+
   //Check that the register address is in range
   assert(address <= MAX_REGISTER_ADDRESS);
 
@@ -320,11 +346,22 @@ void writeSingleRegister(uint8_t address, uint8_t data)
   if (SPI_CRC_ENABLED && (address > GENERAL_CFG_ADDRESS))
   {
     //Read STATUS register to check whether CRC error has occurred or not.
-    readSingleRegister(SYSTEM_STATUS_ADDRESS);
+    retVal = readSingleRegister(SYSTEM_STATUS_ADDRESS, &status);
+    if (retVal != 0)
+    {
+      //If the write failed, return error code
+      return retVal;
+    }
+
     if (SPI_CRCERR_IN)
     {
       //(OPTIONAL) Clear the CRC error by writing 1b to CRCERR_IN bit
-      setRegisterBits(SYSTEM_STATUS_ADDRESS, SYSTEM_STATUS_CRCERR_IN_MASK);
+      retVal = setRegisterBits(SYSTEM_STATUS_ADDRESS, SYSTEM_STATUS_CRCERR_IN_MASK);
+      if (retVal != 0)
+      {
+        //If the write failed, return error code
+        return retVal;
+      }
 
       //(OPTIONAL) Consider notifying the system of the error and repeating the previous command.
     }
@@ -338,7 +375,12 @@ void writeSingleRegister(uint8_t address, uint8_t data)
   {
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
-  spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  retVal = spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  if (retVal != 0)
+  {
+    //If the write failed, return error code
+    return retVal;
+  }
 
   //Update internal register map array (assume command was successful).
   //NOTE: This is required for writing to the CRC_EN bit to ensure read back uses the correct mode.
@@ -347,7 +389,8 @@ void writeSingleRegister(uint8_t address, uint8_t data)
   //NOTE: If you modify the CPOL_CPHA bits in the DATA_CFG register, the SPI perhiperal will need to be reconfigured here.
 
   //(RECOMMENDED) Read back register to confirm register write was successful
-  registerMap[address] = readSingleRegister(address);
+  retVal = readSingleRegister(address, &registerMap[address]);
+  return retVal;
 }
 
 //*****************************************************************************
@@ -362,8 +405,10 @@ void writeSingleRegister(uint8_t address, uint8_t data)
 //!\return None.
 //
 //*****************************************************************************
-void setRegisterBits(uint8_t address, uint8_t bitMask)
+uint8_t setRegisterBits(uint8_t address, uint8_t bitMask)
 {
+  uint8_t retVal = 0;
+
   //Check that the register address is in range
   assert(address <= MAX_REGISTER_ADDRESS);
 
@@ -379,13 +424,18 @@ void setRegisterBits(uint8_t address, uint8_t bitMask)
   {
     dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
-  spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  retVal = spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+  if (retVal != 0)
+  {
+    return retVal;
+  }
 
   //Update internal register map array (assume command was successful).
   //NOTE: This is required for writing to the CRC_EN bit to ensure read back uses the correct mode.
   registerMap[address] = registerMap[address] | bitMask;
 
   //(OPTIONAL) Check if a CRC error occurred
+  return retVal;
 }
 
 //*****************************************************************************

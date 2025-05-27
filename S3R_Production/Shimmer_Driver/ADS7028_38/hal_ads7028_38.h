@@ -140,7 +140,8 @@ extern SPI_ADCTypeDef spiAdc;
 void initAdcPeripherals(void);
 #endif
 //void spiSendReceiveArray(const uint8_t DataTx[], uint8_t DataRx[], const uint8_t byteLength);
-void spiSendReceiveArray(const uint8_t *DataTx, uint8_t *DataRx, const uint8_t byteLength);
+HAL_StatusTypeDef
+spiSendReceiveArray(const uint8_t *DataTx, uint8_t *DataRx, const uint8_t byteLength);
 #if defined(MSP432E401Y)
 uint8_t spiSendReceiveByte(const uint8_t dataTx);
 #endif
@@ -157,7 +158,7 @@ void TIMER0IntHandler(void);
 
 self_test_result_t ads7028_factoryTestChipId(void);
 void ads7028_swI2C4PpgOn(uint8_t state);
-void ads7028_dataGetDma(uint8_t *dataRx);
+HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx);
 void configureAutoSequenceChannel(uint8_t ChannelID);
 bool ads7028_areAnyChannelsEnabled(void);
 void ads7028_factoryTestGsrInit(void);
