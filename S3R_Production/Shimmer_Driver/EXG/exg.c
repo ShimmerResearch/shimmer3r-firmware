@@ -47,14 +47,6 @@ static uint8_t data[9];
 
 uint8_t EXG_init(SPI_HandleTypeDef *hspi)
 {
-  /*ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 +
-  ADS1292_DRDY_INT_CHIP2); ADS1292_init(hspi); ADS1292_resetPulse();
-  ADS1292_chip1CsEnable(1);
-  ADS1292_readDataContinuousMode(0);
-  ADS1292_chip2CsEnable(1);
-  ADS1292_readDataContinuousMode(0);
-  ADS1292_chip2CsEnable(0);*/
-  //ADS1292_init();
   HAL_StatusTypeDef res = HAL_OK;
   setSpiHandle(hspi);
   ADS1292_resetPulse();
@@ -132,7 +124,6 @@ void EXG_start(uint8_t chip)
   {
     ADS1292_chip1CsEnable(1);
     ADS1292_readDataContinuousMode(1);
-    //ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1);
     ADS1292_start(1);
     ADS1292_chip1CsEnable(0);
   }
@@ -140,7 +131,6 @@ void EXG_start(uint8_t chip)
   {
     ADS1292_chip2CsEnable(1);
     ADS1292_readDataContinuousMode(1);
-    //ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP2);
     ADS1292_start(1);
     ADS1292_chip2CsEnable(0);
   }
@@ -152,7 +142,6 @@ void EXG_start(uint8_t chip)
     ADS1292_readDataContinuousMode(1);
     ADS1292_chip1CsEnable(1);
     ADS1292_readDataContinuousMode(1);
-    //ADS1292_enableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1 + ADS1292_DRDY_INT_CHIP2);
     ADS1292_start(1);
     ADS1292_chip2CsEnable(1);
     ADS1292_start(1);
@@ -166,7 +155,6 @@ void EXG_stop(uint8_t chip)
 {
   if (chip)
   {
-    ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP2);
     ADS1292_chip2CsEnable(1);
     ADS1292_start(0);
     ADS1292_readDataContinuousMode(0);
@@ -174,18 +162,12 @@ void EXG_stop(uint8_t chip)
   }
   else
   {
-    ADS1292_disableDrdyInterrupts(ADS1292_DRDY_INT_CHIP1);
     ADS1292_chip1CsEnable(1);
     ADS1292_start(0);
     ADS1292_readDataContinuousMode(0);
     ADS1292_chip1CsEnable(0);
   }
 }
-
-//power off both ExG chips
-//void EXG_powerOff(void) {
-//   ADS1292_powerOff();
-//}
 
 void EXG_resetRegs(uint8_t chip)
 {
@@ -396,10 +378,3 @@ void EXG_setDrdyInterruptState(uint8_t state, uint8_t exg1En, uint8_t exg2En)
     EXG_disableInterrupts(intMask);
   }
 }
-
-//void EXG_dataReadyChip1() {
-//   ADS1292_dataReadyChip1();
-//}
-//void EXG_dataReadyChip2() {
-//   ADS1292_dataReadyChip2();
-//}
