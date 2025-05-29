@@ -1452,7 +1452,6 @@ void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 #endif
 }
 
-
 #elif defined(SHIMMER4_SDK)
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {

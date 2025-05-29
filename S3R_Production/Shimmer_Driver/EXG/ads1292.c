@@ -68,7 +68,7 @@ void ADS1292_init()
   rxCount = 0;
   chip2Enabled = 0;
   chipBusy = 0;
- }
+}
 
 void setSpiHandle(SPI_HandleTypeDef *hspi)
 {
@@ -228,7 +228,7 @@ void ADS1292_chip2CsEnable(uint8_t enable)
   {
     Board_delayMicros(6); //wait 5.875us  (assuming 24MHz clock)
                           //i.e. 3tCLKs (5.86us)
-   Board_EXG_CHIP2_CS(1);
+    Board_EXG_CHIP2_CS(1);
   }
 }
 
