@@ -77,7 +77,6 @@ static void SystemPower_Config(void);
 /* USER CODE BEGIN PFP */
 
 void Init(void);
-HAL_StatusTypeDef ClearnBoot0(void);
 void btInitialise(void);
 void btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt);
@@ -93,6 +92,7 @@ void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 void InitialiseBtAfterBoot(void);
 uint8_t getDefaultBaudForBtVersion(void);
+HAL_StatusTypeDef ClearnBoot0(void);
 
 /* USER CODE END PFP */
 
@@ -245,13 +245,13 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
-  ClearnBoot0();
-
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();
 #endif
 
   Init();
+
+  ClearnBoot0();
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
@@ -268,43 +268,6 @@ int main(void)
     ShimTask_manage();
   }
   /* USER CODE END 3 */
-}
-
-HAL_StatusTypeDef ClearnBoot0(void)
-{
-  FLASH_OBProgramInitTypeDef OB;
-  HAL_FLASHEx_OBGetConfig(&OB);
-
-  /* OB.USERConfig returns the FLASH_OPTR register */
-  //Use it to check if OB programming is necessary
-  if (OB.USERConfig & FLASH_OPTR_nBOOT0_Msk)
-  {
-
-    HAL_FLASH_Unlock();
-    HAL_FLASH_OB_Unlock();
-
-    OB.OptionType = OPTIONBYTE_USER;
-    OB.USERType = OB_USER_NBOOT0;
-    OB.USERConfig = OB_NBOOT0_RESET;
-
-    if (HAL_FLASHEx_OBProgram(&OB) != HAL_OK)
-    {
-      HAL_FLASH_OB_Lock();
-      HAL_FLASH_Lock();
-      return HAL_ERROR;
-    }
-
-    HAL_FLASH_OB_Launch();
-
-    /* We should not make it past the Launch, so lock
-     * flash memory and return an error from function
-     */
-    HAL_FLASH_OB_Lock();
-    HAL_FLASH_Lock();
-    return HAL_ERROR;
-  }
-
-  return HAL_OK;
 }
 
 /**
@@ -671,6 +634,45 @@ uint8_t getDefaultBaudForBtVersion(void)
 
 void stopSensingWrapup(void)
 {
+}
+
+HAL_StatusTypeDef ClearnBoot0(void)
+{
+  FLASH_OBProgramInitTypeDef OB;
+  HAL_FLASHEx_OBGetConfig(&OB);
+
+  uint32_t nBoot0State = ShimBrd_checkStateForBoot0()? FLASH_OPTR_nBOOT0_Msk : 0U;
+
+  /* OB.USERConfig returns the FLASH_OPTR register */
+  //Use it to check if OB programming is necessary
+  if ((OB.USERConfig & FLASH_OPTR_nBOOT0_Msk) != nBoot0State)
+  {
+
+    HAL_FLASH_Unlock();
+    HAL_FLASH_OB_Unlock();
+
+    OB.OptionType = OPTIONBYTE_USER;
+    OB.USERType = OB_USER_NBOOT0;
+    OB.USERConfig = nBoot0State? OB_NBOOT0_SET : OB_NBOOT0_RESET;
+
+    if (HAL_FLASHEx_OBProgram(&OB) != HAL_OK)
+    {
+      HAL_FLASH_OB_Lock();
+      HAL_FLASH_Lock();
+      return HAL_ERROR;
+    }
+
+    HAL_FLASH_OB_Launch();
+
+    /* We should not make it past the Launch, so lock
+     * flash memory and return an error from function
+     */
+    HAL_FLASH_OB_Lock();
+    HAL_FLASH_Lock();
+    return HAL_ERROR;
+  }
+
+  return HAL_OK;
 }
 
 /* USER CODE END 4 */
