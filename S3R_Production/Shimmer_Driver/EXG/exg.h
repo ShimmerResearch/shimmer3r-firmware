@@ -75,6 +75,7 @@ uint8_t EXG_init(SPI_HandleTypeDef *hspi);
 uint8_t EXG_self_test(void);
 void EXG_enableInterrupts(uint8_t mask);
 void EXG_disableInterrupts(uint8_t mask);
+void EXG_setDrdyInterruptState(uint8_t state, uint8_t exg1En, uint8_t exg2En);
 void EXG_setRdatac(uint8_t chip, uint8_t en);
 
 //put ADS1292R chip in RDATAC mode and start sampling
@@ -152,9 +153,6 @@ void EXG_prepareData(uint8_t chip, uint8_t *data, uint8_t *buf, uint8_t size);
 //#define EXG_dataReadFromChip2 ADS1292_dataReadFromChip2
 #define EXG_gatherDataInit ADS1292_gatherDataInit
 //#define EXG_gatherDataStart ADS1292_gatherDataStart
-
-#define EXG_spiRxIsr       ADS1292_spiRxIsr
-#define EXG_spiTxIsr       ADS1292_spiTxIsr
 
 #define EXG_enableChip2    ADS1292_enableChip2
 

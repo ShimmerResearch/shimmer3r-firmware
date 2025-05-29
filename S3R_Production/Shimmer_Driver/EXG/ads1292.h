@@ -607,7 +607,4 @@ void ADS1292_gatherDataInit(void (*done_cb)(void));
 //Bit 0 Must be set to '1;
 #define ADS1x9x_REG_RESP2     (0x00Au)
 
-uint8_t ADS1292_spiRxIsr(void);
-uint8_t ADS1292_spiTxIsr(void);
-
 #endif //ADS1292_H
