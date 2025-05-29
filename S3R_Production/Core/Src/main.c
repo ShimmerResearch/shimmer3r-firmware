@@ -641,7 +641,7 @@ HAL_StatusTypeDef ClearnBoot0(void)
   FLASH_OBProgramInitTypeDef OB;
   HAL_FLASHEx_OBGetConfig(&OB);
 
-  uint32_t nBoot0State = ShimBrd_checkStateForBoot0()? FLASH_OPTR_nBOOT0_Msk : 0U;
+  uint32_t nBoot0State = ShimBrd_checkStateForBoot0() ? FLASH_OPTR_nBOOT0_Msk : 0U;
 
   /* OB.USERConfig returns the FLASH_OPTR register */
   //Use it to check if OB programming is necessary
@@ -653,7 +653,7 @@ HAL_StatusTypeDef ClearnBoot0(void)
 
     OB.OptionType = OPTIONBYTE_USER;
     OB.USERType = OB_USER_NBOOT0;
-    OB.USERConfig = nBoot0State? OB_NBOOT0_SET : OB_NBOOT0_RESET;
+    OB.USERConfig = nBoot0State ? OB_NBOOT0_SET : OB_NBOOT0_RESET;
 
     if (HAL_FLASHEx_OBProgram(&OB) != HAL_OK)
     {
