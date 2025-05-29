@@ -61,13 +61,6 @@
 #define ADS1292R_RESP1     0x09
 #define ADS1292R_RESP2     0x0A
 
-typedef enum
-{
-  EXG_CHIP1 = 0x01,
-  EXG_CHIP2 = 0x02,
-  EXG_CHIP1_AND_CHIP2 = 0x03
-} ExGDAtaStatus;
-
 //initialize both ADS1292R chips on ExG board
 //i.e. power them on and enable internal reference
 //leave both in SDATAC mode
@@ -148,12 +141,7 @@ void EXG_prepareData(uint8_t chip, uint8_t *data, uint8_t *buf, uint8_t size);
 
 //Tell the driver that the data is ready to be read from chipX
 #define EXG_dataReadyChip1 ADS1292_dataReadyChip1
-//#define EXG_dataReadyChip2 ADS1292_dataReadyChip2
-//#define EXG_dataReadFromChip1 ADS1292_dataReadFromChip1
-//#define EXG_dataReadFromChip2 ADS1292_dataReadFromChip2
 #define EXG_gatherDataInit ADS1292_gatherDataInit
-//#define EXG_gatherDataStart ADS1292_gatherDataStart
-
 #define EXG_enableChip2    ADS1292_enableChip2
 
 #endif //EXG_H

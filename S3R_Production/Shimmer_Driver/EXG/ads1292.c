@@ -44,45 +44,19 @@
 #include "hal_Board.h"
 #include <string.h>
 
-//use 843.75Khz, not 13.5Mhz
-//#define USE_843_75KHZ 1
-//#ifndef USE_843_75KHZ
-//#define USE_13_5MHZ
-//#endif
-//uint8_t USE_843_75KHZ;
-
 void (*ADS1292_dataReadDone_cb)(void);
-
-uint8_t ads1292Uca0RxIsr(void);
-uint8_t ads1292Uca0TxIsr(void);
 
 uint8_t *activeBuffer, ads1292_bbuf;
 uint8_t chip1Buffer1[9], chip1Buffer2[9], chip2Buffer1[9], chip2Buffer2[9];
 volatile uint8_t chip1CurrentFullBuffer, chip2CurrentFullBuffer;
 uint8_t rxCount, chip1ReadPending, chip2ReadPending, chip2Enabled, chipBusy;
 SPI_HandleTypeDef *hspi_exg;
-
 uint8_t dummy_tx_buf[9] = {
   0,
 };
 
 void ADS1292_init()
 {
-  /*hspi_exg = hspi;
-  if (hspi_exg->Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
-  {
-    USE_843_75KHZ = 1;
-  }
-  else
-  { //if (hspi_exg.Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
-    USE_843_75KHZ = 1;
-  }
-
-  Board_EXG_RESET_N(0);
-  Board_ExG_CS(1);
-  Board_ECG_CS(1);
-  Board_RESP_CS(1);
-*/
   Board_EXG_RESET_N(1);
   HAL_Delay(1000); //Datasheet states to wait 1s for power-on reset
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
@@ -94,8 +68,7 @@ void ADS1292_init()
   rxCount = 0;
   chip2Enabled = 0;
   chipBusy = 0;
-  //UCA0_isrActivate(UCA0_isrRegister(ads1292Uca0RxIsr, ads1292Uca0TxIsr));
-}
+ }
 
 void setSpiHandle(SPI_HandleTypeDef *hspi)
 {
@@ -109,40 +82,17 @@ void ADS1292_enableChip2(uint8_t en)
 
 HAL_StatusTypeDef ADS1292_Tx1Byte(uint8_t data)
 {
+  HAL_StatusTypeDef res = HAL_OK;
   //one byte write needs 7.8us in total
   uint8_t tx_buf[] = { data };
-  HAL_StatusTypeDef res = HAL_OK;
-  /*if (USE_843_75KHZ == 1)
-  {
-    Board_delayMicros(8);
-    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //9.48us
-  }
-  else
-  {
-    Board_delayMicros(8);
-    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //0.59us
-                                              //Board_delayMicros(8);
-  } */
   res = HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 100);
   return res;
 }
 
 HAL_StatusTypeDef ADS1292_Rx1Byte(uint8_t *buf)
 {
-  //one byte read needs 7.8us in total
-  /* if (USE_843_75KHZ == 1)
-   {
-     Board_delayMicros(8);
-     HAL_SPI_Receive(hspi_exg, buf, 1, 5); //9.48us
-   }
-   else
-   {
-     Board_delayMicros(8);
-     HAL_SPI_Receive(hspi_exg, buf, 1, 5); //0.59us
-                                           //Board_delayMicros(8);
-   }*/
   HAL_StatusTypeDef res = HAL_OK;
-  res = HAL_SPI_Receive(hspi_exg, buf, 1, 5);
+  res = HAL_SPI_Receive(hspi_exg, buf, 1, 100);
   return res;
 }
 
@@ -241,7 +191,6 @@ void ADS1292_chip1CsEnable(uint8_t enable)
       //Disable chip 2
       Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
                             //i.e. 3tCLKs (5.86us)
-      //Board_RESP_CS(1);
       Board_EXG_CHIP2_CS(1);
     }
     Board_EXG_CHIP1_CS(0);
@@ -254,7 +203,6 @@ void ADS1292_chip1CsEnable(uint8_t enable)
     Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
                           //i.e. 3tCLKs (5.86us)
                           //Board_ECG_CS(1);
-    //Board_ExG_CS(1);
     Board_EXG_CHIP1_CS(1);
   }
 }
@@ -263,17 +211,14 @@ void ADS1292_chip2CsEnable(uint8_t enable)
 {
   if (enable)
   {
-    //Board_ExG_CS(0);
     //Ensure chip 1 is not enabled
     if (HAL_GPIO_ReadPin(EXG_CHIP1_CS_GPIO_Port, EXG_CHIP1_CS_Pin) == GPIO_PIN_RESET)
     {
       //Disable chip 2
       Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
                             //i.e. 3tCLKs (5.86us)
-      //Board_ECG_CS(1);
       Board_EXG_CHIP1_CS(1);
     }
-    //Board_RESP_CS(0);
     Board_EXG_CHIP2_CS(0);
     //need to wait 10ns here, 2 clk cycles @ 216MHz
     while (0)
@@ -283,9 +228,7 @@ void ADS1292_chip2CsEnable(uint8_t enable)
   {
     Board_delayMicros(6); //wait 5.875us  (assuming 24MHz clock)
                           //i.e. 3tCLKs (5.86us)
-    //Board_RESP_CS(1);
-    //Board_ExG_CS(1);
-    Board_EXG_CHIP2_CS(1);
+   Board_EXG_CHIP2_CS(1);
   }
 }
 
@@ -340,8 +283,6 @@ HAL_StatusTypeDef ADS1292_offsetCal(void)
 
 HAL_StatusTypeDef ADS1292_enableInternalReference(void)
 {
-  //uint8_t tx_buf = 0xA0;
-  //ADS1292_Tx1Byte(tx_buf);
   uint8_t data[] = { 0x88 };
   HAL_StatusTypeDef res = HAL_OK;
   res = ADS1292_regWrite(ADS1x9x_REG_CONFIG2, 1, data);

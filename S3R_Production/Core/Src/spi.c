@@ -1019,11 +1019,9 @@ void SPI_pollSensors(void)
       {
         EXG_readData(1, 1, &sensing.dataBuf[sensing.ptr.exg2]);
       }
-
       SPI_busGatherDataDone_cb(spi3Sens.busId);
     }
   }
-
   if (spi1Sens.sensorLen > 0)
   {
     SpiSensing(&spi1Sens, SPI_FIRST_SENSOR);
@@ -1040,9 +1038,6 @@ void SPI_stopSensing()
   if (ShimBrd_isAds1292Present())
   {
     gConfigBytes *configBytes = ShimConfig_getStoredConfig();
-
-    //HAL_NVIC_EnableIRQ(EXTI3_IRQn);
-    //HAL_NVIC_EnableIRQ(EXTI4_IRQn);
     if (configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit)
     {
       EXG_stop(1); //probably not needed
@@ -1051,12 +1046,7 @@ void SPI_stopSensing()
     {
       EXG_stop(0); //probably not needed
     }
-    //if(configBytes->chEnExg1_24Bit
-    //   || configBytes->chEnExg2_24Bit
-    //   || configBytes->chEnExg1_16Bit
-    //   || configBytes->chEnExg2_16Bit) {
     EXG_powerOff();
-    //}
     //HAL_SPI_MspDeInit(hspiExg);//this may save .2-.3 mA?
 
     EXG_setDrdyInterruptState(0, configBytes->chEnExg1_24Bit || configBytes->chEnExg1_16Bit,
@@ -1130,12 +1120,7 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
   {
     spiSensingInfo->status = SPI_STAT_IDLE;
     spiSensingInfo->sensorCnt = 0;
-    if (spiSensingInfo->busId == SPI3_BUS_FLAG)
-    {
-      spi3Sens_buf.exg1Data_read = 0;
-      spi3Sens_buf.exg2Data_read = 0;
-    }
-    else
+    if (spiSensingInfo->busId != SPI3_BUS_FLAG)
     {
       SPI_busGatherDataDone_cb(spiSensingInfo->busId);
     }
@@ -1154,12 +1139,7 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
         spiSensingInfo->sensorCnt = 0;
 
         /* SPI3 complete callback is ha           */
-        if (spiSensingInfo->busId == SPI3_BUS_FLAG)
-        {
-          spi3Sens_buf.exg1Data_read = 0;
-          spi3Sens_buf.exg2Data_read = 0;
-        }
-        else
+        if (spiSensingInfo->busId != SPI3_BUS_FLAG)
         {
           SPI_busGatherDataDone_cb(spiSensingInfo->busId);
         }
@@ -1450,28 +1430,20 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  //gConfigBytes *configBytes = ShimConfig_getStoredConfig();
-
 #if !IS_EXG_DATA_READ_BLOCKING
   switch (spi3Sens.sensorList[spi3Sens.sensorCnt])
   {
   case SPI3_ADS1292R_EXG1:
     ADS1292_chip1CsEnable(0);
-    ///Board_EXG_CHIP1_CS(1);
     ADS1292_readDataComplete();
     break;
   case SPI3_ADS1292R_EXG2:
     ADS1292_chip2CsEnable(0);
-    //Board_EXG_CHIP2_CS(1);
     ADS1292_readDataComplete();
     break;
   default:
     break;
   }
-
-  //spi3Sens.status = SPI_STAT_IDLE;
-  //SpiSensing(&spi3Sens, SPI_NEXT_SENSOR);
-
   spi3Sens.sensorCnt++;
   if (spi3Sens.sensorCnt == spi3Sens.sensorLen)
   {
@@ -1480,15 +1452,6 @@ void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 #endif
 }
 
-//void SPI3_TxCpltCallback(SPI_HandleTypeDef *hspi)
-//{
-//  EXG_spiTxIsr();
-//}
-//
-//void SPI3_RxCpltCallback(SPI_HandleTypeDef *hspi)
-//{
-//  EXG_spiRxIsr();
-//}
 
 #elif defined(SHIMMER4_SDK)
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
