@@ -432,11 +432,11 @@ void I2cSens_configureChannels(void)
   i2c4Sens.busId = I2C4_BUS_FLAG;
 
   //Mag (LIS2MDL)
-  if (configBytes->chEnAltMag)
+  if (configBytes->chEnMag)
   {
-    *channel_contents_ptr++ = X_ALT_MAG;
-    *channel_contents_ptr++ = Y_ALT_MAG;
-    *channel_contents_ptr++ = Z_ALT_MAG;
+    *channel_contents_ptr++ = X_MAG;
+    *channel_contents_ptr++ = Y_MAG;
+    *channel_contents_ptr++ = Z_MAG;
     nbr_i2c1_chans += 3;
     sensing.ptr.mag1 = sensing.dataLen;
     sensing.dataLen += 6;
@@ -582,9 +582,9 @@ void I2C_startSensing(void)
   }
 
 #if defined(SHIMMER3R)
-  if (configBytes->chEnAltMag)
+  if (configBytes->chEnMag)
   {
-    lis2mdl_configure(shimmerSamplingFreq, configBytes->altMagRate);
+    lis2mdl_configure(shimmerSamplingFreq, ShimConfig_configByteMagRateGet());
   }
 
 #elif defined(SHIMMER4_SDK)
@@ -819,6 +819,7 @@ void I2cBattMonitor(I2C_SENSING_TYPE start)
 uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
 {
   uint8_t retVal = 0;
+  HAL_StatusTypeDef halRet = 0xFF;
 
   switch (i2cSensingInfo->sensorList[i2cSensingInfo->sensorCnt])
   {
@@ -827,7 +828,7 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
     if (!lis2mdl_is_drdy_int_enabled() || LIS2MDL_DRDY)
     {
       i2cSensingInfo->status = I2C_STAT_LIS2MDL_MAG_GET;
-      lis2mdl_mag_get(i2cSens_buf.lis2mdlMagBuf);
+      halRet = lis2mdl_mag_get(i2cSens_buf.lis2mdlMagBuf);
       retVal = 1;
     }
     break;
@@ -857,6 +858,16 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
   default:
     break;
   }
+
+  /* If a DMA issue occured, return 0 to skip to next sensor */
+  if (halRet != 0xFF && halRet != HAL_OK)
+  {
+    //printf("I2C DMA Error: %d, Stage: %d\n", halRet, i2cSensingInfo->status);
+
+    retVal = 0;
+    i2cSensingInfo->status = SPI_STAT_IDLE;
+  }
+
   return retVal;
 }
 

@@ -98,8 +98,8 @@ extern "C"
   void S4_RTC_WakeUpSet(uint16_t period);
   void S4_RTC_WakeUpSetSlow(void);
   void setupNextRtcMinuteAlarm(void);
-  void setupAndStartAlarm(void);
-  void stopAlarm(void);
+  void RTC_setupAndStartSdSyncAlarm(void);
+  void RTC_stopSdSyncAlarm(void);
 
   /* USER CODE END Prototypes */
 

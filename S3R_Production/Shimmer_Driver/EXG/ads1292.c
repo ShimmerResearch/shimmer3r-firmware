@@ -44,41 +44,19 @@
 #include "hal_Board.h"
 #include <string.h>
 
-//use 843.75Khz, not 13.5Mhz
-//#define USE_843_75KHZ 1
-//#ifndef USE_843_75KHZ
-//#define USE_13_5MHZ
-//#endif
-uint8_t USE_843_75KHZ;
-
 void (*ADS1292_dataReadDone_cb)(void);
-
-uint8_t ads1292Uca0RxIsr(void);
-uint8_t ads1292Uca0TxIsr(void);
 
 uint8_t *activeBuffer, ads1292_bbuf;
 uint8_t chip1Buffer1[9], chip1Buffer2[9], chip2Buffer1[9], chip2Buffer2[9];
-uint8_t chip1CurrentFullBuffer, chip2CurrentFullBuffer;
+volatile uint8_t chip1CurrentFullBuffer, chip2CurrentFullBuffer;
 uint8_t rxCount, chip1ReadPending, chip2ReadPending, chip2Enabled, chipBusy;
 SPI_HandleTypeDef *hspi_exg;
+uint8_t dummy_tx_buf[9] = {
+  0,
+};
 
 void ADS1292_init()
 {
-  /*hspi_exg = hspi;
-  if (hspi_exg->Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
-  {
-    USE_843_75KHZ = 1;
-  }
-  else
-  { //if (hspi_exg.Init.BaudRatePrescaler == SPI_BAUDRATEPRESCALER_128)
-    USE_843_75KHZ = 1;
-  }
-
-  Board_EXG_RESET_N(0);
-  Board_ExG_CS(1);
-  Board_ECG_CS(1);
-  Board_RESP_CS(1);
-*/
   Board_EXG_RESET_N(1);
   HAL_Delay(1000); //Datasheet states to wait 1s for power-on reset
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
@@ -90,7 +68,6 @@ void ADS1292_init()
   rxCount = 0;
   chip2Enabled = 0;
   chipBusy = 0;
-  //UCA0_isrActivate(UCA0_isrRegister(ads1292Uca0RxIsr, ads1292Uca0TxIsr));
 }
 
 void setSpiHandle(SPI_HandleTypeDef *hspi)
@@ -105,40 +82,17 @@ void ADS1292_enableChip2(uint8_t en)
 
 HAL_StatusTypeDef ADS1292_Tx1Byte(uint8_t data)
 {
+  HAL_StatusTypeDef res = HAL_OK;
   //one byte write needs 7.8us in total
   uint8_t tx_buf[] = { data };
-  HAL_StatusTypeDef res = HAL_OK;
-  /*if (USE_843_75KHZ == 1)
-  {
-    Board_delayMicros(8);
-    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //9.48us
-  }
-  else
-  {
-    Board_delayMicros(8);
-    HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 5); //0.59us
-                                              //Board_delayMicros(8);
-  } */
   res = HAL_SPI_Transmit(hspi_exg, tx_buf, 1, 100);
   return res;
 }
 
 HAL_StatusTypeDef ADS1292_Rx1Byte(uint8_t *buf)
 {
-  //one byte read needs 7.8us in total
-  /* if (USE_843_75KHZ == 1)
-   {
-     Board_delayMicros(8);
-     HAL_SPI_Receive(hspi_exg, buf, 1, 5); //9.48us
-   }
-   else
-   {
-     Board_delayMicros(8);
-     HAL_SPI_Receive(hspi_exg, buf, 1, 5); //0.59us
-                                           //Board_delayMicros(8);
-   }*/
   HAL_StatusTypeDef res = HAL_OK;
-  res = HAL_SPI_Receive(hspi_exg, buf, 1, 5);
+  res = HAL_SPI_Receive(hspi_exg, buf, 1, 100);
   return res;
 }
 
@@ -237,7 +191,6 @@ void ADS1292_chip1CsEnable(uint8_t enable)
       //Disable chip 2
       Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
                             //i.e. 3tCLKs (5.86us)
-      //Board_RESP_CS(1);
       Board_EXG_CHIP2_CS(1);
     }
     Board_EXG_CHIP1_CS(0);
@@ -250,7 +203,6 @@ void ADS1292_chip1CsEnable(uint8_t enable)
     Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
                           //i.e. 3tCLKs (5.86us)
                           //Board_ECG_CS(1);
-    //Board_ExG_CS(1);
     Board_EXG_CHIP1_CS(1);
   }
 }
@@ -259,17 +211,14 @@ void ADS1292_chip2CsEnable(uint8_t enable)
 {
   if (enable)
   {
-    //Board_ExG_CS(0);
     //Ensure chip 1 is not enabled
     if (HAL_GPIO_ReadPin(EXG_CHIP1_CS_GPIO_Port, EXG_CHIP1_CS_Pin) == GPIO_PIN_RESET)
     {
       //Disable chip 2
       Board_delayMicros(6); //wait 5.875us (assuming 24MHz clock)
                             //i.e. 3tCLKs (5.86us)
-      //Board_ECG_CS(1);
       Board_EXG_CHIP1_CS(1);
     }
-    //Board_RESP_CS(0);
     Board_EXG_CHIP2_CS(0);
     //need to wait 10ns here, 2 clk cycles @ 216MHz
     while (0)
@@ -279,8 +228,6 @@ void ADS1292_chip2CsEnable(uint8_t enable)
   {
     Board_delayMicros(6); //wait 5.875us  (assuming 24MHz clock)
                           //i.e. 3tCLKs (5.86us)
-    //Board_RESP_CS(1);
-    //Board_ExG_CS(1);
     Board_EXG_CHIP2_CS(1);
   }
 }
@@ -336,8 +283,6 @@ HAL_StatusTypeDef ADS1292_offsetCal(void)
 
 HAL_StatusTypeDef ADS1292_enableInternalReference(void)
 {
-  //uint8_t tx_buf = 0xA0;
-  //ADS1292_Tx1Byte(tx_buf);
   uint8_t data[] = { 0x88 };
   HAL_StatusTypeDef res = HAL_OK;
   res = ADS1292_regWrite(ADS1x9x_REG_CONFIG2, 1, data);
@@ -406,190 +351,120 @@ uint8_t ADS1292_readDataChip2(uint8_t *data)
 //Tell the driver that the data is ready to be read from chipX
 void ADS1292_dataReadyChip1(void)
 {
-  //chip1drdy = 1;
+  if (chip2ReadPending)
+  {
+    chip1ReadPending = 1;
+  }
+  else
+  {
+    if (!chip1ReadPending)
+    {
+      chip1ReadPending = 1;
+      if (chip1CurrentFullBuffer == 1)
+      {
+        activeBuffer = chip1Buffer2;
+      }
+      else
+      {
+        activeBuffer = chip1Buffer1;
+      }
+
+      ADS1292_dataReadFromChip1(activeBuffer);
+    }
+  }
+}
+
+void ADS1292_dataReadyChip2(void)
+{
+  if (chip1ReadPending)
+  {
+    chip2ReadPending = 1;
+  }
+  else
+  {
+    if (!chip2ReadPending)
+    {
+      chip2ReadPending = 1;
+      if (chip2CurrentFullBuffer == 1)
+      {
+        activeBuffer = chip2Buffer2;
+      }
+      else
+      {
+        activeBuffer = chip2Buffer1;
+      }
+      ADS1292_dataReadFromChip2(activeBuffer);
+    }
+  }
+}
+
+void ADS1292_readDataComplete(void)
+{
+  if ((activeBuffer == chip1Buffer1) || (activeBuffer == chip1Buffer2))
+  {
+    chip1ReadPending = 0;
+    if (activeBuffer == chip1Buffer1)
+    {
+      chip1CurrentFullBuffer = 1;
+    }
+    else
+    {
+      chip1CurrentFullBuffer = 2;
+    }
+    if (chip2ReadPending)
+    {
+      chip2ReadPending = 0;
+      ADS1292_dataReadyChip2();
+    }
+  }
+  else
+  {
+    chip2ReadPending = 0;
+    if (activeBuffer == chip2Buffer1)
+    {
+      chip2CurrentFullBuffer = 1;
+    }
+    else
+    {
+      chip2CurrentFullBuffer = 2;
+    }
+    if (chip1ReadPending)
+    {
+      chip1ReadPending = 0;
+      ADS1292_dataReadyChip1();
+    }
+  }
+}
+
+void ADS1292_dataReadFromChip1(uint8_t *buf)
+{
+  HAL_StatusTypeDef ret;
+  ADS1292_chip1CsEnable(1);
+#if IS_EXG_DATA_READ_BLOCKING
+  ret = HAL_SPI_TransmitReceive(
+      hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH, 1000);
+  ADS1292_chip1CsEnable(0);
+  ADS1292_readDataComplete();
+#else
+  ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
+#endif
+}
+
+void ADS1292_dataReadFromChip2(uint8_t *buf)
+{
+  HAL_StatusTypeDef ret;
+  ADS1292_chip2CsEnable(1);
+#if IS_EXG_DATA_READ_BLOCKING
+  ret = HAL_SPI_TransmitReceive(
+      hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH, 1000);
+  ADS1292_chip2CsEnable(0);
+  ADS1292_readDataComplete();
+#else
+  ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
+#endif
 }
 
 void ADS1292_gatherDataInit(void (*done_cb)(void))
 {
   ADS1292_dataReadDone_cb = done_cb;
 }
-
-//void ADS1292_gatherDataStart(void)
-//{
-//  if (!chipBusy)
-//  {
-//    chipBusy = 1;
-//    ADS1292_dataReadFromChip1();
-//  }
-//  else
-//  {
-//    ADS1292_gatherDataDone();
-//  }
-//}
-//
-//void ADS1292_gatherDataDone(void)
-//{
-//  ADS1292_dataReadDone_cb();
-//}
-//
-//#if defined(SHIMMER4_SDK)
-//extern DMA_HandleTypeDef hdma_spi1_rx;
-//#endif
-//void ADS1292_dataReadFromChip1()
-//{
-//  __disable_irq();
-//  if (!chip1ReadPending && !chip2ReadPending)
-//  {
-//    chip1ReadPending = 1;
-//    if (chip1CurrentFullBuffer == 1)
-//    {
-//      activeBuffer = chip1Buffer2;
-//    }
-//    else
-//    {
-//      activeBuffer = chip1Buffer1;
-//    }
-//    rxCount = 0;
-//
-//    if (HAL_GPIO_ReadPin(EXG_CHIP1_CS_GPIO_Port, EXG_CHIP1_CS_Pin) == GPIO_PIN_SET)
-//    {
-//      ADS1292_chip1CsEnable(1);
-//    }
-//    if (USE_843_75KHZ == 1)
-//    {
-//      memset(activeBuffer, 0, ADS1292_DATA_PACKET_LENGTH);
-//      HAL_SPI_DMAStop(hspi_exg);
-//      //Board_delayMicros(6);
-//      while (HAL_SPI_GetState(hspi_exg) != HAL_SPI_STATE_READY)
-//        ;
-//#if defined(SHIMMER3R)
-//      while (HAL_DMA_GetState(hspi_exg->hdmarx) != HAL_DMA_STATE_READY)
-//        ;
-//#elif defined(SHIMMER4_SDK)
-//      while (HAL_DMA_GetState(&hdma_spi1_rx) != HAL_DMA_STATE_READY)
-//        ;
-//#endif
-//      HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
-//    }
-//    else
-//    {
-//      ads1292_bbuf = 0;
-//      HAL_SPI_Receive_DMA(hspi_exg, &ads1292_bbuf, 1);
-//    }
-//  }
-//  __enable_irq();
-//}
-//
-//void ADS1292_dataReadFromChip2()
-//{
-//  __disable_irq();
-//  if (!chip1ReadPending && !chip2ReadPending)
-//  {
-//    chip2ReadPending = 1;
-//    if (chip2CurrentFullBuffer == 1)
-//    {
-//      activeBuffer = chip2Buffer2;
-//    }
-//    else
-//    {
-//      activeBuffer = chip2Buffer1;
-//    }
-//    rxCount = 0;
-//
-//    if (HAL_GPIO_ReadPin(EXG_CHIP2_CS_GPIO_Port, EXG_CHIP2_CS_Pin) == GPIO_PIN_SET)
-//    {
-//      ADS1292_chip2CsEnable(1);
-//    }
-//
-//    if (USE_843_75KHZ == 1)
-//    {
-//      memset(activeBuffer, 0, ADS1292_DATA_PACKET_LENGTH);
-//      HAL_SPI_DMAStop(hspi_exg);
-//      //Board_delayMicros(6);
-//      while (HAL_SPI_GetState(hspi_exg) != HAL_SPI_STATE_READY)
-//        ;
-//#if defined(SHIMMER3R)
-//      while (HAL_DMA_GetState(hspi_exg->hdmarx) != HAL_DMA_STATE_READY)
-//        ;
-//#elif defined(SHIMMER4_SDK)
-//      while (HAL_DMA_GetState(&hdma_spi1_rx) != HAL_DMA_STATE_READY)
-//        ;
-//#endif
-//
-//      HAL_SPI_Receive_DMA(hspi_exg, activeBuffer, ADS1292_DATA_PACKET_LENGTH);
-//    }
-//    else
-//    {
-//    }
-//  }
-//  __enable_irq();
-//}
-
-void ADS1292_dataReadFromChip1(uint8_t *buf)
-{
-  HAL_StatusTypeDef ret;
-  uint8_t tx_buf[9] = {
-    0,
-  };
-
-  ADS1292_chip1CsEnable(1);
-  ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
-  //ret = HAL_SPI_Receive_DMA(hspi_exg, buf, ADS1292_DATA_PACKET_LENGTH);
-}
-
-void ADS1292_dataReadFromChip2(uint8_t *buf)
-{
-  HAL_StatusTypeDef ret;
-  uint8_t tx_buf[9] = {
-    0,
-  };
-
-  ADS1292_chip2CsEnable(1);
-  ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
-  //ret = HAL_SPI_Receive_DMA(hspi_exg, buf, ADS1292_DATA_PACKET_LENGTH);
-}
-
-//uint8_t ADS1292_spiRxIsr(void)
-//{
-//  if ((activeBuffer == chip1Buffer1) || (activeBuffer == chip1Buffer2))
-//  {
-//    chip1ReadPending = 0;
-//    if (activeBuffer == chip1Buffer1)
-//    {
-//      chip1CurrentFullBuffer = 1;
-//    }
-//    else
-//    {
-//      chip1CurrentFullBuffer = 2;
-//    }
-//    if (chip2Enabled)
-//    {
-//      ADS1292_dataReadFromChip2();
-//    }
-//    else
-//    {
-//      chipBusy = 0;
-//      ADS1292_gatherDataDone();
-//    }
-//  }
-//  else
-//  {
-//    chip2ReadPending = 0;
-//    if (activeBuffer == chip2Buffer1)
-//    {
-//      chip2CurrentFullBuffer = 1;
-//    }
-//    else
-//    {
-//      chip2CurrentFullBuffer = 2;
-//    }
-//    chipBusy = 0;
-//    ADS1292_gatherDataDone();
-//  }
-//  return 0;
-//}
-//
-//uint8_t ADS1292_spiTxIsr(void)
-//{
-//  return 0;
-//} //to add if necessary

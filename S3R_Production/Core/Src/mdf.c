@@ -259,7 +259,19 @@ uint8_t micTest(void)
 
   MX_ADF1_Init();
   micStartSensing();
-  HAL_Delay(100);
+
+  /* Wait up to 1s for microphone to begin recording */
+  for (uint8_t i = 0; i < 100; i++)
+  {
+    HAL_Delay(10);
+    if (Mic_CountSkip == 64)
+    {
+      /* Wait further 100ms for settling time */
+      HAL_Delay(100);
+      break;
+    }
+  }
+
   micStopSensing();
 
   for (uint8_t i = 0; i < (DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U); i++)

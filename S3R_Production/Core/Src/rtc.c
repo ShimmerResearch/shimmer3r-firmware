@@ -28,7 +28,7 @@
 
 uint64_t rwcConfigTime64;
 uint32_t S4_RTC_Status = RTC_STATUS_ZERO;
-extern uint32_t alarm_counter = 0;
+uint32_t sdSyncAlarmCounter = 0;
 
 /* USER CODE END 0 */
 
@@ -708,15 +708,15 @@ uint8_t isRwcTimeSet(void)
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  //static uint8_t green0_cnt = 0;
-
   //TODO carried from Shimmer4, LED blinking only works when not sensing
-
   if (shimmerStatus.sensing && !shimmerStatus.configuring)
   {
-//if(!green0_cnt++){
-//   Board_ledToggle(LED_GREEN0);
-//}
+#if SAVE_DATA_FROM_RTC_INT
+    if (sensing.isSampling == SAMPLING_COMPLETE)
+    {
+      ShimSens_saveData();
+    }
+#endif /* SAVE_DATA_FROM_RTC_INT */
 #if !SENS_CLK_RTC0TIM1
     ShimSens_gatherData();
 #endif
@@ -787,7 +787,7 @@ void setupNextRtcMinuteAlarm(void)
   }
 }
 
-void setupAndStartAlarm(void)
+void RTC_setupAndStartSdSyncAlarm(void)
 {
   RTC_AlarmTypeDef sAlarmB;
   RTC_TimeTypeDef sTime;
@@ -820,15 +820,15 @@ void setupAndStartAlarm(void)
 
 void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  alarm_counter++;
+  sdSyncAlarmCounter++;
   //stopAlarm(); //stopping from triggering the Alarm multiple times.
   //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
   //printf("Alarm B fired!\r\n");           // Debug print
 
-  setupAndStartAlarm(); //for the next interval (testing purposes)
+  RTC_setupAndStartSdSyncAlarm(); //for the next interval (testing purposes)
 }
 
-void stopAlarm(void)
+void RTC_stopSdSyncAlarm(void)
 {
   __HAL_RTC_ALARMB_DISABLE(hrtc);                //disable Alarm B
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRB); //disable Alarm trigger

@@ -102,10 +102,6 @@ void S4_NORM_ADC_readBatt(uint8_t isBlockingRead);
 void adcGpioInit(uint32_t pin, GPIO_TypeDef *port);
 void manageReadBatt(uint8_t isBlockingRead);
 
-#if defined(SHIMMER3R)
-bool areMcuAdcChannelsEnabled(void);
-#endif
-
 #if SUPPORT_SR48_6_0
 HAL_StatusTypeDef getSingleMcuAdcChSample(ADC_HandleTypeDef *hadc, uint32_t *sample);
 HAL_StatusTypeDef getFactoryTestGsrResistanceMcuAdc(uint32_t *resistance);
