@@ -92,7 +92,7 @@ void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 void InitialiseBtAfterBoot(void);
 uint8_t getDefaultBaudForBtVersion(void);
-HAL_StatusTypeDef ClearnBoot0(void);
+HAL_StatusTypeDef checknBoot0OptionByte(void);
 
 /* USER CODE END PFP */
 
@@ -251,7 +251,8 @@ int main(void)
 
   Init();
 
-  ClearnBoot0();
+  /* Check nBOOT0 option byte is configured correctly */
+  checknBoot0OptionByte();
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
@@ -636,12 +637,13 @@ void stopSensingWrapup(void)
 {
 }
 
-HAL_StatusTypeDef ClearnBoot0(void)
+HAL_StatusTypeDef checknBoot0OptionByte(void)
 {
   FLASH_OBProgramInitTypeDef OB;
   HAL_FLASHEx_OBGetConfig(&OB);
 
-  uint32_t nBoot0State = ShimBrd_checkStateForBoot0() ? FLASH_OPTR_nBOOT0_Msk : 0U;
+  uint32_t nBoot0State =
+      ShimBrd_checkCorrectStateForBoot0() ? FLASH_OPTR_nBOOT0_Msk : 0U;
 
   /* OB.USERConfig returns the FLASH_OPTR register */
   //Use it to check if OB programming is necessary
@@ -662,6 +664,7 @@ HAL_StatusTypeDef ClearnBoot0(void)
       return HAL_ERROR;
     }
 
+    /* This should cause a reboot */
     HAL_FLASH_OB_Launch();
 
     /* We should not make it past the Launch, so lock
