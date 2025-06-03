@@ -642,8 +642,7 @@ HAL_StatusTypeDef checknBoot0OptionByte(void)
   FLASH_OBProgramInitTypeDef OB;
   HAL_FLASHEx_OBGetConfig(&OB);
 
-  uint32_t nBoot0State =
-      ShimBrd_checkCorrectStateForBoot0() ? FLASH_OPTR_nBOOT0_Msk : 0U;
+  uint32_t nBoot0State = ShimBrd_checkCorrectStateForBoot0() ? FLASH_OPTR_nBOOT0_Msk : 0U;
 
   /* OB.USERConfig returns the FLASH_OPTR register */
   //Use it to check if OB programming is necessary
