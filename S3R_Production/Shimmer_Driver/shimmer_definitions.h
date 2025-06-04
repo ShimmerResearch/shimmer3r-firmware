@@ -4,6 +4,7 @@
 #define SHIMMER_DEFINITIONS_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 #if defined(SHIMMER3R)
 #define DEVICE_VER    10
