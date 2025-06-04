@@ -59,7 +59,7 @@ void petWatchdog(void)
 {
   if (HAL_IWDG_Refresh(&hiwdg) != HAL_OK)
   {
-    SHIMMER_PRINTF("IWDG refresh failed\r\n");
+    Error_Handler();
   }
 }
 
