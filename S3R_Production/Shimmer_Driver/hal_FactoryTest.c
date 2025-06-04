@@ -684,7 +684,8 @@ void SPI_test(void)
   }
   else
   {
-    send_test_report(" - S3R_TEST_0018 - ADXL371 test not applicable for this model\r\n");
+    send_test_report(
+        " - S3R_TEST_0018 - ADXL371 test not applicable for this model\r\n");
   }
 
   SPI1_DeInit();
@@ -713,7 +714,8 @@ void SPI_test(void)
   }
   else
   {
-    send_test_report(" - S3R_TEST_0019 - LIS3MDL test not applicable for this model\r\n");
+    send_test_report(
+        " - S3R_TEST_0019 - LIS3MDL test not applicable for this model\r\n");
   }
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
