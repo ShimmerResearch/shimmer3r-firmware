@@ -489,21 +489,30 @@ void SetupDock(void)
 {
   shimmerStatus.configuring = 1;
 
-  if (shimmerStatus.docked)
+  if (LogAndStream_isDockedOrUsbIn())
   {
     ShimBatt_setBatteryInterval(BATT_INTERVAL_DOCKED);
     ShimBatt_resetBatteryCriticalCount();
+    delay_ms(1000);
     manageReadBatt(1);
 
     shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
     shimmerStatus.sdlogReady = 0;
-    if (CheckSdInslot())
+    /* Prioritise dock over USB for SD card access */
+    if (shimmerStatus.docked)
     {
-      Board_sd2Pc();
+      if (CheckSdInslot())
+      {
+        Board_sd2Pc();
 
-      //Board_sdPowerCycle();
+        //Board_sdPowerCycle();
+      }
+      MX_USART1_UART_Init();
     }
-    MX_USART1_UART_Init();
+    else
+    {
+      DockUart_deint();
+    }
     ShimBt_instreamStatusRespSend();
   }
   else
