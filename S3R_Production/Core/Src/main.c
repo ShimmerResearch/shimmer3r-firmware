@@ -255,6 +255,7 @@ int main(void)
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
   //run_factory_test();
+  JumpToBootloader();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -646,74 +647,41 @@ void stopSensingWrapup(void)
 {
 }
 
-/*temporarity here*/
+/*Temporarily located in main.c. Based on the following example */
+/* https://community.st.com/t5/stm32-mcus/how-to-jump-to-system-bootloader-from-application-code-on-stm32/ta-p/49424 */
 void JumpToBootloader(void)
 {
   uint32_t i = 0;
   void (*SysMemBootJump)(void);
-  /* Set the address of the entry point to bootloader */
+  /* Set the address of the entry point to bootloader for U5 */
   volatile uint32_t BootAddr = 0x0BF90000;
 
   /* Disable all interrupts */
   __disable_irq();
-  HAL_DeInit();
-  hpcd_USB_OTG_HS.Instance->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
-  //HAL_DeInit();
-  //USB->CNTR = 0x0003;
-  //USB_CoreReset(&hpcd_USB_OTG_HS);
-  /*     hpcd_USB_OTG_HS.Instance->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
-
-       HAL_ADC_DeInit(&hadc1);
-       HAL_ADC_DeInit(&hadc2);
-       //HAL_PCD_DeInit(&hpcd_USB_OTG_HS);
-       HAL_DMA_DeInit(&handle_GPDMA1_Channel0);
-       HAL_DMA_DeInit(&handle_GPDMA1_Channel1);
-       HAL_DMA_DeInit(&handle_GPDMA1_Channel2);
-       HAL_DMA_DeInit(&handle_GPDMA1_Channel4);
-       HAL_DMA_DeInit(&handle_GPDMA1_Channel5);
-       HAL_DMA_DeInit(&handle_GPDMA1_Channel6);
-       HAL_DMA_DeInit(&handle_GPDMA1_Channel7);
-       HAL_DMA_DeInit(&handle_GPDMA1_Channel8);
-       HAL_DMA_DeInit(&handle_GPDMA1_Channel9);
-       HAL_DMA_DeInit(&handle_GPDMA1_Channel10);
-       HAL_I2C_DeInit(&hi2c1);
-       HAL_SPI_DeInit(&hspi1);
-       HAL_SPI_DeInit(&hspi2);
-       HAL_SPI_DeInit(&hspi3);
-       HAL_UART_DeInit(&huart1);
-       HAL_UART_DeInit(&huart3);
-       HAL_TIM_Base_DeInit(&htim2);
-       HAL_TIM_Base_DeInit(&htim3);
-       HAL_TIM_Base_DeInit(&htim6);
-       HAL_SD_DeInit(&hsd1);*/
-  //MX_FATFS_Init();
 
   /* Disable Systick timer */
   SysTick->CTRL = 0;
-  SysTick->LOAD = 0;
-  SysTick->VAL = 0;
 
   /* Set the clock to the default state */
   HAL_RCC_DeInit();
 
   /* Clear Interrupt Enable Register & Interrupt Pending Register */
-  for (uint8_t i = 0; i < sizeof(NVIC->ICER) / sizeof(NVIC->ICER[0]); i++)
+  for (i=0;i<5;i++)
   {
-    NVIC->ICER[i] = 0xFFFFFFFF;
-    NVIC->ICPR[i] = 0xFFFFFFFF;
+    NVIC->ICER[i]=0xFFFFFFFF;
+    NVIC->ICPR[i]=0xFFFFFFFF;
   }
 
   /* Re-enable all interrupts */
   __enable_irq();
 
-  /* Set up the jump to booloader address + 4 */
-  SysMemBootJump = (void (*)(void))(*((uint32_t *) ((BootAddr + 4))));
+  /* Set up the jump to boot loader address + 4 */
+  SysMemBootJump = (void (*)(void)) (*((uint32_t *) ((BootAddr + 4))));
 
-  /* Set the main stack pointer to the bootloader stack */
-  __set_MSP(*(uint32_t *) BootAddr);
+  /* Set the main stack pointer to the boot loader stack */
+  __set_MSP(*(uint32_t *)BootAddr);
 
-  /* Call the function to jump to bootloader location */
-  //BOOTVTAB->Reset_Handler();
+  /* Call the function to jump to boot loader location */
   SysMemBootJump();
 
   /* Jump is done successfully */
