@@ -88,9 +88,9 @@ typedef struct shimmer_calib_t{
 #define SC_TIMESTAMP_LENGTH            8
 
 #define SC_SENSOR_ANALOG_ACCEL         2
-#define SC_SENSOR_MPU9150_GYRO         30
-#define SC_SENSOR_LSM303DLHC_ACCEL     31
-#define SC_SENSOR_LSM303DLHC_MAG       32
+#define SC_SENSOR_MPU9X50_ICM20948_GYRO         30
+#define SC_SENSOR_LSM303_ACCEL     31
+#define SC_SENSOR_LSM303_MAG       32
 #define SC_SENSOR_BMP180_PRESSURE      36
 #define SC_SENSOR_HOST_ECG             100
 
@@ -99,29 +99,29 @@ typedef struct shimmer_calib_t{
 #define SC_SENSOR_RANGE_MAX_ANALOG_ACCEL           1
 #define SC_DATA_LEN_ANALOG_ACCEL                   21
 //MPU9x50 Gyro range
-#define SC_SENSOR_RANGE_MPU9250_GYRO_250DPS        0x00 //+/-250 dps
-#define SC_SENSOR_RANGE_MPU9250_GYRO_500DPS        0x01 //+/-500 dps
-#define SC_SENSOR_RANGE_MPU9250_GYRO_1000DPS       0x02 //+/-1000 dps
-#define SC_SENSOR_RANGE_MPU9250_GYRO_2000DPS       0x03 //+/-2000 dps
-#define SC_SENSOR_RANGE_MAX_MPU9250_GYRO           4
-#define SC_DATA_LEN_MPU9250_GYRO                   21
+#define SC_SENSOR_RANGE_MPU9X50_ICM20948_GYRO_250DPS        0x00 //+/-250 dps
+#define SC_SENSOR_RANGE_MPU9X50_ICM20948_GYRO_500DPS        0x01 //+/-500 dps
+#define SC_SENSOR_RANGE_MPU9X50_ICM20948_GYRO_1000DPS       0x02 //+/-1000 dps
+#define SC_SENSOR_RANGE_MPU9X50_ICM20948_GYRO_2000DPS       0x03 //+/-2000 dps
+#define SC_SENSOR_RANGE_MAX_MPU9X50_ICM20948_GYRO           4
+#define SC_DATA_LEN_MPU9X50_ICM20948_GYRO                   21
 //LSM303DLHC Accel Range
-#define SC_SENSOR_RANGE_LSM303DLHC_ACCEL_2G        0x00
-#define SC_SENSOR_RANGE_LSM303DLHC_ACCEL_4G        0x01
-#define SC_SENSOR_RANGE_LSM303DLHC_ACCEL_8G        0x02
-#define SC_SENSOR_RANGE_LSM303DLHC_ACCEL_16G       0x03
-#define SC_SENSOR_RANGE_MAX_LSM303DLHC_ACCEL       4
-#define SC_DATA_LEN_LSM303DLHC_ACCEL               21
+#define SC_SENSOR_RANGE_LSM303_ACCEL_2G        0x00
+#define SC_SENSOR_RANGE_LSM303_ACCEL_4G        0x01
+#define SC_SENSOR_RANGE_LSM303_ACCEL_8G        0x02
+#define SC_SENSOR_RANGE_LSM303_ACCEL_16G       0x03
+#define SC_SENSOR_RANGE_MAX_LSM303_ACCEL       4
+#define SC_DATA_LEN_LSM303_ACCEL               21
 //LSM303DLHC Mag gain
-#define SC_SENSOR_RANGE_LSM303DLHC_MAG_1_3G        0x01 //+/-1.3 Gauss
-#define SC_SENSOR_RANGE_LSM303DLHC_MAG_1_9G        0x02 //+/-1.9 Gauss
-#define SC_SENSOR_RANGE_LSM303DLHC_MAG_2_5G        0x03 //+/-2.5 Gauss
-#define SC_SENSOR_RANGE_LSM303DLHC_MAG_4_0G        0x04 //+/-4.0 Gauss
-#define SC_SENSOR_RANGE_LSM303DLHC_MAG_4_7G        0x05 //+/-4.7 Gauss
-#define SC_SENSOR_RANGE_LSM303DLHC_MAG_5_6G        0x06 //+/-5.6 Gauss
-#define SC_SENSOR_RANGE_LSM303DLHC_MAG_8_1G        0x07 //+/-8.1 Gauss
-#define SC_SENSOR_RANGE_MAX_LSM303DLHC_MAG         7
-#define SC_DATA_LEN_LSM303DLHC_MAG                 21
+#define SC_SENSOR_RANGE_LSM303_MAG_1_3G        0x01 //+/-1.3 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_1_9G        0x02 //+/-1.9 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_2_5G        0x03 //+/-2.5 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_4_0G        0x04 //+/-4.0 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_4_7G        0x05 //+/-4.7 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_5_6G        0x06 //+/-5.6 Gauss
+#define SC_SENSOR_RANGE_LSM303_MAG_8_1G        0x07 //+/-8.1 Gauss
+#define SC_SENSOR_RANGE_MAX_LSM303_MAG         7
+#define SC_DATA_LEN_LSM303_MAG                 21
 //BMP180 Temperature/Pressure Range
 #define SC_SENSOR_RANGE_BMP180                     0
 #define SC_SENSOR_RANGE_MAX_BMP180                 1

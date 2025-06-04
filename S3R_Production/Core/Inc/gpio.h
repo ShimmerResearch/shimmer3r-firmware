@@ -31,8 +31,8 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
-#include "s4.h"
-#include "s4__cfg.h"
+#include "shimmer_definitions.h"
+#include <shimmer_include.h>
 
   /* USER CODE END Includes */
 
@@ -44,18 +44,21 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
-  void GPIO_init(void);
+  void GPIO_usbVbusIntInit(uint8_t state);
   void GPIO_userButtonCheck(void);
 
 #if defined(SHIMMER3R)
   void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising);
 #endif
 
-  uint8_t SD_insertedCheck(void);
-  void SdPowerOn(void);
-  void SdPowerOff(void);
+  uint8_t CheckSdInslot(void);
   uint8_t isSdPowerOn(void);
-  void setMcuHasSdcardControl(uint8_t state);
+  void gpioInitPerBoard(void);
+  void vbusPinStateCheck(void);
+  void initBtPins(void);
+  void initBtInterrupts(void);
+  void deinitBtPins(void);
+  void setBtPower(uint8_t state);
 
   /* USER CODE END Prototypes */
 

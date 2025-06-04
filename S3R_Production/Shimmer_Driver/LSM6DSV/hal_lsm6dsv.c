@@ -119,6 +119,8 @@
 #include "usart.h"
 #endif
 
+#include "hal_FactoryTest.h"
+
 /* Private macro -------------------------------------------------------------*/
 #define BOOT_TIME                 10
 
@@ -170,16 +172,6 @@ void lsm6dsv_driver_init(void)
   lsm6dsv_obj.Ctx.handle = &SENSOR_BUS;
 }
 
-void lsm6dsv_power_on(void)
-{
-  set_power_spi1_bus(true, SPI1_CHIP_INDEX_LSM6DSV);
-}
-
-void lsm6dsv_power_off(void)
-{
-  set_power_spi1_bus(false, SPI1_CHIP_INDEX_LSM6DSV);
-}
-
 void lsm6dsv_selectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
@@ -190,18 +182,18 @@ void lsm6dsv_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-uint8_t lsm6dsv_self_test(void)
+self_test_result_t lsm6dsv_self_test(void)
 {
   lsm6dsv_all_sources_t all_sources;
   int16_t data_raw[3];
   float val_st_off[3];
   float val_st_on[3];
   float test_val[3];
-  uint8_t st_result;
   uint8_t whoamI;
   lsm6dsv_reset_t rst;
   uint8_t i;
   uint8_t j;
+  self_test_result_t self_test_result = SELF_TEST_PASS;
 
   lsm6dsv_driver_init();
 
@@ -210,7 +202,8 @@ uint8_t lsm6dsv_self_test(void)
 
   if (whoamI != LSM6DSV_ID)
   {
-    st_result = ST_FAIL;
+    //st_result = ST_FAIL;
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
   {
@@ -233,18 +226,11 @@ uint8_t lsm6dsv_self_test(void)
     /* Wait stable output */
     platform_delay(100);
 
-    /* Check if new value available */
-    do
+    if (!lsm6dsv_drdy_test())
     {
-      lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
-    } while (!all_sources.drdy_xl);
-
-    /* Read dummy data and discard it */
-    lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
-    /* Read 5 sample and get the average vale for each axis */
-    memset(val_st_off, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < 5; i++)
+      self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
+    }
+    else
     {
       /* Check if new value available */
       do
@@ -252,189 +238,242 @@ uint8_t lsm6dsv_self_test(void)
         lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
       } while (!all_sources.drdy_xl);
 
-      /* Read data and accumulate the mg value */
+      /* Read dummy data and discard it */
       lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
+      /* Read 5 sample and get the average vale for each axis */
+      memset(val_st_off, 0x00, 3 * sizeof(float));
 
-      for (j = 0; j < 3; j++)
+      for (i = 0; i < 5; i++)
       {
-        val_st_off[j] += lsm6dsv_from_fs4_to_mg(data_raw[j]);
+        /* Check if new value available */
+        do
+        {
+          lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
+        } while (!all_sources.drdy_xl);
+
+        /* Read data and accumulate the mg value */
+        lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
+
+        for (j = 0; j < 3; j++)
+        {
+          val_st_off[j] += lsm6dsv_from_fs4_to_mg(data_raw[j]);
+        }
       }
-    }
 
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_off[i] /= 5.0f;
-    }
+      /* Calculate the mg average values */
+      for (i = 0; i < 3; i++)
+      {
+        val_st_off[i] /= 5.0f;
+      }
 
-    /* Enable Self Test positive (or negative) */
-    lsm6dsv_xl_self_test_set(&lsm6dsv_obj.Ctx, LSM6DSV_XL_ST_NEGATIVE);
-    //lsm6dsv_xl_self_test_set(&lsm6dsv_obj.Ctx, LSM6DSV_XL_ST_POSITIVE);
-    /* Wait stable output */
-    platform_delay(100);
+      /* Enable Self Test positive (or negative) */
+      lsm6dsv_xl_self_test_set(&lsm6dsv_obj.Ctx, LSM6DSV_XL_ST_NEGATIVE);
+      //lsm6dsv_xl_self_test_set(&lsm6dsv_obj.Ctx, LSM6DSV_XL_ST_POSITIVE);
+      /* Wait stable output */
+      platform_delay(100);
 
-    /* Check if new value available */
-    do
-    {
-      lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
-    } while (!all_sources.drdy_xl);
-
-    /* Read dummy data and discard it */
-    lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
-    /* Read 5 sample and get the average vale for each axis */
-    memset(val_st_on, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < 5; i++)
-    {
       /* Check if new value available */
       do
       {
         lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
       } while (!all_sources.drdy_xl);
 
-      /* Read data and accumulate the mg value */
+      /* Read dummy data and discard it */
       lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
+      /* Read 5 sample and get the average vale for each axis */
+      memset(val_st_on, 0x00, 3 * sizeof(float));
 
-      for (j = 0; j < 3; j++)
+      for (i = 0; i < 5; i++)
       {
-        val_st_on[j] += lsm6dsv_from_fs4_to_mg(data_raw[j]);
+        /* Check if new value available */
+        do
+        {
+          lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
+        } while (!all_sources.drdy_xl);
+
+        /* Read data and accumulate the mg value */
+        lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
+
+        for (j = 0; j < 3; j++)
+        {
+          val_st_on[j] += lsm6dsv_from_fs4_to_mg(data_raw[j]);
+        }
       }
-    }
 
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_on[i] /= 5.0f;
-    }
-
-    /* Calculate the mg values for self test */
-    for (i = 0; i < 3; i++)
-    {
-      test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
-    }
-
-    /* Check self test limit */
-    st_result = ST_PASS;
-
-    for (i = 0; i < 3; i++)
-    {
-      if ((SELF_TEST_MIN_ST_LIMIT_mg > test_val[i]) || (test_val[i] > SELF_TEST_MAX_ST_LIMIT_mg))
+      /* Calculate the mg average values */
+      for (i = 0; i < 3; i++)
       {
-        st_result = ST_FAIL;
+        val_st_on[i] /= 5.0f;
       }
-    }
 
-    /* Disable Self Test */
-    lsm6dsv_xl_self_test_set(&lsm6dsv_obj.Ctx, LSM6DSV_XL_ST_DISABLE);
-    /* Disable sensor. */
-    lsm6dsv_xl_data_rate_set(&lsm6dsv_obj.Ctx, LSM6DSV_ODR_OFF);
-    /*
-     * Gyroscope Self Test
-     */
-    /* Set Output Data Rate */
-    lsm6dsv_gy_data_rate_set(&lsm6dsv_obj.Ctx, LSM6DSV_ODR_AT_240Hz);
-    /* Set full scale */
-    lsm6dsv_gy_full_scale_set(&lsm6dsv_obj.Ctx, LSM6DSV_2000dps);
-    /* Wait stable output */
-    platform_delay(100);
-
-    /* Check if new value available */
-    do
-    {
-      lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
-    } while (!all_sources.drdy_gy);
-
-    /* Read dummy data and discard it */
-    lsm6dsv_angular_rate_raw_get(&lsm6dsv_obj.Ctx, data_raw);
-    /* Read 5 sample and get the average vale for each axis */
-    memset(val_st_off, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < 5; i++)
-    {
-      /* Check if new value available */
-      do
+      /* Calculate the mg values for self test */
+      for (i = 0; i < 3; i++)
       {
-        lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
-      } while (!all_sources.drdy_gy);
-      /* Read data and accumulate the mg value */
-      lsm6dsv_angular_rate_raw_get(&lsm6dsv_obj.Ctx, data_raw);
-
-      for (j = 0; j < 3; j++)
-      {
-        val_st_off[j] += lsm6dsv_from_fs2000_to_mdps(data_raw[j]);
+        test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
       }
-    }
 
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_off[i] /= 5.0f;
-    }
+      /* Check self test limit */
+      for (i = 0; i < 3; i++)
+      {
+        if ((SELF_TEST_MIN_ST_LIMIT_mg > test_val[i]) || (test_val[i] > SELF_TEST_MAX_ST_LIMIT_mg))
+        {
+          //st_result = ST_FAIL;
+          self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
+        }
+      }
 
-    /* Enable Self Test positive (or negative) */
-    lsm6dsv_gy_self_test_set(&lsm6dsv_obj.Ctx, LSM6DSV_GY_ST_POSITIVE);
-    //lsm6dsv_gy_self_test_set(&lsm6dsv_obj.Ctx, LIS2DH12_GY_ST_NEGATIVE);
-    /* Wait stable output */
-    platform_delay(100);
-    /* Read 5 sample and get the average vale for each axis */
-    memset(val_st_on, 0x00, 3 * sizeof(float));
+      /* Disable Self Test */
+      lsm6dsv_xl_self_test_set(&lsm6dsv_obj.Ctx, LSM6DSV_XL_ST_DISABLE);
+      /* Disable sensor. */
+      lsm6dsv_xl_data_rate_set(&lsm6dsv_obj.Ctx, LSM6DSV_ODR_OFF);
+      /*
+       * Gyroscope Self Test
+       */
+      /* Set Output Data Rate */
+      lsm6dsv_gy_data_rate_set(&lsm6dsv_obj.Ctx, LSM6DSV_ODR_AT_240Hz);
+      /* Set full scale */
+      lsm6dsv_gy_full_scale_set(&lsm6dsv_obj.Ctx, LSM6DSV_2000dps);
+      /* Wait stable output */
+      platform_delay(100);
 
-    for (i = 0; i < 5; i++)
-    {
       /* Check if new value available */
       do
       {
         lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
       } while (!all_sources.drdy_gy);
 
-      /* Read data and accumulate the mg value */
+      /* Read dummy data and discard it */
       lsm6dsv_angular_rate_raw_get(&lsm6dsv_obj.Ctx, data_raw);
+      /* Read 5 sample and get the average vale for each axis */
+      memset(val_st_off, 0x00, 3 * sizeof(float));
 
-      for (j = 0; j < 3; j++)
+      for (i = 0; i < 5; i++)
       {
-        val_st_on[j] += lsm6dsv_from_fs2000_to_mdps(data_raw[j]);
+        /* Check if new value available */
+        do
+        {
+          lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
+        } while (!all_sources.drdy_gy);
+        /* Read data and accumulate the mg value */
+        lsm6dsv_angular_rate_raw_get(&lsm6dsv_obj.Ctx, data_raw);
+
+        for (j = 0; j < 3; j++)
+        {
+          val_st_off[j] += lsm6dsv_from_fs2000_to_mdps(data_raw[j]);
+        }
       }
-    }
 
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_on[i] /= 5.0f;
-    }
-
-    /* Calculate the mg values for self test */
-    for (i = 0; i < 3; i++)
-    {
-      test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
-    }
-
-    /* Check self test limit */
-    for (i = 0; i < 3; i++)
-    {
-      if ((MIN_ST_LIMIT_mdps > test_val[i]) || (test_val[i] > MAX_ST_LIMIT_mdps))
+      /* Calculate the mg average values */
+      for (i = 0; i < 3; i++)
       {
-        st_result = ST_FAIL;
+        val_st_off[i] /= 5.0f;
       }
-    }
 
-    /* Disable Self Test */
-    lsm6dsv_gy_self_test_set(&lsm6dsv_obj.Ctx, LSM6DSV_GY_ST_DISABLE);
+      /* Enable Self Test positive (or negative) */
+      lsm6dsv_gy_self_test_set(&lsm6dsv_obj.Ctx, LSM6DSV_GY_ST_POSITIVE);
+      //lsm6dsv_gy_self_test_set(&lsm6dsv_obj.Ctx, LIS2DH12_GY_ST_NEGATIVE);
+      /* Wait stable output */
+      platform_delay(100);
+      /* Read 5 sample and get the average vale for each axis */
+      memset(val_st_on, 0x00, 3 * sizeof(float));
+
+      for (i = 0; i < 5; i++)
+      {
+        /* Check if new value available */
+        do
+        {
+          lsm6dsv_all_sources_get(&lsm6dsv_obj.Ctx, &all_sources);
+        } while (!all_sources.drdy_gy);
+
+        /* Read data and accumulate the mg value */
+        lsm6dsv_angular_rate_raw_get(&lsm6dsv_obj.Ctx, data_raw);
+
+        for (j = 0; j < 3; j++)
+        {
+          val_st_on[j] += lsm6dsv_from_fs2000_to_mdps(data_raw[j]);
+        }
+      }
+
+      /* Calculate the mg average values */
+      for (i = 0; i < 3; i++)
+      {
+        val_st_on[i] /= 5.0f;
+      }
+
+      /* Calculate the mg values for self test */
+      for (i = 0; i < 3; i++)
+      {
+        test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
+      }
+
+      /* Check self test limit */
+      for (i = 0; i < 3; i++)
+      {
+        if ((MIN_ST_LIMIT_mdps > test_val[i]) || (test_val[i] > MAX_ST_LIMIT_mdps))
+        {
+          self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
+        }
+      }
+
+      /* Disable Self Test */
+      lsm6dsv_gy_self_test_set(&lsm6dsv_obj.Ctx, LSM6DSV_GY_ST_DISABLE);
+    }
     /* Disable sensor. */
     lsm6dsv_xl_data_rate_set(&lsm6dsv_obj.Ctx, LSM6DSV_ODR_OFF);
   }
+  return self_test_result;
+}
 
-  //if (st_result == ST_PASS)
-  //{
-  //  sprintf((char *) tx_buffer, "LSM6DSV Self Test - PASS\r\n");
-  //}
-  //
-  //else
-  //{
-  //  sprintf((char *) tx_buffer, "LSM6DSV Self Test - FAIL\r\n");
-  //}
-  //
-  //tx_com(tx_buffer, strlen((char const *) tx_buffer));
-  return (st_result == ST_PASS ? 0 : 1);
+uint8_t lsm6dsv_drdy_test(void)
+{
+  int16_t data_raw[3];
+  uint8_t i;
+  uint8_t res = 0;
+  lsm6dsv_interrupt_mode_t mode_int = { 0 };
+  lsm6dsv_pin_int_route_t pin_int = { 0 };
+
+  pin_int.drdy_xl = PROPERTY_ENABLE;
+  mode_int.enable = PROPERTY_ENABLE;
+  mode_int.lir = PROPERTY_ENABLE;
+  lsm6dsv_interrupt_enable_set(&lsm6dsv_obj.Ctx, mode_int);
+  lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
+
+  /* Added in case chip needs time to enable interrupt pin */
+  platform_delay(100);
+
+  /* New sample is every 16.6ms @ 60Hz. Loop count + delay below allows 100ms for DRDY to toggle */
+  for (i = 0; i < 50; i++)
+  {
+    if (LSM6DSV_DRDY)
+    {
+      /* Read raw data */
+      lsm6dsv_acceleration_raw_get(&lsm6dsv_obj.Ctx, data_raw);
+      /* Allow some time for pin to change state */
+      platform_delay(1);
+      res = LSM6DSV_DRDY ? 0 : 1; //check for pin status, 0 = fail/(PIN_SET), 1 = pass/(PIN_RESET)
+      /* original expected behaviour ( LSM6DSV_DRDY PIN is high,data register is
+       * READ and LSM6DSV_DRDY PIN goes low) however,There is a finite variable
+       * delay between the time, when data register is read and the pin status
+       * change is captured hence its not always guaranteed that the correct pin
+       * status is captured after each read above. so code change is to run the
+       * loop multiple times (50 in this case) and mark the test as pass if the
+       * correct pin status change is captured atleast once.
+       */
+      if (res)
+      {
+        break;
+      }
+    }
+    platform_delay(1);
+  }
+
+  pin_int.drdy_xl = PROPERTY_DISABLE;
+  mode_int.enable = PROPERTY_DISABLE;
+  mode_int.lir = PROPERTY_DISABLE;
+  lsm6dsv_interrupt_enable_set(&lsm6dsv_obj.Ctx, mode_int);
+  lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
+
+  return res;
 }
 
 void lsm6dsv_configure(float shimmerSamplingFreq,
@@ -445,9 +484,6 @@ void lsm6dsv_configure(float shimmerSamplingFreq,
     uint8_t rangeAccel)
 {
   LSM6DSV_Init(&lsm6dsv_obj);
-
-  //TODO remove when rate is set correctly in config bytes
-  rate = LSM6DSV_ODR_AT_1920Hz;
 
   if (isGyroEn)
   {
@@ -466,40 +502,29 @@ void lsm6dsv_configure(float shimmerSamplingFreq,
     lsm6dsv_xl_full_scale_set(&lsm6dsv_obj.Ctx, (lsm6dsv_xl_full_scale_t) rangeAccel);
   }
 
-  //TODO if chip sampling rate is lower than Shimmer sampling, enable pin
+  //if chip sampling rate is lower than Shimmer sampling, enable pin
   //interrupt to only read data from chip when it's ready
-  lsm6dsv_pin_int_route_t pin_int;
-  pin_int.drdy_g_eis = 0;
-  pin_int.drdy_temp = 0;
-  pin_int.fifo_th = 0;
-  pin_int.fifo_ovr = 0;
-  pin_int.fifo_full = 0;
-  pin_int.cnt_bdr = 0;
-  pin_int.emb_func_endop = 0;
-  pin_int.timestamp = 0;
-  pin_int.shub = 0;
-  pin_int.emb_func = 0;
-  pin_int.sixd = 0;
-  pin_int.single_tap = 0;
-  pin_int.double_tap = 0;
-  pin_int.wakeup = 0;
-  pin_int.freefall = 0;
-  pin_int.sleep_change = 0;
-
   isDrdyIntEnabled = false;
   if (lsm6dsv_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
   {
-    if ((isGyroEn && isAccelEn) || isGyroEn)
+    lsm6dsv_interrupt_mode_t mode_int = { 0 };
+    lsm6dsv_pin_int_route_t pin_int = { 0 };
+
+    /* If gyro or gyro+accel is enabled, use gyro interrupt */
+    if (isGyroEn)
     {
       pin_int.drdy_g = PROPERTY_ENABLE;
-      isDrdyIntEnabled = true;
     }
     else
     {
       pin_int.drdy_xl = PROPERTY_ENABLE;
-      isDrdyIntEnabled = true;
     }
+    mode_int.enable = PROPERTY_ENABLE;
+    mode_int.lir = PROPERTY_ENABLE;
+    lsm6dsv_interrupt_enable_set(&lsm6dsv_obj.Ctx, mode_int);
     lsm6dsv_pin_int1_route_set(&lsm6dsv_obj.Ctx, &pin_int);
+
+    isDrdyIntEnabled = true;
   }
 
   ///* Configure filtering chain */
@@ -675,6 +700,14 @@ void lsm6dsv_status_get(void)
   lsm6dsv_flag_data_ready_get(&lsm6dsv_obj.Ctx, &drdy);
 }
 
+int32_t lsm6dsv_temperature_get(float_t *tempCal)
+{
+  int16_t tempUncal = 0;
+  int32_t res = lsm6dsv_temperature_raw_get(&lsm6dsv_obj.Ctx, &tempUncal);
+  *tempCal = lsm6dsv_from_lsb_to_celsius(tempUncal);
+  return res;
+}
+
 #endif
 
 /*
@@ -746,6 +779,10 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
   HAL_StatusTypeDef ret;
   lsm6dsv_selectDevice();
   ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
+  if (ret != HAL_OK)
+  {
+    lsm6dsv_unselectDevice();
+  }
   return ret;
 }
 

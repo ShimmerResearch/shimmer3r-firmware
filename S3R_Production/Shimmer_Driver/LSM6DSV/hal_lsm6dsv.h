@@ -11,11 +11,10 @@
 #include <lsm6dsv_reg.h>
 
 void lsm6dsv_driver_init(void);
-void lsm6dsv_power_on(void);
-void lsm6dsv_power_off(void);
 void lsm6dsv_selectDevice(void);
 void lsm6dsv_unselectDevice(void);
-uint8_t lsm6dsv_self_test(void);
+self_test_result_t lsm6dsv_self_test(void);
+uint8_t lsm6dsv_drdy_test(void);
 void lsm6dsv_configure(float shimmerSamplingFreq,
     uint8_t isGyroEn,
     uint8_t isAccelEn,
@@ -31,5 +30,6 @@ float lsm6dsv_get_sensor_freq_from_rate(lsm6dsv_data_rate_t rate);
 
 void lsm6dsv_restore_default_config(void);
 void lsm6dsv_status_get(void);
+int32_t lsm6dsv_temperature_get(float_t *tempCal);
 
 #endif /* LSM6DSV_HAL_LSM6DSV_H_ */

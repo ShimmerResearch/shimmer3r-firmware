@@ -46,14 +46,17 @@
 #include "stm32u5xx_hal.h"
 #include <stdint.h>
 
+#define IS_EXG_DATA_READ_BLOCKING 0
+#define EXG_USE_SINGLE_INT        1
+
 //initialise the SPI and other pins for use with the ADS1292
-//void ADS1292_init(void);
-void ADS1292_init(SPI_HandleTypeDef *hspi_exg);
+void ADS1292_init();
 void ADS1292_enableChip2(uint8_t en);
-void ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata);
-void ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata);
+HAL_StatusTypeDef ADS1292_regRead(uint8_t startaddress, uint8_t size, uint8_t *rdata);
+HAL_StatusTypeDef ADS1292_regWrite(uint8_t startaddress, uint8_t size, uint8_t *wdata);
 void ADS1292_powerOn(void);
 void ADS1292_powerOff(void);
+void setSpiHandle(SPI_HandleTypeDef *hspi);
 
 //Issues a reset pulse
 //Remains powered on afterwards
@@ -68,31 +71,31 @@ void ADS1292_chip2CsEnable(uint8_t enable);
 //if enable=1 enable read data continuous mode (RDATAC mode)
 //if enable=0 disable read data continuous mode (SDATAC mode)
 //chip select must be enabled
-void ADS1292_readDataContinuousMode(uint8_t enable);
+HAL_StatusTypeDef ADS1292_readDataContinuousMode(uint8_t enable);
 
 //if start=1 send START opcode
 //if start=0 send STOP opcode
 //chip select must be enabled
-void ADS1292_start(uint8_t start);
+HAL_StatusTypeDef ADS1292_start(uint8_t start);
 
 //Reset all registers to default value
-void ADS1292_resetRegs(void);
+HAL_StatusTypeDef ADS1292_resetRegs(void);
 
 //Channel offset calibration
 //Must be sent every time there is a change in the PGA gain settings
-void ADS1292_offsetCal(void);
+HAL_StatusTypeDef ADS1292_offsetCal(void);
 
 //must be in SDATAC mode before calling this command
 //and chip select must be enabled
-void ADS1292_enableInternalReference(void);
+HAL_StatusTypeDef ADS1292_enableInternalReference(void);
 
 #define ADS1292_DRDY_INT_CHIP1 0x01
 #define ADS1292_DRDY_INT_CHIP2 0x02
-//If bit0 of mask is 1 then data ready interrupt for chip 1 is enabled (P2.0)
-//If bit1 of mask is 1 then data ready interrupt for chip 2 is enabled (P1.4)
+//If bit0 of mask is 1 then data ready interrupt for chip 1 is enabled
+//If bit1 of mask is 1 then data ready interrupt for chip 2 is enabled
 void ADS1292_enableDrdyInterrupts(uint8_t mask);
-//If bit0 of mask is 1 then data ready interrupt for chip 1 is disabled (P2.0)
-//If bit1 of mask is 1 then data ready interrupt for chip 2 is disabled (P1.4)
+//If bit0 of mask is 1 then data ready interrupt for chip 1 is disabled
+//If bit1 of mask is 1 then data ready interrupt for chip 2 is disabled
 void ADS1292_disableDrdyInterrupts(uint8_t mask);
 
 //returns 72bits (9 bytes) in data
@@ -106,13 +109,14 @@ uint8_t ADS1292_readDataChip2(uint8_t *data);
 
 //Tell the driver that the data is ready to be read from chipX
 void ADS1292_dataReadyChip1(void);
+void ADS1292_dataReadyChip2(void);
 
-void ADS1292_dataReadFromChip1(void);
-void ADS1292_dataReadFromChip2(void);
+void ADS1292_readDataComplete(void);
+
+void ADS1292_dataReadFromChip1(uint8_t *buf);
+void ADS1292_dataReadFromChip2(uint8_t *buf);
 
 void ADS1292_gatherDataInit(void (*done_cb)(void));
-void ADS1292_gatherDataStart(void);
-void ADS1292_gatherDataDone(void);
 
 #define ADS1292_DATA_PACKET_LENGTH 9
 /****************************************************************/
@@ -601,8 +605,5 @@ void ADS1292_gatherDataDone(void);
 //
 //Bit 0 Must be set to '1;
 #define ADS1x9x_REG_RESP2     (0x00Au)
-
-uint8_t ADS1292_spiRxIsr(void);
-uint8_t ADS1292_spiTxIsr(void);
 
 #endif //ADS1292_H

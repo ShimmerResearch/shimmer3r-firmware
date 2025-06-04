@@ -22,10 +22,14 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "gpdma.h"
+#include "hal_adc.h"
+
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
+ADC_HandleTypeDef hadc4;
 
 /* ADC1 init function */
 void MX_ADC1_Init(void)
@@ -45,7 +49,7 @@ void MX_ADC1_Init(void)
    */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-  hadc1.Init.Resolution = ADC_RESOLUTION_14B;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.GainCompensation = 0;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
@@ -81,6 +85,8 @@ void MX_ADC1_Init(void)
   }
   /* USER CODE BEGIN ADC1_Init 2 */
 
+  adcLinkedListConfig(&hadc1); //configure linkedlist for ADC
+
   /* USER CODE END ADC1_Init 2 */
 }
 
@@ -102,7 +108,7 @@ void MX_ADC2_Init(void)
    */
   hadc2.Instance = ADC2;
   hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-  hadc2.Init.Resolution = ADC_RESOLUTION_14B;
+  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
   hadc2.Init.GainCompensation = 0;
   hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
@@ -141,6 +147,61 @@ void MX_ADC2_Init(void)
   /* USER CODE END ADC2_Init 2 */
 }
 
+/* ADC4 init function */
+void MX_ADC4_Init(void)
+{
+
+  /* USER CODE BEGIN ADC4_Init 0 */
+
+  /* USER CODE END ADC4_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = { 0 };
+
+  /* USER CODE BEGIN ADC4_Init 1 */
+
+  /* USER CODE END ADC4_Init 1 */
+
+  /** Common config
+   */
+  hadc4.Instance = ADC4;
+  hadc4.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+  hadc4.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc4.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc4.Init.ScanConvMode = ADC4_SCAN_DISABLE;
+  hadc4.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc4.Init.LowPowerAutoPowerOff = ADC_LOW_POWER_NONE;
+  hadc4.Init.LowPowerAutoWait = DISABLE;
+  hadc4.Init.ContinuousConvMode = ENABLE;
+  hadc4.Init.NbrOfConversion = 1;
+  hadc4.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc4.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc4.Init.DMAContinuousRequests = DISABLE;
+  hadc4.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_LOW;
+  hadc4.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc4.Init.SamplingTimeCommon1 = ADC4_SAMPLETIME_814CYCLES_5;
+  hadc4.Init.SamplingTimeCommon2 = ADC4_SAMPLETIME_1CYCLE_5;
+  hadc4.Init.OversamplingMode = DISABLE;
+  if (HAL_ADC_Init(&hadc4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+   */
+  sConfig.Channel = ADC_CHANNEL_VCORE;
+  sConfig.Rank = ADC4_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC4_SAMPLINGTIME_COMMON_1;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc4, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC4_Init 2 */
+
+  /* USER CODE END ADC4_Init 2 */
+}
+
 static uint32_t HAL_RCC_ADC12_CLK_ENABLED = 0;
 
 void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle)
@@ -157,7 +218,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle)
     /** Initializes the peripherals clock
      */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADCDAC;
-    PeriphClkInit.AdcDacClockSelection = RCC_ADCDACCLKSOURCE_HSI;
+    PeriphClkInit.AdcDacClockSelection = RCC_ADCDACCLKSOURCE_HSE;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
       Error_Handler();
@@ -171,34 +232,26 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle)
     }
 
     __HAL_RCC_GPIOC_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
     /**ADC1 GPIO Configuration
     PC3     ------> ADC1_IN4
-    PA4     ------> ADC1_IN9
-    PA5     ------> ADC1_IN10
-    PA6     ------> ADC1_IN11
-    PA7     ------> ADC1_IN12
     */
     GPIO_InitStruct.Pin = VBAT_SENSE_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(VBAT_SENSE_GPIO_Port, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_ADC_EXT_EXP0_Pin | GPIO_ADC_INT_EXP0_Pin
-        | GPIO_ADC_EXT_EXP1_Pin | GPIO_ADC_EXT_EXP2_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
     /* ADC1 interrupt Init */
     HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
     /* USER CODE BEGIN ADC1_MspInit 1 */
+
+    /* ADC1 is used as Shimmer's main ADC when logging/streaming data.
+     * VBAT_SENSE is enabled by default as a placeholder for setting up the ADC1
+     * in CubeMX but the channel is not necessarily enabled in the Shimmer
+     * configuration options. Disabling the pin here and it can be re-enabled
+     * later if configured to be on. */
     HAL_GPIO_DeInit(VBAT_SENSE_GPIO_Port, VBAT_SENSE_Pin);
-    HAL_GPIO_DeInit(GPIOA,
-        GPIO_ADC_EXT_EXP0_Pin | GPIO_ADC_INT_EXP0_Pin | GPIO_ADC_EXT_EXP1_Pin
-            | GPIO_ADC_EXT_EXP2_Pin);
-    HAL_GPIO_DeInit(GPIOB, GPIO_ADC_INT_EXP1_Pin | GPIO_ADC_INT_EXP2_Pin | GPIO_ADC_INT_EXP3_Pin);
+
     /* USER CODE END ADC1_MspInit 1 */
   }
   else if (adcHandle->Instance == ADC2)
@@ -206,6 +259,15 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle)
     /* USER CODE BEGIN ADC2_MspInit 0 */
 
     /* USER CODE END ADC2_MspInit 0 */
+
+    /** Initializes the peripherals clock
+     */
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADCDAC;
+    PeriphClkInit.AdcDacClockSelection = RCC_ADCDACCLKSOURCE_HSE;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+    {
+      Error_Handler();
+    }
 
     /* ADC2 clock enable */
     HAL_RCC_ADC12_CLK_ENABLED++;
@@ -230,6 +292,27 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle)
 
     /* USER CODE END ADC2_MspInit 1 */
   }
+  else if (adcHandle->Instance == ADC4)
+  {
+    /* USER CODE BEGIN ADC4_MspInit 0 */
+
+    /* USER CODE END ADC4_MspInit 0 */
+
+    /** Initializes the peripherals clock
+     */
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADCDAC;
+    PeriphClkInit.AdcDacClockSelection = RCC_ADCDACCLKSOURCE_HSE;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* ADC4 clock enable */
+    __HAL_RCC_ADC4_CLK_ENABLE();
+    /* USER CODE BEGIN ADC4_MspInit 1 */
+
+    /* USER CODE END ADC4_MspInit 1 */
+  }
 }
 
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle)
@@ -249,16 +332,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle)
 
     /**ADC1 GPIO Configuration
     PC3     ------> ADC1_IN4
-    PA4     ------> ADC1_IN9
-    PA5     ------> ADC1_IN10
-    PA6     ------> ADC1_IN11
-    PA7     ------> ADC1_IN12
     */
     HAL_GPIO_DeInit(VBAT_SENSE_GPIO_Port, VBAT_SENSE_Pin);
-
-    HAL_GPIO_DeInit(GPIOA,
-        GPIO_ADC_EXT_EXP0_Pin | GPIO_ADC_INT_EXP0_Pin | GPIO_ADC_EXT_EXP1_Pin
-            | GPIO_ADC_EXT_EXP2_Pin);
 
     /* ADC1 interrupt Deinit */
     /* USER CODE BEGIN ADC1:ADC1_2_IRQn disable */
@@ -270,6 +345,13 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle)
     /* USER CODE END ADC1:ADC1_2_IRQn disable */
 
     /* USER CODE BEGIN ADC1_MspDeInit 1 */
+
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      shimmerAdcGpioSetup(0);
+    }
+#endif
 
     /* USER CODE END ADC1_MspDeInit 1 */
   }
@@ -303,6 +385,17 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle)
 
     /* USER CODE END ADC2_MspDeInit 1 */
   }
+  else if (adcHandle->Instance == ADC4)
+  {
+    /* USER CODE BEGIN ADC4_MspDeInit 0 */
+
+    /* USER CODE END ADC4_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_ADC4_CLK_DISABLE();
+    /* USER CODE BEGIN ADC4_MspDeInit 1 */
+
+    /* USER CODE END ADC4_MspDeInit 1 */
+  }
 }
 
 /* USER CODE BEGIN 1 */
@@ -315,6 +408,11 @@ ADC_HandleTypeDef *getHadc1(void)
 ADC_HandleTypeDef *getHadc2(void)
 {
   return &hadc2;
+}
+
+ADC_HandleTypeDef *getHadc4(void)
+{
+  return &hadc4;
 }
 
 /* USER CODE END 1 */

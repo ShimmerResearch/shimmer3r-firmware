@@ -1,42 +1,43 @@
-/***************************************************************************/ /**
-                                                                               *   @file   adxl371.h
-                                                                               *   @brief  Based on Header file for adxl372 Driver.
-                                                                               *   @author SPopa (stefan.popa@analog.com)
-                                                                               *   https://github.com/analogdevicesinc/no-OS/tree/main/drivers/accel/adxl371
-                                                                               ********************************************************************************
-                                                                               * Copyright 2018(c) Analog Devices, Inc.
-                                                                               *
-                                                                               * All rights reserved.
-                                                                               *
-                                                                               * Redistribution and use in source and binary forms, with or without
-                                                                               * modification, are permitted provided that the following conditions are met:
-                                                                               *  - Redistributions of source code must retain the above copyright
-                                                                               *    notice, this list of conditions and the following disclaimer.
-                                                                               *  - Redistributions in binary form must reproduce the above copyright
-                                                                               *    notice, this list of conditions and the following disclaimer in
-                                                                               *    the documentation and/or other materials provided with the
-                                                                               *    distribution.
-                                                                               *  - Neither the name of Analog Devices, Inc. nor the names of its
-                                                                               *    contributors may be used to endorse or promote products derived
-                                                                               *    from this software without specific prior written permission.
-                                                                               *  - The use of this software may or may not infringe the patent rights
-                                                                               *    of one or more patent holders.  This license does not release you
-                                                                               *    from the requirement that you obtain separate licenses from these
-                                                                               *    patent holders to use this software.
-                                                                               *  - Use of the software either in source or binary form, must be run
-                                                                               *    on or directly connected to an Analog Devices Inc. component.
-                                                                               *
-                                                                               * THIS SOFTWARE IS PROVIDED BY ANALOG DEVICES "AS IS" AND ANY EXPRESS OR
-                                                                               * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, NON-INFRINGEMENT,
-                                                                               * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-                                                                               * IN NO EVENT SHALL ANALOG DEVICES BE LIABLE FOR ANY DIRECT, INDIRECT,
-                                                                               * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-                                                                               * LIMITED TO, INTELLECTUAL PROPERTY RIGHTS, PROCUREMENT OF SUBSTITUTE GOODS OR
-                                                                               * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-                                                                               * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-                                                                               * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-                                                                               * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                                                                               *******************************************************************************/
+/******************************************************************************/
+/**
+ *   @file   adxl371.h
+ *   @brief  Based on Header file for adxl372 Driver.
+ *   @author SPopa (stefan.popa@analog.com)
+ *   https://github.com/analogdevicesinc/no-OS/tree/main/drivers/accel/adxl372
+********************************************************************************
+ * Copyright 2018(c) Analog Devices, Inc.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *  - Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ *  - Neither the name of Analog Devices, Inc. nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *  - The use of this software may or may not infringe the patent rights
+ *    of one or more patent holders.  This license does not release you
+ *    from the requirement that you obtain separate licenses from these
+ *    patent holders to use this software.
+ *  - Use of the software either in source or binary form, must be run
+ *    on or directly connected to an Analog Devices Inc. component.
+ *
+ * THIS SOFTWARE IS PROVIDED BY ANALOG DEVICES "AS IS" AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, NON-INFRINGEMENT,
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL ANALOG DEVICES BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, INTELLECTUAL PROPERTY RIGHTS, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ******************************************************************************/
 
 #ifndef ADXL371_ADXL371_H_
 #define ADXL371_ADXL371_H_
@@ -306,8 +307,20 @@ enum adxl371_th_activity
 
 enum adxl371_filter_settle
 {
-  ADXL371_FILTER_SETTLE_370,
-  ADXL371_FILTER_SETTLE_16
+  ADXL371_FILTER_SETTLE_462_5, // Filter settling set to 462.5 ms.
+  ADXL371_FILTER_SETTLE_4_ODR // Filter settling set to 4/ODR. Ideal for when the filters are disabled.
+};
+
+enum adxl371_lpf_filter
+{
+  ADXL371_LPF_ENABLE,
+  ADXL371_LPF_DISABLE
+};
+
+enum adxl371_hpf_filter
+{
+  ADXL371_HPF_ENABLE,
+  ADXL371_HPF_DISABLE
 };
 
 enum adxl371_fifo_format
@@ -465,6 +478,8 @@ int32_t adxl371_interrupt_config(struct adxl371_dev *dev,
     struct adxl371_irq_config int1,
     struct adxl371_irq_config int2);
 int32_t adxl371_set_filter_settle(struct adxl371_dev *dev, enum adxl371_filter_settle mode);
+int32_t adxl371_set_filter_lpf_mode(struct adxl371_dev *dev, enum adxl371_lpf_filter mode);
+int32_t adxl371_set_filter_hpf_mode(struct adxl371_dev *dev, enum adxl371_hpf_filter mode);
 int32_t adxl371_get_status(struct adxl371_dev *dev,
     uint8_t *status1,
     uint8_t *status2,

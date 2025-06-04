@@ -8,6 +8,7 @@
 #ifndef ADXL371_HAL_ADXL371_H_
 #define ADXL371_HAL_ADXL371_H_
 
+#include "hal_FactoryTest.h"
 #include "stm32u5xx.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -44,11 +45,9 @@ typedef void (*dev_mdelay_ptr)(uint32_t millisec);
 //} dev_ctx_t;
 
 void adxl371_driver_init(void);
-void adxl371_power_on(void);
-void adxl371_power_off(void);
 void adxl371_selectDevice(void);
 void adxl371_unselectDevice(void);
-uint8_t adxl371_self_test(void);
+self_test_result_t adxl371_self_test(void);
 void adxl371_configure(uint8_t rate);
 HAL_StatusTypeDef adxl371_accel_get(uint8_t *buf);
 int32_t adxl371_is_data_rdy(void);

@@ -31,8 +31,9 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
-#include "s4.h"
-#include "s4__cfg.h"
+#include "EXG/ads1292.h"
+#include "shimmer_definitions.h"
+#include <shimmer_include.h>
 
   /* USER CODE END Includes */
 
@@ -56,36 +57,45 @@ extern "C"
     SPI3_BUS_FLAG = 0x04
   } SPI_BUS_INDEX;
 
-  typedef enum
-  {
-    SPI1_CHIP_INDEX_LSM6DSV,
-    SPI1_CHIP_INDEX_ADXL371,
-    SPI1_CHIP_INDEX_BMP390,
-    SPI1_CHIP_QTY,
-    SPI1_CHIP_ALL
-  } SPI1_CHIP_INDEX;
+  //typedef enum
+  //{
+  //  SPI1_CHIP_INDEX_LSM6DSV,
+  //  SPI1_CHIP_INDEX_ADXL371,
+  //  SPI1_CHIP_INDEX_BMP390,
+  //  SPI1_CHIP_QTY,
+  //  SPI1_CHIP_ALL
+  //} SPI1_CHIP_INDEX;
+  //
+  //typedef enum
+  //{
+  //  SPI2_CHIP_INDEX_LIS2DW12,
+  //  SPI2_CHIP_INDEX_LIS3MDL,
+  //  SPI2_CHIP_QTY,
+  //  SPI2_CHIP_ALL
+  //} SPI2_CHIP_INDEX;
+  //
+  //typedef enum
+  //{
+  //  SPI3_CHIP_INDEX_ADS1292R,
+  //  SPI3_CHIP_QTY
+  //} SPI3_CHIP_INDEX;
 
   typedef enum
   {
-    SPI2_CHIP_INDEX_LIS2DW12,
-    SPI2_CHIP_INDEX_LIS3MDL,
-    SPI2_CHIP_QTY,
-    SPI2_CHIP_ALL
-  } SPI2_CHIP_INDEX;
-
-  typedef enum
-  {
-    SPI3_CHIP_INDEX_ADS1292R,
-    SPI3_CHIP_QTY
-  } SPI3_CHIP_INDEX;
-
-  typedef enum
-  { //i2c
-    SPI1_LSM6DSV_GYRO_AND_ACCEL = 0,
+    EMPTY = 0,
+    SPI1_LSM6DSV_GYRO_AND_ACCEL,
     SPI1_LSM6DSV_ACCEL_ONLY,
     SPI1_LSM6DSV_GYRO_ONLY,
     SPI1_ADXL371_ACCEL,
     SPI1_BMP390_PRESSURE_TEMP,
+    SPI1_ADS7028_INT_EXP0, //External ADC
+    SPI1_ADS7028_INT_EXP1,
+    SPI1_ADS7028_INT_EXP2,
+    SPI1_ADS7028_INT_EXP3,
+    SPI1_ADS7028_EXT_EXP0,
+    SPI1_ADS7028_EXT_EXP1,
+    SPI1_ADS7028_EXT_EXP2,
+    SPI1_ADS7028_VBATT_SENSE,
     SPI2_LIS2DW12_ACCEL,
     SPI2_LIS3MDL_MAG,
     SPI3_ADS1292R_EXG1,
@@ -101,6 +111,14 @@ extern "C"
     SPI_STAT_LSM6DSV_GYRO_GET,
     SPI_STAT_ADXL371_ACCEL_GET,
     SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET,
+    SPI_STAT_ADS7028_INT_EXP0_GET,
+    SPI_STAT_ADS7028_INT_EXP1_GET,
+    SPI_STAT_ADS7028_INT_EXP2_GET,
+    SPI_STAT_ADS7028_INT_EXP3_GET,
+    SPI_STAT_ADS7028_EXT_EXP0_GET,
+    SPI_STAT_ADS7028_EXT_EXP1_GET,
+    SPI_STAT_ADS7028_EXT_EXP2_GET,
+    SPI_STAT_ADS7028_VBATT_GET,
     SPI_STAT_LIS2DW12_ACCEL_GET,
     SPI_STAT_LIS3MDL_MAG_GET,
     SPI_STAT_ADS1292R_EXG1_GET,
@@ -119,7 +137,8 @@ extern "C"
     uint8_t lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t adxl371Buf[SPI_DMA_TXRX_OFFSET + 6];
-    uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET + 6 + 1]; //+1 for BMP390 dummy byte
+    uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET + 1 + 6]; //+1 for BMP390 dummy byte
+    uint8_t ads2078Buf[SPI_DMA_TXRX_OFFSET + 3]; //grabbing  only 1 channel at a time.
   } spi1ReadBuf;
 
   typedef struct
@@ -130,8 +149,8 @@ extern "C"
 
   typedef struct
   {
-    uint8_t ads1292rExg1Buf[SPI_DMA_TXRX_OFFSET + 7];
-    uint8_t ads1292rExg2Buf[SPI_DMA_TXRX_OFFSET + 7];
+    uint8_t ads1292rExg1Buf[ADS1292_DATA_PACKET_LENGTH];
+    uint8_t ads1292rExg2Buf[ADS1292_DATA_PACKET_LENGTH];
   } spi3ReadBuf;
 
   typedef struct
@@ -142,6 +161,9 @@ extern "C"
     uint8_t sensorCnt;
     SPI_BUS_INDEX busId;
   } SPITypeDef;
+
+  extern SPITypeDef spi3Sens;
+  extern spi3ReadBuf spi3Sens_buf;
 
 #endif
 
@@ -183,9 +205,8 @@ void SpiStepDone(void);
   void SPI3_RxCpltCallback(SPI_HandleTypeDef *hspi);
   void SPI_ErrorCallback(SPI_HandleTypeDef *hspi);
 
-  void set_power_spi1_bus(bool state, SPI1_CHIP_INDEX chipIndex);
-  void set_power_spi2_bus(bool state, SPI2_CHIP_INDEX chipIndex);
   bool areSpiChannelsEnabled(void);
+  void ads7028_configureChannels(uint8_t *channel_contents_ptr);
 #endif
 
   /* USER CODE END Prototypes */

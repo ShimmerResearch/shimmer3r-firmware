@@ -21,7 +21,11 @@
 #include "tim.h"
 
 /* USER CODE BEGIN 0 */
-#include "s4_led.h"
+#include "iwdg.h"
+
+#include <Boards/shimmer_boards.h>
+#include <LEDs/shimmer_leds.h>
+#include <log_and_stream_common.h>
 
 //static void ledBlinkTimerCallback(void);
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim);
@@ -31,6 +35,7 @@ static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim);
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim7;
 
 /* TIM2 init function */
 void MX_TIM2_Init(void)
@@ -74,7 +79,7 @@ void MX_TIM2_Init(void)
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
@@ -136,7 +141,7 @@ void MX_TIM3_Init(void)
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
@@ -191,6 +196,39 @@ void MX_TIM6_Init(void)
   /* USER CODE END TIM6_Init 2 */
 }
 
+/* TIM7 init function */
+void MX_TIM7_Init(void)
+{
+
+  /* USER CODE BEGIN TIM7_Init 0 */
+
+  /* USER CODE END TIM7_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = { 0 };
+
+  /* USER CODE BEGIN TIM7_Init 1 */
+
+  /* USER CODE END TIM7_Init 1 */
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 48;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 65534;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM7_Init 2 */
+  HAL_TIM_Base_Start(&htim7);
+  /* USER CODE END TIM7_Init 2 */
+}
+
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
 {
 
@@ -231,6 +269,17 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
 
     /* USER CODE END TIM6_MspInit 1 */
   }
+  else if (tim_baseHandle->Instance == TIM7)
+  {
+    /* USER CODE BEGIN TIM7_MspInit 0 */
+
+    /* USER CODE END TIM7_MspInit 0 */
+    /* TIM7 clock enable */
+    __HAL_RCC_TIM7_CLK_ENABLE();
+    /* USER CODE BEGIN TIM7_MspInit 1 */
+
+    /* USER CODE END TIM7_MspInit 1 */
+  }
 }
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *timHandle)
@@ -243,19 +292,43 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *timHandle)
 
     /* USER CODE END TIM2_MspPostInit 0 */
     __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
     /**TIM2 GPIO Configuration
     PA0     ------> TIM2_CH1
-    PA2     ------> TIM2_CH3
-    PA3     ------> TIM2_CH4
+    PB10     ------> TIM2_CH3
+    PB11     ------> TIM2_CH4
     */
-    GPIO_InitStruct.Pin = LED_UPR_RD_Pin | BSL_TX_LED_UPR_GR_Pin | BSL_RX_LED_UPR_BLU_Pin;
+    GPIO_InitStruct.Pin = LED_UPR_RD_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(LED_UPR_RD_GPIO_Port, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = LED_UPR_GR_Pin | LED_UPR_BLU_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* USER CODE BEGIN TIM2_MspPostInit 1 */
+
+#if SUPPORT_SR48_6_0
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      /* SR48-6-0 has LED_UPR_GR and LED_UPR_BLU connections attached to
+       * different MCU pins */
+      HAL_GPIO_DeInit(GPIOB, LED_UPR_GR_Pin | LED_UPR_BLU_Pin);
+
+      GPIO_InitStruct.Pin = SR48_6_0_LED_UPR_GR_Pin | SR48_6_0_LED_UPR_BLU_Pin;
+      GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    }
+#endif
 
     /* USER CODE END TIM2_MspPostInit 1 */
   }
@@ -267,11 +340,11 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *timHandle)
 
     __HAL_RCC_GPIOE_CLK_ENABLE();
     /**TIM3 GPIO Configuration
+    PE5     ------> TIM3_CH3
     PE3     ------> TIM3_CH1
     PE4     ------> TIM3_CH2
-    PE5     ------> TIM3_CH3
     */
-    GPIO_InitStruct.Pin = LED_LWR_RD_Pin | LED_LWR_GR_Pin | LED_LWR_BLU_Pin;
+    GPIO_InitStruct.Pin = LED_LWR_BLU_Pin | LED_LWR_RD_Pin | LED_LWR_GR_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -323,6 +396,17 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
 
     /* USER CODE END TIM6_MspDeInit 1 */
   }
+  else if (tim_baseHandle->Instance == TIM7)
+  {
+    /* USER CODE BEGIN TIM7_MspDeInit 0 */
+
+    /* USER CODE END TIM7_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM7_CLK_DISABLE();
+    /* USER CODE BEGIN TIM7_MspDeInit 1 */
+
+    /* USER CODE END TIM7_MspDeInit 1 */
+  }
 }
 
 /* USER CODE BEGIN 1 */
@@ -330,7 +414,15 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
 //void ledBlinkTimerCallback(void)
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
-  S4Led_Blink();
+  petWatchdog();
+  LogAndStream_blinkTimerCommon();
+}
+
+void delay_us(uint16_t us)
+{
+  __HAL_TIM_SET_COUNTER(&htim7, 0); //set the counter value a 0
+  while (__HAL_TIM_GET_COUNTER(&htim7) < us)
+    ; //wait for the counter to reach the us input in the parameter
 }
 
 /* USER CODE END 1 */

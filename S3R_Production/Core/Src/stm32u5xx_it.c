@@ -22,6 +22,9 @@
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include <Boards/shimmer_boards.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,6 +60,8 @@
 /* External variables --------------------------------------------------------*/
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
+extern MDF_HandleTypeDef AdfHandle0;
+extern DMA_HandleTypeDef handle_GPDMA1_Channel11;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel10;
 extern I2C_HandleTypeDef hi2c1;
@@ -250,17 +255,17 @@ void EXTI1_IRQHandler(void)
 }
 
 /**
- * @brief This function handles EXTI Line14 interrupt.
+ * @brief This function handles EXTI Line6 interrupt.
  */
-void EXTI14_IRQHandler(void)
+void EXTI6_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI14_IRQn 0 */
+  /* USER CODE BEGIN EXTI6_IRQn 0 */
 
-  /* USER CODE END EXTI14_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(BT_CONNECTION_Pin);
-  /* USER CODE BEGIN EXTI14_IRQn 1 */
+  /* USER CODE END EXTI6_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(USER_BTN_Pin);
+  /* USER CODE BEGIN EXTI6_IRQn 1 */
 
-  /* USER CODE END EXTI14_IRQn 1 */
+  /* USER CODE END EXTI6_IRQn 1 */
 }
 
 /**
@@ -367,7 +372,6 @@ void GPDMA1_Channel7_IRQHandler(void)
 void ADC1_2_IRQHandler(void)
 {
   /* USER CODE BEGIN ADC1_2_IRQn 0 */
-
   if (hadc1.Instance != NULL && hadc2.Instance != NULL)
   {
     /* USER CODE END ADC1_2_IRQn 0 */
@@ -555,6 +559,20 @@ void GPDMA1_Channel10_IRQHandler(void)
 }
 
 /**
+ * @brief This function handles GPDMA1 Channel 11 global interrupt.
+ */
+void GPDMA1_Channel11_IRQHandler(void)
+{
+  /* USER CODE BEGIN GPDMA1_Channel11_IRQn 0 */
+
+  /* USER CODE END GPDMA1_Channel11_IRQn 0 */
+  HAL_DMA_IRQHandler(&handle_GPDMA1_Channel11);
+  /* USER CODE BEGIN GPDMA1_Channel11_IRQn 1 */
+
+  /* USER CODE END GPDMA1_Channel11_IRQn 1 */
+}
+
+/**
  * @brief This function handles SPI3 global interrupt.
  */
 void SPI3_IRQHandler(void)
@@ -568,6 +586,154 @@ void SPI3_IRQHandler(void)
   /* USER CODE END SPI3_IRQn 1 */
 }
 
+/**
+ * @brief This function handles ADF interrupt.
+ */
+void ADF1_IRQHandler(void)
+{
+  /* USER CODE BEGIN ADF1_IRQn 0 */
+
+  /* USER CODE END ADF1_IRQn 0 */
+  HAL_MDF_IRQHandler(&AdfHandle0);
+  /* USER CODE BEGIN ADF1_IRQn 1 */
+
+  /* USER CODE END ADF1_IRQn 1 */
+}
+
 /* USER CODE BEGIN 1 */
+
+/* Note the interrupts listed below are not enabled by default in CubeMX and
+ * instead are turned on/off when needed by firmware to save power. */
+
+/**
+ * @brief This function handles EXTI Line0 interrupt.
+ */
+void EXTI0_IRQHandler(void)
+{
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    HAL_GPIO_EXTI_IRQHandler(SR48_6_0_GPIO_ADC_INT_EXP1_Pin);
+  }
+#endif
+  //HAL_GPIO_EXTI_IRQHandler(SD_DETECT_N_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line2 interrupt.
+ */
+void EXTI2_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LIS3MDL_DRDY_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line3 interrupt.
+ */
+void EXTI3_IRQHandler(void)
+{
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    HAL_GPIO_EXTI_IRQHandler(SR48_6_0_BOOT0_USER_BTN_Pin);
+  }
+#endif
+}
+
+/**
+ * @brief This function handles EXTI Line4 interrupt.
+ */
+void EXTI4_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL1_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line5 interrupt.
+ */
+void EXTI5_IRQHandler(void)
+{
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    HAL_GPIO_EXTI_IRQHandler(SR48_6_0_GPIO_ADC_INT_EXP0_Pin);
+  }
+#endif
+  //No plans to use GPIO_INTERNAL2_Pin as interrupt
+  //HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL2_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line7 interrupt.
+ */
+void EXTI7_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LSM6DSV_INT1_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line8 interrupt.
+ */
+void EXTI8_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BT_HOST_WAKE_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line9 interrupt.
+ */
+void EXTI9_IRQHandler(void)
+{
+  //HAL_GPIO_EXTI_IRQHandler(GPIO_EXTERNAL_Pin);
+  HAL_GPIO_EXTI_IRQHandler(USB_VBUS_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line10 interrupt.
+ */
+void EXTI10_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LIS2MDL_DRDY_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line11 interrupt.
+ */
+void EXTI11_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BMP390_INT_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line12 interrupt.
+ */
+void EXTI12_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(LIS2DW12_INT1_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line13 interrupt.
+ */
+void EXTI13_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL0_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line14 interrupt.
+ */
+void EXTI14_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BT_CONNECTION_Pin);
+}
+
+/**
+ * @brief This function handles EXTI Line15 interrupt.
+ */
+void EXTI15_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(BT_CYSPP_Pin);
+}
 
 /* USER CODE END 1 */

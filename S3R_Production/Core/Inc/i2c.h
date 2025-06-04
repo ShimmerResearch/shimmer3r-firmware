@@ -31,12 +31,14 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
-#include "s4.h"
-#include "s4__cfg.h"
+#include "shimmer_definitions.h"
+#include <shimmer_include.h>
 
   /* USER CODE END Includes */
 
   extern I2C_HandleTypeDef hi2c1;
+
+  extern I2C_HandleTypeDef hi2c4;
 
   /* USER CODE BEGIN Private defines */
 
@@ -184,12 +186,15 @@ extern "C"
   /* USER CODE END Private defines */
 
   void MX_I2C1_Init(void);
+  void MX_I2C4_Init(void);
 
   /* USER CODE BEGIN Prototypes */
 
-  void set_power_i2c_main_bus(uint8_t state);
+  void I2C1_DeInit(void);
+  void I2C4_DeInit(void);
   void I2C_scan_busses(void);
-  void I2C_scan(I2C_HandleTypeDef *hi2c);
+  void I2C_scan_internal_expansion_bus(uint8_t *i2c_addr_list_ptr, uint8_t *i2c_addr_list_len_ptr);
+  void I2C_scan(I2C_HandleTypeDef *hi2c, uint8_t *i2c_addr_list, uint8_t *i2c_addr_list_len);
   I2C_HandleTypeDef *I2C_getHandlerSensor(void);
 #if defined(SHIMMER4_SDK)
   I2C_HandleTypeDef *I2C_getHandlerBatt(void);
@@ -247,7 +252,6 @@ extern "C"
   uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo);
 
 #if defined(SHIMMER3R)
-  void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex);
   bool areI2cChannelsEnabled(void);
   void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
 #elif defined(SHIMMER4_SDK)
@@ -287,6 +291,8 @@ void I2cBatt_sensorNext(void);
 #endif
 
   void loadDaughterCardIdFromEeprom(void);
+
+  void enableI2cOnSr48PpgSocket(uint8_t state);
 
   /* USER CODE END Prototypes */
 

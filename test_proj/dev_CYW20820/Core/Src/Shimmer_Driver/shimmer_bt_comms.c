@@ -70,13 +70,13 @@ uint16_t indexOfFirstEol;
 uint32_t firstProcessFailTicks = 0;
 
 uint8_t inquiryBtRsp, samplingRateBtRsp, toggleLedRed, //enableBtstream, enableSdlog,
-        lsm303dlhcAccelRangeResponse, lsm303dlhcMagGainResponse, lsm303dlhcMagSamplingRateResponse, dockStatusBtRsp,
+        wrAccelRangeResponse, magGainResponse, magSamplingRateResponse, dockStatusBtRsp,
         vbattBtRsp, trialConfigResponse, centerResponse, shimmerNameResponse, expIDResponse, configTimeResponse,
-        dirResponse, nshimmerResponse, myIDResponse, lsm303dlhcAccelSamplingRateResponse, i2cvBattBtRsp,
-        lsm303dlhcAccelHRModeResponse, mpu9250GyroRangeResponse, bmp180CalibCoeffBtRsp, mpu9250SamplingRateResponse,
-        mpu9250AccelRangeResponse, bmp180OversamplingRatioResponse, internalExpPowerEnableResponse,
+        dirResponse, nshimmerResponse, myIDResponse, wrAccelSamplingRateResponse, i2cvBattBtRsp,
+        wrAccelHrModeResponse, gyroRangeResponse, bmp180CalibCoeffBtRsp, gyroSamplingRateResponse,
+        altAccelRangeResponse, bmpOversamplingRatioResponse, internalExpPowerEnableResponse,
         exgRegsResponse, configSetupBytesResponse, fwVersionBtRsp, blinkLedBtRsp, infomemBtRsp, dcIdBtRsp, dcMemBtRsp,
-        mpu9250MagSensAdjValsResponse, lsm303dlhcAccelLPModeResponse, deviceVersionBtRsp, rwcResponse,
+        mpu9150MagSensAdjValsResponse, wrAccelLpModeResponse, deviceVersionBtRsp, rwcResponse,
         calibRamResponse, btDataRateResponse;//btIsConnected,
 uint8_t btInfomemLength, btDcMemLength, btCalibRamLength;
 uint16_t btInfomemOffset, btDcMemOffset, btCalibRamOffset;
@@ -926,10 +926,10 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case STOP_SDBT_COMMAND:
                 case START_LOGGING_COMMAND:
                 case STOP_LOGGING_COMMAND:
-                case GET_A_ACCEL_CALIBRATION_COMMAND:
-                case GET_MPU9150_GYRO_CALIBRATION_COMMAND:
-                case GET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
-                case GET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
+                case GET_LN_ACCEL_CALIBRATION_COMMAND:
+                case GET_GYRO_CALIBRATION_COMMAND:
+                case GET_MAG_CALIBRATION_COMMAND:
+                case GET_WR_ACCEL_CALIBRATION_COMMAND:
                 case GET_GSR_RANGE_COMMAND:
                 case GET_ALL_CALIBRATION_COMMAND:
                 case DEPRECATED_GET_DEVICE_VERSION_COMMAND:
@@ -938,18 +938,18 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                 case GET_CHARGE_STATUS_LED_COMMAND:
                 case GET_BUFFER_SIZE_COMMAND:
                 case GET_UNIQUE_SERIAL_COMMAND:
-                case GET_LSM303DLHC_ACCEL_RANGE_COMMAND:
-                case GET_LSM303DLHC_MAG_GAIN_COMMAND:
-                case GET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
-                case GET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
-                case GET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
-                case GET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
-                case GET_MPU9150_GYRO_RANGE_COMMAND:
+                case GET_WR_ACCEL_RANGE_COMMAND:
+                case GET_MAG_GAIN_COMMAND:
+                case GET_MAG_SAMPLING_RATE_COMMAND:
+                case GET_WR_ACCEL_SAMPLING_RATE_COMMAND:
+                case GET_WR_ACCEL_LPMODE_COMMAND:
+                case GET_WR_ACCEL_HRMODE_COMMAND:
+                case GET_GYRO_RANGE_COMMAND:
                 case GET_BMP180_CALIBRATION_COEFFICIENTS_COMMAND:
                 case GET_BMP280_CALIBRATION_COEFFICIENTS_COMMAND:
-                case GET_MPU9150_SAMPLING_RATE_COMMAND:
-                case GET_MPU9150_ACCEL_RANGE_COMMAND:
-                case GET_BMPX80_PRES_OVERSAMPLING_RATIO_COMMAND:
+                case GET_GYRO_SAMPLING_RATE_COMMAND:
+                case GET_ALT_ACCEL_RANGE_COMMAND:
+                case GET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
                 case GET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
                 case RESET_TO_DEFAULT_CONFIGURATION_COMMAND:
                 case RESET_CALIBRATION_VALUE_COMMAND:
@@ -980,17 +980,17 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
                     /* Wake-up MCU so that the get command can be processed */
                     wakeupMcu = 1U;
                     break;
-                case SET_LSM303DLHC_ACCEL_RANGE_COMMAND:
-                case SET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
-                case SET_LSM303DLHC_MAG_GAIN_COMMAND:
+                case SET_WR_ACCEL_RANGE_COMMAND:
+                case SET_WR_ACCEL_SAMPLING_RATE_COMMAND:
+                case SET_MAG_GAIN_COMMAND:
                 case SET_CHARGE_STATUS_LED_COMMAND:
-                case SET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
-                case SET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
-                case SET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
-                case SET_MPU9150_GYRO_RANGE_COMMAND:
-                case SET_MPU9150_SAMPLING_RATE_COMMAND:
-                case SET_MPU9150_ACCEL_RANGE_COMMAND:
-                case SET_BMPX80_PRES_OVERSAMPLING_RATIO_COMMAND:
+                case SET_MAG_SAMPLING_RATE_COMMAND:
+                case SET_WR_ACCEL_LPMODE_COMMAND:
+                case SET_WR_ACCEL_HRMODE_COMMAND:
+                case SET_GYRO_RANGE_COMMAND:
+                case SET_GYRO_SAMPLING_RATE_COMMAND:
+                case SET_ALT_ACCEL_RANGE_COMMAND:
+                case SET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
                 case SET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
                 case SET_GSR_RANGE_COMMAND:
                 case SET_BT_COMMS_BAUD_RATE:
@@ -1054,10 +1054,10 @@ uint8_t Dma2ConversionDone(uint8_t *rxBuff)
 #endif
                     waitingForArgs = 8U;
                     break;
-                case SET_A_ACCEL_CALIBRATION_COMMAND:
-                case SET_MPU9150_GYRO_CALIBRATION_COMMAND:
-                case SET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
-                case SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
+                case SET_LN_ACCEL_CALIBRATION_COMMAND:
+                case SET_GYRO_CALIBRATION_COMMAND:
+                case SET_MAG_CALIBRATION_COMMAND:
+                case SET_WR_ACCEL_CALIBRATION_COMMAND:
 #if IS_BT_RN
                     *(gActionPtr) = data;
 #else
@@ -1890,10 +1890,10 @@ uint8_t processShimmerBtCmd(void)
     case STOP_SDBT_COMMAND:
     case START_LOGGING_COMMAND:
     case STOP_LOGGING_COMMAND:
-    case GET_A_ACCEL_CALIBRATION_COMMAND:
-    case GET_MPU9150_GYRO_CALIBRATION_COMMAND:
-    case GET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
-    case GET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
+    case GET_LN_ACCEL_CALIBRATION_COMMAND:
+    case GET_GYRO_CALIBRATION_COMMAND:
+    case GET_MAG_CALIBRATION_COMMAND:
+    case GET_WR_ACCEL_CALIBRATION_COMMAND:
     case GET_GSR_RANGE_COMMAND:
     case GET_ALL_CALIBRATION_COMMAND:
     case DEPRECATED_GET_DEVICE_VERSION_COMMAND:
@@ -1902,18 +1902,18 @@ uint8_t processShimmerBtCmd(void)
     case GET_CHARGE_STATUS_LED_COMMAND:
     case GET_BUFFER_SIZE_COMMAND:
     case GET_UNIQUE_SERIAL_COMMAND:
-    case GET_LSM303DLHC_ACCEL_RANGE_COMMAND:
-    case GET_LSM303DLHC_MAG_GAIN_COMMAND:
-    case GET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
-    case GET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
-    case GET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
-    case GET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
-    case GET_MPU9150_GYRO_RANGE_COMMAND:
+    case GET_WR_ACCEL_RANGE_COMMAND:
+    case GET_MAG_GAIN_COMMAND:
+    case GET_MAG_SAMPLING_RATE_COMMAND:
+    case GET_WR_ACCEL_SAMPLING_RATE_COMMAND:
+    case GET_WR_ACCEL_LPMODE_COMMAND:
+    case GET_WR_ACCEL_HRMODE_COMMAND:
+    case GET_GYRO_RANGE_COMMAND:
     case GET_BMP180_CALIBRATION_COEFFICIENTS_COMMAND:
     case GET_BMP280_CALIBRATION_COEFFICIENTS_COMMAND:
-    case GET_MPU9150_SAMPLING_RATE_COMMAND:
-    case GET_MPU9150_ACCEL_RANGE_COMMAND:
-    case GET_BMPX80_PRES_OVERSAMPLING_RATIO_COMMAND:
+    case GET_GYRO_SAMPLING_RATE_COMMAND:
+    case GET_ALT_ACCEL_RANGE_COMMAND:
+    case GET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
     case GET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
     case RESET_TO_DEFAULT_CONFIGURATION_COMMAND:
     case RESET_CALIBRATION_VALUE_COMMAND:
@@ -1936,17 +1936,17 @@ uint8_t processShimmerBtCmd(void)
         break;
 
     /* 1 command byte, 1 argument byte */
-    case SET_LSM303DLHC_ACCEL_RANGE_COMMAND:
-    case SET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
-    case SET_LSM303DLHC_MAG_GAIN_COMMAND:
+    case SET_WR_ACCEL_RANGE_COMMAND:
+    case SET_WR_ACCEL_SAMPLING_RATE_COMMAND:
+    case SET_MAG_GAIN_COMMAND:
     case SET_CHARGE_STATUS_LED_COMMAND:
-    case SET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
-    case SET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
-    case SET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
-    case SET_MPU9150_GYRO_RANGE_COMMAND:
-    case SET_MPU9150_SAMPLING_RATE_COMMAND:
-    case SET_MPU9150_ACCEL_RANGE_COMMAND:
-    case SET_BMPX80_PRES_OVERSAMPLING_RATIO_COMMAND:
+    case SET_MAG_SAMPLING_RATE_COMMAND:
+    case SET_WR_ACCEL_LPMODE_COMMAND:
+    case SET_WR_ACCEL_HRMODE_COMMAND:
+    case SET_GYRO_RANGE_COMMAND:
+    case SET_GYRO_SAMPLING_RATE_COMMAND:
+    case SET_ALT_ACCEL_RANGE_COMMAND:
+    case SET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
     case SET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
     case SET_GSR_RANGE_COMMAND:
     case SET_BT_COMMS_BAUD_RATE:
@@ -2017,10 +2017,10 @@ uint8_t processShimmerBtCmd(void)
 #endif
 
     /* 1 command byte, 21 argument bytes */
-    case SET_A_ACCEL_CALIBRATION_COMMAND:
-    case SET_MPU9150_GYRO_CALIBRATION_COMMAND:
-    case SET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
-    case SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
+    case SET_LN_ACCEL_CALIBRATION_COMMAND:
+    case SET_GYRO_CALIBRATION_COMMAND:
+    case SET_MAG_CALIBRATION_COMMAND:
+    case SET_WR_ACCEL_CALIBRATION_COMMAND:
         if(numBytesInBtRxBufWhenLastProcessed>=(1U+21U))
         {
             readActionAndArgBytes(21U);
@@ -2163,10 +2163,10 @@ uint8_t isShimmerBtCmd(uint8_t data)
     case STOP_SDBT_COMMAND:
     case START_LOGGING_COMMAND:
     case STOP_LOGGING_COMMAND:
-    case GET_A_ACCEL_CALIBRATION_COMMAND:
-    case GET_MPU9150_GYRO_CALIBRATION_COMMAND:
-    case GET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
-    case GET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
+    case GET_LN_ACCEL_CALIBRATION_COMMAND:
+    case GET_GYRO_CALIBRATION_COMMAND:
+    case GET_MAG_CALIBRATION_COMMAND:
+    case GET_WR_ACCEL_CALIBRATION_COMMAND:
     case GET_GSR_RANGE_COMMAND:
     case GET_ALL_CALIBRATION_COMMAND:
     case DEPRECATED_GET_DEVICE_VERSION_COMMAND:
@@ -2175,18 +2175,18 @@ uint8_t isShimmerBtCmd(uint8_t data)
     case GET_CHARGE_STATUS_LED_COMMAND:
     case GET_BUFFER_SIZE_COMMAND:
     case GET_UNIQUE_SERIAL_COMMAND:
-    case GET_LSM303DLHC_ACCEL_RANGE_COMMAND:
-    case GET_LSM303DLHC_MAG_GAIN_COMMAND:
-    case GET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
-    case GET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
-    case GET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
-    case GET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
-    case GET_MPU9150_GYRO_RANGE_COMMAND:
+    case GET_WR_ACCEL_RANGE_COMMAND:
+    case GET_MAG_GAIN_COMMAND:
+    case GET_MAG_SAMPLING_RATE_COMMAND:
+    case GET_WR_ACCEL_SAMPLING_RATE_COMMAND:
+    case GET_WR_ACCEL_LPMODE_COMMAND:
+    case GET_WR_ACCEL_HRMODE_COMMAND:
+    case GET_GYRO_RANGE_COMMAND:
     case GET_BMP180_CALIBRATION_COEFFICIENTS_COMMAND:
     case GET_BMP280_CALIBRATION_COEFFICIENTS_COMMAND:
-    case GET_MPU9150_SAMPLING_RATE_COMMAND:
-    case GET_MPU9150_ACCEL_RANGE_COMMAND:
-    case GET_BMPX80_PRES_OVERSAMPLING_RATIO_COMMAND:
+    case GET_GYRO_SAMPLING_RATE_COMMAND:
+    case GET_ALT_ACCEL_RANGE_COMMAND:
+    case GET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
     case GET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
     case RESET_TO_DEFAULT_CONFIGURATION_COMMAND:
     case RESET_CALIBRATION_VALUE_COMMAND:
@@ -2204,17 +2204,17 @@ uint8_t isShimmerBtCmd(uint8_t data)
     case UPD_SDLOG_CFG_COMMAND:
     case UPD_CALIB_DUMP_COMMAND:
     case GET_BT_VERSION_STR_COMMAND:
-    case SET_LSM303DLHC_ACCEL_RANGE_COMMAND:
-    case SET_LSM303DLHC_ACCEL_SAMPLING_RATE_COMMAND:
-    case SET_LSM303DLHC_MAG_GAIN_COMMAND:
+    case SET_WR_ACCEL_RANGE_COMMAND:
+    case SET_WR_ACCEL_SAMPLING_RATE_COMMAND:
+    case SET_MAG_GAIN_COMMAND:
     case SET_CHARGE_STATUS_LED_COMMAND:
-    case SET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
-    case SET_LSM303DLHC_ACCEL_LPMODE_COMMAND:
-    case SET_LSM303DLHC_ACCEL_HRMODE_COMMAND:
-    case SET_MPU9150_GYRO_RANGE_COMMAND:
-    case SET_MPU9150_SAMPLING_RATE_COMMAND:
-    case SET_MPU9150_ACCEL_RANGE_COMMAND:
-    case SET_BMPX80_PRES_OVERSAMPLING_RATIO_COMMAND:
+    case SET_MAG_SAMPLING_RATE_COMMAND:
+    case SET_WR_ACCEL_LPMODE_COMMAND:
+    case SET_WR_ACCEL_HRMODE_COMMAND:
+    case SET_GYRO_RANGE_COMMAND:
+    case SET_GYRO_SAMPLING_RATE_COMMAND:
+    case SET_ALT_ACCEL_RANGE_COMMAND:
+    case SET_PRESSURE_OVERSAMPLING_RATIO_COMMAND:
     case SET_INTERNAL_EXP_POWER_ENABLE_COMMAND:
     case SET_GSR_RANGE_COMMAND:
     case SET_BT_COMMS_BAUD_RATE:
@@ -2242,10 +2242,10 @@ uint8_t isShimmerBtCmd(uint8_t data)
     case SET_CONFIG_SETUP_BYTES_COMMAND:
     case SET_RWC_COMMAND:
     case SET_DERIVED_CHANNEL_BYTES:
-    case SET_A_ACCEL_CALIBRATION_COMMAND:
-    case SET_MPU9150_GYRO_CALIBRATION_COMMAND:
-    case SET_LSM303DLHC_MAG_CALIBRATION_COMMAND:
-    case SET_LSM303DLHC_ACCEL_CALIBRATION_COMMAND:
+    case SET_LN_ACCEL_CALIBRATION_COMMAND:
+    case SET_GYRO_CALIBRATION_COMMAND:
+    case SET_MAG_CALIBRATION_COMMAND:
+    case SET_WR_ACCEL_CALIBRATION_COMMAND:
 #if !USE_OLD_SD_SYNC_APPROACH
     case SET_SD_SYNC_COMMAND:
 #endif
@@ -2444,14 +2444,14 @@ void BtUart_processCmd(void) {
       S4Ram_sdHeadTextSet(btArgs, NV_SENSORS0, 3);
       //InfoMem_update();
       break;
-   case GET_LSM303DLHC_ACCEL_RANGE_COMMAND:
-      lsm303dlhcAccelRangeResponse = 1;
+   case GET_WR_ACCEL_RANGE_COMMAND:
+      wrAccelRangeResponse = 1;
       break;
-   case GET_LSM303DLHC_MAG_GAIN_COMMAND:
-      lsm303dlhcMagGainResponse = 1;
+   case GET_MAG_GAIN_COMMAND:
+      magGainResponse = 1;
       break;
-   case GET_LSM303DLHC_MAG_SAMPLING_RATE_COMMAND:
-      lsm303dlhcMagSamplingRateResponse = 1;
+   case GET_MAG_SAMPLING_RATE_COMMAND:
+      magSamplingRateResponse = 1;
       break;
    case GET_STATUS_COMMAND:
       dockStatusBtRsp = 1;

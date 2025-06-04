@@ -21,7 +21,8 @@
 #include "i2c.h"
 
 /* USER CODE BEGIN 0 */
-#include "s4__cfg.h"
+#include "shimmer_definitions.h"
+#include "shimmer_include.h"
 
 #define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
@@ -62,6 +63,7 @@ uint16_t i2c_batt_report_interval = I2C_BATT_REPORT_INTERVAL_DEFAULT;
 /* USER CODE END 0 */
 
 I2C_HandleTypeDef hi2c1;
+I2C_HandleTypeDef hi2c4;
 DMA_HandleTypeDef handle_GPDMA1_Channel10;
 
 /* I2C1 init function */
@@ -69,8 +71,6 @@ void MX_I2C1_Init(void)
 {
 
   /* USER CODE BEGIN I2C1_Init 0 */
-
-  set_power_i2c_main_bus(1);
 
   /* USER CODE END I2C1_Init 0 */
 
@@ -110,12 +110,57 @@ void MX_I2C1_Init(void)
 
   hi2cMainBus = &hi2c1;
 
-  CAT24C16_init(I2C_getHandlerSensor());
+  eepromInit(I2C_getHandlerSensor());
   lis2mdl_driver_init();
 
   HAL_Delay(BOOT_TIME);
 
   /* USER CODE END I2C1_Init 2 */
+}
+
+/* I2C4 init function */
+void MX_I2C4_Init(void)
+{
+
+  /* USER CODE BEGIN I2C4_Init 0 */
+
+  /* USER CODE END I2C4_Init 0 */
+
+  /* USER CODE BEGIN I2C4_Init 1 */
+
+  /* USER CODE END I2C4_Init 1 */
+  hi2c4.Instance = I2C4;
+  hi2c4.Init.Timing = 0x20303E5D;
+  hi2c4.Init.OwnAddress1 = 0;
+  hi2c4.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c4.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c4.Init.OwnAddress2 = 0;
+  hi2c4.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c4.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c4.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Analogue filter
+   */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c4, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+   */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c4, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C4_Init 2 */
+
+  HAL_Delay(BOOT_TIME);
+
+  /* USER CODE END I2C4_Init 2 */
 }
 
 void HAL_I2C_MspInit(I2C_HandleTypeDef *i2cHandle)
@@ -140,10 +185,10 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *i2cHandle)
 
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**I2C1 GPIO Configuration
-    PB8     ------> I2C1_SCL
     PB9     ------> I2C1_SDA
+    PB8     ------> I2C1_SCL
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+    GPIO_InitStruct.Pin = GPIO_PIN_9 | GPIO_PIN_8;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -191,6 +236,39 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *i2cHandle)
 
     /* USER CODE END I2C1_MspInit 1 */
   }
+  else if (i2cHandle->Instance == I2C4)
+  {
+    /* USER CODE BEGIN I2C4_MspInit 0 */
+
+    /* USER CODE END I2C4_MspInit 0 */
+
+    /** Initializes the peripherals clock
+     */
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C4;
+    PeriphClkInit.I2c4ClockSelection = RCC_I2C4CLKSOURCE_PCLK1;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_RCC_GPIOF_CLK_ENABLE();
+    /**I2C4 GPIO Configuration
+    PF14     ------> I2C4_SCL
+    PF15     ------> I2C4_SDA
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_14 | GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF4_I2C4;
+    HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+    /* I2C4 clock enable */
+    __HAL_RCC_I2C4_CLK_ENABLE();
+    /* USER CODE BEGIN I2C4_MspInit 1 */
+
+    /* USER CODE END I2C4_MspInit 1 */
+  }
 }
 
 void HAL_I2C_MspDeInit(I2C_HandleTypeDef *i2cHandle)
@@ -205,12 +283,12 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef *i2cHandle)
     __HAL_RCC_I2C1_CLK_DISABLE();
 
     /**I2C1 GPIO Configuration
-    PB8     ------> I2C1_SCL
     PB9     ------> I2C1_SDA
+    PB8     ------> I2C1_SCL
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8);
-
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_9);
+
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8);
 
     /* I2C1 DMA DeInit */
     HAL_DMA_DeInit(i2cHandle->hdmarx);
@@ -222,6 +300,26 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef *i2cHandle)
 
     /* USER CODE END I2C1_MspDeInit 1 */
   }
+  else if (i2cHandle->Instance == I2C4)
+  {
+    /* USER CODE BEGIN I2C4_MspDeInit 0 */
+
+    /* USER CODE END I2C4_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_I2C4_CLK_DISABLE();
+
+    /**I2C4 GPIO Configuration
+    PF14     ------> I2C4_SCL
+    PF15     ------> I2C4_SDA
+    */
+    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_14);
+
+    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_15);
+
+    /* USER CODE BEGIN I2C4_MspDeInit 1 */
+
+    /* USER CODE END I2C4_MspDeInit 1 */
+  }
 }
 
 /* USER CODE BEGIN 1 */
@@ -229,39 +327,39 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef *i2cHandle)
 void I2C1_DeInit(void)
 {
   HAL_I2C_DeInit(hi2cMainBus);
-
-  set_power_i2c_main_bus(0);
 }
 
-void set_power_i2c_main_bus(uint8_t state)
+void I2C4_DeInit(void)
 {
-#if defined(SHIMMER4_SDK)
-  Board_SW_EXP(state); //eeprom
-#endif
-  Board_SW_I2C(state);
+  HAL_I2C_DeInit(&hi2c4);
 }
 
 void I2C_scan_busses(void)
 {
-  I2C_scan(hi2cMainBus);
+  I2C_scan(hi2cMainBus, i2c_addr_list, &i2c_addr_list_len);
 #if defined(SHIMMER4_SDK)
   I2C_scan(hi2cBattery);
 #endif
 }
 
-void I2C_scan(I2C_HandleTypeDef *hi2c)
+void I2C_scan_internal_expansion_bus(uint8_t *i2c_addr_list_ptr, uint8_t *i2c_addr_list_len_ptr)
+{
+  I2C_scan(&hi2c4, i2c_addr_list_ptr, i2c_addr_list_len_ptr);
+}
+
+void I2C_scan(I2C_HandleTypeDef *hi2c, uint8_t *i2c_addr_list_ptr, uint8_t *i2c_addr_list_len_ptr)
 {
   uint8_t buf = 0;
   uint16_t i2c_addr;
   HAL_StatusTypeDef result;
 
-  i2c_addr_list_len = 0;
+  *i2c_addr_list_len_ptr = 0;
   for (i2c_addr = 0; i2c_addr < 0x80; i2c_addr++)
   {
     result = HAL_I2C_Master_Receive(hi2c, i2c_addr << 1, &buf, 1, 1);
     if (result == HAL_OK)
     {
-      i2c_addr_list[i2c_addr_list_len++] = i2c_addr;
+      i2c_addr_list_ptr[(*i2c_addr_list_len_ptr)++] = i2c_addr;
     }
   }
 }
@@ -280,7 +378,7 @@ void I2C_readBatt(void)
 {
   static uint16_t cnt = 0;
 #if USE_I2C_VBATT_REPORT
-  if (stat.isSensing && S4Ram_getStoredConfig()->chEnStc3100)
+  if (shimmerStatus.isSensing && S4Ram_getStoredConfig()->chEnStc3100)
   {
   }
   else if (i2c_batt_report_interval == 0)
@@ -291,11 +389,12 @@ void I2C_readBatt(void)
     if (++cnt >= i2c_batt_report_interval)
     {
       cnt = 0;
-      STC3100_readData((uint8_t *) stat.battDigital);
+      STC3100_readData((uint8_t *) shimmerStatus.battDigital);
       uint8_t bt_tx_data[131], packet_length = 0;
       *(bt_tx_data + packet_length++) = INSTREAM_CMD_RESPONSE;
       *(bt_tx_data + packet_length++) = RSP_I2C_BATT_STATUS_COMMAND;
-      memcpy((bt_tx_data + packet_length), (uint8_t *) stat.battDigital, STC3100_DATA_LEN);
+      memcpy((bt_tx_data + packet_length),
+          (uint8_t *) shimmerStatus.battDigital, STC3100_DATA_LEN);
       packet_length += STC3100_DATA_LEN;
       BT_write(bt_tx_data, packet_length);
     }
@@ -321,7 +420,7 @@ void I2cSens_configureChannels(void)
 {
   uint8_t *channel_contents_ptr = sensing.cc + sensing.ccLen;
   uint8_t nbr_i2c1_chans = 0;
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
 #if defined(SHIMMER3R)
   memset((uint8_t *) &i2c1Sens, 0, sizeof(i2c1Sens));
@@ -335,9 +434,9 @@ void I2cSens_configureChannels(void)
   //Mag (LIS2MDL)
   if (configBytes->chEnMag)
   {
-    *channel_contents_ptr++ = X_MAG_1;
-    *channel_contents_ptr++ = Z_MAG_1;
-    *channel_contents_ptr++ = Y_MAG_1;
+    *channel_contents_ptr++ = X_MAG;
+    *channel_contents_ptr++ = Y_MAG;
+    *channel_contents_ptr++ = Z_MAG;
     nbr_i2c1_chans += 3;
     sensing.ptr.mag1 = sensing.dataLen;
     sensing.dataLen += 6;
@@ -369,9 +468,9 @@ void I2cSens_configureChannels(void)
   //Mag (LSM303DLHC)
   if (configBytes->chEnMag)
   {
-    *channel_contents_ptr++ = X_MAG_1;
-    *channel_contents_ptr++ = Z_MAG_1;
-    *channel_contents_ptr++ = Y_MAG_1;
+    *channel_contents_ptr++ = X_MAG;
+    *channel_contents_ptr++ = Z_MAG;
+    *channel_contents_ptr++ = Y_MAG;
     nbr_i2c1_chans += 3;
     sensing.ptr.mag1 = sensing.dataLen;
     sensing.dataLen += 6;
@@ -418,7 +517,7 @@ void I2cSens_configureChannels(void)
   }
 #endif
   sensing.ccLen += nbr_i2c1_chans;
-  sensing.nbrDigiChans += nbr_i2c1_chans;
+  sensing.nbrI2cChans = nbr_i2c1_chans;
 
 #if defined(SHIMMER3R)
   expectedI2cBusCbFlags = 0;
@@ -464,8 +563,8 @@ void I2cBatt_configureChannels(void)
 
 void I2C_startSensing(void)
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
-  float shimmerSamplingFreq = get_shimmer_sampling_freq();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
+  float shimmerSamplingFreq = ShimConfig_getShimmerSamplingFreq();
 
   memset((uint8_t *) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
 
@@ -477,11 +576,15 @@ void I2C_startSensing(void)
   //  HAL_Delay(1000);
   //}
 
+  if (i2c1Sens.sensorLen > 0)
+  {
+    MX_I2C1_Init();
+  }
+
 #if defined(SHIMMER3R)
   if (configBytes->chEnMag)
   {
-    lis2mdl_power_on();
-    lis2mdl_configure(shimmerSamplingFreq, configBytes->magRate);
+    lis2mdl_configure(shimmerSamplingFreq, ShimConfig_configByteMagRateGet());
   }
 
 #elif defined(SHIMMER4_SDK)
@@ -525,8 +628,8 @@ void I2C_startSensing(void)
     }
     if (configBytes->chEnMag)
     {
-      LSM303DLHC_magInit(configBytes->magRate, //sampling rate
-          configBytes->magRange);              //gain
+      LSM303DLHC_magInit(get_config_byte_mag_rate(), //sampling rate
+          configBytes->magRange);                    //gain
     }
   }
 
@@ -570,7 +673,7 @@ void I2C_stopSensing(void)
 
 void I2cSens_stopSensing(void)
 {
-  gConfigBytes *configBytes = S4Ram_getStoredConfig();
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
 #if defined(SHIMMER3R)
 //if (configBytes->chEnMag)
@@ -586,9 +689,11 @@ void I2cSens_stopSensing(void)
   {
     LSM303DLHC_sleep();
   }
-#endif
   HAL_Delay(10);
-  set_power_i2c1_bus(0, I2C1_CHIP_ALL);
+  Board_SW_I2C(0);
+#endif
+
+  I2C1_DeInit();
 }
 
 #if defined(SHIMMER4_SDK)
@@ -662,8 +767,8 @@ void I2cSensing(I2CTypeDef *i2cSensingInfo, I2C_SENSING_TYPE start)
   }
   else if (i2cSensingInfo->sensorCnt < i2cSensingInfo->sensorLen)
   {
-    uint8_t res = 0;
-    while ((res = I2cSens_sensorNext(i2cSensingInfo)) == 0)
+    uint8_t waitingDmaRxCb = 0;
+    while ((waitingDmaRxCb = I2cSens_sensorNext(i2cSensingInfo)) == 0)
     {
       i2cSensingInfo->sensorCnt++;
 
@@ -714,6 +819,7 @@ void I2cBattMonitor(I2C_SENSING_TYPE start)
 uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
 {
   uint8_t retVal = 0;
+  HAL_StatusTypeDef halRet = 0xFF;
 
   switch (i2cSensingInfo->sensorList[i2cSensingInfo->sensorCnt])
   {
@@ -722,7 +828,7 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
     if (!lis2mdl_is_drdy_int_enabled() || LIS2MDL_DRDY)
     {
       i2cSensingInfo->status = I2C_STAT_LIS2MDL_MAG_GET;
-      lis2mdl_mag_get(i2cSens_buf.lis2mdlMagBuf);
+      halRet = lis2mdl_mag_get(i2cSens_buf.lis2mdlMagBuf);
       retVal = 1;
     }
     break;
@@ -752,52 +858,17 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
   default:
     break;
   }
+
+  /* If a DMA issue occured, return 0 to skip to next sensor */
+  if (halRet != 0xFF && halRet != HAL_OK)
+  {
+    //printf("I2C DMA Error: %d, Stage: %d\n", halRet, i2cSensingInfo->status);
+
+    retVal = 0;
+    i2cSensingInfo->status = SPI_STAT_IDLE;
+  }
+
   return retVal;
-}
-
-void set_power_i2c1_bus(bool state, I2C1_CHIP_INDEX chipIndex)
-{
-  bool stateToSet = false;
-
-  if (chipIndex == I2C1_CHIP_ALL)
-  {
-    stateToSet = state;
-    for (uint8_t i = 0; i < sizeof(i2c1BusChipPwrFlags); i++)
-    {
-      i2c1BusChipPwrFlags[i] = state;
-    }
-  }
-  else
-  {
-    i2c1BusChipPwrFlags[chipIndex] = state;
-
-    for (uint8_t i = 0; i < sizeof(i2c1BusChipPwrFlags); i++)
-    {
-      //If any chips should be on, set power on.
-      if (i2c1BusChipPwrFlags[i])
-      {
-        stateToSet = true;
-        break;
-      }
-    }
-  }
-
-  if (stateToSet)
-  {
-    if (hi2cMainBus == NULL || HAL_I2C_GetState(hi2cMainBus) == HAL_I2C_STATE_RESET)
-    {
-      /* Init the I2C */
-      MX_I2C1_Init();
-    }
-  }
-  else
-  {
-    if (hi2cMainBus != NULL && HAL_I2C_GetState(hi2cMainBus) != HAL_I2C_STATE_RESET)
-    {
-      /* DeInit the I2C */
-      I2C1_DeInit();
-    }
-  }
 }
 
 #if defined(SHIMMER3R)
@@ -919,17 +990,19 @@ void BMP180RxDoneHandler(void)
 {
   if (i2c1Sens.status == I2C_STAT_BMP180_TEMP_GET_R)
   {
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       i2c1Sens.status = I2C_STAT_BMP180_PRES_START;
       BMP180_presStartMeasurement(sensorBmp180.oss);
     }
     else
+    {
       i2c1Sens.status = I2C_STAT_IDLE;
+    }
   }
   else if (i2c1Sens.status == I2C_STAT_BMP180_PRES_GET_R)
   {
-    if (stat.isSensing)
+    if (shimmerStatus.isSensing)
     {
       if (!sensorBmp180.tempCnt)
       {
@@ -943,7 +1016,9 @@ void BMP180RxDoneHandler(void)
       }
     }
     else
+    {
       i2c1Sens.status = I2C_STAT_IDLE;
+    }
   }
   else
   {
@@ -1296,14 +1371,52 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void loadDaughterCardIdFromEeprom(void)
 {
-  set_power_i2c1_bus(1, I2C1_CHIP_INDEX_EEPROM);
-  HAL_Delay(100);
   uint8_t daughterCardIdBuf[CAT24C16_PAGE_SIZE];
   eepromRead(0, CAT24C16_PAGE_SIZE, &daughterCardIdBuf[0]);
-  setDaugherCardIdPage(daughterCardIdBuf);
-  parseDaughterCardId(getDaughtCardId()->exp_brd_id);
-  HAL_Delay(10);
-  set_power_i2c1_bus(0, I2C1_CHIP_INDEX_EEPROM);
+  ShimBrd_setDaugherCardIdPage(daughterCardIdBuf);
+  ShimBrd_parseDaughterCardId();
+  HAL_Delay(5); //5ms to ensure no writes pending
+}
+
+void enableI2cOnSr48PpgSocket(uint8_t state)
+{
+  if (state)
+  {
+    Board_setExpansionBrdPower(1);
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      Board_SR48_6_0_SW_I2C4_ON_PPG(1);
+    }
+    else if (ShimBrd_isBoardSr48_7_0())
+    {
+      //SPI is needed to change GPIO state in ADS7028
+      MX_SPI1_Init();
+      ads7028_swI2C4PpgOn(1);
+    }
+    else
+    {
+      Board_SW_I2C4_ON_PPG(1);
+    }
+    MX_I2C4_Init();
+  }
+  else
+  {
+    I2C4_DeInit();
+    Board_setExpansionBrdPower(0);
+    if (ShimBrd_isBoardSr48_6_0())
+    {
+      Board_SR48_6_0_SW_I2C4_ON_PPG(0);
+    }
+    else if (ShimBrd_isBoardSr48_7_0())
+    {
+      ads7028_swI2C4PpgOn(0);
+      SPI1_DeInit();
+    }
+    else
+    {
+      Board_SW_I2C4_ON_PPG(0);
+    }
+  }
 }
 
 /* USER CODE END 1 */

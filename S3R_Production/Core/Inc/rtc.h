@@ -31,7 +31,7 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
-#include "s4__cfg.h"
+#include <shimmer_include.h>
 
   /* USER CODE END Includes */
 
@@ -57,6 +57,8 @@ extern "C"
 #define RTC_BCD2BIN(x)         ((((x) >> 4) & 0x0F) * 10 + ((x) & 0x0F))
 #define RTC_CHAR2NUM(x)        ((x) - '0')
 #define RTC_CHARISNUM(x)       ((x) >= '0' && (x) <= '9')
+
+#define getRwcTime             RTC_get64
 
   typedef struct
   {

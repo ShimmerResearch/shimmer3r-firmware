@@ -122,6 +122,8 @@
 #include "tim.h"
 #endif
 
+#include "hal_FactoryTest.h"
+
 /* Private macro -------------------------------------------------------------*/
 #define WAIT_TIME_00 20 //ms
 #define WAIT_TIME_01 20 //ms
@@ -139,8 +141,6 @@ static const float max_st_limit[] = { 3.0f, 3.0f, 1.0f };
 
 /* Private variables ---------------------------------------------------------*/
 static LIS3MDL_Object_t lis3mdl_obj;
-
-static bool isDrdyIntEnabled = false;
 
 /* Extern variables ----------------------------------------------------------*/
 
@@ -175,16 +175,6 @@ void lis3mdl_driver_init(void)
   lis3mdl_obj.Ctx.handle = &SENSOR_BUS;
 }
 
-void lis3mdl_power_on(void)
-{
-  set_power_spi2_bus(true, SPI2_CHIP_INDEX_LIS3MDL);
-}
-
-void lis3mdl_power_off(void)
-{
-  set_power_spi2_bus(false, SPI2_CHIP_INDEX_LIS3MDL);
-}
-
 void lis3mdl_selectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
@@ -195,18 +185,18 @@ void lis3mdl_unselectDevice(void)
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_SET);
 }
 
-uint8_t lis3mdl_self_test(void)
+self_test_result_t lis3mdl_self_test(void)
 {
   uint8_t tx_buffer[1000];
   int16_t data_raw[3];
   float val_st_off[3];
   float val_st_on[3];
   float test_val[3];
-  uint8_t st_result;
   uint8_t whoamI;
   uint8_t drdy;
   uint8_t i;
   uint8_t j;
+  self_test_result_t self_test_result = SELF_TEST_PASS;
 
   lis3mdl_driver_init();
 
@@ -215,7 +205,7 @@ uint8_t lis3mdl_self_test(void)
 
   if (whoamI != LIS3MDL_ID)
   {
-    st_result = ST_FAIL;
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
   }
   else
   {
@@ -232,18 +222,12 @@ uint8_t lis3mdl_self_test(void)
     /* Wait stable output */
     platform_delay(WAIT_TIME_01);
 
-    /* Check if new value available */
-    do
+    /* Adding DRDY pin test */
+    if (!lis3mdl_drdy_test())
     {
-      lis3mdl_mag_data_ready_get(&lis3mdl_obj.Ctx, &drdy);
-    } while (!drdy);
-
-    /* Read dummy data and discard it */
-    lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
-    /* Read samples and get the average vale for each axis */
-    memset(val_st_off, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < SAMPLES; i++)
+      self_test_result = SELF_TEST_FAIL_DRDY_ISSUE;
+    }
+    else
     {
       /* Check if new value available */
       do
@@ -251,109 +235,126 @@ uint8_t lis3mdl_self_test(void)
         lis3mdl_mag_data_ready_get(&lis3mdl_obj.Ctx, &drdy);
       } while (!drdy);
 
-      /* Read data and accumulate the mg value */
+      /* Read dummy data and discard it */
       lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
 
-      for (j = 0; j < 3; j++)
+      /* Read samples and get the average vale for each axis */
+      memset(val_st_off, 0x00, 3 * sizeof(float));
+      for (i = 0; i < SAMPLES; i++)
       {
-        val_st_off[j] += lis3mdl_from_fs12_to_gauss(data_raw[j]);
+        /* Check if new value available */
+        do
+        {
+          lis3mdl_mag_data_ready_get(&lis3mdl_obj.Ctx, &drdy);
+        } while (!drdy);
+
+        /* Read data and accumulate the mg value */
+        lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
+
+        for (j = 0; j < 3; j++)
+        {
+          val_st_off[j] += lis3mdl_from_fs12_to_gauss(data_raw[j]);
+        }
       }
-    }
 
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_off[i] /= SAMPLES;
-    }
+      /* Calculate the mg average values */
+      for (i = 0; i < 3; i++)
+      {
+        val_st_off[i] /= SAMPLES;
+      }
 
-    /* Enable Self Test */
-    lis3mdl_self_test_set(&lis3mdl_obj.Ctx, PROPERTY_ENABLE);
-    /* Wait stable output */
-    platform_delay(WAIT_TIME_02);
+      /* Enable Self Test */
+      lis3mdl_self_test_set(&lis3mdl_obj.Ctx, PROPERTY_ENABLE);
+      /* Wait stable output */
+      platform_delay(WAIT_TIME_02);
 
-    /* Check if new value available */
-    do
-    {
-      lis3mdl_mag_data_ready_get(&lis3mdl_obj.Ctx, &drdy);
-    } while (!drdy);
-
-    /* Read dummy data and discard it */
-    lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
-    /* Read samples and get the average vale for each axis */
-    memset(val_st_on, 0x00, 3 * sizeof(float));
-
-    for (i = 0; i < SAMPLES; i++)
-    {
       /* Check if new value available */
       do
       {
         lis3mdl_mag_data_ready_get(&lis3mdl_obj.Ctx, &drdy);
       } while (!drdy);
 
-      /* Read data and accumulate the mg value */
+      /* Read dummy data and discard it */
       lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
+      /* Read samples and get the average vale for each axis */
+      memset(val_st_on, 0x00, 3 * sizeof(float));
 
-      for (j = 0; j < 3; j++)
+      for (i = 0; i < SAMPLES; i++)
       {
-        val_st_on[j] += lis3mdl_from_fs12_to_gauss(data_raw[j]);
+        /* Check if new value available */
+        do
+        {
+          lis3mdl_mag_data_ready_get(&lis3mdl_obj.Ctx, &drdy);
+        } while (!drdy);
+
+        /* Read data and accumulate the mg value */
+        lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
+
+        for (j = 0; j < 3; j++)
+        {
+          val_st_on[j] += lis3mdl_from_fs12_to_gauss(data_raw[j]);
+        }
       }
-    }
 
-    /* Calculate the mg average values */
-    for (i = 0; i < 3; i++)
-    {
-      val_st_on[i] /= SAMPLES;
-    }
-
-    st_result = ST_PASS;
-
-    /* Calculate the mg values for self test */
-    for (i = 0; i < 3; i++)
-    {
-      test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
-    }
-
-    /* Check self test limit */
-    for (i = 0; i < 3; i++)
-    {
-      if ((min_st_limit[i] > test_val[i]) || (test_val[i] > max_st_limit[i]))
+      /* Calculate the mg average values */
+      for (i = 0; i < 3; i++)
       {
-        st_result = ST_FAIL;
+        val_st_on[i] /= SAMPLES;
       }
-    }
 
-    /* Disable Self Test */
-    lis3mdl_self_test_set(&lis3mdl_obj.Ctx, PROPERTY_DISABLE);
+      /* Calculate the mg values for self test */
+      for (i = 0; i < 3; i++)
+      {
+        test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
+      }
+
+      /* Check self test limit */
+      for (i = 0; i < 3; i++)
+      {
+        if ((min_st_limit[i] > test_val[i]) || (test_val[i] > max_st_limit[i]))
+        {
+          self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
+        }
+      }
+      float_t tempCal;
+      lis3mdl_temperature_get(&tempCal);
+
+      /* Disable Self Test */
+      lis3mdl_self_test_set(&lis3mdl_obj.Ctx, PROPERTY_DISABLE);
+    }
     /* Disable sensor. */
     lis3mdl_operating_mode_set(&lis3mdl_obj.Ctx, LIS3MDL_POWER_DOWN);
   }
+  return self_test_result;
+}
 
-  //if (st_result == ST_PASS)
-  //{
-  //  sprintf((char *) tx_buffer, "LIS3MDL Self Test - PASS\r\n");
-  //}
-  //
-  //else
-  //{
-  //  sprintf((char *) tx_buffer, "LIS3MDL Self Test - FAIL\r\n");
-  //}
-  //
-  //tx_com(tx_buffer, strlen((char const *) tx_buffer));
+uint8_t lis3mdl_drdy_test(void)
+{
+  int16_t data_raw[3];
+  uint8_t i;
+  uint8_t res = 0;
 
-  return st_result == ST_PASS ? 0 : 1;
+  /* New sample is every 12.5ms @ 80Hz. Loop count + delay below allows 100ms for DRDY to toggle */
+  for (i = 0; i < 50; i++)
+  {
+    if (LIS3MDL_DRDY)
+    {
+      /* Read dummy data and discard it */
+      lis3mdl_magnetic_raw_get(&lis3mdl_obj.Ctx, data_raw);
+      platform_delay(1);
+      res = LIS3MDL_DRDY ? 0 : 1; //check for pin status, 0 = fail, 1 = pass
+      break;
+    }
+    platform_delay(1);
+  }
+
+  return res;
 }
 
 void lis3mdl_configure(float shimmerSamplingFreq, lis3mdl_om_t rate, lis3mdl_fs_t range)
 {
   LIS3MDL_Init(&lis3mdl_obj);
-
-  isDrdyIntEnabled = false;
-  if (lis3mdl_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
-  {
-    /* Note: DRDY pin is always enabled for LIS3MDL but we only need to utilise
-    it if the Shimmer's sampling rate is faster then the chip can support. */
-    isDrdyIntEnabled = true;
-  }
+  /* Note: DRDY pin is always enabled for LIS3MDL nothing needs to be configured */
 
   /* Set Full Scale */
   lis3mdl_full_scale_set(&lis3mdl_obj.Ctx, range);
@@ -373,16 +374,6 @@ HAL_StatusTypeDef lis3mdl_mag_get(uint8_t *buf)
   static uint8_t txBuff[] = { LIS3MDL_OUT_X_L | 0xC0, 0, 0, 0, 0, 0, 0 };
   ret = platform_read_raw_data_dma(lis3mdl_obj.Ctx.handle, &txBuff[0], buf, sizeof(txBuff));
   return ret;
-}
-
-bool lis3mdl_is_drdy_int_enabled(void)
-{
-  return isDrdyIntEnabled;
-}
-
-bool lis3mdl_is_shimmer_freq_higher(float shimmerSamplingFreq, lis3mdl_om_t rate)
-{
-  return shimmerSamplingFreq > lis3mdl_get_sensor_freq_from_rate(rate);
 }
 
 float lis3mdl_get_sensor_freq_from_rate(lis3mdl_om_t rate)
@@ -486,6 +477,22 @@ void lis3mdl_spi_three_wire_set(void)
   ret = lis3mdl_write_reg(&lis3mdl_obj.Ctx, LIS3MDL_CTRL_REG3, (uint8_t *) &ctrl_reg3, 1);
 }
 
+int32_t lis3mdl_temperature_get(float_t *tempCal)
+{
+  int16_t tempUncal = 0;
+
+  lis3mdl_temperature_meas_set(&lis3mdl_obj.Ctx, 1);
+  /* Wait stable output - just picking an existing delay here */
+  platform_delay(WAIT_TIME_02);
+
+  int32_t res = lis3mdl_temperature_raw_get(&lis3mdl_obj.Ctx, &tempUncal);
+
+  lis3mdl_temperature_meas_set(&lis3mdl_obj.Ctx, 0);
+
+  *tempCal = lis3mdl_from_lsb_to_celsius(tempUncal);
+  return res;
+}
+
 /*
  * @brief  Write generic device register (platform dependent)
  *
@@ -574,6 +581,10 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
   HAL_StatusTypeDef ret;
   lis3mdl_selectDevice();
   ret = HAL_SPI_TransmitReceive_DMA(handle, txBufp, rxBufp, len);
+  if (ret != HAL_OK)
+  {
+    lis3mdl_unselectDevice();
+  }
   return ret;
 }
 
@@ -584,7 +595,7 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
  * @param  len           number of byte to send
  *
  */
-static void tx_com(uint8_t *tx_buffer, uint16_t len)
+static void tx_com(uint8_t *tx_buffer, uint16_t len) //@suppress("Unused static function")
 {
 #if defined(NUCLEO_F411RE)
   HAL_UART_Transmit(&huart2, tx_buffer, len, 1000);

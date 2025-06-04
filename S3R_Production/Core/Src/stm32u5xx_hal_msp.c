@@ -1,4 +1,3 @@
-
 /* USER CODE BEGIN Header */
 /**
  ******************************************************************************
@@ -67,15 +66,29 @@ void HAL_MspInit(void)
 
   /* USER CODE BEGIN MspInit 0 */
 
+  /* U5 driver v1.7.0 added EnableVddUSB, EnableVddIO2 and EnableVddA here. We
+   * previously had to add in EnableVddA ourselves based on online forums but
+   * EnableVddUSB and EnableVddIO2 are also being enabled elsewhere.
+   * Additionally EnableVddUSB will not work at this point with the SR48-6-0
+   * prototypes due to a fault in the design. Sectioning off the CubeMX changes
+   * for the moment.*/
+#if SUPPORT_SR48_6_0
+  __HAL_RCC_PWR_CLK_ENABLE();
+  HAL_PWREx_EnableVddA();
+#else //SUPPORT_SR48_6_0
+
   /* USER CODE END MspInit 0 */
 
   __HAL_RCC_PWR_CLK_ENABLE();
+  HAL_PWREx_EnableVddUSB();
+  HAL_PWREx_EnableVddIO2();
+  HAL_PWREx_EnableVddA();
 
   /* System interrupt init*/
 
   /* USER CODE BEGIN MspInit 1 */
 
-  HAL_PWREx_EnableVddA();
+#endif //SUPPORT_SR48_6_0
 
   /* USER CODE END MspInit 1 */
 }

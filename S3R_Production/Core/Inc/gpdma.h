@@ -33,6 +33,8 @@ extern "C"
 
   /* USER CODE END Includes */
 
+  extern DMA_HandleTypeDef handle_GPDMA1_Channel11;
+
   extern DMA_HandleTypeDef handle_GPDMA1_Channel2;
 
   /* USER CODE BEGIN Private defines */
@@ -43,7 +45,8 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
-  void linkedListConfig(ADC_HandleTypeDef *hadc);
+  void adcLinkedListConfig(ADC_HandleTypeDef *hadc);
+  void micLinkedListConfig(MDF_HandleTypeDef *adfHandle);
 
   /* USER CODE END Prototypes */
 

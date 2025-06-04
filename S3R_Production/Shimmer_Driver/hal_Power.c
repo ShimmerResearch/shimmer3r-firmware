@@ -41,7 +41,7 @@
  */
 
 #include "hal_Power.h"
-#include "s4.h"
+#include "log_and_stream_definitions.h"
 #include "stm32u5xx_hal.h"
 
 extern void SystemClock_Config(void);
@@ -89,7 +89,10 @@ void Power_GpioAnalogConfig(void)
   __GPIOH_CLK_ENABLE();
   __GPIOI_CLK_ENABLE();
   __GPIOJ_CLK_ENABLE();
+
+#if defined(GPIOK)
   __GPIOK_CLK_ENABLE();
+#endif /* GPIOK */
 
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
@@ -107,7 +110,10 @@ void Power_GpioAnalogConfig(void)
   HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
   HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
   HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
-  //HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+
+#if defined(GPIOK)
+  HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+#endif /* GPIOK */
 
   /* Disable GPIOs clock */
 
@@ -122,7 +128,10 @@ void Power_GpioAnalogConfig(void)
   __GPIOH_CLK_DISABLE();
   __GPIOI_CLK_DISABLE();
   __GPIOJ_CLK_DISABLE();
+
+#if defined(GPIOK)
   __GPIOK_CLK_DISABLE();
+#endif /* GPIOK */
 
 #ifndef DEBUG //Something to do with debugging...
   __GPIOA_CLK_ENABLE();
@@ -134,7 +143,7 @@ void Power_GpioAnalogConfig(void)
 void Power_SleepUntilInterrupt(void)
 {
   HAL_SuspendTick();
-  HAL_PWR_EnterSLEEPMode(0, PWR_SLEEPENTRY_WFI);
+  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
   HAL_ResumeTick();
 }
 
