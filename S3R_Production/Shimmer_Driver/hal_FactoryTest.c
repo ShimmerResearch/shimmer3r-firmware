@@ -684,8 +684,7 @@ void SPI_test(void)
   }
   else
   {
-    sprintf(buffer, " - S3R_TEST_0018 - ADXL371 test not applicable for this model\r\n");
-    send_test_report(buffer);
+    send_test_report(" - S3R_TEST_0018 - ADXL371 test not applicable for this model\r\n");
   }
 
   SPI1_DeInit();
@@ -693,21 +692,28 @@ void SPI_test(void)
   send_test_report("SPI2:\r\n");
   MX_SPI2_Init();
 
-  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
-  self_test_result = lis3mdl_self_test();
-  if (self_test_result == SELF_TEST_PASS)
+  if (ShimBrd_isLis3mdlPresent())
   {
-    //Get new temperature value
-    self_test_result = lis3mdl_temperature_get(&tempCal);
-    if (self_test_result || is_temperature_outside_of_range(tempCal))
+    tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
+    self_test_result = lis3mdl_self_test();
+    if (self_test_result == SELF_TEST_PASS)
     {
-      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+      //Get new temperature value
+      self_test_result = lis3mdl_temperature_get(&tempCal);
+      if (self_test_result || is_temperature_outside_of_range(tempCal))
+      {
+        self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+      }
+    }
+    print_chip_test_result("S3R_TEST_0019", "LIS3MDL", self_test_result, tempCal);
+    if (self_test_result)
+    {
+      shimmerStatus.testResult |= S3R_TEST_0019;
     }
   }
-  print_chip_test_result("S3R_TEST_0019", "LIS3MDL", self_test_result, tempCal);
-  if (self_test_result)
+  else
   {
-    shimmerStatus.testResult |= S3R_TEST_0019;
+    send_test_report(" - S3R_TEST_0019 - LIS3MDL test not applicable for this model\r\n");
   }
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
