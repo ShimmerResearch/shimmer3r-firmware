@@ -21,6 +21,8 @@
 #include "tim.h"
 
 /* USER CODE BEGIN 0 */
+#include "iwdg.h"
+
 #include <Boards/shimmer_boards.h>
 #include <LEDs/shimmer_leds.h>
 #include <log_and_stream_common.h>
@@ -412,6 +414,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
 //void ledBlinkTimerCallback(void)
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
+  petWatchdog();
   LogAndStream_blinkTimerCommon();
 }
 
