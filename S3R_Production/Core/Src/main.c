@@ -21,6 +21,7 @@
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
+#include "iwdg.h"
 #include "memorymap.h"
 #include "rng.h"
 #include "rtc.h"
@@ -242,6 +243,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();
@@ -289,14 +291,16 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB buses clocks
    */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_LSI
       | RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_0;
+  RCC_OscInitStruct.LSIDiv = RCC_LSI_DIV1;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -489,21 +493,30 @@ void SetupDock(void)
 {
   shimmerStatus.configuring = 1;
 
-  if (shimmerStatus.docked)
+  if (LogAndStream_isDockedOrUsbIn())
   {
     ShimBatt_setBatteryInterval(BATT_INTERVAL_DOCKED);
     ShimBatt_resetBatteryCriticalCount();
+    delay_ms(1000);
     manageReadBatt(1);
 
     shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
     shimmerStatus.sdlogReady = 0;
-    if (CheckSdInslot())
+    /* Prioritise dock over USB for SD card access */
+    if (shimmerStatus.docked)
     {
-      Board_sd2Pc();
+      if (CheckSdInslot())
+      {
+        Board_sd2Pc();
 
-      //Board_sdPowerCycle();
+        //Board_sdPowerCycle();
+      }
+      MX_USART1_UART_Init();
     }
-    MX_USART1_UART_Init();
+    else
+    {
+      DockUart_deint();
+    }
     ShimBt_instreamStatusRespSend();
   }
   else
