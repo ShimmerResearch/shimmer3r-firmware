@@ -57,7 +57,7 @@ void MX_IWDG_Init(void)
 
 void petWatchdog(void)
 {
-  if (HAL_IWDG_Refresh(&hiwdg) != HAL_OK)
+  if (hiwdg.Instance != 0 && HAL_IWDG_Refresh(&hiwdg) != HAL_OK)
   {
     Error_Handler();
   }

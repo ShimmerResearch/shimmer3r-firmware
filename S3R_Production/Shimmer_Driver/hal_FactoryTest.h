@@ -123,6 +123,7 @@ uint8_t is_temperature_outside_of_range(float_t temperature);
 void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_test_result, float_t tempCal);
 void send_test_report(char *str);
 uint8_t runGsrFactoryTest(void);
+void printGsrTestResults(void);
 HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance);
 uint8_t runMicrophoneTest(void);
 
