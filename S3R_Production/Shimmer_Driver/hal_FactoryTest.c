@@ -922,9 +922,9 @@ uint8_t runGsrFactoryTest(void)
       returnVal = 1;
     }
 
-//    sprintf(buffer, "Test %lu, Measured %lu, Tolerance +-%lu\r\n", testGsrResistances[i],
-//        gsrResistance, gsrBuffer);
-//    send_test_report(buffer);
+    //sprintf(buffer, "Test %lu, Measured %lu, Tolerance +-%lu\r\n", testGsrResistances[i],
+    //    gsrResistance, gsrBuffer);
+    //send_test_report(buffer);
   }
 
   resetGsrPwrAndRange();
@@ -970,8 +970,7 @@ void printGsrTestResults(void)
       {
         referenceResistor = 287000;
       }
-      else if (testGsrResistances[i] >= 220000L
-          && testGsrResistances[i] < 680000L)
+      else if (testGsrResistances[i] >= 220000L && testGsrResistances[i] < 680000L)
       {
         referenceResistor = 1000000;
       }
@@ -980,8 +979,9 @@ void printGsrTestResults(void)
         referenceResistor = 3300000;
       }
 
-      sprintf(buffer, "Test Resistance = %lu ohms, Measured %lu ohms, Tolerance +-%lu ohms, Ref Resistor = %lu, Result = %s\r\n", testGsrResistances[i],
-          gsrResistance[i], gsrBuffer, referenceResistor, returnVal ? "FAIL" : "PASS");
+      sprintf(buffer, "Test Resistance = %lu ohms, Measured %lu ohms, Tolerance +-%lu ohms, Ref Resistor = %lu, Result = %s\r\n",
+          testGsrResistances[i], gsrResistance[i], gsrBuffer, referenceResistor,
+          returnVal ? "FAIL" : "PASS");
       send_test_report(buffer);
     }
   }
