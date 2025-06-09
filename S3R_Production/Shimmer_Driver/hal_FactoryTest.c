@@ -915,7 +915,7 @@ uint8_t runGsrFactoryTest(void)
 
     status = getFactoryTestGsrAvg(&gsrResistance[i]);
 
-    uint32_t gsrBuffer = gsrResistance[i] * GSR_TEST_TOLERANCE;
+    uint32_t gsrBuffer = testGsrResistances[i] * GSR_TEST_TOLERANCE;
     if (status != HAL_OK || (gsrResistance[i] < (testGsrResistances[i] - gsrBuffer))
         || (gsrResistance[i] > (testGsrResistances[i] + gsrBuffer)))
     {
@@ -955,7 +955,7 @@ void printGsrTestResults(void)
     {
       returnVal = 0;
 
-      uint32_t gsrBuffer = gsrResistance[i] * GSR_TEST_TOLERANCE;
+      uint32_t gsrBuffer = testGsrResistances[i] * GSR_TEST_TOLERANCE;
       if ((gsrResistance[i] < (testGsrResistances[i] - gsrBuffer))
           || (gsrResistance[i] > (testGsrResistances[i] + gsrBuffer)))
       {
