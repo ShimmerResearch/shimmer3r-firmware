@@ -94,6 +94,7 @@ float samplingClockFreqGet(void);
 void InitialiseBtAfterBoot(void);
 uint8_t getDefaultBaudForBtVersion(void);
 void JumpToBootloader(void);
+HAL_StatusTypeDef checknBoot0OptionByte(void);
 
 /* USER CODE END PFP */
 
@@ -246,11 +247,15 @@ int main(void)
   MX_TIM7_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
+
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();
 #endif
 
   Init();
+
+  /* Check nBOOT0 option byte is configured correctly */
+  checknBoot0OptionByte();
 
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
@@ -689,6 +694,45 @@ void JumpToBootloader(void)
   {
     /* Code should never reach this loop */
   }
+
+HAL_StatusTypeDef checknBoot0OptionByte(void)
+{
+  FLASH_OBProgramInitTypeDef OB;
+  HAL_FLASHEx_OBGetConfig(&OB);
+
+  uint32_t nBoot0State = ShimBrd_checkCorrectStateForBoot0() ? FLASH_OPTR_nBOOT0_Msk : 0U;
+
+  /* OB.USERConfig returns the FLASH_OPTR register */
+  //Use it to check if OB programming is necessary
+  if ((OB.USERConfig & FLASH_OPTR_nBOOT0_Msk) != nBoot0State)
+  {
+
+    HAL_FLASH_Unlock();
+    HAL_FLASH_OB_Unlock();
+
+    OB.OptionType = OPTIONBYTE_USER;
+    OB.USERType = OB_USER_NBOOT0;
+    OB.USERConfig = nBoot0State ? OB_NBOOT0_SET : OB_NBOOT0_RESET;
+
+    if (HAL_FLASHEx_OBProgram(&OB) != HAL_OK)
+    {
+      HAL_FLASH_OB_Lock();
+      HAL_FLASH_Lock();
+      return HAL_ERROR;
+    }
+
+    /* This should cause a reboot */
+    HAL_FLASH_OB_Launch();
+
+    /* We should not make it past the Launch, so lock
+     * flash memory and return an error from function
+     */
+    HAL_FLASH_OB_Lock();
+    HAL_FLASH_Lock();
+    return HAL_ERROR;
+  }
+
+  return HAL_OK;
 }
 
 /* USER CODE END 4 */
