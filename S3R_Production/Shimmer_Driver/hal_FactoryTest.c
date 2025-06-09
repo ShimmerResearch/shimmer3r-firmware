@@ -979,7 +979,7 @@ void printGsrTestResults(void)
         referenceResistor = 3300000;
       }
 
-      sprintf(buffer, "Test Resistance = %lu ohms, Measured %lu ohms, Tolerance +-%lu ohms, Ref Resistor = %lu, Result = %s\r\n",
+      sprintf(buffer, "Test Resistance = %lu ohms, Measured %lu ohms, Tolerance @5% +-%lu ohms, Ref Resistor = %lu, Result = %s\r\n",
           testGsrResistances[i], gsrResistance[i], gsrBuffer, referenceResistor,
           returnVal ? "FAIL" : "PASS");
       send_test_report(buffer);
