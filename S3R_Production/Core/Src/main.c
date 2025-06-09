@@ -695,76 +695,76 @@ void JumpToBootloader(void)
     /* Code should never reach this loop */
   }
 
-  HAL_StatusTypeDef checknBoot0OptionByte(void)
+HAL_StatusTypeDef checknBoot0OptionByte(void)
+{
+  FLASH_OBProgramInitTypeDef OB;
+  HAL_FLASHEx_OBGetConfig(&OB);
+
+  uint32_t nBoot0State = ShimBrd_checkCorrectStateForBoot0() ? FLASH_OPTR_nBOOT0_Msk : 0U;
+
+  /* OB.USERConfig returns the FLASH_OPTR register */
+  //Use it to check if OB programming is necessary
+  if ((OB.USERConfig & FLASH_OPTR_nBOOT0_Msk) != nBoot0State)
   {
-    FLASH_OBProgramInitTypeDef OB;
-    HAL_FLASHEx_OBGetConfig(&OB);
 
-    uint32_t nBoot0State = ShimBrd_checkCorrectStateForBoot0() ? FLASH_OPTR_nBOOT0_Msk : 0U;
+    HAL_FLASH_Unlock();
+    HAL_FLASH_OB_Unlock();
 
-    /* OB.USERConfig returns the FLASH_OPTR register */
-    //Use it to check if OB programming is necessary
-    if ((OB.USERConfig & FLASH_OPTR_nBOOT0_Msk) != nBoot0State)
+    OB.OptionType = OPTIONBYTE_USER;
+    OB.USERType = OB_USER_NBOOT0;
+    OB.USERConfig = nBoot0State ? OB_NBOOT0_SET : OB_NBOOT0_RESET;
+
+    if (HAL_FLASHEx_OBProgram(&OB) != HAL_OK)
     {
-
-      HAL_FLASH_Unlock();
-      HAL_FLASH_OB_Unlock();
-
-      OB.OptionType = OPTIONBYTE_USER;
-      OB.USERType = OB_USER_NBOOT0;
-      OB.USERConfig = nBoot0State ? OB_NBOOT0_SET : OB_NBOOT0_RESET;
-
-      if (HAL_FLASHEx_OBProgram(&OB) != HAL_OK)
-      {
-        HAL_FLASH_OB_Lock();
-        HAL_FLASH_Lock();
-        return HAL_ERROR;
-      }
-
-      /* This should cause a reboot */
-      HAL_FLASH_OB_Launch();
-
-      /* We should not make it past the Launch, so lock
-       * flash memory and return an error from function
-       */
       HAL_FLASH_OB_Lock();
       HAL_FLASH_Lock();
       return HAL_ERROR;
     }
 
-    return HAL_OK;
+    /* This should cause a reboot */
+    HAL_FLASH_OB_Launch();
+
+    /* We should not make it past the Launch, so lock
+     * flash memory and return an error from function
+     */
+    HAL_FLASH_OB_Lock();
+    HAL_FLASH_Lock();
+    return HAL_ERROR;
   }
 
-  /* USER CODE END 4 */
+  return HAL_OK;
+}
 
-  /**
-   * @brief  This function is executed in case of error occurrence.
-   * @retval None
-   */
-  void Error_Handler(void)
+/* USER CODE END 4 */
+
+/**
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
   {
-    /* USER CODE BEGIN Error_Handler_Debug */
-    /* User can add his own implementation to report the HAL error return state */
-    __disable_irq();
-    while (1)
-    {
-    }
-    /* USER CODE END Error_Handler_Debug */
   }
+  /* USER CODE END Error_Handler_Debug */
+}
 
 #ifdef USE_FULL_ASSERT
-  /**
-   * @brief  Reports the name of the source file and the source line number
-   *         where the assert_param error has occurred.
-   * @param  file: pointer to the source file name
-   * @param  line: assert_param error line source number
-   * @retval None
-   */
-  void assert_failed(uint8_t * file, uint32_t line)
-  {
-    /* USER CODE BEGIN 6 */
-    /* User can add his own implementation to report the file name and line number,
-       ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-    /* USER CODE END 6 */
-  }
+/**
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
+void assert_failed(uint8_t * file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
 #endif /* USE_FULL_ASSERT */
