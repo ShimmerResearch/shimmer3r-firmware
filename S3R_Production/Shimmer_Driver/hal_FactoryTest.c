@@ -921,10 +921,6 @@ uint8_t runGsrFactoryTest(void)
     {
       returnVal = 1;
     }
-
-    //sprintf(buffer, "Test %lu, Measured %lu, Tolerance +-%lu\r\n", testGsrResistances[i],
-    //    gsrResistance, gsrBuffer);
-    //send_test_report(buffer);
   }
 
   resetGsrPwrAndRange();
@@ -949,8 +945,10 @@ void printGsrTestResults(void)
 
   if (gsrResistance[0] != 0xFF)
   {
-    send_test_report("\r\nGSR Test Results:\r\n");
+    sprintf(buffer, "\r\n    - GSR Test Results (pass tolerance = +-%.0f%%):\r\n", (float) GSR_TEST_TOLERANCE * 100.0f);
+    send_test_report(buffer);
 
+    send_test_report("      - Source, Measured, Tolerance, Ref Resistor, Result\r\n");
     for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
     {
       returnVal = 0;
@@ -979,8 +977,10 @@ void printGsrTestResults(void)
         referenceResistor = 3300000;
       }
 
-      sprintf(buffer, "Test Resistance = %lu ohms, Measured %lu ohms, Tolerance @5% +-%lu ohms, Ref Resistor = %lu, Result = %s\r\n",
-          testGsrResistances[i], gsrResistance[i], gsrBuffer, referenceResistor,
+      float measured_tolerance = (((float) gsrResistance[i] - (float) testGsrResistances[i]) * 100.0f) / (float) testGsrResistances[i];
+
+      sprintf(buffer, "      - %lu ohms, %lu ohms, %+.02f%%, %lu ohms, %s\r\n",
+          testGsrResistances[i], gsrResistance[i], measured_tolerance, referenceResistor,
           returnVal ? "FAIL" : "PASS");
       send_test_report(buffer);
     }
