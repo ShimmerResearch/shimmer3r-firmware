@@ -55,7 +55,6 @@ given above */
 #define SELF_TEST_STR_DRDY_ISSUE                   " - DRDY/INT issue"
 #define SELF_TEST_STR_UNKNOWN                      " - Unknown"
 
-//Originally  GSR_TEST_TOLERANCE                         0.05
 #define GSR_TEST_TOLERANCE                         0.06
 
 typedef enum
