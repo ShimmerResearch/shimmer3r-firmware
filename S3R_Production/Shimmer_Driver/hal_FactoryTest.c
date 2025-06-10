@@ -1017,7 +1017,8 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
       gsrResistanceAvg += *gsrResistance;
     }
 
-    HAL_Delay(10);
+    /*  Originally HAL_Delay(10), but increased as it is helping the GSR signal test pass */
+    HAL_Delay(15);
   }
 
   *gsrResistance = gsrResistanceAvg / 10;
