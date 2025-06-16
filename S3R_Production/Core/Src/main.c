@@ -159,7 +159,7 @@ void Init()
   btInitialise();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
-//  BtStop(true);
+  //BtStop(true);
 
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
