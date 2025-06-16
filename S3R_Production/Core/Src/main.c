@@ -397,8 +397,6 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
   }
 #endif //SUPPORT_SR48_6_0
 
-  SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
-
   btInit(baudToTry, factoryReset);
 
   while ((isBtInitCmdsRunning() && !isBtIsInitialised())
@@ -449,8 +447,6 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
         {
           baudToTry = 500000;
         }
-
-        SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
 
         btInit(baudToTry, factoryReset);
 

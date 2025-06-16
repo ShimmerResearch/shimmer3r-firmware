@@ -182,12 +182,9 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
   Board_BT_LP_MODE(1);
   Board_BT_CP_ROLE(1);
 
-  BtUart_init(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
-
-  /* packet pointer for working with response/event data */
-  //ezs_packet_t *packet;
-
-  //printf("\r\nEZ-Serial API communication demo started\r\n");
+  uint8_t hwFlowControl = baudRate == 115200 ? 0 : FLOW_CONTROL;
+  SHIMMER_PRINTF("BT Init: Baud=%lu, HW Flow Control=%d\r\n", baudRate, hwFlowControl);
+  BtUart_init(baudRate, hwFlowControl);
 
   resetEzsPendingResponse();
 
