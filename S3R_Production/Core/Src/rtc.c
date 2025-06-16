@@ -143,9 +143,9 @@ void MX_RTC_Init(void)
     /* Writes a data in a RTC Backup data Register0 */
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x32F2);
 
-   // __HAL_RTC_ALARMA_DISABLE(&hrtc);
-   // __HAL_RTC_ALARM_DISABLE_IT(&hrtc, RTC_IT_ALRB);
-   //HAL_RTC_DeactivateAlarm(&hrtc,RTC_ALARM_B); //deactivate Sync alarm to be setup with sync.
+    //__HAL_RTC_ALARMA_DISABLE(&hrtc);
+    //__HAL_RTC_ALARM_DISABLE_IT(&hrtc, RTC_IT_ALRB);
+    //HAL_RTC_DeactivateAlarm(&hrtc,RTC_ALARM_B); //deactivate Sync alarm to be setup with sync.
   }
   else
   {
@@ -802,14 +802,14 @@ void RTC_setupAndStartSdSyncAlarm(void)
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-/*  if (sTime.Seconds == 59)
-  {
-    sAlarmB.AlarmTime.Minutes = (sTime.Minutes + 1) % 60;
-    if (sTime.Minutes == 59)
+  /*  if (sTime.Seconds == 59)
     {
-      sAlarmB.AlarmTime.Hours = (sTime.Hours + 1) % 24;
-    }
-  }*/
+      sAlarmB.AlarmTime.Minutes = (sTime.Minutes + 1) % 60;
+      if (sTime.Minutes == 59)
+      {
+        sAlarmB.AlarmTime.Hours = (sTime.Hours + 1) % 24;
+      }
+    }*/
   if (sTime.Minutes >= 58)
   {
     sAlarmB.AlarmTime.Hours = (sTime.Hours + 1);
@@ -817,8 +817,8 @@ void RTC_setupAndStartSdSyncAlarm(void)
   }
   else
   {
-  sAlarmB.AlarmTime.Hours = sTime.Hours;
-  sAlarmB.AlarmTime.Minutes = sTime.Minutes + 2;
+    sAlarmB.AlarmTime.Hours = sTime.Hours;
+    sAlarmB.AlarmTime.Minutes = sTime.Minutes + 2;
   }
 
   sAlarmB.AlarmTime.Seconds = 0x0;
