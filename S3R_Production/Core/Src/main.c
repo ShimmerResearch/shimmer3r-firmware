@@ -159,7 +159,7 @@ void Init()
   btInitialise();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
-//  BtStop(true);
+  BtStop(true);
 
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
@@ -486,8 +486,8 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
 
 void BtStartDone(void)
 {
-  shimmerStatus.btIsInitialised = true;
   initBtInterrupts();
+  shimmerStatus.btIsInitialised = true;
 
   /* TODO LP_MODE feature provides a noticable drop in current consumption but
    * Consensys is having difficulty communicating after connection is
