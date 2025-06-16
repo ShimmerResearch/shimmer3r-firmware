@@ -55,7 +55,8 @@ given above */
 #define SELF_TEST_STR_DRDY_ISSUE                   " - DRDY/INT issue"
 #define SELF_TEST_STR_UNKNOWN                      " - Unknown"
 
-#define GSR_TEST_TOLERANCE                         0.05
+#define GSR_TEST_TOLERANCE_5_PERCENT               0.05
+#define GSR_TEST_TOLERANCE_7_PERCENT               0.07
 
 typedef enum
 {
@@ -122,8 +123,9 @@ void setup_factory_test(factory_test_target_t target, factory_test_t testToRun);
 uint8_t is_temperature_outside_of_range(float_t temperature);
 void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_test_result, float_t tempCal);
 void send_test_report(char *str);
-uint8_t runGsrFactoryTest(void);
-HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance);
+uint8_t gsrFactoryTest_run(void);
+void gsrFactoryTest_printResults(void);
+HAL_StatusTypeDef gsrFactoryTest_getAvgGsr(uint32_t *gsrResistance);
 uint8_t runMicrophoneTest(void);
 
 #endif /* HAL_FACTORYTEST_H_ */

@@ -1387,7 +1387,7 @@ void enableI2cOnSr48PpgSocket(uint8_t state)
     {
       Board_SR48_6_0_SW_I2C4_ON_PPG(1);
     }
-    else if (ShimBrd_isBoardSr48_7_0())
+    else if (ShimBrd_isI2cOnPPGControlledByAdcChip())
     {
       //SPI is needed to change GPIO state in ADS7028
       MX_SPI1_Init();
@@ -1407,7 +1407,7 @@ void enableI2cOnSr48PpgSocket(uint8_t state)
     {
       Board_SR48_6_0_SW_I2C4_ON_PPG(0);
     }
-    else if (ShimBrd_isBoardSr48_7_0())
+    else if (ShimBrd_isI2cOnPPGControlledByAdcChip())
     {
       ads7028_swI2C4PpgOn(0);
       SPI1_DeInit();

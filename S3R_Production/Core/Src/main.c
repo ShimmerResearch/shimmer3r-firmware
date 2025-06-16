@@ -21,6 +21,7 @@
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
+#include "iwdg.h"
 #include "memorymap.h"
 #include "rng.h"
 #include "rtc.h"
@@ -78,8 +79,10 @@ static void SystemPower_Config(void);
 
 void Init(void);
 void btInitialise(void);
+void InitialiseBtAfterBoot(void);
 void btFactoryResetViaFw(void);
-void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt);
+void btCommWithDiffBaudRates(uint8_t resetCnt);
+void BtStartDone(void);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
 void SetupDock(void);
@@ -90,8 +93,8 @@ void sleepWhenNoTask(void);
 
 void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
-void InitialiseBtAfterBoot(void);
 uint8_t getDefaultBaudForBtVersion(void);
+HAL_StatusTypeDef checknBoot0OptionByte(void);
 
 /* USER CODE END PFP */
 
@@ -156,7 +159,8 @@ void Init()
   btInitialise();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
-//btDeinit();
+  //BtStop(true);
+
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
 #endif
@@ -243,15 +247,22 @@ int main(void)
   MX_TIM6_Init();
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
+
+  //MX_IWDG_Init();
+
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();
 #endif
 
   Init();
 
+  /* Check nBOOT0 option byte is configured correctly */
+  checknBoot0OptionByte();
+
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
   //run_factory_test();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -289,14 +300,16 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB buses clocks
    */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_LSI
       | RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_0;
+  RCC_OscInitStruct.LSIDiv = RCC_LSI_DIV1;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -356,19 +369,40 @@ void btInitialise(void)
 {
   SHIMMER_PRINTF("\r\nBT init start\r\n");
 
-  //20 * 100ms = 2s per baud rate attempt
-  btCommWithDiffBaudRates(false, 50U);
+  setBtBootModeFirstBoot();
+
+  //50 * 100ms = 5s per baud rate attempt
+  btCommWithDiffBaudRates(50U);
+}
+
+void InitialiseBtAfterBoot(void)
+{
+  SHIMMER_PRINTF("\r\nBT init after boot start\r\n");
+
+  setBtBootModeSubsequentBoot();
   ShimSdSync_init(InitialiseBtAfterBoot, BtStop);
 
-  SHIMMER_PRINTF("BT init end\r\n");
+  //50 * 100ms = 5s per baud rate attempt
+  btCommWithDiffBaudRates(50U);
+}
+
+void InitialiseBtAfterBoot(void)
+{
+  SHIMMER_PRINTF("\r\nBT init after boot start\r\n");
+
+  setBtBootModeSubsequentBoot();
+
+  btCommWithDiffBaudRates(0);
 }
 
 void btFactoryResetViaFw(void)
 {
   SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
 
+  setBtBootModeFactoryReset();
+
   //50 * 100ms = 5s per baud rate attempt
-  btCommWithDiffBaudRates(true, 50U);
+  btCommWithDiffBaudRates(50U);
 
   //Abort transfer operations to release UART for subsequent requests.
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
@@ -376,7 +410,7 @@ void btFactoryResetViaFw(void)
   SHIMMER_PRINTF("BT factory reset end\r\n");
 }
 
-void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
+void btCommWithDiffBaudRates(uint8_t resetCnt)
 {
   uint8_t failCount = 0U;
   uint8_t resetCntCurrent = resetCnt;
@@ -389,86 +423,91 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
   }
 #endif //SUPPORT_SR48_6_0
 
-  SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
+  BT_startDone_cb(BtStartDone);
+  shimmerStatus.btIsInitialised = false;
+  btInit(baudToTry);
 
-  btInit(baudToTry, factoryReset);
-
-  while ((isBtInitCmdsRunning() && !isBtIsInitialised())
-      || (isBtFactoryResetCmdsRunning() && !isBtIsFactoryResetted()))
+  if (resetCnt > 0U)
   {
-    //HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
-    /* Insert delay 100 ms */
-    HAL_Delay(100);
-
-    if (isEzsBaudRateDelayPending())
+    while ((isBtInitCmdsRunning() && !shimmerStatus.btIsInitialised)
+        || (isBtFactoryResetCmdsRunning() && !isBtIsFactoryResetted()))
     {
-      /* Delay or arbitrary value. As a guide, the EZ-Serial user guide states that it takes ~150 ms for a "chipset reset and boot process". */
-      HAL_Delay(500);
-      incrementBtInitCmdsStep();
-      btInitCommands();
-    }
-    else if (isEzsFactoryRebootDelayPending())
-    {
-      //TODO move away from fixed delay now that we're able to parse the boot message
-      /* Experimentally found to be ~ 2.75s. */
-      HAL_Delay(3000);
-      incrementBtFactoryResetCmdsStep();
-      btFactoryResetCommands();
-    }
+      //HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+      /* Insert delay 100 ms */
+      HAL_Delay(100);
 
-    if (!(resetCntCurrent--))
-    {
-      failCount++;
-
-      btDeinit();
-      HAL_Delay(500);
-
-      if (failCount <= 4)
+      if (isEzsBaudRateDelayPending())
       {
-        if (failCount == 1)
-        {
-          baudToTry = 115200;
-        }
-        else if (failCount == 2)
-        {
-          baudToTry = 460800;
-        }
-        else if (failCount == 3)
-        {
-          baudToTry = 2000000;
-        }
-        else if (failCount == 4)
-        {
-          baudToTry = 500000;
-        }
-
-        SHIMMER_PRINTF("Attempting %lu Baud\r\n", baudToTry);
-
-        btInit(baudToTry, factoryReset);
-
-        resetCntCurrent = resetCnt;
+        /* Delay or arbitrary value. As a guide, the EZ-Serial user guide states that it takes ~150 ms for a "chipset reset and boot process". */
+        HAL_Delay(500);
+        incrementBtInitCmdsStep();
+        btInitCommands();
       }
-      else
+      else if (isEzsFactoryRebootDelayPending())
       {
-        //SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
-        ////software POR reset
-        //NVIC_SystemReset();
-        setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
-        break;
+        //TODO move away from fixed delay now that we're able to parse the boot message
+        /* Experimentally found to be ~ 2.75s. */
+        HAL_Delay(3000);
+        incrementBtInitCmdsStep();
+        btInitCommands();
+      }
+
+      if (!(resetCntCurrent--))
+      {
+        failCount++;
+
+        btDeinit();
+        HAL_Delay(500);
+
+        if (failCount <= 4)
+        {
+          if (failCount == 1)
+          {
+            baudToTry = 115200;
+          }
+          else if (failCount == 2)
+          {
+            baudToTry = 460800;
+          }
+          else if (failCount == 3)
+          {
+            baudToTry = 2000000;
+          }
+          else if (failCount == 4)
+          {
+            baudToTry = 500000;
+          }
+
+          shimmerStatus.btIsInitialised = false;
+          btInit(baudToTry);
+
+          resetCntCurrent = resetCnt;
+        }
+        else
+        {
+          //SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
+          ////software POR reset
+          //NVIC_SystemReset();
+          setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
+          break;
+        }
       }
     }
   }
+}
 
-  if (isBtIsInitialised())
-  {
-    initBtInterrupts();
+void BtStartDone(void)
+{
+  initBtInterrupts();
+  shimmerStatus.btIsInitialised = true;
 
-    /* TODO LP_MODE feature provides a noticable drop in current consumption but
-     * Consensys is having difficulty communicating after connection is
-     * established (could be due to the lack of CTS/RTS in prototype boards?) */
-    //Allow LP Mode after configuring
-    //Board_BT_LP_MODE(0);
-  }
+  /* TODO LP_MODE feature provides a noticable drop in current consumption but
+   * Consensys is having difficulty communicating after connection is
+   * established (could be due to the lack of CTS/RTS in prototype boards?) */
+  //Allow LP Mode after configuring
+  //Board_BT_LP_MODE(0);
+
+  SHIMMER_PRINTF("BT init end\r\n");
 }
 
 void setBtConnectionState(bool state)
@@ -490,21 +529,30 @@ void SetupDock(void)
 {
   shimmerStatus.configuring = 1;
 
-  if (shimmerStatus.docked)
+  if (LogAndStream_isDockedOrUsbIn())
   {
     ShimBatt_setBatteryInterval(BATT_INTERVAL_DOCKED);
     ShimBatt_resetBatteryCriticalCount();
+    delay_ms(1000);
     manageReadBatt(1);
 
     shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
     shimmerStatus.sdlogReady = 0;
-    if (CheckSdInslot())
+    /* Prioritise dock over USB for SD card access */
+    if (shimmerStatus.docked)
     {
-      Board_sd2Pc();
+      if (CheckSdInslot())
+      {
+        Board_sd2Pc();
 
-      //Board_sdPowerCycle();
+        //Board_sdPowerCycle();
+      }
+      MX_USART1_UART_Init();
     }
-    MX_USART1_UART_Init();
+    else
+    {
+      DockUart_deint();
+    }
     ShimBt_instreamStatusRespSend();
   }
   else
@@ -630,21 +678,12 @@ void BtStop(uint8_t isCalledFromMain)
   //BT_disable
   resetBtRxBuff();
   btDeinit();
+  shimmerStatus.btIsInitialised = false;
 }
 
 float samplingClockFreqGet(void)
 {
   return 32768.0f;
-}
-
-void InitialiseBtAfterBoot(void)
-{
-  //TODO implement a shorted boot sequence as this is not the first time the BT
-  //has been booted at this point. btInit(baudToTry, factoryReset);
-  btInit(BAUD_TO_USE, FACTORY_RESET);
-  //BtStart(); //need to implement this
-  SHIMMER_PRINTF(
-      "TODO: need to implemented BT initialise after boot function\r\n");
 }
 
 uint8_t getDefaultBaudForBtVersion(void)
@@ -654,6 +693,46 @@ uint8_t getDefaultBaudForBtVersion(void)
 
 void stopSensingWrapup(void)
 {
+}
+
+HAL_StatusTypeDef checknBoot0OptionByte(void)
+{
+  FLASH_OBProgramInitTypeDef OB;
+  HAL_FLASHEx_OBGetConfig(&OB);
+
+  uint32_t nBoot0State = ShimBrd_checkCorrectStateForBoot0() ? FLASH_OPTR_nBOOT0_Msk : 0U;
+
+  /* OB.USERConfig returns the FLASH_OPTR register */
+  //Use it to check if OB programming is necessary
+  if ((OB.USERConfig & FLASH_OPTR_nBOOT0_Msk) != nBoot0State)
+  {
+
+    HAL_FLASH_Unlock();
+    HAL_FLASH_OB_Unlock();
+
+    OB.OptionType = OPTIONBYTE_USER;
+    OB.USERType = OB_USER_NBOOT0;
+    OB.USERConfig = nBoot0State ? OB_NBOOT0_SET : OB_NBOOT0_RESET;
+
+    if (HAL_FLASHEx_OBProgram(&OB) != HAL_OK)
+    {
+      HAL_FLASH_OB_Lock();
+      HAL_FLASH_Lock();
+      return HAL_ERROR;
+    }
+
+    /* This should cause a reboot */
+    HAL_FLASH_OB_Launch();
+
+    /* We should not make it past the Launch, so lock
+     * flash memory and return an error from function
+     */
+    HAL_FLASH_OB_Lock();
+    HAL_FLASH_Lock();
+    return HAL_ERROR;
+  }
+
+  return HAL_OK;
 }
 
 /* USER CODE END 4 */

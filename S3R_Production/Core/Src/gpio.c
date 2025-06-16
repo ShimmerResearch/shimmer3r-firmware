@@ -522,7 +522,7 @@ void gpioInitPerBoard(void)
       HAL_GPIO_Init(SR48_6_0_GPIO_ADC_INT_EXP2_GPIO_Port, &GPIO_InitStruct);
     }
 #endif
-    else if (ShimBrd_isBoardSr48_7_0())
+    else if (ShimBrd_isI2cOnPPGControlledByAdcChip())
     {
       //External ADC controls I2C4 switch
     }

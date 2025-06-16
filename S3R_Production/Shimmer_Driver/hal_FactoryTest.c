@@ -29,6 +29,11 @@ static uint32_t testGsrResistances[] = { 12000L, 48800L, //GSR Range 0 (8.0kOhm-
   248000L, 498000L,               //GSR Range 2 (220.0kOhm-680.0kOhm)
   2000000L, 3000000L, 4000000L }; //GSR Range 3 (680.0kOhm-4.7MOhm)
 
+uint32_t gsrResistance[sizeof(testGsrResistances)];
+
+static float gsrFactoryTest_getPassToleranceForTestResistor(uint32_t testResistor);
+static uint32_t gsrFactoryTest_getRefResistorForTestResistor(uint32_t testResistor);
+
 uint32_t run_factory_test(void)
 {
   send_test_report("//**************************** TEST START "
@@ -434,7 +439,7 @@ void sd_card_test(void)
 void bt_module_test(void)
 {
   send_test_report("BT Module:\r\n");
-  if (isBtIsInitialised())
+  if (shimmerStatus.btIsInitialised)
   {
     send_test_report(" - MAC ID: ");
     memcpy(&buffer[0], ShimBt_macIdStrPtrGet(), 12);
@@ -549,13 +554,14 @@ void I2C_test(void)
     {
       send_test_report(" - S3R_TEST_0024 - PASS: I2C4\r\n");
 
-      uint8_t gsr_result = runGsrFactoryTest();
+      uint8_t gsr_result = gsrFactoryTest_run();
       sprintf(buffer, " - S3R_TEST_0025 - %s: GSR signal test\r\n",
           gsr_result ? "FAIL" : "PASS");
       send_test_report(buffer);
 
       if (gsr_result)
       {
+        gsrFactoryTest_printResults();
         shimmerStatus.testResult |= S3R_TEST_0025;
       }
     }
@@ -684,8 +690,8 @@ void SPI_test(void)
   }
   else
   {
-    sprintf(buffer, " - S3R_TEST_0018 - ADXL371 test not applicable for this model\r\n");
-    send_test_report(buffer);
+    send_test_report(
+        " - S3R_TEST_0018 - ADXL371 test not applicable for this model\r\n");
   }
 
   SPI1_DeInit();
@@ -693,21 +699,29 @@ void SPI_test(void)
   send_test_report("SPI2:\r\n");
   MX_SPI2_Init();
 
-  tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
-  self_test_result = lis3mdl_self_test();
-  if (self_test_result == SELF_TEST_PASS)
+  if (ShimBrd_isLis3mdlPresent())
   {
-    //Get new temperature value
-    self_test_result = lis3mdl_temperature_get(&tempCal);
-    if (self_test_result || is_temperature_outside_of_range(tempCal))
+    tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
+    self_test_result = lis3mdl_self_test();
+    if (self_test_result == SELF_TEST_PASS)
     {
-      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+      //Get new temperature value
+      self_test_result = lis3mdl_temperature_get(&tempCal);
+      if (self_test_result || is_temperature_outside_of_range(tempCal))
+      {
+        self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+      }
+    }
+    print_chip_test_result("S3R_TEST_0019", "LIS3MDL", self_test_result, tempCal);
+    if (self_test_result)
+    {
+      shimmerStatus.testResult |= S3R_TEST_0019;
     }
   }
-  print_chip_test_result("S3R_TEST_0019", "LIS3MDL", self_test_result, tempCal);
-  if (self_test_result)
+  else
   {
-    shimmerStatus.testResult |= S3R_TEST_0019;
+    send_test_report(
+        " - S3R_TEST_0019 - LIS3MDL test not applicable for this model\r\n");
   }
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
@@ -855,9 +869,8 @@ void send_test_report(char *str)
   }
 }
 
-uint8_t runGsrFactoryTest(void)
+uint8_t gsrFactoryTest_run(void)
 {
-  uint32_t gsrResistance = 0;
   uint8_t returnVal = 0;
   uint8_t i = 0;
   HAL_StatusTypeDef status;
@@ -889,6 +902,9 @@ uint8_t runGsrFactoryTest(void)
   ads7028_factoryTestGsrInit();
 #endif
 
+  gsrResistance[0] = 0xFF;
+
+  float passTolerance;
   for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
   {
     status = setGsrTestRigResistance(testGsrResistances[i]);
@@ -901,19 +917,16 @@ uint8_t runGsrFactoryTest(void)
     }
     HAL_Delay(100);
 
-    status = getFactoryTestGsrAvg(&gsrResistance);
+    status = gsrFactoryTest_getAvgGsr(&gsrResistance[i]);
 
-    uint32_t gsrBuffer = gsrResistance * GSR_TEST_TOLERANCE;
-    if (status != HAL_OK || (gsrResistance < (testGsrResistances[i] - gsrBuffer))
-        || (gsrResistance > (testGsrResistances[i] + gsrBuffer)))
+    passTolerance
+        = gsrFactoryTest_getPassToleranceForTestResistor(testGsrResistances[i]);
+    uint32_t gsrBuffer = testGsrResistances[i] * passTolerance;
+    if (status != HAL_OK || (gsrResistance[i] < (testGsrResistances[i] - gsrBuffer))
+        || (gsrResistance[i] > (testGsrResistances[i] + gsrBuffer)))
     {
       returnVal = 1;
-      break;
     }
-
-    //sprintf(buffer, "Test %lu, Measured %lu, Tolerance +-%lu\r\n", testGsrResistances[i],
-    //    gsrResistance, gsrBuffer);
-    //send_test_report(buffer);
   }
 
   resetGsrPwrAndRange();
@@ -930,7 +943,87 @@ uint8_t runGsrFactoryTest(void)
   return returnVal;
 }
 
-HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
+void gsrFactoryTest_printResults(void)
+{
+  uint8_t i = 0;
+  uint8_t returnVal = 0;
+  uint32_t referenceResistor = 0;
+  float passTolerance = 0.0;
+
+  if (gsrResistance[0] != 0xFF)
+  {
+    send_test_report("\r\n    - GSR Test Results:\r\n");
+    send_test_report("      - Source, Measured, Pass Tolerance, Measured "
+                     "Tolerance, Ref Resistor, Result\r\n");
+    for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
+    {
+      returnVal = 0;
+
+      referenceResistor
+          = gsrFactoryTest_getRefResistorForTestResistor(testGsrResistances[i]);
+      passTolerance
+          = gsrFactoryTest_getPassToleranceForTestResistor(testGsrResistances[i]);
+
+      uint32_t gsrBuffer = testGsrResistances[i] * passTolerance;
+      if ((gsrResistance[i] < (testGsrResistances[i] - gsrBuffer))
+          || (gsrResistance[i] > (testGsrResistances[i] + gsrBuffer)))
+      {
+        returnVal = 1;
+      }
+
+      float measured_tolerance
+          = (((float) gsrResistance[i] - (float) testGsrResistances[i]) * 100.0f)
+          / (float) testGsrResistances[i];
+
+      sprintf(buffer, "      - %lu ohms, %lu ohms, +-%.0f%%, %+.02f%%, %lu ohms, %s\r\n",
+          testGsrResistances[i], gsrResistance[i], passTolerance * 100.0f,
+          measured_tolerance, referenceResistor, returnVal ? "FAIL" : "PASS");
+      send_test_report(buffer);
+    }
+  }
+}
+
+static float gsrFactoryTest_getPassToleranceForTestResistor(uint32_t testResistor)
+{
+  if (testResistor > 8000L && testResistor < 63000L)
+  {
+    return GSR_TEST_TOLERANCE_7_PERCENT;
+  }
+  else if (testResistor >= 63000L && testResistor < 220000L)
+  {
+    return GSR_TEST_TOLERANCE_5_PERCENT;
+  }
+  else if (testResistor >= 220000L && testResistor < 680000L)
+  {
+    return GSR_TEST_TOLERANCE_5_PERCENT;
+  }
+  else
+  {
+    return GSR_TEST_TOLERANCE_5_PERCENT;
+  }
+}
+
+static uint32_t gsrFactoryTest_getRefResistorForTestResistor(uint32_t testResistor)
+{
+  if (testResistor > 8000L && testResistor < 63000L)
+  {
+    return 40000;
+  }
+  else if (testResistor >= 63000L && testResistor < 220000L)
+  {
+    return 287000;
+  }
+  else if (testResistor >= 220000L && testResistor < 680000L)
+  {
+    return 1000000;
+  }
+  else
+  {
+    return 3300000;
+  }
+}
+
+HAL_StatusTypeDef gsrFactoryTest_getAvgGsr(uint32_t *gsrResistance)
 {
   HAL_StatusTypeDef status;
   uint32_t gsrResistanceAvg = 0;
@@ -956,7 +1049,8 @@ HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
       gsrResistanceAvg += *gsrResistance;
     }
 
-    HAL_Delay(10);
+    /* TODO Figure out why delay is needed at all */
+    HAL_Delay(15);
   }
 
   *gsrResistance = gsrResistanceAvg / 10;
