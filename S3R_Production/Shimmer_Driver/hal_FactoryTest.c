@@ -31,6 +31,9 @@ static uint32_t testGsrResistances[] = { 12000L, 48800L, //GSR Range 0 (8.0kOhm-
 
 uint32_t gsrResistance[sizeof(testGsrResistances)];
 
+static float gsrFactoryTest_getPassToleranceForTestResistor(uint32_t testResistor);
+static uint32_t gsrFactoryTest_getRefResistorForTestResistor(uint32_t testResistor);
+
 uint32_t run_factory_test(void)
 {
   send_test_report("//**************************** TEST START "
@@ -551,14 +554,14 @@ void I2C_test(void)
     {
       send_test_report(" - S3R_TEST_0024 - PASS: I2C4\r\n");
 
-      uint8_t gsr_result = runGsrFactoryTest();
+      uint8_t gsr_result = gsrFactoryTest_run();
       sprintf(buffer, " - S3R_TEST_0025 - %s: GSR signal test\r\n",
           gsr_result ? "FAIL" : "PASS");
       send_test_report(buffer);
 
       if (gsr_result)
       {
-        printGsrTestResults();
+        gsrFactoryTest_printResults();
         shimmerStatus.testResult |= S3R_TEST_0025;
       }
     }
@@ -866,7 +869,7 @@ void send_test_report(char *str)
   }
 }
 
-uint8_t runGsrFactoryTest(void)
+uint8_t gsrFactoryTest_run(void)
 {
   uint8_t returnVal = 0;
   uint8_t i = 0;
@@ -901,6 +904,7 @@ uint8_t runGsrFactoryTest(void)
 
   gsrResistance[0] = 0xFF;
 
+  float passTolerance;
   for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
   {
     status = setGsrTestRigResistance(testGsrResistances[i]);
@@ -913,9 +917,10 @@ uint8_t runGsrFactoryTest(void)
     }
     HAL_Delay(100);
 
-    status = getFactoryTestGsrAvg(&gsrResistance[i]);
+    status = gsrFactoryTest_getAvgGsr(&gsrResistance[i]);
 
-    uint32_t gsrBuffer = testGsrResistances[i] * GSR_TEST_TOLERANCE;
+    passTolerance = gsrFactoryTest_getPassToleranceForTestResistor(testGsrResistances[i]);
+    uint32_t gsrBuffer = testGsrResistances[i] * passTolerance;
     if (status != HAL_OK || (gsrResistance[i] < (testGsrResistances[i] - gsrBuffer))
         || (gsrResistance[i] > (testGsrResistances[i] + gsrBuffer)))
     {
@@ -937,61 +942,85 @@ uint8_t runGsrFactoryTest(void)
   return returnVal;
 }
 
-void printGsrTestResults(void)
+void gsrFactoryTest_printResults(void)
 {
   uint8_t i = 0;
   uint8_t returnVal = 0;
   uint32_t referenceResistor = 0;
+  float passTolerance = 0.0;
 
   if (gsrResistance[0] != 0xFF)
   {
-    sprintf(buffer, "\r\n    - GSR Test Results (pass tolerance = +-%.0f%%):\r\n",
-        (float) GSR_TEST_TOLERANCE * 100.0f);
-    send_test_report(buffer);
-
+    send_test_report("\r\n    - GSR Test Results:\r\n");
     send_test_report(
-        "      - Source, Measured, Tolerance, Ref Resistor, Result\r\n");
+        "      - Source, Measured, Pass Tolerance, Measured Tolerance, Ref Resistor, Result\r\n");
     for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
     {
       returnVal = 0;
 
-      uint32_t gsrBuffer = testGsrResistances[i] * GSR_TEST_TOLERANCE;
+      referenceResistor = gsrFactoryTest_getRefResistorForTestResistor(testGsrResistances[i]);
+      passTolerance = gsrFactoryTest_getPassToleranceForTestResistor(testGsrResistances[i]);
+
+      uint32_t gsrBuffer = testGsrResistances[i] * passTolerance;
       if ((gsrResistance[i] < (testGsrResistances[i] - gsrBuffer))
           || (gsrResistance[i] > (testGsrResistances[i] + gsrBuffer)))
       {
         returnVal = 1;
       }
 
-      if (testGsrResistances[i] > 8000L && testGsrResistances[i] < 63000L)
-      {
-        referenceResistor = 40000;
-      }
-      else if (testGsrResistances[i] >= 63000L && testGsrResistances[i] < 220000L)
-      {
-        referenceResistor = 287000;
-      }
-      else if (testGsrResistances[i] >= 220000L && testGsrResistances[i] < 680000L)
-      {
-        referenceResistor = 1000000;
-      }
-      else
-      {
-        referenceResistor = 3300000;
-      }
-
       float measured_tolerance
           = (((float) gsrResistance[i] - (float) testGsrResistances[i]) * 100.0f)
           / (float) testGsrResistances[i];
 
-      sprintf(buffer, "      - %lu ohms, %lu ohms, %+.02f%%, %lu ohms, %s\r\n",
-          testGsrResistances[i], gsrResistance[i], measured_tolerance,
+      sprintf(buffer, "      - %lu ohms, %lu ohms, +-%.0f%%, %+.02f%%, %lu ohms, %s\r\n",
+          testGsrResistances[i], gsrResistance[i], passTolerance * 100.0f, measured_tolerance,
           referenceResistor, returnVal ? "FAIL" : "PASS");
       send_test_report(buffer);
     }
   }
 }
 
-HAL_StatusTypeDef getFactoryTestGsrAvg(uint32_t *gsrResistance)
+static float gsrFactoryTest_getPassToleranceForTestResistor(uint32_t testResistor)
+{
+  if (testResistor > 8000L && testResistor < 63000L)
+  {
+    return GSR_TEST_TOLERANCE_7_PERCENT;
+  }
+  else if (testResistor >= 63000L && testResistor < 220000L)
+  {
+    return GSR_TEST_TOLERANCE_5_PERCENT;
+  }
+  else if (testResistor >= 220000L && testResistor < 680000L)
+  {
+    return GSR_TEST_TOLERANCE_5_PERCENT;
+  }
+  else
+  {
+    return GSR_TEST_TOLERANCE_5_PERCENT;
+  }
+}
+
+static uint32_t gsrFactoryTest_getRefResistorForTestResistor(uint32_t testResistor)
+{
+  if (testResistor > 8000L && testResistor < 63000L)
+  {
+    return 40000;
+  }
+  else if (testResistor >= 63000L && testResistor < 220000L)
+  {
+    return 287000;
+  }
+  else if (testResistor >= 220000L && testResistor < 680000L)
+  {
+    return 1000000;
+  }
+  else
+  {
+    return 3300000;
+  }
+}
+
+HAL_StatusTypeDef gsrFactoryTest_getAvgGsr(uint32_t *gsrResistance)
 {
   HAL_StatusTypeDef status;
   uint32_t gsrResistanceAvg = 0;
