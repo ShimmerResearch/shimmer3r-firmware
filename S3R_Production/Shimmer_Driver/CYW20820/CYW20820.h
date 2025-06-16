@@ -26,7 +26,9 @@
 
 enum BT_SET_COMMAND_STAGES
 {
-  WAIT_FOR_BOOT,
+  IDLE,
+  WAIT_FOR_BOOT_STAGE1,
+  WAIT_FOR_BOOT_STAGE2,
   UPDATE_UART_SETTINGS_STAGE1,
   UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3,
@@ -55,19 +57,12 @@ enum BT_SET_COMMAND_STAGES
   GET_SECURITY_PARAMETERS,
   START_BLE_ADVERTISING_STAGE1,
   START_BLE_ADVERTISING_STAGE2,
-  FINISH
-};
-
-enum BT_FACTORY_RESET_COMMAND_STAGES
-{
-  FR_WAIT_FOR_BOOT,
-  FR_GET_BT_MAC_ID,
   FACTORY_RESET,
   FR_WAIT_FOR_REBOOT_AFTER_FR,
   FR_UPDATE_UART,
   FR_PING,
   FR_RESET_BT_MAC_ID,
-  FR_FINISH
+  FINISH
 };
 
 enum BLUETOOTH_DEVICE_TYPE
@@ -82,13 +77,12 @@ enum BLUETOOTH_UART_TYPE
   UART_TYPE_HCI_UART
 };
 
-void btInit(uint32_t baudRate, uint8_t factoryReset);
+void btInit(uint32_t baudRate);
 void btDeinit(void);
 void btInitCommands(void);
 void btFactoryResetCommands(void);
 void progressToNextBtInCmd(void);
 void setExpectedResponse(uint16_t idx);
-bool isBtIsInitialised(void);
 bool isBtIsFactoryResetted(void);
 bool isBtInitCmdsRunning(void);
 bool isBtFactoryResetCmdsRunning(void);
@@ -101,4 +95,6 @@ void setBtConnectionState(bool state);
 uint8_t BT_connect(uint8_t *addr);
 //after this command is called there will be no link to the connected device
 uint8_t BT_disconnect(void);
+void BT_startDone_cb(void (*callback)(void));
+
 #endif /* SRC_CYW20820_H_ */

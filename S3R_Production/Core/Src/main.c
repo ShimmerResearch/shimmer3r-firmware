@@ -79,8 +79,10 @@ static void SystemPower_Config(void);
 
 void Init(void);
 void btInitialise(void);
+void InitialiseBtAfterBoot(void);
 void btFactoryResetViaFw(void);
-void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt);
+void btCommWithDiffBaudRates(uint8_t resetCnt);
+void BtStartDone(void);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
 void SetupDock(void);
@@ -91,7 +93,6 @@ void sleepWhenNoTask(void);
 
 void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
-void InitialiseBtAfterBoot(void);
 uint8_t getDefaultBaudForBtVersion(void);
 HAL_StatusTypeDef checknBoot0OptionByte(void);
 
@@ -158,7 +159,8 @@ void Init()
   btInitialise();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
-//btDeinit();
+  //BtStop(true);
+
 #elif defined(SHIMMER4_SDK)
   BtUart_init();
 #endif
@@ -259,6 +261,7 @@ int main(void)
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
   //run_factory_test();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -365,18 +368,29 @@ void btInitialise(void)
 {
   SHIMMER_PRINTF("\r\nBT init start\r\n");
 
-  //20 * 100ms = 2s per baud rate attempt
-  btCommWithDiffBaudRates(false, 50U);
+  setBtBootModeFirstBoot();
 
-  SHIMMER_PRINTF("BT init end\r\n");
+  //50 * 100ms = 5s per baud rate attempt
+  btCommWithDiffBaudRates(50U);
+}
+
+void InitialiseBtAfterBoot(void)
+{
+  SHIMMER_PRINTF("\r\nBT init after boot start\r\n");
+
+  setBtBootModeSubsequentBoot();
+
+  btCommWithDiffBaudRates(0);
 }
 
 void btFactoryResetViaFw(void)
 {
   SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
 
+  setBtBootModeFactoryReset();
+
   //50 * 100ms = 5s per baud rate attempt
-  btCommWithDiffBaudRates(true, 50U);
+  btCommWithDiffBaudRates(50U);
 
   //Abort transfer operations to release UART for subsequent requests.
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
@@ -384,7 +398,7 @@ void btFactoryResetViaFw(void)
   SHIMMER_PRINTF("BT factory reset end\r\n");
 }
 
-void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
+void btCommWithDiffBaudRates(uint8_t resetCnt)
 {
   uint8_t failCount = 0U;
   uint8_t resetCntCurrent = resetCnt;
@@ -397,82 +411,91 @@ void btCommWithDiffBaudRates(bool factoryReset, uint8_t resetCnt)
   }
 #endif //SUPPORT_SR48_6_0
 
-  btInit(baudToTry, factoryReset);
+  BT_startDone_cb(BtStartDone);
+  shimmerStatus.btIsInitialised = false;
+  btInit(baudToTry);
 
-  while ((isBtInitCmdsRunning() && !isBtIsInitialised())
-      || (isBtFactoryResetCmdsRunning() && !isBtIsFactoryResetted()))
+  if (resetCnt > 0U)
   {
-    //HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
-    /* Insert delay 100 ms */
-    HAL_Delay(100);
-
-    if (isEzsBaudRateDelayPending())
+    while ((isBtInitCmdsRunning() && !shimmerStatus.btIsInitialised)
+        || (isBtFactoryResetCmdsRunning() && !isBtIsFactoryResetted()))
     {
-      /* Delay or arbitrary value. As a guide, the EZ-Serial user guide states that it takes ~150 ms for a "chipset reset and boot process". */
-      HAL_Delay(500);
-      incrementBtInitCmdsStep();
-      btInitCommands();
-    }
-    else if (isEzsFactoryRebootDelayPending())
-    {
-      //TODO move away from fixed delay now that we're able to parse the boot message
-      /* Experimentally found to be ~ 2.75s. */
-      HAL_Delay(3000);
-      incrementBtFactoryResetCmdsStep();
-      btFactoryResetCommands();
-    }
+      //HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+      /* Insert delay 100 ms */
+      HAL_Delay(100);
 
-    if (!(resetCntCurrent--))
-    {
-      failCount++;
-
-      btDeinit();
-      HAL_Delay(500);
-
-      if (failCount <= 4)
+      if (isEzsBaudRateDelayPending())
       {
-        if (failCount == 1)
-        {
-          baudToTry = 115200;
-        }
-        else if (failCount == 2)
-        {
-          baudToTry = 460800;
-        }
-        else if (failCount == 3)
-        {
-          baudToTry = 2000000;
-        }
-        else if (failCount == 4)
-        {
-          baudToTry = 500000;
-        }
-
-        btInit(baudToTry, factoryReset);
-
-        resetCntCurrent = resetCnt;
+        /* Delay or arbitrary value. As a guide, the EZ-Serial user guide states that it takes ~150 ms for a "chipset reset and boot process". */
+        HAL_Delay(500);
+        incrementBtInitCmdsStep();
+        btInitCommands();
       }
-      else
+      else if (isEzsFactoryRebootDelayPending())
       {
-        //SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
-        ////software POR reset
-        //NVIC_SystemReset();
-        setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
-        break;
+        //TODO move away from fixed delay now that we're able to parse the boot message
+        /* Experimentally found to be ~ 2.75s. */
+        HAL_Delay(3000);
+        incrementBtInitCmdsStep();
+        btInitCommands();
+      }
+
+      if (!(resetCntCurrent--))
+      {
+        failCount++;
+
+        btDeinit();
+        HAL_Delay(500);
+
+        if (failCount <= 4)
+        {
+          if (failCount == 1)
+          {
+            baudToTry = 115200;
+          }
+          else if (failCount == 2)
+          {
+            baudToTry = 460800;
+          }
+          else if (failCount == 3)
+          {
+            baudToTry = 2000000;
+          }
+          else if (failCount == 4)
+          {
+            baudToTry = 500000;
+          }
+
+          shimmerStatus.btIsInitialised = false;
+          btInit(baudToTry);
+
+          resetCntCurrent = resetCnt;
+        }
+        else
+        {
+          //SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
+          ////software POR reset
+          //NVIC_SystemReset();
+          setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
+          break;
+        }
       }
     }
   }
+}
 
-  if (isBtIsInitialised())
-  {
-    initBtInterrupts();
+void BtStartDone(void)
+{
+  initBtInterrupts();
+  shimmerStatus.btIsInitialised = true;
 
-    /* TODO LP_MODE feature provides a noticable drop in current consumption but
-     * Consensys is having difficulty communicating after connection is
-     * established (could be due to the lack of CTS/RTS in prototype boards?) */
-    //Allow LP Mode after configuring
-    //Board_BT_LP_MODE(0);
-  }
+  /* TODO LP_MODE feature provides a noticable drop in current consumption but
+   * Consensys is having difficulty communicating after connection is
+   * established (could be due to the lack of CTS/RTS in prototype boards?) */
+  //Allow LP Mode after configuring
+  //Board_BT_LP_MODE(0);
+
+  SHIMMER_PRINTF("BT init end\r\n");
 }
 
 void setBtConnectionState(bool state)
@@ -622,19 +645,12 @@ void BtStop(uint8_t isCalledFromMain)
 {
   //TODO tidy this flow up
   btDeinit();
+  shimmerStatus.btIsInitialised = false;
 }
 
 float samplingClockFreqGet(void)
 {
   return 32768.0f;
-}
-
-void InitialiseBtAfterBoot(void)
-{
-  //TODO implement a shorted boot sequence as this is not the first time the BT
-  //has been booted at this point. btInit(baudToTry, factoryReset);
-  SHIMMER_PRINTF(
-      "TODO: need to implemented BT initialise after boot function\r\n");
 }
 
 uint8_t getDefaultBaudForBtVersion(void)

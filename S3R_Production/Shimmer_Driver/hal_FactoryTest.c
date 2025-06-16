@@ -439,7 +439,7 @@ void sd_card_test(void)
 void bt_module_test(void)
 {
   send_test_report("BT Module:\r\n");
-  if (isBtIsInitialised())
+  if (shimmerStatus.btIsInitialised)
   {
     send_test_report(" - MAC ID: ");
     memcpy(&buffer[0], ShimBt_macIdStrPtrGet(), 12);
