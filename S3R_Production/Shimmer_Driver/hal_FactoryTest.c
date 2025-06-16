@@ -919,7 +919,8 @@ uint8_t gsrFactoryTest_run(void)
 
     status = gsrFactoryTest_getAvgGsr(&gsrResistance[i]);
 
-    passTolerance = gsrFactoryTest_getPassToleranceForTestResistor(testGsrResistances[i]);
+    passTolerance
+        = gsrFactoryTest_getPassToleranceForTestResistor(testGsrResistances[i]);
     uint32_t gsrBuffer = testGsrResistances[i] * passTolerance;
     if (status != HAL_OK || (gsrResistance[i] < (testGsrResistances[i] - gsrBuffer))
         || (gsrResistance[i] > (testGsrResistances[i] + gsrBuffer)))
@@ -952,14 +953,16 @@ void gsrFactoryTest_printResults(void)
   if (gsrResistance[0] != 0xFF)
   {
     send_test_report("\r\n    - GSR Test Results:\r\n");
-    send_test_report(
-        "      - Source, Measured, Pass Tolerance, Measured Tolerance, Ref Resistor, Result\r\n");
+    send_test_report("      - Source, Measured, Pass Tolerance, Measured "
+                     "Tolerance, Ref Resistor, Result\r\n");
     for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
     {
       returnVal = 0;
 
-      referenceResistor = gsrFactoryTest_getRefResistorForTestResistor(testGsrResistances[i]);
-      passTolerance = gsrFactoryTest_getPassToleranceForTestResistor(testGsrResistances[i]);
+      referenceResistor
+          = gsrFactoryTest_getRefResistorForTestResistor(testGsrResistances[i]);
+      passTolerance
+          = gsrFactoryTest_getPassToleranceForTestResistor(testGsrResistances[i]);
 
       uint32_t gsrBuffer = testGsrResistances[i] * passTolerance;
       if ((gsrResistance[i] < (testGsrResistances[i] - gsrBuffer))
@@ -973,8 +976,8 @@ void gsrFactoryTest_printResults(void)
           / (float) testGsrResistances[i];
 
       sprintf(buffer, "      - %lu ohms, %lu ohms, +-%.0f%%, %+.02f%%, %lu ohms, %s\r\n",
-          testGsrResistances[i], gsrResistance[i], passTolerance * 100.0f, measured_tolerance,
-          referenceResistor, returnVal ? "FAIL" : "PASS");
+          testGsrResistances[i], gsrResistance[i], passTolerance * 100.0f,
+          measured_tolerance, referenceResistor, returnVal ? "FAIL" : "PASS");
       send_test_report(buffer);
     }
   }
