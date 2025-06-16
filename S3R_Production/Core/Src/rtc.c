@@ -142,6 +142,10 @@ void MX_RTC_Init(void)
     /* USER CODE BEGIN RTC_Init 2 */
     /* Writes a data in a RTC Backup data Register0 */
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x32F2);
+
+   // __HAL_RTC_ALARMA_DISABLE(&hrtc);
+   // __HAL_RTC_ALARM_DISABLE_IT(&hrtc, RTC_IT_ALRB);
+   //HAL_RTC_DeactivateAlarm(&hrtc,RTC_ALARM_B); //deactivate Sync alarm to be setup with sync.
   }
   else
   {
@@ -794,22 +798,35 @@ void RTC_setupAndStartSdSyncAlarm(void)
   RTC_DateTypeDef sDate;
 
   //Always updating current time before scheduling
+  //HAL_RTC_GetAlarm(&hrtc, &sAlarmB, RTC_ALARM_B, RTC_FORMAT_BIN);
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-  if (sTime.Seconds == 59)
+/*  if (sTime.Seconds == 59)
   {
     sAlarmB.AlarmTime.Minutes = (sTime.Minutes + 1) % 60;
     if (sTime.Minutes == 59)
     {
       sAlarmB.AlarmTime.Hours = (sTime.Hours + 1) % 24;
     }
+  }*/
+  if (sTime.Minutes >= 58)
+  {
+    sAlarmB.AlarmTime.Hours = (sTime.Hours + 1);
+    sAlarmB.AlarmTime.Minutes = 0x00;
+  }
+  else
+  {
+  sAlarmB.AlarmTime.Hours = sTime.Hours;
+  sAlarmB.AlarmTime.Minutes = sTime.Minutes + 2;
   }
 
+  sAlarmB.AlarmTime.Seconds = 0x0;
+  sAlarmB.AlarmTime.SubSeconds = 0x0;
   sAlarmB.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_SECONDS;
   sAlarmB.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
   sAlarmB.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  sAlarmB.AlarmDateWeekDay = 1;
+  sAlarmB.AlarmDateWeekDay = 0x1;
   sAlarmB.Alarm = RTC_ALARM_B;
 
   //Retry until alarm is set
@@ -824,8 +841,10 @@ void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
   //stopAlarm(); //stopping from triggering the Alarm multiple times.
   //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
   //printf("Alarm B fired!\r\n");           // Debug print
-
+  __HAL_RTC_ALARMB_DISABLE(&hrtc);
+  __HAL_RTC_ALARM_DISABLE_IT(&hrtc, RTC_IT_ALRB);
   RTC_setupAndStartSdSyncAlarm(); //for the next interval (testing purposes)
+  ShimSdSync_handleSyncTimerTrigger();
 }
 
 void RTC_stopSdSyncAlarm(void)
