@@ -27,7 +27,6 @@
 #define USE_DEFAULT_SENSOR  0
 #define RTC_FAST \
   0 //need to increase rtc alarm interrupt priority before enabling this option
-#define FULL_TEST_MODE        0
 #define USE_FREERTOS          0
 #define SENS_CLK_RTC0TIM1     0
 

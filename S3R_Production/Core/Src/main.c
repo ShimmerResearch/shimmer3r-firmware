@@ -172,15 +172,6 @@ void Init()
    * MAC ID can be used for default Shimmer name and calibration file names.*/
   ShimConfig_loadSensorConfigAndCalib();
 
-  SetupDock();
-  //Disable dock comms until sensor is ready to communicate
-  DockUart_disable();
-
-  //==== 13.8ma ====
-#if FULL_TEST_MODE
-  FullTest();
-#endif
-  //S4Sens_stopPeripherals();
   S4_RTC_WakeUpOff();
 #if defined(SHIMMER4_SDK)
   S4_RTC_WakeUpSetSlow();
@@ -193,8 +184,7 @@ void Init()
   /* Take initial measurement to update LED state */
   manageReadBatt(1);
 
-  //Enable dock comms now that sensor is ready to communicate
-  DockUart_enable();
+  SetupDock();
 
   shimmerStatus.initialising = 0;
   setBootStage(BOOT_STAGE_END);
@@ -521,7 +511,8 @@ void SetupDock(void)
   {
     ShimBatt_setBatteryInterval(BATT_INTERVAL_DOCKED);
     ShimBatt_resetBatteryCriticalCount();
-    delay_ms(1000);
+    /* Delay to allow the battery voltage to stabilise after docked. Getting an battery error without the delay. A delay of 1s causes SD card to stop showing on PC */
+    delay_ms(100);
     manageReadBatt(1);
 
     shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
