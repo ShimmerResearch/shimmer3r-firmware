@@ -28,7 +28,6 @@
 
 uint64_t rwcConfigTime64;
 uint32_t S4_RTC_Status = RTC_STATUS_ZERO;
-uint32_t sdSyncAlarmCounter = 0;
 
 /* USER CODE END 0 */
 
@@ -103,6 +102,7 @@ void MX_RTC_Init(void)
     sDate.Month = RTC_MONTH_JANUARY;
     sDate.Date = 0x1;
     sDate.Year = 0x70;
+
     if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
     {
       Error_Handler();
@@ -124,15 +124,6 @@ void MX_RTC_Init(void)
       Error_Handler();
     }
 
-    /** Enable the Alarm B
-     */
-    sAlarm.AlarmTime.Minutes = 0x10;
-    sAlarm.Alarm = RTC_ALARM_B;
-    if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
     /** Enable the WakeUp
      */
     if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
@@ -142,10 +133,6 @@ void MX_RTC_Init(void)
     /* USER CODE BEGIN RTC_Init 2 */
     /* Writes a data in a RTC Backup data Register0 */
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x32F2);
-
-    //__HAL_RTC_ALARMA_DISABLE(&hrtc);
-    //__HAL_RTC_ALARM_DISABLE_IT(&hrtc, RTC_IT_ALRB);
-    //HAL_RTC_DeactivateAlarm(&hrtc,RTC_ALARM_B); //deactivate Sync alarm to be setup with sync.
   }
   else
   {
@@ -318,7 +305,7 @@ void S4_RTC_WakeUpOff()
 
 void S4_RTC_WakeUpSet(uint16_t period)
 {
-  uint16_t prescalar;
+  uint16_t wakeUpCounter;
 
   HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
   if (period > 32768)
@@ -326,7 +313,7 @@ void S4_RTC_WakeUpSet(uint16_t period)
     Error_Handler();
   }
 
-  prescalar = period / 2 - 1;
+  wakeUpCounter = period / 2 - 1;
 
   //changing either prescalar or RTC_WAKEUPCLOCK_RTCCLK_DIV wouldn't change the power consumption.
   //only the product matters: prescalar*RTC_WAKEUPCLOCK_RTCCLK_DIV
@@ -335,9 +322,9 @@ void S4_RTC_WakeUpSet(uint16_t period)
    uint32_t WakeUpAutoClr)
    uint32_t WakeUpAutoClr missing argument in the old Shimmer4*/
 #if defined(SHIMMER3R)
-  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, prescalar, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
+  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, wakeUpCounter, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
 #elif defined(SHIMMER4_SDK)
-  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, prescalar, RTC_WAKEUPCLOCK_RTCCLK_DIV2) != HAL_OK)
+  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, wakeUpCounter, RTC_WAKEUPCLOCK_RTCCLK_DIV2) != HAL_OK)
 #endif
   {
     Error_Handler();
@@ -346,6 +333,11 @@ void S4_RTC_WakeUpSet(uint16_t period)
 
 void S4_RTC_WakeUpSetSlow()
 {
+  /* 3276 equates to 0.1 seconds
+   * wakeup counter = period / 2 - 1 => 3276 / 2 - 1 => 1637
+   * Clock source frequency = 32,768 / 2 = 16,384 Hz
+   * Interval = (1637 + 1) / 16,384 => 0.1 seconds
+   */
   S4_RTC_WakeUpSet(3276);
 }
 
@@ -793,58 +785,58 @@ void setupNextRtcMinuteAlarm(void)
 
 void RTC_setupAndStartSdSyncAlarm(void)
 {
-  RTC_AlarmTypeDef sAlarmB;
   RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
-
-  //Always updating current time before scheduling
-  //HAL_RTC_GetAlarm(&hrtc, &sAlarmB, RTC_ALARM_B, RTC_FORMAT_BIN);
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-  /*  if (sTime.Seconds == 59)
+  uint8_t sec = sTime.Seconds + 1;
+  uint8_t min = sTime.Minutes;
+  uint8_t hr = sTime.Hours;
+
+  if (sec >= 60)
+  {
+    sec = 0;
+    min++;
+    if (min >= 60)
     {
-      sAlarmB.AlarmTime.Minutes = (sTime.Minutes + 1) % 60;
-      if (sTime.Minutes == 59)
+      min = 0;
+      hr++;
+      if (hr >= 24)
       {
-        sAlarmB.AlarmTime.Hours = (sTime.Hours + 1) % 24;
+        hr = 0;
       }
-    }*/
-  if (sTime.Minutes >= 58)
-  {
-    sAlarmB.AlarmTime.Hours = (sTime.Hours + 1);
-    sAlarmB.AlarmTime.Minutes = 0x00;
-  }
-  else
-  {
-    sAlarmB.AlarmTime.Hours = sTime.Hours;
-    sAlarmB.AlarmTime.Minutes = sTime.Minutes + 2;
+    }
   }
 
-  sAlarmB.AlarmTime.Seconds = 0x0;
-  sAlarmB.AlarmTime.SubSeconds = 0x0;
-  sAlarmB.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_SECONDS;
-  sAlarmB.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-  sAlarmB.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  sAlarmB.AlarmDateWeekDay = 0x1;
-  sAlarmB.Alarm = RTC_ALARM_B;
+  RTC_AlarmTypeDef sAlarm = { 0 };
+  sAlarm.AlarmTime.Hours = hr;
+  sAlarm.AlarmTime.Minutes = min;
+  sAlarm.AlarmTime.Seconds = sec;
 
-  //Retry until alarm is set
-  while (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarmB, RTC_FORMAT_BIN) != HAL_OK)
+  sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY; //Match Hours, Minutes, Seconds
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.AlarmDateWeekDay = 1; //ignored due to mask
+  sAlarm.Alarm = RTC_ALARM_B;
+
+  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
   {
+    Error_Handler();
   }
 }
 
 void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  sdSyncAlarmCounter++;
   //stopAlarm(); //stopping from triggering the Alarm multiple times.
   //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
   //printf("Alarm B fired!\r\n");           // Debug print
-  __HAL_RTC_ALARMB_DISABLE(&hrtc);
-  __HAL_RTC_ALARM_DISABLE_IT(&hrtc, RTC_IT_ALRB);
-  RTC_setupAndStartSdSyncAlarm(); //for the next interval (testing purposes)
+  //__HAL_RTC_ALARMB_DISABLE(&hrtc);
+  //__HAL_RTC_ALARM_DISABLE_IT(&hrtc, RTC_IT_ALRB);
+  //RTC_setupAndStartSdSyncAlarm(); //for the next interval (testing purposes)
+
+  RTC_stopSdSyncAlarm();
+
   ShimSdSync_handleSyncTimerTrigger();
+
+  RTC_setupAndStartSdSyncAlarm();
 }
 
 void RTC_stopSdSyncAlarm(void)
