@@ -155,6 +155,7 @@ void Init()
 #if defined(SHIMMER3R)
   setBootStage(BOOT_STAGE_BLUETOOTH);
   ShimBt_btCommsProtocolInit();
+  ShimSdSync_init(InitialiseBtAfterBoot, BtStop);
   //btFactoryResetViaFw();
   btInitialise();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
@@ -370,17 +371,6 @@ void btInitialise(void)
   SHIMMER_PRINTF("\r\nBT init start\r\n");
 
   setBtBootModeFirstBoot();
-
-  //50 * 100ms = 5s per baud rate attempt
-  btCommWithDiffBaudRates(50U);
-}
-
-void InitialiseBtAfterBoot(void)
-{
-  SHIMMER_PRINTF("\r\nBT init after boot start\r\n");
-
-  setBtBootModeSubsequentBoot();
-  ShimSdSync_init(InitialiseBtAfterBoot, BtStop);
 
   //50 * 100ms = 5s per baud rate attempt
   btCommWithDiffBaudRates(50U);
