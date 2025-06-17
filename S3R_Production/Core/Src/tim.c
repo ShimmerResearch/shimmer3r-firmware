@@ -43,7 +43,7 @@ void MX_TIM2_Init(void)
 
   /* USER CODE BEGIN TIM2_Init 0 */
 
-  // PWM timer for Upper RGB LED
+  //PWM timer for Upper RGB LED
 
   /* USER CODE END TIM2_Init 0 */
 
@@ -107,7 +107,7 @@ void MX_TIM3_Init(void)
 
   /* USER CODE BEGIN TIM3_Init 0 */
 
-  // PWM timer for Lower RGB LED
+  //PWM timer for Lower RGB LED
 
   /* USER CODE END TIM3_Init 0 */
 
@@ -177,7 +177,7 @@ void MX_TIM6_Init(void)
 
   /* USER CODE BEGIN TIM6_Init 1 */
 
-  // 100ms timer for LED blinking
+  //100ms timer for LED blinking
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
@@ -208,7 +208,7 @@ void MX_TIM7_Init(void)
 
   /* USER CODE BEGIN TIM7_Init 0 */
 
-  // 1us timer for delay_us()
+  //1us timer for delay_us()
 
   /* USER CODE END TIM7_Init 0 */
 

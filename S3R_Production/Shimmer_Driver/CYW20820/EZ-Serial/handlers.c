@@ -251,7 +251,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     if (waitingForBtBoot)
     {
       btBootMsg[btBootMsgIndex++] = rxBuf[i];
-//      SHIMMER_PRINTF("S0=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+      //SHIMMER_PRINTF("S0=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
       if (btBootMsgIndex > 0 && btBootMsg[btBootMsgIndex - 2] == 0x0D
           && btBootMsg[btBootMsgIndex - 1] == 0x0A)
       {
@@ -318,7 +318,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     }
   }
 
-  // Power on check in case SD Sync has turned BT off as part of the sync process
+  //Power on check in case SD Sync has turned BT off as part of the sync process
   if (shimmerStatus.btPowerOn)
   {
     if (count == 0)
