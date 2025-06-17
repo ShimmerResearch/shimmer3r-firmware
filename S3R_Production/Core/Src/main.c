@@ -667,17 +667,20 @@ void BtStart(void)
 
 void BtStop(uint8_t isCalledFromMain)
 {
-  //TODO tidy this flow up
-  ShimBt_clearBtTxBuf(isCalledFromMain);
-  ShimTask_clear(TASK_RCNODER10);
-  shimmerStatus.btConnected = 0;
-  shimmerStatus.btInSyncMode = 0;
-  //BT_disable
-  resetBtRxBuff();
-  btDeinit();
-  shimmerStatus.btIsInitialised = false;
+  if (shimmerStatus.btPowerOn)
+  {
+    //TODO tidy this flow up
+    ShimBt_clearBtTxBuf(isCalledFromMain);
+    ShimTask_clear(TASK_RCNODER10);
+    shimmerStatus.btConnected = 0;
+    shimmerStatus.btInSyncMode = 0;
+    //BT_disable
+    resetBtRxBuff();
+    btDeinit();
+    shimmerStatus.btIsInitialised = false;
 
-  SHIMMER_PRINTF("\r\nBT Stop\r\n");
+    SHIMMER_PRINTF("\r\nBT Stop\r\n");
+  }
 }
 
 float samplingClockFreqGet(void)
