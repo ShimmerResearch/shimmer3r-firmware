@@ -91,6 +91,7 @@ void HAL_Delay(uint32_t Delay);
 #endif
 void sleepWhenNoTask(void);
 
+void BtStart(void);
 void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 uint8_t getDefaultBaudForBtVersion(void);
@@ -370,6 +371,8 @@ void btInitialise(void)
 {
   SHIMMER_PRINTF("\r\nBT init start\r\n");
 
+  BtStart();
+
   setBtBootModeFirstBoot();
 
   //50 * 100ms = 5s per baud rate attempt
@@ -380,6 +383,8 @@ void InitialiseBtAfterBoot(void)
 {
   SHIMMER_PRINTF("\r\nBT init after boot start\r\n");
 
+  BtStart();
+
   setBtBootModeSubsequentBoot();
 
   btCommWithDiffBaudRates(0);
@@ -388,6 +393,8 @@ void InitialiseBtAfterBoot(void)
 void btFactoryResetViaFw(void)
 {
   SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
+
+  BtStart();
 
   setBtBootModeFactoryReset();
 
@@ -669,6 +676,8 @@ void BtStop(uint8_t isCalledFromMain)
   resetBtRxBuff();
   btDeinit();
   shimmerStatus.btIsInitialised = false;
+
+  SHIMMER_PRINTF("\r\nBT Stop\r\n");
 }
 
 float samplingClockFreqGet(void)
