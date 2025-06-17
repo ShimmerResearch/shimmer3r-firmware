@@ -23,7 +23,7 @@
 #define printHex32(VARIABLE)           printHex((uint8_t *) &VARIABLE, 4, 1, 0)
 #define printHexMac(VARIABLE)          printHex((uint8_t *) &VARIABLE, 6, 1, ':')
 
-#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 0
+#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 1
 
 /*
  * Index: {1,2,3,4,5,6,7,8}
@@ -32,7 +32,8 @@
  * BLE:   {-2,0,2,4,6,8,10,10}, */
 #define BT_TX_POWER                    8
 
-#define CONNECTION_TIMEOUT_MS          10000 //10 seconds timeout
+//#define CONNECTION_TIMEOUT_MS          10000 //10 seconds timeout
+#define CONNECTION_TIMEOUT_S          10 //10 seconds timeout
 
 uint8_t advNameMacIdStartIdx = 11;
 static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
@@ -1087,10 +1088,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   case EZS_IDX_RSP_BT_CONNECT:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("RX: idx_bt_connected: conn_handle=");
+    printf("RX: idx_rsp_bt_connected: conn_handle=");
     printHex8(packet->payload.rsp_bt_connect.conn_handle);
-    printf(", Result");
-    printHexMac(packet->payload.rsp_bt_connect.result);
+    printf(", Result=");
+    printHex16(packet->payload.rsp_bt_connect.result);
     printf("\r\n");
 #endif
     break;
@@ -1106,12 +1107,22 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     break;
 
+  case EZS_IDX_RSP_GAP_CONNECT:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: idx_rsp_gap_connect: conn_handle=");
+    printHex8(packet->payload.rsp_gap_connect.conn_handle);
+    printf(", Result=");
+    printHex16(packet->payload.rsp_gap_connect.result);
+    printf("\r\n");
+#endif
+    break;
+
   case EZS_IDX_EVT_BT_CONNECTION_FAILED:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("RX: idx_bt_connection_fail: conn_handle=");
+    printf("RX: idx_evt_bt_connection_fail: conn_handle=");
     printHex8(packet->payload.evt_bt_connection_failed.conn_handle);
-    printf(", Reason");
-    printHex8(packet->payload.evt_bt_connection_failed.reason);
+    printf(", Reason=");
+    printHex16(packet->payload.evt_bt_connection_failed.reason);
     printf("\r\n");
 #endif
     break;
@@ -1209,6 +1220,8 @@ uint8_t BT_connect(uint8_t *addr)
 {
   ezs_cmd_bt_connect_t bt_conn;
   clock_t start_time = clock();
+  uint8_t addrReverse[6];
+
   /*//TODO how to distinguish between Master and slave
    if(bt_conn.type == MASTER)
    {
@@ -1218,15 +1231,28 @@ uint8_t BT_connect(uint8_t *addr)
    {
    memset(bt_conn.address.addr, addr, 6);
    }*/
-  memcpy(bt_conn.address.addr, addr, 6);
+
+  addrReverse[0] = addr[5];
+  addrReverse[1] = addr[4];
+  addrReverse[2] = addr[3];
+  addrReverse[3] = addr[2];
+  addrReverse[4] = addr[1];
+  addrReverse[5] = addr[0];
+
+  memcpy(bt_conn.address.addr, addrReverse, 6);
   bt_conn.type = 1; //for SPP
   printf("Connecting to MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", addr[0], addr[1],
       addr[2], addr[3], addr[4], addr[5]);
   //connect
 
-  setExpectedResponse(EZS_IDX_CMD_BT_CONNECT);
-  uint8_t status = ezs_cmd_bt_connect(bt_conn.address.addr, 1); //returns status code
+  // 1 for SPP, other params are set to 0 as they are not implemented in the CYW20820 EZ-Serial firmware
+//  ezs_cmd_gap_connect(&bt_conn.address.addr, 0, 0, 0, 0, 0, 0, CONNECTION_TIMEOUT_S);
+
+//  setExpectedResponse(EZS_IDX_CMD_BT_CONNECT);
+
+  uint8_t status = ezs_cmd_bt_connect(&bt_conn.address.addr, 1); // 1 for SPP
   printf("Connection Status Code: %02X\n", status);
+
   /* Connection status codes :
  0x00 -> Success
  0x01 -> Failure
@@ -1234,28 +1260,28 @@ uint8_t BT_connect(uint8_t *addr)
  0x03 -> Already connected
  else other error*/
 
-  while (1)
-  {
-    if (status == 0) //Success case
-    {
-      printf("Connection success\n");
-      active_conn_handle = 0;
-      return active_conn_handle;
-    }
-    else if ((((clock() - start_time) * 1000 / CLOCKS_PER_SEC) > 5000))
-    {
-      printf("Connection failed\n");
-      BT_connectionFailed(0xFF, 0x0008);
-      active_conn_handle = 0xFF;
-      return 0;
-    }
-    else
-    {
-      printf("Connection Status Code: %02X\n", status);
-      return 0;
-    }
-  }
-  //return active_conn_handle; //Feels unnecessary
+//  while (1)
+//  {
+//    if (status == 0) //Success case
+//    {
+//      printf("Connection success\n");
+//      active_conn_handle = 0;
+//      return active_conn_handle;
+//    }
+//    else if ((((clock() - start_time) * 1000 / CLOCKS_PER_SEC) > 5000))
+//    {
+//      printf("Connection failed\n");
+//      BT_connectionFailed(0xFF, 0x0008);
+//      active_conn_handle = 0xFF;
+//      return 0;
+//    }
+//    else
+//    {
+//      printf("Connection Status Code: %02X\n", status);
+//      return 0;
+//    }
+//  }
+  return active_conn_handle; //Feels unnecessary
 }
 
 uint8_t BT_disconnect(void)

@@ -371,8 +371,6 @@ void btInitialise(void)
 {
   SHIMMER_PRINTF("\r\nBT init start\r\n");
 
-  BtStart();
-
   setBtBootModeFirstBoot();
 
   //50 * 100ms = 5s per baud rate attempt
@@ -383,8 +381,6 @@ void InitialiseBtAfterBoot(void)
 {
   SHIMMER_PRINTF("\r\nBT init after boot start\r\n");
 
-  BtStart();
-
   setBtBootModeSubsequentBoot();
 
   btCommWithDiffBaudRates(0);
@@ -393,8 +389,6 @@ void InitialiseBtAfterBoot(void)
 void btFactoryResetViaFw(void)
 {
   SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
-
-  BtStart();
 
   setBtBootModeFactoryReset();
 
@@ -412,6 +406,8 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
   uint8_t failCount = 0U;
   uint8_t resetCntCurrent = resetCnt;
   uint32_t baudToTry = BAUD_TO_USE;
+
+  BtStart();
 
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
