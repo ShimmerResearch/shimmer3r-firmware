@@ -788,7 +788,8 @@ void RTC_setupAndStartSdSyncAlarm(void)
   RTC_AlarmTypeDef sAlarm;
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
-  HAL_RTC_GetAlarm(&hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN); //to update the previous alarm.
+
+  HAL_RTC_GetAlarm(&hrtc, &sAlarm, RTC_ALARM_B, RTC_FORMAT_BIN); //to update the previous alarm.
   /* Get time added since it was randomly missing interrupt when using HAL_RTC_GetAlarm().*/
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   /* From GetTime() notes : You must call HAL_RTC_GetDate() after HAL_RTC_GetTime() to unlock the values....*/
