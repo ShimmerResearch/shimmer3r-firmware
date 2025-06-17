@@ -198,8 +198,7 @@ void btInit(uint32_t baudRate)
   //Enable BT power
   setBtPower(1);
   //TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
-  //HAL_Delay(10);
-  delay_us(10000L);
+  HAL_Delay(10);
   Board_BT_LP_MODE(1);
   Board_BT_CP_ROLE(1);
 
@@ -213,8 +212,7 @@ void btInit(uint32_t baudRate)
   EZSerial_Init(appHandler, appOutput, appInput);
 
   //TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
-  //HAL_Delay(10);
-  delay_us(10000L);
+  HAL_Delay(10);
   /* Setting DMA waiting for first char from BT module */
   HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
   /* Allow BT module to boot */

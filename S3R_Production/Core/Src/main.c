@@ -156,7 +156,7 @@ void Init()
 #if defined(SHIMMER3R)
   setBootStage(BOOT_STAGE_BLUETOOTH);
   ShimBt_btCommsProtocolInit();
-  ShimSdSync_init(InitialiseBtAfterBoot, BtStop);
+  ShimSdSync_init(ShimTask_setInitialiseBluetooth, BtStop);
   //btFactoryResetViaFw();
   btInitialise();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
