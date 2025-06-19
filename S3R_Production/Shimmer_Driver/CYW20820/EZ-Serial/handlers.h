@@ -64,8 +64,12 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart);
 
 uint8_t isEzsBaudRateDelayPending(void);
 uint8_t isEzsFactoryRebootDelayPending(void);
+void setBtInitCmdsSteps(uint8_t *steps);
 void incrementBtInitCmdsStep(void);
-void incrementBtFactoryResetCmdsStep(void);
+
+void setBtBootModeFactoryReset(void);
+void setBtBootModeFirstBoot(void);
+void setBtBootModeSubsequentBoot(void);
 
 extern void ezsHandler(ezs_packet_t *packet) __attribute__((weak));
 extern void ezsHandlerShimmer(ezs_packet_t *packet) __attribute__((weak));

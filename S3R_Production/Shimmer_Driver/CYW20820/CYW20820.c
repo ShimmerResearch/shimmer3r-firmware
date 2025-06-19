@@ -90,9 +90,33 @@ static ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode_ref = {
   .interval = 300, //A value of 300 was read from eval kit. Datasheet states setting isn't supported.
 };
 
-uint8_t btInitCmdsRunning, btInitCmdsStep, btFactoryResetCmdsRunning, btFactoryResetCmdsStep;
+uint8_t *btInitCmdsSteps;
+uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
 uint8_t btNameTypeBeingRead;
-bool btIsInitialised, btIsFactoryResetted, btCysppState, btUartSettingsChanged;
+bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
+
+static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
+  WAIT_FOR_BOOT_STAGE2, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
+  UPDATE_UART_SETTINGS_STAGE3, UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5,
+  PING, STOP_BLE_ADVERTISING_STAGE1, STOP_BLE_ADVERTISING_STAGE2,
+  GET_FIRMWARE_VERSION, GET_BT_MAC_ID, UPDATE_LOCAL_ADVERTISING_NAMES,
+  GET_DEVICE_NAME_BT, SET_DEVICE_NAME_BT, GET_DEVICE_NAME_BLE, SET_DEVICE_NAME_BLE,
+  GET_TX_POWER, SET_TX_POWER, GET_SMP_PRIVACY_MODE, SET_SMP_PRIVACY_MODE,
+#if USE_GET_SET_ADV_PARAM
+  GET_ADVERTISING_PARAMETERS, SET_ADVERTISING_PARAMETERS,
+#endif
+  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS,
+  START_BLE_ADVERTISING_STAGE1, START_BLE_ADVERTISING_STAGE2, FINISH };
+
+static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
+  PING, //Any command to get module into binary command mode
+  FINISH };
+
+static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
+  WAIT_FOR_BOOT_STAGE2, GET_BT_MAC_ID, FACTORY_RESET, FR_WAIT_FOR_REBOOT_AFTER_FR,
+  FR_UPDATE_UART, FR_PING, FR_RESET_BT_MAC_ID, FINISH };
+
+void (*btIsInitialised_cb)(void);
 
 static char hexdigit2int(uint8_t xd)
 {
@@ -159,20 +183,10 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
   }
 }
 
-void btInit(uint32_t baudRate, uint8_t factoryReset)
+void btInit(uint32_t baudRate)
 {
-  if (factoryReset)
-  {
-    btFactoryResetCmdsRunning = 1;
-    btFactoryResetCmdsStep = FR_WAIT_FOR_BOOT;
-    btIsFactoryResetted = false;
-  }
-  else
-  {
-    btInitCmdsRunning = 1;
-    btInitCmdsStep = WAIT_FOR_BOOT;
-    btIsInitialised = false;
-  }
+  btInitCmdsStepIdx = 0;
+  btInitCmdsStep = WAIT_FOR_BOOT_STAGE1;
 
   initBtPins();
   //Enable BT power
@@ -182,12 +196,9 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
   Board_BT_LP_MODE(1);
   Board_BT_CP_ROLE(1);
 
-  BtUart_init(baudRate, baudRate == 115200 ? 0 : FLOW_CONTROL);
-
-  /* packet pointer for working with response/event data */
-  //ezs_packet_t *packet;
-
-  //printf("\r\nEZ-Serial API communication demo started\r\n");
+  uint8_t hwFlowControl = baudRate == 115200 ? 0 : FLOW_CONTROL;
+  SHIMMER_PRINTF("BT Init: Baud=%lu, HW Flow Control=%d\r\n", baudRate, hwFlowControl);
+  BtUart_init(baudRate, hwFlowControl);
 
   resetEzsPendingResponse();
 
@@ -201,14 +212,7 @@ void btInit(uint32_t baudRate, uint8_t factoryReset)
   /* Allow BT module to boot */
   Board_BT_RST_N(1);
 
-  if (factoryReset)
-  {
-    btFactoryResetCommands();
-  }
-  else
-  {
-    btInitCommands();
-  }
+  btInitCommands();
 }
 
 void btDeinit(void)
@@ -221,20 +225,24 @@ void btDeinit(void)
 //TODO set appropriate values for setDmaRx() calls
 void btInitCommands(void)
 {
-  if (btInitCmdsStep == WAIT_FOR_BOOT)
+  if (btInitCmdsStep == WAIT_FOR_BOOT_STAGE1)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     //Only ASCII boot message currently working so had to implement our own
     //approach setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
     setWaitingForBtBoot(1);
     return;
   }
 
+  if (btInitCmdsStep == WAIT_FOR_BOOT_STAGE2)
+  {
+    incrementBtInitCmdsStep();
+    printf("Boot Msgs=\r\n%s", getBtBootMsgPtr());
+  }
+
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)
   {
-    btInitCmdsStep++;
-
-    printf("Boot Msgs=\r\n%s", getBtBootMsgPtr());
+    incrementBtInitCmdsStep();
 
     printf("Update UART Stage1\r\n");
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS);
@@ -244,7 +252,7 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE2)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     printf("Current Baud=%lu\r\n", rsp_system_get_uart_parameters.baud);
     btUartSettingsChanged = false;
     //No need to set if the current settings are correct.
@@ -277,7 +285,7 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE3)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     if (btUartSettingsChanged)
     {
       printf("Update UART Stage3\r\n");
@@ -306,13 +314,13 @@ void btInitCommands(void)
     }
     else
     {
-      btInitCmdsStep++;
+      incrementBtInitCmdsStep();
     }
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE5)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     if (btUartSettingsChanged)
     {
       printf("Update UART Stage5\r\n");
@@ -345,7 +353,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == PING)
   {
     printf("Ping\r\n");
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
     ezs_cmd_system_ping();
     return;
@@ -354,7 +362,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == STOP_BLE_ADVERTISING_STAGE1)
   {
     printf("Stop BLE Advertising\r\n");
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     setExpectedResponse(EZS_IDX_RSP_GAP_STOP_ADV);
     ezs_cmd_gap_stop_adv();
     return;
@@ -363,7 +371,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == STOP_BLE_ADVERTISING_STAGE2)
   {
     printf("Wait for BLE stop\r\n");
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
     return;
   }
@@ -371,7 +379,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == GET_FIRMWARE_VERSION)
   {
     printf("Get FW Version\r\n");
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION);
     ezs_cmd_system_query_firmware_version();
     return;
@@ -380,7 +388,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == GET_BT_MAC_ID)
   {
     printf("Get BT address\r\n");
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS);
     ezs_cmd_system_get_bluetooth_address();
     return;
@@ -389,7 +397,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == UPDATE_LOCAL_ADVERTISING_NAMES)
   {
     printf("Update local advertising name\r\n");
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     advNameBt[advNameMacIdStartIdx]
         = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
     advNameBt[advNameMacIdStartIdx + 1]
@@ -412,7 +420,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == GET_DEVICE_NAME_BT)
   {
     printf("Get Device Name BT\r\n");
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     btNameTypeBeingRead = DEVICE_TYPE_BT;
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_DEVICE_NAME);
     ezs_cmd_gap_get_device_name(DEVICE_TYPE_BT);
@@ -421,7 +429,7 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == SET_DEVICE_NAME_BT)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     if (!strstr((char *) &rsp_gap_get_device_name_bt.name.data[0], &advNameBt[1]))
     {
       printf("Set Device Name BT\r\n");
@@ -434,7 +442,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == GET_DEVICE_NAME_BLE)
   {
     printf("Get Device Name BLE\r\n");
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     btNameTypeBeingRead = DEVICE_TYPE_BLE;
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_DEVICE_NAME);
     ezs_cmd_gap_get_device_name(DEVICE_TYPE_BLE);
@@ -444,7 +452,7 @@ void btInitCommands(void)
   //TODO BLE advertising name won't update on-the-fly, need to either stop adv before name change and then start again or use F cmd and reset module.
   if (btInitCmdsStep == SET_DEVICE_NAME_BLE)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     if (!strstr((char *) &rsp_gap_get_device_name_ble.name.data[0], &advNameBle[1]))
     {
       printf("Set Device Name BLE\r\n");
@@ -457,7 +465,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == GET_TX_POWER)
   {
     printf("Get TX Power\r\n");
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_TX_POWER);
     ezs_cmd_system_get_tx_power();
     return;
@@ -465,7 +473,7 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == SET_TX_POWER)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     if (rsp_system_get_tx_power.power != BT_TX_POWER)
     {
       printf("Set TX Power\r\n");
@@ -479,7 +487,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == GET_SMP_PRIVACY_MODE)
   {
     printf("Get SMP Privacy mode\r\n");
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     setExpectedResponse(EZS_IDX_RSP_SMP_GET_PRIVACY_MODE);
     ezs_cmd_smp_get_privacy_mode();
     return;
@@ -487,7 +495,7 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == SET_SMP_PRIVACY_MODE)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     if (rsp_smp_get_privacy_mode.mode != rsp_smp_get_privacy_mode_ref.mode)
     {
       printf("Set SMP Privacy mode\r\n");
@@ -502,7 +510,7 @@ void btInitCommands(void)
 #if USE_GET_SET_ADV_PARAM
   if (btInitCmdsStep == GET_ADVERTISING_PARAMETERS)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     printf("Get Advertising Parameters\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_ADV_PARAMETERS);
     ezs_cmd_gap_get_adv_parameters();
@@ -511,7 +519,7 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == SET_ADVERTISING_PARAMETERS)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
 
     if (memcmp(&rsp_gap_get_adv_parameters_ref.result,
             &rsp_gap_get_adv_parameters.result, sizeof(rsp_gap_get_adv_parameters_ref))
@@ -534,7 +542,7 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == GET_CONN_PARAMETERS)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     printf("Get Conn Param\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS);
     ezs_cmd_gap_get_conn_parameters();
@@ -543,7 +551,7 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == SET_CONN_PARAMETERS)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     //No need to set if the current settings are correct.
     if (memcmp(&rsp_gap_get_conn_parameters_ref.result,
             &rsp_gap_get_conn_parameters.result, sizeof(rsp_gap_get_conn_parameters_ref))
@@ -563,7 +571,7 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == GET_SECURITY_PARAMETERS)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     /* Not needed at the moment so skipping */
     //printf("Get Security Param\r\n");
     //setExpectedResponse(EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS);
@@ -573,7 +581,7 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     printf("Start BLE Advertising\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_START_ADV);
     ezs_cmd_gap_start_adv(rsp_gap_get_adv_parameters_ref.mode,
@@ -589,74 +597,47 @@ void btInitCommands(void)
 
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE2)
   {
-    btInitCmdsStep++;
+    incrementBtInitCmdsStep();
     printf("Wait for BLE start\r\n");
     setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
     return;
   }
 
-  if (btInitCmdsStep == FINISH)
+  if (btInitCmdsStep == FACTORY_RESET)
   {
-    btInitCmdsRunning = 0;
-    btIsInitialised = true;
-    return;
-  }
-}
-
-void btFactoryResetCommands(void)
-{
-  if (btFactoryResetCmdsStep == FR_WAIT_FOR_BOOT)
-  {
-    btFactoryResetCmdsStep++;
-    //Only ASCII boot message currently working so had to implement our own
-    //approach setExpectedResponse(EZS_IDX_RSP_SYSTEM_REBOOT);
-    setWaitingForBtBoot(1);
-  }
-
-  if (btFactoryResetCmdsStep == FR_GET_BT_MAC_ID)
-  {
-    printf("Get BT address\r\n");
-    btFactoryResetCmdsStep++;
-    setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS);
-    ezs_cmd_system_get_bluetooth_address();
-    return;
-  }
-
-  if (btFactoryResetCmdsStep == FACTORY_RESET)
-  {
-    btFactoryResetCmdsStep++;
+    incrementBtInitCmdsStep();
     printf("Factory Reset\r\n");
     setExpectedResponse(EZS_IDX_EVT_SYSTEM_FACTORY_RESET_COMPLETE);
     ezs_cmd_system_factory_reset();
     return;
   }
 
-  if (btFactoryResetCmdsStep == FR_WAIT_FOR_REBOOT_AFTER_FR)
+  if (btInitCmdsStep == FR_WAIT_FOR_REBOOT_AFTER_FR)
   {
     return;
   }
 
-  if (btFactoryResetCmdsStep == FR_UPDATE_UART)
+  if (btInitCmdsStep == FR_UPDATE_UART)
   {
-    btFactoryResetCmdsStep++;
+    incrementBtInitCmdsStep();
     printf("Update UART to factory default\r\n");
     //TODO resolve reference
     BtUart_update(115200, 0);
     HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
   }
 
-  if (btFactoryResetCmdsStep == FR_PING)
+  if (btInitCmdsStep == FR_PING)
   {
+    incrementBtInitCmdsStep();
     printf("Ping\r\n");
-    btFactoryResetCmdsStep++;
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
     ezs_cmd_system_ping();
     return;
   }
 
-  if (btFactoryResetCmdsStep == FR_RESET_BT_MAC_ID)
+  if (btInitCmdsStep == FR_RESET_BT_MAC_ID)
   {
-    btFactoryResetCmdsStep++;
+    incrementBtInitCmdsStep();
     printf("Reset BT Address\r\n");
     setExpectedResponse(EZS_IDX_CMD_SYSTEM_SET_BLUETOOTH_ADDRESS);
 
@@ -670,33 +651,64 @@ void btFactoryResetCommands(void)
     return;
   }
 
-  if (btFactoryResetCmdsStep == FR_FINISH)
+  if (btInitCmdsStep == FINISH)
   {
-    btFactoryResetCmdsRunning = 0;
-    btIsFactoryResetted = true;
+    if (btFactoryResetCmdsRunning)
+    {
+      btFactoryResetCmdsRunning = 0;
+      btIsFactoryResetted = true;
+    }
+    else
+    {
+      btInitCmdsRunning = 0;
+      btIsInitialised_cb();
+    }
     return;
   }
 }
 
 uint8_t isEzsBaudRateDelayPending(void)
 {
-  return btInitCmdsRunning && btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE4
-      && btUartSettingsChanged;
+  return btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE4 && btUartSettingsChanged;
 }
 
 uint8_t isEzsFactoryRebootDelayPending(void)
 {
-  return btFactoryResetCmdsRunning && btFactoryResetCmdsStep == FR_WAIT_FOR_REBOOT_AFTER_FR;
+  return btInitCmdsStep == FR_WAIT_FOR_REBOOT_AFTER_FR;
+}
+
+void setBtInitCmdsSteps(uint8_t *steps)
+{
+  btInitCmdsSteps = steps;
 }
 
 void incrementBtInitCmdsStep(void)
 {
-  btInitCmdsStep++;
+  if (btInitCmdsStep != FINISH)
+  {
+    btInitCmdsStepIdx++;
+    btInitCmdsStep = btInitCmdsSteps[btInitCmdsStepIdx];
+  }
 }
 
-void incrementBtFactoryResetCmdsStep(void)
+void setBtBootModeFactoryReset(void)
 {
-  btFactoryResetCmdsStep++;
+  btFactoryResetCmdsRunning = 1;
+  setBtInitCmdsSteps(&btBootStagesFactoryReset[0]);
+
+  btIsFactoryResetted = false;
+}
+
+void setBtBootModeFirstBoot(void)
+{
+  btInitCmdsRunning = 1;
+  setBtInitCmdsSteps(&btBootStagesFirstBoot[0]);
+}
+
+void setBtBootModeSubsequentBoot(void)
+{
+  btInitCmdsRunning = 1;
+  setBtInitCmdsSteps(&btBootStagesSubsequentBoot[0]);
 }
 
 void ezsHandler(ezs_packet_t *packet)
@@ -1094,27 +1106,14 @@ void progressToNextBtInCmd(void)
   {
     /* Set the expected response to be invalid */
     setExpectedResponse(EZS_IDX_EVT_MAX);
-    if (btInitCmdsRunning)
-    {
-      /* Continue with the next set command */
-      btInitCommands();
-    }
-    else if (btFactoryResetCmdsRunning)
-    {
-      /* Continue with the next set command */
-      btFactoryResetCommands();
-    }
+    /* Continue with the next stage */
+    btInitCommands();
   }
 }
 
 void setExpectedResponse(uint16_t idx)
 {
   expectedResponseIdx = idx;
-}
-
-bool isBtIsInitialised(void)
-{
-  return btIsInitialised;
 }
 
 bool isBtIsFactoryResetted(void)
@@ -1177,4 +1176,9 @@ uint8_t BT_connect(uint8_t *addr)
 uint8_t BT_disconnect(void)
 {
   return 1;
+}
+
+void BT_startDone_cb(void (*callback)(void))
+{
+  btIsInitialised_cb = callback;
 }
