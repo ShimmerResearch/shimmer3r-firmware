@@ -670,7 +670,7 @@ void JumpToBootloaderIfRequired(void)
 {
   uint8_t bslCheckCounter = 0;
 
-  if(HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin))
+  if (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin))
   {
     stopLedBlinkTimer();
     for (bslCheckCounter = 0; bslCheckCounter < 30; bslCheckCounter++)
@@ -682,7 +682,7 @@ void JumpToBootloaderIfRequired(void)
 
       if (bslCheckCounter == 29)
       {
-  //        SHIMMER_PRINTF("Entering bootloader mode\r\n");
+        //SHIMMER_PRINTF("Entering bootloader mode\r\n");
         JumpToBootloader();
       }
 
@@ -702,34 +702,34 @@ void JumpToBootloaderIfRequired(void)
     startLedBlinkTimer();
   }
 
-//  if(HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin))
-//  {
-//    stopLedBlinkTimer();
-//    uint8_t bslCheckCounter = 0U;
-//    do
-//    {
-//      if (bslCheckCounter % 2 == 0)
-//      {
-//        Board_ledUprSetColourRgb(0, 0, 0);
-//        Board_ledLwrSetColourRgb(128, 0, 128);
-//      }
-//      else
-//      {
-//        Board_ledUprSetColourRgb(128, 0, 128);
-//        Board_ledLwrSetColourRgb(0, 0, 0);
-//      }
-//
-//      if (bslCheckCounter++ > 30U)
-//      {
-////        SHIMMER_PRINTF("Entering bootloader mode\r\n");
-//        JumpToBootloader();
-//      }
-//      //Check if the user button is pressed to enter bootloader mode
-//      HAL_Delay(100U); //Wait 100ms before checking again
-//    } while (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin));
-//
-//    startLedBlinkTimer();
-//  }
+  //if(HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin))
+  //{
+  //  stopLedBlinkTimer();
+  //  uint8_t bslCheckCounter = 0U;
+  //  do
+  //  {
+  //    if (bslCheckCounter % 2 == 0)
+  //    {
+  //      Board_ledUprSetColourRgb(0, 0, 0);
+  //      Board_ledLwrSetColourRgb(128, 0, 128);
+  //    }
+  //    else
+  //    {
+  //      Board_ledUprSetColourRgb(128, 0, 128);
+  //      Board_ledLwrSetColourRgb(0, 0, 0);
+  //    }
+  //
+  //    if (bslCheckCounter++ > 30U)
+  //    {
+  ////        SHIMMER_PRINTF("Entering bootloader mode\r\n");
+  //JumpToBootloader();
+  //}
+  ////Check if the user button is pressed to enter bootloader mode
+  //HAL_Delay(100U); //Wait 100ms before checking again
+  //} while (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin));
+  //
+  //startLedBlinkTimer();
+  //}
 }
 
 /*Temporarily located in main.c. Based on the following example */
