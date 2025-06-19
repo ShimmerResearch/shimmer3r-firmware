@@ -93,6 +93,7 @@ void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 void InitialiseBtAfterBoot(void);
 uint8_t getDefaultBaudForBtVersion(void);
+void JumpToBootloaderIfRequired(void);
 void JumpToBootloader(void);
 HAL_StatusTypeDef checknBoot0OptionByte(void);
 
@@ -257,10 +258,12 @@ int main(void)
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
 
+  JumpToBootloaderIfRequired();
+
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
   //run_factory_test();
-  JumpToBootloader();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -650,6 +653,72 @@ uint8_t getDefaultBaudForBtVersion(void)
 
 void stopSensingWrapup(void)
 {
+}
+
+void JumpToBootloaderIfRequired(void)
+{
+  uint8_t bslCheckCounter = 0;
+
+  if(HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin))
+  {
+    stopLedBlinkTimer();
+    for (bslCheckCounter = 0; bslCheckCounter < 30; bslCheckCounter++)
+    {
+      if (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin) == GPIO_PIN_RESET)
+      {
+        break;
+      }
+
+      if (bslCheckCounter == 29)
+      {
+  //        SHIMMER_PRINTF("Entering bootloader mode\r\n");
+        JumpToBootloader();
+      }
+
+      if (bslCheckCounter % 2 == 0)
+      {
+        Board_ledUprSetColourRgb(0, 0, 0);
+        Board_ledLwrSetColourRgb(128, 0, 128);
+      }
+      else
+      {
+        Board_ledUprSetColourRgb(128, 0, 128);
+        Board_ledLwrSetColourRgb(0, 0, 0);
+      }
+
+      HAL_Delay(100U); //Wait 100ms before checking again
+    }
+    startLedBlinkTimer();
+  }
+
+//  if(HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin))
+//  {
+//    stopLedBlinkTimer();
+//    uint8_t bslCheckCounter = 0U;
+//    do
+//    {
+//      if (bslCheckCounter % 2 == 0)
+//      {
+//        Board_ledUprSetColourRgb(0, 0, 0);
+//        Board_ledLwrSetColourRgb(128, 0, 128);
+//      }
+//      else
+//      {
+//        Board_ledUprSetColourRgb(128, 0, 128);
+//        Board_ledLwrSetColourRgb(0, 0, 0);
+//      }
+//
+//      if (bslCheckCounter++ > 30U)
+//      {
+////        SHIMMER_PRINTF("Entering bootloader mode\r\n");
+//        JumpToBootloader();
+//      }
+//      //Check if the user button is pressed to enter bootloader mode
+//      HAL_Delay(100U); //Wait 100ms before checking again
+//    } while (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin));
+//
+//    startLedBlinkTimer();
+//  }
 }
 
 /*Temporarily located in main.c. Based on the following example */
