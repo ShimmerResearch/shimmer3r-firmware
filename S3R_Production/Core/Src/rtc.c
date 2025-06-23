@@ -23,14 +23,14 @@
 /* USER CODE BEGIN 0 */
 
 #include "shimmer_definitions.h"
+#include "time.h"
 #include <TaskList/shimmer_taskList.h>
 #include <log_and_stream_externs.h>
-#include "time.h"
 
 uint64_t rwcConfigTime64;
 uint32_t S4_RTC_Status = RTC_STATUS_ZERO;
 
-volatile time_t nextAlarms[RTC_NUM_ALARMS] = {RTC_ALARM_CONTEXT_NONE};
+volatile time_t nextAlarms[RTC_NUM_ALARMS] = { RTC_ALARM_CONTEXT_NONE };
 
 /* USER CODE END 0 */
 
@@ -734,34 +734,36 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   __HAL_RTC_ALARMA_DISABLE(hrtc);
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
 
-  // Get current time
+  //Get current time
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
   HAL_RTC_GetTime(hrtc, &sTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(hrtc, &sDate, RTC_FORMAT_BIN);
 
-  struct tm current_tm =
-  { .tm_sec = sTime.Seconds, .tm_min = sTime.Minutes, .tm_hour = sTime.Hours,
-      .tm_mday = sDate.Date, .tm_mon = sDate.Month - 1, .tm_year = sDate.Year
-          + 100 };
+  struct tm current_tm = { .tm_sec = sTime.Seconds,
+    .tm_min = sTime.Minutes,
+    .tm_hour = sTime.Hours,
+    .tm_mday = sDate.Date,
+    .tm_mon = sDate.Month - 1,
+    .tm_year = sDate.Year + 100 };
   time_t now = mktime(&current_tm);
 
-  // Check all alarms
+  //Check all alarms
   for (int i = 0; i < RTC_NUM_ALARMS; i++)
   {
     if (nextAlarms[i] != 0 && now >= nextAlarms[i])
     {
-      // Alarm is due, handle action
+      //Alarm is due, handle action
       switch (i)
       {
       case RTC_ALARM_CONTEXT_BATT_READ:
         ShimTask_set(TASK_BATT_READ);
         break;
-//      case RTC_ALARM_CONTEXT_BT_SYNC:
-//        RTC_stopSdSyncAlarm();
-//        ShimSdSync_handleSyncTimerTrigger();
-//        RTC_setupAndStartSdSyncAlarm();
-//        break;
+        //case RTC_ALARM_CONTEXT_BT_SYNC:
+        //  RTC_stopSdSyncAlarm();
+        //  ShimSdSync_handleSyncTimerTrigger();
+        //  RTC_setupAndStartSdSyncAlarm();
+        //  break;
       case RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING:
         ShimTask_setStopSensing();
         break;
@@ -769,15 +771,15 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
         JumpToBootloader();
         break;
       default:
-        // No action or error log
+        //No action or error log
         break;
       }
-      // Clear the alarm
+      //Clear the alarm
       nextAlarms[i] = 0;
     }
   }
 
-  RTC_setNextRtcAlarmA(hrtc); // Re-setup the next minute alarm
+  RTC_setNextRtcAlarmA(hrtc); //Re-setup the next minute alarm
 }
 
 void RTC_setAlarmBattRead(void)
@@ -790,19 +792,19 @@ void RTC_setAlarmBattRead(void)
 
 void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow)
 {
-  // Set the alarm to stop logging after a specified number of minutes
+  //Set the alarm to stop logging after a specified number of minutes
   RTC_setAlarmAFromNow(minutesFromNow * 60, RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING);
 }
 
 void RTC_setAlarmRebootToBootloader(void)
 {
-  // Set the alarm to reboot to bootloader after a specified time
+  //Set the alarm to reboot to bootloader after a specified time
   RTC_setAlarmAFromNow(5, RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER);
 }
 
 void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
 {
-  // Find the next soonest alarm
+  //Find the next soonest alarm
   time_t nextAlarmTime = 0;
   int nextAlarmIdx = -1;
   for (int i = 0; i < RTC_NUM_ALARMS; i++)
@@ -817,14 +819,14 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
     }
   }
 
-  // Set up the next alarm if any
+  //Set up the next alarm if any
   if (nextAlarmIdx != -1)
   {
-//    struct tm *alarm_tm = localtime(&nextAlarmTime);
+    //struct tm *alarm_tm = localtime(&nextAlarmTime);
 
     struct tm alarm_tm;
     time_t t = nextAlarmTime;
-    gmtime_r(&t, &alarm_tm); // If gmtime_r is available
+    gmtime_r(&t, &alarm_tm); //If gmtime_r is available
 
     RTC_AlarmTypeDef sAlarm = { 0 };
     sAlarm.AlarmTime.Hours = alarm_tm.tm_hour;
@@ -842,24 +844,26 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
   }
 }
 
-void RTC_setAlarmAFromNow(uint32_t secondsFromNow,
-    RTC_AlarmB_Context_t context)
+void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
 {
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
   HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN); // Must be called after GetTime()
+  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN); //Must be called after GetTime()
 
-  struct tm current_tm =
-  { .tm_sec = sTime.Seconds, .tm_min = sTime.Minutes, .tm_hour = sTime.Hours,
-      .tm_mday = sDate.Date, .tm_mon = sDate.Month - 1, // struct tm uses 0-11 for months
-      .tm_year = sDate.Year + 100 // struct tm uses years since 1900
+  struct tm current_tm = {
+    .tm_sec = sTime.Seconds,
+    .tm_min = sTime.Minutes,
+    .tm_hour = sTime.Hours,
+    .tm_mday = sDate.Date,
+    .tm_mon = sDate.Month - 1,  //struct tm uses 0-11 for months
+    .tm_year = sDate.Year + 100 //struct tm uses years since 1900
   };
 
-  // Add offset
+  //Add offset
   time_t future_time = mktime(&current_tm) + secondsFromNow;
-  nextAlarms[context] = future_time; // Store the future time for this alarm
-  RTC_setNextRtcAlarmA(&hrtc); // Set up the next alarm
+  nextAlarms[context] = future_time; //Store the future time for this alarm
+  RTC_setNextRtcAlarmA(&hrtc);       //Set up the next alarm
 }
 
 /* USER CODE END 1 */

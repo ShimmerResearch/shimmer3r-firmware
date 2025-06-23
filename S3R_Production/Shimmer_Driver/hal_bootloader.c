@@ -53,4 +53,3 @@ void JumpToBootloader(void)
     /* Code should never reach this loop */
   }
 }
-
