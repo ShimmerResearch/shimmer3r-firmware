@@ -95,7 +95,6 @@ void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 uint8_t getDefaultBaudForBtVersion(void);
 void JumpToBootloaderIfRequired(void);
-void JumpToBootloader(void);
 HAL_StatusTypeDef checknBoot0OptionByte(void);
 
 /* USER CODE END PFP */
@@ -262,7 +261,6 @@ int main(void)
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
 
-  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
   //run_factory_test();
 
@@ -576,7 +574,7 @@ void SetupDock(void)
       LogAndStream_setSdInfoSyncDelayed(1);
     }
   }
-  setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
+  RTC_setAlarmBattRead(); //configure Alarm on dock/undock
   shimmerStatus.configuring = 0;
 }
 
@@ -700,50 +698,6 @@ void JumpToBootloaderIfRequired(void)
       HAL_Delay(100U); //Wait 100ms before checking again
     }
     startLedBlinkTimer();
-  }
-}
-
-/*Temporarily located in main.c. Based on the following example */
-/* https://community.st.com/t5/stm32-mcus/how-to-jump-to-system-bootloader-from-application-code-on-stm32/ta-p/49424 */
-void JumpToBootloader(void)
-{
-  uint32_t i = 0;
-  void (*SysMemBootJump)(void);
-  /* Set the address of the entry point to bootloader for U5 */
-  volatile uint32_t BootAddr = 0x0BF90000;
-
-  /* Disable all interrupts */
-  __disable_irq();
-
-  /* Disable Systick timer */
-  SysTick->CTRL = 0;
-
-  /* Set the clock to the default state */
-  HAL_RCC_DeInit();
-
-  /* Clear Interrupt Enable Register & Interrupt Pending Register */
-  for (i = 0; i < 5; i++)
-  {
-    NVIC->ICER[i] = 0xFFFFFFFF;
-    NVIC->ICPR[i] = 0xFFFFFFFF;
-  }
-
-  /* Re-enable all interrupts */
-  __enable_irq();
-
-  /* Set up the jump to boot loader address + 4 */
-  SysMemBootJump = (void (*)(void))(*((uint32_t *) ((BootAddr + 4))));
-
-  /* Set the main stack pointer to the boot loader stack */
-  __set_MSP(*(uint32_t *) BootAddr);
-
-  /* Call the function to jump to boot loader location */
-  SysMemBootJump();
-
-  /* Jump is done successfully */
-  while (1)
-  {
-    /* Code should never reach this loop */
   }
 }
 

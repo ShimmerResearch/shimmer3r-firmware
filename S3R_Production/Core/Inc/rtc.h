@@ -60,46 +60,63 @@ extern "C"
 
 #define getRwcTime             RTC_get64
 
-  typedef struct
-  {
-    uint8_t seconds;     /*!< Seconds parameter, from 00 to 59 */
-    uint16_t subseconds; /*!< Subsecond downcounter. When it reaches zero, it's reload value is the same as
-                                   @ref RTC_SYNC_PREDIV, so in our case 0x3FF = 1023, 1024 steps in one second */
-    uint8_t minutes;     /*!< Minutes parameter, from 00 to 59 */
-    uint8_t hours;       /*!< Hours parameter, 24Hour mode, 00 to 23 */
-    uint8_t weekday;     /*!< Day in a week, from 1 to 7 */
-    uint8_t date;        /*!< Date in a month, 1 to 31 */
-    uint8_t month;       /*!< Month in a year, 1 to 12 */
-    uint8_t year;   /*!< Year parameter, 00 to 99, 00 is 2000 and 99 is 2099 */
-    uint32_t unix;  /*!< Seconds from 01.01.1970 00:00:00 */
-    uint64_t ticks; /*!< ticks from 01.01.1970 00:00:00 */
-  } S4_RTC_t;
+typedef struct
+{
+  uint8_t seconds;     /*!< Seconds parameter, from 00 to 59 */
+  uint16_t subseconds; /*!< Subsecond downcounter. When it reaches zero, it's reload value is the same as
+                                 @ref RTC_SYNC_PREDIV, so in our case 0x3FF = 1023, 1024 steps in one second */
+  uint8_t minutes;     /*!< Minutes parameter, from 00 to 59 */
+  uint8_t hours;       /*!< Hours parameter, 24Hour mode, 00 to 23 */
+  uint8_t weekday;     /*!< Day in a week, from 1 to 7 */
+  uint8_t date;        /*!< Date in a month, 1 to 31 */
+  uint8_t month;       /*!< Month in a year, 1 to 12 */
+  uint8_t year;   /*!< Year parameter, 00 to 99, 00 is 2000 and 99 is 2099 */
+  uint32_t unix;  /*!< Seconds from 01.01.1970 00:00:00 */
+  uint64_t ticks; /*!< ticks from 01.01.1970 00:00:00 */
+} S4_RTC_t;
 
-  /* USER CODE END Private defines */
+typedef enum
+{
+  RTC_ALARM_CONTEXT_NONE = 0,
+  RTC_ALARM_CONTEXT_BATT_READ,
+//  RTC_ALARM_CONTEXT_BT_SYNC,
+  RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING,
+  RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER,
+  RTC_NUM_ALARMS
+} RTC_AlarmB_Context_t;
 
-  void MX_RTC_Init(void);
+/* USER CODE END Private defines */
 
-  /* USER CODE BEGIN Prototypes */
-  void S4_RTC_Init(void); //RTC_HandleTypeDef *hrtc
-  uint8_t S4_RTC_SetDateTime(S4_RTC_t *data);
-  void S4_RTC_GetDateTime(S4_RTC_t *data);
-  uint32_t S4_RTC_RTC2Unix(S4_RTC_t *data);
-  void S4_RTC_Unix2RTC(S4_RTC_t *data, uint32_t unix);
+void MX_RTC_Init(void);
 
-  void RTC_init(uint64_t ticks);
-  uint32_t RTC_get32(void);
-  uint64_t RTC_get64(void);
-  uint8_t isRwcTimeSet(void);
+/* USER CODE BEGIN Prototypes */
+void S4_RTC_Init(void); //RTC_HandleTypeDef *hrtc
+uint8_t S4_RTC_SetDateTime(S4_RTC_t *data);
+void S4_RTC_GetDateTime(S4_RTC_t *data);
+uint32_t S4_RTC_RTC2Unix(S4_RTC_t *data);
+void S4_RTC_Unix2RTC(S4_RTC_t *data, uint32_t unix);
 
-  void S4_RWC_setConfigTime(uint64_t val);
-  uint64_t S4_RWC_getConfigTime(void);
+void RTC_init(uint64_t ticks);
+uint32_t RTC_get32(void);
+uint64_t RTC_get64(void);
+uint8_t isRwcTimeSet(void);
 
-  void S4_RTC_WakeUpOff(void);
-  void S4_RTC_WakeUpSet(uint16_t period);
-  void S4_RTC_WakeUpSetSlow(void);
-  void setupNextRtcMinuteAlarm(void);
+void S4_RWC_setConfigTime(uint64_t val);
+uint64_t S4_RWC_getConfigTime(void);
 
-  /* USER CODE END Prototypes */
+void S4_RTC_WakeUpOff(void);
+void S4_RTC_WakeUpSet(uint16_t period);
+void S4_RTC_WakeUpSetSlow(void);
+
+void RTC_setAlarmBattRead(void);
+void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow);
+void RTC_setAlarmRebootToBootloader(void);
+
+void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc);
+void RTC_setAlarmAFromNow(uint32_t secondsFromNow,
+    RTC_AlarmB_Context_t context);
+
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
