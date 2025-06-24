@@ -796,10 +796,10 @@ void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow)
   RTC_setAlarmAFromNow(minutesFromNow * 60, RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING);
 }
 
-void RTC_setAlarmRebootToBootloader(void)
+void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow)
 {
   //Set the alarm to reboot to bootloader after a specified time
-  RTC_setAlarmAFromNow(5, RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER);
+  RTC_setAlarmAFromNow(secondsFromNow, RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER);
 }
 
 void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)

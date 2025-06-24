@@ -110,7 +110,7 @@ extern "C"
 
   void RTC_setAlarmBattRead(void);
   void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow);
-  void RTC_setAlarmRebootToBootloader(void);
+  void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow);
 
   void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc);
   void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context);
