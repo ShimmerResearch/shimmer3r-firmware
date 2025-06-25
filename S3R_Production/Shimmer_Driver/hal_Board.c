@@ -79,6 +79,29 @@ void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
 
 void startLedBlinkTimer(void)
 {
+  ShimLeds_resetCounters();
+
+  // Align the blink timer to the next odd second to synchronize across devices.
+  S4_RTC_t rtc;
+  uint8_t target_sec;
+
+  // Get current RTC time
+  S4_RTC_GetDateTime(&rtc);
+
+//  // Target second is the next even second
+//  target_sec = (rtc.seconds % 2 == 0) ? rtc.seconds + 2 : rtc.seconds + 1;
+  // Target second is the next odd second
+  target_sec = (rtc.seconds % 2 == 1) ? rtc.seconds + 2 : rtc.seconds + 1;
+
+  target_sec %= 60;
+
+  // Wait until RTC seconds match target and subseconds are near the top (e.g., > 32760)
+  // Subsecond buffer required here to account for code execution and readout delays.
+  do {
+      S4_RTC_GetDateTime(&rtc);
+  } while (rtc.seconds != target_sec || rtc.subseconds < 32760);
+
+  // Now start the blink timer
   HAL_TIM_Base_Start_IT(htimLedBlinkPtr);
   shimmerStatus.timerBlinkEnabled = 1;
 }
@@ -87,6 +110,8 @@ void stopLedBlinkTimer(void)
 {
   HAL_TIM_Base_Stop(htimLedBlinkPtr);
   shimmerStatus.timerBlinkEnabled = 0;
+
+  //TODO turn off all LEDs to reset their state?
 }
 
 void rgb_led_lwr_color(uint8_t red, uint8_t green, uint8_t blue)
