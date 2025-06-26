@@ -96,5 +96,6 @@ uint8_t BT_connect(uint8_t *addr);
 //after this command is called there will be no link to the connected device
 uint8_t BT_disconnect(void);
 void BT_startDone_cb(void (*callback)(void));
-
+uint8_t BT_cancelConnection(void);
+uint8_t BT_connectionFailed(uint8_t conn_handle, uint16_t reason);
 #endif /* SRC_CYW20820_H_ */

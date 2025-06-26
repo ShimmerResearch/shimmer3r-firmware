@@ -91,6 +91,7 @@ void HAL_Delay(uint32_t Delay);
 #endif
 void sleepWhenNoTask(void);
 
+void BtStart(void);
 void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 uint8_t getDefaultBaudForBtVersion(void);
@@ -155,6 +156,7 @@ void Init()
 #if defined(SHIMMER3R)
   setBootStage(BOOT_STAGE_BLUETOOTH);
   ShimBt_btCommsProtocolInit();
+  ShimSdSync_init(ShimTask_setInitialiseBluetooth, BtStop);
   //btFactoryResetViaFw();
   btInitialise();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
@@ -246,8 +248,9 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
-  //MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
+
+  //MX_IWDG_Init();
 
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();
@@ -403,6 +406,8 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
   uint8_t failCount = 0U;
   uint8_t resetCntCurrent = resetCnt;
   uint32_t baudToTry = BAUD_TO_USE;
+
+  BtStart();
 
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
@@ -642,11 +647,37 @@ void sleepWhenNoTask(void)
   //}
 }
 
+void BtStart(void)
+{
+  if (!shimmerStatus.btPowerOn)
+  {
+    //is watchdog timer function required
+  }
+  if (!shimmerStatus.sensing)
+  {
+    shimmerStatus.configuring = 1;
+  }
+  resetBtRxBuff();
+  shimmerStatus.btInSyncMode = shimmerStatus.sdSyncEnabled;
+  //BT_start();
+}
+
 void BtStop(uint8_t isCalledFromMain)
 {
-  //TODO tidy this flow up
-  btDeinit();
-  shimmerStatus.btIsInitialised = false;
+  if (shimmerStatus.btPowerOn)
+  {
+    //TODO tidy this flow up
+    ShimBt_clearBtTxBuf(isCalledFromMain);
+    ShimTask_clear(TASK_RCNODER10);
+    shimmerStatus.btConnected = 0;
+    shimmerStatus.btInSyncMode = 0;
+    //BT_disable
+    resetBtRxBuff();
+    btDeinit();
+    shimmerStatus.btIsInitialised = false;
+
+    SHIMMER_PRINTF("\r\nBT Stop\r\n");
+  }
 }
 
 float samplingClockFreqGet(void)
