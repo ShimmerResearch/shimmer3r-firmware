@@ -17,6 +17,8 @@ void JumpToBootloader(void)
   uint32_t i = 0;
   void (*SysMemBootJump)(void);
   /* Set the address of the entry point to bootloader for U5 */
+  /* The value 0x0BF90000 corresponds to the system memory bootloader entry point for STM32U5 microcontrollers. */
+  /* Refer to the STM32 documentation and the example at https://community.st.com/t5/stm32-mcus/how-to-jump-to-system-bootloader-from-application-code-on-stm32/ta-p/49424 for more details. */
   volatile uint32_t BootAddr = 0x0BF90000;
 
   /* Disable all interrupts */
