@@ -61,6 +61,7 @@
 #define TIM_MEASURE_END    \
   time_end = SysTick->VAL; \
   time_diff = time_start - time_end
+#define BOOTLOADER_ENTRY_THRESHOLD 29
 
 /* USER CODE END PM */
 
@@ -669,7 +670,7 @@ void JumpToBootloaderIfRequired(void)
   if (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin))
   {
     stopLedBlinkTimer();
-    for (bslCheckCounter = 0; bslCheckCounter < 30; bslCheckCounter++)
+    for (bslCheckCounter = 0; bslCheckCounter <= BOOTLOADER_ENTRY_THRESHOLD; bslCheckCounter++)
     {
       if (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin) == GPIO_PIN_RESET)
       {
