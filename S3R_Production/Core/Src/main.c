@@ -529,8 +529,9 @@ void SetupDock(void)
     delay_ms(1000);
     manageReadBatt(1);
 
-    shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
     shimmerStatus.sdlogReady = 0;
+    ShimSens_stopSensing(0);
+
     /* Prioritise dock over USB for SD card access */
     if (shimmerStatus.docked)
     {
