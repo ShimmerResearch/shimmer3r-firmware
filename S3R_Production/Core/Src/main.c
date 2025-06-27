@@ -144,8 +144,6 @@ void Init()
 
   setUartPeripheralPointers();
 
-  S4_RTC_Init();
-
   Board_delayMicrosInit();
   DockUart_interruptCheck();
   CheckSdInslot();
@@ -184,7 +182,7 @@ void Init()
   FullTest();
 #endif
   //S4Sens_stopPeripherals();
-  S4_RTC_WakeUpOff();
+  RTC_wakeUpOff();
 #if defined(SHIMMER4_SDK)
   S4_RTC_WakeUpSetSlow();
 #endif
