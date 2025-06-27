@@ -23,11 +23,17 @@
 /* USER CODE BEGIN 0 */
 
 #include "shimmer_definitions.h"
+#include "time.h"
 #include <TaskList/shimmer_taskList.h>
 #include <log_and_stream_externs.h>
 
-uint64_t rwcConfigTime64;
-uint32_t S4_RTC_Status = RTC_STATUS_ZERO;
+uint32_t SHIM_RTC_Status = RTC_STATUS_ZERO;
+
+volatile time_t nextAlarms[RTC_NUM_ALARMS] = { RTC_ALARM_CONTEXT_NONE };
+
+#if RTC_FAST
+uint64_t rtc64_reg;
+#endif /* RTC_FAST */
 
 /* USER CODE END 0 */
 
@@ -38,6 +44,12 @@ void MX_RTC_Init(void)
 {
 
   /* USER CODE BEGIN RTC_Init 0 */
+
+#if RTC_FAST
+  SHIM_RTC_t data;
+#endif /* RTC_FAST */
+
+  ShimRtc_setConfigTime(0);
 
   /* USER CODE END RTC_Init 0 */
 
@@ -153,6 +165,13 @@ void MX_RTC_Init(void)
   ///* Clear source Reset Flag */
   //__HAL_RCC_CLEAR_RESET_FLAGS();
 
+#if RTC_FAST
+  ShimRtc_getDateTime(&data);
+  rtc64_reg = data.ticks & 0xffffffffffff8000;
+#endif /* RTC_FAST */
+
+  RTC_wakeUpOff();
+
   /* USER CODE END RTC_Init 2 */
 }
 
@@ -212,136 +231,7 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef *rtcHandle)
 
 /* USER CODE BEGIN 1 */
 
-void S4_RWC_setConfigTime(uint64_t val)
-{
-  rwcConfigTime64 = val;
-} //64bits = 8bytes
-
-uint64_t S4_RWC_getConfigTime(void)
-{
-  return rwcConfigTime64;
-}
-
-/* Days in a month */
-uint8_t S4_RTC_Months[2][12] = {
-  { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }, /* Not leap year */
-  { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }  /* Leap year */
-};
-uint64_t rtc64_reg;
-
-void S4_RTC_Init(void)
-{ //RTC_HandleTypeDef *hrtc
-
-  //"How to know after power start whether the product up from a stand by mode or a power down reset. "
-  uint32_t lastRstState = RCC->CSR;
-  //code to detect a warm reboot
-  if (RCC_CSR_SFTRSTF & lastRstState)
-  {
-    //uartPrintf("\n\r Warm boot (reset caused by software)" );
-  }
-  else
-  {
-    //uartPrintf("\n\r Cold boot (Powered from Off)" );
-  }
-
-  //s4rtc_hrtc = hrtc;
-  S4_RTC_t data;
-
-  rwcConfigTime64 = 0;
-
-  hrtc.Instance = RTC;
-
-  //HAL_RTC_DeInit(s4rtc_hrtc);
-
-  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-  hrtc.Init.AsynchPrediv = 0;
-  hrtc.Init.SynchPrediv = 32767;
-  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-  HAL_RTC_Init(&hrtc);
-
-  S4_RTC_GetDateTime(&data);
-#ifdef RTC_FAST
-  rtc64_reg = data.ticks & 0xffffffffffff8000;
-#endif
-
-  ///**Enable the Alarm A
-  //* fires every second
-  //*/
-  ////   RTC_AlarmTypeDef sAlarm;
-  ////   sAlarm.AlarmTime.Hours = 0x0;
-  ////   sAlarm.AlarmTime.Minutes = 0x0;
-  ////   sAlarm.AlarmTime.Seconds = 0x0;
-  ////   sAlarm.AlarmTime.SubSeconds = 0x0;
-  ////   sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  ////   sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  ////   sAlarm.AlarmMask = RTC_ALARMMASK_ALL;
-  ////   sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-  ////   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  ////   sAlarm.AlarmDateWeekDay = 1;
-  ////   sAlarm.Alarm = RTC_ALARM_A;
-  ////   HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD);
-  //
-
-  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-  //if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 15, RTC_WAKEUPCLOCK_RTCCLK_DIV2) != HAL_OK)
-  //{
-  //   Error_Handler();
-  //}
-
-  //S4_RTC_Status = RTC_STATUS_INIT_OK;
-  //HAL_RTCEx_BKUPWrite(&hrtc, RTC_STATUS_REG, S4_RTC_Status);
-}
-
-void S4_RTC_WakeUpOff()
-{
-  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-  //if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 15, RTC_WAKEUPCLOCK_RTCCLK_DIV2) != HAL_OK)
-  //{
-  //   Error_Handler();
-  //}
-}
-
-void S4_RTC_WakeUpSet(uint16_t period)
-{
-  uint16_t wakeUpCounter;
-
-  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-  if (period > 32768)
-  {
-    Error_Handler();
-  }
-
-  wakeUpCounter = period / 2 - 1;
-
-  //changing either prescalar or RTC_WAKEUPCLOCK_RTCCLK_DIV wouldn't change the power consumption.
-  //only the product matters: prescalar*RTC_WAKEUPCLOCK_RTCCLK_DIV
-
-  /* HAL_StatusTypeDef HAL_RTCEx_SetWakeUpTimer_IT(RTC_HandleTypeDef *hrtc, uint32_t WakeUpCounter, uint32_t WakeUpClock,
-   uint32_t WakeUpAutoClr)
-   uint32_t WakeUpAutoClr missing argument in the old Shimmer4*/
-#if defined(SHIMMER3R)
-  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, wakeUpCounter, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
-#elif defined(SHIMMER4_SDK)
-  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, wakeUpCounter, RTC_WAKEUPCLOCK_RTCCLK_DIV2) != HAL_OK)
-#endif
-  {
-    Error_Handler();
-  }
-}
-
-void S4_RTC_WakeUpSetSlow()
-{
-  /* 3276 equates to 0.1 seconds
-   * wakeup counter = period / 2 - 1 => 3276 / 2 - 1 => 1637
-   * Clock source frequency = 32,768 / 2 = 16,384 Hz
-   * Interval = (1637 + 1) / 16,384 => 0.1 seconds
-   */
-  S4_RTC_WakeUpSet(3276);
-}
-
-uint8_t S4_RTC_SetDateTime(S4_RTC_t *data)
+uint8_t RTC_setDateTime(SHIM_RTC_t *data)
 {
   uint32_t format = RTC_FORMAT_BIN;
   //S4_RTC_t tmp;
@@ -368,22 +258,20 @@ uint8_t S4_RTC_SetDateTime(S4_RTC_t *data)
   //}
 
   /* Check year and month */
-  if (data->year > 99 || data->month == 0 || data->month > 12 || data->date == 0
-      || data->date > S4_RTC_Months[RTC_LEAP_YEAR(2000 + data->year) ? 1 : 0][data->month - 1]
-      || data->weekday == 0 || data->weekday > 7 || data->hours > 23
-      || data->minutes > 59 || data->seconds > 59)
+  if (!ShimRtc_isDateValid(data))
   {
     /* Invalid date */
     return 1;
   }
-  /**Initialize RTC and set the Time and Date
-   */
-  S4_RTC_Status = HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG);
 
-  if (S4_RTC_Status == RTC_STATUS_ZERO)
-  {
-    S4_RTC_Init();
-  }
+  /* TODO Can be removed as RTC is always initialized on boot. Keeping here for the moment so we can see how to read status from RTC module */
+  ///**Initialize RTC and set the Time and Date
+  //*/
+  //SHIM_RTC_Status = HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG);
+  //if (SHIM_RTC_Status == RTC_STATUS_ZERO)
+  //{
+  // MX_RTC_Init();
+  //}
 
   sTime.Hours = data->hours;
   sTime.Minutes = data->minutes;
@@ -415,14 +303,14 @@ uint8_t S4_RTC_SetDateTime(S4_RTC_t *data)
   //HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BCD);
 
   /* Write backup registers */
-  S4_RTC_Status = RTC_STATUS_TIME_OK;
+  SHIM_RTC_Status = RTC_STATUS_TIME_OK;
   HAL_RTCEx_BKUPWrite(&hrtc, RTC_STATUS_REG, RTC_STATUS_TIME_OK);
 
   /* Return OK */
   return 0;
 }
 
-void S4_RTC_GetDateTime(S4_RTC_t *data)
+void RTC_getDateTime(SHIM_RTC_t *data)
 {
   uint32_t format = RTC_FORMAT_BIN;
   uint32_t unix;
@@ -448,217 +336,21 @@ void S4_RTC_GetDateTime(S4_RTC_t *data)
   data->weekday = sDate.WeekDay;
 
   /* Calculate unix offset */
-  unix = S4_RTC_RTC2Unix(data);
+  unix = ShimRtc_rtc2Unix(data);
   data->unix = unix;
 
   data->ticks = ((uint64_t) data->unix * 32768) + 32768 - data->subseconds;
 }
 
-uint32_t S4_RTC_RTC2Unix(S4_RTC_t *data)
+void RTC_setTimeFromTicks(uint64_t ticks)
 {
-  uint32_t days = 0, seconds = 0;
-  uint16_t i;
-  uint16_t year = (uint16_t) (data->year + 2000);
-  /* Year is below offset year */
-  if (year < RTC_OFFSET_YEAR)
-  {
-    return 0;
-  }
-  /* Days in back years */
-  for (i = RTC_OFFSET_YEAR; i < year; i++)
-  {
-    days += RTC_DAYS_IN_YEAR(i);
-  }
-  /* Days in current year */
-  for (i = 1; i < data->month; i++)
-  {
-    days += S4_RTC_Months[RTC_LEAP_YEAR(year)][i - 1];
-  }
-  /* Day starts with 1 */
-  days += data->date - 1;
-  seconds = days * RTC_SECONDS_PER_DAY;
-  seconds += data->hours * RTC_SECONDS_PER_HOUR;
-  seconds += data->minutes * RTC_SECONDS_PER_MINUTE;
-  seconds += data->seconds;
-
-  /* seconds = days * 86400; */
-  return seconds;
-}
-
-void S4_RTC_Unix2RTC(S4_RTC_t *data, uint32_t unix)
-{
-  uint16_t year;
-
-  /* Store unix time to unix in struct */
-  data->unix = unix;
-  /* Get seconds from unix */
-  data->seconds = unix % 60;
-  /* Go to minutes */
-  unix /= 60;
-  /* Get minutes */
-  data->minutes = unix % 60;
-  /* Go to hours */
-  unix /= 60;
-  /* Get hours */
-  data->hours = unix % 24;
-  /* Go to days */
-  unix /= 24;
-
-  /* Get week day */
-  /* Monday is day one */
-  data->weekday = (unix + 3) % 7 + 1;
-
-  /* Get year */
-  year = 1970;
-  while (1)
-  {
-    if (RTC_LEAP_YEAR(year))
-    {
-      if (unix >= 366)
-      {
-        unix -= 366;
-      }
-      else
-      {
-        break;
-      }
-    }
-    else if (unix >= 365)
-    {
-      unix -= 365;
-    }
-    else
-    {
-      break;
-    }
-    year++;
-  }
-  /* Get year in xx format */
-  data->year = (uint8_t) (year - 2000);
-  /* Get month */
-  for (data->month = 0; data->month < 12; data->month++)
-  {
-    if (RTC_LEAP_YEAR(year))
-    {
-      if (unix >= (uint32_t) S4_RTC_Months[1][data->month])
-      {
-        unix -= S4_RTC_Months[1][data->month];
-      }
-      else
-      {
-        break;
-      }
-    }
-    else if (unix >= (uint32_t) S4_RTC_Months[0][data->month])
-    {
-      unix -= S4_RTC_Months[0][data->month];
-    }
-    else
-    {
-      break;
-    }
-  }
-  /* Get month */
-  /* Month starts with 1 */
-  data->month++;
-  /* Get date */
-  /* Date starts with 1 */
-  data->date = unix + 1;
-}
-
-void S4_RTC_Ticks2RTC(S4_RTC_t *data, uint64_t ticks)
-{
-  uint16_t year;
-  uint32_t unix;
-
-  data->ticks = ticks;
-  /* Store unix time to unix in struct */
-  unix = ticks / 32768;
-  data->unix = unix;
-  /* Get seconds from unix */
-  data->seconds = unix % 60;
-  /* Go to minutes */
-  unix /= 60;
-  /* Get minutes */
-  data->minutes = unix % 60;
-  /* Go to hours */
-  unix /= 60;
-  /* Get hours */
-  data->hours = unix % 24;
-  /* Go to days */
-  unix /= 24;
-
-  /* Get week day */
-  /* Monday is day one */
-  data->weekday = (unix + 3) % 7 + 1;
-
-  /* Get year */
-  year = 1970;
-  while (1)
-  {
-    if (RTC_LEAP_YEAR(year))
-    {
-      if (unix >= 366)
-      {
-        unix -= 366;
-      }
-      else
-      {
-        break;
-      }
-    }
-    else if (unix >= 365)
-    {
-      unix -= 365;
-    }
-    else
-    {
-      break;
-    }
-    year++;
-  }
-  /* Get year in xx format */
-  data->year = (uint8_t) (year - 2000);
-  /* Get month */
-  for (data->month = 0; data->month < 12; data->month++)
-  {
-    if (RTC_LEAP_YEAR(year))
-    {
-      if (unix >= (uint32_t) S4_RTC_Months[1][data->month])
-      {
-        unix -= S4_RTC_Months[1][data->month];
-      }
-      else
-      {
-        break;
-      }
-    }
-    else if (unix >= (uint32_t) S4_RTC_Months[0][data->month])
-    {
-      unix -= S4_RTC_Months[0][data->month];
-    }
-    else
-    {
-      break;
-    }
-  }
-  /* Get month */
-  /* Month starts with 1 */
-  data->month++;
-  /* Get date */
-  /* Date starts with 1 */
-  data->date = unix + 1;
-}
-
-void RTC_init(uint64_t ticks)
-{
-  S4_RTC_t data;
-  S4_RTC_Ticks2RTC(&data, ticks);
-  S4_RTC_SetDateTime(&data);
+  SHIM_RTC_t data;
+  ShimRtc_ticks2Rtc(&data, ticks);
+  RTC_setDateTime(&data);
 #if RTC_FAST
   rtc64_reg = data.ticks & 0xffffffffffff8000;
 #endif
-  S4_RWC_setConfigTime(ticks);
+  ShimRtc_setConfigTime(ticks);
 }
 
 uint64_t RTC_get64(void)
@@ -673,8 +365,8 @@ uint64_t RTC_get64(void)
   } while (t1 != t2);
   return t1;
 #else
-  S4_RTC_t data;
-  S4_RTC_GetDateTime(&data);
+  SHIM_RTC_t data;
+  RTC_getDateTime(&data);
   return data.ticks;
 #endif
 }
@@ -691,15 +383,52 @@ uint32_t RTC_get32(void)
   } while (t1 != t2);
   return t1;
 #else
-  S4_RTC_t data;
-  S4_RTC_GetDateTime(&data);
+  SHIM_RTC_t data;
+  RTC_getDateTime(&data);
   return data.ticks;
 #endif
 }
 
-uint8_t isRwcTimeSet(void)
+void RTC_wakeUpOff(void)
 {
-  return ((rwcConfigTime64 > 0) ? 1 : 0);
+  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+  //if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 15, RTC_WAKEUPCLOCK_RTCCLK_DIV2) != HAL_OK)
+  //{
+  //   Error_Handler();
+  //}
+}
+
+void RTC_wakeUpSet(uint16_t period)
+{
+  uint16_t prescalar;
+
+  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+  if (period > 32768)
+  {
+    Error_Handler();
+  }
+
+  prescalar = period / 2 - 1;
+
+  //changing either prescalar or RTC_WAKEUPCLOCK_RTCCLK_DIV wouldn't change the power consumption.
+  //only the product matters: prescalar*RTC_WAKEUPCLOCK_RTCCLK_DIV
+
+  /* HAL_StatusTypeDef HAL_RTCEx_SetWakeUpTimer_IT(RTC_HandleTypeDef *hrtc, uint32_t WakeUpCounter, uint32_t WakeUpClock,
+   uint32_t WakeUpAutoClr)
+   uint32_t WakeUpAutoClr missing argument in the old Shimmer4*/
+#if defined(SHIMMER3R)
+  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, prescalar, RTC_WAKEUPCLOCK_RTCCLK_DIV2, 0) != HAL_OK)
+#elif defined(SHIMMER4_SDK)
+  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, prescalar, RTC_WAKEUPCLOCK_RTCCLK_DIV2) != HAL_OK)
+#endif
+  {
+    Error_Handler();
+  }
+}
+
+void RTC_wakeUpSetSlow(void)
+{
+  RTC_wakeUpSet(3276);
 }
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
@@ -733,54 +462,139 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  /* Disable alarm and interrupt - this is stopping the alarm from triggering
-   * multiple times while debugging */
   __HAL_RTC_ALARMA_DISABLE(hrtc);
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
 
-  ShimTask_set(TASK_BATT_READ);
-#if defined(SHIMMER4_SDK)
-#if RTC_FAST
-  //rtc64_reg += 0x8000; // this is not working well as the interrupt priority is not the highest
-#endif
-#endif
-}
-
-void setupNextRtcMinuteAlarm(void)
-{
-  RTC_AlarmTypeDef sAlarm;
+  //Get current time
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
-  HAL_RTC_GetAlarm(&hrtc, &sAlarm, RTC_ALARM_A, RTC_FORMAT_BIN); //to update the previous alarm.
-  /* Get time added since it was randomly missing interrupt when using HAL_RTC_GetAlarm().*/
-  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-  /* From GetTime() notes : You must call HAL_RTC_GetDate() after HAL_RTC_GetTime() to unlock the values....*/
-  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+  HAL_RTC_GetTime(hrtc, &sTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(hrtc, &sDate, RTC_FORMAT_BIN);
 
-  sAlarm.AlarmTime.Hours = 0x0;
-  sAlarm.AlarmTime.Minutes = 0x0;
-  sAlarm.AlarmTime.Seconds = 0x0;
-  sAlarm.AlarmTime.SubSeconds = 0x0;
+  struct tm current_tm = { .tm_sec = sTime.Seconds,
+    .tm_min = sTime.Minutes,
+    .tm_hour = sTime.Hours,
+    .tm_mday = sDate.Date,
+    .tm_mon = sDate.Month - 1,
+    .tm_year = sDate.Year + 100 };
+  time_t now = mktime(&current_tm);
+
+  //Check all alarms
+  for (int i = 0; i < RTC_NUM_ALARMS; i++)
+  {
+    if (nextAlarms[i] != 0 && now >= nextAlarms[i])
+    {
+      //Alarm is due, handle action
+      switch (i)
+      {
+      case RTC_ALARM_CONTEXT_BATT_READ:
+        ShimTask_set(TASK_BATT_READ);
+        break;
+        //case RTC_ALARM_CONTEXT_BT_SYNC:
+        //  RTC_stopSdSyncAlarm();
+        //  ShimSdSync_handleSyncTimerTrigger();
+        //  RTC_setupAndStartSdSyncAlarm();
+        //  break;
+      case RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING:
+        ShimTask_setStopSensing();
+        break;
+      case RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER:
+        JumpToBootloader();
+        break;
+      default:
+        //No action or error log
+        break;
+      }
+      //Clear the alarm
+      nextAlarms[i] = 0;
+    }
+  }
+
+  RTC_setNextRtcAlarmA(hrtc); //Re-setup the next minute alarm
+}
+
+void RTC_setAlarmBattRead(void)
+{
   /* If docked alarm fires every 30s and if un-docked fires every 10 minutes*/
   battAlarmInterval_t battAlarm = ShimBatt_getBatteryInterval();
-  if (battAlarm == BATT_INTERVAL_DOCKED) //docked
-  {
-    sAlarm.AlarmTime.Seconds = sTime.Seconds > 28 ? 0 : sTime.Seconds + 30U;
-    sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS | RTC_ALARMMASK_MINUTES;
-  }
-  else //un-docked
-  {
-    sAlarm.AlarmTime.Minutes = sTime.Minutes > 48 ? 0 : sTime.Minutes + 10U;
-    sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS | RTC_ALARMMASK_SECONDS;
-  }
-  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  sAlarm.AlarmDateWeekDay = 0x1;
-  sAlarm.Alarm = RTC_ALARM_A;
+  uint32_t nextBattReadInS = (battAlarm == BATT_INTERVAL_DOCKED) ? 30 : (10 * 60);
+  RTC_setAlarmAFromNow(nextBattReadInS, RTC_ALARM_CONTEXT_BATT_READ);
+}
 
-  while (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
+void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow)
+{
+  //Set the alarm to stop logging after a specified number of minutes
+  RTC_setAlarmAFromNow(minutesFromNow * 60, RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING);
+}
+
+void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow)
+{
+  //Set the alarm to reboot to bootloader after a specified time
+  RTC_setAlarmAFromNow(secondsFromNow, RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER);
+}
+
+void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
+{
+  //Find the next soonest alarm
+  time_t nextAlarmTime = 0;
+  int nextAlarmIdx = -1;
+  for (int i = 0; i < RTC_NUM_ALARMS; i++)
   {
+    if (nextAlarms[i] != 0)
+    {
+      if (nextAlarmTime == 0 || nextAlarms[i] < nextAlarmTime)
+      {
+        nextAlarmTime = nextAlarms[i];
+        nextAlarmIdx = i;
+      }
+    }
   }
+
+  //Set up the next alarm if any
+  if (nextAlarmIdx != -1)
+  {
+    //struct tm *alarm_tm = localtime(&nextAlarmTime);
+
+    struct tm alarm_tm;
+    time_t t = nextAlarmTime;
+    gmtime_r(&t, &alarm_tm); //If gmtime_r is available
+
+    RTC_AlarmTypeDef sAlarm = { 0 };
+    sAlarm.AlarmTime.Hours = alarm_tm.tm_hour;
+    sAlarm.AlarmTime.Minutes = alarm_tm.tm_min;
+    sAlarm.AlarmTime.Seconds = alarm_tm.tm_sec;
+    sAlarm.AlarmDateWeekDay = alarm_tm.tm_mday;
+    sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+    sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+    sAlarm.Alarm = RTC_ALARM_A;
+
+    if (HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
+    {
+      Error_Handler();
+    }
+  }
+}
+
+void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
+{
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef sDate;
+  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN); //Must be called after GetTime()
+
+  struct tm current_tm = {
+    .tm_sec = sTime.Seconds,
+    .tm_min = sTime.Minutes,
+    .tm_hour = sTime.Hours,
+    .tm_mday = sDate.Date,
+    .tm_mon = sDate.Month - 1,  //struct tm uses 0-11 for months
+    .tm_year = sDate.Year + 100 //struct tm uses years since 1900
+  };
+
+  //Add offset
+  time_t future_time = mktime(&current_tm) + secondsFromNow;
+  nextAlarms[context] = future_time; //Store the future time for this alarm
+  RTC_setNextRtcAlarmA(&hrtc);       //Set up the next alarm
 }
 
 void RTC_setupAndStartSdSyncAlarm(void)

@@ -61,6 +61,7 @@
 #define TIM_MEASURE_END    \
   time_end = SysTick->VAL; \
   time_diff = time_start - time_end
+#define BOOTLOADER_ENTRY_THRESHOLD 29
 
 /* USER CODE END PM */
 
@@ -95,6 +96,7 @@ void BtStart(void);
 void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 uint8_t getDefaultBaudForBtVersion(void);
+void JumpToBootloaderIfRequired(void);
 HAL_StatusTypeDef checknBoot0OptionByte(void);
 
 /* USER CODE END PFP */
@@ -122,6 +124,8 @@ void Init()
   Board_ledTimersStart(&htim3, &htim2, &htim6);
 #endif
 
+  JumpToBootloaderIfRequired();
+
   setBootStage(BOOT_STAGE_START);
 
   ShimBrd_setHwId(DEVICE_VER);
@@ -141,8 +145,6 @@ void Init()
   gpioInitPerBoard();
 
   setUartPeripheralPointers();
-
-  S4_RTC_Init();
 
   Board_delayMicrosInit();
   DockUart_interruptCheck();
@@ -183,7 +185,7 @@ void Init()
   FullTest();
 #endif
   //S4Sens_stopPeripherals();
-  S4_RTC_WakeUpOff();
+  RTC_wakeUpOff();
 #if defined(SHIMMER4_SDK)
   S4_RTC_WakeUpSetSlow();
 #endif
@@ -261,7 +263,6 @@ int main(void)
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
 
-  //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_MAIN);
   //setup_factory_test(PRINT_TO_DEBUGGER, FACTORY_TEST_ICS);
   //run_factory_test();
 
@@ -524,11 +525,6 @@ void SetupDock(void)
 
   if (LogAndStream_isDockedOrUsbIn())
   {
-    ShimBatt_setBatteryInterval(BATT_INTERVAL_DOCKED);
-    ShimBatt_resetBatteryCriticalCount();
-    delay_ms(1000);
-    manageReadBatt(1);
-
     shimmerStatus.sdlogReady = 0;
     ShimSens_stopSensing(0);
 
@@ -547,6 +543,12 @@ void SetupDock(void)
     {
       DockUart_deint();
     }
+
+    /* Reading battery after SD hand-over to allow some time for battery voltage and charger status to settle. */
+    ShimBatt_setBatteryInterval(BATT_INTERVAL_DOCKED);
+    ShimBatt_resetBatteryCriticalCount();
+    manageReadBatt(1);
+
     ShimBt_instreamStatusRespSend();
   }
   else
@@ -578,7 +580,7 @@ void SetupDock(void)
       LogAndStream_setSdInfoSyncDelayed(1);
     }
   }
-  setupNextRtcMinuteAlarm(); //configure Alarm on dock/undock
+  RTC_setAlarmBattRead(); //configure Alarm on dock/undock
   shimmerStatus.configuring = 0;
 }
 
@@ -692,6 +694,43 @@ uint8_t getDefaultBaudForBtVersion(void)
 
 void stopSensingWrapup(void)
 {
+}
+
+void JumpToBootloaderIfRequired(void)
+{
+  uint8_t bslCheckCounter = 0;
+
+  if (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin))
+  {
+    stopLedBlinkTimer();
+    for (bslCheckCounter = 0; bslCheckCounter <= BOOTLOADER_ENTRY_THRESHOLD; bslCheckCounter++)
+    {
+      if (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin) == GPIO_PIN_RESET)
+      {
+        break;
+      }
+
+      if (bslCheckCounter == BOOTLOADER_ENTRY_THRESHOLD)
+      {
+        //SHIMMER_PRINTF("Entering bootloader mode\r\n");
+        JumpToBootloader();
+      }
+
+      if (bslCheckCounter % 2 == 0)
+      {
+        Board_ledUprSetColourRgb(0, 0, 0);
+        Board_ledLwrSetColourRgb(128, 0, 128);
+      }
+      else
+      {
+        Board_ledUprSetColourRgb(128, 0, 128);
+        Board_ledLwrSetColourRgb(0, 0, 0);
+      }
+
+      HAL_Delay(100U); //Wait 100ms before checking again
+    }
+    startLedBlinkTimer();
+  }
 }
 
 HAL_StatusTypeDef checknBoot0OptionByte(void)
