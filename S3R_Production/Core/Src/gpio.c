@@ -284,13 +284,11 @@ void GPIO_userButtonCheck()
     {
       if (shimmerStatus.sdLogging == 0)
       {
-        shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
-        ShimTask_set(TASK_STARTSENSING);
+        ShimTask_setStartLoggingIfReady();
       }
       else
       {
-        shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_STOP;
-        ShimTask_set(TASK_STOPSENSING);
+        ShimTask_setStopLogging();
       }
     }
     GPIO_tsLastRelease = GPIO_tsRelease;
