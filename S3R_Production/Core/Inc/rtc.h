@@ -31,8 +31,8 @@ extern "C"
 
   /* USER CODE BEGIN Includes */
 
-#include <shimmer_include.h>
 #include <RTC/shimmer_rtc.h>
+#include <shimmer_include.h>
 
   /* USER CODE END Includes */
 
@@ -47,41 +47,41 @@ extern "C"
 #define RTC_STATUS_TIME_OK 0x4321       /* RTC time OK */
 #define RTC_STATUS_ZERO    0x0000
 
-typedef enum
-{
-  RTC_ALARM_CONTEXT_NONE = 0,
-  RTC_ALARM_CONTEXT_BATT_READ,
-  //RTC_ALARM_CONTEXT_BT_SYNC,
-  RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING,
-  RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER,
-  RTC_NUM_ALARMS
-} RTC_AlarmB_Context_t;
+  typedef enum
+  {
+    RTC_ALARM_CONTEXT_NONE = 0,
+    RTC_ALARM_CONTEXT_BATT_READ,
+    //RTC_ALARM_CONTEXT_BT_SYNC,
+    RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING,
+    RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER,
+    RTC_NUM_ALARMS
+  } RTC_AlarmB_Context_t;
 
-/* USER CODE END Private defines */
+  /* USER CODE END Private defines */
 
-void MX_RTC_Init(void);
+  void MX_RTC_Init(void);
 
-/* USER CODE BEGIN Prototypes */
+  /* USER CODE BEGIN Prototypes */
 
-uint8_t RTC_setDateTime(SHIM_RTC_t *data);
-void RTC_getDateTime(SHIM_RTC_t *data);
+  uint8_t RTC_setDateTime(SHIM_RTC_t *data);
+  void RTC_getDateTime(SHIM_RTC_t *data);
 
-void RTC_setTimeFromTicks(uint64_t ticks);
-uint64_t RTC_get64(void);
-uint32_t RTC_get32(void);
+  void RTC_setTimeFromTicks(uint64_t ticks);
+  uint64_t RTC_get64(void);
+  uint32_t RTC_get32(void);
 
-void RTC_wakeUpOff(void);
-void RTC_wakeUpSet(uint16_t period);
-void RTC_wakeUpSetSlow(void);
+  void RTC_wakeUpOff(void);
+  void RTC_wakeUpSet(uint16_t period);
+  void RTC_wakeUpSetSlow(void);
 
-void RTC_setAlarmBattRead(void);
-void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow);
-void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow);
+  void RTC_setAlarmBattRead(void);
+  void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow);
+  void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow);
 
-void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc);
-void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context);
+  void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc);
+  void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context);
 
-/* USER CODE END Prototypes */
+  /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }

@@ -265,13 +265,13 @@ uint8_t RTC_setDateTime(SHIM_RTC_t *data)
   }
 
   /* TODO Can be removed as RTC is always initialized on boot. Keeping here for the moment so we can see how to read status from RTC module */
-//  /**Initialize RTC and set the Time and Date
-//   */
-//  SHIM_RTC_Status = HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG);
-//  if (SHIM_RTC_Status == RTC_STATUS_ZERO)
-//  {
-//    MX_RTC_Init();
-//  }
+  ///**Initialize RTC and set the Time and Date
+  // */
+  //SHIM_RTC_Status = HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG);
+  //if (SHIM_RTC_Status == RTC_STATUS_ZERO)
+  //{
+  //  MX_RTC_Init();
+  //}
 
   sTime.Hours = data->hours;
   sTime.Minutes = data->minutes;
