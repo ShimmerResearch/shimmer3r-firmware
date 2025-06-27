@@ -676,7 +676,7 @@ void JumpToBootloaderIfRequired(void)
         break;
       }
 
-      if (bslCheckCounter == 29)
+      if (bslCheckCounter == BOOTLOADER_ENTRY_THRESHOLD)
       {
         //SHIMMER_PRINTF("Entering bootloader mode\r\n");
         JumpToBootloader();
