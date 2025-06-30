@@ -43,9 +43,6 @@
 #include "hal_Infomem.h"
 #include "shimmer_definitions.h"
 
-gConfigBytes *infoMem_p_storedConfig;
-uint8_t *infoMem_p_shimmerCalib_ram;
-
 #if HAL_TEST_INFOMEM
 uint8_t test_infomem_wr[INFOMEM_CONFIG_SIZE];
 uint8_t test_infomem_rd[INFOMEM_CONFIG_SIZE];
@@ -58,20 +55,7 @@ FLASH_EraseInitTypeDef pEraseInit = { .TypeErase = FLASH_TYPEERASE_PAGES,
   .NbPages = INFOMEM_NUM_OF_PAGES };
 #endif
 
-void InfoMem_init(void)
-{
-  infoMem_p_storedConfig = ShimConfig_getStoredConfig();
-  infoMem_p_shimmerCalib_ram = ShimCalib_getRam();
-}
-
-//void InfoMem_initRam(uint8_t* buf){
-//   infoMem_p_storedConfig = buf;
-//}
-//void InfoMem_initCalib(uint8_t* buf){
-//   infoMem_p_shimmerCalib_ram = buf;
-//}
-
-void InfoMem_update()
+void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
 {
   uint16_t j;
 #if defined(SHIMMER3R)
@@ -81,54 +65,66 @@ void InfoMem_update()
     Error_Handler();
   }
 #endif
+
+  // Unlock the flash memory for writing
   HAL_StatusTypeDef status = HAL_FLASH_Unlock();
   if (status != HAL_OK)
   {
     Error_Handler();
   }
+
+  /*TODO STM32 flash has to be erased per 8KB page size even if we only want to update a small number of bytes.
+   * Revisit if we move Infomem to being stored on EEPROM where we can erase/write 16 byte pages. */
+  //Erase the flash memory
 #if defined(SHIMMER3R)
-  uint32_t PageError;
-  //TODO check PageError
+  uint32_t PageError = 0xFFFFFFFFU;
   status |= HAL_FLASHEx_Erase(&pEraseInit, &PageError);
 #elif defined(SHIMMER4_SDK)
   status |= FLASH_Erase_Sector(INFOMEM_SECTOR, FLASH_VOLTAGE_RANGE_3);
   status |= FLASH_WaitForLastOperation((uint32_t) 500);
 #endif
+  if (status != HAL_OK || PageError != 0xFFFFFFFFU)
+  {
+    Error_Handler();
+  }
 
-  if (infoMem_p_storedConfig != 0)
+  //Program the configuration bytes to the flash memory
+  if (configBytePtr != 0)
   {
 #if defined(SHIMMER3R)
     for (j = 0; j < INFOMEM_CONFIG_SIZE; j += QUAD_WORD_BYTE_SIZE)
     {
       status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CONFIG_OFFSET + j,
-          (uint32_t) (infoMem_p_storedConfig->rawBytes + j));
+          (uint32_t) (configBytePtr + j));
     }
 #elif defined(SHIMMER4_SDK)
     for (j = 0; j < INFOMEM_CONFIG_SIZE; j += 4)
     {
       //FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
       status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_CONFIG_OFFSET + j,
-          *(uint32_t *) (infoMem_p_storedConfig->rawBytes + j));
+          *(uint32_t *) (configBytePtr->rawBytes + j));
     }
 //for(j = 0; j < INFOMEM_RAM_SIZE; j++){
 //   status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_RAM_OFFSET+j, infoMem_p_storedConfig[j]);
 //}
 #endif
   }
-  if (infoMem_p_shimmerCalib_ram != 0)
+
+  //Program the calibration dunp bytes to the flash memory
+  if (calibDumpPtr != 0)
   {
 #if defined(SHIMMER3R)
     for (j = 0; j < INFOMEM_CALIB_SIZE; j += QUAD_WORD_BYTE_SIZE)
     {
       status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD,
-          INFOMEM_CALIB_OFFSET + j, (uint32_t) (infoMem_p_shimmerCalib_ram + j));
+          INFOMEM_CALIB_OFFSET + j, (uint32_t) (calibDumpPtr + j));
     }
 #elif defined(SHIMMER4_SDK)
     for (j = 0; j < INFOMEM_CALIB_SIZE; j += 4)
     {
       //FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
       status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_CALIB_OFFSET + j,
-          *(uint32_t *) (infoMem_p_shimmerCalib_ram + j));
+          *(uint32_t *) (calibDumpPtr + j));
     }
 #endif
   }
@@ -150,6 +146,7 @@ void InfoMem_update()
 #endif
 #endif
 
+  //Lock the flash memory after writing
   status |= HAL_FLASH_Lock();
 #if defined(SHIMMER3R)
   /* Enable instruction cache after the internal cacheable memory update */
@@ -268,6 +265,6 @@ uint8_t InfoMem_write(uint16_t addr, uint8_t *buf, uint16_t size)
 {
   /*TODO STM32 flash has to be erased per 8KB page size even if we only want to update a small number of bytes.
    * Revisit if we move Infomem to being stored on EEPROM where we can erase/write 16 byte pages. */
-  InfoMem_update();
+  InfoMem_update(ShimConfig_getStoredConfig()->rawBytes, ShimCalib_getBytesPtr());
   return 0;
 }

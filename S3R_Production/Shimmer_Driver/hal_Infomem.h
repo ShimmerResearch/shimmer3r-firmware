@@ -138,13 +138,7 @@ yes      IROM1    0x8008000   0xf8000
 
 //returns 0 if successful, 1 if failure
 
-void InfoMem_init(void);
-
-//void InfoMem_initRam(uint8_t* buf);
-
-//void InfoMem_initCalib(uint8_t* buf);
-
-void InfoMem_update(void);
+void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr);
 
 void InfoMem_updateFrom(uint8_t *buf);
 

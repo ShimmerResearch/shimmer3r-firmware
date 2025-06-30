@@ -49,7 +49,7 @@ void MX_RTC_Init(void)
   SHIM_RTC_t data;
 #endif /* RTC_FAST */
 
-  ShimRtc_setConfigTime(0);
+  ShimRtc_setRwcConfigTime(0);
 
   /* USER CODE END RTC_Init 0 */
 
@@ -342,6 +342,13 @@ void RTC_getDateTime(SHIM_RTC_t *data)
   data->ticks = ((uint64_t) data->unix * 32768) + 32768 - data->subseconds;
 }
 
+void RTC_setTimeFromTicksPtr(uint8_t *ticksPtr)
+{
+  uint64_t temp64;
+  memcpy((uint8_t *) (&temp64), ticksPtr, 8); //64bits = 8bytes
+  RTC_setTimeFromTicks(temp64);
+}
+
 void RTC_setTimeFromTicks(uint64_t ticks)
 {
   SHIM_RTC_t data;
@@ -350,7 +357,7 @@ void RTC_setTimeFromTicks(uint64_t ticks)
 #if RTC_FAST
   rtc64_reg = data.ticks & 0xffffffffffff8000;
 #endif
-  ShimRtc_setConfigTime(ticks);
+  ShimRtc_setRwcConfigTime(ticks);
 }
 
 uint64_t RTC_get64(void)
@@ -663,6 +670,11 @@ void RTC_stopSdSyncAlarm(void)
 {
   __HAL_RTC_ALARMB_DISABLE(hrtc);                //disable Alarm B
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRB); //disable Alarm trigger
+}
+
+uint8_t RTC_isRwcTimeSet(void)
+{
+  return RTC_get64() > 1735689600000; // 1735689600000 is the timestamp for 2025-01-01T00:00:00Z
 }
 
 /* USER CODE END 1 */
