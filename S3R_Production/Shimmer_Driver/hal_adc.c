@@ -1022,7 +1022,7 @@ void S4_NORM_ADC_stopSensing()
   }
   if (configBytes->chEnGsr)
   {
-    resetGsrPwrAndRange();
+    Board_resetGsrPwrAndRange();
   }
 
 #if defined(SHIMMER4_SDK)

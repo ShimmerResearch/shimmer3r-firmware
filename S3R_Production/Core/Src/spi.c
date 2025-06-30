@@ -1053,7 +1053,7 @@ void SPI_stopSensing()
         configBytes->chEnExg2_24Bit || configBytes->chEnExg2_16Bit);
   }
 
-  resetGsrPwrAndRange();
+  Board_resetGsrPwrAndRange();
   if (ads7028_areAnyChannelsEnabled())
   {
     stopAds7028Conversions();

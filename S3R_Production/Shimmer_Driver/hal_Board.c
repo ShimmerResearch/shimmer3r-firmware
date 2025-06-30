@@ -570,7 +570,12 @@ void Board_setExpansionBrdPower(uint8_t state)
   shimmerStatus.pinPvExt = state;
 }
 
-void resetGsrPwrAndRange(void)
+uint8_t Board_isBtnPressed(void)
+{
+  return HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin) == GPIO_PIN_SET;
+}
+
+void Board_resetGsrPwrAndRange(void)
 {
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
