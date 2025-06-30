@@ -60,7 +60,7 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
   uint16_t j;
 
   uint32_t primask = __get_PRIMASK();
-  // Disable interrupts
+  //Disable interrupts
   __disable_irq();
 
 #if defined(SHIMMER3R)
@@ -158,9 +158,10 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
   HAL_ICACHE_Enable();
 #endif
 
-  // Restore interrupt state
-  if (!primask) {
-      __enable_irq();
+  //Restore interrupt state
+  if (!primask)
+  {
+    __enable_irq();
   }
 
   if (status != HAL_OK)
@@ -174,7 +175,7 @@ void InfoMem_updateFrom(uint8_t *buf)
   uint16_t j;
 
   uint32_t primask = __get_PRIMASK();
-  // Disable interrupts
+  //Disable interrupts
   __disable_irq();
 
   HAL_FLASH_Unlock();
@@ -203,9 +204,10 @@ void InfoMem_updateFrom(uint8_t *buf)
 #endif
   HAL_FLASH_Lock();
 
-  // Restore interrupt state
-  if (!primask) {
-      __enable_irq();
+  //Restore interrupt state
+  if (!primask)
+  {
+    __enable_irq();
   }
 }
 
