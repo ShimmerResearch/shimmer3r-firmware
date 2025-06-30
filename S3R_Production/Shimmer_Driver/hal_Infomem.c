@@ -66,7 +66,7 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
   }
 #endif
 
-  // Unlock the flash memory for writing
+  //Unlock the flash memory for writing
   HAL_StatusTypeDef status = HAL_FLASH_Unlock();
   if (status != HAL_OK)
   {
@@ -94,15 +94,15 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
 #if defined(SHIMMER3R)
     for (j = 0; j < INFOMEM_CONFIG_SIZE; j += QUAD_WORD_BYTE_SIZE)
     {
-      status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CONFIG_OFFSET + j,
-          (uint32_t) (configBytePtr + j));
+      status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD,
+          INFOMEM_CONFIG_OFFSET + j, (uint32_t) (configBytePtr + j));
     }
 #elif defined(SHIMMER4_SDK)
     for (j = 0; j < INFOMEM_CONFIG_SIZE; j += 4)
     {
       //FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
-      status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_CONFIG_OFFSET + j,
-          *(uint32_t *) (configBytePtr->rawBytes + j));
+      status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,
+          INFOMEM_CONFIG_OFFSET + j, *(uint32_t *) (configBytePtr->rawBytes + j));
     }
 //for(j = 0; j < INFOMEM_RAM_SIZE; j++){
 //   status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_RAM_OFFSET+j, infoMem_p_storedConfig[j]);
@@ -123,8 +123,8 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
     for (j = 0; j < INFOMEM_CALIB_SIZE; j += 4)
     {
       //FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
-      status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, INFOMEM_CALIB_OFFSET + j,
-          *(uint32_t *) (calibDumpPtr + j));
+      status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,
+          INFOMEM_CALIB_OFFSET + j, *(uint32_t *) (calibDumpPtr + j));
     }
 #endif
   }
