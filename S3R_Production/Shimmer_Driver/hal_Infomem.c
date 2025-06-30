@@ -102,7 +102,7 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
     {
       //FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
       status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,
-          INFOMEM_CONFIG_OFFSET + j, *(uint32_t *) (configBytePtr->rawBytes + j));
+          INFOMEM_CONFIG_OFFSET + j, *(uint32_t *) (configBytePtr + j));
     }
 //for(j = 0; j < INFOMEM_RAM_SIZE; j++){
 //   status |= HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_RAM_OFFSET+j, infoMem_p_storedConfig[j]);
