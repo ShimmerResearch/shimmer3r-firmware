@@ -674,7 +674,7 @@ void RTC_stopSdSyncAlarm(void)
 
 uint8_t RTC_isRwcTimeSet(void)
 {
-  return RTC_get64() > 1735689600000; // 1735689600000 is the timestamp for 2025-01-01T00:00:00Z
+  return RTC_get64() > 1735689600000; //1735689600000 is the timestamp for 2025-01-01T00:00:00Z
 }
 
 /* USER CODE END 1 */
