@@ -58,6 +58,11 @@ FLASH_EraseInitTypeDef pEraseInit = { .TypeErase = FLASH_TYPEERASE_PAGES,
 void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
 {
   uint16_t j;
+
+  uint32_t primask = __get_PRIMASK();
+  // Disable interrupts
+  __disable_irq();
+
 #if defined(SHIMMER3R)
   /* Disable instruction cache prior to internal cacheable memory update */
   if (HAL_ICACHE_Disable() != HAL_OK)
@@ -153,6 +158,11 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
   HAL_ICACHE_Enable();
 #endif
 
+  // Restore interrupt state
+  if (!primask) {
+      __enable_irq();
+  }
+
   if (status != HAL_OK)
   {
     Error_Handler();
@@ -162,7 +172,13 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
 void InfoMem_updateFrom(uint8_t *buf)
 {
   uint16_t j;
+
+  uint32_t primask = __get_PRIMASK();
+  // Disable interrupts
+  __disable_irq();
+
   HAL_FLASH_Unlock();
+
 #if defined(SHIMMER3R)
   uint32_t PageError;
   //TODO check PageEror
@@ -186,6 +202,11 @@ void InfoMem_updateFrom(uint8_t *buf)
   }
 #endif
   HAL_FLASH_Lock();
+
+  // Restore interrupt state
+  if (!primask) {
+      __enable_irq();
+  }
 }
 
 uint8_t InfoMem_read(uint16_t addr, uint8_t *buf, uint16_t size)
