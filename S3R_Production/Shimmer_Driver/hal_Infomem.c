@@ -115,7 +115,7 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
 #endif
   }
 
-  //Program the calibration dunp bytes to the flash memory
+  //Program the calibration dump bytes to the flash memory
   if (calibDumpPtr != 0)
   {
 #if defined(SHIMMER3R)
