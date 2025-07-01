@@ -15,6 +15,12 @@
  * If no LICENSE file comes with this software, it is provided AS-IS.
  *
  ******************************************************************************
+ * TIM2: PWM timer for Upper RGB LED @ 979.592Hz or 261 us period
+ * TIM3: PWM timer for Lower RGB LED @ 979.592Hz or 261 us period
+ * TIM4: Timer millisecond scheduler @ 1000Hz or 1ms period
+ * TIM6: Timer for LED blink and WDT @ 10Hz or 100ms period
+ * TIM7: Timer for delay_us() @ 1MHz or 1us period
+ ******************************************************************************
  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -23,17 +29,21 @@
 /* USER CODE BEGIN 0 */
 #include "iwdg.h"
 
+#include "shimmer_include.h"
 #include <Boards/shimmer_boards.h>
 #include <LEDs/shimmer_leds.h>
 #include <log_and_stream_common.h>
 
-//static void ledBlinkTimerCallback(void);
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim);
+static void ms_clock_interrupt_static(struct __TIM_HandleTypeDef *htim);
+
+void (*ms_clock_cb)(void);
 
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
 
@@ -165,6 +175,50 @@ void MX_TIM3_Init(void)
   HAL_TIM_MspPostInit(&htim3);
 }
 
+/* TIM4 init function */
+void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = { 0 };
+  TIM_MasterConfigTypeDef sMasterConfig = { 0 };
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 47999;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 99;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  HAL_TIM_RegisterCallback(&htim4, HAL_TIM_PERIOD_ELAPSED_CB_ID, ms_clock_interrupt_static);
+
+//  HAL_TIM_Base_Start_IT(&htim4);
+
+  /* USER CODE END TIM4_Init 2 */
+}
+
 /* TIM6 init function */
 void MX_TIM6_Init(void)
 {
@@ -262,6 +316,21 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
 
     /* USER CODE END TIM3_MspInit 1 */
   }
+  else if (tim_baseHandle->Instance == TIM4)
+  {
+    /* USER CODE BEGIN TIM4_MspInit 0 */
+
+    /* USER CODE END TIM4_MspInit 0 */
+    /* TIM4 clock enable */
+    __HAL_RCC_TIM4_CLK_ENABLE();
+
+    /* TIM4 interrupt Init */
+    HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM4_IRQn);
+    /* USER CODE BEGIN TIM4_MspInit 1 */
+
+    /* USER CODE END TIM4_MspInit 1 */
+  }
   else if (tim_baseHandle->Instance == TIM6)
   {
     /* USER CODE BEGIN TIM6_MspInit 0 */
@@ -284,6 +353,10 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
     /* USER CODE END TIM7_MspInit 0 */
     /* TIM7 clock enable */
     __HAL_RCC_TIM7_CLK_ENABLE();
+
+    /* TIM7 interrupt Init */
+    HAL_NVIC_SetPriority(TIM7_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM7_IRQn);
     /* USER CODE BEGIN TIM7_MspInit 1 */
 
     /* USER CODE END TIM7_MspInit 1 */
@@ -390,6 +463,20 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
 
     /* USER CODE END TIM3_MspDeInit 1 */
   }
+  else if (tim_baseHandle->Instance == TIM4)
+  {
+    /* USER CODE BEGIN TIM4_MspDeInit 0 */
+
+    /* USER CODE END TIM4_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM4_CLK_DISABLE();
+
+    /* TIM4 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(TIM4_IRQn);
+    /* USER CODE BEGIN TIM4_MspDeInit 1 */
+
+    /* USER CODE END TIM4_MspDeInit 1 */
+  }
   else if (tim_baseHandle->Instance == TIM6)
   {
     /* USER CODE BEGIN TIM6_MspDeInit 0 */
@@ -411,6 +498,9 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
     /* USER CODE END TIM7_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_TIM7_CLK_DISABLE();
+
+    /* TIM7 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(TIM7_IRQn);
     /* USER CODE BEGIN TIM7_MspDeInit 1 */
 
     /* USER CODE END TIM7_MspDeInit 1 */
@@ -431,6 +521,47 @@ void delay_us(uint16_t us)
   __HAL_TIM_SET_COUNTER(&htim7, 0); //set the counter value a 0
   while (__HAL_TIM_GET_COUNTER(&htim7) < us)
     ; //wait for the counter to reach the us input in the parameter
+}
+
+void Stop_TIM4(void)
+{
+  HAL_TIM_Base_Stop_IT(&htim4);
+}
+
+uint32_t GetTIM4Ticks(void)
+{
+  return __HAL_TIM_GET_COUNTER(&htim4);
+}
+
+void start_10ms_timer(void (*timer_cb)(void))
+{
+  ms_clock_cb = timer_cb;
+
+    __HAL_TIM_SET_COUNTER(&htim4, 0);
+    HAL_TIM_Base_Start_IT(&htim4);
+}
+
+//void MX_TIM4_10ms_Init(void)
+//{
+//    htim4.Instance = TIM4;
+//    htim4.Init.Prescaler = (SystemCoreClock / 10000) - 1; // 10kHz timer clock
+//    htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+//    htim4.Init.Period = 999; // 10ms: 100 counts at 10kHz
+//    htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+//    htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+//    HAL_TIM_Base_Init(&htim4);
+//
+//    HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
+//    HAL_NVIC_EnableIRQ(TIM4_IRQn);
+//
+//    HAL_TIM_RegisterCallback(&htim4, HAL_TIM_PERIOD_ELAPSED_CB_ID, ms_clock_interrupt_static);
+//
+//}
+
+static void ms_clock_interrupt_static(struct __TIM_HandleTypeDef *htim)
+{
+  HAL_TIM_Base_Stop_IT(&htim4); // Stop timer after 10ms
+  ms_clock_cb();
 }
 
 /* USER CODE END 1 */

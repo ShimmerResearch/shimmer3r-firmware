@@ -55,6 +55,7 @@
 #include "hal_FactoryTest.h"
 #include "hal_Infomem.h"
 #include "hal_bootloader.h"
+#include <MsClock/ms_clock.h>
 
 #include "adc.h"
 #if defined(SHIMMER4_SDK)

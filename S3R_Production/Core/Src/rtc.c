@@ -508,6 +508,12 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
       case RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER:
         JumpToBootloader();
         break;
+      case RTC_ALARM_CONTEXT_BT_BOOT_STAGE2:
+        btStart_stage2();
+        break;
+      case RTC_ALARM_CONTEXT_BT_BOOT_STAGE3:
+        btStart_stage3();
+        break;
       default:
         //No action or error log
         break;
@@ -525,19 +531,31 @@ void RTC_setAlarmBattRead(void)
   /* If docked alarm fires every 30s and if un-docked fires every 10 minutes*/
   battAlarmInterval_t battAlarm = ShimBatt_getBatteryInterval();
   uint32_t nextBattReadInS = (battAlarm == BATT_INTERVAL_DOCKED) ? 30 : (10 * 60);
-  RTC_setAlarmAFromNow(nextBattReadInS, RTC_ALARM_CONTEXT_BATT_READ);
+  RTC_setAlarmASecondsFromNow(nextBattReadInS, RTC_ALARM_CONTEXT_BATT_READ);
 }
 
 void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow)
 {
   //Set the alarm to stop logging after a specified number of minutes
-  RTC_setAlarmAFromNow(minutesFromNow * 60, RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING);
+  RTC_setAlarmASecondsFromNow(minutesFromNow * 60, RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING);
 }
 
 void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow)
 {
   //Set the alarm to reboot to bootloader after a specified time
-  RTC_setAlarmAFromNow(secondsFromNow, RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER);
+  RTC_setAlarmASecondsFromNow(secondsFromNow, RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER);
+}
+
+void RTC_setAlarmBtBootStage2(void)
+{
+  //Set the alarm to reboot to bootloader after a specified time
+  RTC_setAlarmASecondsFromNow(1, RTC_ALARM_CONTEXT_BT_BOOT_STAGE2);
+}
+
+void RTC_setAlarmBtBootStage3(void)
+{
+  //Set the alarm to reboot to bootloader after a specified time
+  RTC_setAlarmASecondsFromNow(1, RTC_ALARM_CONTEXT_BT_BOOT_STAGE3);
 }
 
 void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
@@ -582,7 +600,7 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
   }
 }
 
-void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
+void RTC_setAlarmASecondsFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
 {
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;

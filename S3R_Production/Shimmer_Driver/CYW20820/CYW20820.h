@@ -78,6 +78,9 @@ enum BLUETOOTH_UART_TYPE
 };
 
 void btInit(uint32_t baudRate);
+void btStart_stage1(void);
+void btStart_stage2(void);
+void btStart_stage3(void);
 void btDeinit(void);
 void btInitCommands(void);
 void btFactoryResetCommands(void);

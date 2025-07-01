@@ -54,6 +54,8 @@ extern "C"
     //RTC_ALARM_CONTEXT_BT_SYNC,
     RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING,
     RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER,
+    RTC_ALARM_CONTEXT_BT_BOOT_STAGE2,
+    RTC_ALARM_CONTEXT_BT_BOOT_STAGE3,
     RTC_NUM_ALARMS
   } RTC_AlarmB_Context_t;
 
@@ -80,7 +82,7 @@ extern "C"
   void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow);
 
   void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc);
-  void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context);
+  void RTC_setAlarmASecondsFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context);
 
   void RTC_setupAndStartSdSyncAlarm(void);
   void RTC_stopSdSyncAlarm(void);

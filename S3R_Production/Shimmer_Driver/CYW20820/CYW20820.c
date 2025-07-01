@@ -102,6 +102,8 @@ uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmds
 uint8_t btNameTypeBeingRead;
 bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
+uint32_t baudRateToUse;
+
 static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3, UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5,
@@ -192,28 +194,75 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
 
 void btInit(uint32_t baudRate)
 {
+  //btInitCmdsStepIdx = 0;
+  //btInitCmdsStep = WAIT_FOR_BOOT_STAGE1;
+  //
+  //initBtPins();
+  ////Enable BT power
+  //setBtPower(1);
+  ////TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
+  //HAL_Delay(10);
+  //Board_BT_LP_MODE(1);
+  //Board_BT_CP_ROLE(1);
+  //
+  //uint8_t hwFlowControl = baudRate == 115200 ? 0 : FLOW_CONTROL;
+  //SHIMMER_PRINTF("BT Init: Baud=%lu, HW Flow Control=%d\r\n", baudRate,
+  //hwFlowControl); BtUart_init(baudRate, hwFlowControl);
+  //
+  //resetEzsPendingResponse();
+  //
+  ///* initialize EZ-Serial interface and callbacks */
+  //EZSerial_Init(appHandler, appOutput, appInput);
+  //
+  ////TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
+  //HAL_Delay(10);
+  ///* Setting DMA waiting for first char from BT module */
+  //HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+  ///* Allow BT module to boot */
+  //Board_BT_RST_N(1);
+  //
+  //btInitCommands();
+
+  baudRateToUse = baudRate;
+
+  btStart_stage1();
+}
+
+void btStart_stage1(void)
+{
   btInitCmdsStepIdx = 0;
   btInitCmdsStep = WAIT_FOR_BOOT_STAGE1;
 
   initBtPins();
   //Enable BT power
   setBtPower(1);
-  //TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
-  HAL_Delay(10);
+
+//  HAL_Delay(10);
+//  btStart_stage2();
+  start_10ms_timer(btStart_stage2);
+}
+
+void btStart_stage2(void)
+{
   Board_BT_LP_MODE(1);
   Board_BT_CP_ROLE(1);
 
-  uint8_t hwFlowControl = baudRate == 115200 ? 0 : FLOW_CONTROL;
-  SHIMMER_PRINTF("BT Init: Baud=%lu, HW Flow Control=%d\r\n", baudRate, hwFlowControl);
-  BtUart_init(baudRate, hwFlowControl);
+  uint8_t hwFlowControl = baudRateToUse == 115200 ? 0 : FLOW_CONTROL;
+  SHIMMER_PRINTF("BT Init: Baud=%lu, HW Flow Control=%d\r\n", baudRateToUse, hwFlowControl);
+  BtUart_init(baudRateToUse, hwFlowControl);
 
   resetEzsPendingResponse();
 
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
 
-  //TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
-  HAL_Delay(10);
+//  HAL_Delay(10);
+//  btStart_stage3();
+  start_10ms_timer(btStart_stage3);
+}
+
+void btStart_stage3(void)
+{
   /* Setting DMA waiting for first char from BT module */
   HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
   /* Allow BT module to boot */

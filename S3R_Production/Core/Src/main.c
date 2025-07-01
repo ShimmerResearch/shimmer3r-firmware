@@ -21,7 +21,6 @@
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
-#include "iwdg.h"
 #include "memorymap.h"
 #include "rng.h"
 #include "rtc.h"
@@ -252,6 +251,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   //MX_IWDG_Init();
+
+  MX_TIM4_Init();
 
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();

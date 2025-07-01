@@ -37,6 +37,8 @@ extern "C"
 
   extern TIM_HandleTypeDef htim3;
 
+  extern TIM_HandleTypeDef htim4;
+
   extern TIM_HandleTypeDef htim6;
 
   extern TIM_HandleTypeDef htim7;
@@ -47,6 +49,7 @@ extern "C"
 
   void MX_TIM2_Init(void);
   void MX_TIM3_Init(void);
+  void MX_TIM4_Init(void);
   void MX_TIM6_Init(void);
   void MX_TIM7_Init(void);
 
@@ -54,6 +57,9 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
   void delay_us(uint16_t us);
+
+  void start_10ms_timer(void (*timer_cb)(void));
+//  void MX_TIM4_10ms_Init(void);
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
