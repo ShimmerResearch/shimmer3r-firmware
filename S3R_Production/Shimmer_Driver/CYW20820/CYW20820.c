@@ -237,8 +237,8 @@ void btStart_stage1(void)
   //Enable BT power
   setBtPower(1);
 
-//  HAL_Delay(10);
-//  btStart_stage2();
+  //HAL_Delay(10);
+  //btStart_stage2();
   start_10ms_timer(btStart_stage2);
 }
 
@@ -256,8 +256,8 @@ void btStart_stage2(void)
   /* initialize EZ-Serial interface and callbacks */
   EZSerial_Init(appHandler, appOutput, appInput);
 
-//  HAL_Delay(10);
-//  btStart_stage3();
+  //HAL_Delay(10);
+  //btStart_stage3();
   start_10ms_timer(btStart_stage3);
 }
 

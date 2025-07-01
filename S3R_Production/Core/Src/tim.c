@@ -214,7 +214,7 @@ void MX_TIM4_Init(void)
 
   HAL_TIM_RegisterCallback(&htim4, HAL_TIM_PERIOD_ELAPSED_CB_ID, ms_clock_interrupt_static);
 
-//  HAL_TIM_Base_Start_IT(&htim4);
+  //HAL_TIM_Base_Start_IT(&htim4);
 
   /* USER CODE END TIM4_Init 2 */
 }
@@ -537,8 +537,8 @@ void start_10ms_timer(void (*timer_cb)(void))
 {
   ms_clock_cb = timer_cb;
 
-    __HAL_TIM_SET_COUNTER(&htim4, 0);
-    HAL_TIM_Base_Start_IT(&htim4);
+  __HAL_TIM_SET_COUNTER(&htim4, 0);
+  HAL_TIM_Base_Start_IT(&htim4);
 }
 
 //void MX_TIM4_10ms_Init(void)
@@ -560,7 +560,7 @@ void start_10ms_timer(void (*timer_cb)(void))
 
 static void ms_clock_interrupt_static(struct __TIM_HandleTypeDef *htim)
 {
-  HAL_TIM_Base_Stop_IT(&htim4); // Stop timer after 10ms
+  HAL_TIM_Base_Stop_IT(&htim4); //Stop timer after 10ms
   ms_clock_cb();
 }
 

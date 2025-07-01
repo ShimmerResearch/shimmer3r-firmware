@@ -59,7 +59,7 @@ extern "C"
   void delay_us(uint16_t us);
 
   void start_10ms_timer(void (*timer_cb)(void));
-//  void MX_TIM4_10ms_Init(void);
+  //void MX_TIM4_10ms_Init(void);
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
