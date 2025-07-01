@@ -82,7 +82,7 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
    * Revisit if we move Infomem to being stored on EEPROM where we can erase/write 16 byte pages. */
   //Erase the flash memory
 #if defined(SHIMMER3R)
-  uint32_t PageError = 0xFFFFFFFFU;
+  uint32_t PageError = FLASH_WRITE_PAGE_ERROR_INIT_VALUE;
   status |= HAL_FLASHEx_Erase(&pEraseInit, &PageError);
 #elif defined(SHIMMER4_SDK)
   status |= FLASH_Erase_Sector(INFOMEM_SECTOR, FLASH_VOLTAGE_RANGE_3);
@@ -167,47 +167,6 @@ void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr)
   if (status != HAL_OK)
   {
     Error_Handler();
-  }
-}
-
-void InfoMem_updateFrom(uint8_t *buf)
-{
-  uint16_t j;
-
-  uint32_t primask = __get_PRIMASK();
-  //Disable interrupts
-  __disable_irq();
-
-  HAL_FLASH_Unlock();
-
-#if defined(SHIMMER3R)
-  uint32_t PageError;
-  //TODO check PageEror
-  HAL_FLASHEx_Erase(&pEraseInit, &PageError);
-#elif defined(SHIMMER4_SDK)
-  FLASH_Erase_Sector(INFOMEM_SECTOR, FLASH_VOLTAGE_RANGE_3);
-  FLASH_WaitForLastOperation((uint32_t) 50000);
-#endif
-
-#if defined(SHIMMER3R)
-  for (j = 0; j < INFOMEM_CONFIG_SIZE; j += QUAD_WORD_BYTE_SIZE)
-  {
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, INFOMEM_CONFIG_OFFSET + j,
-        (uint32_t) (buf + j));
-  }
-#elif defined(SHIMMER4_SDK)
-  for (j = 0; j < INFOMEM_CONFIG_SIZE; j++)
-  {
-    //FLASH_TYPEPROGRAM_BYTE requires around 0x10000 clk cycles
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, INFOMEM_CONFIG_OFFSET + j, buf[j]);
-  }
-#endif
-  HAL_FLASH_Lock();
-
-  //Restore interrupt state
-  if (!primask)
-  {
-    __enable_irq();
   }
 }
 
