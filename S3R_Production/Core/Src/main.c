@@ -126,19 +126,18 @@ void Init()
 
   JumpToBootloaderIfRequired();
 
-  setBootStage(BOOT_STAGE_START);
+  LogAndStream_setBootStage(BOOT_STAGE_START);
 
   ShimBrd_setHwId(DEVICE_VER);
 
 #if defined(SHIMMER4_SDK)
   TIM_init();
 #endif
-  InfoMem_init();
 
   //GPIO_init();
   S4_ADC_init();
 
-  setBootStage(BOOT_STAGE_I2C);
+  LogAndStream_setBootStage(BOOT_STAGE_I2C);
   //TODO Shimmer3 performs bus scan on boot - not needed for Shimmer3r?
   loadDaughterCardIdFromEeprom();
 
@@ -156,7 +155,7 @@ void Init()
   //GPIO_userButtonCheck();
 
 #if defined(SHIMMER3R)
-  setBootStage(BOOT_STAGE_BLUETOOTH);
+  LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH);
   ShimBt_btCommsProtocolInit();
   ShimSdSync_init(ShimTask_setInitialiseBluetooth, BtStop);
   //btFactoryResetViaFw();
@@ -169,7 +168,7 @@ void Init()
   BtUart_init();
 #endif
 
-  setBootStage(BOOT_STAGE_CONFIGURATION);
+  LogAndStream_setBootStage(BOOT_STAGE_CONFIGURATION);
   /* Calibration needs to be loaded after the chips have been detected in
    * order to know which default calib to set for attached chips.
    * It also needs to be loaded after the BT is initialised so that the
@@ -201,7 +200,7 @@ void Init()
   DockUart_enable();
 
   shimmerStatus.initialising = 0;
-  setBootStage(BOOT_STAGE_END);
+  LogAndStream_setBootStage(BOOT_STAGE_END);
 }
 
 /* USER CODE END 0 */
@@ -482,7 +481,7 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
           //SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
           ////software POR reset
           //NVIC_SystemReset();
-          setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
+          LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
           break;
         }
       }

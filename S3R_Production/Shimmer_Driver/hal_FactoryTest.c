@@ -929,7 +929,7 @@ uint8_t gsrFactoryTest_run(void)
     }
   }
 
-  resetGsrPwrAndRange();
+  Board_resetGsrPwrAndRange();
 
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
