@@ -201,7 +201,7 @@ void MDF1_DeInit(void)
 
 void micStartSensing(void)
 {
-  if(!shimmerStatus.micSensing)
+  if (!shimmerStatus.micSensing)
   {
     Mic_CountSkip = 0;
 
@@ -221,11 +221,11 @@ void micStartSensing(void)
 
 void micStopSensing(void)
 {
-  if(shimmerStatus.micSensing)
+  if (shimmerStatus.micSensing)
   {
     HAL_MDF_AcqStop_DMA(&AdfHandle0);
     MDF1_DeInit();
-//    HAL_Delay(100);
+    //HAL_Delay(100);
     shimmerStatus.micSensing = 0;
   }
 }
@@ -321,7 +321,7 @@ uint8_t micTest(void)
 
     if (micTestResult == 0)
     {
-      micTestResult = FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER; // no data in buffer
+      micTestResult = FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER; //no data in buffer
     }
   }
 
