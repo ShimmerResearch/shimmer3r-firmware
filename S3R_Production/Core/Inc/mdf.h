@@ -37,8 +37,14 @@ extern "C"
 
   extern MDF_FilterConfigTypeDef AdfFilterConfig0;
 
-/* USER CODE BEGIN Private defines */
-#define MAX_BUFFER_SIZE 32000
+  /* USER CODE BEGIN Private defines */
+
+  #define MAX_BUFFER_SIZE 32000
+
+  #define FACTORY_TEST_MIC_ERROR_CNT_THRESHOLD 500
+  #define FACTORY_TEST_MIC_PASS 0xFF
+  #define FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER 0xFE
+
   /* USER CODE END Private defines */
 
   void MX_ADF1_Init(void);

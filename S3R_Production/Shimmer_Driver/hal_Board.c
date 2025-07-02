@@ -580,3 +580,9 @@ void resetGsrPwrAndRange(void)
 #endif
   GSR_setActiveResistor(HW_RES_40K);
 }
+
+void Board_setMicPower(uint8_t state)
+{
+  Board_SW_MIC(state);
+  shimmerStatus.pinPvMic = state;
+}

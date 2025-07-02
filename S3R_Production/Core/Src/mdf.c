@@ -33,6 +33,9 @@ MDF_DmaConfigTypeDef micDmaConfig;
 int Mic_CountSkip = 0;
 //volatile uint8_t counter = 0;
 
+uint8_t micTestRunning = 0;
+uint16_t micTestErrorCnt = 0;
+
 /* USER CODE END 0 */
 
 MDF_HandleTypeDef AdfHandle0;
@@ -47,7 +50,9 @@ void MX_ADF1_Init(void)
   /* USER CODE END ADF1_Init 0 */
 
   /* USER CODE BEGIN ADF1_Init 1 */
-  Board_SW_MIC(1);
+
+  Board_setMicPower(1);
+
   /* USER CODE END ADF1_Init 1 */
 
   /**
@@ -191,29 +196,38 @@ void MDF1_DeInit(void)
 #else
   HAL_MDF_DeInit(&AdfHandle0);
 #endif
-  Board_SW_MIC(0);
+  Board_setMicPower(0);
 }
 
 void micStartSensing(void)
 {
-  Mic_CountSkip = 0;
-
-  if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
+  if(!shimmerStatus.micSensing)
   {
-    Error_Handler();
-  }
+    Mic_CountSkip = 0;
 
-  if (HAL_MDF_GenerateTrgo(&AdfHandle0) != HAL_OK)
-  {
-    Error_Handler();
+    if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    if (HAL_MDF_GenerateTrgo(&AdfHandle0) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    shimmerStatus.micSensing = 1;
   }
 }
 
 void micStopSensing(void)
 {
-  HAL_MDF_AcqStop_DMA(&AdfHandle0);
-  MDF1_DeInit();
-  HAL_Delay(100);
+  if(shimmerStatus.micSensing)
+  {
+    HAL_MDF_AcqStop_DMA(&AdfHandle0);
+    MDF1_DeInit();
+//    HAL_Delay(100);
+    shimmerStatus.micSensing = 0;
+  }
 }
 
 void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf)
@@ -253,8 +267,23 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
   }
 }
 
+void HAL_MDF_ErrorCallback(MDF_HandleTypeDef *hmdf)
+{
+  if (micTestRunning)
+  {
+    micTestErrorCnt++;
+    if (micTestErrorCnt == FACTORY_TEST_MIC_ERROR_CNT_THRESHOLD)
+    {
+      micStopSensing();
+    }
+  }
+}
+
 uint8_t micTest(void)
 {
+  uint8_t micTestResult = FACTORY_TEST_MIC_PASS;
+  micTestRunning = 1;
+  micTestErrorCnt = 0;
   memset(dataBuffer, 0, sizeof(dataBuffer));
 
   MX_ADF1_Init();
@@ -272,18 +301,32 @@ uint8_t micTest(void)
     }
   }
 
-  micStopSensing();
-
-  for (uint8_t i = 0; i < (DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U); i++)
+  if (!shimmerStatus.micSensing)
   {
-    if (dataBuffer[i] != 0)
+    micTestResult = AdfHandle0.ErrorCode;
+  }
+  else
+  {
+    micStopSensing();
+
+    for (uint8_t i = 0; i < (DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U); i++)
     {
-      //some data is present, so the microphone is working
-      return 0;
+      if (dataBuffer[i] != 0)
+      {
+        //some data is present, so the microphone is working
+        micTestResult = FACTORY_TEST_MIC_PASS;
+        break;
+      }
+    }
+
+    if (micTestResult == 0)
+    {
+      micTestResult = FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER; // no data in buffer
     }
   }
 
-  return 1;
+  micTestRunning = 0;
+  return micTestResult;
 }
 
 /* USER CODE END 1 */
