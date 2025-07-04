@@ -649,7 +649,7 @@ void sleepWhenNoTask(void)
 
 void BtStart(void)
 {
-  // Best to check if BT is powered on as it could be on but not yet initialised
+  //Best to check if BT is powered on as it could be on but not yet initialised
   if (!shimmerStatus.btPowerOn)
   {
     ShimBt_startCommon();
