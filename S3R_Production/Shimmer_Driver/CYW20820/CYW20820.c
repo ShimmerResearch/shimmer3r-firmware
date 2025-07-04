@@ -190,7 +190,7 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
   }
 }
 
-void btInit(uint32_t baudRate)
+void btInit(void)
 {
   btInitCmdsStepIdx = 0;
   btInitCmdsStep = WAIT_FOR_BOOT_STAGE1;
@@ -203,6 +203,7 @@ void btInit(uint32_t baudRate)
   Board_BT_LP_MODE(1);
   Board_BT_CP_ROLE(1);
 
+  uint32_t baudRate = ShimBt_getBtBaudRateToUse();
   uint8_t hwFlowControl = baudRate == 115200 ? 0 : FLOW_CONTROL;
   SHIMMER_PRINTF("BT Init: Baud=%lu, HW Flow Control=%d\r\n", baudRate, hwFlowControl);
   BtUart_init(baudRate, hwFlowControl);

@@ -77,7 +77,7 @@ enum BLUETOOTH_UART_TYPE
   UART_TYPE_HCI_UART
 };
 
-void btInit(uint32_t baudRate);
+void btInit(void);
 void btDeinit(void);
 void btInitCommands(void);
 void btFactoryResetCommands(void);

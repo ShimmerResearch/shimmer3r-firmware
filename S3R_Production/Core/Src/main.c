@@ -79,10 +79,10 @@ static void SystemPower_Config(void);
 /* USER CODE BEGIN PFP */
 
 void Init(void);
-void btInitialise(void);
+void InitialiseBt(void);
 void InitialiseBtAfterBoot(void);
 void btFactoryResetViaFw(void);
-void btCommWithDiffBaudRates(uint8_t resetCnt);
+void btCommWithDiffBaudRates(void);
 void BtStartDone(void);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
@@ -159,7 +159,7 @@ void Init()
   ShimBt_btCommsProtocolInit();
   ShimSdSync_init(ShimTask_setInitialiseBluetooth, BtStop);
   //btFactoryResetViaFw();
-  btInitialise();
+  InitialiseBt();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
   //BtStop(true);
@@ -367,14 +367,13 @@ STATTypeDef *GetStatus()
 
 //TODO move out of here
 #if defined(SHIMMER3R)
-void btInitialise(void)
+void InitialiseBt(void)
 {
   SHIMMER_PRINTF("\r\nBT init start\r\n");
 
   setBtBootModeFirstBoot();
 
-  //50 * 100ms = 5s per baud rate attempt
-  btCommWithDiffBaudRates(50U);
+  btCommWithDiffBaudRates();
 }
 
 void InitialiseBtAfterBoot(void)
@@ -383,7 +382,7 @@ void InitialiseBtAfterBoot(void)
 
   setBtBootModeSubsequentBoot();
 
-  btCommWithDiffBaudRates(0);
+  BtStart();
 }
 
 void btFactoryResetViaFw(void)
@@ -392,8 +391,7 @@ void btFactoryResetViaFw(void)
 
   setBtBootModeFactoryReset();
 
-  //50 * 100ms = 5s per baud rate attempt
-  btCommWithDiffBaudRates(50U);
+  btCommWithDiffBaudRates();
 
   //Abort transfer operations to release UART for subsequent requests.
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
@@ -401,13 +399,13 @@ void btFactoryResetViaFw(void)
   SHIMMER_PRINTF("BT factory reset end\r\n");
 }
 
-void btCommWithDiffBaudRates(uint8_t resetCnt)
+void btCommWithDiffBaudRates(void)
 {
   uint8_t failCount = 0U;
+  //50 * 100ms = 5s per baud rate attempt
+  uint8_t resetCnt = 50U;
   uint8_t resetCntCurrent = resetCnt;
   uint32_t baudToTry = BAUD_TO_USE;
-
-  BtStart();
 
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
@@ -417,8 +415,9 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
 #endif //SUPPORT_SR48_6_0
 
   BT_startDone_cb(BtStartDone);
-  shimmerStatus.btIsInitialised = false;
-  btInit(baudToTry);
+
+  ShimBt_setBtBaudRateToUse(baudToTry);
+  BtStart();
 
   if (resetCnt > 0U)
   {
@@ -449,7 +448,7 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
       {
         failCount++;
 
-        btDeinit();
+        BtStop(1);
         HAL_Delay(500);
 
         if (failCount <= 4)
@@ -471,8 +470,8 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
             baudToTry = 500000;
           }
 
-          shimmerStatus.btIsInitialised = false;
-          btInit(baudToTry);
+          ShimBt_setBtBaudRateToUse(baudToTry);
+          BtStart();
 
           resetCntCurrent = resetCnt;
         }
@@ -650,34 +649,24 @@ void sleepWhenNoTask(void)
 
 void BtStart(void)
 {
+  // Best to check if BT is powered on as it could be on but not yet initialised
   if (!shimmerStatus.btPowerOn)
   {
-    //is watchdog timer function required
+    ShimBt_startCommon();
+    btInit();
   }
-  if (!shimmerStatus.sensing)
-  {
-    shimmerStatus.configuring = 1;
-  }
-  resetBtRxBuff();
-  shimmerStatus.btInSyncMode = shimmerStatus.sdSyncEnabled;
-  //BT_start();
 }
 
 void BtStop(uint8_t isCalledFromMain)
 {
   if (shimmerStatus.btPowerOn)
   {
-    //TODO tidy this flow up
-    ShimBt_clearBtTxBuf(isCalledFromMain);
-    ShimTask_clear(TASK_RCNODER10);
-    shimmerStatus.btConnected = 0;
-    shimmerStatus.btInSyncMode = 0;
-    //BT_disable
-    resetBtRxBuff();
-    btDeinit();
-    shimmerStatus.btIsInitialised = false;
-
     SHIMMER_PRINTF("\r\nBT Stop\r\n");
+
+    //BT_disable
+    btDeinit();
+
+    ShimBt_stopCommon(isCalledFromMain);
   }
 }
 
