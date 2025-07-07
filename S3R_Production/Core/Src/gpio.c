@@ -690,8 +690,8 @@ void gpioInitPerBoard(void)
   else if (daughtCardId->exp_brd_id == EXP_BRD_PROTO3_DELUXE)
   {
     //'GPIO_INTERNAL0'
-    //Optional Power to PV regulator on J3 connector. Components are normally DNI.
-    //HAL_GPIO_WritePin(PV_REGSW_GPIO_Port, PV_REGSW_Pin, GPIO_PIN_RESET);
+    //Optional Power to PV regulator on J3 connector. Components are normally
+    //DNI. HAL_GPIO_WritePin(PV_REGSW_GPIO_Port, PV_REGSW_Pin, GPIO_PIN_RESET);
     //GPIO_InitStruct.Pin = PV_REGSW_Pin;
     //GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     //GPIO_InitStruct.Pull = GPIO_NOPULL;
