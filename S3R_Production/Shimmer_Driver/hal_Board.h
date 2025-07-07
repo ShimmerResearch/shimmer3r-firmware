@@ -310,14 +310,13 @@
       SW_VOLTAGE_DIVIDER_HIGH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
 /* Shimmer3R Proto3 Deluxe SR38 */
-//TLV70028DDC, Active High 
-#define Board_SW_PROTO3_DELUXE_PWR(x)                                      \
-  HAL_GPIO_WritePin(J2_PWR_FOR_I2C_SWITCH_GPIO_Port, J2_PWR_FOR_I2C_SWITCH_Pin, \
-      x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//TPS22945DCKR, Active High 
-#define Board_SW_PROTO3_DELUXE_I2C4_ON_J2(x)                                      \
-  HAL_GPIO_WritePin(J2_SW_I2C4_GPIO_Port, J2_SW_I2C4_Pin, \
-      x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//TLV70028DDC, Active High
+#define Board_SW_PROTO3_DELUXE_PWR(x)                \
+  HAL_GPIO_WritePin(J2_PWR_FOR_I2C_SWITCH_GPIO_Port, \
+      J2_PWR_FOR_I2C_SWITCH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//TPS22945DCKR, Active High
+#define Board_SW_PROTO3_DELUXE_I2C4_ON_J2(x) \
+  HAL_GPIO_WritePin(J2_SW_I2C4_GPIO_Port, J2_SW_I2C4_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
 #elif defined(SHIMMER4_SDK)
 #define Board_SW_EXP(x) \
