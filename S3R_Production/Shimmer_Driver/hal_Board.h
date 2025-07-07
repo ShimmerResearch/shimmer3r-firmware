@@ -307,6 +307,11 @@
   HAL_GPIO_WritePin(SW_VOLTAGE_DIVIDER_HIGH_GPIO_Port, \
       SW_VOLTAGE_DIVIDER_HIGH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
+/* Shimmer3R Proto3 Deluxe SR38 */
+#define Board_SW_PROTO3_DELUXE_PWR(x)                                      \
+  HAL_GPIO_WritePin(J2_PWR_FOR_I2C_SWITCH_GPIO_Port, J2_PWR_FOR_I2C_SWITCH_Pin, \
+      x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+
 #elif defined(SHIMMER4_SDK)
 #define Board_SW_EXP(x) \
   HAL_GPIO_WritePin(EXP_RESET_N_GPIO_Port, EXP_RESET_N_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
@@ -406,6 +411,6 @@ extern void Board_delayMicros(uint32_t micros);
 void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #endif
 void Board_setExpansionBrdPower(uint8_t state);
-void resetGsrPwrAndRange(void);
+void resetGsrRange(void);
 
 #endif
