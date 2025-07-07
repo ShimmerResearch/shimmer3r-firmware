@@ -1378,7 +1378,7 @@ void loadDaughterCardIdFromEeprom(void)
   HAL_Delay(5); //5ms to ensure no writes pending
 }
 
-void enableI2cOnSr48PpgSocket(uint8_t state)
+void enableI2cOnSr48OrSr38PpgSocket(uint8_t state)
 {
   if (state)
   {
@@ -1392,6 +1392,10 @@ void enableI2cOnSr48PpgSocket(uint8_t state)
       //SPI is needed to change GPIO state in ADS7028
       MX_SPI1_Init();
       ads7028_swI2C4PpgOn(1);
+    }
+    else if (ShimBrd_isExpBrdId(EXP_BRD_PROTO3_DELUXE))
+    {
+      Board_SW_PROTO3_DELUXE_I2C4_ON_J2(1);
     }
     else
     {
@@ -1411,6 +1415,10 @@ void enableI2cOnSr48PpgSocket(uint8_t state)
     {
       ads7028_swI2C4PpgOn(0);
       SPI1_DeInit();
+    }
+    else if (ShimBrd_isExpBrdId(EXP_BRD_PROTO3_DELUXE))
+    {
+      Board_SW_PROTO3_DELUXE_I2C4_ON_J2(0);
     }
     else
     {

@@ -538,7 +538,7 @@ void I2C_test(void)
   {
     uint8_t i2c4_result = 0;
 
-    enableI2cOnSr48PpgSocket(1);
+    enableI2cOnSr48OrSr38PpgSocket(1);
     HAL_Delay(2); //2ms as per Shimmer3 code
     I2C_scan_internal_expansion_bus(test_i2c_addr_list, &test_i2c_addr_list_len);
 
@@ -585,7 +585,7 @@ void I2C_test(void)
       i2c4_result = 1;
     }
 
-    enableI2cOnSr48PpgSocket(0);
+    enableI2cOnSr48OrSr38PpgSocket(0);
 
     if (i2c4_result)
     {
