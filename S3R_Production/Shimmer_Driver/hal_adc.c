@@ -916,13 +916,18 @@ void S4_NORM_ADC_bufPoll()
   }
 #endif
   //Bridge Amplifier/Strain Gauge
-  if (configBytes->chEnBridgeAmp) {
-     // SG_LOW channel
-     sensing.dataBuf[sensing.ptr.strainGauge + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-     sensing.dataBuf[sensing.ptr.strainGauge + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-     // SG_HIGH channel
-     sensing.dataBuf[sensing.ptr.strainGauge + 2] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-     sensing.dataBuf[sensing.ptr.strainGauge + 3] = *((uint8_t*)adcBufSens + adc_offset_sens++);
+  if (configBytes->chEnBridgeAmp)
+  {
+    //SG_LOW channel
+    sensing.dataBuf[sensing.ptr.strainGauge + 0]
+        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    sensing.dataBuf[sensing.ptr.strainGauge + 1]
+        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    //SG_HIGH channel
+    sensing.dataBuf[sensing.ptr.strainGauge + 2]
+        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    sensing.dataBuf[sensing.ptr.strainGauge + 3]
+        = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
   else
   {

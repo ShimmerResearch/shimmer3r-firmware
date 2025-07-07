@@ -562,18 +562,17 @@ void Board_setExpansionBrdPower(uint8_t state)
   //ExG is handled in SPI stop sensing.
 
   gConfigBytes *configBytes = ShimConfig_getStoredConfig();
-  if (ShimBrd_isExpBrdId(EXP_BRD_GSR_UNIFIED)
-      || ShimBrd_isExpBrdId(EXP_BRD_BR_AMP_UNIFIED)
+  if (ShimBrd_isExpBrdId(EXP_BRD_GSR_UNIFIED) || ShimBrd_isExpBrdId(EXP_BRD_BR_AMP_UNIFIED)
       || ShimBrd_isExpBrdId(EXP_BRD_PROTO3_DELUXE))
   {
     if (ShimBrd_isExpBrdId(EXP_BRD_GSR_UNIFIED))
     {
-  #if SUPPORT_SR48_6_0
+#if SUPPORT_SR48_6_0
       if (configBytes->chEnGsr && ShimBrd_isBoardSr48_6_0())
       {
         Board_SR48_6_0_SW_GSR(0);
       }
-  #endif
+#endif
       Board_SW_PPG_POWER(state);
     }
     else if (ShimBrd_isExpBrdId(EXP_BRD_BR_AMP_UNIFIED))
