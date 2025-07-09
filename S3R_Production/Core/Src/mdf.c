@@ -33,8 +33,8 @@ MDF_DmaConfigTypeDef micDmaConfig;
 int Mic_CountSkip = 0;
 //volatile uint8_t counter = 0;
 
-uint8_t micTestRunning = 0;
-uint16_t micTestErrorCnt = 0;
+static uint8_t micTestRunning = 0;
+static uint16_t micTestErrorCnt = 0;
 
 /* USER CODE END 0 */
 
