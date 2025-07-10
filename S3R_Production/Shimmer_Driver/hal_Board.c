@@ -594,9 +594,9 @@ void Board_setExpansionBrdPower(uint8_t state)
   }
 }
 
-void Board_resetGsrRange(void)
+uint8_t Board_isBtnPressed(void)
 {
-  GSR_setActiveResistor(HW_RES_40K);
+  return HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin) == GPIO_PIN_SET;
 }
 
 void Board_setMicPower(uint8_t state)

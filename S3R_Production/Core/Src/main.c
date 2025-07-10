@@ -21,8 +21,6 @@
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
-#include "iwdg.h"
-#include "memorymap.h"
 #include "rng.h"
 #include "rtc.h"
 #include "tim.h"
@@ -79,10 +77,10 @@ static void SystemPower_Config(void);
 /* USER CODE BEGIN PFP */
 
 void Init(void);
-void btInitialise(void);
+void InitialiseBt(void);
 void InitialiseBtAfterBoot(void);
 void btFactoryResetViaFw(void);
-void btCommWithDiffBaudRates(uint8_t resetCnt);
+void btCommWithDiffBaudRates(void);
 void BtStartDone(void);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
@@ -92,6 +90,7 @@ void HAL_Delay(uint32_t Delay);
 #endif
 void sleepWhenNoTask(void);
 
+void BtStart(void);
 void BtStop(uint8_t isCalledFromMain);
 float samplingClockFreqGet(void);
 uint8_t getDefaultBaudForBtVersion(void);
@@ -125,19 +124,18 @@ void Init()
 
   JumpToBootloaderIfRequired();
 
-  setBootStage(BOOT_STAGE_START);
+  LogAndStream_setBootStage(BOOT_STAGE_START);
 
   ShimBrd_setHwId(DEVICE_VER);
 
 #if defined(SHIMMER4_SDK)
   TIM_init();
 #endif
-  InfoMem_init();
 
   //GPIO_init();
   S4_ADC_init();
 
-  setBootStage(BOOT_STAGE_I2C);
+  LogAndStream_setBootStage(BOOT_STAGE_I2C);
   //TODO Shimmer3 performs bus scan on boot - not needed for Shimmer3r?
   loadDaughterCardIdFromEeprom();
 
@@ -155,10 +153,11 @@ void Init()
   //GPIO_userButtonCheck();
 
 #if defined(SHIMMER3R)
-  setBootStage(BOOT_STAGE_BLUETOOTH);
+  LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH);
   ShimBt_btCommsProtocolInit();
+  ShimSdSync_init(ShimTask_setInitialiseBluetooth, BtStop);
   //btFactoryResetViaFw();
-  btInitialise();
+  InitialiseBt();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
   //BtStop(true);
@@ -167,7 +166,7 @@ void Init()
   BtUart_init();
 #endif
 
-  setBootStage(BOOT_STAGE_CONFIGURATION);
+  LogAndStream_setBootStage(BOOT_STAGE_CONFIGURATION);
   /* Calibration needs to be loaded after the chips have been detected in
    * order to know which default calib to set for attached chips.
    * It also needs to be loaded after the BT is initialised so that the
@@ -199,7 +198,7 @@ void Init()
   DockUart_enable();
 
   shimmerStatus.initialising = 0;
-  setBootStage(BOOT_STAGE_END);
+  LogAndStream_setBootStage(BOOT_STAGE_END);
 }
 
 /* USER CODE END 0 */
@@ -248,8 +247,9 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
-  //MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
+
+  //MX_IWDG_Init();
 
 #if !IS_CONNECTED_EEPROM
   setMockExpansionBrdDetails();
@@ -365,14 +365,13 @@ STATTypeDef *GetStatus()
 
 //TODO move out of here
 #if defined(SHIMMER3R)
-void btInitialise(void)
+void InitialiseBt(void)
 {
   SHIMMER_PRINTF("\r\nBT init start\r\n");
 
   setBtBootModeFirstBoot();
 
-  //50 * 100ms = 5s per baud rate attempt
-  btCommWithDiffBaudRates(50U);
+  btCommWithDiffBaudRates();
 }
 
 void InitialiseBtAfterBoot(void)
@@ -381,7 +380,7 @@ void InitialiseBtAfterBoot(void)
 
   setBtBootModeSubsequentBoot();
 
-  btCommWithDiffBaudRates(0);
+  BtStart();
 }
 
 void btFactoryResetViaFw(void)
@@ -390,8 +389,7 @@ void btFactoryResetViaFw(void)
 
   setBtBootModeFactoryReset();
 
-  //50 * 100ms = 5s per baud rate attempt
-  btCommWithDiffBaudRates(50U);
+  btCommWithDiffBaudRates();
 
   //Abort transfer operations to release UART for subsequent requests.
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
@@ -399,9 +397,11 @@ void btFactoryResetViaFw(void)
   SHIMMER_PRINTF("BT factory reset end\r\n");
 }
 
-void btCommWithDiffBaudRates(uint8_t resetCnt)
+void btCommWithDiffBaudRates(void)
 {
   uint8_t failCount = 0U;
+  //50 * 100ms = 5s per baud rate attempt
+  uint8_t resetCnt = 50U;
   uint8_t resetCntCurrent = resetCnt;
   uint32_t baudToTry = BAUD_TO_USE;
 
@@ -413,8 +413,9 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
 #endif //SUPPORT_SR48_6_0
 
   BT_startDone_cb(BtStartDone);
-  shimmerStatus.btIsInitialised = false;
-  btInit(baudToTry);
+
+  ShimBt_setBtBaudRateToUse(baudToTry);
+  BtStart();
 
   if (resetCnt > 0U)
   {
@@ -445,7 +446,7 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
       {
         failCount++;
 
-        btDeinit();
+        BtStop(1);
         HAL_Delay(500);
 
         if (failCount <= 4)
@@ -467,8 +468,8 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
             baudToTry = 500000;
           }
 
-          shimmerStatus.btIsInitialised = false;
-          btInit(baudToTry);
+          ShimBt_setBtBaudRateToUse(baudToTry);
+          BtStart();
 
           resetCntCurrent = resetCnt;
         }
@@ -477,7 +478,7 @@ void btCommWithDiffBaudRates(uint8_t resetCnt)
           //SHIMMER_PRINTF("Operation failed, performing system reset\r\n");
           ////software POR reset
           //NVIC_SystemReset();
-          setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
+          LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH_FAILURE);
           break;
         }
       }
@@ -520,8 +521,8 @@ void SetupDock(void)
 
   if (LogAndStream_isDockedOrUsbIn())
   {
-    shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_IDLE;
     shimmerStatus.sdlogReady = 0;
+    ShimSens_stopSensing(0);
 
     /* Prioritise dock over USB for SD card access */
     if (shimmerStatus.docked)
@@ -644,11 +645,27 @@ void sleepWhenNoTask(void)
   //}
 }
 
+void BtStart(void)
+{
+  //Best to check if BT is powered on as it could be on but not yet initialised
+  if (!shimmerStatus.btPowerOn)
+  {
+    ShimBt_startCommon();
+    btInit();
+  }
+}
+
 void BtStop(uint8_t isCalledFromMain)
 {
-  //TODO tidy this flow up
-  btDeinit();
-  shimmerStatus.btIsInitialised = false;
+  if (shimmerStatus.btPowerOn)
+  {
+    SHIMMER_PRINTF("\r\nBT Stop\r\n");
+
+    //BT_disable
+    btDeinit();
+
+    ShimBt_stopCommon(isCalledFromMain);
+  }
 }
 
 float samplingClockFreqGet(void)
@@ -758,7 +775,6 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
 #ifdef USE_FULL_ASSERT
 /**
  * @brief  Reports the name of the source file and the source line number

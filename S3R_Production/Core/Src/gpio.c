@@ -282,15 +282,13 @@ void GPIO_userButtonCheck()
     GPIO_tsRelease = RTC_get64();
     if (GPIO_tsRelease - GPIO_tsLastRelease > 3277)
     {
-      if (shimmerStatus.sensing == 0)
+      if (shimmerStatus.sdLogging == 0)
       {
-        shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_START;
-        ShimTask_set(TASK_STARTSENSING);
+        ShimTask_setStartLoggingIfReady();
       }
       else
       {
-        shimmerStatus.sdlogCmd = SD_LOG_CMD_STATE_STOP;
-        ShimTask_set(TASK_STOPSENSING);
+        ShimTask_setStopLogging();
       }
     }
     GPIO_tsLastRelease = GPIO_tsRelease;

@@ -66,6 +66,7 @@ extern "C"
   uint8_t RTC_setDateTime(SHIM_RTC_t *data);
   void RTC_getDateTime(SHIM_RTC_t *data);
 
+  void RTC_setTimeFromTicksPtr(uint8_t *ticksPtr);
   void RTC_setTimeFromTicks(uint64_t ticks);
   uint64_t RTC_get64(void);
   uint32_t RTC_get32(void);
@@ -80,6 +81,10 @@ extern "C"
 
   void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc);
   void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context);
+
+  void RTC_setupAndStartSdSyncAlarm(void);
+  void RTC_stopSdSyncAlarm(void);
+  uint8_t RTC_isRwcTimeSet(void);
 
   /* USER CODE END Prototypes */
 

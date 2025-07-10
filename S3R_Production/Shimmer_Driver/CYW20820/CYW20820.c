@@ -12,9 +12,12 @@
 
 #include "stdio.h"
 #include "string.h"
+#include "time.h"
 
 #include "main.h"
 #include "usart.h"
+
+#include "log_and_stream_includes.h"
 
 /* convenience functions for pretty-printing binary data as zero-padded hexadecimal */
 #define printHex8(VARIABLE)            printHex((uint8_t *) &VARIABLE, 1, 1, 0)
@@ -22,7 +25,7 @@
 #define printHex32(VARIABLE)           printHex((uint8_t *) &VARIABLE, 4, 1, 0)
 #define printHexMac(VARIABLE)          printHex((uint8_t *) &VARIABLE, 6, 1, ':')
 
-#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 0
+#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 1
 
 /*
  * Index: {1,2,3,4,5,6,7,8}
@@ -31,6 +34,9 @@
  * BLE:   {-2,0,2,4,6,8,10,10}, */
 #define BT_TX_POWER                    8
 
+//#define CONNECTION_TIMEOUT_MS          10000 //10 seconds timeout
+#define CONNECTION_TIMEOUT_S           10 //10 seconds timeout
+
 uint8_t advNameMacIdStartIdx = 11;
 static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
   '-', 'X', 'X', 'X', 'X', '-', 'B', 'T' };
@@ -38,6 +44,7 @@ static char advNameBle[] = { 18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
   '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E' };
 
 uint16_t expectedResponseIdx;
+uint8_t active_conn_handle = 0xFF; //no active connection
 
 ezs_rsp_system_ping_t rsp_system_ping;
 ezs_rsp_system_query_firmware_version_t rsp_system_query_firmware_version;
@@ -46,6 +53,8 @@ ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
 ezs_rsp_system_get_tx_power_t rsp_system_get_tx_power;
 ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode;
+ezs_rsp_bt_cancel_connection_t rsp_bt_cancel_connection;
+ezs_rsp_bt_disconnect_t rsp_bt_disconnect;
 #if USE_GET_SET_ADV_PARAM
 ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 #endif
@@ -89,6 +98,10 @@ static ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode_ref = {
   .mode = 4,       //(Default=4)
   .interval = 300, //A value of 300 was read from eval kit. Datasheet states setting isn't supported.
 };
+static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
+    = { .mode = 0x41, .bonding = 1, .flags = 1, .keysize = 16, .io = 3, .pairprop = 0 }; //Default values
+static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref_sd_sync
+    = { .mode = 0, .bonding = 0, .flags = 1, .keysize = 16, .io = 3, .pairprop = 0 };
 
 uint8_t *btInitCmdsSteps;
 uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
@@ -105,11 +118,13 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
 #if USE_GET_SET_ADV_PARAM
   GET_ADVERTISING_PARAMETERS, SET_ADVERTISING_PARAMETERS,
 #endif
-  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS,
+  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS, SET_SECURITY_PARAMETERS,
   START_BLE_ADVERTISING_STAGE1, START_BLE_ADVERTISING_STAGE2, FINISH };
 
-static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
-  PING, //Any command to get module into binary command mode
+static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
+  WAIT_FOR_BOOT_STAGE2, /* PING,*/
+  SET_SECURITY_PARAMETERS,
+  GET_SECURITY_PARAMETERS, //Any command to get module into binary command mode. Added set, get security parameters here to get SD sync working
   FINISH };
 
 static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
@@ -183,7 +198,7 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
   }
 }
 
-void btInit(uint32_t baudRate)
+void btInit(void)
 {
   btInitCmdsStepIdx = 0;
   btInitCmdsStep = WAIT_FOR_BOOT_STAGE1;
@@ -196,6 +211,7 @@ void btInit(uint32_t baudRate)
   Board_BT_LP_MODE(1);
   Board_BT_CP_ROLE(1);
 
+  uint32_t baudRate = ShimBt_getBtBaudRateToUse();
   uint8_t hwFlowControl = baudRate == 115200 ? 0 : FLOW_CONTROL;
   SHIMMER_PRINTF("BT Init: Baud=%lu, HW Flow Control=%d\r\n", baudRate, hwFlowControl);
   BtUart_init(baudRate, hwFlowControl);
@@ -572,11 +588,38 @@ void btInitCommands(void)
   if (btInitCmdsStep == GET_SECURITY_PARAMETERS)
   {
     incrementBtInitCmdsStep();
-    /* Not needed at the moment so skipping */
-    //printf("Get Security Param\r\n");
-    //setExpectedResponse(EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS);
-    //ezs_cmd_smp_get_security_parameters();
-    //return;
+    printf("Get Security Param\r\n");
+    setExpectedResponse(EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS);
+    ezs_cmd_smp_get_security_parameters();
+    return;
+  }
+
+  if (btInitCmdsStep == SET_SECURITY_PARAMETERS)
+  {
+    incrementBtInitCmdsStep();
+
+    ezs_rsp_smp_get_security_parameters_t *securityParametersPtr;
+    if (ShimConfig_getStoredConfig()->syncEnable)
+    {
+      securityParametersPtr = &rsp_smp_get_security_parameters_ref_sd_sync;
+    }
+    else
+    {
+      securityParametersPtr = &rsp_smp_get_security_parameters_ref;
+    }
+
+    if (memcmp(&securityParametersPtr->result, &rsp_smp_get_security_parameters.result,
+            sizeof(rsp_smp_get_security_parameters_ref))
+        != 0)
+    {
+      printf("Set Security Param\r\n");
+      setExpectedResponse(EZS_IDX_RSP_SMP_SET_SECURITY_PARAMETERS);
+      ezs_cmd_smp_set_security_parameters(securityParametersPtr->mode,
+          securityParametersPtr->bonding, securityParametersPtr->keysize,
+          securityParametersPtr->pairprop, securityParametersPtr->io,
+          securityParametersPtr->flags);
+      return;
+    }
   }
 
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
@@ -955,6 +998,13 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     break;
 
+  case EZS_IDX_RSP_SMP_SET_SECURITY_PARAMETERS:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: rsp_smp_set_security_parameters: Result=");
+    printHex16(packet->payload.rsp_smp_set_security_parameters.result);
+    printf("\r\n");
+#endif
+    break;
   case EZS_IDX_RSP_GAP_SET_ADV_PARAMETERS:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_set_adv_parameters.result != EZS_ERR_SUCCESS)
@@ -1079,6 +1129,45 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     rsp_smp_get_privacy_mode = packet->payload.rsp_smp_get_privacy_mode;
     break;
 
+  case EZS_IDX_RSP_BT_CONNECT:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: idx_rsp_bt_connected: conn_handle=");
+    printHex8(packet->payload.rsp_bt_connect.conn_handle);
+    printf(", Result=");
+    printHex16(packet->payload.rsp_bt_connect.result);
+    printf("\r\n");
+#endif
+    break;
+
+  case EZS_IDX_RSP_BT_CANCEL_CONNECTION:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    rsp_bt_cancel_connection = packet->payload.rsp_bt_cancel_connection;
+#endif
+    break;
+  case EZS_IDX_RSP_BT_DISCONNECT:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    rsp_bt_disconnect = packet->payload.rsp_bt_disconnect;
+#endif
+    break;
+
+  case EZS_IDX_RSP_GAP_CONNECT:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: idx_rsp_gap_connect: conn_handle=");
+    printHex8(packet->payload.rsp_gap_connect.conn_handle);
+    printf(", Result=");
+    printHex16(packet->payload.rsp_gap_connect.result);
+    printf("\r\n");
+#endif
+    break;
+
+  case EZS_IDX_EVT_BT_CONNECTION_FAILED:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    BT_connectionFailed(packet->payload.evt_bt_connection_failed.conn_handle,
+        packet->payload.evt_bt_connection_failed.reason);
+    printf("\r\n");
+#endif
+    break;
+
     /* -------- Shimmer added end -------- */
 
   default:
@@ -1170,12 +1259,125 @@ void BT_generateCyw20820FirmwareVersionStr(char *str)
 //TODO placeholder for now, implement this later
 uint8_t BT_connect(uint8_t *addr)
 {
-  return 1;
+  ezs_cmd_bt_connect_t bt_conn;
+  clock_t start_time = clock();
+  uint8_t addrReverse[6];
+
+  /*//TODO how to distinguish between Master and slave
+   if(bt_conn.type == MASTER)
+   {
+   memcpy(bt_conn.address.addr, addr, 6); //copying the MAC address
+   }
+   else if (bt_conn.type == SLAVE)
+   {
+   memset(bt_conn.address.addr, addr, 6);
+   }*/
+
+  addrReverse[0] = addr[5];
+  addrReverse[1] = addr[4];
+  addrReverse[2] = addr[3];
+  addrReverse[3] = addr[2];
+  addrReverse[4] = addr[1];
+  addrReverse[5] = addr[0];
+
+  memcpy(bt_conn.address.addr, addrReverse, 6);
+  bt_conn.type = 1; //for SPP
+  printf("Connecting to MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", addr[0], addr[1],
+      addr[2], addr[3], addr[4], addr[5]);
+  //connect
+
+  //1 for SPP, other params are set to 0 as they are not implemented in the CYW20820 EZ-Serial firmware
+  //ezs_cmd_gap_connect(&bt_conn.address.addr, 0, 0, 0, 0, 0, 0, CONNECTION_TIMEOUT_S);
+
+  //setExpectedResponse(EZS_IDX_CMD_BT_CONNECT);
+
+  uint8_t status = ezs_cmd_bt_connect(&bt_conn.address.addr, 1); //1 for SPP
+  printf("Connection Status Code: %02X\n", status);
+
+  /* Connection status codes :
+ 0x00 -> Success
+ 0x01 -> Failure
+ 0x02 -> Timeout
+ 0x03 -> Already connected
+ else other error*/
+
+  //while (1)
+  //{
+  //  if (status == 0) //Success case
+  //  {
+  //    printf("Connection success\n");
+  //    active_conn_handle = 0;
+  //    return active_conn_handle;
+  //  }
+  //  else if ((((clock() - start_time) * 1000 / CLOCKS_PER_SEC) > 5000))
+  //  {
+  //    printf("Connection failed\n");
+  //    BT_connectionFailed(0xFF, 0x0008);
+  //    active_conn_handle = 0xFF;
+  //    return 0;
+  //  }
+  //  else
+  //  {
+  //    printf("Connection Status Code: %02X\n", status);
+  //    return 0;
+  //  }
+  //}
+  return active_conn_handle; //Feels unnecessary
 }
 
 uint8_t BT_disconnect(void)
 {
-  return 1;
+  ezs_cmd_bt_disconnect_t bt_disc;
+  uint8_t status;
+  bt_disc.conn_handle = active_conn_handle; //this detects an active connection
+  if (bt_disc.conn_handle == 0xFF)
+  {
+    printf("No active connection detected\n");
+  }
+  else
+  {
+    setExpectedResponse(EZS_IDX_CMD_BT_DISCONNECT);
+    status = ezs_cmd_bt_disconnect(bt_disc.conn_handle); //status for debug to check if correct status code was achieved
+  }
+  return 0;
+}
+
+void BT_cancelConnection(void)
+{
+  uint8_t status;
+  //expects a response of 11 bytes
+  uint8_t response[11];
+  setExpectedResponse(EZS_IDX_CMD_BT_CANCEL_CONNECTION);
+  status = ezs_cmd_bt_cancel_connection();
+  printf("Received response from BT cancel connection:\n");
+  for (int i = 0; i < 11; i++)
+  {
+    printf("0x%02X ", response[i]);
+  }
+  printf("\n");
+}
+
+//TODO fix this
+void BT_connectionFailed(uint8_t conn_handle, uint16_t reason)
+{
+  printf("Connection Failed! Conn Handle: %02X, Reason: %04X\n", conn_handle, reason);
+
+  //Handling failure cases
+  switch (reason)
+  {
+  case 0x0001:
+    printf("Reason: Authentication Failed\n");
+    break;
+  case 0x0008:
+    printf("Reason: Connection Timeout\n");
+    break;
+  case 0x0013:
+    printf("Reason: Remote Device Terminated Connection\n");
+    break;
+  default:
+    printf("Reason: Unknown Error\n");
+    break;
+  }
 }
 
 void BT_startDone_cb(void (*callback)(void))

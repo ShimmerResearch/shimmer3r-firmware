@@ -55,6 +55,7 @@ enum BT_SET_COMMAND_STAGES
   GET_CONN_PARAMETERS,
   SET_CONN_PARAMETERS,
   GET_SECURITY_PARAMETERS,
+  SET_SECURITY_PARAMETERS,
   START_BLE_ADVERTISING_STAGE1,
   START_BLE_ADVERTISING_STAGE2,
   FACTORY_RESET,
@@ -77,7 +78,7 @@ enum BLUETOOTH_UART_TYPE
   UART_TYPE_HCI_UART
 };
 
-void btInit(uint32_t baudRate);
+void btInit(void);
 void btDeinit(void);
 void btInitCommands(void);
 void btFactoryResetCommands(void);
@@ -96,5 +97,6 @@ uint8_t BT_connect(uint8_t *addr);
 //after this command is called there will be no link to the connected device
 uint8_t BT_disconnect(void);
 void BT_startDone_cb(void (*callback)(void));
-
+void BT_cancelConnection(void);
+void BT_connectionFailed(uint8_t conn_handle, uint16_t reason);
 #endif /* SRC_CYW20820_H_ */

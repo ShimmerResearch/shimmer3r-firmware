@@ -126,27 +126,21 @@ yes      IROM1    0x8008000   0xf8000
 #define INFOMEM_SIZE_TOTAL \
   INFOMEM_CONFIG_SIZE + INFOMEM_CALIB_SIZE + INFOMEM_TEST_SIZE
 
-#define WORD_BYTE_SIZE            4
-#define QUAD_WORD_BYTE_SIZE       16
+#define WORD_BYTE_SIZE                    4
+#define QUAD_WORD_BYTE_SIZE               16
 
 /* Definitions used within the Shimmer3 comms protocol */
-#define INFOMEM_OFFSET_MSP430     0x1800
-#define INFOMEM_SEG_A_ADDR_MSP430 0x1980
-#define INFOMEM_SEG_B_ADDR_MSP430 0x1900
-#define INFOMEM_SEG_C_ADDR_MSP430 0x1880
-#define INFOMEM_SEG_D_ADDR_MSP430 0x1800
+#define INFOMEM_OFFSET_MSP430             0x1800
+#define INFOMEM_SEG_A_ADDR_MSP430         0x1980
+#define INFOMEM_SEG_B_ADDR_MSP430         0x1900
+#define INFOMEM_SEG_C_ADDR_MSP430         0x1880
+#define INFOMEM_SEG_D_ADDR_MSP430         0x1800
+
+#define FLASH_WRITE_PAGE_ERROR_INIT_VALUE 0xFFFFFFFFU
 
 //returns 0 if successful, 1 if failure
 
-void InfoMem_init(void);
-
-//void InfoMem_initRam(uint8_t* buf);
-
-//void InfoMem_initCalib(uint8_t* buf);
-
-void InfoMem_update(void);
-
-void InfoMem_updateFrom(uint8_t *buf);
+void InfoMem_update(uint8_t *configBytePtr, uint8_t *calibDumpPtr);
 
 uint8_t InfoMem_read(uint16_t addr, uint8_t *buf, uint16_t size);
 

@@ -49,7 +49,7 @@ void MX_RTC_Init(void)
   SHIM_RTC_t data;
 #endif /* RTC_FAST */
 
-  ShimRtc_setConfigTime(0);
+  ShimRtc_setRwcConfigTime(0);
 
   /* USER CODE END RTC_Init 0 */
 
@@ -342,6 +342,13 @@ void RTC_getDateTime(SHIM_RTC_t *data)
   data->ticks = ((uint64_t) data->unix * 32768) + 32768 - data->subseconds;
 }
 
+void RTC_setTimeFromTicksPtr(uint8_t *ticksPtr)
+{
+  uint64_t temp64;
+  memcpy((uint8_t *) (&temp64), ticksPtr, 8); //64bits = 8bytes
+  RTC_setTimeFromTicks(temp64);
+}
+
 void RTC_setTimeFromTicks(uint64_t ticks)
 {
   SHIM_RTC_t data;
@@ -350,7 +357,7 @@ void RTC_setTimeFromTicks(uint64_t ticks)
 #if RTC_FAST
   rtc64_reg = data.ticks & 0xffffffffffff8000;
 #endif
-  ShimRtc_setConfigTime(ticks);
+  ShimRtc_setRwcConfigTime(ticks);
 }
 
 uint64_t RTC_get64(void)
@@ -595,6 +602,78 @@ void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
   time_t future_time = mktime(&current_tm) + secondsFromNow;
   nextAlarms[context] = future_time; //Store the future time for this alarm
   RTC_setNextRtcAlarmA(&hrtc);       //Set up the next alarm
+}
+
+void RTC_setupAndStartSdSyncAlarm(void)
+{
+  RTC_AlarmTypeDef sAlarm;
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef sDate;
+
+  /* Get time added since it was randomly missing interrupt when using HAL_RTC_GetAlarm().*/
+  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+  /* From GetTime() notes : You must call HAL_RTC_GetDate() after HAL_RTC_GetTime() to unlock the values....*/
+  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+  uint8_t sec = sTime.Seconds + 1;
+  uint8_t min = sTime.Minutes;
+  uint8_t hr = sTime.Hours;
+
+  if (sec >= 60)
+  {
+    sec = 0;
+    min++;
+    if (min >= 60)
+    {
+      min = 0;
+      hr++;
+      if (hr >= 24)
+      {
+        hr = 0;
+      }
+    }
+  }
+
+  sAlarm.AlarmTime.Hours = hr;
+  sAlarm.AlarmTime.Minutes = min;
+  sAlarm.AlarmTime.Seconds = sec;
+
+  sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY; //Match Hours, Minutes, Seconds
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.AlarmDateWeekDay = 1; //ignored due to mask
+  sAlarm.Alarm = RTC_ALARM_B;
+
+  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
+{
+  //stopAlarm(); //stopping from triggering the Alarm multiple times.
+  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
+  //printf("Alarm B fired!\r\n");           // Debug print
+  //__HAL_RTC_ALARMB_DISABLE(&hrtc);
+  //__HAL_RTC_ALARM_DISABLE_IT(&hrtc, RTC_IT_ALRB);
+  //RTC_setupAndStartSdSyncAlarm(); //for the next interval (testing purposes)
+
+  RTC_stopSdSyncAlarm();
+
+  ShimSdSync_handleSyncTimerTrigger();
+
+  RTC_setupAndStartSdSyncAlarm();
+}
+
+void RTC_stopSdSyncAlarm(void)
+{
+  __HAL_RTC_ALARMB_DISABLE(hrtc);                //disable Alarm B
+  __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRB); //disable Alarm trigger
+}
+
+uint8_t RTC_isRwcTimeSet(void)
+{
+  return RTC_get64() > 1735689600000; //1735689600000 is the timestamp for 2025-01-01T00:00:00Z
 }
 
 /* USER CODE END 1 */
