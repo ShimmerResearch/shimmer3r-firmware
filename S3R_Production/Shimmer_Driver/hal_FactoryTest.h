@@ -109,9 +109,10 @@ enum
   S3R_TEST_0026 = (1 << (26 - 1)), //Microphone
 };
 
-typedef struct {
-    const char *message;
-    uint8_t selfTestResult;
+typedef struct
+{
+  const char *message;
+  uint8_t selfTestResult;
 } micTestResult_t;
 
 uint32_t run_factory_test(void);
@@ -132,6 +133,6 @@ uint8_t gsrFactoryTest_run(void);
 void gsrFactoryTest_printResults(void);
 HAL_StatusTypeDef gsrFactoryTest_getAvgGsr(uint32_t *gsrResistance);
 uint8_t runMicrophoneTest(void);
-const micTestResult_t* getMicTestResult(uint8_t micResult);
+const micTestResult_t *getMicTestResult(uint8_t micResult);
 
 #endif /* HAL_FACTORYTEST_H_ */

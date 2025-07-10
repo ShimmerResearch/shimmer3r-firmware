@@ -1080,20 +1080,23 @@ uint8_t runMicrophoneTest(void)
   return self_test_result;
 }
 
-const micTestResult_t* getMicTestResult(uint8_t micResult) {
-    static const micTestResult_t results[] = {
-        [FACTORY_TEST_MIC_PASS] = { "PASS", SELF_TEST_PASS },
-        [FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER] = { "FAIL: Test buffer is empty", SELF_TEST_FAIL_SIGNAL_ISSUE },
-        [MDF_ERROR_ACQUISITION_OVERFLOW] = { "FAIL: Acquisition Overflow Error", SELF_TEST_FAIL_CHIP_DETECTION },
-        [MDF_ERROR_RSF_OVERRUN] = { "FAIL: RSF Overrun Error", SELF_TEST_FAIL_CHIP_DETECTION },
-        [MDF_ERROR_CLOCK_ABSENCE] = { "FAIL: Clock Absence Error", SELF_TEST_FAIL_CHIP_DETECTION },
-        [MDF_ERROR_SATURATION] = { "FAIL: Saturation Error", SELF_TEST_FAIL_CHIP_DETECTION },
-        [MDF_ERROR_DMA] = { "FAIL: DMA", SELF_TEST_FAIL_CHIP_DETECTION }
-    };
-    static const micTestResult_t unknown = { "FAIL: Unknown Error Code", SELF_TEST_FAIL_CHIP_DETECTION };
+const micTestResult_t *getMicTestResult(uint8_t micResult)
+{
+  static const micTestResult_t results[] = { [FACTORY_TEST_MIC_PASS] = { "PASS", SELF_TEST_PASS },
+    [FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER]
+    = { "FAIL: Test buffer is empty", SELF_TEST_FAIL_SIGNAL_ISSUE },
+    [MDF_ERROR_ACQUISITION_OVERFLOW]
+    = { "FAIL: Acquisition Overflow Error", SELF_TEST_FAIL_CHIP_DETECTION },
+    [MDF_ERROR_RSF_OVERRUN] = { "FAIL: RSF Overrun Error", SELF_TEST_FAIL_CHIP_DETECTION },
+    [MDF_ERROR_CLOCK_ABSENCE] = { "FAIL: Clock Absence Error", SELF_TEST_FAIL_CHIP_DETECTION },
+    [MDF_ERROR_SATURATION] = { "FAIL: Saturation Error", SELF_TEST_FAIL_CHIP_DETECTION },
+    [MDF_ERROR_DMA] = { "FAIL: DMA", SELF_TEST_FAIL_CHIP_DETECTION } };
+  static const micTestResult_t unknown
+      = { "FAIL: Unknown Error Code", SELF_TEST_FAIL_CHIP_DETECTION };
 
-    if (micResult < sizeof(results)/sizeof(results[0]) && results[micResult].message != NULL) {
-        return &results[micResult];
-    }
-    return &unknown;
+  if (micResult < sizeof(results) / sizeof(results[0]) && results[micResult].message != NULL)
+  {
+    return &results[micResult];
+  }
+  return &unknown;
 }
