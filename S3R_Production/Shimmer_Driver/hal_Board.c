@@ -594,7 +594,13 @@ void Board_setExpansionBrdPower(uint8_t state)
   }
 }
 
-void resetGsrRange(void)
+void Board_resetGsrRange(void)
 {
   GSR_setActiveResistor(HW_RES_40K);
+}
+
+void Board_setMicPower(uint8_t state)
+{
+  Board_SW_MIC(state);
+  shimmerStatus.pinPvMic = state;
 }
