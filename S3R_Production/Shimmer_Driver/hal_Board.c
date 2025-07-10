@@ -559,25 +559,43 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state)
 
 void Board_setExpansionBrdPower(uint8_t state)
 {
-  if (ShimBrd_isExpBrdId(EXP_BRD_GSR_UNIFIED))
+  //ExG is handled in SPI stop sensing.
+
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
+  if (ShimBrd_isExpBrdId(EXP_BRD_GSR_UNIFIED) || ShimBrd_isExpBrdId(EXP_BRD_BR_AMP_UNIFIED)
+      || ShimBrd_isExpBrdId(EXP_BRD_PROTO3_DELUXE))
   {
-    Board_SW_PPG_POWER(state);
+    if (ShimBrd_isExpBrdId(EXP_BRD_GSR_UNIFIED))
+    {
+#if SUPPORT_SR48_6_0
+      if (configBytes->chEnGsr && ShimBrd_isBoardSr48_6_0())
+      {
+        Board_SR48_6_0_SW_GSR(0);
+      }
+#endif
+      Board_SW_PPG_POWER(state);
+    }
+    else if (ShimBrd_isExpBrdId(EXP_BRD_BR_AMP_UNIFIED))
+    {
+      if (configBytes->chEnBridgeAmp)
+      {
+        Board_SW_BRIDGE_AMP_PWR(state);
+      }
+      if (configBytes->chEnIntADC3)
+      {
+        Board_SW_VOLTAGE_DIVIDER_PWR(state);
+      }
+    }
+    else if (ShimBrd_isExpBrdId(EXP_BRD_PROTO3_DELUXE))
+    {
+      Board_SW_PROTO3_DELUXE_PWR(state);
+    }
+    shimmerStatus.pinPvExt = state;
   }
-  else
-  {
-    //TODO
-  }
-  shimmerStatus.pinPvExt = state;
 }
 
-void resetGsrPwrAndRange(void)
+void Board_resetGsrRange(void)
 {
-#if SUPPORT_SR48_6_0
-  if (ShimBrd_isBoardSr48_6_0())
-  {
-    Board_SR48_6_0_SW_GSR(0);
-  }
-#endif
   GSR_setActiveResistor(HW_RES_40K);
 }
 

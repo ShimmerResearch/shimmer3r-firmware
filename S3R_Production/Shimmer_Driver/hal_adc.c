@@ -286,7 +286,7 @@ void S4_NORM_ADC_configureChannels(void)
   }
 #endif
 
-  //Strain gauge
+  //Bridge Amplifier/Strain Gauge
   if (configBytes->chEnBridgeAmp)
   {
     *channel_contents_ptr++ = STRAIN_HIGH;
@@ -406,27 +406,22 @@ void S4_NORM_ADC_startSensing(void)
 
     HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_SET);
   }
-#endif
 
-  //TODO check what's needed below for Shimmer3r
   if (configBytes->chEnPpg)
   {
-#if defined(SHIMMER4_SDK)
     //in shimmer3 this corresponds to adc12
     configBytes->chEnIntADC0 = 1;
     configBytes->chEnIntADC4 = 1;
     HAL_GPIO_WritePin(SW_PPG_EN_GPIO_Port, SW_PPG_EN_Pin, GPIO_PIN_SET);
-#endif
   }
   if (configBytes->chEnBridgeAmp)
   {
-#if defined(SHIMMER4_SDK)
     //in shimmer3 this corresponds to adc13 and adc14
     configBytes->chEnIntADC1 = 1;
     configBytes->chEnIntADC2 = 1;
     HAL_GPIO_WritePin(SW_STRAIN_GAUGE_GPIO_Port, SW_STRAIN_GAUGE_Pin, GPIO_PIN_SET);
-#endif
   }
+#endif
   if (configBytes->chEnGsr)
   {
     //TODO check what's needed below for Shimmer3r
@@ -434,8 +429,6 @@ void S4_NORM_ADC_startSensing(void)
     //in shimmer3 this corresponds to adc1
     configBytes->chEnIntADC3 = 1;
 #endif
-
-    Board_SR48_6_0_SW_GSR(1);
     GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks);
   }
 
@@ -496,7 +489,7 @@ void S4_NORM_ADC_startSensing(void)
     }
   }
 
-  if (configBytes->chEnIntADC1)
+  if (configBytes->chEnIntADC1 || configBytes->chEnBridgeAmp)
   {
     sConfig.Channel = ADC_CHANNEL_INT_A1;
     sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
@@ -506,7 +499,7 @@ void S4_NORM_ADC_startSensing(void)
     }
   }
 
-  if (configBytes->chEnIntADC2)
+  if (configBytes->chEnIntADC2 || configBytes->chEnBridgeAmp)
   {
     sConfig.Channel = ADC_CHANNEL_INT_A2;
     sConfig.Rank = ADC_RANK_ARRAY[adc_counter_sens++];
@@ -565,11 +558,11 @@ void shimmerAdcGpioSetup(uint8_t init)
   {
     adcPinsPortA |= SR48_6_0_GPIO_ADC_INT_EXP0_Pin;
   }
-  if (configBytes->chEnIntADC1)
+  if (configBytes->chEnIntADC1 || configBytes->chEnBridgeAmp)
   {
     adcPinsPortB |= SR48_6_0_GPIO_ADC_INT_EXP1_Pin;
   }
-  if (configBytes->chEnIntADC2)
+  if (configBytes->chEnIntADC2 || configBytes->chEnBridgeAmp)
   {
     adcPinsPortB |= SR48_6_0_GPIO_ADC_INT_EXP2_Pin;
   }
@@ -922,19 +915,36 @@ void S4_NORM_ADC_bufPoll()
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
 #endif
-  if (configBytes->chEnIntADC1)
+  //Bridge Amplifier/Strain Gauge
+  if (configBytes->chEnBridgeAmp)
   {
-    sensing.dataBuf[sensing.ptr.intADC1 + 0]
+    //SG_LOW channel
+    sensing.dataBuf[sensing.ptr.strainGauge + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.intADC1 + 1]
+    sensing.dataBuf[sensing.ptr.strainGauge + 1]
+        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    //SG_HIGH channel
+    sensing.dataBuf[sensing.ptr.strainGauge + 2]
+        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    sensing.dataBuf[sensing.ptr.strainGauge + 3]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
-  if (configBytes->chEnIntADC2)
+  else
   {
-    sensing.dataBuf[sensing.ptr.intADC2 + 0]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.intADC2 + 1]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    if (configBytes->chEnIntADC1)
+    {
+      sensing.dataBuf[sensing.ptr.intADC1 + 0]
+          = *((uint8_t *) adcBufSens + adc_offset_sens++);
+      sensing.dataBuf[sensing.ptr.intADC1 + 1]
+          = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    }
+    if (configBytes->chEnIntADC2)
+    {
+      sensing.dataBuf[sensing.ptr.intADC2 + 0]
+          = *((uint8_t *) adcBufSens + adc_offset_sens++);
+      sensing.dataBuf[sensing.ptr.intADC2 + 1]
+          = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    }
   }
   if (configBytes->chEnGsr)
   {
@@ -949,18 +959,6 @@ void S4_NORM_ADC_bufPoll()
     sensing.dataBuf[sensing.ptr.intADC3 + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
-
-  ////PPG
-
-  ////Strain Gauge
-  //if (configBytes->chEnBrAmp) {
-  //   // SG_LOW channel
-  //   sensing.dataBuf[sensing.ptr.strainGauge + 0] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-  //   sensing.dataBuf[sensing.ptr.strainGauge + 1] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-  //   // SG_HIGH channel
-  //   sensing.dataBuf[sensing.ptr.strainGauge + 2] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-  //   sensing.dataBuf[sensing.ptr.strainGauge + 3] = *((uint8_t*)adcBufSens + adc_offset_sens++);
-  //}
 }
 
 //void ADC_stopSensing()
@@ -1006,23 +1004,19 @@ void S4_NORM_ADC_stopSensing()
 #if defined(SHIMMER4_SDK)
   //Analog Accel (KXRB5-2042)
   HAL_GPIO_WritePin(GPIOG, SW_ACCEL_Pin, GPIO_PIN_RESET);
-#endif
   //Analog Strain Gauge, resets the PV_SG voltage to gauge op-amp
   if (configBytes->chEnPpg)
   {
-#if defined(SHIMMER4_SDK)
     HAL_GPIO_WritePin(SW_PPG_EN_GPIO_Port, SW_PPG_EN_Pin, GPIO_PIN_RESET);
-#endif
   }
   if (configBytes->chEnBridgeAmp)
   {
-#if defined(SHIMMER4_SDK)
     HAL_GPIO_WritePin(SW_STRAIN_GAUGE_GPIO_Port, SW_STRAIN_GAUGE_Pin, GPIO_PIN_RESET);
-#endif
   }
+#endif
   if (configBytes->chEnGsr)
   {
-    resetGsrPwrAndRange();
+    GSR_resetGsrRange();
   }
 
 #if defined(SHIMMER4_SDK)

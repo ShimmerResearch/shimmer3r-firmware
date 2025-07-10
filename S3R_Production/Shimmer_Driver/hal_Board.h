@@ -90,16 +90,18 @@
 /* Shimmer3R Proto3 Deluxe SR38 */
 #define PV_REGSW_Pin                      GPIO_INTERNAL0_Pin
 #define PV_REGSW_GPIO_Port                GPIO_INTERNAL0_GPIO_Port
-#define J3_PWM_SOURCE_Pin                 GPIO_INTERNAL3_Pin
-#define J3_PWM_SOURCE_Port                GPIO_INTERNAL3_GPIO_Port
+#define J4_GPIO_INTERNAL1_Pin             GPIO_INTERNAL1_Pin
+#define J4_GPIO_INTERNAL1_GPIO_Port       GPIO_INTERNAL1_GPIO_Port
 #define J2_SW_I2C4_Pin                    GPIO_INTERNAL2_Pin
 #define J2_SW_I2C4_GPIO_Port              GPIO_INTERNAL2_GPIO_Port
-#define J2_PWR_FOR_I2C_SWITCH_Pin         GPIO_INTERNAL5_Pin
-#define J2_PWR_FOR_I2C_SWITCH_GPIO_Port   GPIO_INTERNAL5_GPIO_Port
+#define J3_PWM_SOURCE_Pin                 GPIO_INTERNAL3_Pin
+#define J3_PWM_SOURCE_Port                GPIO_INTERNAL3_GPIO_Port
 #define J10_SPI3_CS_Pin                   GPIO_INTERNAL4_Pin
 #define J10_SPI3_CS_GPIO_Port             GPIO_INTERNAL4_GPIO_Port
-#define J4_GPIO_INTERNAL6_Pin             GPIO_PIN_4
-#define J4_GPIO_INTERNAL6_GPIO_Port       GPIOA
+#define J2_PWR_FOR_I2C_SWITCH_Pin         GPIO_INTERNAL5_Pin
+#define J2_PWR_FOR_I2C_SWITCH_GPIO_Port   GPIO_INTERNAL5_GPIO_Port
+#define J4_GPIO_INTERNAL6_Pin             GPIO_INTERNAL6_Pin
+#define J4_GPIO_INTERNAL6_GPIO_Port       GPIO_INTERNAL6_GPIO_Port
 
 /* Interrupts */
 /* Either GPIO_ADC_INT_EXP1 or SD_DETECT_N can be used on line 0 */
@@ -307,6 +309,15 @@
   HAL_GPIO_WritePin(SW_VOLTAGE_DIVIDER_HIGH_GPIO_Port, \
       SW_VOLTAGE_DIVIDER_HIGH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
+/* Shimmer3R Proto3 Deluxe SR38 */
+//TLV70028DDC, Active High
+#define Board_SW_PROTO3_DELUXE_PWR(x)                \
+  HAL_GPIO_WritePin(J2_PWR_FOR_I2C_SWITCH_GPIO_Port, \
+      J2_PWR_FOR_I2C_SWITCH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//TPS22945DCKR, Active High
+#define Board_SW_PROTO3_DELUXE_I2C4_ON_J2(x) \
+  HAL_GPIO_WritePin(J2_SW_I2C4_GPIO_Port, J2_SW_I2C4_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+
 #elif defined(SHIMMER4_SDK)
 #define Board_SW_EXP(x) \
   HAL_GPIO_WritePin(EXP_RESET_N_GPIO_Port, EXP_RESET_N_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
@@ -406,7 +417,6 @@ extern void Board_delayMicros(uint32_t micros);
 void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #endif
 void Board_setExpansionBrdPower(uint8_t state);
-void resetGsrPwrAndRange(void);
 void Board_setMicPower(uint8_t state);
 
 #endif

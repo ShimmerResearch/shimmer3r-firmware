@@ -178,7 +178,10 @@ extern "C"
 #define BT_LP_MODE_Pin           GPIO_PIN_10
 #define BT_LP_MODE_GPIO_Port     GPIOD
 
-/* USER CODE BEGIN Private defines */
+  /* USER CODE BEGIN Private defines */
+
+#define GPIO_INTERNAL6_Pin       GPIO_PIN_4
+#define GPIO_INTERNAL6_GPIO_Port GPIOA
 
 /* TODO including these expansion board pin definitions here because CubeMX
  * randomly stopped automatically generating them */

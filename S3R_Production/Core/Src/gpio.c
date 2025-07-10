@@ -669,6 +669,91 @@ void gpioInitPerBoard(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(EXG_RESET_N_GPIO_Port, &GPIO_InitStruct);
   }
+  else if (daughtCardId->exp_brd_id == EXP_BRD_BR_AMP_UNIFIED)
+  {
+    //Power to Bridge Amplifier
+    Board_SW_BRIDGE_AMP_PWR(0);
+    GPIO_InitStruct.Pin = SW_BRIDGE_AMP_PWR_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(SW_BRIDGE_AMP_PWR_GPIO_Port, &GPIO_InitStruct);
+
+    //Power to Voltage Divider
+    Board_SW_VOLTAGE_DIVIDER_PWR(0);
+    GPIO_InitStruct.Pin = SW_VOLTAGE_DIVIDER_HIGH_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(SW_VOLTAGE_DIVIDER_HIGH_GPIO_Port, &GPIO_InitStruct);
+  }
+  else if (daughtCardId->exp_brd_id == EXP_BRD_PROTO3_DELUXE)
+  {
+    //'GPIO_INTERNAL0'
+    //Optional Power to PV regulator on J3 connector. Components are normally
+    //DNI. HAL_GPIO_WritePin(PV_REGSW_GPIO_Port, PV_REGSW_Pin, GPIO_PIN_RESET);
+    //GPIO_InitStruct.Pin = PV_REGSW_Pin;
+    //GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    //GPIO_InitStruct.Pull = GPIO_NOPULL;
+    //GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    //HAL_GPIO_Init(PV_REGSW_GPIO_Port, &GPIO_InitStruct);
+
+    //'GPIO_INTERNAL1'
+    //GPIO pin on J4 connector. Not used currently but can be used for future expansion.
+    //HAL_GPIO_WritePin(J4_GPIO_INTERNAL1_GPIO_Port, J4_GPIO_INTERNAL1_Pin,
+    //    GPIO_PIN_RESET);
+    //GPIO_InitStruct.Pin = J4_GPIO_INTERNAL1_Pin;
+    //GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    //GPIO_InitStruct.Pull = GPIO_NOPULL;
+    //GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    //HAL_GPIO_Init(J4_GPIO_INTERNAL1_GPIO_Port, &GPIO_InitStruct);
+
+    //'GPIO_INTERNAL2'
+    //Switch (ADG742) for I2C4 on J2 connector. 0 = I2C4 off, 1 = I2C4 on
+    Board_SW_PROTO3_DELUXE_I2C4_ON_J2(0);
+    GPIO_InitStruct.Pin = J2_SW_I2C4_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(J2_SW_I2C4_GPIO_Port, &GPIO_InitStruct);
+
+    //'GPIO_INTERNAL3'
+    //PWM at J3. Components are normally DNI.
+    //HAL_GPIO_WritePin(J3_PWM_SOURCE_Port, J3_PWM_SOURCE_Pin, GPIO_PIN_RESET);
+    //GPIO_InitStruct.Pin = J3_PWM_SOURCE_Pin;
+    //GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    //GPIO_InitStruct.Pull = GPIO_NOPULL;
+    //GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    //HAL_GPIO_Init(J3_PWM_SOURCE_Port, &GPIO_InitStruct);
+
+    //'GPIO_INTERNAL4'
+    //SPI3 CS for J10 connector. Not used currently but can be used for future expansion.
+    //HAL_GPIO_WritePin(J10_SPI3_CS_GPIO_Port, J10_SPI3_CS_Pin, GPIO_PIN_RESET);
+    //GPIO_InitStruct.Pin = J10_SPI3_CS_Pin;
+    //GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    //GPIO_InitStruct.Pull = GPIO_NOPULL;
+    //GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    //HAL_GPIO_Init(J10_SPI3_CS_GPIO_Port, &GPIO_InitStruct);
+
+    //'GPIO_INTERNAL5'
+    //Optional power to both J3 and J2. Components are normally placed.
+    Board_SW_PROTO3_DELUXE_PWR(0);
+    GPIO_InitStruct.Pin = J2_PWR_FOR_I2C_SWITCH_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(J2_PWR_FOR_I2C_SWITCH_GPIO_Port, &GPIO_InitStruct);
+
+    //'GPIO_INTERNAL6'
+    //GPIO pin on J4 connector. Not used currently but can be used for future expansion.
+    //HAL_GPIO_WritePin(J4_GPIO_INTERNAL6_GPIO_Port, J4_GPIO_INTERNAL6_Pin,
+    //    GPIO_PIN_RESET);
+    //GPIO_InitStruct.Pin = J4_GPIO_INTERNAL6_Pin;
+    //GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    //GPIO_InitStruct.Pull = GPIO_NOPULL;
+    //GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    //HAL_GPIO_Init(J4_GPIO_INTERNAL6_GPIO_Port, &GPIO_InitStruct);
+  }
 }
 
 void vbusPinStateCheck(void)
