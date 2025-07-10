@@ -17,6 +17,8 @@
 #include "main.h"
 #include "usart.h"
 
+#include "log_and_stream_includes.h"
+
 /* convenience functions for pretty-printing binary data as zero-padded hexadecimal */
 #define printHex8(VARIABLE)            printHex((uint8_t *) &VARIABLE, 1, 1, 0)
 #define printHex16(VARIABLE)           printHex((uint8_t *) &VARIABLE, 2, 1, 0)
@@ -97,7 +99,10 @@ static ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode_ref = {
   .interval = 300, //A value of 300 was read from eval kit. Datasheet states setting isn't supported.
 };
 static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
+    = { .mode = 0x41, .bonding = 1, .flags = 1, .keysize = 16, .io = 3, .pairprop = 0 }; // Default values
+static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref_sd_sync
     = { .mode = 0, .bonding = 0, .flags = 1, .keysize = 16, .io = 3, .pairprop = 0 };
+
 uint8_t *btInitCmdsSteps;
 uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
 uint8_t btNameTypeBeingRead;
@@ -592,15 +597,31 @@ void btInitCommands(void)
   if (btInitCmdsStep == SET_SECURITY_PARAMETERS)
   {
     incrementBtInitCmdsStep();
-    setExpectedResponse(EZS_IDX_RSP_SMP_SET_SECURITY_PARAMETERS);
 
-    ezs_cmd_smp_set_security_parameters(rsp_smp_get_security_parameters_ref.mode,
-        rsp_smp_get_security_parameters_ref.bonding,
-        rsp_smp_get_security_parameters_ref.keysize,
-        rsp_smp_get_security_parameters_ref.pairprop,
-        rsp_smp_get_security_parameters_ref.io,
-        rsp_smp_get_security_parameters_ref.flags);
-    return;
+    ezs_rsp_smp_get_security_parameters_t *securityParametersPtr;
+    if(ShimConfig_getStoredConfig()->syncEnable)
+    {
+      securityParametersPtr = &rsp_smp_get_security_parameters_ref_sd_sync;
+    }
+    else
+    {
+      securityParametersPtr = &rsp_smp_get_security_parameters_ref;
+    }
+
+    if (memcmp(&securityParametersPtr->result,
+            &rsp_smp_get_security_parameters.result, sizeof(rsp_smp_get_security_parameters_ref))
+        != 0)
+    {
+      printf("Set Security Param\r\n");
+      setExpectedResponse(EZS_IDX_RSP_SMP_SET_SECURITY_PARAMETERS);
+      ezs_cmd_smp_set_security_parameters(securityParametersPtr->mode,
+          securityParametersPtr->bonding,
+          securityParametersPtr->keysize,
+          securityParametersPtr->pairprop,
+          securityParametersPtr->io,
+          securityParametersPtr->flags);
+      return;
+    }
   }
 
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
