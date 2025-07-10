@@ -1099,6 +1099,7 @@ uint8_t runMicrophoneTest(void)
       send_test_report("FAIL: DMA");
       break;
     default:
+      send_test_report("FAIL: Unknown Error Code");
       break;
     }
   }
