@@ -1067,42 +1067,9 @@ uint8_t runMicrophoneTest(void)
   micResult = micTest();
 
   send_test_report(" - S3R_TEST_0026 - ");
-  if (micResult == FACTORY_TEST_MIC_PASS)
-  {
-    send_test_report("PASS");
-    self_test_result = SELF_TEST_PASS;
-  }
-  else if (micResult == FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER)
-  {
-    send_test_report("FAIL: Test buffer is empty");
-    self_test_result = SELF_TEST_FAIL_SIGNAL_ISSUE;
-  }
-  else
-  {
-    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
-    /* MDF_ERROR_SHORT_CIRCUIT and MDF_ERROR_OUT_OFF_LIMIT not implemented here as they are not used for ADF instances */
-    switch (micResult)
-    {
-    case MDF_ERROR_ACQUISITION_OVERFLOW:
-      send_test_report("FAIL: Acquisition Overflow Error");
-      break;
-    case MDF_ERROR_RSF_OVERRUN:
-      send_test_report("FAIL: RSF Overrun Error");
-      break;
-    case MDF_ERROR_CLOCK_ABSENCE:
-      send_test_report("FAIL: Clock Absence Error");
-      break;
-    case MDF_ERROR_SATURATION:
-      send_test_report("FAIL: Saturation Error");
-      break;
-    case MDF_ERROR_DMA:
-      send_test_report("FAIL: DMA");
-      break;
-    default:
-      send_test_report("FAIL: Unknown Error Code");
-      break;
-    }
-  }
+  const micTestResult_t *result = getMicTestResult(micResult);
+  send_test_report(result->message);
+  self_test_result = result->selfTestResult;
   send_test_report("\r\n");
 
   if (self_test_result != SELF_TEST_PASS)
