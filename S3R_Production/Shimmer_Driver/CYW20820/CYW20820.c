@@ -99,7 +99,7 @@ static ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode_ref = {
   .interval = 300, //A value of 300 was read from eval kit. Datasheet states setting isn't supported.
 };
 static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
-    = { .mode = 0x41, .bonding = 1, .flags = 1, .keysize = 16, .io = 3, .pairprop = 0 }; // Default values
+    = { .mode = 0x41, .bonding = 1, .flags = 1, .keysize = 16, .io = 3, .pairprop = 0 }; //Default values
 static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref_sd_sync
     = { .mode = 0, .bonding = 0, .flags = 1, .keysize = 16, .io = 3, .pairprop = 0 };
 
@@ -599,7 +599,7 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
 
     ezs_rsp_smp_get_security_parameters_t *securityParametersPtr;
-    if(ShimConfig_getStoredConfig()->syncEnable)
+    if (ShimConfig_getStoredConfig()->syncEnable)
     {
       securityParametersPtr = &rsp_smp_get_security_parameters_ref_sd_sync;
     }
@@ -608,17 +608,15 @@ void btInitCommands(void)
       securityParametersPtr = &rsp_smp_get_security_parameters_ref;
     }
 
-    if (memcmp(&securityParametersPtr->result,
-            &rsp_smp_get_security_parameters.result, sizeof(rsp_smp_get_security_parameters_ref))
+    if (memcmp(&securityParametersPtr->result, &rsp_smp_get_security_parameters.result,
+            sizeof(rsp_smp_get_security_parameters_ref))
         != 0)
     {
       printf("Set Security Param\r\n");
       setExpectedResponse(EZS_IDX_RSP_SMP_SET_SECURITY_PARAMETERS);
       ezs_cmd_smp_set_security_parameters(securityParametersPtr->mode,
-          securityParametersPtr->bonding,
-          securityParametersPtr->keysize,
-          securityParametersPtr->pairprop,
-          securityParametersPtr->io,
+          securityParametersPtr->bonding, securityParametersPtr->keysize,
+          securityParametersPtr->pairprop, securityParametersPtr->io,
           securityParametersPtr->flags);
       return;
     }
