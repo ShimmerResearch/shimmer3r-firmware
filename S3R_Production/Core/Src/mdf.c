@@ -281,7 +281,7 @@ void HAL_MDF_ErrorCallback(MDF_HandleTypeDef *hmdf)
 
 uint8_t micTest(void)
 {
-  uint8_t micTestResult = FACTORY_TEST_MIC_PASS;
+  uint8_t micTestResult = MDF_ERROR_NONE;
   micTestRunning = 1;
   micTestErrorCnt = 0;
   memset(dataBuffer, 0, sizeof(dataBuffer));
@@ -309,6 +309,8 @@ uint8_t micTest(void)
   {
     micStopSensing();
 
+    micTestResult = FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER; //no data in buffer
+
     for (uint8_t i = 0; i < (DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U); i++)
     {
       if (dataBuffer[i] != 0)
@@ -317,11 +319,6 @@ uint8_t micTest(void)
         micTestResult = FACTORY_TEST_MIC_PASS;
         break;
       }
-    }
-
-    if (micTestResult == 0)
-    {
-      micTestResult = FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER; //no data in buffer
     }
   }
 
