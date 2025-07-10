@@ -538,7 +538,7 @@ void I2C_test(void)
   {
     uint8_t i2c4_result = 0;
 
-    enableI2cOnSr48PpgSocket(1);
+    enableI2cOnSr48OrSr38PpgSocket(1);
     HAL_Delay(2); //2ms as per Shimmer3 code
     I2C_scan_internal_expansion_bus(test_i2c_addr_list, &test_i2c_addr_list_len);
 
@@ -585,7 +585,7 @@ void I2C_test(void)
       i2c4_result = 1;
     }
 
-    enableI2cOnSr48PpgSocket(0);
+    enableI2cOnSr48OrSr38PpgSocket(0);
 
     if (i2c4_result)
     {
@@ -839,7 +839,7 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
   send_test_report(buffer);
 }
 
-void send_test_report(char *str)
+void send_test_report(const char *str)
 {
   switch (factoryTestTarget)
   {
@@ -929,7 +929,7 @@ uint8_t gsrFactoryTest_run(void)
     }
   }
 
-  Board_resetGsrPwrAndRange();
+  GSR_resetGsrRange();
 
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
@@ -1060,14 +1060,17 @@ HAL_StatusTypeDef gsrFactoryTest_getAvgGsr(uint32_t *gsrResistance)
 uint8_t runMicrophoneTest(void)
 {
   uint8_t self_test_result = SELF_TEST_PASS;
+  uint8_t micResult;
 
   send_test_report("Microphone:\r\n");
 
-  self_test_result = micTest() ? SELF_TEST_FAIL_SIGNAL_ISSUE : SELF_TEST_PASS;
+  micResult = micTest();
 
-  sprintf(buffer, " - S3R_TEST_0026 - %s\r\n",
-      self_test_result == SELF_TEST_PASS ? "PASS" : "FAIL: Test buffer is empty");
-  send_test_report(buffer);
+  send_test_report(" - S3R_TEST_0026 - ");
+  const micTestResult_t *result = getMicTestResult(micResult);
+  send_test_report(result->message);
+  self_test_result = result->selfTestResult;
+  send_test_report("\r\n");
 
   if (self_test_result != SELF_TEST_PASS)
   {
@@ -1075,4 +1078,25 @@ uint8_t runMicrophoneTest(void)
   }
 
   return self_test_result;
+}
+
+const micTestResult_t *getMicTestResult(uint8_t micResult)
+{
+  static const micTestResult_t results[] = { [FACTORY_TEST_MIC_PASS] = { "PASS", SELF_TEST_PASS },
+    [FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER]
+    = { "FAIL: Test buffer is empty", SELF_TEST_FAIL_SIGNAL_ISSUE },
+    [MDF_ERROR_ACQUISITION_OVERFLOW]
+    = { "FAIL: Acquisition Overflow Error", SELF_TEST_FAIL_CHIP_DETECTION },
+    [MDF_ERROR_RSF_OVERRUN] = { "FAIL: RSF Overrun Error", SELF_TEST_FAIL_CHIP_DETECTION },
+    [MDF_ERROR_CLOCK_ABSENCE] = { "FAIL: Clock Absence Error", SELF_TEST_FAIL_CHIP_DETECTION },
+    [MDF_ERROR_SATURATION] = { "FAIL: Saturation Error", SELF_TEST_FAIL_CHIP_DETECTION },
+    [MDF_ERROR_DMA] = { "FAIL: DMA", SELF_TEST_FAIL_CHIP_DETECTION } };
+  static const micTestResult_t unknown
+      = { "FAIL: Unknown Error Code", SELF_TEST_FAIL_CHIP_DETECTION };
+
+  if (micResult < sizeof(results) / sizeof(results[0]) && results[micResult].message != NULL)
+  {
+    return &results[micResult];
+  }
+  return &unknown;
 }
