@@ -96,15 +96,8 @@ static ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode_ref = {
   .mode = 4,       //(Default=4)
   .interval = 300, //A value of 300 was read from eval kit. Datasheet states setting isn't supported.
 };
-static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref =
-{
-    .mode = 0,
-    .bonding = 0,
-    .flags = 1,
-    .keysize = 16,
-    .io = 3,
-    .pairprop = 0
-};
+static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
+    = { .mode = 0, .bonding = 0, .flags = 1, .keysize = 16, .io = 3, .pairprop = 0 };
 uint8_t *btInitCmdsSteps;
 uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
 uint8_t btNameTypeBeingRead;
@@ -120,11 +113,13 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
 #if USE_GET_SET_ADV_PARAM
   GET_ADVERTISING_PARAMETERS, SET_ADVERTISING_PARAMETERS,
 #endif
-  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS,SET_SECURITY_PARAMETERS,
+  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS, SET_SECURITY_PARAMETERS,
   START_BLE_ADVERTISING_STAGE1, START_BLE_ADVERTISING_STAGE2, FINISH };
 
-static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,/* PING,*/
-   SET_SECURITY_PARAMETERS,GET_SECURITY_PARAMETERS, //Any command to get module into binary command mode. Added set, get security parameters here to get SD sync working
+static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
+  WAIT_FOR_BOOT_STAGE2, /* PING,*/
+  SET_SECURITY_PARAMETERS,
+  GET_SECURITY_PARAMETERS, //Any command to get module into binary command mode. Added set, get security parameters here to get SD sync working
   FINISH };
 
 static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
@@ -593,17 +588,19 @@ void btInitCommands(void)
     ezs_cmd_smp_get_security_parameters();
     return;
   }
-  
+
   if (btInitCmdsStep == SET_SECURITY_PARAMETERS)
   {
     incrementBtInitCmdsStep();
     setExpectedResponse(EZS_IDX_RSP_SMP_SET_SECURITY_PARAMETERS);
 
     ezs_cmd_smp_set_security_parameters(rsp_smp_get_security_parameters_ref.mode,
-        rsp_smp_get_security_parameters_ref.bonding,rsp_smp_get_security_parameters_ref.keysize,
-        rsp_smp_get_security_parameters_ref.pairprop, rsp_smp_get_security_parameters_ref.io,
-        rsp_smp_get_security_parameters_ref.flags );
-      return;
+        rsp_smp_get_security_parameters_ref.bonding,
+        rsp_smp_get_security_parameters_ref.keysize,
+        rsp_smp_get_security_parameters_ref.pairprop,
+        rsp_smp_get_security_parameters_ref.io,
+        rsp_smp_get_security_parameters_ref.flags);
+    return;
   }
 
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
