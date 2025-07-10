@@ -17,6 +17,8 @@
 #include "main.h"
 #include "usart.h"
 
+#include "log_and_stream_includes.h"
+
 /* convenience functions for pretty-printing binary data as zero-padded hexadecimal */
 #define printHex8(VARIABLE)            printHex((uint8_t *) &VARIABLE, 1, 1, 0)
 #define printHex16(VARIABLE)           printHex((uint8_t *) &VARIABLE, 2, 1, 0)
@@ -96,6 +98,10 @@ static ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode_ref = {
   .mode = 4,       //(Default=4)
   .interval = 300, //A value of 300 was read from eval kit. Datasheet states setting isn't supported.
 };
+static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
+    = { .mode = 0x41, .bonding = 1, .flags = 1, .keysize = 16, .io = 3, .pairprop = 0 }; //Default values
+static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref_sd_sync
+    = { .mode = 0, .bonding = 0, .flags = 1, .keysize = 16, .io = 3, .pairprop = 0 };
 
 uint8_t *btInitCmdsSteps;
 uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
@@ -112,11 +118,13 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
 #if USE_GET_SET_ADV_PARAM
   GET_ADVERTISING_PARAMETERS, SET_ADVERTISING_PARAMETERS,
 #endif
-  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS,
+  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS, SET_SECURITY_PARAMETERS,
   START_BLE_ADVERTISING_STAGE1, START_BLE_ADVERTISING_STAGE2, FINISH };
 
-static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
-  PING, //Any command to get module into binary command mode
+static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
+  WAIT_FOR_BOOT_STAGE2, /* PING,*/
+  SET_SECURITY_PARAMETERS,
+  GET_SECURITY_PARAMETERS, //Any command to get module into binary command mode. Added set, get security parameters here to get SD sync working
   FINISH };
 
 static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
@@ -580,11 +588,38 @@ void btInitCommands(void)
   if (btInitCmdsStep == GET_SECURITY_PARAMETERS)
   {
     incrementBtInitCmdsStep();
-    /* Not needed at the moment so skipping */
-    //printf("Get Security Param\r\n");
-    //setExpectedResponse(EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS);
-    //ezs_cmd_smp_get_security_parameters();
-    //return;
+    printf("Get Security Param\r\n");
+    setExpectedResponse(EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS);
+    ezs_cmd_smp_get_security_parameters();
+    return;
+  }
+
+  if (btInitCmdsStep == SET_SECURITY_PARAMETERS)
+  {
+    incrementBtInitCmdsStep();
+
+    ezs_rsp_smp_get_security_parameters_t *securityParametersPtr;
+    if (ShimConfig_getStoredConfig()->syncEnable)
+    {
+      securityParametersPtr = &rsp_smp_get_security_parameters_ref_sd_sync;
+    }
+    else
+    {
+      securityParametersPtr = &rsp_smp_get_security_parameters_ref;
+    }
+
+    if (memcmp(&securityParametersPtr->result, &rsp_smp_get_security_parameters.result,
+            sizeof(rsp_smp_get_security_parameters_ref))
+        != 0)
+    {
+      printf("Set Security Param\r\n");
+      setExpectedResponse(EZS_IDX_RSP_SMP_SET_SECURITY_PARAMETERS);
+      ezs_cmd_smp_set_security_parameters(securityParametersPtr->mode,
+          securityParametersPtr->bonding, securityParametersPtr->keysize,
+          securityParametersPtr->pairprop, securityParametersPtr->io,
+          securityParametersPtr->flags);
+      return;
+    }
   }
 
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
@@ -963,6 +998,13 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     break;
 
+  case EZS_IDX_RSP_SMP_SET_SECURITY_PARAMETERS:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: rsp_smp_set_security_parameters: Result=");
+    printHex16(packet->payload.rsp_smp_set_security_parameters.result);
+    printf("\r\n");
+#endif
+    break;
   case EZS_IDX_RSP_GAP_SET_ADV_PARAMETERS:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_set_adv_parameters.result != EZS_ERR_SUCCESS)
@@ -1120,10 +1162,8 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   case EZS_IDX_EVT_BT_CONNECTION_FAILED:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("RX: idx_evt_bt_connection_fail: conn_handle=");
-    printHex8(packet->payload.evt_bt_connection_failed.conn_handle);
-    printf(", Reason=");
-    printHex16(packet->payload.evt_bt_connection_failed.reason);
+    BT_connectionFailed(packet->payload.evt_bt_connection_failed.conn_handle,
+        packet->payload.evt_bt_connection_failed.reason);
     printf("\r\n");
 #endif
     break;
@@ -1302,7 +1342,7 @@ uint8_t BT_disconnect(void)
   return 0;
 }
 
-uint8_t BT_cancelConnection(void)
+void BT_cancelConnection(void)
 {
   uint8_t status;
   //expects a response of 11 bytes
@@ -1318,7 +1358,7 @@ uint8_t BT_cancelConnection(void)
 }
 
 //TODO fix this
-uint8_t BT_connectionFailed(uint8_t conn_handle, uint16_t reason)
+void BT_connectionFailed(uint8_t conn_handle, uint16_t reason)
 {
   printf("Connection Failed! Conn Handle: %02X, Reason: %04X\n", conn_handle, reason);
 
