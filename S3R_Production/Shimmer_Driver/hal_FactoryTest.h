@@ -109,6 +109,12 @@ enum
   S3R_TEST_0026 = (1 << (26 - 1)), //Microphone
 };
 
+typedef struct
+{
+  const char *message;
+  uint8_t selfTestResult;
+} micTestResult_t;
+
 uint32_t run_factory_test(void);
 void print_date_and_time(void);
 void print_shimmer_model(void);
@@ -122,10 +128,11 @@ void SPI_test(void);
 void setup_factory_test(factory_test_target_t target, factory_test_t testToRun);
 uint8_t is_temperature_outside_of_range(float_t temperature);
 void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_test_result, float_t tempCal);
-void send_test_report(char *str);
+void send_test_report(const char *str);
 uint8_t gsrFactoryTest_run(void);
 void gsrFactoryTest_printResults(void);
 HAL_StatusTypeDef gsrFactoryTest_getAvgGsr(uint32_t *gsrResistance);
 uint8_t runMicrophoneTest(void);
+const micTestResult_t *getMicTestResult(uint8_t micResult);
 
 #endif /* HAL_FACTORYTEST_H_ */

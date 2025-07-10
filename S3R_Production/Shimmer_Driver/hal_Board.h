@@ -407,5 +407,6 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #endif
 void Board_setExpansionBrdPower(uint8_t state);
 void resetGsrPwrAndRange(void);
+void Board_setMicPower(uint8_t state);
 
 #endif
