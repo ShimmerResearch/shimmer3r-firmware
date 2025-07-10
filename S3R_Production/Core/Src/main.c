@@ -21,8 +21,6 @@
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
-#include "iwdg.h"
-#include "memorymap.h"
 #include "rng.h"
 #include "rtc.h"
 #include "tim.h"
@@ -777,7 +775,6 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
 #ifdef USE_FULL_ASSERT
 /**
  * @brief  Reports the name of the source file and the source line number
