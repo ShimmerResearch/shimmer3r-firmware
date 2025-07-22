@@ -596,6 +596,8 @@ void I2C_test(void)
   {
     send_test_report(
         " - S3R_TEST_0024 - I2C4 test not applicable for this model\r\n");
+    send_test_report(
+        " - S3R_TEST_0025 - GSR test not applicable for this model\r\n");
   }
 #endif
 }
