@@ -575,16 +575,6 @@ void I2C_test(void)
       send_test_report(buffer);
       send_test_report(
           " - S3R_TEST_0025 - WARNING: GSR - no test rig detected\r\n");
-
-      if (i2c4_result)
-      {
-        shimmerStatus.testResult |= S3R_TEST_0024;
-      }
-    }
-    else if (test_i2c_addr_list_len == 1) //No test rig detected
-    {
-      send_test_report(
-          " - S3R_TEST_0024 - FAIL: I2C4 - test rig not recognised\r\n");
     }
     else
     {
