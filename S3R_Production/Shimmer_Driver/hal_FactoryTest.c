@@ -546,10 +546,8 @@ void I2C_test(void)
     {
       send_test_report(
           " - S3R_TEST_0024 - FAIL: I2C4 - no test rig detected\r\n");
-#ifdef SHIMMER3R_GSR
       send_test_report(
           " - S3R_TEST_0025 - FAIL: GSR - no test rig detected\r\n");
-#endif
       i2c4_result = 1;
     }
     else if (test_i2c_addr_list_len == 3) //GSR Test Rig detected
@@ -575,10 +573,8 @@ void I2C_test(void)
 
       sprintf(buffer, " - S3R_TEST_0024 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
       send_test_report(buffer);
-#ifdef SHIMMER3R_GSR
       send_test_report(
           " - S3R_TEST_0025 - WARNING: GSR - no test rig detected\r\n");
-#endif
 
       if (i2c4_result)
       {
@@ -610,6 +606,8 @@ void I2C_test(void)
   {
     send_test_report(
         " - S3R_TEST_0024 - I2C4 test not applicable for this model\r\n");
+    send_test_report(
+        " - S3R_TEST_0025 - GSR test not applicable for this model\r\n");
   }
 #endif
 }
