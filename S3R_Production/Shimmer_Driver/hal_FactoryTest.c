@@ -573,8 +573,16 @@ void I2C_test(void)
 
       sprintf(buffer, " - S3R_TEST_0024 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
       send_test_report(buffer);
-      send_test_report(
-          " - S3R_TEST_0025 - WARNING: GSR - no test rig detected\r\n");
+      if (ShimBrd_isHwId(EXP_BRD_GSR_UNIFIED))
+      {
+        send_test_report(
+            " - S3R_TEST_0025 - WARNING: GSR - no test rig detected\r\n");
+      }
+      else
+      {
+        send_test_report(
+            " - S3R_TEST_0025 - GSR test not applicable for this model\r\n");
+      }
     }
     else
     {
