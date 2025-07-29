@@ -25,6 +25,7 @@
 
 #include <Boards/shimmer_boards.h>
 #include <LEDs/shimmer_leds.h>
+#include <hal_Board.h>
 #include <log_and_stream_common.h>
 
 //static void ledBlinkTimerCallback(void);
@@ -419,7 +420,21 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
 
 /* USER CODE BEGIN 1 */
 
-//void ledBlinkTimerCallback(void)
+void TIM_reinitLeds(void)
+{
+  //Stop the LED timers and deinitialize them
+  Board_ledTimersStop();
+  HAL_TIM_Base_DeInit(&htim2);
+  HAL_TIM_Base_DeInit(&htim3);
+  HAL_TIM_Base_DeInit(&htim6);
+
+  //Start the LED timers again
+  MX_TIM2_Init();
+  MX_TIM3_Init();
+  MX_TIM6_Init();
+  Board_ledTimersStart(&htim3, &htim2, &htim6);
+}
+
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
   petWatchdog();

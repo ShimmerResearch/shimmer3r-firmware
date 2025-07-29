@@ -53,6 +53,7 @@ extern "C"
   void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
   /* USER CODE BEGIN Prototypes */
+  void TIM_reinitLeds(void);
   void delay_us(uint16_t us);
   /* USER CODE END Prototypes */
 

@@ -383,6 +383,7 @@ typedef enum
 void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
     TIM_HandleTypeDef *htimUprLeds,
     TIM_HandleTypeDef *htimLedBlink);
+void Board_ledTimersStop(void);
 
 void startLedBlinkTimer(void);
 void stopLedBlinkTimer(void);
