@@ -76,6 +76,7 @@ extern "C"
   void RTC_wakeUpSetSlow(void);
 
   void RTC_setAlarmBattRead(void);
+  void RTC_setAlarmBattReadAfterDockUnDock(void);
   void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow);
   void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow);
 
