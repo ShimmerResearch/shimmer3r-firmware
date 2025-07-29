@@ -419,7 +419,24 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
 
 /* USER CODE BEGIN 1 */
 
-//void ledBlinkTimerCallback(void)
+void TIM_initLeds(void)
+{
+  MX_TIM2_Init();
+  MX_TIM3_Init();
+  MX_TIM6_Init();
+
+  Board_ledTimersStart(&htim3, &htim2, &htim6);
+}
+
+void TIM_deinitLeds(void)
+{
+  HAL_TIM_Base_Stop_IT(&htim6);
+  HAL_TIM_Base_DeInit(&htim6);
+
+  HAL_TIM_Base_DeInit(&htim2);
+  HAL_TIM_Base_DeInit(&htim3);
+}
+
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
   petWatchdog();

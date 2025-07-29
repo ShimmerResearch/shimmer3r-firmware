@@ -622,6 +622,10 @@ void gpioInitPerBoard(void)
 
       /* SR48-6-0 uses MCU pins for ADC channels and not the ADS7028 */
       HAL_GPIO_DeInit(CS_ADS7028_GPIO_Port, CS_ADS7028_Pin);
+
+      /* SR48-6-0 patch some LEDs connected to different pins */
+      TIM_deinitLeds();
+      TIM_initLeds();
     }
 #endif
 
