@@ -519,7 +519,9 @@ void SetupDock(void)
 {
   shimmerStatus.configuring = 1;
 
-  ShimBatt_resetChargingStatus();
+  /* Reset battery charging status on dock/undock so that we don't display an
+   * invalid state. */
+  ShimBatt_resetBatteryChargingStatus();
 
   if (LogAndStream_isDockedOrUsbIn())
   {
