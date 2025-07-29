@@ -25,7 +25,7 @@
 #define printHex32(VARIABLE)           printHex((uint8_t *) &VARIABLE, 4, 1, 0)
 #define printHexMac(VARIABLE)          printHex((uint8_t *) &VARIABLE, 6, 1, ':')
 
-#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 1
+#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 0
 
 /*
  * Index: {1,2,3,4,5,6,7,8}
@@ -599,7 +599,9 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
 
     ezs_rsp_smp_get_security_parameters_t *securityParametersPtr;
-    if (ShimConfig_getStoredConfig()->syncEnable)
+    /* Stored config hasn't been read yet on first boot so default sec params
+     * are used during initial boot */
+    if (!shimmerStatus.initialising && ShimConfig_getStoredConfig()->syncEnable)
     {
       securityParametersPtr = &rsp_smp_get_security_parameters_ref_sd_sync;
     }
