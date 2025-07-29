@@ -77,6 +77,19 @@ void Board_ledTimersStart(TIM_HandleTypeDef *htimLwrLeds,
   startLedBlinkTimer();
 }
 
+void Board_ledTimersStop(void)
+{
+  stopLedBlinkTimer();
+
+  HAL_TIM_PWM_Stop(htimLwrLedsPtr, TIM_CHANNEL_1); //Lower Red LED
+  HAL_TIM_PWM_Stop(htimLwrLedsPtr, TIM_CHANNEL_2); //Lower Green LED
+  HAL_TIM_PWM_Stop(htimLwrLedsPtr, TIM_CHANNEL_3); //Lower Blue LED
+
+  HAL_TIM_PWM_Stop(htimUprLedsPtr, TIM_CHANNEL_1); //Upper Red LED
+  HAL_TIM_PWM_Stop(htimUprLedsPtr, TIM_CHANNEL_3); //Upper Green LED
+  HAL_TIM_PWM_Stop(htimUprLedsPtr, TIM_CHANNEL_4); //Upper Blue LED
+}
+
 void startLedBlinkTimer(void)
 {
   HAL_TIM_Base_Start_IT(htimLedBlinkPtr);
