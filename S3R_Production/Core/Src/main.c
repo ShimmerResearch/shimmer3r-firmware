@@ -579,7 +579,7 @@ void SetupDock(void)
     }
   }
 
-  // Setup RTC alarm for battery read after dock/undock
+  //Setup RTC alarm for battery read after dock/undock
   RTC_setAlarmBattReadAfterDockUnDock();
 
   shimmerStatus.configuring = 0;
