@@ -374,7 +374,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
   case DOCK_DETECT_Pin:
     DockUart_interruptCheck();
-    ShimTask_set(TASK_SETUP_DOCK);
+    LogAndStream_dockedStateChange();
     break;
 #if SUPPORT_SR48_6_0
     /* SR48-6-0 patch for dock detection - start */
@@ -383,7 +383,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     {
       /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
       DockUart_interruptCheck();
-      ShimTask_set(TASK_SETUP_DOCK);
+      LogAndStream_dockedStateChange();
       /* no break */
       break;
     }

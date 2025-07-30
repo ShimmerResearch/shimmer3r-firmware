@@ -528,6 +528,13 @@ void RTC_setAlarmBattRead(void)
   RTC_setAlarmAFromNow(nextBattReadInS, RTC_ALARM_CONTEXT_BATT_READ);
 }
 
+void RTC_setAlarmBattReadAfterDockUnDock(void)
+{
+  /* Set the alarm to read battery a short time after dock/undock to allow
+   * charger status to settle. Arbitrarily chosen as 1s delay here. */
+  RTC_setAlarmAFromNow(1, RTC_ALARM_CONTEXT_BATT_READ);
+}
+
 void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow)
 {
   //Set the alarm to stop logging after a specified number of minutes

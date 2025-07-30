@@ -1220,8 +1220,8 @@ void deinitGsrMcuAdc(void)
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr)
 {
   //Multiplied by 2 due to voltage divider
-  uint16_t battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcSensPtr, VREF_EXTERNAL_SUPPLY_MV,
-                           adcBattVal, hadcSensPtr->Init.Resolution)
+  uint16_t battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcBattPtr, VREF_EXTERNAL_SUPPLY_MV,
+                           adcBattVal, hadcBattPtr->Init.Resolution)
       * 2;
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
