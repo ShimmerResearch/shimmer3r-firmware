@@ -271,8 +271,7 @@ void GPIO_usbVbusIntInit(uint8_t state)
 
 void GPIO_userButtonCheck()
 {
-  uint8_t pinState = HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin);
-  if (pinState == GPIO_PIN_SET)
+  if (USER_BTN_PRESSED)
   { //pressed
     shimmerStatus.buttonPressed = 1;
   }

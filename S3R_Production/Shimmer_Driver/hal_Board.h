@@ -353,6 +353,9 @@
 #define LM3658SD_STAT2 HAL_GPIO_ReadPin(CHG_STAT2_GPIO_Port, CHG_STAT2_Pin)
 #define LM3658SD_STAT1 HAL_GPIO_ReadPin(CHG_STAT1_GPIO_Port, CHG_STAT1_Pin)
 
+/* S3R user button is active high */
+#define USER_BTN_PRESSED HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin)
+
 typedef enum
 {
   SENSE_PWR_VBATT = (0x01 << 0),
