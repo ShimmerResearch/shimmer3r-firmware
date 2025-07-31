@@ -687,8 +687,8 @@ void JumpToBootloaderIfRequired(void)
   if (USER_BTN_PRESSED)
   {
     for (shimmerStatus.bslCheckTimeMs = 100U;
-        shimmerStatus.bslCheckTimeMs <= BOOTLOADER_ENTRY_THRESHOLD_MS;
-        shimmerStatus.bslCheckTimeMs+=100)
+         shimmerStatus.bslCheckTimeMs <= BOOTLOADER_ENTRY_THRESHOLD_MS;
+         shimmerStatus.bslCheckTimeMs += 100)
     {
       HAL_Delay(100U); //Wait 100ms before checking again
 
