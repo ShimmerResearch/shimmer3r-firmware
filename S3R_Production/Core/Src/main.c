@@ -519,6 +519,10 @@ void SetupDock(void)
 {
   shimmerStatus.configuring = 1;
 
+  /* Reset battery charging status on dock/undock so that we don't display an
+   * invalid state. */
+  ShimBatt_resetBatteryChargingStatus();
+
   if (LogAndStream_isDockedOrUsbIn())
   {
     shimmerStatus.sdlogReady = 0;
@@ -540,10 +544,10 @@ void SetupDock(void)
       DockUart_deint();
     }
 
-    /* Reading battery after SD hand-over to allow some time for battery voltage and charger status to settle. */
     ShimBatt_setBatteryInterval(BATT_INTERVAL_DOCKED);
+    /* Reset battery critical count on dock to allow logging to begin again if
+     * auto-stop on low-power is enabled. */
     ShimBatt_resetBatteryCriticalCount();
-    manageReadBatt(1);
 
     ShimBt_instreamStatusRespSend();
   }
@@ -566,7 +570,7 @@ void SetupDock(void)
       }
 
       HAL_Delay(120); //120ms
-                      //Board_sdPower(1);
+      //Board_sdPower(1);
 
       LogAndStream_syncConfigAndCalibOnSd();
     }
@@ -576,7 +580,10 @@ void SetupDock(void)
       LogAndStream_setSdInfoSyncDelayed(1);
     }
   }
-  RTC_setAlarmBattRead(); //configure Alarm on dock/undock
+
+  //Setup RTC alarm for battery read after dock/undock
+  RTC_setAlarmBattReadAfterDockUnDock();
+
   shimmerStatus.configuring = 0;
 }
 
