@@ -59,7 +59,7 @@
 #define TIM_MEASURE_END    \
   time_end = SysTick->VAL; \
   time_diff = time_start - time_end
-#define BOOTLOADER_ENTRY_THRESHOLD 29
+#define BOOTLOADER_ENTRY_THRESHOLD_MS 3000
 
 /* USER CODE END PM */
 
@@ -691,38 +691,27 @@ void stopSensingWrapup(void)
 
 void JumpToBootloaderIfRequired(void)
 {
-  uint8_t bslCheckCounter = 0;
-
-  if (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin))
+  if (USER_BTN_PRESSED)
   {
-    stopLedBlinkTimer();
-    for (bslCheckCounter = 0; bslCheckCounter <= BOOTLOADER_ENTRY_THRESHOLD; bslCheckCounter++)
+    for (shimmerStatus.bslCheckTimeMs = 100U;
+         shimmerStatus.bslCheckTimeMs <= BOOTLOADER_ENTRY_THRESHOLD_MS;
+         shimmerStatus.bslCheckTimeMs += 100)
     {
-      if (HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin) == GPIO_PIN_RESET)
+      HAL_Delay(100U); //Wait 100ms before checking again
+
+      if (!USER_BTN_PRESSED)
       {
+        shimmerStatus.bslCheckTimeMs = 0;
+        //Button released, exit BSL check
         break;
       }
 
-      if (bslCheckCounter == BOOTLOADER_ENTRY_THRESHOLD)
+      if (shimmerStatus.bslCheckTimeMs == BOOTLOADER_ENTRY_THRESHOLD_MS)
       {
-        //SHIMMER_PRINTF("Entering bootloader mode\r\n");
+        //Button pressed for long enough, jump to bootloader
         JumpToBootloader();
       }
-
-      if (bslCheckCounter % 2 == 0)
-      {
-        Board_ledUprSetColourRgb(0, 0, 0);
-        Board_ledLwrSetColourRgb(128, 0, 128);
-      }
-      else
-      {
-        Board_ledUprSetColourRgb(128, 0, 128);
-        Board_ledLwrSetColourRgb(0, 0, 0);
-      }
-
-      HAL_Delay(100U); //Wait 100ms before checking again
     }
-    startLedBlinkTimer();
   }
 }
 
