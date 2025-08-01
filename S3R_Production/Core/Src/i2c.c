@@ -1369,15 +1369,6 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 }
 #endif
 
-void loadDaughterCardIdFromEeprom(void)
-{
-  uint8_t daughterCardIdBuf[CAT24C16_PAGE_SIZE];
-  eepromRead(0, CAT24C16_PAGE_SIZE, &daughterCardIdBuf[0]);
-  ShimBrd_setDaugherCardIdPage(daughterCardIdBuf);
-  ShimBrd_parseDaughterCardId();
-  HAL_Delay(5); //5ms to ensure no writes pending
-}
-
 void enableI2cOnSr48OrSr38PpgSocket(uint8_t state)
 {
   if (state)

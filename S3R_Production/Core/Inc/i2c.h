@@ -290,8 +290,6 @@ void I2cBatt_sensorNext(void);
   void STC3100BatteryRxDoneHandler(void);
 #endif
 
-  void loadDaughterCardIdFromEeprom(void);
-
   void enableI2cOnSr48OrSr38PpgSocket(uint8_t state);
 
   /* USER CODE END Prototypes */
