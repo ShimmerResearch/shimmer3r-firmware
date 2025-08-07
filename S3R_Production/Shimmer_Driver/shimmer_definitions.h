@@ -45,17 +45,4 @@
 #define SHIMMER_PRINTF(...)
 #endif /* SHIMMER_ENABLE_PRINTF */
 
-//typedef uint8_t bool;
-//#define TRUE 1
-//#define FALSE 0
-
-//typedef uint8_t error_t;
-//#define SUCCESS 1
-//#define FAIL 0
-
-//typedef enum{//bt
-//   UART_BT_STAT_IDLE = 0,
-//   UART_BT_STAT_CONFIG = 1
-//}UART_BT_STATUS;
-
 #endif //S4_H

@@ -1,5 +1,11 @@
-//#include "s4__cfg.h"
-
+/*
+ * Shimmer Include Header
+ *
+ * This header file includes all necessary headers for the Shimmer platform.
+ * It is designed to be included in various source files to provide access
+ * to the Shimmer API and hardware definitions.
+ *
+*/
 #ifndef SHIMMER_INCLUDE_H_
 #define SHIMMER_INCLUDE_H_
 
@@ -27,7 +33,7 @@
 #include "LIS2DW12/lis2dw12-pid/lis2dw12_reg.h"
 #include <ADS7028_38/ads7028_38.h>
 #include <CYW20820/CYW20820.h>
-#include <CYW20820/EZ-Serial/handlers.h>
+#include <CYW20820/hal_CYW20820.h>
 #include <LIS2DW12/lis2dw12.h>
 #include <LIS2MDL/hal_lis2mdl.h>
 #include <LIS2MDL/lis2mdl-pid/lis2mdl_reg.h>

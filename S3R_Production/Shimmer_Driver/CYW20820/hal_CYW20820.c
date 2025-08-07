@@ -42,10 +42,11 @@
  * software license agreement.
  *******************************************************************************/
 
+#include "hal_CYW20820.h"
+
 #include "stm32u5xx.h"
 
 #include "log_and_stream_externs.h"
-#include <CYW20820/EZ-Serial/handlers.h>
 #include <Comms/shimmer_bt_uart.h>
 
 uint8_t pending_response = 0;
