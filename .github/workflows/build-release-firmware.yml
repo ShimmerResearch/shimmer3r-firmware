@@ -20,28 +20,25 @@ jobs:
       with:
         fetch-depth: 0  # Needed for tags
 
-    - name: Set up ARM toolchain
-      uses: carlosperate/arm-none-eabi-gcc-action@v1
-
     - name: Increment version
       run: |
         set -euo pipefail
-        chmod +x FW_Shimmer3r/S3R_Production/build/scripts/increment_version.sh
-        FW_Shimmer3r/S3R_Production/build/scripts/increment_version.sh ${{ github.event.inputs.increment || 'patch' }}
-      working-directory: FW_Shimmer3r/S3R_Production/build
+        chmod +x S3R_Production/build/scripts/increment_version.sh
+        S3R_Production/build/scripts/increment_version.sh ${{ github.event.inputs.increment || 'patch' }}
+      working-directory: S3R_Production/build
 
     - name: Save version for next steps
       id: get_version
       run: |
         set -euo pipefail
-        echo "version=$(cat FW_Shimmer3r/S3R_Production/build/version.txt)" >> $GITHUB_OUTPUT
+        echo "version=$(cat S3R_Production/build/version.txt)" >> $GITHUB_OUTPUT
 
     - name: Commit version bump
       run: |
         set -euo pipefail
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-        git add FW_Shimmer3r/S3R_Production/build/version.txt FW_Shimmer3r/S3R_Production/Shimmer_Driver/version.h
+        git add S3R_Production/build/version.txt S3R_Production/Shimmer_Driver/version.h
         git commit -m "chore: bump firmware version to v${{ steps.get_version.outputs.version }}" || echo "No changes to commit"
         git push
 
@@ -54,15 +51,19 @@ jobs:
         fi
 
     - name: Build firmware
+      uses: xanderhendriks/action-build-stm32cubeide@v13.0
+      with:
+        project-path: 'S3R_Production'
+
+    - name: Find and copy hex file
       run: |
         set -euo pipefail
         mkdir -p build
-        make -C FW_Shimmer3r/S3R_Production
         HEX_PATH=""
-        if [ -f FW_Shimmer3r/S3R_Production/Release/S3R_Production.hex ]; then
-          HEX_PATH=FW_Shimmer3r/S3R_Production/Release/S3R_Production.hex
-        elif [ -f FW_Shimmer3r/S3R_Production/Debug/S3R_Production.hex ]; then
-          HEX_PATH=FW_Shimmer3r/S3R_Production/Debug/S3R_Production.hex
+        if [ -f S3R_Production/Release/S3R_Production.hex ]; then
+          HEX_PATH=S3R_Production/Release/S3R_Production.hex
+        elif [ -f S3R_Production/Debug/S3R_Production.hex ]; then
+          HEX_PATH=S3R_Production/Debug/S3R_Production.hex
         else
           echo "No .hex file found in Release or Debug."
           exit 1
