@@ -16,4 +16,5 @@ jobs:
         uses: carlosperate/arm-none-eabi-gcc-action@v1
 
       - name: Build project
-        run: make -C FW_Shimmer3r/S3R_Production
+        run: make -C ../S3R_Production
+        working-directory: FW_Shimmer3r/.github/workflows
