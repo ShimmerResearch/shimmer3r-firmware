@@ -1,0 +1,19 @@
+name: Build STM32 Project
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up ARM GCC
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
+
+      - name: Build project
+        run: make -C FW_Shimmer3r/S3R_Production
