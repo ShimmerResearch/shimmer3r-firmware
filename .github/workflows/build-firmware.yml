@@ -1,3 +1,4 @@
+yaml
 name: Build STM32 Project
 
 on:
@@ -11,9 +12,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-      - name: Set up ARM GCC
-        uses: carlosperate/arm-none-eabi-gcc-action@v1
+      - name: Cache STM32CubeIDE build
+        uses: actions/cache@v4
+        with:
+          path: S3R_Production/Debug
+          key: ${{ runner.os }}-stm32cubeide-${{ hashFiles('S3R_Production/.project') }}
+          restore-keys: |
+            ${{ runner.os }}-stm32cubeide-
 
-      - name: Build project
-        run: make -C S3R_Production/Debug
+      - name: Build STM32CubeIde project
+        uses: xanderhendriks/action-build-stm32cubeide@v13.0
+        with:
+          project-path: 'S3R_Production'
