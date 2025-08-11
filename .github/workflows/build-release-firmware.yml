@@ -23,8 +23,8 @@ jobs:
     - name: Increment version
       run: |
         set -euo pipefail
-        chmod +x S3R_Production/build/scripts/increment_version.sh
-        S3R_Production/build/scripts/increment_version.sh ${{ github.event.inputs.increment || 'patch' }}
+        chmod +x S3R_Production/log-and-stream-common/scripts/increment_version.sh
+        S3R_Production/log-and-stream-common/scripts/increment_version.sh ${{ github.event.inputs.increment || 'patch' }}
       working-directory: S3R_Production/build
 
     - name: Save version for next steps
