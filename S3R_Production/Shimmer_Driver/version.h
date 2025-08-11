@@ -4,16 +4,16 @@
 
 #define FW_VERSION_MAJOR  1  //16-bit
 #define FW_VERSION_MINOR  0  //8-bit
-#define FW_VERSION_PATCH  31 //8-bit
-#define FW_VERSION_STRING "v1.00.031"
+#define FW_VERSION_PATCH  30 //8-bit
+#define FW_VERSION_STRING "v1.00.030"
 
 #include <stdint.h>
 
 typedef struct
 {
-    uint16_t major;
-    uint8_t  minor;
-    uint8_t  patch;
+  uint16_t major;
+  uint8_t minor;
+  uint8_t patch;
 } firmware_version_t;
 
 __attribute__((section(".version"), used)) static const firmware_version_t fw_version_struct

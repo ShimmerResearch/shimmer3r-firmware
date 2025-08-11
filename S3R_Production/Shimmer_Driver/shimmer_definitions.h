@@ -13,7 +13,7 @@
 #define FW_IDENTIFIER 3
 #elif defined(SHIMMER4_SDK)
 //HARDWARE VERSION: SR_58 for Shimmer4SDK
-#define DEVICE_VER 58
+#define DEVICE_VER    58
 //12 is the firmware for shimmer4sdk, with LogAndStream in side
 #define FW_IDENTIFIER 12
 #endif

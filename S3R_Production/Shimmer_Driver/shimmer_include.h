@@ -5,7 +5,7 @@
  * It is designed to be included in various source files to provide access
  * to the Shimmer API and hardware definitions.
  *
-*/
+ */
 #ifndef SHIMMER_INCLUDE_H_
 #define SHIMMER_INCLUDE_H_
 

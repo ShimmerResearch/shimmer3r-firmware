@@ -104,9 +104,9 @@ cat <<EOF > "$HEADER_FILE" || { echo "Failed to write $HEADER_FILE"; exit 1; }
 
 typedef struct
 {
-    uint16_t major;
-    uint8_t  minor;
-    uint8_t  patch;
+  uint16_t major;
+  uint8_t minor;
+  uint8_t patch;
 } firmware_version_t;
 
 __attribute__((section(".version"), used)) static const firmware_version_t fw_version_struct
