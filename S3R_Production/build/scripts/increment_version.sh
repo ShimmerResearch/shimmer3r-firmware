@@ -95,27 +95,25 @@ cat <<EOF > "$HEADER_FILE" || { echo "Failed to write $HEADER_FILE"; exit 1; }
 #ifndef VERSION_H
 #define VERSION_H
 
-#define FW_VERSION_MAJOR     $MAJOR      // 16-bit
-#define FW_VERSION_MINOR     $MINOR      // 8-bit
-#define FW_VERSION_PATCH     $PATCH      // 8-bit
-#define FW_VERSION_STRING   "v$NEW_VERSION"
+#define FW_VERSION_MAJOR  $MAJOR  //16-bit
+#define FW_VERSION_MINOR  $MINOR  //8-bit
+#define FW_VERSION_PATCH  $PATCH //8-bit
+#define FW_VERSION_STRING "v$NEW_VERSION"
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
     uint16_t major;
     uint8_t  minor;
     uint8_t  patch;
 } firmware_version_t;
 
-__attribute__((section(".version"), used))
-static const firmware_version_t fw_version_struct = {
-    .major = FW_VERSION_MAJOR,
-    .minor = FW_VERSION_MINOR,
-    .patch = FW_VERSION_PATCH
+__attribute__((section(".version"), used)) static const firmware_version_t fw_version_struct
+    = { .major = FW_VERSION_MAJOR, .minor = FW_VERSION_MINOR, .patch = FW_VERSION_PATCH };
 };
 
-#endif // VERSION_H
+#endif //VERSION_H
 EOF
 
 echo "Updated version to $NEW_VERSION"
