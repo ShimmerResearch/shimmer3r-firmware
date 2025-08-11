@@ -16,4 +16,4 @@ jobs:
         uses: carlosperate/arm-none-eabi-gcc-action@v1
 
       - name: Build project
-        run: make -C S3R_Production
+        run: make -C S3R_Production/Debug
