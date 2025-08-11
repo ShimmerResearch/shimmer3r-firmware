@@ -30,7 +30,7 @@ if ! [[ $(cat "$VERSION_BASE_FILE") =~ ^[0-9]+\.[0-9]+$ ]]; then
 fi
 
 # Validate current version format
-if ! [[ $(cat "$VERSION_FILE") =~ ^[0-9]+\.[0-9]{2}\.[0-9]{3}$ ]]; then
+if ! [[ $(cat "$VERSION_FILE") =~ ^[0-9]+\.[0-9][0-9]\.[0-9][0-9][0-9]$ ]]; then
     echo "Error: $VERSION_FILE format invalid (expected MAJOR.MINOR.PATCH)"
     exit 1
 fi
