@@ -111,7 +111,6 @@ typedef struct
 
 __attribute__((section(".version"), used)) static const firmware_version_t fw_version_struct
     = { .major = FW_VERSION_MAJOR, .minor = FW_VERSION_MINOR, .patch = FW_VERSION_PATCH };
-};
 
 #endif //VERSION_H
 EOF
