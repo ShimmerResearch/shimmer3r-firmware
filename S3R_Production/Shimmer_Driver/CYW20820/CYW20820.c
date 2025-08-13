@@ -122,8 +122,8 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
 
 static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2, /* PING,*/
-  SET_SECURITY_PARAMETERS,
-  GET_SECURITY_PARAMETERS, //Any command to get module into binary command mode. Added set, get security parameters here to get SD sync working
+  GET_SECURITY_PARAMETERS,
+  SET_SECURITY_PARAMETERS, //Any command to get module into binary command mode. Added set, get security parameters here to get SD sync working
   FINISH };
 
 static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
