@@ -564,7 +564,7 @@ void SetupDock(void)
     if (CheckSdInslot())
     {
       Board_sd2Arm();
-      if ( !shimmerStatus.sensing)
+      if (!shimmerStatus.sensing)
       {
         if (!shimmerStatus.sdBadFile)
         {
