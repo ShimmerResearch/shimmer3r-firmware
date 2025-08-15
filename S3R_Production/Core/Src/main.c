@@ -561,24 +561,26 @@ void SetupDock(void)
     //SendStatusByte();
     ShimBt_instreamStatusRespSend();
     //Board_sdPower(0);
-    if (CheckSdInslot() && !shimmerStatus.sensing)
+    if (CheckSdInslot())
     {
       Board_sd2Arm();
-
-      if (!shimmerStatus.sdBadFile)
+      if (!shimmerStatus.sensing)
       {
-        shimmerStatus.sdlogReady = 1;
+        if (!shimmerStatus.sdBadFile)
+        {
+          shimmerStatus.sdlogReady = 1;
+        }
+
+        HAL_Delay(120); //120ms
+        //Board_sdPower(1);
+
+        LogAndStream_syncConfigAndCalibOnSd();
       }
-
-      HAL_Delay(120); //120ms
-      //Board_sdPower(1);
-
-      LogAndStream_syncConfigAndCalibOnSd();
-    }
-    else
-    {
-      shimmerStatus.sdlogReady = 0;
-      LogAndStream_setSdInfoSyncDelayed(1);
+      else
+      {
+        shimmerStatus.sdlogReady = 0;
+        LogAndStream_setSdInfoSyncDelayed(1);
+      }
     }
   }
 
