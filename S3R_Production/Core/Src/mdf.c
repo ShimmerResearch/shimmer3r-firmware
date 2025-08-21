@@ -274,7 +274,12 @@ void HAL_MDF_ErrorCallback(MDF_HandleTypeDef *hmdf)
     micTestErrorCnt++;
     if (micTestErrorCnt == FACTORY_TEST_MIC_ERROR_CNT_THRESHOLD)
     {
+      if (Mic_CountSkip < 64)
+      {
+        return; //not enough data in buffer so giving sometime to fill it
+      }
       micStopSensing();
+      micTestRunning = 0;
     }
   }
 }
