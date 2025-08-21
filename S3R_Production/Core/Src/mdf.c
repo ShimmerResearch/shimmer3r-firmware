@@ -288,7 +288,6 @@ void HAL_MDF_ErrorCallback(MDF_HandleTypeDef *hmdf)
         micStopSensing();
         micTestRunning = 0;
       }
-
     }
   }
 }
