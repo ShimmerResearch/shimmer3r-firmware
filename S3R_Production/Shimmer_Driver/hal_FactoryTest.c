@@ -899,7 +899,7 @@ uint8_t gsrFactoryTest_run(void)
   }
 
   GSR_setActiveResistor(HW_RES_40K);
-  // Setup ADC for GSR readings
+  //Setup ADC for GSR readings
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
   {
@@ -942,7 +942,7 @@ uint8_t gsrFactoryTest_run(void)
 
   GSR_resetGsrRange();
 
-  // Deinit ADC for GSR readings
+  //Deinit ADC for GSR readings
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
   {
