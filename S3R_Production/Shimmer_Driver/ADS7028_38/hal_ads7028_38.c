@@ -570,6 +570,12 @@ bool ads7028_areAnyChannelsEnabled(void)
 
 void ads7028_factoryTestGsrInit(void)
 {
+  /* If PPG is not controlling the ADS7028 via I2C, we need to initialize SPI1 here */
+  if (!ShimBrd_isI2cOnPPGControlledByAdcChip())
+  {
+    MX_SPI1_Init();
+  }
+
 #if USE_MANUAL_MODE_FOR_FACTORY_TEST
   //GSR channel
   uint8_t channelID = CHANNEL_SEL_MANUAL_CHID_3;
