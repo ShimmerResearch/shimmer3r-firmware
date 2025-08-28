@@ -1,9 +1,9 @@
 name: Build STM32 Firmware
 
 on:
-  push:
-    branches:
-      - main
+#  push:
+#    branches:
+#      - main
   workflow_dispatch:
     inputs:
       increment:
@@ -81,15 +81,24 @@ jobs:
         set -euo pipefail
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-        git tag "v${{ steps.get_version.outputs.version }}"
-        git push origin "v${{ steps.get_version.outputs.version }}"
+        git tag "LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}"
+        git push origin "LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}"
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v${{ steps.get_version.outputs.version }}
-        name: "Firmware v${{ steps.get_version.outputs.version }}"
+        tag_name: LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}
+        name: "Firmware LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}"
         generate_release_notes: true
         files: build/*.hex
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Tag submodule log-and-stream-common
+      run: |
+        set -euo pipefail
+        cd S3R_Production/log-and-stream-common
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git tag "LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}"
+        git push "https://x-access-token:${{ secrets.SUBMODULE_PAT }}@github.com/ShimmerResearch/log-and-stream-common.git" "LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}"
