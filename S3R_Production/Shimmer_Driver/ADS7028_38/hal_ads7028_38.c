@@ -456,17 +456,17 @@ void ads7028_setCS(const bool state)
 //!\return None.
 //
 //*****************************************************************************
-void delay_ms(const uint32_t delay_time_ms)
-{
-  /* --- INSERT YOUR CODE HERE --- */
-
-#if defined(MSP432E401Y)
-  const uint32_t cycles_per_loop = 3;
-  MAP_SysCtlDelay(delay_time_ms * SYSTEM_CLOCK_HZ / (cycles_per_loop * 1000u));
-#else
-  HAL_Delay(delay_time_ms);
-#endif
-}
+//void delay_ms(const uint32_t delay_time_ms)
+//{
+//  /* --- INSERT YOUR CODE HERE --- */
+//
+//#if defined(MSP432E401Y)
+//  const uint32_t cycles_per_loop = 3;
+//  MAP_SysCtlDelay(delay_time_ms * SYSTEM_CLOCK_HZ / (cycles_per_loop * 1000u));
+//#else
+//  HAL_Delay(delay_time_ms);
+//#endif
+//}
 
 //*****************************************************************************
 //

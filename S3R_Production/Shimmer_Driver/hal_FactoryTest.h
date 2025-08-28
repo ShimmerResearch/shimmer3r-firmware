@@ -13,6 +13,8 @@
 
 #include <stm32u5xx.h>
 
+#include "Test/shimmer_test.h"
+
 #define DELAY_BETWEEN_LED_CHANGES_MS               2000
 
 #define TEST_THRESHOLD_VREF_LOWER                  (VREF_EXTERNAL_SUPPLY_MV - 80)
@@ -46,32 +48,8 @@ given above */
 
 #define TEST_BT_MODULE_FW                          "v01.04.16.16"
 
-#define SELF_TEST_STR_PASS                         "PASS"
-#define SELF_TEST_STR_FAIL                         "FAIL"
-#define SELF_TEST_STR_EMPTY                        ""
-#define SELF_TEST_STR_CHIP_DETECTION               " - Chip not detected"
-#define SELF_TEST_STR_SIGNAL_ISSUE                 " - Signal issue"
-#define SELF_TEST_STR_TEMPERATURE_ISSUE            " - Temperature issue"
-#define SELF_TEST_STR_DRDY_ISSUE                   " - DRDY/INT issue"
-#define SELF_TEST_STR_UNKNOWN                      " - Unknown"
-
 #define GSR_TEST_TOLERANCE_5_PERCENT               0.05
 #define GSR_TEST_TOLERANCE_7_PERCENT               0.07
-
-typedef enum
-{
-  PRINT_TO_DEBUGGER = 0,
-  PRINT_TO_DOCK_UART,
-  PRINT_TO_BT_UART
-} factory_test_target_t;
-
-typedef enum
-{
-  FACTORY_TEST_MAIN = 0,
-  FACTORY_TEST_LEDS,
-  FACTORY_TEST_ICS,
-  FACTORY_TEST_COUNT
-} factory_test_t;
 
 typedef enum
 {
@@ -115,7 +93,7 @@ typedef struct
   uint8_t selfTestResult;
 } micTestResult_t;
 
-uint32_t run_factory_test(void);
+void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr);
 void print_date_and_time(void);
 void print_shimmer_model(void);
 void print_mcu_details(void);
@@ -125,10 +103,8 @@ void sd_card_test(void);
 void bt_module_test(void);
 void I2C_test(void);
 void SPI_test(void);
-void setup_factory_test(factory_test_target_t target, factory_test_t testToRun);
 uint8_t is_temperature_outside_of_range(float_t temperature);
 void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_test_result, float_t tempCal);
-void send_test_report(const char *str);
 uint8_t gsrFactoryTest_run(void);
 void gsrFactoryTest_printResults(void);
 HAL_StatusTypeDef gsrFactoryTest_getAvgGsr(uint32_t *gsrResistance);

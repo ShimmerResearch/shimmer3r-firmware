@@ -17,10 +17,7 @@
 #include "bmp3_defs.h"
 #include "usbd_cdc_acm_if.h"
 
-factory_test_target_t factoryTestTarget = PRINT_TO_DEBUGGER;
-factory_test_t factoryTestToRun;
-
-char buffer[100];
+char *buffer;
 
 uint8_t test_i2c_addr_list[128], test_i2c_addr_list_len;
 
@@ -34,12 +31,9 @@ uint32_t gsrResistance[sizeof(testGsrResistances)];
 static float gsrFactoryTest_getPassToleranceForTestResistor(uint32_t testResistor);
 static uint32_t gsrFactoryTest_getRefResistorForTestResistor(uint32_t testResistor);
 
-uint32_t run_factory_test(void)
+void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr)
 {
-  send_test_report("//**************************** TEST START "
-                   "************************************//\r\n");
-
-  shimmerStatus.testResult = 0;
+  buffer = bufPtr;
 
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
   {
@@ -90,25 +84,6 @@ uint32_t run_factory_test(void)
     }
     led_test();
   }
-
-  if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
-  {
-    if (shimmerStatus.testResult)
-    {
-      sprintf(buffer, "\r\nOverall Result = FAIL (0x%08" PRIX32 ")\r\n",
-          shimmerStatus.testResult);
-    }
-    else
-    {
-      sprintf(buffer, "\r\nOverall Result = PASS\r\n");
-    }
-    send_test_report(buffer);
-  }
-
-  send_test_report("//***************************** TEST END "
-                   "*************************************//\r\n");
-
-  return shimmerStatus.testResult;
 }
 
 void print_date_and_time(void)
@@ -791,12 +766,6 @@ void SPI_test(void)
   }
 }
 
-void setup_factory_test(factory_test_target_t target, factory_test_t testToRun)
-{
-  factoryTestTarget = target;
-  factoryTestToRun = testToRun;
-}
-
 uint8_t is_temperature_outside_of_range(float_t temperature)
 {
   return (temperature < TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
@@ -849,7 +818,7 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
   send_test_report(buffer);
 }
 
-void send_test_report(const char *str)
+void send_test_report_impl(const char *str, factory_test_target_t factoryTestTarget)
 {
   switch (factoryTestTarget)
   {
