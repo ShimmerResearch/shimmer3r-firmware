@@ -899,6 +899,7 @@ uint8_t gsrFactoryTest_run(void)
   }
 
   GSR_setActiveResistor(HW_RES_40K);
+  //Setup ADC for GSR readings
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
   {
@@ -941,12 +942,27 @@ uint8_t gsrFactoryTest_run(void)
 
   GSR_resetGsrRange();
 
+  //Deinit ADC for GSR readings
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
   {
     //Stop ADC
     deinitGsrMcuAdc();
     Board_SR48_6_0_SW_GSR(0);
+  }
+  else
+  {
+    /*Only deinit SPI1 if not using I2C controlled by ADC chip. Otherwise SPI1 will be deinitialised later in the test flow.*/
+    if (!ShimBrd_isI2cOnPPGControlledByAdcChip())
+    {
+      SPI1_DeInit();
+    }
+  }
+#else
+  /*Only deinit SPI1 if not using I2C controlled by ADC chip. Otherwise SPI1 will be deinitialised later in the test flow.*/
+  if (!ShimBrd_isI2cOnPPGControlledByAdcChip())
+  {
+    SPI1_DeInit();
   }
 #endif
 
