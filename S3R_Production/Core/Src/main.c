@@ -564,21 +564,17 @@ void SetupDock(void)
     if (CheckSdInslot())
     {
       Board_sd2Arm();
-      if (!shimmerStatus.sdLogging)
+
+      //Set sdlogReady flag if SD card is present and no bad file
+      shimmerStatus.sdlogReady = !shimmerStatus.sdBadFile;
+
+      if (!shimmerStatus.sensing)
       {
-        if (!shimmerStatus.sdBadFile)
-        {
-          shimmerStatus.sdlogReady = 1;
-        }
-
         HAL_Delay(120); //120ms
-        //Board_sdPower(1);
-
         LogAndStream_syncConfigAndCalibOnSd();
       }
       else
       {
-        shimmerStatus.sdlogReady = 0;
         LogAndStream_setSdInfoSyncDelayed(1);
       }
     }
