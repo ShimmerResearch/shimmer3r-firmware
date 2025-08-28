@@ -456,17 +456,17 @@ void ads7028_setCS(const bool state)
 //!\return None.
 //
 //*****************************************************************************
-void delay_ms(const uint32_t delay_time_ms)
-{
-  /* --- INSERT YOUR CODE HERE --- */
-
-#if defined(MSP432E401Y)
-  const uint32_t cycles_per_loop = 3;
-  MAP_SysCtlDelay(delay_time_ms * SYSTEM_CLOCK_HZ / (cycles_per_loop * 1000u));
-#else
-  HAL_Delay(delay_time_ms);
-#endif
-}
+//void delay_ms(const uint32_t delay_time_ms)
+//{
+//  /* --- INSERT YOUR CODE HERE --- */
+//
+//#if defined(MSP432E401Y)
+//  const uint32_t cycles_per_loop = 3;
+//  MAP_SysCtlDelay(delay_time_ms * SYSTEM_CLOCK_HZ / (cycles_per_loop * 1000u));
+//#else
+//  HAL_Delay(delay_time_ms);
+//#endif
+//}
 
 //*****************************************************************************
 //
@@ -570,6 +570,12 @@ bool ads7028_areAnyChannelsEnabled(void)
 
 void ads7028_factoryTestGsrInit(void)
 {
+  /* If PPG is not controlling the ADS7028 via I2C, we need to initialize SPI1 here */
+  if (!ShimBrd_isI2cOnPPGControlledByAdcChip())
+  {
+    MX_SPI1_Init();
+  }
+
 #if USE_MANUAL_MODE_FOR_FACTORY_TEST
   //GSR channel
   uint8_t channelID = CHANNEL_SEL_MANUAL_CHID_3;

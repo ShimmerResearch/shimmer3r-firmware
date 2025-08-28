@@ -561,24 +561,22 @@ void SetupDock(void)
     //SendStatusByte();
     ShimBt_instreamStatusRespSend();
     //Board_sdPower(0);
-    if (CheckSdInslot() && !shimmerStatus.sensing)
+    if (CheckSdInslot())
     {
       Board_sd2Arm();
 
-      if (!shimmerStatus.sdBadFile)
+      //Set sdlogReady flag if SD card is present and no bad file
+      shimmerStatus.sdlogReady = !shimmerStatus.sdBadFile;
+
+      if (!shimmerStatus.sensing)
       {
-        shimmerStatus.sdlogReady = 1;
+        HAL_Delay(120); //120ms
+        LogAndStream_syncConfigAndCalibOnSd();
       }
-
-      HAL_Delay(120); //120ms
-      //Board_sdPower(1);
-
-      LogAndStream_syncConfigAndCalibOnSd();
-    }
-    else
-    {
-      shimmerStatus.sdlogReady = 0;
-      LogAndStream_setSdInfoSyncDelayed(1);
+      else
+      {
+        LogAndStream_setSdInfoSyncDelayed(1);
+      }
     }
   }
 
@@ -754,6 +752,11 @@ HAL_StatusTypeDef checknBoot0OptionByte(void)
   }
 
   return HAL_OK;
+}
+
+void delay_ms(const uint32_t delay_time_ms)
+{
+  HAL_Delay(delay_time_ms);
 }
 
 /* USER CODE END 4 */

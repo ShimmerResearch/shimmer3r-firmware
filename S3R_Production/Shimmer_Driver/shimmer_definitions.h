@@ -32,7 +32,6 @@
 #define USE_VBATT_ALWAYS      0
 #define HAL_TEST_INFOMEM      0
 #define USE_BMPX80            2 //x=1 for 180, x=2 for 280
-#define NUM_SDWRBUF           64
 #define USE_USBX              0
 #define SHIMMER_ENABLE_PRINTF 1
 
