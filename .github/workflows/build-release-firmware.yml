@@ -19,7 +19,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Needed for tags
-
+        submodules: recursive
+    
     - name: Increment version
       run: |
         set -euo pipefail
