@@ -269,7 +269,7 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
 
 void HAL_MDF_ErrorCallback(MDF_HandleTypeDef *hmdf)
 {
-  if (micTestRunning)
+  if (micTestRunning && Mic_CountSkip >= FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
   {
     micTestErrorCnt++;
     if (micTestErrorCnt == FACTORY_TEST_MIC_ERROR_CNT_THRESHOLD)
@@ -293,7 +293,7 @@ uint8_t micTest(void)
   for (uint8_t i = 0; i < 100; i++)
   {
     HAL_Delay(10);
-    if (Mic_CountSkip == 64)
+    if (Mic_CountSkip == FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
     {
       /* Wait further 100ms for settling time */
       HAL_Delay(100);
