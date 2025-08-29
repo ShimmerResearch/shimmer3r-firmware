@@ -234,7 +234,7 @@ void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf)
 {
   UNUSED(hmdf);
 
-  if (Mic_CountSkip < 64)
+  if (Mic_CountSkip < FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
   {
     ++Mic_CountSkip;
     return;
@@ -253,7 +253,7 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
 {
   UNUSED(hmdf);
 
-  if (Mic_CountSkip < 64)
+  if (Mic_CountSkip < FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
   {
     ++Mic_CountSkip;
     return;
