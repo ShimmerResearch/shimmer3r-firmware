@@ -44,6 +44,7 @@ extern "C"
 #define FACTORY_TEST_MIC_ERROR_CNT_THRESHOLD    500
 #define FACTORY_TEST_MIC_PASS                   0xFF
 #define FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER 0xFE
+#define FACTORY_TEST_MIC_BUFFER_SKIP_COUNT      64
 
   /* USER CODE END Private defines */
 
