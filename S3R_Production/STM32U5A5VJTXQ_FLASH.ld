@@ -115,6 +115,12 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
 
+  /* Ensures that FW version info kept in final binary and flash memory */
+  .version :
+  {
+    KEEP(*(.version))
+  } >FLASH
+
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 
