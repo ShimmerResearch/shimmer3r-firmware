@@ -48,6 +48,9 @@ jobs:
         set -euo pipefail
         echo "version=$(cat ${{ env.PROJECT_DIR }}/build/version.txt)" >> $GITHUB_OUTPUT
 
+    - name: Debug path
+      run: pwd
+
     - name: Build firmware
       uses: xanderhendriks/action-build-stm32cubeide@v13.0
       with:
