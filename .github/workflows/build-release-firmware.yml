@@ -38,7 +38,7 @@ jobs:
     - name: Increment version
       run: |
         set -euo pipefail
-        chmod +x ${{ env.PROJECT_DIR }}/log-and-stream-common/scripts/increment_version.sh
+        chmod +x ../log-and-stream-common/scripts/increment_version.sh
         ${{ env.PROJECT_DIR }}/log-and-stream-common/scripts/increment_version.sh ${{ github.event.inputs.increment || 'patch' }}
       working-directory: ${{ env.PROJECT_DIR }}/build
 
