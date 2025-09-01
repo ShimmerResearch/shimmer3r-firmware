@@ -27,7 +27,14 @@ jobs:
       with:
         fetch-depth: 0  # Needed for tags
         submodules: recursive
-    
+
+    - name: Debug path
+      run: pwd
+
+    - name: Debug directory structure
+      run: |
+        ls -lR S3R_Production/log-and-stream-common/scripts
+
     - name: Increment version
       run: |
         set -euo pipefail
