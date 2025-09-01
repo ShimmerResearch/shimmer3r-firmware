@@ -10,6 +10,10 @@ on:
         description: "Which version part to increment: major, minor, patch"
         default: "patch"
 
+env:
+  PROJECT_DIR: S3R_Production
+  TAG_PREFIX: LogAndStream_Shimmer3R_v
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,29 +25,28 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        path: . # Stop github action doubling up the repo root folder
         fetch-depth: 0  # Needed for tags
         submodules: recursive
     
     - name: Increment version
       run: |
         set -euo pipefail
-        chmod +x S3R_Production/log-and-stream-common/scripts/increment_version.sh
-        S3R_Production/log-and-stream-common/scripts/increment_version.sh ${{ github.event.inputs.increment || 'patch' }}
-      working-directory: S3R_Production/build
+        chmod +x ${{ env.PROJECT_DIR }}/log-and-stream-common/scripts/increment_version.sh
+        ${{ env.PROJECT_DIR }}/log-and-stream-common/scripts/increment_version.sh ${{ github.event.inputs.increment || 'patch' }}
+      working-directory: ${{ env.PROJECT_DIR }}/build
 
     - name: Save version for next steps
       id: get_version
       run: |
         set -euo pipefail
-        echo "version=$(cat S3R_Production/build/version.txt)" >> $GITHUB_OUTPUT
+        echo "version=$(cat ${{ env.PROJECT_DIR }}/build/version.txt)" >> $GITHUB_OUTPUT
 
     - name: Commit version bump
       run: |
         set -euo pipefail
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-        git add S3R_Production/build/version.txt S3R_Production/Shimmer_Driver/version.h
+        git add ${{ env.PROJECT_DIR }}/build/version.txt ${{ env.PROJECT_DIR }}/Shimmer_Driver/version.h
         git commit -m "chore: bump firmware version to v${{ steps.get_version.outputs.version }}" || echo "No changes to commit"
         git push
 
@@ -58,22 +61,22 @@ jobs:
     - name: Build firmware
       uses: xanderhendriks/action-build-stm32cubeide@v13.0
       with:
-        project-path: 'S3R_Production'
+        project-path: '${{ env.PROJECT_DIR }}'
 
     - name: Find and copy hex file
       run: |
         set -euo pipefail
         mkdir -p build
         HEX_PATH=""
-        if [ -f S3R_Production/Release/S3R_Production.hex ]; then
-          HEX_PATH=S3R_Production/Release/S3R_Production.hex
-        elif [ -f S3R_Production/Debug/S3R_Production.hex ]; then
-          HEX_PATH=S3R_Production/Debug/S3R_Production.hex
+        if [ -f ${{ env.PROJECT_DIR }}/Release/${{ env.PROJECT_DIR }}.hex ]; then
+          HEX_PATH=${{ env.PROJECT_DIR }}/Release/${{ env.PROJECT_DIR }}.hex
+        elif [ -f ${{ env.PROJECT_DIR }}/Debug/${{ env.PROJECT_DIR }}.hex ]; then
+          HEX_PATH=${{ env.PROJECT_DIR }}/Debug/${{ env.PROJECT_DIR }}.hex
         else
           echo "No .hex file found in Release or Debug."
           exit 1
         fi
-        cp "$HEX_PATH" build/LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}.hex
+        cp "$HEX_PATH" build/${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}.hex
 
     - name: Upload firmware artifact
       uses: actions/upload-artifact@v4
@@ -86,14 +89,14 @@ jobs:
         set -euo pipefail
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-        git tag "LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}"
-        git push origin "LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}"
+        git tag "${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}"
+        git push origin "${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}"
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}
-        name: "Firmware LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}"
+        tag_name: ${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}
+        name: "Firmware ${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}"
         generate_release_notes: true
         files: build/*.hex
       env:
@@ -102,8 +105,8 @@ jobs:
     - name: Tag submodule log-and-stream-common
       run: |
         set -euo pipefail
-        cd S3R_Production/log-and-stream-common
+        cd ${{ env.PROJECT_DIR }}/log-and-stream-common
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-        git tag "LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}"
-        git push "https://x-access-token:${{ secrets.SUBMODULE_PAT }}@github.com/ShimmerResearch/log-and-stream-common.git" "LogAndStream_Shimmer3R_v${{ steps.get_version.outputs.version }}"
+        git tag "${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}"
+        git push "https://x-access-token:${{ secrets.SUBMODULE_PAT }}@github.com/ShimmerResearch/log-and-stream-common.git" "${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}"
