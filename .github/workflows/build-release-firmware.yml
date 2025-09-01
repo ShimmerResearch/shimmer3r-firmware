@@ -28,12 +28,12 @@ jobs:
         fetch-depth: 0  # Needed for tags
         submodules: recursive
 
-    - name: Debug path
-      run: pwd
+#    - name: Debug path
+#      run: pwd
 
-    - name: Debug directory structure
-      run: |
-        ls -lR S3R_Production/log-and-stream-common/scripts
+#    - name: Debug directory structure
+#      run: |
+#        ls -lR S3R_Production/log-and-stream-common/scripts
 
     - name: Increment version
       run: |
@@ -48,14 +48,11 @@ jobs:
         set -euo pipefail
         echo "version=$(cat ${{ env.PROJECT_DIR }}/build/version.txt)" >> $GITHUB_OUTPUT
 
-    - name: Commit version bump
+    - name: Show uncommitted changes
       run: |
-        set -euo pipefail
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
-        git add ${{ env.PROJECT_DIR }}/build/version.txt ${{ env.PROJECT_DIR }}/Shimmer_Driver/version.h
-        git commit -m "chore: bump firmware version to v${{ steps.get_version.outputs.version }}" || echo "No changes to commit"
-        git push
+        git status
+        git diff
+        git diff --cached
 
     - name: Check for clean working tree
       run: |
@@ -84,6 +81,15 @@ jobs:
           exit 1
         fi
         cp "$HEX_PATH" build/${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}.hex
+
+    - name: Commit version bump
+      run: |
+        set -euo pipefail
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git add ${{ env.PROJECT_DIR }}/build/version.txt ${{ env.PROJECT_DIR }}/Shimmer_Driver/version.h
+        git commit -m "chore: bump firmware version to v${{ steps.get_version.outputs.version }}" || echo "No changes to commit"
+        git push
 
     - name: Upload firmware artifact
       uses: actions/upload-artifact@v4
