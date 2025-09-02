@@ -26,7 +26,7 @@ extern "C"
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "lis2dw12_reg.h"
+#include "lis2dw12-pid/lis2dw12_reg.h"
 #include <string.h>
 
   /** @addtogroup BSP BSP

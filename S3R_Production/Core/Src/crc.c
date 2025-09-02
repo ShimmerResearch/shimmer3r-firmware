@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "hal_CRC.h"
+
 /* USER CODE END 0 */
 
 CRC_HandleTypeDef hcrc;

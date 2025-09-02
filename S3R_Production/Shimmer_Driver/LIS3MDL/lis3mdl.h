@@ -26,7 +26,7 @@ extern "C"
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "lis3mdl_reg.h"
+#include "lis3mdl-pid/lis3mdl_reg.h"
 #include <stddef.h>
 #include <string.h>
   /** @addtogroup BSP

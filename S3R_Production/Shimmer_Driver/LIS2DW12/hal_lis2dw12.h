@@ -8,7 +8,7 @@
 #ifndef LIS2DW12_HAL_LIS2DW12_H_
 #define LIS2DW12_HAL_LIS2DW12_H_
 
-#include <lis2dw12_reg.h>
+#include "lis2dw12-pid/lis2dw12_reg.h"
 
 void lis2dw12_driver_init(void);
 void lis2dw12_selectDevice(void);

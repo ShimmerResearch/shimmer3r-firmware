@@ -26,7 +26,7 @@ extern "C"
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "lsm6dsv_reg.h"
+#include "lsm6dsv-pid/lsm6dsv_reg.h"
 #include <string.h>
 
   /** @addtogroup BSP BSP

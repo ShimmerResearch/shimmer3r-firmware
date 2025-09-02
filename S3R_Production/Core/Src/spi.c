@@ -23,7 +23,7 @@
 /* USER CODE BEGIN 0 */
 
 //TODO remove, needed until SW supports setting pressure sensor rate in config
-#include "bmp3_defs.h"
+#include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
 #if defined(SHIMMER3R)

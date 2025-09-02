@@ -8,7 +8,7 @@
 #ifndef LIS2MDL_HAL_LIS2MDL_H_
 #define LIS2MDL_HAL_LIS2MDL_H_
 
-#include <lis2mdl_reg.h>
+#include "lis2mdl-pid/lis2mdl_reg.h"
 
 void lis2mdl_driver_init(void);
 self_test_result_t lis2mdl_self_test(void);
