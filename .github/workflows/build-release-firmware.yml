@@ -52,7 +52,7 @@ jobs:
       uses: xanderhendriks/action-build-stm32cubeide@v13.0
       with:
         project-path: .
-        project-target: ${{ env.PROJECT_DIR }}/Release
+        project-target: ${{ env.PROJECT_DIR }}
 
     - name: Find and copy hex file
       run: |
