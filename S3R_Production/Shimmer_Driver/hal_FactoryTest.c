@@ -431,7 +431,8 @@ void bt_module_test(void)
   }
   else
   {
-    ShimFactoryTest_sendReport(" - S3R_TEST_0014 - FAIL - BT hasn't initialised\r\n");
+    ShimFactoryTest_sendReport(
+        " - S3R_TEST_0014 - FAIL - BT hasn't initialised\r\n");
     shimmerStatus.testResult |= S3R_TEST_0014;
   }
 }
@@ -949,8 +950,9 @@ void gsrFactoryTest_printResults(void)
   if (gsrResistance[0] != 0xFF)
   {
     ShimFactoryTest_sendReport("\r\n    - GSR Test Results:\r\n");
-    ShimFactoryTest_sendReport("      - Source, Measured, Pass Tolerance, Measured "
-                     "Tolerance, Ref Resistor, Result\r\n");
+    ShimFactoryTest_sendReport(
+        "      - Source, Measured, Pass Tolerance, Measured "
+        "Tolerance, Ref Resistor, Result\r\n");
     for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
     {
       returnVal = 0;
