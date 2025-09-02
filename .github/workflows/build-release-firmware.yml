@@ -46,12 +46,12 @@ jobs:
         echo "version=$(cat ${{ env.PROJECT_DIR }}/build/version.txt)" >> $GITHUB_OUTPUT
 
     - name: List project files
-      run: ls -l S3R_Production
+      run: ls -l -a ${{ env.PROJECT_DIR }}
 
     - name: Build firmware
       uses: xanderhendriks/action-build-stm32cubeide@v13.0
       with:
-        project-path: '${{ env.PROJECT_DIR }}'
+        project-path: ${{ env.PROJECT_DIR }}
 
     - name: Find and copy hex file
       run: |
