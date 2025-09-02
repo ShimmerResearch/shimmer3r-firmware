@@ -81,8 +81,8 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "lis2mdl.h"
 #include "lis2mdl-pid/lis2mdl_reg.h"
+#include "lis2mdl.h"
 #include <stdio.h>
 #include <string.h>
 

@@ -12,9 +12,9 @@
 #include "i2c.h"
 #include "spi.h"
 
+#include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
 #include "PCM/pcm_config.h"
-#include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #include "usbd_cdc_acm_if.h"
 
 char *buffer;

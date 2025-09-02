@@ -110,8 +110,8 @@
 #include "components.h"
 
 #elif defined(SHIMMER3R)
-#include "lsm6dsv.h"
 #include "lsm6dsv-pid/lsm6dsv_reg.h"
+#include "lsm6dsv.h"
 
 #include "gpio.h"
 #include "spi.h"
