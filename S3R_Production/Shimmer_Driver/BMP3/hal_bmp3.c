@@ -397,19 +397,21 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
     break;
 
   case BMP3_TRIMMING_DATA_OUT_OF_BOUND:
-    send_test_report("Trimming data out of bound\r\n");
+    ShimFactoryTest_sendReport("Trimming data out of bound\r\n");
     break;
   case BMP3_TEMPERATURE_BOUND_WIRE_FAILURE_OR_MEMS_DEFECT:
-    send_test_report("Temperature bound wire failure or MEMs defect\r\n");
+    ShimFactoryTest_sendReport(
+        "Temperature bound wire failure or MEMs defect\r\n");
     break;
   case BMP3_PRESSURE_BOUND_WIRE_FAILURE_OR_MEMS_DEFECT:
-    send_test_report("Pressure bound wire failure or MEMs defect\r\n");
+    ShimFactoryTest_sendReport(
+        "Pressure bound wire failure or MEMs defect\r\n");
     break;
   case BMP3_IMPLAUSIBLE_TEMPERATURE:
-    send_test_report("Implausible Temperature\r\n");
+    ShimFactoryTest_sendReport("Implausible Temperature\r\n");
     break;
   case BMP3_IMPLAUSIBLE_PRESSURE:
-    send_test_report("Implausible Pressure\r\n");
+    ShimFactoryTest_sendReport("Implausible Pressure\r\n");
     break;
 
   default:

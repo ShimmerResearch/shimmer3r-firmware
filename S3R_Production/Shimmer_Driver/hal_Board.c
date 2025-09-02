@@ -498,11 +498,11 @@ void Board_setDockAccessToSd(uint8_t mcu0dock1)
   //TODO remove below when functionality is working
   //if (mcu0dock1)
   //{
-  //  send_test_report("SD to Dock\r\n");
+  //  ShimFactoryTest_sendReport("SD to Dock\r\n");
   //}
   //else
   //{
-  //  send_test_report("SD to MCU\r\n");
+  //  ShimFactoryTest_sendReport("SD to MCU\r\n");
   //}
 }
 
