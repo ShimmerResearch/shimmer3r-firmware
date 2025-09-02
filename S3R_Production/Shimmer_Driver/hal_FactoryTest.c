@@ -38,38 +38,38 @@ void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr)
   if (factoryTestToRun == FACTORY_TEST_MAIN || factoryTestToRun == FACTORY_TEST_ICS)
   {
     print_date_and_time();
-    send_test_report("\r\n");
+    ShimFactoryTest_sendReport("\r\n");
 
     sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f\xC2\xB0 C\r\n",
         TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER, TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
-    send_test_report(buffer);
-    send_test_report("\r\n");
+    ShimFactoryTest_sendReport(buffer);
+    ShimFactoryTest_sendReport("\r\n");
 
     print_shimmer_model();
-    send_test_report("\r\n");
+    ShimFactoryTest_sendReport("\r\n");
 
     //Sensing power is needed for ADC peripheral and I2C/SPI tests
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
 
     print_mcu_details();
-    send_test_report("\r\n");
+    ShimFactoryTest_sendReport("\r\n");
 
     print_battery_details();
-    send_test_report("\r\n");
+    ShimFactoryTest_sendReport("\r\n");
 
     sd_card_test();
-    send_test_report("\r\n");
+    ShimFactoryTest_sendReport("\r\n");
 
     bt_module_test();
-    send_test_report("\r\n");
+    ShimFactoryTest_sendReport("\r\n");
 
     //InfoMem_test();
 
     SPI_test();
-    send_test_report("\r\n");
+    ShimFactoryTest_sendReport("\r\n");
 
     I2C_test();
-    send_test_report("\r\n");
+    ShimFactoryTest_sendReport("\r\n");
 
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
 
@@ -80,7 +80,7 @@ void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr)
   {
     if (factoryTestToRun == FACTORY_TEST_MAIN)
     {
-      send_test_report("\r\n");
+      ShimFactoryTest_sendReport("\r\n");
     }
     led_test();
   }
@@ -97,39 +97,39 @@ void print_date_and_time(void)
   HAL_RTC_GetDate(&hrtc, &sDate, format);
   sprintf(buffer, "Date (yyyy-mm-dd): %.4u-%.2u-%.2u\r\n",
       ((sDate.Year >= 70 ? 1900 : 2000) + sDate.Year), sDate.Month, sDate.Date);
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   sprintf(buffer, "Time (hh:mm:ss): %.2u:%.2u:%.2u (UTC)\r\n", sTime.Hours,
       sTime.Minutes, sTime.Seconds);
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
 }
 
 void print_shimmer_model(void)
 {
-  send_test_report("Shimmer model:\r\n");
+  ShimFactoryTest_sendReport("Shimmer model:\r\n");
   if (ShimBrd_isDaughterCardIdSet())
   {
     sprintf(buffer, " - S3R_TEST_0003 - PASS: %s", ShimBrd_getDaughtCardIdStrPtr());
-    send_test_report(buffer);
+    ShimFactoryTest_sendReport(buffer);
     shimmer_expansion_brd *daughterCardId = ShimBrd_getDaughtCardId();
     sprintf(buffer, " (SR%d-%d-%d)\r\n", daughterCardId->exp_brd_id,
         daughterCardId->exp_brd_major, daughterCardId->exp_brd_minor);
-    send_test_report(buffer);
+    ShimFactoryTest_sendReport(buffer);
   }
   else
   {
-    send_test_report(" - S3R_TEST_0003 - FAIL: not set\r\n");
+    ShimFactoryTest_sendReport(" - S3R_TEST_0003 - FAIL: not set\r\n");
     shimmerStatus.testResult |= S3R_TEST_0003;
   }
 }
 
 void print_mcu_details(void)
 {
-  send_test_report("MCU:\r\n");
+  ShimFactoryTest_sendReport("MCU:\r\n");
 
   sprintf(buffer, " - Device ID = %lu\r\n", HAL_GetDEVID());
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   sprintf(buffer, " - Revision ID = %lu\r\n", HAL_GetREVID());
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
 
   /*
    * UID[31:0]: X and Y coordinates on the wafer expressed in BCD format
@@ -138,16 +138,16 @@ void print_mcu_details(void)
    * UID[95:64]: LOT_NUM[55:24] Lot number (ASCII encoded)
    * */
   //sprintf(buffer, " - Unique ID w0 = 0x%08X\r\n", HAL_GetUIDw0());
-  //send_test_report(buffer);
+  //ShimFactoryTest_sendReport(buffer);
   //sprintf(buffer, " - Unique ID w1 = 0x%08X\r\n", HAL_GetUIDw1());
-  //send_test_report(buffer);
+  //ShimFactoryTest_sendReport(buffer);
   //sprintf(buffer, " - Unique ID w2 = 0x%08X\r\n", HAL_GetUIDw2());
-  //send_test_report(buffer);
+  //ShimFactoryTest_sendReport(buffer);
   //sprintf(buffer, " - Unique ID = 0x%08X%08X%08X\r\n", HAL_GetUIDw0(),
   //    HAL_GetUIDw1(), HAL_GetUIDw2());
   sprintf(buffer, " - Unique ID = 0x%08" PRIX32 "%08" PRIX32 "%08" PRIX32 "\r\n",
       HAL_GetUIDw0(), HAL_GetUIDw1(), HAL_GetUIDw2());
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
 
   ADCDebugInfo_t adcDebugInfo;
   getherMcuDebugInfo(&adcDebugInfo);
@@ -157,7 +157,7 @@ void print_mcu_details(void)
   sprintf(buffer, " - S3R_TEST_0007 - %s: VRef = %ldmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.vRefMV,
       TEST_THRESHOLD_VREF_LOWER, TEST_THRESHOLD_VREF_UPPER);
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0007;
@@ -168,7 +168,7 @@ void print_mcu_details(void)
   sprintf(buffer, " - S3R_TEST_0008 - %s: VCore = %ldmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.vCoreMV,
       TEST_THRESHOLD_MV_VCORE_LOWER, TEST_THRESHOLD_MV_VCORE_UPPER);
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0008;
@@ -191,7 +191,7 @@ void print_mcu_details(void)
         testPass ? "PASS" : "FAIL", adcDebugInfo.vBattPinMV,
         TEST_THRESHOLD_MV_VBATT_PIN_LOWER, TEST_THRESHOLD_MV_VBATT_PIN_UPPER);
   }
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0009;
@@ -201,26 +201,26 @@ void print_mcu_details(void)
       && adcDebugInfo.temperature < TEST_THRESHOLD_MV_MCU_TEMPERATURE_UPPER);
   sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xC2\xB0 C\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0010;
   }
 
-  send_test_report(" - I/O status:\r\n");
+  ShimFactoryTest_sendReport(" - I/O status:\r\n");
   sprintf(buffer, "    - Docked: %s\r\n", shimmerStatus.docked ? "Yes" : "No");
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   sprintf(buffer, "    - BT connected: %s\r\n", shimmerStatus.btConnected ? "Yes" : "No");
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   sprintf(buffer, "    - Button pressed: %s\r\n", shimmerStatus.buttonPressed ? "Yes" : "No");
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   sprintf(buffer, "    - USB connected: %s\r\n", shimmerStatus.usbPluggedIn ? "Yes" : "No");
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
 }
 
 void print_battery_details(void)
 {
-  send_test_report("Battery:\r\n");
+  ShimFactoryTest_sendReport("Battery:\r\n");
   manageReadBatt(1);
 
   uint8_t testPass = (batteryStatus.battValMV > TEST_THRESHOLD_MV_VBATT_LOWER
@@ -228,7 +228,7 @@ void print_battery_details(void)
   sprintf(buffer, " - S3R_TEST_0011 - %s: VBatt = %dmV (%d-%dmV)\r\n",
       testPass ? "PASS" : "FAIL", batteryStatus.battValMV,
       TEST_THRESHOLD_MV_VBATT_LOWER, TEST_THRESHOLD_MV_VBATT_UPPER);
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0011;
@@ -236,7 +236,7 @@ void print_battery_details(void)
 
   testPass = batteryStatus.battStatusRaw.rawBytes[2] == CHRG_CHIP_STATUS_BAD_BATTERY ? 0 : 1;
   sprintf(buffer, " - S3R_TEST_0012 - %s: Charger chip status = ", testPass ? "PASS" : "FAIL");
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0012;
@@ -261,9 +261,9 @@ void print_battery_details(void)
     sprintf(buffer, "Unknown\r\n");
     break;
   }
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
 
-  send_test_report(" - Determined charging status = ");
+  ShimFactoryTest_sendReport(" - Determined charging status = ");
   switch (batteryStatus.battChargingStatus)
   {
   case CHARGING_STATUS_CHECKING:
@@ -289,46 +289,46 @@ void print_battery_details(void)
     sprintf(buffer, "Unknown\r\n");
     break;
   }
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
 }
 
 void led_test(void)
 {
-  send_test_report("LED test (S3R_TEST_0027):\r\n");
+  ShimFactoryTest_sendReport("LED test (S3R_TEST_0027):\r\n");
 
 #if defined(SHIMMER3R)
   stopLedBlinkTimer();
 
   Board_ledLwrSetColour(LED_RGB_ALL_OFF);
   Board_ledUprSetColour(LED_RGB_ALL_OFF);
-  send_test_report(" - All LEDs off\r\n");
+  ShimFactoryTest_sendReport(" - All LEDs off\r\n");
   HAL_Delay(DELAY_BETWEEN_LED_CHANGES_MS);
 
-  send_test_report(" - Lower Red LED on\r\n");
+  ShimFactoryTest_sendReport(" - Lower Red LED on\r\n");
   Board_ledLwrSetColour(LED_RGB_RED);
   HAL_Delay(DELAY_BETWEEN_LED_CHANGES_MS);
-  send_test_report(" - Lower Green LED on\r\n");
+  ShimFactoryTest_sendReport(" - Lower Green LED on\r\n");
   Board_ledLwrSetColour(LED_RGB_GREEN);
   HAL_Delay(DELAY_BETWEEN_LED_CHANGES_MS);
-  send_test_report(" - Lower Blue LED on\r\n");
+  ShimFactoryTest_sendReport(" - Lower Blue LED on\r\n");
   Board_ledLwrSetColour(LED_RGB_BLUE);
   HAL_Delay(DELAY_BETWEEN_LED_CHANGES_MS);
   Board_ledLwrSetColour(LED_RGB_ALL_OFF);
 
-  send_test_report(" - Upper Red LED on\r\n");
+  ShimFactoryTest_sendReport(" - Upper Red LED on\r\n");
   Board_ledUprSetColour(LED_RGB_RED);
   HAL_Delay(DELAY_BETWEEN_LED_CHANGES_MS);
-  send_test_report(" - Upper Green LED on\r\n");
+  ShimFactoryTest_sendReport(" - Upper Green LED on\r\n");
   Board_ledUprSetColour(LED_RGB_GREEN);
   HAL_Delay(DELAY_BETWEEN_LED_CHANGES_MS);
-  send_test_report(" - Upper Blue LED on\r\n");
+  ShimFactoryTest_sendReport(" - Upper Blue LED on\r\n");
   Board_ledUprSetColour(LED_RGB_BLUE);
   HAL_Delay(DELAY_BETWEEN_LED_CHANGES_MS);
-  send_test_report(" - All LEDs off\r\n");
+  ShimFactoryTest_sendReport(" - All LEDs off\r\n");
   Board_ledUprSetColour(LED_RGB_ALL_OFF);
 
   HAL_Delay(DELAY_BETWEEN_LED_CHANGES_MS);
-  send_test_report(" - All LEDs on\r\n");
+  ShimFactoryTest_sendReport(" - All LEDs on\r\n");
   Board_ledLwrSetColour(LED_RGB_ALL_ON);
   Board_ledUprSetColour(LED_RGB_ALL_ON);
   HAL_Delay(DELAY_BETWEEN_LED_CHANGES_MS);
@@ -375,10 +375,10 @@ void led_test(void)
 
 void sd_card_test(void)
 {
-  send_test_report("SD Card:\r\n");
+  ShimFactoryTest_sendReport("SD Card:\r\n");
   if (!shimmerStatus.sdInserted)
   {
-    send_test_report(" - S3R_TEST_0013 - FAIL: not detected\r\n");
+    ShimFactoryTest_sendReport(" - S3R_TEST_0013 - FAIL: not detected\r\n");
     shimmerStatus.testResult |= S3R_TEST_0013;
   }
   else
@@ -389,15 +389,15 @@ void sd_card_test(void)
       HAL_Delay(120); //120ms
     }
 
-    send_test_report(" - ");
+    ShimFactoryTest_sendReport(" - ");
     printSdCardInfo(buffer);
-    send_test_report(buffer);
+    ShimFactoryTest_sendReport(buffer);
 
     shimmerStatus.testResult += ShimSd_test1() << 6;
     //SD_test_alternative();
     sprintf(buffer, " - S3R_TEST_0013 - %s: MCU read/write test\r\n",
         shimmerStatus.sdBadFile ? "FAIL" : "PASS");
-    send_test_report(buffer);
+    ShimFactoryTest_sendReport(buffer);
 
     if (shimmerStatus.sdBadFile)
     {
@@ -413,24 +413,25 @@ void sd_card_test(void)
 
 void bt_module_test(void)
 {
-  send_test_report("BT Module:\r\n");
-  if (shimmerStatus.btIsInitialised)
+  ShimFactoryTest_sendReport("BT Module:\r\n");
+  /* Check MAC and BT version have been read */
+  if (*(ShimBt_macIdStrPtrGet()) != 0x00 && *(ShimBt_getBtVerStrPtr()) != 0x00)
   {
-    send_test_report(" - MAC ID: ");
+    ShimFactoryTest_sendReport(" - MAC ID: ");
     memcpy(&buffer[0], ShimBt_macIdStrPtrGet(), 12);
     sprintf(&buffer[12], "\r\n");
-    send_test_report(buffer);
+    ShimFactoryTest_sendReport(buffer);
 
     sprintf(buffer, " - %s\r\n", ShimBt_getBtVerStrPtr());
-    send_test_report(buffer);
+    ShimFactoryTest_sendReport(buffer);
 
     sprintf(buffer, " - S3R_TEST_0014 - %s BT firmware version\r\n",
         strstr(buffer, TEST_BT_MODULE_FW) != NULL ? "PASS: Correct" : "FAIL: Incorrect");
-    send_test_report(buffer);
+    ShimFactoryTest_sendReport(buffer);
   }
   else
   {
-    send_test_report(" - S3R_TEST_0014 - FAIL - BT hasn't initialised\r\n");
+    ShimFactoryTest_sendReport(" - S3R_TEST_0014 - FAIL - BT hasn't initialised\r\n");
     shimmerStatus.testResult |= S3R_TEST_0014;
   }
 }
@@ -470,7 +471,7 @@ void I2C_test(void)
     ret_val |= 0x08;
   }
 #elif defined(SHIMMER3R)
-  send_test_report("I2C1:\r\n");
+  ShimFactoryTest_sendReport("I2C1:\r\n");
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
   self_test_result = lis2mdl_self_test();
@@ -491,7 +492,7 @@ void I2C_test(void)
 
   uint8_t eeprom_result = eepromTest();
   sprintf(buffer, " - S3R_TEST_0023 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
   if (eeprom_result)
   {
     shimmerStatus.testResult |= S3R_TEST_0023;
@@ -508,7 +509,7 @@ void I2C_test(void)
   I2C1_DeInit();
 
 #if defined(SHIMMER3R)
-  send_test_report("I2C4:\r\n");
+  ShimFactoryTest_sendReport("I2C4:\r\n");
   if (ShimBrd_isI2c4Supported())
   {
     uint8_t i2c4_result = 0;
@@ -519,20 +520,20 @@ void I2C_test(void)
 
     if (test_i2c_addr_list_len == 0) //Nothing detected on I2C bus
     {
-      send_test_report(
+      ShimFactoryTest_sendReport(
           " - S3R_TEST_0024 - FAIL: I2C4 - no test rig detected\r\n");
-      send_test_report(
+      ShimFactoryTest_sendReport(
           " - S3R_TEST_0025 - FAIL: GSR - no test rig detected\r\n");
       i2c4_result = 1;
     }
     else if (test_i2c_addr_list_len == 3) //GSR Test Rig detected
     {
-      send_test_report(" - S3R_TEST_0024 - PASS: I2C4\r\n");
+      ShimFactoryTest_sendReport(" - S3R_TEST_0024 - PASS: I2C4\r\n");
 
       uint8_t gsr_result = gsrFactoryTest_run();
       sprintf(buffer, " - S3R_TEST_0025 - %s: GSR signal test\r\n",
           gsr_result ? "FAIL" : "PASS");
-      send_test_report(buffer);
+      ShimFactoryTest_sendReport(buffer);
 
       if (gsr_result)
       {
@@ -547,23 +548,23 @@ void I2C_test(void)
       HAL_Delay(5); //5ms to ensure no writes pending
 
       sprintf(buffer, " - S3R_TEST_0024 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
-      send_test_report(buffer);
+      ShimFactoryTest_sendReport(buffer);
       if (ShimBrd_isHwId(EXP_BRD_GSR_UNIFIED))
       {
-        send_test_report(
+        ShimFactoryTest_sendReport(
             " - S3R_TEST_0025 - WARNING: GSR - no test rig detected\r\n");
       }
       else
       {
-        send_test_report(
+        ShimFactoryTest_sendReport(
             " - S3R_TEST_0025 - GSR test not applicable for this model\r\n");
       }
     }
     else
     {
-      send_test_report(
+      ShimFactoryTest_sendReport(
           " - S3R_TEST_0024 - FAIL: I2C4 - test rig not recognised\r\n");
-      send_test_report(
+      ShimFactoryTest_sendReport(
           " - S3R_TEST_0025 - FAIL: GSR - test rig not recognised\r\n");
       i2c4_result = 1;
     }
@@ -577,9 +578,9 @@ void I2C_test(void)
   }
   else
   {
-    send_test_report(
+    ShimFactoryTest_sendReport(
         " - S3R_TEST_0024 - I2C4 test not applicable for this model\r\n");
-    send_test_report(
+    ShimFactoryTest_sendReport(
         " - S3R_TEST_0025 - GSR test not applicable for this model\r\n");
   }
 #endif
@@ -591,13 +592,13 @@ void SPI_test(void)
   float_t tempCal = 0;
 
 #if defined(SHIMMER3R)
-  send_test_report("SPI1:\r\n");
+  ShimFactoryTest_sendReport("SPI1:\r\n");
   MX_SPI1_Init();
 
   if (ShimBrd_isBoardSr48_6_0())
   {
     sprintf(buffer, " - S3R_TEST_0015 - ADS7028 test not applicable for this model\r\n");
-    send_test_report(buffer);
+    ShimFactoryTest_sendReport(buffer);
   }
   else
   {
@@ -653,10 +654,10 @@ void SPI_test(void)
   }
   else
   {
-    send_test_report(" - S3R_TEST_0017 - FAIL: BMP390 - ");
+    ShimFactoryTest_sendReport(" - S3R_TEST_0017 - FAIL: BMP390 - ");
 
     bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
-    send_test_report(buffer);
+    ShimFactoryTest_sendReport(buffer);
   }
   if (self_test_result != SELF_TEST_PASS)
   {
@@ -675,13 +676,13 @@ void SPI_test(void)
   }
   else
   {
-    send_test_report(
+    ShimFactoryTest_sendReport(
         " - S3R_TEST_0018 - ADXL371 test not applicable for this model\r\n");
   }
 
   SPI1_DeInit();
 
-  send_test_report("SPI2:\r\n");
+  ShimFactoryTest_sendReport("SPI2:\r\n");
   MX_SPI2_Init();
 
   if (ShimBrd_isLis3mdlPresent())
@@ -705,7 +706,7 @@ void SPI_test(void)
   }
   else
   {
-    send_test_report(
+    ShimFactoryTest_sendReport(
         " - S3R_TEST_0019 - LIS3MDL test not applicable for this model\r\n");
   }
 
@@ -730,7 +731,7 @@ void SPI_test(void)
 
 #endif
 
-  send_test_report("SPI3:\r\n");
+  ShimFactoryTest_sendReport("SPI3:\r\n");
   if (ShimBrd_isAds1292Present())
   {
     uint8_t ads1292RInitResult = 0;
@@ -740,17 +741,17 @@ void SPI_test(void)
     if (ads1292RInitResult)
     {
       sprintf(buffer, " - S3R_TEST_0021 - FAIL: ADS1292R Init fail\r\n");
-      send_test_report(buffer);
+      ShimFactoryTest_sendReport(buffer);
     }
     else
     {
       uint8_t ads1292RTestResult = EXG_self_test();
       sprintf(buffer, " - S3R_TEST_0021 - %s: ADS1292R Chip1 detect\r\n",
           (ads1292RTestResult & 0x01) ? "FAIL" : "PASS");
-      send_test_report(buffer);
+      ShimFactoryTest_sendReport(buffer);
       sprintf(buffer, " - S3R_TEST_0021 - %s: ADS1292R Chip2 detect\r\n",
           (ads1292RTestResult & 0x02) ? "FAIL" : "PASS");
-      send_test_report(buffer);
+      ShimFactoryTest_sendReport(buffer);
       if (ads1292RTestResult)
       {
         shimmerStatus.testResult |= S3R_TEST_0021;
@@ -761,7 +762,7 @@ void SPI_test(void)
   }
   else
   {
-    send_test_report(
+    ShimFactoryTest_sendReport(
         " - S3R_TEST_0021 - ADS1292R test not applicable for this model\r\n");
   }
 }
@@ -815,10 +816,10 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
     sprintf(buffer, " - %s - %s: %s%s (%.2f\xC2\xB0 C)\r\n", testId,
         selfTestResultStr, chipId, selfTestDetailsStr, tempCal);
   }
-  send_test_report(buffer);
+  ShimFactoryTest_sendReport(buffer);
 }
 
-void send_test_report_impl(const char *str, factory_test_target_t factoryTestTarget)
+void ShimFactoryTest_sendReportImpl(const char *str, factory_test_target_t factoryTestTarget)
 {
   switch (factoryTestTarget)
   {
@@ -863,7 +864,7 @@ uint8_t gsrFactoryTest_run(void)
   status = gsrTestRigInit(&hi2c4);
   if (status != HAL_OK)
   {
-    //send_test_report("Failed to initialise GSR test rig\r\n");
+    //ShimFactoryTest_sendReport("Failed to initialise GSR test rig\r\n");
     return returnVal;
   }
 
@@ -892,7 +893,7 @@ uint8_t gsrFactoryTest_run(void)
     {
       //sprintf(buffer, "Failed to set GSR test rig resistance %lu\r\n",
       //    testGsrResistances[i]);
-      //send_test_report(buffer);
+      //ShimFactoryTest_sendReport(buffer);
       return returnVal;
     }
     HAL_Delay(100);
@@ -947,8 +948,8 @@ void gsrFactoryTest_printResults(void)
 
   if (gsrResistance[0] != 0xFF)
   {
-    send_test_report("\r\n    - GSR Test Results:\r\n");
-    send_test_report("      - Source, Measured, Pass Tolerance, Measured "
+    ShimFactoryTest_sendReport("\r\n    - GSR Test Results:\r\n");
+    ShimFactoryTest_sendReport("      - Source, Measured, Pass Tolerance, Measured "
                      "Tolerance, Ref Resistor, Result\r\n");
     for (i = 0; i < sizeof(testGsrResistances) / sizeof(testGsrResistances[0]); i++)
     {
@@ -973,7 +974,7 @@ void gsrFactoryTest_printResults(void)
       sprintf(buffer, "      - %lu ohms, %lu ohms, +-%.0f%%, %+.02f%%, %lu ohms, %s\r\n",
           testGsrResistances[i], gsrResistance[i], passTolerance * 100.0f,
           measured_tolerance, referenceResistor, returnVal ? "FAIL" : "PASS");
-      send_test_report(buffer);
+      ShimFactoryTest_sendReport(buffer);
     }
   }
 }
@@ -1057,15 +1058,15 @@ uint8_t runMicrophoneTest(void)
   uint8_t self_test_result = SELF_TEST_PASS;
   uint8_t micResult;
 
-  send_test_report("Microphone:\r\n");
+  ShimFactoryTest_sendReport("Microphone:\r\n");
 
   micResult = micTest();
 
-  send_test_report(" - S3R_TEST_0026 - ");
+  ShimFactoryTest_sendReport(" - S3R_TEST_0026 - ");
   const micTestResult_t *result = getMicTestResult(micResult);
-  send_test_report(result->message);
+  ShimFactoryTest_sendReport(result->message);
   self_test_result = result->selfTestResult;
-  send_test_report("\r\n");
+  ShimFactoryTest_sendReport("\r\n");
 
   if (self_test_result != SELF_TEST_PASS)
   {
