@@ -84,8 +84,8 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "lis2dw12.h"
 #include "lis2dw12-pid/lis2dw12_reg.h"
+#include "lis2dw12.h"
 #include <stdio.h>
 #include <string.h>
 

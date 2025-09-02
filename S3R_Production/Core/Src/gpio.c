@@ -26,9 +26,9 @@
 #include "usb_device.h"
 #include "usbd_core.h"
 
+#include "Boards/shimmer_boards.h"
 #include "TaskList/shimmer_taskList.h"
 #include "log_and_stream_externs.h"
-#include "Boards/shimmer_boards.h"
 
 /* USER CODE END 0 */
 
