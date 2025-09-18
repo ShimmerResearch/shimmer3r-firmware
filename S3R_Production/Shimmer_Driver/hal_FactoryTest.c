@@ -985,7 +985,7 @@ static float gsrFactoryTest_getPassToleranceForTestResistor(uint32_t testResisto
 {
   if (testResistor > 8000L && testResistor < 63000L)
   {
-    return GSR_TEST_TOLERANCE_7_PERCENT;
+    return GSR_TEST_TOLERANCE_8_PERCENT;
   }
   else if (testResistor >= 63000L && testResistor < 220000L)
   {

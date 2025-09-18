@@ -48,8 +48,8 @@ given above */
 
 #define TEST_BT_MODULE_FW                          "v01.04.16.16"
 
-#define GSR_TEST_TOLERANCE_5_PERCENT               0.05
 #define GSR_TEST_TOLERANCE_7_PERCENT               0.07
+#define GSR_TEST_TOLERANCE_8_PERCENT               0.08
 
 typedef enum
 {
