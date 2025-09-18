@@ -284,11 +284,11 @@ void GPIO_userButtonCheck()
     {
       if (shimmerStatus.sdLogging == 0)
       {
-        ShimTask_setStartLoggingIfReady();
+        ShimTask_setStartLoggingIfReady(SD_BT_LOG_STREAM_CMD_SRC_HW);
       }
       else
       {
-        ShimTask_setStopLogging();
+       ShimTask_setStopLogging(SD_BT_LOG_STREAM_CMD_SRC_HW);
       }
     }
     GPIO_tsLastRelease = GPIO_tsRelease;
@@ -402,7 +402,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     /* no break */
 #endif //SUPPORT_SR48_6_0
   case USER_BTN_Pin:
-    GPIO_userButtonCheck();
+    ShimBtn_pressReleaseAction();
     break;
   case SD_DETECT_N_Pin:
     CheckSdInslot();

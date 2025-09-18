@@ -84,7 +84,7 @@ void btCommWithDiffBaudRates(void);
 void BtStartDone(void);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
-void SetupDock(void);
+void SetupDock(uint8_t src);
 #if USE_CUSTOM_HAL_DELAY
 void HAL_Delay(uint32_t Delay);
 #endif
@@ -174,7 +174,7 @@ void Init()
    * MAC ID can be used for default Shimmer name and calibration file names.*/
   ShimConfig_loadSensorConfigAndCalib();
 
-  SetupDock();
+  SetupDock(SD_BT_LOG_STREAM_CMD_SRC_OTH);
   //Disable dock comms until sensor is ready to communicate
   DockUart_disable();
 
@@ -516,10 +516,10 @@ bool isBtConnected(void)
 
 #endif
 
-void SetupDock(void)
+void SetupDock(uint8_t src)
 {
   shimmerStatus.configuring = 1;
-
+  shimmerStatus.sdBtCmdSrc = src;
   /* Reset battery charging status on dock/undock so that we don't display an
    * invalid state. */
   ShimBatt_resetBatteryChargingStatus();
@@ -571,7 +571,7 @@ void SetupDock(void)
       if (!shimmerStatus.sensing)
       {
         HAL_Delay(120); //120ms
-        LogAndStream_syncConfigAndCalibOnSd();
+        LogAndStream_syncConfigAndCalibOnSd(src);
       }
       else
       {
