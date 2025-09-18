@@ -288,7 +288,7 @@ void GPIO_userButtonCheck()
       }
       else
       {
-       ShimTask_setStopLogging(SD_BT_LOG_STREAM_CMD_SRC_HW);
+        ShimTask_setStopLogging(SD_BT_LOG_STREAM_CMD_SRC_HW);
       }
     }
     GPIO_tsLastRelease = GPIO_tsRelease;
