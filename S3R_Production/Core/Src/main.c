@@ -151,7 +151,7 @@ void Init()
   Board_sd2Arm();
   ShimSd_mount(shimmerStatus.sdInserted);
 
-  //GPIO_userButtonCheck();
+  //(void)ShimBtn_pressReleaseAction();
 
 #if defined(SHIMMER3R)
   LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH);

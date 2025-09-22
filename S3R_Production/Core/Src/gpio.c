@@ -27,6 +27,7 @@
 #include "usbd_core.h"
 
 #include "Boards/shimmer_boards.h"
+#include "Button/shimmer_button.h"
 #include "TaskList/shimmer_taskList.h"
 #include "log_and_stream_externs.h"
 
@@ -38,6 +39,15 @@
 /* USER CODE BEGIN 1 */
 
 uint64_t GPIO_tsLastRelease = 0, GPIO_tsRelease = 0;
+
+#if defined(SHIMMER4_SDK)
+uint16_t ext_cnt1 = 0;
+uint16_t ext_cnt2 = 0;
+uint16_t ext_cnt3 = 0;
+uint16_t ext_cnt4 = 0;
+uint16_t ext_cnt5 = 0;
+uint16_t ext_cnt6 = 0;
+#endif
 
 /* USER CODE END 1 */
 
@@ -270,38 +280,6 @@ void GPIO_usbVbusIntInit(uint8_t state)
   }
 }
 
-void GPIO_userButtonCheck()
-{
-  if (USER_BTN_PRESSED)
-  { //pressed
-    shimmerStatus.buttonPressed = 1;
-  }
-  else
-  {
-    shimmerStatus.buttonPressed = 0;
-    GPIO_tsRelease = RTC_get64();
-    if (GPIO_tsRelease - GPIO_tsLastRelease > 3277)
-    {
-      if (shimmerStatus.sdLogging == 0)
-      {
-        ShimTask_setStartLoggingIfReady();
-      }
-      else
-      {
-        ShimTask_setStopLogging();
-      }
-    }
-    GPIO_tsLastRelease = GPIO_tsRelease;
-  }
-}
-
-uint16_t ext_cnt1 = 0;
-uint16_t ext_cnt2 = 0;
-uint16_t ext_cnt3 = 0;
-uint16_t ext_cnt4 = 0;
-uint16_t ext_cnt5 = 0;
-uint16_t ext_cnt6 = 0;
-
 //TODO copy Shimmer4 pins from HAL_GPIO_EXTI_Callback to HAL_GPIO_EXTI_Rising_Callback and HAL_GPIO_EXTI_Falling_Callback
 #if defined(SHIMMER3R)
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
@@ -402,7 +380,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     /* no break */
 #endif //SUPPORT_SR48_6_0
   case USER_BTN_Pin:
-    GPIO_userButtonCheck();
+    (void) ShimBtn_pressReleaseAction();
     break;
   case SD_DETECT_N_Pin:
     CheckSdInslot();
@@ -453,7 +431,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     DockUart_interruptCheck();
     break;
   case USER_BTN_N_Pin:
-    GPIO_userButtonCheck();
+    (void) ShimBtn_pressReleaseAction();
     break;
   case SD_DETECT_N_Pin:
     CheckSdInslot();
