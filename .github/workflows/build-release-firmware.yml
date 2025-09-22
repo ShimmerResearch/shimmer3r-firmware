@@ -7,8 +7,22 @@ on:
   workflow_dispatch:
     inputs:
       increment:
-        description: "Which version part to increment: major, minor, patch"
+        description: "Which version part to increment"
+        required: true
         default: "patch"
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+      build_mode:
+        description: "Select build mode"
+        required: true
+        default: "Release"
+        type: choice
+        options:
+          - Release
+          - Debug
 
 env:
   PROJECT_DIR: S3R_Production
@@ -58,16 +72,14 @@ jobs:
       run: |
         set -euo pipefail
         mkdir -p build
-        HEX_PATH=""
-        if [ -f ${{ env.PROJECT_DIR }}/Release/${{ env.PROJECT_DIR }}.hex ]; then
-          HEX_PATH=${{ env.PROJECT_DIR }}/Release/${{ env.PROJECT_DIR }}.hex
-        elif [ -f ${{ env.PROJECT_DIR }}/Debug/${{ env.PROJECT_DIR }}.hex ]; then
-          HEX_PATH=${{ env.PROJECT_DIR }}/Debug/${{ env.PROJECT_DIR }}.hex
+        HEX_PATH="${{ env.PROJECT_DIR }}/${{ github.event.inputs.build_mode }}/${{ env.PROJECT_DIR }}.hex"
+
+        if [ -f "$HEX_PATH" ]; then
+          cp "$HEX_PATH" build/${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}.hex
         else
-          echo "No .hex file found in Release or Debug."
+          echo "No .hex file found in ${{ github.event.inputs.build_mode }} folder."
           exit 1
         fi
-        cp "$HEX_PATH" build/${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}.hex
 
     - name: Commit version bump
       run: |
