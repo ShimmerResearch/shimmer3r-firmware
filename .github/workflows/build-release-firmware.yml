@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       increment:
-        description: "Which version part to increment"
+        description: "Which version part to increment (vMAJOR.MINOR.PATCH)?"
         required: true
         default: "patch"
         type: choice
@@ -16,7 +16,7 @@ on:
           - minor
           - patch
       build_mode:
-        description: "Select build mode"
+        description: "Select build mode:"
         required: true
         default: "Release"
         type: choice
