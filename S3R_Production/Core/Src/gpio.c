@@ -27,9 +27,9 @@
 #include "usbd_core.h"
 
 #include "Boards/shimmer_boards.h"
+#include "Button/shimmer_button.h"
 #include "TaskList/shimmer_taskList.h"
 #include "log_and_stream_externs.h"
-#include "Button/shimmer_button.h"
 
 /* USER CODE END 0 */
 
@@ -380,7 +380,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     /* no break */
 #endif //SUPPORT_SR48_6_0
   case USER_BTN_Pin:
-    (void)ShimBtn_pressReleaseAction();
+    (void) ShimBtn_pressReleaseAction();
     break;
   case SD_DETECT_N_Pin:
     CheckSdInslot();
@@ -431,7 +431,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     DockUart_interruptCheck();
     break;
   case USER_BTN_N_Pin:
-    (void)ShimBtn_pressReleaseAction();
+    (void) ShimBtn_pressReleaseAction();
     break;
   case SD_DETECT_N_Pin:
     CheckSdInslot();
