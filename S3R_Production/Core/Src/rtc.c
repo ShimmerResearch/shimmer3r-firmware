@@ -503,7 +503,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
         //  RTC_setupAndStartSdSyncAlarm();
         //  break;
       case RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING:
-        ShimTask_setStopSensing();
+        ShimTask_setStopSensing(SD_BT_LOG_STREAM_CMD_SRC_OTH);
         break;
       case RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER:
         JumpToBootloader();
