@@ -144,7 +144,6 @@ void Init()
 
   setUartPeripheralPointers();
 
-  Board_delayMicrosInit();
   DockUart_interruptCheck();
   CheckSdInslot();
   //TODO ShimSd_mount() is normally done CheckSdInslot() for Shimmer3 but that feels like a hack
