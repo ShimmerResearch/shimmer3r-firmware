@@ -275,7 +275,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
             && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
     {
       //Parse as Shimmer packet
- //     SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+      //SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
       count = btRxWaitByteCount;
       ShimBt_dmaConversionDone(&rxBuf[i]);
       i += count;
@@ -304,16 +304,16 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
         }
 
         //TODO get working
-       /* else if (result == EZS_INPUT_RESULT_BUFFER_OVERFLOW || result == EZS_INPUT_RESULT_UNHANDLED_PACKET
-            || result == EZS_INPUT_RESULT_INVALID_CHECKSUM)
-        {
-          // If packet incomplete but byte wasn't recognised as part of an EZ
-          // Serial packet, send to Shimmer parser
-          if (getEzsPacketLength() == 0)
-          {
-           SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
-          }
-        } */
+        /* else if (result == EZS_INPUT_RESULT_BUFFER_OVERFLOW || result == EZS_INPUT_RESULT_UNHANDLED_PACKET
+             || result == EZS_INPUT_RESULT_INVALID_CHECKSUM)
+         {
+           // If packet incomplete but byte wasn't recognised as part of an EZ
+           // Serial packet, send to Shimmer parser
+           if (getEzsPacketLength() == 0)
+           {
+            SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+           }
+         } */
       }
       i += 1;
     }
