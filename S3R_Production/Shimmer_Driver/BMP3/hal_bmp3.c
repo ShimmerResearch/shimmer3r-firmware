@@ -357,7 +357,7 @@ int8_t save_calib_data_bytes(void)
   uint8_t reg_addr = BMP3_REG_CALIB_DATA;
 
   /* Read the calibration data from the sensor */
-  rslt = bmp3_get_regs(reg_addr, &calib_bytes[0], BMP3_LEN_CALIB_DATA, &bmp3);
+  rslt = bmp3_get_regs(reg_addr, calib_bytes, BMP3_LEN_CALIB_DATA, &bmp3);
 
   return rslt;
 }
