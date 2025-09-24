@@ -766,6 +766,18 @@ void delay_ms(const uint32_t delay_time_ms)
   HAL_Delay(delay_time_ms);
 }
 
+//Overrides weak function in LogAndStream driver
+uint8_t ShimBrd_doesDeviceSupportBle(void)
+{
+  return 1;
+}
+
+//Overrides weak function in LogAndStream driver
+uint8_t ShimBrd_doesDeviceSupportBtClassic(void)
+{
+  return 1;
+}
+
 /* USER CODE END 4 */
 
 /**
