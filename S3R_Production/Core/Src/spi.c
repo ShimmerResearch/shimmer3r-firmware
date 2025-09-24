@@ -123,11 +123,14 @@ void MX_SPI1_Init(void)
 
   hspiSensing1 = &hspi1;
 
+  /* Delay to allow sensors time to boot up before initialising their drivers.
+   * Note the BMP3 requires this as the calibration parameters are read from it
+   * during driver initialisation. */
+  HAL_Delay(BOOT_TIME);
+
   lsm6dsv_driver_init();
   bmp3_driver_init();
   adxl371_driver_init();
-
-  HAL_Delay(BOOT_TIME);
 
   /* USER CODE END SPI1_Init 2 */
 }
@@ -188,10 +191,10 @@ void MX_SPI2_Init(void)
 
   hspiSensing2 = &hspi2;
 
+  HAL_Delay(BOOT_TIME);
+
   lis2dw12_driver_init();
   lis3mdl_driver_init();
-
-  HAL_Delay(BOOT_TIME);
 
   /* USER CODE END SPI2_Init 2 */
 }
@@ -1616,5 +1619,13 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
   }
 }
 #endif
+
+void bmp3_readCalibrationDataOnBoot(void)
+{
+  /* Initialise SPI1 simply so that the pressure sensors calibration can be read
+   *  on boot. It is de-initialised straight after. */
+  MX_SPI1_Init();
+  SPI1_DeInit();
+}
 
 /* USER CODE END 1 */
