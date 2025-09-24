@@ -104,12 +104,19 @@ HAL_StatusTypeDef checknBoot0OptionByte(void);
 
 int _write(int file, char *ptr, int len)
 {
+#ifdef DEBUG
   int DataIdx;
-  for (DataIdx = 0; DataIdx < len; DataIdx++)
+  //Only send if debugger attached and ITM enabled
+  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk)
+      && (ITM->TCR & ITM_TCR_ITMENA_Msk) && (ITM->TER & 1U))
   {
-    ITM_SendChar(*ptr++);
+    for (DataIdx = 0; DataIdx < len; DataIdx++)
+    {
+      ITM_SendChar(*ptr++);
+    }
+    //HAL_UART_Transmit(huartBsl, (uint8_t *) ptr++, (uint16_t) len, 0xFFFF);
   }
-  //HAL_UART_Transmit(huartBsl, (uint8_t *) ptr++, (uint16_t) len, 0xFFFF);
+#endif
   return len;
 }
 

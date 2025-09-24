@@ -49,6 +49,8 @@
 #include "log_and_stream_externs.h"
 #include <Comms/shimmer_bt_uart.h>
 
+#define CONSOLE_PRINT_NON_EZ_SERIAL_BYTES 0
+
 uint8_t pending_response = 0;
 //uint8_t timer_active = 0;
 //volatile uint16_t timeout_ms_elapsed;
@@ -275,7 +277,9 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
             && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
     {
       //Parse as Shimmer packet
+#if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
       SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+#endif
       count = btRxWaitByteCount;
       ShimBt_dmaConversionDone(&rxBuf[i]);
       i += count;
@@ -311,7 +315,9 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
            * Serial packet, send to Shimmer parser */
           if (getEzsPacketLength() == 0)
           {
+#if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
             SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+#endif
           }
         }
       }
