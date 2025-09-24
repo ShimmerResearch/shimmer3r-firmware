@@ -106,10 +106,10 @@ int _write(int file, char *ptr, int len)
 {
 #ifdef DEBUG
   int DataIdx;
-  // Only send if debugger attached and ITM enabled
-  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) &&
-      (ITM->TCR & ITM_TCR_ITMENA_Msk) &&
-      (ITM->TER & 1U)) {
+  //Only send if debugger attached and ITM enabled
+  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk)
+      && (ITM->TCR & ITM_TCR_ITMENA_Msk) && (ITM->TER & 1U))
+  {
     for (DataIdx = 0; DataIdx < len; DataIdx++)
     {
       ITM_SendChar(*ptr++);
