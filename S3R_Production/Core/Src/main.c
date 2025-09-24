@@ -179,6 +179,7 @@ void Init()
    * It also needs to be loaded after the BT is initialised so that the
    * MAC ID can be used for default Shimmer name and calibration file names.*/
   ShimConfig_loadSensorConfigAndCalib();
+  bmp3_readCalibrationDataOnBoot();
 
   SetupDock();
   //Disable dock comms until sensor is ready to communicate
