@@ -1624,8 +1624,10 @@ void bmp3_readCalibrationDataOnBoot(void)
 {
   /* Initialise SPI1 simply so that the pressure sensors calibration can be read
    *  on boot. It is de-initialised straight after. */
+  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
   MX_SPI1_Init();
   SPI1_DeInit();
+  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
 }
 
 /* USER CODE END 1 */
