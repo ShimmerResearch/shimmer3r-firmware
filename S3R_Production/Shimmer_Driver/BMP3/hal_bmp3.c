@@ -48,7 +48,7 @@ void bmp3_driver_init(void)
   bmp3.intf = BMP3_SPI_INTF;
   bmp3.delay_us = bmp3_delay_us;
   bmp3.intf_ptr = &dev_addr;
-  bmp3.dummy_byte = 1;
+  bmp3.dummy_byte = 1; /* SPI interface, read extra byte */
 
   save_calib_data_bytes();
 }
