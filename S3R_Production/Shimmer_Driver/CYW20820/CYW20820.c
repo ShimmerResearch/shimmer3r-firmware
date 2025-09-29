@@ -599,7 +599,7 @@ void btInitCommands(void)
     {
       printf("Set Conn Param\r\n");
       setExpectedResponse(EZS_IDX_RSP_GAP_SET_CONN_PARAMETERS);
-      ezs_cmd_gap_set_conn_parameters(rsp_gap_get_conn_parameters_ref.interval,
+      ezs_fcmd_gap_set_conn_parameters(rsp_gap_get_conn_parameters_ref.interval,
           rsp_gap_get_conn_parameters_ref.slave_latency,
           rsp_gap_get_conn_parameters_ref.supervision_timeout,
           rsp_gap_get_conn_parameters_ref.scan_interval,
