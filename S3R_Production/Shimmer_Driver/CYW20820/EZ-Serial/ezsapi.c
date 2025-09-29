@@ -182,6 +182,9 @@ const uint8_t ezs_tbl_cmd[] = {
   0x07, 0x0B, 0x06, 0x06, T_U8, T_U8, T_U8, T_U8, T_U8,
   T_U8, /*  81 | S 19, SSBP (smp_set_security_parameters) */
   0x07, 0x0D, 0x04, 0x01, T_U32, /*  82 | S 20, SFPK (smp_set_fixed_passkey) */
+  //-------------- Fix 07 Start -------------------------//
+  0x07, 0x0F, 0x01, 0x01, T_U8A, /*  XX | S XX, SBTPIN (smp_set_pin_code) */
+  //-------------- Fix 07 End -------------------------//
   0x09, 0x03, 0x04, 0x04, T_U8, T_U8, T_U8, T_U8, /*  83 | S 21, SIOF (gpio_set_function) */
   0x09, 0x05, 0x06, 0x06, T_U8, T_U8, T_U8, T_U8, T_U8,
   T_U8, /*  84 | S 22, SIOD (gpio_set_drive) */
@@ -217,6 +220,9 @@ const uint8_t ezs_tbl_cmd[] = {
   0x07, 0x0A, 0x00, 0x00, /* 106 | G 18, GPRV (smp_get_privacy_mode) */
   0x07, 0x0C, 0x00, 0x00, /* 107 | G 19, GSBP (smp_get_security_parameters) */
   0x07, 0x0E, 0x00, 0x00, /* 108 | G 20, GFPK (smp_get_fixed_passkey) */
+  //-------------- Fix 07 Start -------------------------//
+  0x07, 0x10, 0x00, 0x00, /*  XX | S XX, GBTPIN, (smp_get_pin_code) */
+  //-------------- Fix 07 End -------------------------//
   0x09, 0x04, 0x01, 0x01, T_U8, /* 109 | G 21, GIOF (gpio_get_function) */
   0x09, 0x06, 0x01, 0x01, T_U8, /* 110 | G 22, GIOD (gpio_get_drive) */
   0x09, 0x08, 0x01, 0x01, T_U8, /* 111 | G 23, GIOL (gpio_get_logic) */
