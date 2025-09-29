@@ -41,7 +41,7 @@ static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
   '-', 'X', 'X', 'X', 'X', '-', 'B', 'T' };
 static char advNameBle[] = { 18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
   '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E' };
-// Legacy pin code for RN42, RN4678 compatibility
+//Legacy pin code for RN42, RN4678 compatibility
 static char pin_code[] = { 4, '1', '2', '3', '4' };
 
 uint16_t expectedResponseIdx;
@@ -103,25 +103,25 @@ static ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode_ref = {
  * - 0x4X = BT Classic -> MITM Protection Not Required - Single Profiles/general
  *   bonding. Numeric comparison with automatic accept allowed.
  * - 0xX1 = BLE -> Required - General Bond
-*/
+ */
 static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
     = { .mode = 0x41,
         .bonding = 1,
         .flags = 0x01,
         .keysize = 16,
-        .io = 3, // 3 = No Input + No Output – no ability to display or input anything (factory default)
+        .io = 3, //3 = No Input + No Output – no ability to display or input anything (factory default)
         .pairprop = 0 }; //Default values
 /* Mode = 0x40
  * - 0x4X = BT Classic -> MITM Protection Not Required - Single Profiles/general
  *   bonding. Numeric comparison with automatic accept allowed.
  * - 0xX0 = BLE -> Not required - No Bond
-*/
+ */
 static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref_sd_sync
     = { .mode = 0x40,
         .bonding = 0,
-        .flags = 0x04, // 0x04 = Enable use of legacy PIN code during paring for BT classic device.
+        .flags = 0x04, //0x04 = Enable use of legacy PIN code during paring for BT classic device.
         .keysize = 16,
-        .io = 3, // 3 = No Input + No Output – no ability to display or input anything (factory default)
+        .io = 3, //3 = No Input + No Output – no ability to display or input anything (factory default)
         .pairprop = 0 };
 
 ezs_rsp_smp_get_pin_code_t rsp_smp_get_pin_code;
@@ -661,8 +661,7 @@ void btInitCommands(void)
   {
     incrementBtInitCmdsStep();
 
-    if (memcmp(&rsp_smp_get_pin_code.pin_code, &pin_code[0], sizeof(pin_code))
-        != 0)
+    if (memcmp(&rsp_smp_get_pin_code.pin_code, &pin_code[0], sizeof(pin_code)) != 0)
     {
       printf("Set Pin Code\r\n");
       setExpectedResponse(EZS_IDX_RSP_SMP_SET_PIN_CODE);
@@ -1231,8 +1230,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     rsp_smp_get_pin_code = packet->payload.rsp_smp_get_pin_code;
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: rsp_smp_get_pin_code: pin_code=");
-    printf("%.*s",
-        (int)packet->payload.rsp_smp_get_pin_code.pin_code.length,
+    printf("%.*s", (int) packet->payload.rsp_smp_get_pin_code.pin_code.length,
         packet->payload.rsp_smp_get_pin_code.pin_code.data);
     printf(", Result=");
     printHex16(packet->payload.rsp_smp_get_pin_code.result);
