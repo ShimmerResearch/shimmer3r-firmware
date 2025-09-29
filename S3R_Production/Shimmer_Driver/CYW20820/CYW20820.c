@@ -661,7 +661,8 @@ void btInitCommands(void)
   {
     incrementBtInitCmdsStep();
 
-    if (memcmp(&rsp_smp_get_pin_code.pin_code, &pin_code[0], sizeof(pin_code)) != 0)
+    if (rsp_smp_get_pin_code.pin_code[0] != pin_code[0]
+        || memcmp(&rsp_smp_get_pin_code.pin_code[1], &pin_code[1], pin_code[0]) != 0)
     {
       printf("Set Pin Code\r\n");
       setExpectedResponse(EZS_IDX_RSP_SMP_SET_PIN_CODE);
