@@ -97,7 +97,7 @@ void MX_USART1_UART_Init(void)
 
   HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
 
-  // Assumes MX_USART1_UART_Init is only called if Shimmer is not sensing
+  //Assumes MX_USART1_UART_Init is only called if Shimmer is not sensing
   DockUart_enable();
 
   MX_CRC_Init();
