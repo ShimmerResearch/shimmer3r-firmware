@@ -92,7 +92,6 @@ void MX_USART1_UART_Init(void)
 
 #if defined(SHIMMER3R)
   HAL_UART_RegisterCallback(huartDock, HAL_UART_RX_COMPLETE_CB_ID, dockUartRxCallback);
-//HAL_UART_RegisterCallback(huartDock, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
 #endif
 
   HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
