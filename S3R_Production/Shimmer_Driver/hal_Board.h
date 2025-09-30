@@ -256,6 +256,8 @@
 #define Board_BT_CYSPP_MODE(x) \
   HAL_GPIO_WritePin(BT_CYSPP_GPIO_Port, BT_CYSPP_MODE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
+#define BOARD_IS_SD_INSERTED (HAL_GPIO_ReadPin(SD_DETECT_N_GPIO_Port, SD_DETECT_N_Pin) == GPIO_PIN_RESET)
+
 #define LIS2MDL_DRDY HAL_GPIO_ReadPin(LIS2MDL_DRDY_GPIO_Port, LIS2MDL_DRDY_Pin)
 #define LIS3MDL_DRDY HAL_GPIO_ReadPin(LIS3MDL_DRDY_GPIO_Port, LIS3MDL_DRDY_Pin)
 #define LSM6DSV_DRDY HAL_GPIO_ReadPin(LSM6DSV_INT1_GPIO_Port, LSM6DSV_INT1_Pin)
@@ -410,8 +412,8 @@ extern void Board_ledOff(uint8_t ledMask);
 extern void Board_ledToggle(uint8_t ledMask);
 
 extern void Board_sdPowerCycle(void);
-extern void Board_sd2Pc(void);
-extern void Board_sd2Arm(void);
+void Board_sd2Pc(void);
+void Board_sd2Arm(void);
 void Board_setSdPower(uint8_t state);
 void Board_setDockAccessToSd(uint8_t mcu0dock1);
 

@@ -84,7 +84,6 @@ void btCommWithDiffBaudRates(void);
 void BtStartDone(void);
 void setBtConnectionState(bool state);
 bool isBtConnected(void);
-void SetupDock(void);
 #if USE_CUSTOM_HAL_DELAY
 void HAL_Delay(uint32_t Delay);
 #endif
@@ -181,7 +180,7 @@ void Init()
   ShimConfig_loadSensorConfigAndCalib();
   bmp3_readCalibrationDataOnBoot();
 
-  SetupDock();
+  LogAndStream_setupDock();
   //Disable dock comms until sensor is ready to communicate
   DockUart_disable();
 
@@ -522,76 +521,6 @@ bool isBtConnected(void)
 }
 
 #endif
-
-void SetupDock(void)
-{
-  shimmerStatus.configuring = 1;
-
-  /* Reset battery charging status on dock/undock so that we don't display an
-   * invalid state. */
-  ShimBatt_resetBatteryChargingStatus();
-
-  if (LogAndStream_isDockedOrUsbIn())
-  {
-    shimmerStatus.sdlogReady = 0;
-    ShimSens_stopSensing(0);
-
-    /* Prioritise dock over USB for SD card access */
-    if (shimmerStatus.docked)
-    {
-      if (CheckSdInslot())
-      {
-        Board_sd2Pc();
-
-        //Board_sdPowerCycle();
-      }
-      MX_USART1_UART_Init();
-    }
-    else
-    {
-      DockUart_deint();
-    }
-
-    ShimBatt_setBatteryInterval(BATT_INTERVAL_DOCKED);
-    /* Reset battery critical count on dock to allow logging to begin again if
-     * auto-stop on low-power is enabled. */
-    ShimBatt_resetBatteryCriticalCount();
-
-    ShimBt_instreamStatusRespSend();
-  }
-  else
-  {
-    ShimBatt_setBatteryInterval(BATT_INTERVAL_UNDOCKED);
-    DockUart_deint();
-    //Board_sdcard_arm0pc1(0);
-
-    //SendStatusByte();
-    ShimBt_instreamStatusRespSend();
-    //Board_sdPower(0);
-    if (CheckSdInslot())
-    {
-      Board_sd2Arm();
-
-      //Set sdlogReady flag if SD card is present and no bad file
-      shimmerStatus.sdlogReady = !shimmerStatus.sdBadFile;
-
-      if (!shimmerStatus.sensing)
-      {
-        HAL_Delay(120); //120ms
-        LogAndStream_syncConfigAndCalibOnSd();
-      }
-      else
-      {
-        LogAndStream_setSdInfoSyncDelayed(1);
-      }
-    }
-  }
-
-  //Setup RTC alarm for battery read after dock/undock
-  RTC_setAlarmBattReadAfterDockUnDock();
-
-  shimmerStatus.configuring = 0;
-}
 
 #if USE_CUSTOM_HAL_DELAY
 /* TODO: Overriding HAL_DELAY() with this because USB peripheral init based

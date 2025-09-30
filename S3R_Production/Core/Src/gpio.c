@@ -444,14 +444,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 uint8_t CheckSdInslot(void)
 {
-  if (HAL_GPIO_ReadPin(SD_DETECT_N_GPIO_Port, SD_DETECT_N_Pin) == GPIO_PIN_RESET)
-  { //inserted
-    shimmerStatus.sdInserted = 1;
-  }
-  else
-  {
-    shimmerStatus.sdInserted = 0;
-  }
+  shimmerStatus.sdInserted = BOARD_IS_SD_INSERTED;
   return shimmerStatus.sdInserted;
 }
 

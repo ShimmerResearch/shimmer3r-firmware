@@ -87,7 +87,18 @@ void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   ShimDock_resetVariables();
-  DockUart_init(&huart1);
+
+  huartDock = &huart1;
+
+#if defined(SHIMMER3R)
+  HAL_UART_RegisterCallback(huartDock, HAL_UART_RX_COMPLETE_CB_ID, dockUartRxCallback);
+//HAL_UART_RegisterCallback(huartDock, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
+#endif
+
+  HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
+
+  // Assumes MX_USART1_UART_Init is only called if Shimmer is not sensing
+  DockUart_enable();
 
   MX_CRC_Init();
 
@@ -480,30 +491,15 @@ uint8_t BtUart_isInitialised(void)
  *
  *****************************************************/
 
-void DockUart_init(UART_HandleTypeDef *huart)
+void DockUart_init(void)
 {
-  huartDock = huart;
-
-#if defined(SHIMMER3R)
-  HAL_UART_RegisterCallback(huartDock, HAL_UART_RX_COMPLETE_CB_ID, dockUartRxCallback);
-//HAL_UART_RegisterCallback(huartDock, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
-#endif
-
-  HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
-
-  if (shimmerStatus.sensing)
+  if (!DockUart_isInitialised())
   {
-    DockUart_disable();
-  }
-  else
-  {
-    /* Not sure if this is needed but enabling here in case a previous disable
-     * action is not automatically reset when the peripheral is reinitialised. */
-    DockUart_enable();
+    MX_USART1_UART_Init();
   }
 }
 
-void DockUart_deint(void)
+void DockUart_deinit(void)
 {
   if (DockUart_isInitialised())
   {
