@@ -415,16 +415,14 @@ void Board_ledToggle(uint8_t ledMask)
  * @param  none
  * @return none
  */
-void Board_sdPowerCycle(void)
+void Board_sdPowerCycle(uint8_t dockAccessToSd)
 {
-  Board_detectN(1);
+  HAL_Delay(120);
   Board_setSdPower(0);
-  Board_setDockAccessToSd(0);
+  Board_setDockAccessToSd(dockAccessToSd);
   HAL_Delay(120);
   Board_setSdPower(1);
   HAL_Delay(50);
-  ShimSd_mount(0);
-  ShimSd_mount(1);
 }
 
 /**
@@ -434,46 +432,45 @@ void Board_sdPowerCycle(void)
  */
 void Board_sd2Pc(void)
 {
-  //Board_sdPowerCycle();
-
   ///* ADC pins are shared with two dat pins, ensure both are inputs */
   //HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP0_GPIO_Port, GPIO_ADC_EXT_EXP0_Pin);
   //HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP1_GPIO_Port, GPIO_ADC_EXT_EXP1_Pin);
 
-  //Board_detectN(1);
-  HAL_Delay(120);
-  Board_setSdPower(0);
-  Board_setDockAccessToSd(1);
-  //Board_detectN(GPIO_PIN_RESET);
-  HAL_Delay(120);
-  Board_setSdPower(1);
-  HAL_Delay(50);
-  Board_detectN(0);
+  //Power cycle the SD card with access to dock
+  Board_sdPowerCycle(1);
+
+  //Setup pin to indicate SD ready for dock access
+  Board_dockDetectN(0);
+
+  //Unmount SD card
   ShimSd_mount(0);
 
+  //De-initialize SD card peripheral
   mmc1DeInit();
 }
 
 /**
- * @brief  SD control to ARM side
+ * @brief  SD control to MCU side
  * @param  none
  * @return none
  */
-void Board_sd2Arm(void)
+void Board_sd2Mcu(void)
 {
-  Board_detectN(1);
-  HAL_Delay(120);
-  Board_setSdPower(0);
-  Board_setDockAccessToSd(0);
-  HAL_Delay(120);
-  Board_setSdPower(1);
-  HAL_Delay(50);
+  //Setup pin to indicate SD not ready for dock access
+  Board_dockDetectN(1);
 
+  //Power cycle the SD card with access to MCU
+  Board_sdPowerCycle(0);
+
+  //Initialize SD card peripheral
   MX_SDMMC1_SD_Init();
+
 #if USE_FATFS
+  //Initialize file system driver
   MX_FATFS_Init();
 #endif
 
+  //Mount SD card
   ShimSd_mount(0);
   ShimSd_mount(1);
 }
@@ -494,25 +491,54 @@ void Board_setDockAccessToSd(uint8_t mcu0dock1)
 {
   Board_sdMcu0Dock1(mcu0dock1);
   shimmerStatus.sdMcu0Pc1 = mcu0dock1;
-
-  //TODO remove below when functionality is working
-  //if (mcu0dock1)
-  //{
-  //  ShimFactoryTest_sendReport("SD to Dock\r\n");
-  //}
-  //else
-  //{
-  //  ShimFactoryTest_sendReport("SD to MCU\r\n");
-  //}
 }
 
-//void Board_detectN(uint8_t on) {
-//  if(on){
-//     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12,GPIO_PIN_SET);
-//  } else{
-//     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12,GPIO_PIN_RESET);
-//  }
-//}
+uint8_t Board_dockedDetect(void)
+{
+  //#if TEST_UNDOCKED
+  //  if (0)
+  //  {
+  //#else
+  //  if (HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) ==
+  //  GPIO_PIN_SET) { //docked
+  //#endif
+  //    shimmerStatus.isDocked = 1;
+  //    //Board_sd2Pc();
+  //    //Board_ledOn(LED_GREEN0);
+  //  }
+  //  else
+  //  {
+  //    shimmerStatus.isDocked = 0;
+  //    //Board_sd2Arm();
+  //    //SD_mount(1);
+  //    //Board_ledOff(LED_GREEN0);
+  //  }
+
+#if TEST_UNDOCKED
+  shimmerStatus.isDocked = 1;
+#else //TEST_UNDOCKED
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    /* SR48-6-0 patch for dock detection - start */
+    /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
+    shimmerStatus.docked = HAL_GPIO_ReadPin(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, SR48_6_0_BOOT0_USER_BTN_Pin)
+        == GPIO_PIN_SET;
+    /* SR48-6-0 patch for dock detection - end */
+  }
+  else
+  {
+    shimmerStatus.docked
+        = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
+  }
+#else  //SUPPORT_SR48_6_0
+  shimmerStatus.docked
+      = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
+#endif //SUPPORT_SR48_6_0
+#endif //TEST_UNDOCKED
+
+  return shimmerStatus.docked;
+}
 
 /**
  * use while loop to do delay microseconds
@@ -609,7 +635,12 @@ void Board_setExpansionBrdPower(uint8_t state)
 
 uint8_t Board_isBtnPressed(void)
 {
-  return HAL_GPIO_ReadPin(USER_BTN_GPIO_Port, USER_BTN_Pin) == GPIO_PIN_SET;
+  return USER_BTN_PRESSED;
+}
+
+uint8_t Board_isSdInserted(void)
+{
+  return BOARD_IS_SD_INSERTED;
 }
 
 void Board_setMicPower(uint8_t state)

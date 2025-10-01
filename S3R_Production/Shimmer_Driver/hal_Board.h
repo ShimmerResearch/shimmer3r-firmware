@@ -336,14 +336,14 @@
       x ? GPIO_PIN_RESET : GPIO_PIN_SET) //EXT_MEM: 0 for arm, 1 for pc
 #define Board_SW_FLASH(x) \
   HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define Board_detectN(x) \
+#define Board_dockDetectN(x) \
   HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #elif defined(SHIMMER4_SDK)
 #define Board_sdMcu0Dock1(x) \
   HAL_GPIO_WritePin(GPIOG, EXT_MEM_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET) //EXT_MEM: 0 for arm, 1 for pc
 #define Board_SW_FLASH(x) \
   HAL_GPIO_WritePin(GPIOG, SW_FLASH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define Board_detectN(x) \
+#define Board_dockDetectN(x) \
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #endif
 
@@ -412,11 +412,12 @@ extern void Board_ledOn(uint8_t ledMask);
 extern void Board_ledOff(uint8_t ledMask);
 extern void Board_ledToggle(uint8_t ledMask);
 
-extern void Board_sdPowerCycle(void);
+extern void Board_sdPowerCycle(uint8_t dockAccessToSd);
 void Board_sd2Pc(void);
-void Board_sd2Arm(void);
+void Board_sd2Mcu(void);
 void Board_setSdPower(uint8_t state);
 void Board_setDockAccessToSd(uint8_t mcu0dock1);
+uint8_t Board_dockedDetect(void);
 
 extern void Board_delayMicrosInit(void);
 extern void Board_delayMicros(uint32_t micros);
@@ -425,6 +426,7 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 #endif
 void Board_setExpansionBrdPower(uint8_t state);
 uint8_t Board_isBtnPressed(void);
+uint8_t Board_isSdInserted(void);
 void Board_setMicPower(uint8_t state);
 
 #endif

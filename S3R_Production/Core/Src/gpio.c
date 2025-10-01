@@ -351,7 +351,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     //setBtCysppState(isRising);
     break;
   case DOCK_DETECT_Pin:
-    DockUart_interruptCheck();
+    Board_dockedDetect();
     LogAndStream_dockedStateChange();
     break;
 #if SUPPORT_SR48_6_0
@@ -360,7 +360,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     if (ShimBrd_isBoardSr48_6_0())
     {
       /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
-      DockUart_interruptCheck();
+      Board_dockedDetect();
       LogAndStream_dockedStateChange();
       /* no break */
       break;
@@ -383,7 +383,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     (void) ShimBtn_pressReleaseAction();
     break;
   case SD_DETECT_N_Pin:
-    CheckSdInslot();
+    LogAndStream_checkSdInSlot();
     break;
   default:
     break;
@@ -428,7 +428,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     BtUart_connectIntCheck();
     break;
   case DOCK_DETECT_Pin:
-    DockUart_interruptCheck();
+    Board_dockedDetect();
     break;
   case USER_BTN_N_Pin:
     (void) ShimBtn_pressReleaseAction();
@@ -441,12 +441,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   }
 }
 #endif
-
-uint8_t CheckSdInslot(void)
-{
-  shimmerStatus.sdInserted = BOARD_IS_SD_INSERTED;
-  return shimmerStatus.sdInserted;
-}
 
 uint8_t isSdPowerOn(void)
 {

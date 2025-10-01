@@ -84,7 +84,6 @@ extern "C"
 #define BtUart_rtsIntCheck() \
   BT_rtsInterrupt(HAL_GPIO_ReadPin(BT_RTS_GPIO_Port, BT_RTS_Pin))
 #endif
-  uint8_t DockUart_interruptCheck(void);
   void dockUartRxCallback(UART_HandleTypeDef *huart);
   void DockUart_writeBlocking(uint8_t *buf, uint8_t len);
   void DockUart_writeText(char *str);

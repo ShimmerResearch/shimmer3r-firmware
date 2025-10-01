@@ -122,7 +122,7 @@ int _write(int file, char *ptr, int len)
 void Init()
 {
   LogAndStream_init();
-  shimmerStatus.initialising = 1; /* led flag, in initialisation period */
+  shimmerStatus.booting = 1; /* led flag, in initialisation period */
 
 #if defined(SHIMMER3R)
   Board_ledTimersStart(&htim3, &htim2, &htim6);
@@ -150,11 +150,12 @@ void Init()
 
   setUartPeripheralPointers();
 
-  DockUart_interruptCheck();
-  CheckSdInslot();
-  //TODO ShimSd_mount() is normally done CheckSdInslot() for Shimmer3 but that feels like a hack
-  Board_sd2Arm();
-  ShimSd_mount(shimmerStatus.sdInserted);
+  Board_dockedDetect();
+  LogAndStream_checkSdInSlot();
+  if(shimmerStatus.sdInserted)
+  {
+    LogAndStream_setupUndock();
+  }
 
   //(void)ShimBtn_pressReleaseAction();
 
@@ -204,7 +205,7 @@ void Init()
   //Enable dock comms now that sensor is ready to communicate
   DockUart_enable();
 
-  shimmerStatus.initialising = 0;
+  shimmerStatus.booting = 0;
   LogAndStream_setBootStage(BOOT_STAGE_END);
 }
 
