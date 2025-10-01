@@ -152,7 +152,7 @@ void Init()
 
   Board_dockedDetect();
   LogAndStream_checkSdInSlot();
-  if(shimmerStatus.sdInserted)
+  if (shimmerStatus.sdInserted)
   {
     LogAndStream_setupUndock();
   }
