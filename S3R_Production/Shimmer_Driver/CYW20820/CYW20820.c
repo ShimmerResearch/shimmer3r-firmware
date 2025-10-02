@@ -673,25 +673,25 @@ void btInitCommands(void)
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
   {
     incrementBtInitCmdsStep();
-    printf("Start BLE Advertising\r\n");
-    setExpectedResponse(EZS_IDX_RSP_GAP_START_ADV);
-    ezs_cmd_gap_start_adv(rsp_gap_get_adv_parameters_ref.mode,
-        rsp_gap_get_adv_parameters_ref.type, rsp_gap_get_adv_parameters_ref.channels,
-        rsp_gap_get_adv_parameters_ref.high_interval,
-        rsp_gap_get_adv_parameters_ref.high_duration,
-        rsp_gap_get_adv_parameters_ref.low_interval,
-        rsp_gap_get_adv_parameters_ref.low_duration,
-        rsp_gap_get_adv_parameters_ref.flags, &rsp_gap_get_adv_parameters_ref.direct_addr,
-        rsp_gap_get_adv_parameters_ref.direct_address_type);
-    return;
+//    printf("Start BLE Advertising\r\n");
+//    setExpectedResponse(EZS_IDX_RSP_GAP_START_ADV);
+//    ezs_cmd_gap_start_adv(rsp_gap_get_adv_parameters_ref.mode,
+//        rsp_gap_get_adv_parameters_ref.type, rsp_gap_get_adv_parameters_ref.channels,
+//        rsp_gap_get_adv_parameters_ref.high_interval,
+//        rsp_gap_get_adv_parameters_ref.high_duration,
+//        rsp_gap_get_adv_parameters_ref.low_interval,
+//        rsp_gap_get_adv_parameters_ref.low_duration,
+//        rsp_gap_get_adv_parameters_ref.flags, &rsp_gap_get_adv_parameters_ref.direct_addr,
+//        rsp_gap_get_adv_parameters_ref.direct_address_type);
+//    return;
   }
 
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE2)
   {
     incrementBtInitCmdsStep();
-    printf("Wait for BLE start\r\n");
-    setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
-    return;
+//    printf("Wait for BLE start\r\n");
+//    setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
+//    return;
   }
 
   if (btInitCmdsStep == FACTORY_RESET)
