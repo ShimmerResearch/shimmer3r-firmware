@@ -419,8 +419,8 @@ void btInitCommands(void)
 
     setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
 
-    rsp_bt_get_parameters.discoverable = 0;
-    rsp_bt_get_parameters.connectable = 0;
+    rsp_bt_get_parameters.discoverable = BT_DISC_MODE_NOT_DISCOVERABLE;
+    rsp_bt_get_parameters.connectable = BT_CONN_MODE_NOT_CONNECTABLE;
     ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
         rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
         rsp_bt_get_parameters.flags, rsp_bt_get_parameters.scn,
@@ -742,8 +742,8 @@ void btInitCommands(void)
       printf("Start BT Advertising\r\n");
       setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
 
-      rsp_bt_get_parameters.discoverable = 2; // 2 = default = general discoverable
-      rsp_bt_get_parameters.connectable = 1; // 1 = default = connectable
+      rsp_bt_get_parameters.discoverable = BT_DISC_MODE_GENERAL_DISCOVERABLE;
+      rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
       ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
           rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
           rsp_bt_get_parameters.flags, rsp_bt_get_parameters.scn,

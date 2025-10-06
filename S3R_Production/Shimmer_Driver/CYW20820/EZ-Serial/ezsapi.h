@@ -801,6 +801,23 @@ typedef enum
   //-------------- Fix 05 End -------------------------//
 } ezs_argtype_t;
 
+
+//-------------- Shimmer added enums start -------------------------//
+enum
+{
+  BT_DISC_MODE_NOT_DISCOVERABLE = 0,
+  BT_DISC_MODE_LIMITED_DISCOVERABLE = 1,
+  BT_DISC_MODE_GENERAL_DISCOVERABLE = 2 /* (default) */
+};
+
+enum
+{
+  BT_CONN_MODE_NOT_CONNECTABLE = 0,
+  BT_CONN_MODE_CONNECTABLE = 1, /* (default) */
+};
+
+//-------------- Shimmer added enums end -------------------------//
+
 /*******************************************************************************
  * Structure defining a length-specified byte array, maximum 255 bytes. This is
  * also used for strings.
