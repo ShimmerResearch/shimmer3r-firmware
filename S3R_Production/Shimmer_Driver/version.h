@@ -4,8 +4,8 @@
 
 #define FW_VERSION_MAJOR  1  //16-bit
 #define FW_VERSION_MINOR  0  //8-bit
-#define FW_VERSION_PATCH  38 //8-bit
-#define FW_VERSION_STRING "v1.00.038"
+#define FW_VERSION_PATCH  39 //8-bit
+#define FW_VERSION_STRING "v1.00.039"
 
 #include <stdint.h>
 
