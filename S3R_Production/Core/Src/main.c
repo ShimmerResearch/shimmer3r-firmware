@@ -144,6 +144,7 @@ void Init()
 
   LogAndStream_setBootStage(BOOT_STAGE_I2C);
   //TODO Shimmer3 performs bus scan on boot - not needed for Shimmer3r?
+  ShimEeprom_setIsPresent(1);
   ShimEeprom_readAll();
   ShimBrd_parseDaughterCardId();
 

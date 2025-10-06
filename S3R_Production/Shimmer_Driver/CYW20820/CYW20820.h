@@ -35,6 +35,8 @@ enum BT_SET_COMMAND_STAGES
   UPDATE_UART_SETTINGS_STAGE4,
   UPDATE_UART_SETTINGS_STAGE5,
   PING,
+  GET_BT_PARAMETERS,
+  STOP_BT_ADVERTISING,
   STOP_BLE_ADVERTISING_STAGE1,
   STOP_BLE_ADVERTISING_STAGE2,
   GET_FIRMWARE_VERSION,
@@ -60,6 +62,7 @@ enum BT_SET_COMMAND_STAGES
   SET_PIN_CODE,
   START_BLE_ADVERTISING_STAGE1,
   START_BLE_ADVERTISING_STAGE2,
+  START_BT_ADVERTISING,
   FACTORY_RESET,
   FR_WAIT_FOR_REBOOT_AFTER_FR,
   FR_UPDATE_UART,
@@ -98,7 +101,8 @@ void setBtConnectionState(bool state);
 uint8_t BT_connect(uint8_t *addr);
 //after this command is called there will be no link to the connected device
 uint8_t BT_disconnect(void);
-void BT_startDone_cb(void (*callback)(void));
 void BT_cancelConnection(void);
 void BT_connectionFailed(uint8_t conn_handle, uint16_t reason);
+void BT_startDone_cb(void (*callback)(void));
+
 #endif /* SRC_CYW20820_H_ */

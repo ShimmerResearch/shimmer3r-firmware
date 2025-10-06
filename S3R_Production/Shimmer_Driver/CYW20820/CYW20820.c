@@ -54,6 +54,7 @@ ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
 ezs_rsp_system_get_tx_power_t rsp_system_get_tx_power;
 ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode;
+ezs_rsp_bt_get_parameters_t rsp_bt_get_parameters;
 ezs_rsp_bt_cancel_connection_t rsp_bt_cancel_connection;
 ezs_rsp_bt_disconnect_t rsp_bt_disconnect;
 #if USE_GET_SET_ADV_PARAM
@@ -131,19 +132,22 @@ uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmds
 uint8_t btNameTypeBeingRead;
 bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
-static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
-  WAIT_FOR_BOOT_STAGE2, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
-  UPDATE_UART_SETTINGS_STAGE3, UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5,
-  PING, STOP_BLE_ADVERTISING_STAGE1, STOP_BLE_ADVERTISING_STAGE2,
-  GET_FIRMWARE_VERSION, GET_BT_MAC_ID, UPDATE_LOCAL_ADVERTISING_NAMES,
-  GET_DEVICE_NAME_BT, SET_DEVICE_NAME_BT, GET_DEVICE_NAME_BLE, SET_DEVICE_NAME_BLE,
-  GET_TX_POWER, SET_TX_POWER, GET_SMP_PRIVACY_MODE, SET_SMP_PRIVACY_MODE,
+static uint8_t btBootStagesFirstBoot[] =
+{ WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2, UPDATE_UART_SETTINGS_STAGE1,
+    UPDATE_UART_SETTINGS_STAGE2, UPDATE_UART_SETTINGS_STAGE3,
+    UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5, PING,
+    GET_BT_PARAMETERS, STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1,
+    STOP_BLE_ADVERTISING_STAGE2, GET_FIRMWARE_VERSION, GET_BT_MAC_ID,
+    UPDATE_LOCAL_ADVERTISING_NAMES, GET_DEVICE_NAME_BT, SET_DEVICE_NAME_BT,
+    GET_DEVICE_NAME_BLE, SET_DEVICE_NAME_BLE, GET_TX_POWER, SET_TX_POWER,
+    GET_SMP_PRIVACY_MODE, SET_SMP_PRIVACY_MODE,
 #if USE_GET_SET_ADV_PARAM
   GET_ADVERTISING_PARAMETERS, SET_ADVERTISING_PARAMETERS,
 #endif
-  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS,
-  SET_SECURITY_PARAMETERS, GET_PIN_CODE, SET_PIN_CODE,
-  START_BLE_ADVERTISING_STAGE1, START_BLE_ADVERTISING_STAGE2, FINISH };
+    GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS,
+    SET_SECURITY_PARAMETERS, GET_PIN_CODE, SET_PIN_CODE,
+    START_BLE_ADVERTISING_STAGE1, START_BLE_ADVERTISING_STAGE2,
+    START_BT_ADVERTISING, FINISH };
 
 static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2, /* PING,*/
@@ -396,6 +400,32 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_PING);
     ezs_cmd_system_ping();
+    return;
+  }
+
+  if (btInitCmdsStep == GET_BT_PARAMETERS)
+  {
+    printf("Get BT Parameters\r\n");
+    incrementBtInitCmdsStep();
+    setExpectedResponse(EZS_IDX_RSP_BT_GET_PARAMETERS);
+    ezs_cmd_bt_get_parameters();
+    return;
+  }
+
+  if (btInitCmdsStep == STOP_BT_ADVERTISING)
+  {
+    printf("Stop BT Advertising\r\n");
+    incrementBtInitCmdsStep();
+
+    setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
+
+    rsp_bt_get_parameters.discoverable = 0;
+    rsp_bt_get_parameters.connectable = 0;
+    ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
+        rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
+        rsp_bt_get_parameters.flags, rsp_bt_get_parameters.scn,
+        rsp_bt_get_parameters.active_bt_discoverability,
+        rsp_bt_get_parameters.active_bt_connectability);
     return;
   }
 
@@ -673,25 +703,58 @@ void btInitCommands(void)
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
   {
     incrementBtInitCmdsStep();
-    //printf("Start BLE Advertising\r\n");
-    //setExpectedResponse(EZS_IDX_RSP_GAP_START_ADV);
-    //ezs_cmd_gap_start_adv(rsp_gap_get_adv_parameters_ref.mode,
-    //    rsp_gap_get_adv_parameters_ref.type, rsp_gap_get_adv_parameters_ref.channels,
-    //    rsp_gap_get_adv_parameters_ref.high_interval,
-    //    rsp_gap_get_adv_parameters_ref.high_duration,
-    //    rsp_gap_get_adv_parameters_ref.low_interval,
-    //    rsp_gap_get_adv_parameters_ref.low_duration,
-    //    rsp_gap_get_adv_parameters_ref.flags, &rsp_gap_get_adv_parameters_ref.direct_addr,
-    //    rsp_gap_get_adv_parameters_ref.direct_address_type);
-    //return;
+    if (ShimBt_isBleCurrentlyEnabled())
+    {
+      printf("Start BLE Advertising\r\n");
+      setExpectedResponse(EZS_IDX_RSP_GAP_START_ADV);
+      ezs_cmd_gap_start_adv(rsp_gap_get_adv_parameters_ref.mode,
+          rsp_gap_get_adv_parameters_ref.type, rsp_gap_get_adv_parameters_ref.channels,
+          rsp_gap_get_adv_parameters_ref.high_interval,
+          rsp_gap_get_adv_parameters_ref.high_duration,
+          rsp_gap_get_adv_parameters_ref.low_interval,
+          rsp_gap_get_adv_parameters_ref.low_duration,
+          rsp_gap_get_adv_parameters_ref.flags, &rsp_gap_get_adv_parameters_ref.direct_addr,
+          rsp_gap_get_adv_parameters_ref.direct_address_type);
+      return;
+    }
+    else
+    {
+      printf("BLE disabled - Skipping start advertising\r\n");
+      }
   }
 
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE2)
   {
     incrementBtInitCmdsStep();
-    //printf("Wait for BLE start\r\n");
-    //setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
-    //return;
+    if (ShimBt_isBleCurrentlyEnabled())
+    {
+      printf("Wait for BLE start\r\n");
+      setExpectedResponse(EZS_IDX_EVT_GAP_ADV_STATE_CHANGED);
+      return;
+    }
+  }
+
+  if (btInitCmdsStep == START_BT_ADVERTISING)
+  {
+    incrementBtInitCmdsStep();
+    if (ShimBt_isBtClassicCurrentlyEnabled())
+    {
+      printf("Start BT Advertising\r\n");
+      setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
+
+      rsp_bt_get_parameters.discoverable = 2; // 2 = default = general discoverable
+      rsp_bt_get_parameters.connectable = 1; // 1 = default = connectable
+      ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
+          rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
+          rsp_bt_get_parameters.flags, rsp_bt_get_parameters.scn,
+          rsp_bt_get_parameters.active_bt_discoverability,
+          rsp_bt_get_parameters.active_bt_connectability);
+      return;
+    }
+    else
+    {
+      printf("BT disabled - Skipping start advertising\r\n");
+    }
   }
 
   if (btInitCmdsStep == FACTORY_RESET)
@@ -1244,6 +1307,21 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     {
       printf("RX: rsp_smp_set_pin_code: Result=");
       printHex16(packet->payload.rsp_smp_set_pin_code.result);
+      printf("\r\n");
+    }
+#endif
+    break;
+
+  case EZS_IDX_RSP_BT_GET_PARAMETERS:
+    rsp_bt_get_parameters = packet->payload.rsp_bt_get_parameters;
+    break;
+
+  case EZS_IDX_RSP_BT_SET_PARAMETERS:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    if (packet->payload.rsp_bt_set_parameters.result != EZS_ERR_SUCCESS)
+    {
+      printf("RX: rsp_bt_set_parameters: Result=");
+      printHex16(packet->payload.rsp_bt_set_parameters.result);
       printf("\r\n");
     }
 #endif

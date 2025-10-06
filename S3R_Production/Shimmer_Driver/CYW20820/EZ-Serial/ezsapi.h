@@ -2272,13 +2272,13 @@ __PACKDEF(ezs_cmd_bt_get_parameters_t, {});
 
 __PACKDEF(ezs_rsp_bt_get_parameters_t, {
   uint16_t result;
-  uint8_t link_super_time_out;
+  uint16_t link_super_time_out;
   uint8_t discoverable;
   uint8_t connectable;
   uint8_t flags;
   uint8_t scn;
-  uint8_t active_bt_discoverability;
-  uint8_t active_bt_connectability;
+  uint16_t active_bt_discoverability;
+  uint16_t active_bt_connectability;
 });
 
 __PACKDEF(ezs_cmd_bt_set_device_class_t, { uint32_t cod; });
