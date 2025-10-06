@@ -417,7 +417,7 @@ void Board_sd2Pc(void);
 void Board_sd2Mcu(void);
 void Board_setSdPower(uint8_t state);
 void Board_setDockAccessToSd(uint8_t mcu0dock1);
-uint8_t Board_dockedDetect(void);
+uint8_t Board_checkDockedDetectState(void);
 
 extern void Board_delayMicrosInit(void);
 extern void Board_delayMicros(uint32_t micros);
@@ -427,6 +427,7 @@ void Board_enableSensingPower(sense_pwr_flg_t flag, uint8_t state);
 void Board_setExpansionBrdPower(uint8_t state);
 uint8_t Board_isBtnPressed(void);
 uint8_t Board_isSdInserted(void);
+uint8_t Board_isDocked(void);
 void Board_setMicPower(uint8_t state);
 
 #endif

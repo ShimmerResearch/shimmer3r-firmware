@@ -351,7 +351,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     //setBtCysppState(isRising);
     break;
   case DOCK_DETECT_Pin:
-    Board_dockedDetect();
+    Board_checkDockedDetectState();
     LogAndStream_dockedStateChange();
     break;
 #if SUPPORT_SR48_6_0
@@ -360,7 +360,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     if (ShimBrd_isBoardSr48_6_0())
     {
       /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
-      Board_dockedDetect();
+      Board_checkDockedDetectState();
       LogAndStream_dockedStateChange();
       /* no break */
       break;
@@ -428,7 +428,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     BtUart_connectIntCheck();
     break;
   case DOCK_DETECT_Pin:
-    Board_dockedDetect();
+    Board_checkDockedDetectState();
     break;
   case USER_BTN_N_Pin:
     (void) ShimBtn_pressReleaseAction();

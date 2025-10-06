@@ -493,50 +493,13 @@ void Board_setDockAccessToSd(uint8_t mcu0dock1)
   shimmerStatus.sdMcu0Pc1 = mcu0dock1;
 }
 
-uint8_t Board_dockedDetect(void)
+uint8_t Board_checkDockedDetectState(void)
 {
-  //#if TEST_UNDOCKED
-  //  if (0)
-  //  {
-  //#else
-  //  if (HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) ==
-  //  GPIO_PIN_SET) { //docked
-  //#endif
-  //    shimmerStatus.isDocked = 1;
-  //    //Board_sd2Pc();
-  //    //Board_ledOn(LED_GREEN0);
-  //  }
-  //  else
-  //  {
-  //    shimmerStatus.isDocked = 0;
-  //    //Board_sd2Arm();
-  //    //SD_mount(1);
-  //    //Board_ledOff(LED_GREEN0);
-  //  }
-
 #if TEST_UNDOCKED
-  shimmerStatus.isDocked = 1;
+  shimmerStatus.docked = 1;
 #else //TEST_UNDOCKED
-#if SUPPORT_SR48_6_0
-  if (ShimBrd_isBoardSr48_6_0())
-  {
-    /* SR48-6-0 patch for dock detection - start */
-    /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
-    shimmerStatus.docked = HAL_GPIO_ReadPin(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, SR48_6_0_BOOT0_USER_BTN_Pin)
-        == GPIO_PIN_SET;
-    /* SR48-6-0 patch for dock detection - end */
-  }
-  else
-  {
-    shimmerStatus.docked
-        = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
-  }
-#else  //SUPPORT_SR48_6_0
-  shimmerStatus.docked
-      = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
-#endif //SUPPORT_SR48_6_0
+  shimmerStatus.docked = Board_isDocked();
 #endif //TEST_UNDOCKED
-
   return shimmerStatus.docked;
 }
 
@@ -641,6 +604,26 @@ uint8_t Board_isBtnPressed(void)
 uint8_t Board_isSdInserted(void)
 {
   return BOARD_IS_SD_INSERTED;
+}
+
+uint8_t Board_isDocked(void)
+{
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    /* SR48-6-0 patch for dock detection - start */
+    /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
+    return HAL_GPIO_ReadPin(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, SR48_6_0_BOOT0_USER_BTN_Pin)
+        == GPIO_PIN_SET;
+    /* SR48-6-0 patch for dock detection - end */
+  }
+  else
+  {
+    return HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
+  }
+#else  //SUPPORT_SR48_6_0
+  return HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
+#endif //SUPPORT_SR48_6_0
 }
 
 void Board_setMicPower(uint8_t state)

@@ -150,7 +150,7 @@ void Init()
 
   setUartPeripheralPointers();
 
-  Board_dockedDetect();
+  Board_checkDockedDetectState();
   LogAndStream_checkSdInSlot();
   if (shimmerStatus.sdInserted)
   {
