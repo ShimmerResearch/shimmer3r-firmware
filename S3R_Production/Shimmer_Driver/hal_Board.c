@@ -497,7 +497,7 @@ uint8_t Board_checkDockedDetectState(void)
 {
 #if TEST_UNDOCKED
   shimmerStatus.docked = 1;
-#else //TEST_UNDOCKED
+#else  //TEST_UNDOCKED
   shimmerStatus.docked = Board_isDocked();
 #endif //TEST_UNDOCKED
   return shimmerStatus.docked;
