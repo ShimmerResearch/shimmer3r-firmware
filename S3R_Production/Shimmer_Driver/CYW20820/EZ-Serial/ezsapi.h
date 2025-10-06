@@ -801,7 +801,6 @@ typedef enum
   //-------------- Fix 05 End -------------------------//
 } ezs_argtype_t;
 
-
 //-------------- Shimmer added enums start -------------------------//
 enum
 {
