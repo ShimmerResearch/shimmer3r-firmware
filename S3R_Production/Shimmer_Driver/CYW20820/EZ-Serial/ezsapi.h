@@ -801,6 +801,22 @@ typedef enum
   //-------------- Fix 05 End -------------------------//
 } ezs_argtype_t;
 
+//-------------- Shimmer added enums start -------------------------//
+enum
+{
+  BT_DISC_MODE_NOT_DISCOVERABLE = 0,
+  BT_DISC_MODE_LIMITED_DISCOVERABLE = 1,
+  BT_DISC_MODE_GENERAL_DISCOVERABLE = 2 /* (default) */
+};
+
+enum
+{
+  BT_CONN_MODE_NOT_CONNECTABLE = 0,
+  BT_CONN_MODE_CONNECTABLE = 1, /* (default) */
+};
+
+//-------------- Shimmer added enums end -------------------------//
+
 /*******************************************************************************
  * Structure defining a length-specified byte array, maximum 255 bytes. This is
  * also used for strings.
@@ -2272,13 +2288,13 @@ __PACKDEF(ezs_cmd_bt_get_parameters_t, {});
 
 __PACKDEF(ezs_rsp_bt_get_parameters_t, {
   uint16_t result;
-  uint8_t link_super_time_out;
+  uint16_t link_super_time_out;
   uint8_t discoverable;
   uint8_t connectable;
   uint8_t flags;
   uint8_t scn;
-  uint8_t active_bt_discoverability;
-  uint8_t active_bt_connectability;
+  uint16_t active_bt_discoverability;
+  uint16_t active_bt_connectability;
 });
 
 __PACKDEF(ezs_cmd_bt_set_device_class_t, { uint32_t cod; });

@@ -258,8 +258,7 @@ const uint8_t ezs_tbl_cmd[] = {
   0x0E, 0x07, 0x00, 0x00,       /* 134 | . , /BTQC (bt_query_connections) */
   0x0E, 0x08, 0x01, 0x01, T_U8, /* 135 | . , /BTQPA (bt_query_peer_address) */
   0x0E, 0x09, 0x01, 0x01, T_U8, /* 136 | . , /BTQSS (bt_query_rssi) */
-  //TODO documentation states length is 03 but then lists 7 parameters
-  0x0E, 0x0A, 0x07, 0x07, T_U8, T_U8, T_U8, T_U8, T_U8, T_U8, T_U8,
+  0x0E, 0x0A, 0x0A, 0x07, T_U16, T_U8, T_U8, T_U8, T_U8, T_U16, T_U16,
   /* 137 | . , SBTP (bt_set_parameters) */
   0x0E, 0x0B, 0x00, 0x00,        /* 138 | . , GBTP (bt_get_parameters) */
   0x0E, 0x0C, 0x04, 0x01, T_U32, /* 139 | . , SBTDC (bt_set_device_class) */
