@@ -43,7 +43,7 @@ extern "C" {
 /** @defgroup USBD_BOT_Exported_Defines
   * @{
   */
-#define MSC_BOT_STR_DESC             "STM32 MSC DEVICE"
+#define MSC_BOT_STR_DESC             "SHIMMER MSC DEVICE"
 
 /* MSC Class Config */
 #ifndef MSC_MEDIA_PACKET
