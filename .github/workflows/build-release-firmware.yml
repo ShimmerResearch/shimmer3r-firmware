@@ -1,4 +1,4 @@
-name: Build STM32 Firmware
+name: LogAndStream S3R Build & Release
 
 on:
   workflow_dispatch:
