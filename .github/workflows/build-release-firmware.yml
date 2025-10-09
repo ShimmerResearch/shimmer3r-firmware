@@ -30,6 +30,7 @@ permissions:
 env:
   PROJECT_DIR: S3R_Production
   TAG_PREFIX: LogAndStream_Shimmer3R_v
+  TAG_PREFIX_JIRA: L&S_S3R_v
   SUBMODULE_FOLDER: log-and-stream-common
   SUBMODULE_REPO: ShimmerResearch/log-and-stream-common
 
@@ -176,3 +177,89 @@ jobs:
           # Add files (e.g., `build/*.txt`) after "$TAG" if you want to attach assets
           gh release create "$TAG" -R "${{ env.SUBMODULE_REPO }}" --title "$TAG" --generate-notes
         fi
+
+    # Add after your "Create GitHub Release" step
+    - name: Link GitHub release to Jira
+      if: success()
+      env:
+        JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+        JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        JIRA_PROJECT_KEY: DEV          # adjust
+        RELEASE_TAG: ${{ env.TAG_PREFIX_JIRA }}${{ steps.get_version.outputs.version }}
+      run: |
+        set -euo pipefail
+        sudo apt-get update && sudo apt-get install -y jq
+
+
+        git fetch --tags --quiet
+        PREV_TAG=$(git describe --tags --abbrev=0 "${RELEASE_TAG}^" 2>/dev/null || echo "")
+        echo "Current tag: $RELEASE_TAG"
+        echo "Previous tag: ${PREV_TAG:-<none>}"
+
+
+        RANGE=""
+        if [ -n "$PREV_TAG" ]; then
+          RANGE="$PREV_TAG..$RELEASE_TAG"
+        else
+          RANGE="$RELEASE_TAG"
+        fi
+
+
+        ISSUE_KEYS=$(git log --format='%s%n%b' $RANGE | grep -Eo '[A-Z][A-Z0-9]+-[0-9]+' | sort -u || true)
+        if [ -z "$ISSUE_KEYS" ]; then
+          echo "No Jira issue keys found; skipping."
+          exit 0
+        fi
+        echo "Found issue keys:"
+        echo "$ISSUE_KEYS"
+
+
+        PROJECT_JSON=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+          -H 'Accept: application/json' \
+          "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY")
+        PROJECT_ID=$(echo "$PROJECT_JSON" | jq -r '.id')
+
+
+        EXISTING_VERSION_ID=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+          -H 'Accept: application/json' \
+          "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY/versions" | \
+          jq -r --arg NAME "$RELEASE_TAG" '.[] | select(.name==$NAME) | .id')
+
+
+        if [ -n "$EXISTING_VERSION_ID" ]; then
+          VERSION_ID="$EXISTING_VERSION_ID"
+          echo "Jira version already exists: $RELEASE_TAG (id=$VERSION_ID)"
+        else
+          echo "Creating Jira version: $RELEASE_TAG"
+          CREATE_RESP=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d "$(jq -nc --arg name "$RELEASE_TAG" --arg pid "$PROJECT_ID" --arg date "$(date -u +%Y-%m-%d)" \
+              '{name:$name, projectId:($pid|tonumber), released:true, releaseDate:$date}')" \
+            "$JIRA_BASE_URL/rest/api/3/version")
+          VERSION_ID=$(echo "$CREATE_RESP" | jq -r '.id')
+          if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
+            echo "Failed to create Jira version. Response:"
+            echo "$CREATE_RESP"
+            exit 1
+          fi
+          echo "Created version id: $VERSION_ID"
+        fi
+
+
+        echo "Linking issues to version..."
+        while read -r KEY; do
+          [ -z "$KEY" ] && continue
+          echo "Updating $KEY"
+          curl -s -o /dev/null -w "%{http_code}\n" \
+            -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+            -H 'Content-Type: application/json' \
+            -X PUT \
+            --data "$(jq -nc --arg v "$RELEASE_TAG" '{update:{fixVersions:[{add:{name:$v}}]}}')" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$KEY" | grep -qE '^(204|200)$' || {
+              echo "Failed to update $KEY"
+            }
+        done <<< "$ISSUE_KEYS"
+
+
+        echo "Done. Jira version '$RELEASE_TAG' linked."
