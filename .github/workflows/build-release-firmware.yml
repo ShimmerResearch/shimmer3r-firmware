@@ -232,13 +232,3 @@ jobs:
           # Add files (e.g., `build/*.txt`) after "$TAG" if you want to attach assets
           gh release create "$TAG" -R "${{ env.SUBMODULE_REPO }}" --title "$TAG" --generate-notes
         fi
-
-#    - name: Fetch tags with auth (main repo)
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      run: |
-#        set -euo pipefail
-#        git -c url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf="https://github.com/" \
-#            fetch --tags --quiet
-#
-# follow the above with another link to Jira to link the submodule issues to the release
