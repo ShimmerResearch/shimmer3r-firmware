@@ -148,7 +148,6 @@ jobs:
         RELEASE_TAG="${GH_TAG_PREFIX}${VERSION}"
         JIRA_VERSION="${JIRA_VERSION_PREFIX}${VERSION}"
 
-        # Fetch tags if needed (ensure repo auth is available in your job)
         git fetch --tags --quiet || true
 
         PREV_TAG=$(git describe --tags --abbrev=0 "${RELEASE_TAG}^" 2>/dev/null || echo "")
@@ -159,21 +158,26 @@ jobs:
 
         PROJECT_JSON=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
           -H 'Accept: application/json' "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY")
-        PROJECT_ID=$(echo "$PROJECT_JSON" | jq -r '.id')
+        PROJECT_ID=$(echo "$PROJECT_JSON" | jq -r '.id // empty')
+        [ -z "$PROJECT_ID" ] && echo "Failed to resolve project id" && echo "$PROJECT_JSON" && exit 1
 
-        # FIX: handle both paginated object \(.values\) and bare array
-        EXISTING_VERSION_ID=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
-          -H 'Accept: application/json' "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY/versions" | \
-          jq -r --arg NAME "$JIRA_VERSION" '((.values // .)[] | select(.name==$NAME) | .id) // empty')
+        VERSIONS_JSON=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+          -H 'Accept: application/json' "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY/versions")
+
+        # Normalize to an array, then pick the first matching version id (if any)
+        EXISTING_VERSION_ID=$(echo "$VERSIONS_JSON" | jq -r --arg NAME "$JIRA_VERSION" '
+          (.values? // .)                                     # paginated object or bare array
+          | (if type=="array" then . else [] end)             # ensure array
+          | map(select(.name==$NAME)) | .[0]? | .id? // empty # select by name
+        ')
 
         if [ -z "$EXISTING_VERSION_ID" ]; then
-          CREATE_RESP=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
-            -H 'Content-Type: application/json' \
-            -d "$(jq -nc --arg name "$JIRA_VERSION" --arg pid "$PROJECT_ID" --arg date "$(date -u +%Y-%m-%d)" \
-              '{name:$name, projectId:($pid|tonumber), released:true, releaseDate:$date}')" \
-            "$JIRA_BASE_URL/rest/api/3/version")
-          VERSION_ID=$(echo "$CREATE_RESP" | jq -r '.id')
-          [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ] && echo "$CREATE_RESP" && exit 1
+          CREATE_RESP=$(jq -nc --arg name "$JIRA_VERSION" --arg pid "$PROJECT_ID" --arg date "$(date -u +%Y-%m-%d)" \
+            '{name:$name, projectId:($pid|tonumber), released:true, releaseDate:$date}' \
+            | curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" -H 'Content-Type: application/json' \
+              -d @- "$JIRA_BASE_URL/rest/api/3/version")
+          VERSION_ID=$(echo "$CREATE_RESP" | jq -r '.id // empty')
+          [ -z "$VERSION_ID" ] && echo "Failed to create Jira version" && echo "$CREATE_RESP" && exit 1
         else
           VERSION_ID="$EXISTING_VERSION_ID"
         fi
