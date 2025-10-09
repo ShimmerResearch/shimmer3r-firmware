@@ -24,9 +24,14 @@ on:
           - Release
           - Debug
 
+permissions:
+  contents: write  # Needed for git commit/push and tag creation
+
 env:
   PROJECT_DIR: S3R_Production
   TAG_PREFIX: LogAndStream_Shimmer3R_v
+  SUBMODULE_FOLDER: log-and-stream-common
+  SUBMODULE_REPO: ShimmerResearch/log-and-stream-common
 
 jobs:
   build:
@@ -36,7 +41,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Needed for tags
+        fetch-depth: 0  # Needed for tags and versioning
         submodules: recursive
 
 #    - name: Debug path
@@ -128,11 +133,46 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Tag submodule log-and-stream-common
+    - name: Remove actions auth header
+      run: |
+        git config --unset-all http.https://github.com/.extraheader || true
+        git -C '${{ env.PROJECT_DIR }}/${{ env.SUBMODULE_FOLDER }}' config --unset-all http.https://github.com/.extraheader || true
+
+    - name: Prepare submodule remote with PAT
       run: |
         set -euo pipefail
-        cd ${{ env.PROJECT_DIR }}/log-and-stream-common
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
-        git tag "${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}"
-        git push "https://x-access-token:${{ secrets.SUBMODULE_PAT }}@github.com/ShimmerResearch/log-and-stream-common.git" "${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}"
+        SUB_PATH='${{ env.PROJECT_DIR }}/${{ env.SUBMODULE_FOLDER }}'
+        # Safety: remove any lingering auth header
+        git -C "$SUB_PATH" config --unset-all http.https://github.com/.extraheader || true
+        # Set remote URL with PAT
+        git -C "$SUB_PATH" remote set-url origin "https://${{ secrets.SUBMODULE_PUSH_USER }}:${{ secrets.SUBMODULE_PUSH_TOKEN }}@github.com/${{ env.SUBMODULE_REPO }}.git"
+        git -C "$SUB_PATH" remote -v
+      
+    - name: Tag submodule ${{ env.SUBMODULE_FOLDER }}
+      working-directory: ${{ env.PROJECT_DIR }}/${{ env.SUBMODULE_FOLDER }}
+      run: |
+        set -euo pipefail
+        tag='${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}'
+        git fetch --tags origin
+        if git rev-parse "$tag" >/dev/null 2>&1; then
+          echo "Tag $tag already exists. Skipping."
+          exit 0
+        fi
+        git config user.name "${{ secrets.SUBMODULE_PUSH_USER }}"
+        git config user.email "${{ secrets.SUBMODULE_PUSH_USER }}@users.noreply.github.com"
+        git tag -a "$tag" -m "Release $tag"
+        # Push via explicit URL (ensures PAT is used even if remote not rewritten)
+        git push "https://${{ secrets.SUBMODULE_PUSH_USER }}:${{ secrets.SUBMODULE_PUSH_TOKEN }}@github.com/${{ env.SUBMODULE_REPO }}.git" "$tag"
+
+    - name: Create GitHub Release in submodule
+      env:
+        GH_TOKEN: ${{ secrets.SUBMODULE_PUSH_TOKEN }}
+        TAG: ${{ env.TAG_PREFIX }}${{ steps.get_version.outputs.version }}
+      run: |
+        set -euo pipefail
+        if gh release view "$TAG" -R "${{ env.SUBMODULE_REPO }}" >/dev/null 2>&1; then
+          echo "Release $TAG already exists in $SUBMODULE_REPO; skipping."
+        else
+          # Add files (e.g., `build/*.txt`) after "$TAG" if you want to attach assets
+          gh release create "$TAG" -R "${{ env.SUBMODULE_REPO }}" --title "$TAG" --generate-notes
+        fi
