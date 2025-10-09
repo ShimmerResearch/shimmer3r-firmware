@@ -155,6 +155,7 @@ void Init()
   LogAndStream_checkSdInSlot();
   if (shimmerStatus.sdInserted)
   {
+    //Take control of SD card so configuration & calibration can be loaded later
     LogAndStream_setupUndock();
   }
 
@@ -182,7 +183,12 @@ void Init()
   ShimConfig_loadSensorConfigAndCalib();
   bmp3_readCalibrationDataOnBoot();
 
-  LogAndStream_setupDock();
+  //Pass control of SD card to dock if docked
+  if (LogAndStream_isDockedOrUsbIn())
+  {
+    LogAndStream_setupDock();
+  }
+
   //Disable dock comms until sensor is ready to communicate
   DockUart_disable();
 
