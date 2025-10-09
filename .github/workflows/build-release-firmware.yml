@@ -161,9 +161,10 @@ jobs:
           -H 'Accept: application/json' "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY")
         PROJECT_ID=$(echo "$PROJECT_JSON" | jq -r '.id')
 
+        # FIX: handle both paginated object \(.values\) and bare array
         EXISTING_VERSION_ID=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
           -H 'Accept: application/json' "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY/versions" | \
-          jq -r --arg NAME "$JIRA_VERSION" '.[] | select(.name==$NAME) | .id')
+          jq -r --arg NAME "$JIRA_VERSION" '((.values // .)[] | select(.name==$NAME) | .id) // empty')
 
         if [ -z "$EXISTING_VERSION_ID" ]; then
           CREATE_RESP=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
@@ -231,3 +232,13 @@ jobs:
           # Add files (e.g., `build/*.txt`) after "$TAG" if you want to attach assets
           gh release create "$TAG" -R "${{ env.SUBMODULE_REPO }}" --title "$TAG" --generate-notes
         fi
+
+#    - name: Fetch tags with auth (main repo)
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      run: |
+#        set -euo pipefail
+#        git -c url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf="https://github.com/" \
+#            fetch --tags --quiet
+#
+# follow the above with another link to Jira to link the submodule issues to the release
