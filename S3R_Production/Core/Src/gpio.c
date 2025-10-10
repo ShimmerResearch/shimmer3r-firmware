@@ -740,12 +740,8 @@ void vbusPinStateCheck(void)
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   if (pin == GPIO_PIN_SET)
   {
-#if defined(SHIMMER3R)
     shimmerStatus.usbPluggedIn = 1;
-#else
-    shimmerStatus.usbPluggedIn = 0;
-#endif
-     if (hUsbDevice.pDesc == NULL)
+    if (hUsbDevice.pDesc == NULL)
     {
       //Enable USB peripheral
 #if SUPPORT_SR48_6_0
