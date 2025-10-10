@@ -496,7 +496,7 @@ void Board_setDockAccessToSd(uint8_t mcu0dock1)
 uint8_t Board_checkDockedDetectState(void)
 {
 #if TEST_UNDOCKED
-  shimmerStatus.docked = 1;
+  shimmerStatus.docked = 0;
 #else  //TEST_UNDOCKED
   shimmerStatus.docked = Board_isDocked();
 #endif //TEST_UNDOCKED
