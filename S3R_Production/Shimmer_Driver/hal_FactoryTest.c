@@ -15,7 +15,10 @@
 #include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
 #include "PCM/pcm_config.h"
+
+#if defined(SHIMMER3R)
 #include "usbd_cdc_acm_if.h"
+#endif
 
 char *buffer;
 
@@ -828,11 +831,14 @@ void ShimFactoryTest_sendReportImpl(const char *str, factory_test_target_t facto
     SHIMMER_PRINTF(str);
     break;
   case PRINT_TO_DOCK_UART:
+#if defined(SHIMMER3R)
     if (shimmerStatus.usbPluggedIn)
     {
       CDC_Transmit(0, (uint8_t *) str, strlen(str));
     }
-    else if (shimmerStatus.docked)
+    else
+#endif
+    if (shimmerStatus.docked)
     {
       DockUart_writeBlocking((uint8_t *) str, strlen(str));
     }
