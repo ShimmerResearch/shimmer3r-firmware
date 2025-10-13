@@ -838,7 +838,7 @@ void ShimFactoryTest_sendReportImpl(const char *str, factory_test_target_t facto
     }
     else
 #endif
-    if (shimmerStatus.docked)
+        if (shimmerStatus.docked)
     {
       DockUart_writeBlocking((uint8_t *) str, strlen(str));
     }
