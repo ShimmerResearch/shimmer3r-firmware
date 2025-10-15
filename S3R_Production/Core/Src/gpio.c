@@ -754,7 +754,7 @@ void vbusPinStateCheck(void)
     }
     else
     {
-      if(!shimmerStatus.btConnected && !shimmerStatus.docked)
+      if (!shimmerStatus.btConnected && !shimmerStatus.docked)
       {
         if (!DockUart_isInitialised() || !BtUart_isInitialised())
         {
@@ -799,7 +799,7 @@ void vbusPinStateCheck(void)
     shimmerStatus.usbPluggedIn = 0;
     if (shimmerStatus.usbCrcInitFlag)
     {
-      if(!shimmerStatus.btConnected && !shimmerStatus.docked)
+      if (!shimmerStatus.btConnected && !shimmerStatus.docked)
       {
         if (!DockUart_isInitialised() || !BtUart_isInitialised())
         {
