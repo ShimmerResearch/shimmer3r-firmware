@@ -737,6 +737,7 @@ void gpioInitPerBoard(void)
 
 void vbusPinStateCheck(void)
 {
+  static uint8_t usb_crc_flag = 0;
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   if (pin == GPIO_PIN_SET)
   {
@@ -745,6 +746,22 @@ void vbusPinStateCheck(void)
 #else
     shimmerStatus.usbPluggedIn = 0;
 #endif
+    if (shimmerStatus.usbPluggedIn)
+    {
+      ShimDock_resetVariables();
+      MX_CRC_Init();
+      shimmerStatus.usbCrcInitFlag = 1;
+    }
+    else
+    {
+      if(!shimmerStatus.btConnected && !shimmerStatus.docked)
+      {
+        if (!DockUart_isInitialised() || !BtUart_isInitialised())
+        {
+          deinitCrc();
+        }
+      }
+    }
     if (hUsbDevice.pDesc == NULL)
     {
       //Enable USB peripheral
@@ -780,6 +797,17 @@ void vbusPinStateCheck(void)
   else if (pin == GPIO_PIN_RESET)
   {
     shimmerStatus.usbPluggedIn = 0;
+    if (shimmerStatus.usbCrcInitFlag)
+    {
+      if(!shimmerStatus.btConnected && !shimmerStatus.docked)
+      {
+        if (!DockUart_isInitialised() || !BtUart_isInitialised())
+        {
+          deinitCrc();
+        }
+      }
+      shimmerStatus.usbCrcInitFlag = 0;
+    }
 
 #if SUPPORT_SR48_6_0
     /* SR48-6-0 patch for VBUS sense - start */
