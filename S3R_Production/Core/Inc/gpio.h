@@ -52,7 +52,6 @@ extern "C"
 
   uint8_t CheckSdInslot(void);
   uint8_t isSdPowerOn(void);
-  void gpioInitPerBoard(void);
   void vbusPinStateCheck(void);
   void initBtPins(void);
   void initBtInterrupts(void);
