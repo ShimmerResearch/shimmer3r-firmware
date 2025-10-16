@@ -737,7 +737,6 @@ void gpioInitPerBoard(void)
 
 void vbusPinStateCheck(void)
 {
-  static uint8_t usb_crc_flag = 0;
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   if (pin == GPIO_PIN_SET)
   {

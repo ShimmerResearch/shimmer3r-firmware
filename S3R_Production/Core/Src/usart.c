@@ -463,10 +463,7 @@ void btUart_deint(void)
 {
   HAL_StatusTypeDef status = HAL_UART_Abort(huartBt);
   status = HAL_UART_DeInit(huartBt);
-  if (!DockUart_isInitialised())
-  {
-    CRC_setState(CRC_SRC_BT, 0);
-  }
+  CRC_setState(CRC_SRC_BT, 0);
 }
 
 uint8_t BtUart_isInitialised(void)
@@ -508,10 +505,7 @@ void DockUart_deint(void)
   if (DockUart_isInitialised())
   {
     HAL_UART_DeInit(huartDock);
-    if (!BtUart_isInitialised())
-    {
-      CRC_setState(CRC_SRC_DOCK, 0);
-    }
+    CRC_setState(CRC_SRC_DOCK, 0);
   }
 }
 
