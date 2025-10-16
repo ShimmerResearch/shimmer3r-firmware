@@ -522,10 +522,8 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 
 void RTC_setAlarmBattRead(void)
 {
-  /* If docked alarm fires every 30s and if un-docked fires every 10 minutes*/
-  battAlarmInterval_t battAlarm = ShimBatt_getBatteryInterval();
-  uint32_t nextBattReadInS = (battAlarm == BATT_INTERVAL_DOCKED) ? 30 : (10 * 60);
-  RTC_setAlarmAFromNow(nextBattReadInS, RTC_ALARM_CONTEXT_BATT_READ);
+  battAlarmInterval_t nextBattReadInS = ShimBatt_getBatteryInterval();
+  RTC_setAlarmAFromNow((uint32_t) nextBattReadInS, RTC_ALARM_CONTEXT_BATT_READ);
 }
 
 void RTC_setAlarmBattReadAfterDockUnDock(void)

@@ -87,7 +87,17 @@ void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   ShimDock_resetVariables();
-  DockUart_init(&huart1);
+
+  huartDock = &huart1;
+
+#if defined(SHIMMER3R)
+  HAL_UART_RegisterCallback(huartDock, HAL_UART_RX_COMPLETE_CB_ID, dockUartRxCallback);
+#endif
+
+  HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
+
+  //Assumes MX_USART1_UART_Init is only called if Shimmer is not sensing
+  DockUart_enable();
 
   CRC_setState(CRC_SRC_DOCK, 1);
 
@@ -477,30 +487,15 @@ uint8_t BtUart_isInitialised(void)
  *
  *****************************************************/
 
-void DockUart_init(UART_HandleTypeDef *huart)
+void DockUart_init(void)
 {
-  huartDock = huart;
-
-#if defined(SHIMMER3R)
-  HAL_UART_RegisterCallback(huartDock, HAL_UART_RX_COMPLETE_CB_ID, dockUartRxCallback);
-//HAL_UART_RegisterCallback(huartDock, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
-#endif
-
-  HAL_UART_Receive_IT(huartDock, uartDockRxBuf, 1);
-
-  if (shimmerStatus.sensing)
+  if (!DockUart_isInitialised())
   {
-    DockUart_disable();
-  }
-  else
-  {
-    /* Not sure if this is needed but enabling here in case a previous disable
-     * action is not automatically reset when the peripheral is reinitialised. */
-    DockUart_enable();
+    MX_USART1_UART_Init();
   }
 }
 
-void DockUart_deint(void)
+void DockUart_deinit(void)
 {
   if (DockUart_isInitialised())
   {
@@ -582,53 +577,6 @@ uint8_t BtUart_connectIntCheck(void)
 //void BtUart_rtsIntCheck(void) {
 //   BT_rtsInterrupt(HAL_GPIO_ReadPin(BTH_RTS_GPIO_Port, BTH_RTS_Pin));
 //}
-
-uint8_t DockUart_interruptCheck(void)
-{
-  //#if TEST_UNDOCKED
-  //  if (0)
-  //  {
-  //#else
-  //  if (HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) ==
-  //  GPIO_PIN_SET) { //docked
-  //#endif
-  //    shimmerStatus.isDocked = 1;
-  //    //Board_sd2Pc();
-  //    //Board_ledOn(LED_GREEN0);
-  //  }
-  //  else
-  //  {
-  //    shimmerStatus.isDocked = 0;
-  //    //Board_sd2Arm();
-  //    //SD_mount(1);
-  //    //Board_ledOff(LED_GREEN0);
-  //  }
-
-#if TEST_UNDOCKED
-  shimmerStatus.isDocked = 1;
-#else //TEST_UNDOCKED
-#if SUPPORT_SR48_6_0
-  if (ShimBrd_isBoardSr48_6_0())
-  {
-    /* SR48-6-0 patch for dock detection - start */
-    /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
-    shimmerStatus.docked = HAL_GPIO_ReadPin(SR48_6_0_BOOT0_USER_BTN_GPIO_Port, SR48_6_0_BOOT0_USER_BTN_Pin)
-        == GPIO_PIN_SET;
-    /* SR48-6-0 patch for dock detection - end */
-  }
-  else
-  {
-    shimmerStatus.docked
-        = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
-  }
-#else  //SUPPORT_SR48_6_0
-  shimmerStatus.docked
-      = HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
-#endif //SUPPORT_SR48_6_0
-#endif //TEST_UNDOCKED
-
-  return shimmerStatus.docked;
-}
 
 //HAL_StatusTypeDef BtUart_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)
 //{

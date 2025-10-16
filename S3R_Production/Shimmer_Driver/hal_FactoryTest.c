@@ -385,7 +385,7 @@ void sd_card_test(void)
   {
     if (shimmerStatus.docked)
     {
-      Board_sd2Arm();
+      Board_sd2Mcu();
       HAL_Delay(120); //120ms
     }
 
