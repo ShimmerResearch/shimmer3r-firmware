@@ -65,8 +65,8 @@ extern "C"
 //*pData, uint16_t Size); uint8_t BtUart_isConnected(void);
 #endif
 
-  void DockUart_init(UART_HandleTypeDef *huart);
-  void DockUart_deint(void);
+  void DockUart_init(void);
+  void DockUart_deinit(void);
   void DockUart_disable(void);
   void DockUart_enable(void);
   uint8_t DockUart_getStep(void);
@@ -84,7 +84,6 @@ extern "C"
 #define BtUart_rtsIntCheck() \
   BT_rtsInterrupt(HAL_GPIO_ReadPin(BT_RTS_GPIO_Port, BT_RTS_Pin))
 #endif
-  uint8_t DockUart_interruptCheck(void);
   void dockUartRxCallback(UART_HandleTypeDef *huart);
   void DockUart_writeBlocking(uint8_t *buf, uint8_t len);
   void DockUart_writeText(char *str);

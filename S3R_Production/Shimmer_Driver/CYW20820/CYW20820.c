@@ -652,7 +652,7 @@ void btInitCommands(void)
     ezs_rsp_smp_get_security_parameters_t *securityParametersPtr;
     /* Stored config hasn't been read yet on first boot so default sec params
      * are used during initial boot */
-    if (!shimmerStatus.initialising && ShimConfig_getStoredConfig()->syncEnable)
+    if (!shimmerStatus.booting && ShimConfig_getStoredConfig()->syncEnable)
     {
       securityParametersPtr = &rsp_smp_get_security_parameters_ref_sd_sync;
     }
