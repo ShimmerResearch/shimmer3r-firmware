@@ -28,13 +28,13 @@ extern "C"
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-typedef enum
+
+  typedef enum
   {
     CRC_SRC_BT = (0x01 << 0),
     CRC_SRC_DOCK = (0x01 << 1),
     CRC_SRC_USB = (0x01 << 2)
   } crc_src_flg_t;
-
 
   /* USER CODE BEGIN Includes */
 
@@ -53,7 +53,7 @@ typedef enum
   CRC_HandleTypeDef *getCrcHandle(void);
   void enableCRC(crc_src_flg_t flag, uint8_t state);
 
-    /* USER CODE END Prototypes */
+  /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
