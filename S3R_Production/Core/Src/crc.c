@@ -104,7 +104,7 @@ CRC_HandleTypeDef *getCrcHandle(void)
   return &hcrc;
 }
 
-void enableCRC(crc_src_flg_t flag, uint8_t state)
+void CRC_setState(crc_src_flg_t flag, uint8_t state)
 {
   uint8_t originalState = crcSrcFlags;
   if (state)

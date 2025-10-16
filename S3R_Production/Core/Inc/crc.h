@@ -51,7 +51,7 @@ extern "C"
   /* USER CODE BEGIN Prototypes */
 
   CRC_HandleTypeDef *getCrcHandle(void);
-  void enableCRC(crc_src_flg_t flag, uint8_t state);
+  void CRC_setState(crc_src_flg_t flag, uint8_t state);
 
   /* USER CODE END Prototypes */
 

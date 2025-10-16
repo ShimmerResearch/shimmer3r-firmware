@@ -198,9 +198,8 @@ void Init()
 
   //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
   GPIO_usbVbusIntInit(1);
-#if defined(SHIMMER3R)
   vbusPinStateCheck();
-#endif
+
   /* Take initial measurement to update LED state */
   manageReadBatt(1);
 

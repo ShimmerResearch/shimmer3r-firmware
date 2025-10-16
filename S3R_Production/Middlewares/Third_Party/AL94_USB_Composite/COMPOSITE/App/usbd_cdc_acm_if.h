@@ -33,6 +33,11 @@
 /* USER CODE BEGIN INCLUDE */
 
 /* USER CODE END INCLUDE */
+ typedef enum
+ {
+   CDC_CH_DOCK_COMMS = 0,
+   CDC_CH_BT_COMMS = 1
+ } usb_cdc_comm_t;
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @brief For Usb device.
