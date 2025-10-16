@@ -56,6 +56,8 @@ void MX_USB_OTG_HS_PCD_Init(void)
   /* USER CODE BEGIN USB_OTG_HS_Init 2 */
 
   /* USER CODE END USB_OTG_HS_Init 2 */
+  ShimDock_resetVariables();
+  CRC_setState(CRC_SRC_USB, 1);
 }
 
 void HAL_PCD_MspInit(PCD_HandleTypeDef *pcdHandle)
@@ -155,7 +157,7 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef *pcdHandle)
     /* USB_OTG_HS interrupt Deinit */
     HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
     /* USER CODE BEGIN USB_OTG_HS_MspDeInit 1 */
-
+    CRC_setState(CRC_SRC_USB, 0);
     /* USER CODE END USB_OTG_HS_MspDeInit 1 */
   }
 }
@@ -277,7 +279,7 @@ void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
     //https://community.st.com/t5/stm32-mcus-products/stm32u595-timeout-in-usb-corereset/td-p/618743
     /* Enable SYSCFG Clock */
     __HAL_RCC_SYSCFG_CLK_DISABLE();
-
+    CRC_setState(CRC_SRC_USB, 0);
     /* USER CODE END USB_OTG_HS_MspDeInit 1 */
   }
 }

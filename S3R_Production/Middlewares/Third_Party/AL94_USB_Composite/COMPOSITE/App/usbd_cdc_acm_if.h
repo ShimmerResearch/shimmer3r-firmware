@@ -33,6 +33,11 @@
 /* USER CODE BEGIN INCLUDE */
 
 /* USER CODE END INCLUDE */
+ typedef enum
+ {
+   CDC_CH_DOCK_COMMS = 0,
+   CDC_CH_BT_COMMS = 1
+ } usb_cdc_comm_t;
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @brief For Usb device.
@@ -104,6 +109,12 @@ extern USBD_CDC_ACM_ItfTypeDef  USBD_CDC_ACM_fops;
   */
 
 uint8_t CDC_Transmit(uint8_t ch, uint8_t* Buf, uint16_t Len);
+/* Added non-blocking transmit support helpers */
+uint16_t CDC_TxFree(uint8_t ch);        /* free space remaining in TX ring */
+uint16_t CDC_TxPending(uint8_t ch);     /* bytes queued but not yet sent */
+void     CDC_Flush(uint8_t ch);         /* force immediate send of queued data */
+void     CDC_FlushAll(void);            /* flush all CDC channels */
+void     CDC_FlushTimerTick(uint8_t ch);/* call periodically (e.g. 1ms) to drive coalescing timer */
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
 

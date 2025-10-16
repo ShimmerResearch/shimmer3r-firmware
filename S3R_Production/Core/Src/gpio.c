@@ -764,7 +764,6 @@ void vbusPinStateCheck(void)
   else if (pin == GPIO_PIN_RESET)
   {
     shimmerStatus.usbPluggedIn = 0;
-
 #if SUPPORT_SR48_6_0
     /* SR48-6-0 patch for VBUS sense - start */
     if (ShimBrd_isBoardSr48_6_0())
