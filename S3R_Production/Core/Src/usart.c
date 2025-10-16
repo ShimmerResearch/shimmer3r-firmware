@@ -99,7 +99,7 @@ void MX_USART1_UART_Init(void)
   //Assumes MX_USART1_UART_Init is only called if Shimmer is not sensing
   DockUart_enable();
 
-  MX_CRC_Init();
+  CRC_setState(CRC_SRC_DOCK, 1);
 
   /* USER CODE END USART1_Init 2 */
 }
@@ -192,7 +192,7 @@ void MX_USART3_UART_Init(void)
 
 #endif //SUPPORT_SR48_6_0
 
-  MX_CRC_Init();
+  CRC_setState(CRC_SRC_BT, 1);
 
   /* USER CODE END USART3_Init 2 */
 }
@@ -460,7 +460,7 @@ void BtUart_init(uint32_t baudRate, uint32_t hwFlowCtrl)
 
   setBtUartInstance(huartBt);
 
-  MX_CRC_Init();
+  CRC_setState(CRC_SRC_BT, 1);
 }
 
 void BtUart_update(uint32_t baudRate, uint32_t hwFlowCtrl)
@@ -473,10 +473,7 @@ void btUart_deint(void)
 {
   HAL_StatusTypeDef status = HAL_UART_Abort(huartBt);
   status = HAL_UART_DeInit(huartBt);
-  if (!DockUart_isInitialised())
-  {
-    deinitCrc();
-  }
+  CRC_setState(CRC_SRC_BT, 0);
 }
 
 uint8_t BtUart_isInitialised(void)
@@ -503,10 +500,7 @@ void DockUart_deinit(void)
   if (DockUart_isInitialised())
   {
     HAL_UART_DeInit(huartDock);
-    if (!BtUart_isInitialised())
-    {
-      deinitCrc();
-    }
+    CRC_setState(CRC_SRC_DOCK, 0);
   }
 }
 

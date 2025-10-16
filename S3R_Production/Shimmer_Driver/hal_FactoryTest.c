@@ -830,7 +830,7 @@ void ShimFactoryTest_sendReportImpl(const char *str, factory_test_target_t facto
   case PRINT_TO_DOCK_UART:
     if (shimmerStatus.usbPluggedIn)
     {
-      CDC_Transmit(0, (uint8_t *) str, strlen(str));
+      CDC_Transmit(CDC_CH_DOCK_COMMS, (uint8_t *) str, strlen(str));
     }
     else if (shimmerStatus.docked)
     {
