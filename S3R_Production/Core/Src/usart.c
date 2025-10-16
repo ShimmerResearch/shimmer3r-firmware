@@ -89,7 +89,7 @@ void MX_USART1_UART_Init(void)
   ShimDock_resetVariables();
   DockUart_init(&huart1);
 
-  MX_CRC_Init();
+  enableCRC(CRC_SRC_DOCK, 1);
 
   /* USER CODE END USART1_Init 2 */
 }
@@ -182,7 +182,7 @@ void MX_USART3_UART_Init(void)
 
 #endif //SUPPORT_SR48_6_0
 
-  MX_CRC_Init();
+  enableCRC(CRC_SRC_BT, 1);
 
   /* USER CODE END USART3_Init 2 */
 }
@@ -450,7 +450,7 @@ void BtUart_init(uint32_t baudRate, uint32_t hwFlowCtrl)
 
   setBtUartInstance(huartBt);
 
-  MX_CRC_Init();
+  enableCRC(CRC_SRC_BT, 1);
 }
 
 void BtUart_update(uint32_t baudRate, uint32_t hwFlowCtrl)
@@ -465,7 +465,7 @@ void btUart_deint(void)
   status = HAL_UART_DeInit(huartBt);
   if (!DockUart_isInitialised())
   {
-    deinitCrc();
+    enableCRC(CRC_SRC_BT, 0);
   }
 }
 
@@ -510,7 +510,7 @@ void DockUart_deint(void)
     HAL_UART_DeInit(huartDock);
     if (!BtUart_isInitialised())
     {
-      deinitCrc();
+      enableCRC(CRC_SRC_DOCK, 0);
     }
   }
 }

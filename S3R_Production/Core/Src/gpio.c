@@ -746,22 +746,7 @@ void vbusPinStateCheck(void)
 #else
     shimmerStatus.usbPluggedIn = 0;
 #endif
-    if (shimmerStatus.usbPluggedIn)
-    {
-      ShimDock_resetVariables();
-      MX_CRC_Init();
-      shimmerStatus.usbCrcInitFlag = 1;
-    }
-    else
-    {
-      if (!shimmerStatus.btConnected && !shimmerStatus.docked)
-      {
-        if (!DockUart_isInitialised() || !BtUart_isInitialised())
-        {
-          deinitCrc();
-        }
-      }
-    }
+
     if (hUsbDevice.pDesc == NULL)
     {
       //Enable USB peripheral
@@ -797,18 +782,6 @@ void vbusPinStateCheck(void)
   else if (pin == GPIO_PIN_RESET)
   {
     shimmerStatus.usbPluggedIn = 0;
-    if (shimmerStatus.usbCrcInitFlag)
-    {
-      if (!shimmerStatus.btConnected && !shimmerStatus.docked)
-      {
-        if (!DockUart_isInitialised() || !BtUart_isInitialised())
-        {
-          deinitCrc();
-        }
-      }
-      shimmerStatus.usbCrcInitFlag = 0;
-    }
-
 #if SUPPORT_SR48_6_0
     /* SR48-6-0 patch for VBUS sense - start */
     if (ShimBrd_isBoardSr48_6_0())

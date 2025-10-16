@@ -25,7 +25,7 @@
 #include "hal_CRC.h"
 
 /* USER CODE END 0 */
-
+volatile uint8_t crcSrcFlags = 0;
 CRC_HandleTypeDef hcrc;
 
 /* CRC init function */
@@ -104,9 +104,32 @@ CRC_HandleTypeDef *getCrcHandle(void)
   return &hcrc;
 }
 
-void deinitCrc(void)
-{
-  HAL_CRC_DeInit(&hcrc);
-}
+void enableCRC(crc_src_flg_t flag, uint8_t state)
+  {
+    uint8_t originalState = crcSrcFlags;
+    if (state)
+    {
+      crcSrcFlags |= flag;
+    }
+    else
+    {
+      crcSrcFlags &= ~flag;
+    }
+
+    /* take action if state has changed */
+    if ((originalState == 0 && crcSrcFlags != 0)
+        || (originalState != 0 && crcSrcFlags == 0))
+    {
+      if (state)
+      {
+        MX_CRC_Init();
+      }
+      else
+      {
+        HAL_CRC_DeInit(&hcrc);
+      }
+    }
+  }
+
 
 /* USER CODE END 1 */
