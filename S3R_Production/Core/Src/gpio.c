@@ -447,7 +447,8 @@ uint8_t isSdPowerOn(void)
   return HAL_GPIO_ReadPin(SW_FLASH_GPIO_Port, SW_FLASH_Pin);
 }
 
-/*
+/* Overrides weak function in LogAndStream driver
+ *
  * The following pins are utilised differently in each expansion board:
  * - GPIO_ADC_INT_EXP0_Pin
  * - GPIO_ADC_INT_EXP1_Pin
@@ -457,7 +458,7 @@ uint8_t isSdPowerOn(void)
  * - GPIO_INTERNAL1_Pin
  * - GPIO_INTERNAL2_Pin
  * */
-void gpioInitPerBoard(void)
+void platform_initGpioForRevision(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
   /* GPIO Ports Clock Enable */

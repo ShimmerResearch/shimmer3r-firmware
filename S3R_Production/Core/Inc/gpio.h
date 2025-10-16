@@ -51,7 +51,6 @@ extern "C"
 #endif
 
   uint8_t isSdPowerOn(void);
-  void gpioInitPerBoard(void);
   void vbusPinStateCheck(void);
   void initBtPins(void);
   void initBtInterrupts(void);
