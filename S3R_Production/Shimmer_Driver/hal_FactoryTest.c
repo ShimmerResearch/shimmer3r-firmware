@@ -17,7 +17,6 @@
 #include "PCM/pcm_config.h"
 #include "usbd_cdc_acm_if.h"
 
-
 char *buffer;
 
 uint8_t test_i2c_addr_list[128], test_i2c_addr_list_len;
