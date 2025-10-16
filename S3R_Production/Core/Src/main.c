@@ -695,7 +695,7 @@ HAL_StatusTypeDef checknBoot0OptionByte(void)
   return HAL_OK;
 }
 
-void delay_ms(const uint32_t delay_time_ms)
+void platform_delayMs(const uint32_t delay_time_ms)
 {
   HAL_Delay(delay_time_ms);
 }

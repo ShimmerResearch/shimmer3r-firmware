@@ -458,7 +458,7 @@ uint8_t isSdPowerOn(void)
  * - GPIO_INTERNAL1_Pin
  * - GPIO_INTERNAL2_Pin
  * */
-void Board_initGpioForRevision(void)
+void platform_initGpioForRevision(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
   /* GPIO Ports Clock Enable */

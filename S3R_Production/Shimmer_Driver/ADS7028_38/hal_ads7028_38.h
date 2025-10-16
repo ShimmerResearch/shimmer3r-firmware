@@ -151,7 +151,7 @@ void ads7028_setCS(const bool state);
 bool getCS(void); /*  Used for testing only */
 
 /* Timing functions */
-//void delay_ms(const uint32_t delay_time_ms);
+void delay_ms(const uint32_t delay_time_ms);
 void startTimer(uint32_t timerFreq);
 void stopTimer(void);
 void TIMER0IntHandler(void);
