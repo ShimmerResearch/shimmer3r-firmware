@@ -63,6 +63,7 @@ ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
 ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
 ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters;
 ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters;
+ezs_rsp_bt_get_device_class_t rsp_bt_get_device_class;
 
 static ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters_ref
     = { .result = 0,
@@ -136,7 +137,7 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_S
   UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2, UPDATE_UART_SETTINGS_STAGE3,
   UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5, PING, GET_BT_PARAMETERS,
   STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1, STOP_BLE_ADVERTISING_STAGE2,
-  GET_FIRMWARE_VERSION, GET_BT_MAC_ID, UPDATE_LOCAL_ADVERTISING_NAMES,
+  GET_FIRMWARE_VERSION, GET_BT_MAC_ID, GET_BT_DEVICE_CLASS, SET_BT_DEVICE_CLASS, UPDATE_LOCAL_ADVERTISING_NAMES,
   GET_DEVICE_NAME_BT, SET_DEVICE_NAME_BT, GET_DEVICE_NAME_BLE, SET_DEVICE_NAME_BLE,
   GET_TX_POWER, SET_TX_POWER, GET_SMP_PRIVACY_MODE, SET_SMP_PRIVACY_MODE,
 #if USE_GET_SET_ADV_PARAM
@@ -459,6 +460,27 @@ void btInitCommands(void)
     setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS);
     ezs_cmd_system_get_bluetooth_address();
     return;
+  }
+
+  if (btInitCmdsStep == GET_BT_DEVICE_CLASS)
+  {
+    printf("Get BT Device Class\r\n");
+    incrementBtInitCmdsStep();
+    setExpectedResponse(EZS_IDX_RSP_BT_GET_DEVICE_CLASS);
+    ezs_cmd_bt_get_device_class();
+    return;
+  }
+
+  if (btInitCmdsStep == SET_BT_DEVICE_CLASS)
+  {
+    incrementBtInitCmdsStep();
+    if (rsp_bt_get_device_class.cod != BT_DEVICE_CLASS_SPP)
+    {
+      printf("Set BT Device Class\r\n");
+      setExpectedResponse(EZS_IDX_RSP_BT_SET_DEVICE_CLASS);
+      ezs_fcmd_bt_set_device_class(BT_DEVICE_CLASS_SPP);
+      return;
+    }
   }
 
   if (btInitCmdsStep == UPDATE_LOCAL_ADVERTISING_NAMES)
@@ -1322,6 +1344,21 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printf("\r\n");
     }
 #endif
+    break;
+
+  case EZS_IDX_RSP_BT_GET_DEVICE_CLASS:
+    rsp_bt_get_device_class = packet->payload.rsp_bt_get_device_class;
+    break;
+
+  case EZS_IDX_RSP_BT_SET_DEVICE_CLASS:
+    #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    if (packet->payload.rsp_bt_set_device_class.result != EZS_ERR_SUCCESS)
+    {
+      printf("RX: rsp_bt_set_device_class: Result=");
+      printHex16(packet->payload.rsp_bt_set_device_class.result);
+      printf("\r\n");
+    }
+    #endif
     break;
 
     /* -------- Shimmer added end -------- */
