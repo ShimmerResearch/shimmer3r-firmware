@@ -249,6 +249,7 @@ const uint8_t ezs_tbl_cmd[] = {
   T_U8A,                  /* 126 | . 12, .EDDYSP (p_eddystone_set_parameters) */
   0x0D, 0x02, 0x00, 0x00, /* 127 | . 13, .EDDYGP (p_eddystone_get_parameters) */
   //-------------- Fix 06 Start -------------------------//
+  //Group, ID, #Bytes, #Params, Param Types...
   0x0E, 0x01, 0x02, 0x02, T_U8, T_U8,  /* 128 | . , /BTI (bt_start_inquiry) */
   0x0E, 0x02, 0x00, 0x00,              /* 129 | . , /BTIX (bt_cancel_inquiry) */
   0x0E, 0x03, 0x06, 0x01, T_MAC,       /* 130 | . , /BTQN (bt_query_name) */
