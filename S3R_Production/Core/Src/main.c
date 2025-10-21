@@ -743,14 +743,13 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 
-
 #endif /* USE_FULL_ASSERT */
 
 void decideSdAccessPriority(uint8_t currentPriority)
 {
   uint8_t previousPriority = getSdAccessPriority();
-  // 1. During boot, MCU always has priority
-  if(shimmerStatus.booting)
+  //1. During boot, MCU always has priority
+  if (shimmerStatus.booting)
   {
     setSdAccessPriority(PRIORITY_SD_ACCESS_MCU);
     return;
@@ -770,17 +769,17 @@ void decideSdAccessPriority(uint8_t currentPriority)
     }
   }
 
-  if(currentPriority == PRIORITY_SD_ACCESS_USB)
+  if (currentPriority == PRIORITY_SD_ACCESS_USB)
   {
-    if(previousPriority != PRIORITY_SD_ACCESS_DOCK && shimmerStatus.usbPluggedIn)
+    if (previousPriority != PRIORITY_SD_ACCESS_DOCK && shimmerStatus.usbPluggedIn)
     {
       setSdAccessPriority(currentPriority);
     }
     return;
   }
-  else if(currentPriority == PRIORITY_SD_ACCESS_DOCK)
+  else if (currentPriority == PRIORITY_SD_ACCESS_DOCK)
   {
-    if(previousPriority != PRIORITY_SD_ACCESS_USB && shimmerStatus.docked)
+    if (previousPriority != PRIORITY_SD_ACCESS_USB && shimmerStatus.docked)
     {
       setSdAccessPriority(currentPriority);
     }
@@ -790,7 +789,7 @@ void decideSdAccessPriority(uint8_t currentPriority)
   {
     setSdAccessPriority(PRIORITY_SD_ACCESS_MCU);
   }
-return;
+  return;
 }
 
 uint8_t getSdAccessPriority(void)
