@@ -234,6 +234,17 @@ extern "C"
 
   /* USER CODE END Private defines */
 
+  typedef enum
+  {
+    PRIORITY_SD_ACCESS_MCU = 1 << 0,
+    PRIORITY_SD_ACCESS_USB = 1 << 1,
+    PRIORITY_SD_ACCESS_DOCK = 1 << 2
+  }PRIORITY_SD_ACCESS;
+
+void decideSdAccessPriority(uint8_t priority);
+uint8_t getSdAccessPriority(void);
+void setSdAccessPriority(uint8_t priority);
+
 #ifdef __cplusplus
 }
 #endif

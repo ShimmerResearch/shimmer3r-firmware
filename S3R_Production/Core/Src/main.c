@@ -123,6 +123,7 @@ void Init()
 {
   LogAndStream_init();
   shimmerStatus.booting = 1; /* led flag, in initialisation period */
+  decideSdAccessPriority(PRIORITY_SD_ACCESS_MCU);
 
 #if defined(SHIMMER3R)
   Board_ledTimersStart(&htim3, &htim2, &htim6);
@@ -211,6 +212,7 @@ void Init()
 
   shimmerStatus.booting = 0;
   LogAndStream_setBootStage(BOOT_STAGE_END);
+  decideSdAccessPriority(PRIORITY_SD_ACCESS_MCU);
 }
 
 /* USER CODE END 0 */
@@ -740,4 +742,63 @@ void assert_failed(uint8_t *file, uint32_t line)
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
+
+
 #endif /* USE_FULL_ASSERT */
+
+void decideSdAccessPriority(uint8_t currentPriority)
+{
+  uint8_t previousPriority = getSdAccessPriority();
+  // 1. During boot, MCU always has priority
+  if(shimmerStatus.booting)
+  {
+    setSdAccessPriority(PRIORITY_SD_ACCESS_MCU);
+    return;
+  }
+
+  if (previousPriority == PRIORITY_SD_ACCESS_MCU)
+  {
+    if (shimmerStatus.usbPluggedIn)
+    {
+      setSdAccessPriority(PRIORITY_SD_ACCESS_USB);
+      return;
+    }
+    else if (shimmerStatus.docked)
+    {
+      setSdAccessPriority(PRIORITY_SD_ACCESS_DOCK);
+      return;
+    }
+  }
+
+  if(currentPriority == PRIORITY_SD_ACCESS_USB)
+  {
+    if(previousPriority != PRIORITY_SD_ACCESS_DOCK && shimmerStatus.usbPluggedIn)
+    {
+      setSdAccessPriority(currentPriority);
+    }
+    return;
+  }
+  else if(currentPriority == PRIORITY_SD_ACCESS_DOCK)
+  {
+    if(previousPriority != PRIORITY_SD_ACCESS_USB && shimmerStatus.docked)
+    {
+      setSdAccessPriority(currentPriority);
+    }
+    return;
+  }
+  if ((!shimmerStatus.usbPluggedIn && !shimmerStatus.docked))
+  {
+    setSdAccessPriority(PRIORITY_SD_ACCESS_MCU);
+  }
+return;
+}
+
+uint8_t getSdAccessPriority(void)
+{
+  return shimmerStatus.sdAccessPriority;
+}
+
+void setSdAccessPriority(uint8_t priority)
+{
+  shimmerStatus.sdAccessPriority = priority;
+}
