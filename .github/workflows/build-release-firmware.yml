@@ -41,6 +41,7 @@ jobs:
       with:
         fetch-depth: 0  # Needed for tags and versioning
         submodules: recursive
+        ref: ${{ github.ref }}
 
 #    - name: Debug path
 #      run: pwd
@@ -85,27 +86,14 @@ jobs:
         fi
 
     - name: Commit version bump
+      if: ${{ github.ref_type == 'branch' }}
       run: |
         set -euo pipefail
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
         git add ${{ env.PROJECT_DIR }}/build/version.txt ${{ env.PROJECT_DIR }}/Shimmer_Driver/version.h
         git commit -m "chore: bump firmware version to v${{ steps.get_version.outputs.version }}" || echo "No changes to commit"
-        git push
-
-#    - name: Show uncommitted changes
-#      run: |
-#        git status
-#        git diff
-#        git diff --cached
-
-#    - name: Check for clean working tree
-#      run: |
-#        set -euo pipefail
-#        if ! git diff --quiet || ! git diff --cached --quiet; then
-#          echo "Working tree is dirty. Please commit or stash changes before tagging."
-#          exit 1
-#        fi
+        git push origin HEAD:${{ github.ref }}
 
     - name: Upload firmware artifact
       uses: actions/upload-artifact@v4
