@@ -46,9 +46,9 @@ volatile uint8_t expectedSpiBusCbFlags = 0;
 volatile uint8_t currentSpiBusCbFlags = 0;
 SPI_ADCTypeDef spiAdc;
 volatile uint8_t currentChannel = 10; //invalid channel to start with;
-uint16_t chData[8] ={0};  // latest sample per channel
+uint16_t chData[8] = { 0 };           //latest sample per channel
 //uint16_t adcTempbuf[8] = {0};  // DMA buffer
-uint8_t flagsEnabledAds7028Channels[8] = {0};
+uint8_t flagsEnabledAds7028Channels[8] = { 0 };
 uint8_t enabledAds7028Channels = 0; //all channels disabled initially;
 
 #endif
@@ -916,8 +916,6 @@ void SPI_startSensing()
       GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks);
     }
     enableAds7028AutoSequenceMode(enabledAds7028Channels);
-
-
   }
 
   /* SPI2 */
@@ -1234,7 +1232,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
   case SPI1_ADS7028_INT_EXP2:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP2_GET;
     //configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH2_ENABLED);
-     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
+    halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     currentChannel = ADS7028_INT_EXP2;
     retVal = 1;
     break;
@@ -1242,34 +1240,34 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP3_GET;
     //configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
-   currentChannel = ADS7028_INT_EXP3;
+    currentChannel = ADS7028_INT_EXP3;
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP0:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP0_GET;
     //configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED);
-     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
+    halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     currentChannel = ADS7028_EXT_EXP0;
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP1:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP1_GET;
     //configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED);
-     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
+    halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     currentChannel = ADS7028_EXT_EXP1;
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP2:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP2_GET;
     //configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH6_ENABLED);
-     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
+    halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     currentChannel = ADS7028_EXT_EXP2;
     retVal = 1;
     break;
   case SPI1_ADS7028_VBATT_SENSE:
     spiSensingInfo->status = SPI_STAT_ADS7028_VBATT_GET;
     //configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH7_ENABLED);
-     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
+    halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     currentChannel = ADS7028_VBATT;
     retVal = 1;
     break;
@@ -1364,14 +1362,13 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     /* Original ADC data is MSB order and left-aligned whereas Shimmer normally
      * uses LSB order right-aligned */
     ads7028_setCS(HIGH);
-   uint16_t adcTempbuf = (((uint16_t) spi1Sens_buf.ads2078Buf[0]) << 4
+    uint16_t adcTempbuf = (((uint16_t) spi1Sens_buf.ads2078Buf[0]) << 4
                               | spi1Sens_buf.ads2078Buf[1] >> 4)
         & 0x0FFF;
 
     //ads7028_setCS(HIGH);  // end of SPI frame → trigger next conversion
 
-   // processAds7028ConversionData(spi1Sens_buf.ads2078Buf, adcTempbuf);
-
+    //processAds7028ConversionData(spi1Sens_buf.ads2078Buf, adcTempbuf);
 
     switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
     {
@@ -1534,7 +1531,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
 {
   gConfigBytes *configBytes = ShimConfig_getStoredConfig();
   memset(&spiAdc, 0x00, sizeof(spiAdc));
- // uint8_t enabledAds7028Channels = 0; //all channels disabled initially;
+  //uint8_t enabledAds7028Channels = 0; //all channels disabled initially;
 
   //Select channel  and enable as per config
   //Internal ADC 0
