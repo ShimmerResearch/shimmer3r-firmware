@@ -118,7 +118,9 @@ static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
 #if USE_GET_SET_SYSTEM_SLEEP_PARAM
 static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref = {
   .level = 1,             //Default=1
+#if ENABLE_FIX_08
   .hid_off_sleep_time = 0 //Default=0
+#endif
 };
 #endif
 
@@ -562,7 +564,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == SET_TX_POWER)
   {
     incrementBtInitCmdsStep();
-    if (rxPayloadPtr->rsp_system_get_tx_power.power != BT_TX_POWER)
+    if (rsp_system_get_tx_power.power != BT_TX_POWER)
     {
       printf("Set TX Power\r\n");
       rsp_system_get_tx_power.power = BT_TX_POWER;
@@ -592,8 +594,11 @@ void btInitCommands(void)
     {
       printf("Set System Sleep Parameters\r\n");
       setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_SLEEP_PARAMETERS);
-      ezs_fcmd_system_set_sleep_parameters(rsp_system_get_sleep_parameters_ref.level,
-          rsp_system_get_sleep_parameters_ref.hid_off_sleep_time);
+      ezs_fcmd_system_set_sleep_parameters(rsp_system_get_sleep_parameters_ref.level
+#if ENABLE_FIX_08
+          , rsp_system_get_sleep_parameters_ref.hid_off_sleep_time
+#endif
+      );
       return;
     }
   }
@@ -1379,8 +1384,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: rsp_system_get_sleep_parameters: level=");
     printHex8(packet->payload.rsp_system_get_sleep_parameters.level);
+#if ENABLE_FIX_08
     printf(", hid_off_sleep_time=");
     printHex16(packet->payload.rsp_system_get_sleep_parameters.hid_off_sleep_time);
+#endif
     printf("\r\n");
 #endif
     break;
