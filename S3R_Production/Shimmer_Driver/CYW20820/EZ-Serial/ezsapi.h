@@ -1002,7 +1002,10 @@ __PACKDEF(ezs_rsp_system_get_wco_parameters_t, {
 });
 
 #if ENABLE_FIX_08
-__PACKDEF(ezs_cmd_system_set_sleep_parameters_t, { uint8_t level; uint16_t hid_off_sleep_time; });
+__PACKDEF(ezs_cmd_system_set_sleep_parameters_t, {
+  uint8_t level;
+  uint16_t hid_off_sleep_time;
+});
 #else
 __PACKDEF(ezs_cmd_system_set_sleep_parameters_t, { uint8_t level; });
 #endif
