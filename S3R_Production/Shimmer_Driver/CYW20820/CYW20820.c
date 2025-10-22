@@ -117,7 +117,7 @@ static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
 
 #if USE_GET_SET_SYSTEM_SLEEP_PARAM
 static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref = {
-  .level = 1,             //Default=1
+  .level = 1, //Default=1
 #if ENABLE_FIX_08
   .hid_off_sleep_time = 0 //Default=0
 #endif
@@ -596,7 +596,8 @@ void btInitCommands(void)
       setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_SLEEP_PARAMETERS);
       ezs_fcmd_system_set_sleep_parameters(rsp_system_get_sleep_parameters_ref.level
 #if ENABLE_FIX_08
-          , rsp_system_get_sleep_parameters_ref.hid_off_sleep_time
+          ,
+          rsp_system_get_sleep_parameters_ref.hid_off_sleep_time
 #endif
       );
       return;
