@@ -145,7 +145,11 @@ const uint8_t ezs_tbl_cmd[] = {
   0x02, 0x0D, 0x06, 0x01, T_MAC, /*  64 | S  2, SBA (system_set_bluetooth_address) */
   0x02, 0x0F, 0x02, 0x01, T_U16, /*  65 | S  3, SECO (system_set_eco_parameters) */
   0x02, 0x11, 0x01, 0x01, T_U8, /*  66 | S  4, SWCO (system_set_wco_parameters) */
+#if ENABLE_FIX_08
+  0x02, 0x13, 0x03, 0x02, T_U8, T_U16, /*  67 | S  5, SSLP (system_set_sleep_parameters) */
+#else
   0x02, 0x13, 0x01, 0x01, T_U8, /*  67 | S  5, SSLP (system_set_sleep_parameters) */
+#endif
   //-------------- Fix 05 Start -------------------------//
   //0x02,0x15,  0x01,   0x01,T_U8,                                /*  68 | S  6, STXP (system_set_tx_power) */
   0x02, 0x15, 0x1A, 0x02, T_U8, T_PWR_LVL_ARY, /*  68 | S  6, STXP (system_set_tx_power) */
@@ -310,7 +314,7 @@ const uint8_t ezs_tbl_evt[] = {
   0x09, 0x01, 0x09, /*  35, INT (gpio_interrupt) */
   0x0A, 0x01, 0x01, /*  36, .CYSPP (p_cyspp_status) */
   0x0B, 0x01, 0x01, /*  37, .CYCOM (p_cycommand_status) */
-                    //-------------- Fix 06 Start -------------------------//
+  //-------------- Fix 06 Start -------------------------//
   0x0E, 0x01, 0x0B, /*  38, /BTIR (bt_inquiry_result) */
   0x0E, 0x02, 0x08, /*  39, /BTINR (bt_name_result) */
   0x0E, 0x03, 0x00, /*  40, /BTIC (bt_inquiry_complete) */

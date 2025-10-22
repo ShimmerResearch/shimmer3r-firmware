@@ -16,6 +16,7 @@
 /* TODO decide if needed and remove it and associated code if not. Seems to be
  * needed or else BLE won't advertise just using ezs_cmd_gap_start_adv. */
 #define USE_GET_SET_ADV_PARAM 0
+#define USE_GET_SET_SYSTEM_SLEEP_PARAM 0
 
 #define BAUD_TO_USE           2000000L
 #define FLOW_CONTROL          1
@@ -52,6 +53,10 @@ enum BT_SET_COMMAND_STAGES
   SET_DEVICE_NAME_BLE,
   GET_TX_POWER,
   SET_TX_POWER,
+#if USE_GET_SET_SYSTEM_SLEEP_PARAM
+  GET_SYSTEM_SLEEP_PARAMETERS,
+  SET_SYSTEM_SLEEP_PARAMETERS,
+#endif
   GET_SMP_PRIVACY_MODE,
   SET_SMP_PRIVACY_MODE,
 #if USE_GET_SET_ADV_PARAM

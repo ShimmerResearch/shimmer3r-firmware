@@ -47,23 +47,12 @@ static char pin_code[] = { 4, '1', '2', '3', '4' };
 uint16_t expectedResponseIdx;
 uint8_t active_conn_handle = 0xFF; //no active connection
 
-ezs_rsp_system_ping_t rsp_system_ping;
-ezs_rsp_system_query_firmware_version_t rsp_system_query_firmware_version;
-ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
+ezs_packet_payload_t *rxPayloadPtr;
+
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
 ezs_rsp_system_get_tx_power_t rsp_system_get_tx_power;
-ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode;
 ezs_rsp_bt_get_parameters_t rsp_bt_get_parameters;
-ezs_rsp_bt_cancel_connection_t rsp_bt_cancel_connection;
-ezs_rsp_bt_disconnect_t rsp_bt_disconnect;
-#if USE_GET_SET_ADV_PARAM
-ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters;
-#endif
-ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters;
-ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters;
-ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters;
-ezs_rsp_bt_get_device_class_t rsp_bt_get_device_class;
 
 static ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters_ref
     = { .result = 0,
@@ -126,7 +115,12 @@ static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
         .io = 3, //3 = No Input + No Output – no ability to display or input anything (factory default)
         .pairprop = 0 };
 
-ezs_rsp_smp_get_pin_code_t rsp_smp_get_pin_code;
+#if USE_GET_SET_SYSTEM_SLEEP_PARAM
+static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref = {
+  .level = 1, // Default=1
+  .hid_off_sleep_time = 0  // Default=0
+  };
+#endif
 
 uint8_t *btInitCmdsSteps;
 uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
@@ -140,7 +134,11 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
   STOP_BLE_ADVERTISING_STAGE2, GET_FIRMWARE_VERSION, GET_BT_MAC_ID,
   GET_BT_DEVICE_CLASS, SET_BT_DEVICE_CLASS, UPDATE_LOCAL_ADVERTISING_NAMES,
   GET_DEVICE_NAME_BT, SET_DEVICE_NAME_BT, GET_DEVICE_NAME_BLE, SET_DEVICE_NAME_BLE,
-  GET_TX_POWER, SET_TX_POWER, GET_SMP_PRIVACY_MODE, SET_SMP_PRIVACY_MODE,
+  GET_TX_POWER, SET_TX_POWER,
+#if USE_GET_SET_SYSTEM_SLEEP_PARAM
+  GET_SYSTEM_SLEEP_PARAMETERS, SET_SYSTEM_SLEEP_PARAMETERS,
+#endif
+  GET_SMP_PRIVACY_MODE, SET_SMP_PRIVACY_MODE,
 #if USE_GET_SET_ADV_PARAM
   GET_ADVERTISING_PARAMETERS, SET_ADVERTISING_PARAMETERS,
 #endif
@@ -296,11 +294,11 @@ void btInitCommands(void)
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE2)
   {
     incrementBtInitCmdsStep();
-    printf("Current Baud=%lu\r\n", rsp_system_get_uart_parameters.baud);
+    printf("Current Baud=%lu\r\n", rxPayloadPtr->rsp_system_get_uart_parameters.baud);
     btUartSettingsChanged = false;
     //No need to set if the current settings are correct.
     if (memcmp(&rsp_system_get_uart_parameters_ref.result,
-            &rsp_system_get_uart_parameters.result, sizeof(rsp_system_get_uart_parameters_ref))
+            &rxPayloadPtr->rsp_system_get_uart_parameters.result, sizeof(rsp_system_get_uart_parameters_ref))
         != 0)
     {
       printf("Update UART Stage2\r\n");
@@ -475,7 +473,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == SET_BT_DEVICE_CLASS)
   {
     incrementBtInitCmdsStep();
-    if (rsp_bt_get_device_class.cod != BT_DEVICE_CLASS_SPP)
+    if (rxPayloadPtr->rsp_bt_get_device_class.cod != BT_DEVICE_CLASS_SPP)
     {
       printf("Set BT Device Class\r\n");
       setExpectedResponse(EZS_IDX_RSP_BT_SET_DEVICE_CLASS);
@@ -489,22 +487,22 @@ void btInitCommands(void)
     printf("Update local advertising name\r\n");
     incrementBtInitCmdsStep();
     advNameBt[advNameMacIdStartIdx]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
+        = hexdigit2int((rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
     advNameBt[advNameMacIdStartIdx + 1]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
+        = hexdigit2int((rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
     advNameBt[advNameMacIdStartIdx + 2]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
+        = hexdigit2int((rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
     advNameBt[advNameMacIdStartIdx + 3]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
+        = hexdigit2int((rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
 
     advNameBle[advNameMacIdStartIdx]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
+        = hexdigit2int((rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
     advNameBle[advNameMacIdStartIdx + 1]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
+        = hexdigit2int((rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
     advNameBle[advNameMacIdStartIdx + 2]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
+        = hexdigit2int((rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
     advNameBle[advNameMacIdStartIdx + 3]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
+        = hexdigit2int((rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
   }
 
   if (btInitCmdsStep == GET_DEVICE_NAME_BT)
@@ -564,7 +562,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == SET_TX_POWER)
   {
     incrementBtInitCmdsStep();
-    if (rsp_system_get_tx_power.power != BT_TX_POWER)
+    if (rxPayloadPtr->rsp_system_get_tx_power.power != BT_TX_POWER)
     {
       printf("Set TX Power\r\n");
       rsp_system_get_tx_power.power = BT_TX_POWER;
@@ -573,6 +571,31 @@ void btInitCommands(void)
       return;
     }
   }
+
+#if USE_GET_SET_SYSTEM_SLEEP_PARAM
+  if (btInitCmdsStep == GET_SYSTEM_SLEEP_PARAMETERS)
+  {
+    printf("Get System Sleep Parameters\r\n");
+    incrementBtInitCmdsStep();
+    setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_SLEEP_PARAMETERS);
+    ezs_cmd_system_get_sleep_parameters();
+    return;
+  }
+
+  if (btInitCmdsStep == SET_SYSTEM_SLEEP_PARAMETERS)
+  {
+    incrementBtInitCmdsStep();
+    if (memcmp(&rsp_system_get_sleep_parameters_ref.result,
+            &rxPayloadPtr->rsp_system_get_sleep_parameters.result, sizeof(rsp_system_get_sleep_parameters_ref))
+        != 0)
+    {
+      printf("Set System Sleep Parameters\r\n");
+      setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_SLEEP_PARAMETERS);
+      ezs_fcmd_system_set_sleep_parameters(rsp_system_get_sleep_parameters_ref.level, rsp_system_get_sleep_parameters_ref.hid_off_sleep_time);
+      return;
+    }
+  }
+#endif
 
   if (btInitCmdsStep == GET_SMP_PRIVACY_MODE)
   {
@@ -586,13 +609,13 @@ void btInitCommands(void)
   if (btInitCmdsStep == SET_SMP_PRIVACY_MODE)
   {
     incrementBtInitCmdsStep();
-    if (rsp_smp_get_privacy_mode.mode != rsp_smp_get_privacy_mode_ref.mode)
+    if (rxPayloadPtr->rsp_smp_get_privacy_mode.mode != rsp_smp_get_privacy_mode_ref.mode)
     {
       printf("Set SMP Privacy mode\r\n");
       setExpectedResponse(EZS_IDX_RSP_SMP_SET_PRIVACY_MODE);
       //Leaving the interval value unchanged from what is set in the module
       ezs_fcmd_smp_set_privacy_mode(
-          rsp_smp_get_privacy_mode_ref.mode, rsp_smp_get_privacy_mode.interval);
+          rsp_smp_get_privacy_mode_ref.mode, rxPayloadPtr->rsp_smp_get_privacy_mode.interval);
       return;
     }
   }
@@ -612,7 +635,7 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
 
     if (memcmp(&rsp_gap_get_adv_parameters_ref.result,
-            &rsp_gap_get_adv_parameters.result, sizeof(rsp_gap_get_adv_parameters_ref))
+            &rxPayloadPtr->rsp_gap_get_adv_parameters.result, sizeof(rsp_gap_get_adv_parameters_ref))
         != 0)
     {
       printf("Set Advertising Parameters\r\n");
@@ -644,7 +667,7 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
     //No need to set if the current settings are correct.
     if (memcmp(&rsp_gap_get_conn_parameters_ref.result,
-            &rsp_gap_get_conn_parameters.result, sizeof(rsp_gap_get_conn_parameters_ref))
+            &rxPayloadPtr->rsp_gap_get_conn_parameters.result, sizeof(rsp_gap_get_conn_parameters_ref))
         != 0)
     {
       printf("Set Conn Param\r\n");
@@ -684,7 +707,7 @@ void btInitCommands(void)
       securityParametersPtr = &rsp_smp_get_security_parameters_ref;
     }
 
-    if (memcmp(&securityParametersPtr->result, &rsp_smp_get_security_parameters.result,
+    if (memcmp(&securityParametersPtr->result, &rxPayloadPtr->rsp_smp_get_security_parameters.result,
             sizeof(rsp_smp_get_security_parameters_ref))
         != 0)
     {
@@ -711,7 +734,7 @@ void btInitCommands(void)
   {
     incrementBtInitCmdsStep();
 
-    if (memcmp(&rsp_smp_get_pin_code.pin_code, &pin_code[0], sizeof(pin_code)) != 0)
+    if (memcmp(&rxPayloadPtr->rsp_smp_get_pin_code.pin_code, &pin_code[0], sizeof(pin_code)) != 0)
     {
       printf("Set Pin Code\r\n");
       setExpectedResponse(EZS_IDX_RSP_SMP_SET_PIN_CODE);
@@ -820,7 +843,7 @@ void btInitCommands(void)
     //0, sizeof(addr.addr)); ezs_fcmd_system_set_bluetooth_address(&addr);
 
     ezs_fcmd_system_set_bluetooth_address(
-        &rsp_system_get_bluetooth_address.address.addr);
+        &rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr);
 
     return;
   }
@@ -891,11 +914,10 @@ void ezsHandler(ezs_packet_t *packet)
 
 void ezsHandlerShimmer(ezs_packet_t *packet)
 {
-
+  rxPayloadPtr = &packet->payload;
   switch (packet->tbl_index)
   {
   case EZS_IDX_RSP_SYSTEM_PING:
-    rsp_system_ping = packet->payload.rsp_system_ping;
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_system_ping.result != EZS_ERR_SUCCESS)
     {
@@ -911,8 +933,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION:
-    rsp_system_query_firmware_version = packet->payload.rsp_system_query_firmware_version;
-
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: rsp_system_query_firmware_version: app=");
     printHex32(packet->payload.rsp_system_query_firmware_version.app);
@@ -1025,7 +1045,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   /* -------- Shimmer added start -------- */
   case EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS:
-    rsp_system_get_bluetooth_address = packet->payload.rsp_system_get_bluetooth_address;
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
 //printf("RX: rsp_system_query_firmware_version: Address=");
 //printHexMac(packet->payload.rsp_system_get_bluetooth_address.address);
@@ -1075,7 +1094,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS:
-    rsp_system_get_uart_parameters = packet->payload.rsp_system_get_uart_parameters;
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
 //printf("RX: rsp_gap_set_device_appearance: Result=");
 //printHex16(packet->payload.rsp_gap_set_device_appearance.result);
@@ -1084,7 +1102,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS:
-    rsp_gap_get_conn_parameters = packet->payload.rsp_gap_get_conn_parameters;
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
 //printf("\r\n");
 #endif
@@ -1121,7 +1138,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS:
-    rsp_smp_get_security_parameters = packet->payload.rsp_smp_get_security_parameters;
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: rsp_smp_get_security_parameters: Result=");
     printHex16(packet->payload.rsp_smp_get_security_parameters.result);
@@ -1148,9 +1164,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_GAP_GET_ADV_PARAMETERS:
-#if USE_GET_SET_ADV_PARAM
-    rsp_gap_get_adv_parameters = packet->payload.rsp_gap_get_adv_parameters;
-#endif
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
 //printHex16(packet->payload.rsp_gap_get_adv_parameters.result);
 //printf("\r\n");
@@ -1257,7 +1270,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SMP_GET_PRIVACY_MODE:
-    rsp_smp_get_privacy_mode = packet->payload.rsp_smp_get_privacy_mode;
     break;
 
   case EZS_IDX_RSP_BT_CONNECT:
@@ -1272,12 +1284,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   case EZS_IDX_RSP_BT_CANCEL_CONNECTION:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    rsp_bt_cancel_connection = packet->payload.rsp_bt_cancel_connection;
 #endif
     break;
   case EZS_IDX_RSP_BT_DISCONNECT:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    rsp_bt_disconnect = packet->payload.rsp_bt_disconnect;
 #endif
     break;
 
@@ -1310,7 +1320,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SMP_GET_PIN_CODE:
-    rsp_smp_get_pin_code = packet->payload.rsp_smp_get_pin_code;
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: rsp_smp_get_pin_code: pin_code=");
     printf("%.*s", (int) packet->payload.rsp_smp_get_pin_code.pin_code.length,
@@ -1348,7 +1357,6 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_BT_GET_DEVICE_CLASS:
-    rsp_bt_get_device_class = packet->payload.rsp_bt_get_device_class;
     break;
 
   case EZS_IDX_RSP_BT_SET_DEVICE_CLASS:
@@ -1360,6 +1368,19 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printf("\r\n");
     }
 #endif
+    break;
+
+  case EZS_IDX_RSP_SYSTEM_GET_SLEEP_PARAMETERS:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: rsp_system_get_sleep_parameters: level=");
+    printHex8(packet->payload.rsp_system_get_sleep_parameters.level);
+    printf(", hid_off_sleep_time=");
+    printHex16(packet->payload.rsp_system_get_sleep_parameters.hid_off_sleep_time);
+    printf("\r\n");
+#endif
+    break;
+
+  case EZS_IDX_RSP_SYSTEM_SET_SLEEP_PARAMETERS:
     break;
 
     /* -------- Shimmer added end -------- */
@@ -1435,19 +1456,19 @@ bool getBtCysppState(void)
 
 uint8_t *BT_getCyw20820MacAddressPtr(void)
 {
-  return &rsp_system_get_bluetooth_address.address.addr[0];
+  return &rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[0];
 }
 
 void BT_generateCyw20820FirmwareVersionStr(char *str)
 {
   sprintf(str, "CYW20820 app=v%02d.%02d.%02d.%02d, stack=0x%08x, protocol=0x%04x, hardware=0x%02x",
-      (uint8_t) (rsp_system_query_firmware_version.app >> 24),
-      (uint8_t) (rsp_system_query_firmware_version.app >> 16),
-      (uint8_t) (rsp_system_query_firmware_version.app >> 8),
-      (uint8_t) (rsp_system_query_firmware_version.app >> 0),
-      (uint16_t) rsp_system_query_firmware_version.stack,
-      rsp_system_query_firmware_version.protocol,
-      rsp_system_query_firmware_version.hardware);
+      (uint8_t) (rxPayloadPtr->rsp_system_query_firmware_version.app >> 24),
+      (uint8_t) (rxPayloadPtr->rsp_system_query_firmware_version.app >> 16),
+      (uint8_t) (rxPayloadPtr->rsp_system_query_firmware_version.app >> 8),
+      (uint8_t) (rxPayloadPtr->rsp_system_query_firmware_version.app >> 0),
+      (uint16_t) rxPayloadPtr->rsp_system_query_firmware_version.stack,
+      rxPayloadPtr->rsp_system_query_firmware_version.protocol,
+      rxPayloadPtr->rsp_system_query_firmware_version.hardware);
 }
 
 //TODO placeholder for now, implement this later
