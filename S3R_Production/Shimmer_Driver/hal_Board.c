@@ -438,10 +438,10 @@ void Board_sdPowerCycle(uint8_t dockAccessToSd)
 void Board_sd2Pc(void)
 {
   /* Ensure the dock sees "no card" during the entire handover */
-  Board_dockDetectN(1);
+  Board_dockDetectN(DOCK_CARD_NOT_PRESENT);
 
   /* Cleanly release SD from MCU side before power/route changes */
-  ShimSd_mount(0);   /* Unmount FS while MCU still owns the bus */
+  ShimSd_mount(SD_UNMOUNT);   /* Unmount FS while MCU still owns the bus */
   mmc1DeInit();      /* De-init SDMMC to tri-state pins */
 
   /* Power cycle the SD and hand bus control to the dock/PC side */
@@ -451,7 +451,7 @@ void Board_sd2Pc(void)
   HAL_Delay(SD_PC_STABILIZE_MS);
 
   /* Now tell the dock/PC that a card is present */
-  Board_dockDetectN(0);
+  Board_dockDetectN(DOCK_CARD_PRESENT);
 }
 
 /**
@@ -462,7 +462,7 @@ void Board_sd2Pc(void)
 void Board_sd2Mcu(void)
 {
   //Setup pin to indicate SD not ready for dock access
-  Board_dockDetectN(1);
+  Board_dockDetectN(DOCK_CARD_NOT_PRESENT);
 
   //Power cycle the SD card with access to MCU
   Board_sdPowerCycle(0);
@@ -476,8 +476,8 @@ void Board_sd2Mcu(void)
 #endif
 
   //Mount SD card
-  ShimSd_mount(0);
-  ShimSd_mount(1);
+  ShimSd_mount(SD_UNMOUNT);
+  ShimSd_mount(SD_MOUNT);
 }
 
 /***************************************************************************/

@@ -228,6 +228,12 @@
 #define ADC_CHANNEL_INT_A4          ADC_CHANNEL_12
 #endif
 
+enum
+{
+  DOCK_CARD_PRESENT,
+  DOCK_CARD_NOT_PRESENT
+};
+
 #if defined(SHIMMER3R)
 #define Board_SW_PV_SENSE(x) \
   HAL_GPIO_WritePin(SW_SENSE_GPIO_Port, SW_SENSE_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
