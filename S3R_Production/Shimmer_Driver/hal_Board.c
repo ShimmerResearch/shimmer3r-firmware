@@ -44,11 +44,6 @@
 
 #include "stm32u5xx_hal.h"
 
-/* Optional: tuneable delay for the USB-SD bridge to settle before CD assert */
-#ifndef SD_PC_STABILIZE_MS
-#define SD_PC_STABILIZE_MS 300  /* 300–500ms has proven robust on macOS */
-#endif
-
 #if defined(SHIMMER3R)
 
 static uint8_t ledStateLwrRed = 0, ledStateLwrGreen = 0, ledStateLwrBlue = 0;
@@ -427,7 +422,6 @@ void Board_sdPowerCycle(uint8_t dockAccessToSd)
   Board_setDockAccessToSd(dockAccessToSd);
   HAL_Delay(120);
   Board_setSdPower(1);
-  HAL_Delay(50);
 }
 
 /**
@@ -466,6 +460,8 @@ void Board_sd2Mcu(void)
 
   //Power cycle the SD card with access to MCU
   Board_sdPowerCycle(0);
+
+  HAL_Delay(SD_MCU_STABILIZE_MS);
 
   //Initialize SD card peripheral
   MX_SDMMC1_SD_Init();
