@@ -44,6 +44,11 @@
 
 #include "stm32u5xx_hal.h"
 
+/* Optional: tuneable delay for the USB-SD bridge to settle before CD assert */
+#ifndef SD_PC_STABILIZE_MS
+#define SD_PC_STABILIZE_MS 300  /* 300–500ms has proven robust on macOS */
+#endif
+
 #if defined(SHIMMER3R)
 
 static uint8_t ledStateLwrRed = 0, ledStateLwrGreen = 0, ledStateLwrBlue = 0;
@@ -432,21 +437,21 @@ void Board_sdPowerCycle(uint8_t dockAccessToSd)
  */
 void Board_sd2Pc(void)
 {
-  ///* ADC pins are shared with two dat pins, ensure both are inputs */
-  //HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP0_GPIO_Port, GPIO_ADC_EXT_EXP0_Pin);
-  //HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP1_GPIO_Port, GPIO_ADC_EXT_EXP1_Pin);
+  /* Ensure the dock sees "no card" during the entire handover */
+  Board_dockDetectN(1);
 
-  //Power cycle the SD card with access to dock
-  Board_sdPowerCycle(1);
+  /* Cleanly release SD from MCU side before power/route changes */
+  ShimSd_mount(0);   /* Unmount FS while MCU still owns the bus */
+  mmc1DeInit();      /* De-init SDMMC to tri-state pins */
 
-  //Setup pin to indicate SD ready for dock access
+  /* Power cycle the SD and hand bus control to the dock/PC side */
+  Board_sdPowerCycle(1); /* setDockAccessToSd(1) inside power cycle */
+
+  /* Give the USB-SD bridge time to see power, enumerate media, and be ready */
+  HAL_Delay(SD_PC_STABILIZE_MS);
+
+  /* Now tell the dock/PC that a card is present */
   Board_dockDetectN(0);
-
-  //Unmount SD card
-  ShimSd_mount(0);
-
-  //De-initialize SD card peripheral
-  mmc1DeInit();
 }
 
 /**
