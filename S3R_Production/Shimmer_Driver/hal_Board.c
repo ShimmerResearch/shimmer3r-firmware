@@ -435,8 +435,8 @@ void Board_sd2Pc(void)
   Board_dockDetectN(DOCK_CARD_NOT_PRESENT);
 
   /* Cleanly release SD from MCU side before power/route changes */
-  ShimSd_mount(SD_UNMOUNT);   /* Unmount FS while MCU still owns the bus */
-  mmc1DeInit();      /* De-init SDMMC to tri-state pins */
+  ShimSd_mount(SD_UNMOUNT); /* Unmount FS while MCU still owns the bus */
+  mmc1DeInit();             /* De-init SDMMC to tri-state pins */
 
   /* Power cycle the SD and hand bus control to the dock/PC side */
   Board_sdPowerCycle(1); /* setDockAccessToSd(1) inside power cycle */
