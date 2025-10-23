@@ -49,7 +49,8 @@ uint8_t active_conn_handle = 0xFF; //no active connection
 
 ezs_packet_payload_t *rxPayloadPtr;
 
-/* Response structures to hold data from EZ-Serial responses. Some responses need to be kept for reference as the packets stored in rxPayloadPtr are overwritten with each get request t the BT module. */
+/* Response structures to hold data from EZ-Serial responses. Some responses need
+ * to be kept for reference as the packets stored in rxPayloadPtr are overwritten with each get request t the BT module. */
 ezs_rsp_system_query_firmware_version_t rsp_system_query_firmware_version;
 ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
@@ -491,23 +492,23 @@ void btInitCommands(void)
   {
     printf("Update local advertising name\r\n");
     incrementBtInitCmdsStep();
-    advNameBt[advNameMacIdStartIdx] = hexdigit2int(
-        (rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
-    advNameBt[advNameMacIdStartIdx + 1] = hexdigit2int(
-        (rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
-    advNameBt[advNameMacIdStartIdx + 2] = hexdigit2int(
-        (rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
-    advNameBt[advNameMacIdStartIdx + 3] = hexdigit2int(
-        (rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
+    advNameBt[advNameMacIdStartIdx]
+        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
+    advNameBt[advNameMacIdStartIdx + 1]
+        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
+    advNameBt[advNameMacIdStartIdx + 2]
+        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
+    advNameBt[advNameMacIdStartIdx + 3]
+        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
 
-    advNameBle[advNameMacIdStartIdx] = hexdigit2int(
-        (rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
-    advNameBle[advNameMacIdStartIdx + 1] = hexdigit2int(
-        (rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
-    advNameBle[advNameMacIdStartIdx + 2] = hexdigit2int(
-        (rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
-    advNameBle[advNameMacIdStartIdx + 3] = hexdigit2int(
-        (rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
+    advNameBle[advNameMacIdStartIdx]
+        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
+    advNameBle[advNameMacIdStartIdx + 1]
+        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
+    advNameBle[advNameMacIdStartIdx + 2]
+        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
+    advNameBle[advNameMacIdStartIdx + 3]
+        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
   }
 
   if (btInitCmdsStep == GET_DEVICE_NAME_BT)
