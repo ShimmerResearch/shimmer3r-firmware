@@ -455,24 +455,27 @@ void Board_sd2Pc(void)
  */
 void Board_sd2Mcu(void)
 {
-  //Setup pin to indicate SD not ready for dock access
+  /* Setup pin to indicate SD not ready for dock access */
   Board_dockDetectN(DOCK_CARD_NOT_PRESENT);
 
-  //Power cycle the SD card with access to MCU
+  /* Clears any lingering FatFs work area, BPB/cache, and “mounted” flags if a prior path failed to unmount. */
+  ShimSd_mount(SD_UNMOUNT);
+
+  /* Power cycle the SD card with access to MCU */
   Board_sdPowerCycle(0);
 
+  /* Allow time for SD card to stabilize */
   HAL_Delay(SD_MCU_STABILIZE_MS);
 
-  //Initialize SD card peripheral
+  /* Initialize SD card peripheral */
   MX_SDMMC1_SD_Init();
 
 #if USE_FATFS
-  //Initialize file system driver
+  /* Initialize file system driver */
   MX_FATFS_Init();
 #endif
 
-  //Mount SD card
-  ShimSd_mount(SD_UNMOUNT);
+  /* Mount SD card */
   ShimSd_mount(SD_MOUNT);
 }
 
