@@ -49,6 +49,9 @@ uint8_t active_conn_handle = 0xFF; //no active connection
 
 ezs_packet_payload_t *rxPayloadPtr;
 
+/* Response structures to hold data from EZ-Serial responses. Some responses need to be kept for reference as the packets stored in rxPayloadPtr are overwritten with each get request t the BT module. */
+ezs_rsp_system_query_firmware_version_t rsp_system_query_firmware_version;
+ezs_rsp_system_get_bluetooth_address_t rsp_system_get_bluetooth_address;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_bt;
 ezs_rsp_gap_get_device_name_t rsp_gap_get_device_name_ble;
 ezs_rsp_system_get_tx_power_t rsp_system_get_tx_power;
@@ -133,7 +136,7 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_S
   UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2, UPDATE_UART_SETTINGS_STAGE3,
   UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5, PING, GET_BT_PARAMETERS,
   STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1, STOP_BLE_ADVERTISING_STAGE2,
-  GET_FIRMWARE_VERSION, GET_BT_MAC_ID, GET_BT_DEVICE_CLASS, SET_BT_DEVICE_CLASS,
+  GET_FIRMWARE_VERSION, GET_BT_DEVICE_CLASS, SET_BT_DEVICE_CLASS, GET_BT_MAC_ID,
   UPDATE_LOCAL_ADVERTISING_NAMES, GET_DEVICE_NAME_BT, SET_DEVICE_NAME_BT,
   GET_DEVICE_NAME_BLE, SET_DEVICE_NAME_BLE, GET_TX_POWER, SET_TX_POWER,
 #if USE_GET_SET_SYSTEM_SLEEP_PARAM
@@ -454,15 +457,6 @@ void btInitCommands(void)
     return;
   }
 
-  if (btInitCmdsStep == GET_BT_MAC_ID)
-  {
-    printf("Get BT address\r\n");
-    incrementBtInitCmdsStep();
-    setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS);
-    ezs_cmd_system_get_bluetooth_address();
-    return;
-  }
-
   if (btInitCmdsStep == GET_BT_DEVICE_CLASS)
   {
     printf("Get BT Device Class\r\n");
@@ -484,27 +478,36 @@ void btInitCommands(void)
     }
   }
 
+  if (btInitCmdsStep == GET_BT_MAC_ID)
+  {
+    printf("Get BT address\r\n");
+    incrementBtInitCmdsStep();
+    setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS);
+    ezs_cmd_system_get_bluetooth_address();
+    return;
+  }
+
   if (btInitCmdsStep == UPDATE_LOCAL_ADVERTISING_NAMES)
   {
     printf("Update local advertising name\r\n");
     incrementBtInitCmdsStep();
     advNameBt[advNameMacIdStartIdx] = hexdigit2int(
-        (rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
+        (rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
     advNameBt[advNameMacIdStartIdx + 1] = hexdigit2int(
-        (rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
+        (rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
     advNameBt[advNameMacIdStartIdx + 2] = hexdigit2int(
-        (rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
+        (rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
     advNameBt[advNameMacIdStartIdx + 3] = hexdigit2int(
-        (rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
+        (rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
 
     advNameBle[advNameMacIdStartIdx] = hexdigit2int(
-        (rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
+        (rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
     advNameBle[advNameMacIdStartIdx + 1] = hexdigit2int(
-        (rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
+        (rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
     advNameBle[advNameMacIdStartIdx + 2] = hexdigit2int(
-        (rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
+        (rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
     advNameBle[advNameMacIdStartIdx + 3] = hexdigit2int(
-        (rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
+        (rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
   }
 
   if (btInitCmdsStep == GET_DEVICE_NAME_BT)
@@ -853,7 +856,7 @@ void btInitCommands(void)
     //0, sizeof(addr.addr)); ezs_fcmd_system_set_bluetooth_address(&addr);
 
     ezs_fcmd_system_set_bluetooth_address(
-        &rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr);
+        &rsp_system_get_bluetooth_address.address.addr);
 
     return;
   }
@@ -943,6 +946,8 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION:
+    /* Store the firmware version */
+    rsp_system_query_firmware_version = packet->payload.rsp_system_query_firmware_version;
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: rsp_system_query_firmware_version: app=");
     printHex32(packet->payload.rsp_system_query_firmware_version.app);
@@ -1055,9 +1060,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   /* -------- Shimmer added start -------- */
   case EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS:
+    /* Store the Bluetooth address */
+    rsp_system_get_bluetooth_address = packet->payload.rsp_system_get_bluetooth_address;
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-//printf("RX: rsp_system_query_firmware_version: Address=");
-//printHexMac(packet->payload.rsp_system_get_bluetooth_address.address);
+    printf("RX: rsp_system_get_bluetooth_address: Address=");
+    printHexMac(packet->payload.rsp_system_get_bluetooth_address.address);
+    printf("\r\n");
 #endif
     break;
 
@@ -1468,19 +1476,19 @@ bool getBtCysppState(void)
 
 uint8_t *BT_getCyw20820MacAddressPtr(void)
 {
-  return &rxPayloadPtr->rsp_system_get_bluetooth_address.address.addr[0];
+  return &rsp_system_get_bluetooth_address.address.addr[0];
 }
 
 void BT_generateCyw20820FirmwareVersionStr(char *str)
 {
   sprintf(str, "CYW20820 app=v%02d.%02d.%02d.%02d, stack=0x%08x, protocol=0x%04x, hardware=0x%02x",
-      (uint8_t) (rxPayloadPtr->rsp_system_query_firmware_version.app >> 24),
-      (uint8_t) (rxPayloadPtr->rsp_system_query_firmware_version.app >> 16),
-      (uint8_t) (rxPayloadPtr->rsp_system_query_firmware_version.app >> 8),
-      (uint8_t) (rxPayloadPtr->rsp_system_query_firmware_version.app >> 0),
-      (uint16_t) rxPayloadPtr->rsp_system_query_firmware_version.stack,
-      rxPayloadPtr->rsp_system_query_firmware_version.protocol,
-      rxPayloadPtr->rsp_system_query_firmware_version.hardware);
+      (uint8_t) (rsp_system_query_firmware_version.app >> 24),
+      (uint8_t) (rsp_system_query_firmware_version.app >> 16),
+      (uint8_t) (rsp_system_query_firmware_version.app >> 8),
+      (uint8_t) (rsp_system_query_firmware_version.app >> 0),
+      (uint16_t) rsp_system_query_firmware_version.stack,
+      rsp_system_query_firmware_version.protocol,
+      rsp_system_query_firmware_version.hardware);
 }
 
 //TODO placeholder for now, implement this later
