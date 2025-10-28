@@ -32,6 +32,8 @@
  *  Source:
  *  "https://github.com/TexasInstruments/precision-adc-examples/tree/main
  *  /devices/ads7038"
+ *
+ *  modified by: Ramesh Chhetri
  */
 
 #ifndef HAL_ADC7028_38_H_
@@ -128,8 +130,6 @@ typedef struct
 } SPI_ADCTypeDef;
 
 extern SPI_ADCTypeDef spiAdc;
-
-#define NUM_CHANNELS 8;
 
 //*****************************************************************************
 //

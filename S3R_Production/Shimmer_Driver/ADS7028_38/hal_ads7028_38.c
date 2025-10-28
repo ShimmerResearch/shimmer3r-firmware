@@ -32,6 +32,8 @@
  *  Source:
  *  "https://github.com/TexasInstruments/precision-adc-examples/tree/main
  *  /devices/ads7038"
+ *
+ *  modified by: Ramesh Chhetri
  */
 
 #include <ADS7028_38/hal_ads7028_38.h>
@@ -539,15 +541,6 @@ void ads7028_swI2C4PpgOn(uint8_t state)
 HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx)
 {
   HAL_StatusTypeDef returnedStatus = HAL_OK;
-
-  /* //select auto sequencing mode and start conversion
-   returnedStatus = writeSingleRegister(SEQUENCE_CFG_ADDRESS,
-       SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
-
-   if (returnedStatus != HAL_OK)
-   {
-     return returnedStatus;
-   }*/
 
   ////TODO : Is this delay needed?
   //delay_us(3);
