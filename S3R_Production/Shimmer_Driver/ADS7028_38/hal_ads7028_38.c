@@ -540,14 +540,14 @@ HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx)
 {
   HAL_StatusTypeDef returnedStatus = HAL_OK;
 
- /* //select auto sequencing mode and start conversion
-  returnedStatus = writeSingleRegister(SEQUENCE_CFG_ADDRESS,
-      SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
+  /* //select auto sequencing mode and start conversion
+   returnedStatus = writeSingleRegister(SEQUENCE_CFG_ADDRESS,
+       SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
 
-  if (returnedStatus != HAL_OK)
-  {
-    return returnedStatus;
-  }*/
+   if (returnedStatus != HAL_OK)
+   {
+     return returnedStatus;
+   }*/
 
   ////TODO : Is this delay needed?
   //delay_us(3);
@@ -635,7 +635,7 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
 void enableAds7028AutoSequenceMode(void)
 {
   writeSingleRegister(SEQUENCE_CFG_ADDRESS,
-  SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
+      SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
 
   ads7028_setCS(HIGH); //put nCS high to start conversion
   //delay_ms(5);

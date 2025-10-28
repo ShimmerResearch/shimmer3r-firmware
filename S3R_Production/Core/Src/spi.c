@@ -911,7 +911,7 @@ void SPI_startSensing()
     {
       GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks);
     }
-    
+
     configureAutoSequenceChannel(enabledAds7028Channels); //Configuring ADS7028 needs SPI1 threfore moving it here where it is initialised.
     enableAds7028AutoSequenceMode();
   }
@@ -1344,7 +1344,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     /* Original ADC data is MSB order and left-aligned whereas Shimmer normally
      * uses LSB order right-aligned */
     //ads7028_setCS(HIGH);  // end of SPI frame → trigger next conversion
-   uint16_t adcTempbuf = (((uint16_t) spi1Sens_buf.ads2078Buf[0]) << 4
+    uint16_t adcTempbuf = (((uint16_t) spi1Sens_buf.ads2078Buf[0]) << 4
                               | spi1Sens_buf.ads2078Buf[1] >> 4)
         & 0x0FFF;
 
@@ -1630,7 +1630,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
     enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH0_ENABLED;
   }
   //configureAutoSequenceChannel(enabledAds7028Channels, flagsEnabledAds7028Channels);
- // SPI1_DeInit(); //de-initialize SPI1 after ADS7028 configuration
+  //SPI1_DeInit(); //de-initialize SPI1 after ADS7028 configuration
 }
 #endif
 
