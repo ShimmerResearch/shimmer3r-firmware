@@ -161,10 +161,9 @@ void TIMER0IntHandler(void);
 self_test_result_t ads7028_factoryTestChipId(void);
 void ads7028_swI2C4PpgOn(uint8_t state);
 HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx);
-void configureAutoSequenceChannel(uint8_t ChannelID, uint8_t* channels);
+void configureAutoSequenceChannel(uint8_t ChannelID);
 bool ads7028_areAnyChannelsEnabled(void);
 void ads7028_factoryTestGsrInit(void);
 HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance);
-void enableAds7028AutoSequenceMode(uint8_t ChannelID);
-void processAds7028ConversionData(uint8_t *dataRx, uint16_t *adcValues);
+void enableAds7028AutoSequenceMode(void);
 #endif /* HAL_ADC7028_38_H_ */

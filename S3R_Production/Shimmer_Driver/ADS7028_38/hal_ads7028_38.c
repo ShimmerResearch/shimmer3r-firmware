@@ -557,22 +557,10 @@ HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx)
   return returnedStatus;
 }
 
-void configureAutoSequenceChannel(uint8_t ChannelID, uint8_t* channels)
+void configureAutoSequenceChannel(uint8_t ChannelID)
 {
- // writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_DEFAULT); //put all channels to default
+  //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_DEFAULT); //put all channels to default
   writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID); //select channels for auto-sequencing
-
-  for (uint8_t i = 0; i < 8; i++)
-  {
-    if (ChannelID & (1 << i))
-    {
-      channels[i] = 1;  // mark this channel as enabled
-    }
-    else
-    {
-      channels[i] = 0;  // mark this channel as disabled
-    }
-  }
 }
 
 bool ads7028_areAnyChannelsEnabled(void)
@@ -644,33 +632,13 @@ HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance)
   return status;
 }
 
-void enableAds7028AutoSequenceMode(uint8_t ChannelID)
+void enableAds7028AutoSequenceMode(void)
 {
-  uint8_t result =0;
-  //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_SEQ_START_DISABLED);
- // setRegisterBits(SYSTEM_STATUS_ADDRESS, SYSTEM_STATUS_DEFAULT); //clear status register
-
- // writeSingleRegister(OPMODE_CFG_ADDRESS,OPMODE_CFG_CONV_MODE_AUTONOMOUS_MODE); //set to autonomous mode
-  //writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, 0x20);
-  uint8_t flagsEnabledAds7028Channels[8] = {0};
-  configureAutoSequenceChannel(ChannelID, flagsEnabledAds7028Channels);
   writeSingleRegister(SEQUENCE_CFG_ADDRESS,
   SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
 
-  readSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, &result);
   ads7028_setCS(HIGH); //put nCS high to start conversion
   //delay_ms(5);
 }
 
-void processAds7028ConversionData(uint8_t *dataRx, uint16_t *adcValues)
-{
- // uint16_t *adcValues = (uint16_t*) dataRx;
-  //Convert each 12-bit left-aligned value to right-aligned
-  for (uint8_t i = 0; i < spiAdc.sensorLen; i++)
-  {
-    adcValues[i] = (((uint16_t) dataRx[i * 2]) << 4 | dataRx[i * 2 + 1] >> 4)
-        & 0x0FFF;
-  }
-  //return adcValues;
-}
 //*****************************************************************************
