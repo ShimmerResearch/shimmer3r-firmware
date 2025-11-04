@@ -65,7 +65,7 @@
 
 #define USBD_VID                      1155
 #define USBD_LANGID_STRING            1033
-#define USBD_MANUFACTURER_STRING      "STMicroelectronics"
+#define USBD_MANUFACTURER_STRING      "Shimmer"
 #if (USBD_USE_DFU == 1)
 #define USBD_PID                      57105 // for DFU PID must be 57105, ST proprietary modification
 #else
@@ -250,13 +250,18 @@ uint8_t * USBD_LangIDStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
   */
 uint8_t * USBD_ProductStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 {
+  char str_buffer[32] = "";
+  LogAndStream_generateUsbCompositeDeviceId(str_buffer);
+
   if(speed == 0)
   {
-    USBD_GetString((uint8_t *)USBD_PRODUCT_STRING, USBD_StrDesc, length);
+//    USBD_GetString((uint8_t *)USBD_PRODUCT_STRING, USBD_StrDesc, length);
+    USBD_GetString((uint8_t *)str_buffer, USBD_StrDesc, length);
   }
   else
   {
-    USBD_GetString((uint8_t *)USBD_PRODUCT_STRING, USBD_StrDesc, length);
+//    USBD_GetString((uint8_t *)USBD_PRODUCT_STRING, USBD_StrDesc, length);
+    USBD_GetString((uint8_t *)str_buffer, USBD_StrDesc, length);
   }
   return USBD_StrDesc;
 }
