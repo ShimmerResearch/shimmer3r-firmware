@@ -811,6 +811,7 @@ static uint8_t *USBD_COMPOSITE_GetUsrStringDesc(USBD_HandleTypeDef *pdev, uint8_
       {
         snprintf(str_buffer, sizeof(str_buffer), CDC_ACM_STR_DESC, i);
         USBD_GetString((uint8_t *)str_buffer, USBD_StrDesc, length);
+        return USBD_StrDesc;
       }
     }
 #endif
@@ -818,68 +819,81 @@ static uint8_t *USBD_COMPOSITE_GetUsrStringDesc(USBD_HandleTypeDef *pdev, uint8_
     if (index == CDC_ECM_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)CDC_ECM_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
 #if (USBD_USE_CDC_RNDIS == 1)
     if (index == CDC_RNDIS_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)CDC_RNDIS_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
 #if (USBD_USE_HID_MOUSE == 1)
     if (index == HID_MOUSE_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)HID_MOUSE_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
 #if (USBD_USE_HID_KEYBOARD == 1)
     if (index == HID_KEYBOARD_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)HID_KEYBOARD_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
 #if (USBD_USE_HID_CUSTOM == 1)
     if (index == CUSTOM_HID_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)CUSTOM_HID_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
 #if (USBD_USE_UAC_MIC == 1)
     if (index == AUDIO_MIC_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)AUDIO_MIC_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
 #if (USBD_USE_UAC_SPKR == 1)
     if (index == AUDIO_SPKR_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)AUDIO_SPKR_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
 #if (USBD_USE_UVC == 1)
     if (index == UVC_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)UVC_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
 #if (USBD_USE_MSC == 1)
     if (index == MSC_BOT_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)MSC_BOT_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
 #if (USBD_USE_DFU == 1)
     if (index == DFU_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)DFU_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
 #if (USBD_USE_PRNTR == 1)
     if (index == PRINTER_STR_DESC_IDX)
     {
       USBD_GetString((uint8_t *)PRNT_STR_DESC, USBD_StrDesc, length);
+      return USBD_StrDesc;
     }
 #endif
+    /* Default fallback for any other valid index */
+    USBD_GetString((uint8_t *)"INTERFACE", USBD_StrDesc, length);
     return USBD_StrDesc;
   }
   else
@@ -1070,8 +1084,9 @@ void USBD_COMPOSITE_Mount_Class(void)
   USBD_Update_DFU_DESC(ptr, interface_no_track, USBD_Track_String_Index);
   memcpy(USBD_COMPOSITE_HSCfgDesc.USBD_DFU_DESC, ptr + 0x09, len - 0x09);
 
-  interface_no_track += USBD_DFU_MAX_ITF_NUM;
-  USBD_Track_String_Index += USBD_DFU_MAX_ITF_NUM;
+  /* DFU contributes exactly one interface number, regardless of alternate settings */
+  interface_no_track += 1;
+  USBD_Track_String_Index += 1;
 #endif
 
 #if (USBD_USE_PRNTR == 1)

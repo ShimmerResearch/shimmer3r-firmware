@@ -118,7 +118,7 @@ extern "C" {
 /* Other defines                                  */
 /**************************************************/
 /* Bit Detach capable = bit 3 in bmAttributes field */
-#define DFU_DETACH_MASK                (1U << 4)
+#define DFU_DETACH_MASK                (1U << 3)
 #define DFU_STATUS_DEPTH               6U
 
 typedef enum
@@ -143,7 +143,7 @@ typedef  void (*pFunction)(void);
                                       0x00,   /* bNumEndpoints*/ \
                                       0xFE,   /* bInterfaceClass: Application Specific Class Code */ \
                                       0x01,   /* bInterfaceSubClass : Device Firmware Upgrade Code */ \
-                                      0x02,   /* nInterfaceProtocol: DFU mode protocol */ \
+                                      0x01,   /* nInterfaceProtocol: DFU runtime protocol */ \
                                       0x00    /* iInterface: Index of string descriptor */ \
 
 #define TRANSFER_SIZE_BYTES(size)     ((uint8_t)(size)), /* XFERSIZEB0 */\

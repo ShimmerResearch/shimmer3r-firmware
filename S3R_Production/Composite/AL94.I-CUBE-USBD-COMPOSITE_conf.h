@@ -67,7 +67,7 @@
 #define _USBD_USE_MSC      true
 
 /*---------- _USBD_USE_DFU  -----------*/
-#define _USBD_USE_DFU      false
+#define _USBD_USE_DFU      true
 
 /*---------- _USBD_USE_PRNTR  -----------*/
 #define _USBD_USE_PRNTR      false
