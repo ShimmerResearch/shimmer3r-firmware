@@ -134,6 +134,7 @@ uint8_t btNameTypeBeingRead;
 bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
 static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
+  ENTER_BINARY_MODE,
   UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2, UPDATE_UART_SETTINGS_STAGE3,
   UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5, PING, GET_BT_PARAMETERS,
   STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1, STOP_BLE_ADVERTISING_STAGE2,
@@ -153,12 +154,13 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_S
 
 static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2, /* PING,*/
+  ENTER_BINARY_MODE,
   GET_SECURITY_PARAMETERS,
   SET_SECURITY_PARAMETERS, //Any command to get module into binary command mode. Added set, get security parameters here to get SD sync working
   FINISH };
 
 static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
-  WAIT_FOR_BOOT_STAGE2, GET_BT_MAC_ID, FACTORY_RESET, FR_WAIT_FOR_REBOOT_AFTER_FR,
+  WAIT_FOR_BOOT_STAGE2, ENTER_BINARY_MODE, GET_BT_MAC_ID, FACTORY_RESET, FR_WAIT_FOR_REBOOT_AFTER_FR,
   FR_UPDATE_UART, FR_PING, FR_RESET_BT_MAC_ID, FINISH };
 
 void (*btIsInitialised_cb)(void);
@@ -283,7 +285,17 @@ void btInitCommands(void)
   if (btInitCmdsStep == WAIT_FOR_BOOT_STAGE2)
   {
     incrementBtInitCmdsStep();
+    setWaitingForBtBoot(0);
     printf("Boot Msgs=\r\n%s", getBtBootMsgPtr());
+  }
+
+  if (btInitCmdsStep == ENTER_BINARY_MODE)
+  {
+    incrementBtInitCmdsStep();
+    printf("Enter Binary Mode\r\n");
+    setExpectedResponse(EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE);
+    appOutput(10, (uint8_t *) "SPPM,M=1\r\n"); //Enter binary mode
+    return;
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)
@@ -1115,9 +1127,9 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   case EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-//printf("RX: rsp_gap_set_device_appearance: Result=");
-//printHex16(packet->payload.rsp_gap_set_device_appearance.result);
-//printf("\r\n");
+    printf("RX: rsp_system_get_uart_parameters: Result=");
+    printHex16(packet->payload.rsp_system_get_uart_parameters.result);
+    printf("\r\n");
 #endif
     break;
 
@@ -1398,6 +1410,14 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf(", hid_off_sleep_time=");
     printHex16(packet->payload.rsp_system_get_sleep_parameters.hid_off_sleep_time);
 #endif
+    printf("\r\n");
+#endif
+    break;
+
+  case EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: cmd_protocol_set_parse_mode: mode=");
+    printHex8(packet->payload.cmd_protocol_set_parse_mode.mode);
     printf("\r\n");
 #endif
     break;
