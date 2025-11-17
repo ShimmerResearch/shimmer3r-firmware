@@ -1003,24 +1003,30 @@ void SPI_pollSensors(void)
     {
       if (storedConfigPtr->chEnExg1_24Bit)
       {
-        EXG_readData(0, 0, &sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[sensing.ptr.exg1]);
+        EXG_readData(0, 0,
+            &sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[sensing.ptr.exg1]);
       }
       else if (storedConfigPtr->chEnExg1_16Bit)
       {
-        EXG_readData(0, 1, &sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[sensing.ptr.exg1]);
+        EXG_readData(0, 1,
+            &sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[sensing.ptr.exg1]);
       }
       if (storedConfigPtr->chEnExg2_24Bit)
       {
-        EXG_readData(1, 0, &sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[sensing.ptr.exg2]);
+        EXG_readData(1, 0,
+            &sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[sensing.ptr.exg2]);
         if (!(sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[sensing.ptr.exg2 + 1] == 0x00
-                || sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[sensing.ptr.exg2 + 1] == 0xff))
+                || sensing.packetBuffers[sensing.packetBufferIdx]
+                        .dataBuf[sensing.ptr.exg2 + 1]
+                    == 0xff))
         {
           __NOP();
         }
       }
       else if (storedConfigPtr->chEnExg2_16Bit)
       {
-        EXG_readData(1, 1, &sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[sensing.ptr.exg2]);
+        EXG_readData(1, 1,
+            &sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[sensing.ptr.exg2]);
       }
       SPI_busGatherDataDone_cb(spi3Sens.busId);
     }
@@ -1403,8 +1409,10 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
       break;
     }
 
-    sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[dataBufIndex + 0] = adcTempbuf & 0xFF;
-    sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[dataBufIndex + 1] = (adcTempbuf >> 8) & 0xFF;
+    sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[dataBufIndex + 0]
+        = adcTempbuf & 0xFF;
+    sensing.packetBuffers[sensing.packetBufferIdx].dataBuf[dataBufIndex + 1]
+        = (adcTempbuf >> 8) & 0xFF;
 
     if (spi1Sens.sensorList[spi1Sens.sensorCnt] == SPI1_ADS7028_INT_EXP3
         && ShimConfig_isGSREnabled())
