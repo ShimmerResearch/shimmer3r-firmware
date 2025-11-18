@@ -954,8 +954,7 @@ void S4_NORM_ADC_bufPoll()
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
     sensing.packetBuffers[sensing.dataWrBufIdx].dataBuf[sensing.ptr.gsr + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    GSR_range(
-        &sensing.packetBuffers[sensing.dataWrBufIdx].dataBuf[sensing.ptr.gsr]);
+    GSR_range(&sensing.packetBuffers[sensing.dataWrBufIdx].dataBuf[sensing.ptr.gsr]);
   }
   else if (configBytes->chEnIntADC3)
   {
