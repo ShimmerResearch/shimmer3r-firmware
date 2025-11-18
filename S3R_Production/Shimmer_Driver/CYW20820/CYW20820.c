@@ -24,7 +24,7 @@
 #define printHex32(VARIABLE)           printHex((uint8_t *) &VARIABLE, 4, 1, 0)
 #define printHexMac(VARIABLE)          printHex((uint8_t *) &VARIABLE, 6, 1, ':')
 
-#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 0
+#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 1
 
 /*
  * Index: {1,2,3,4,5,6,7,8}
@@ -294,7 +294,16 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
     printf("Enter Binary Mode\r\n");
     setExpectedResponse(EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE);
-    appOutput(10, (uint8_t *) "SPPM,M=1\r\n"); //Enter binary mode
+//    appOutput(10, (uint8_t *) "SPPM,M=1\r\n"); //Enter binary mode
+
+//    appOutput(10, (uint8_t *) "SPPM,M=1\r\n"); //Enter auto-detect mode
+
+    //Skip the "SPPM,M=x\r\n" response as EZ-Serial can't parse it
+    setSkippingBytesCount(10);
+
+    /* Enable binary and non-transparent mode */
+    appOutput(10, (uint8_t *) "SPPM,M=3\r\n");
+
     return;
   }
 
@@ -812,11 +821,16 @@ void btInitCommands(void)
       printf("Start BT Advertising\r\n");
       setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
 
+      /* From firmware v1.4.17 onwards there is a new flag to control whether to
+       * allow the device enter sniff mode. Set this flag to 1 to disable sniff
+       * mode */
+      uint8_t flags = BT_isFirmwareVersionAtLeast(1, 4, 17) ? 1 : 0;
+
       rsp_bt_get_parameters.discoverable = BT_DISC_MODE_GENERAL_DISCOVERABLE;
       rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
       ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
           rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
-          rsp_bt_get_parameters.flags, rsp_bt_get_parameters.scn,
+          flags, rsp_bt_get_parameters.scn,
           rsp_bt_get_parameters.active_bt_discoverability,
           rsp_bt_get_parameters.active_bt_connectability);
       return;
@@ -1422,7 +1436,32 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     break;
 
+  case EZS_IDX_CMD_PROTOCOL_GET_PARSE_MODE:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: cmd_protocol_get_parse_mode: mode=");
+    printHex8(packet->payload.rsp_protocol_get_parse_mode.mode);
+    printf("\r\n");
+#endif
+    break;
+
   case EZS_IDX_RSP_SYSTEM_SET_SLEEP_PARAMETERS:
+    break;
+
+  case EZS_IDX_EVT_SPP_DATA_RECEIVED:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: evt_spp_data_received: conn_handle=");
+    printHex8(packet->payload.evt_spp_data_received.conn_handle);
+    printf(", length=");
+    printHex16(packet->payload.evt_spp_data_received.data.length);
+    printf(", data=");
+    for (uint16_t i = 0; i < packet->payload.evt_spp_data_received.data.length; i++)
+    {
+      printHex8(packet->payload.evt_spp_data_received.data.data[i]);
+      ShimBt_dmaConversionDone(&packet->payload.evt_spp_data_received.data.data[i]);
+      printf(" ");
+    }
+    printf("\r\n");
+#endif
     break;
 
     /* -------- Shimmer added end -------- */
@@ -1511,6 +1550,34 @@ void BT_generateCyw20820FirmwareVersionStr(char *str)
       (uint16_t) rsp_system_query_firmware_version.stack,
       rsp_system_query_firmware_version.protocol,
       rsp_system_query_firmware_version.hardware);
+}
+
+uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch)
+{
+  uint8_t fw_major = (uint8_t) (rsp_system_query_firmware_version.app >> 24);
+  uint8_t fw_minor = (uint8_t) (rsp_system_query_firmware_version.app >> 16);
+  uint8_t fw_patch = (uint8_t) (rsp_system_query_firmware_version.app >> 8);
+  uint8_t fw_build = (uint8_t) (rsp_system_query_firmware_version.app >> 0);
+
+  if (fw_major > major)
+  {
+    return 1;
+  }
+  else if (fw_major == major)
+  {
+    if (fw_minor > minor)
+    {
+      return 1;
+    }
+    else if (fw_minor == minor)
+    {
+      if (fw_patch >= patch)
+      {
+        return 1;
+      }
+    }
+  }
+  return 0;
 }
 
 //TODO placeholder for now, implement this later

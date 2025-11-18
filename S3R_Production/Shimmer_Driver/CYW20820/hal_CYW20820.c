@@ -49,7 +49,7 @@
 #include "log_and_stream_externs.h"
 #include <Comms/shimmer_bt_uart.h>
 
-#define CONSOLE_PRINT_NON_EZ_SERIAL_BYTES 0
+#define CONSOLE_PRINT_NON_EZ_SERIAL_BYTES 1
 
 uint8_t pending_response = 0;
 //uint8_t timer_active = 0;
@@ -69,6 +69,8 @@ uint8_t btBootMsgIndex = 0;
 uint8_t btBootMsgLineCount = 0;
 
 uint16_t btRxWaitByteCount = 0;
+
+uint8_t skippingBytesCount = 0;
 
 /*******************************************************************************
  * Interrupt Handler Name: TimerInterruptHandler
@@ -121,6 +123,17 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
   /* send data out through UART */
   //UART_SpiUartPutArray((uint8_t *)data, length);
   HAL_StatusTypeDef ret_val;
+
+  printf("TX data=");
+  for (uint16_t i = 0; i < length; i++)
+  {
+    printf("%c",
+        ((data[i] >> 4) & 0xF) < 10 ? ('0' + ((data[i] >> 4) & 0xF)) :
+                                    ('A' - 10 + ((data[i] >> 4) & 0xF)));
+    printf("%c", (data[i] & 0xF) < 10 ? ('0' + (data[i] & 0xF)) : ('A' - 10 + (data[i] & 0xF)));
+    printf(" ");
+  }
+  printf("\r\n");
 
   //ret_val = HAL_UART_Transmit_DMA(huart, (uint8_t *)data, length);
   //ret_val = HAL_UART_Transmit(huart, (uint8_t *)data, length, 1500*HAL_GetTickFreq());
@@ -268,6 +281,11 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       }
       i += 1;
     }
+    else if (skippingBytesCount > 0)
+    {
+      skippingBytesCount--;
+      i += 1;
+    }
     /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
      * parse is ideal and the header byte is a Shimmer packet header byte,
      * parse as Shimmer packet */
@@ -343,7 +361,23 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 
 HAL_StatusTypeDefShimmer BtTransmit(uint8_t *buf, uint8_t len)
 {
-  HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
+//  HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
+
+  HAL_StatusTypeDef ret_val = HAL_OK;
+  ezs_output_result_t ezs_ret;
+
+  ezs_cmd_spp_send_command_t spp_send_command;
+  spp_send_command.conn_handle = 2;
+  spp_send_command.data.length = len;
+  memcpy(spp_send_command.data.data, buf, len);
+  ezs_ret = ezs_cmd_spp_send_command(spp_send_command.conn_handle, &spp_send_command.data);
+
+  if (ezs_ret != EZS_OUTPUT_RESULT_DATA_WRITTEN)
+  {
+    SHIMMER_PRINTF("BtTransmit EZS fault=%d\r\n", ezs_ret);
+    ret_val = HAL_ERROR;
+  }
+
   return (HAL_StatusTypeDefShimmer) ret_val;
 }
 
@@ -366,6 +400,11 @@ void setWaitingForBtBoot(uint8_t state)
     btBootMsgIndex = 0;
     btBootMsgLineCount = 0;
   }
+}
+
+void setSkippingBytesCount(uint8_t count)
+{
+  skippingBytesCount = count;
 }
 
 char *getBtBootMsgPtr(void)

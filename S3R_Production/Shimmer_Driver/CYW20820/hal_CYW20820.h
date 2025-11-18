@@ -79,6 +79,7 @@ void resetEzsPendingResponse(void);
 void resetBtRxBuff(void);
 
 void setWaitingForBtBoot(uint8_t state);
+void setSkippingBytesCount(uint8_t count);
 char *getBtBootMsgPtr(void);
 
 void setDmaWaitingForResponse(uint16_t count);

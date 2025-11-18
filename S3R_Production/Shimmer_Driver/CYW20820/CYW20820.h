@@ -107,6 +107,7 @@ void setBtCysppState(bool state);
 bool getBtCysppState(void);
 uint8_t *BT_getCyw20820MacAddressPtr(void);
 void BT_generateCyw20820FirmwareVersionStr(char *str);
+uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch);
 void setBtConnectionState(bool state);
 //connect to a specific device that was previously discovered
 uint8_t BT_connect(uint8_t *addr);
