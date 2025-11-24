@@ -76,6 +76,7 @@ extern void ezsHandlerShimmer(ezs_packet_t *packet) __attribute__((weak));
 
 HAL_StatusTypeDefShimmer BtTransmit(uint8_t *buf, uint8_t len);
 void resetEzsPendingResponse(void);
+uint8_t isPendingResponse(void);
 void resetBtRxBuff(void);
 
 void setWaitingForBtBoot(uint8_t state);
@@ -83,6 +84,7 @@ void setSkippingBytesCount(uint8_t count);
 char *getBtBootMsgPtr(void);
 
 void setDmaWaitingForResponse(uint16_t count);
+uint16_t getDmaWaitingForResponse(void);
 
 #endif /* HANDLERS_H */
 

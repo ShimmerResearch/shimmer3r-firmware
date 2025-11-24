@@ -272,7 +272,7 @@ const uint8_t ezs_tbl_cmd[] = {
   //-------------- Fix 06 End -------------------------//
 
 #if ENABLE_FIX_09
-  0x0D, 0x01, 0x03, 0x02, T_U8, T_LU8A, /* 144 | SPPS (spp_send_command) */
+  0x13, 0x01, 0x03, 0x02, T_U8, T_LU8A, /* 144 | SPPS (spp_send_command) */
 #endif
 };
 

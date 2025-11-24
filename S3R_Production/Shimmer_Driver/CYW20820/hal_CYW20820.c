@@ -124,6 +124,7 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
   //UART_SpiUartPutArray((uint8_t *)data, length);
   HAL_StatusTypeDef ret_val;
 
+#if ENABLE_BT_TX_DEBUG_PRINTS
   printf("TX data=");
   for (uint16_t i = 0; i < length; i++)
   {
@@ -134,10 +135,11 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
     printf(" ");
   }
   printf("\r\n");
+#endif
 
-  //ret_val = HAL_UART_Transmit_DMA(huart, (uint8_t *)data, length);
+  ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *)data, length);
   //ret_val = HAL_UART_Transmit(huart, (uint8_t *)data, length, 1500*HAL_GetTickFreq());
-  ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
+//  ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
 
   if (ret_val != HAL_OK)
   {
@@ -221,44 +223,6 @@ void setBtUartInstance(UART_HandleTypeDef *huartToUse)
 
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 {
-  //SHIMMER_PRINTF("byte received\r\n");
-  //SHIMMER_PRINTF("%c", rxBuf[0]);
-
-  //if start byte is CYW header byte or if in middle of waiting for full CYW
-  //response if(!waitingForArgs
-  //    && (ezs_rx_packet_length != 0 || (b & EZS_BINARY_SOF_MASK) != 0)) {
-  //
-  //  ezs_input_result_t result = EZSerial_Parse(b);
-  //  if(result == EZS_INPUT_RESULT_IN_PROGRESS
-  //      || result == EZS_INPUT_RESULT_PACKET_COMPLETE) {
-  //
-  //  }
-  //} else {
-  //  //Assume Shimmer command
-  //}
-
-  //ezs_packet_t *result = ezs_parseSingleByte(rxBuf[0]);
-  //if(result!=0){
-  //  ezsHandlerShimmer(result);
-  //}
-  //HAL_StatusTypeDef status = setDmaRx(1);
-
-  //for (uint8_t i = 0; i < expectedByteCount; i++)
-  //{
-  //  ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
-  //  if (result != 0)
-  //  {
-  //    ezsHandlerShimmer(result);
-  //  }
-  //}
-  //
-  //uint16_t count = getEzsRemainingByteCount();
-  //if (count == 0)
-  //{
-  //  count = 1;
-  //}
-  //HAL_StatusTypeDef status = setDmaRx(count);
-
   uint16_t count = 1;
 
   uint8_t i = 0;
@@ -286,23 +250,23 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       skippingBytesCount--;
       i += 1;
     }
-    /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
-     * parse is ideal and the header byte is a Shimmer packet header byte,
-     * parse as Shimmer packet */
-    else if (ShimBt_isWaitingForArgs()
-        || (getEzsPacketLength() == 0 && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
-            && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
-            && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
-    {
-      //Parse as Shimmer packet
-#if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
-      SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
-#endif
-      count = btRxWaitByteCount;
-      ShimBt_dmaConversionDone(&rxBuf[i]);
-      i += count;
-      count = btRxWaitByteCount;
-    }
+//    /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
+//     * parse is ideal and the header byte is a Shimmer packet header byte,
+//     * parse as Shimmer packet */
+//    else if (ShimBt_isWaitingForArgs()
+//        || (getEzsPacketLength() == 0 && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
+//            && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
+//            && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
+//    {
+//      //Parse as Shimmer packet
+//#if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
+//      SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+//#endif
+//      count = btRxWaitByteCount;
+//      ShimBt_dmaConversionDone(&rxBuf[i]);
+//      i += count;
+//      count = btRxWaitByteCount;
+//    }
     else
     {
       ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
@@ -318,14 +282,10 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
         if (result == EZS_INPUT_RESULT_IN_PROGRESS)
         {
-          //if (getEzsPacketLength() != 0)
-          //{
-          //  count = getEzsRemainingByteCount();
-          //}
           count = getEzsRemainingByteCount();
         }
 
-        //TODO get working
+        //TODO get working if needed (doesn't seem necessary currently)
         else if (result == EZS_INPUT_RESULT_BUFFER_OVERFLOW || result == EZS_INPUT_RESULT_UNHANDLED_PACKET
             || result == EZS_INPUT_RESULT_INVALID_CHECKSUM)
         {
@@ -386,6 +346,11 @@ void resetEzsPendingResponse(void)
   pending_response = 0;
 }
 
+uint8_t isPendingResponse(void)
+{
+  return pending_response;
+}
+
 void resetBtRxBuff(void)
 {
   memset(rxBuf, 0, sizeof(rxBuf));
@@ -415,4 +380,9 @@ char *getBtBootMsgPtr(void)
 void setDmaWaitingForResponse(uint16_t count)
 {
   btRxWaitByteCount = count;
+}
+
+uint16_t getDmaWaitingForResponse(void)
+{
+  return btRxWaitByteCount;
 }
