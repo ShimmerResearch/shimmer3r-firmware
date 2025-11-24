@@ -355,7 +355,7 @@
 //-------------- Fix 06 End -------------------------//
 
 #if ENABLE_FIX_09
-#define EZS_IDX_RSP_SPP_SEND_COMMAND        EZS_IDX_CMD_SPP_SEND_COMMAND
+#define EZS_IDX_RSP_SPP_SEND_COMMAND EZS_IDX_CMD_SPP_SEND_COMMAND
 #endif
 
 /*******************************************************************************
@@ -730,10 +730,11 @@ typedef enum ezs_idx_cmd_t
   EZS_IDX_CMD_BT_SET_DEVICE_CLASS,   /* = 141 */
   EZS_IDX_CMD_BT_GET_DEVICE_CLASS,   /* = 142 */
   EZS_IDX_CMD_SPP_GET_CONFIG,        /* = 143 */
-  //-------------- Fix 06 End -------------------------//
+
+//-------------- Fix 06 End -------------------------//
 
 #if ENABLE_FIX_09
-  EZS_IDX_CMD_SPP_SEND_COMMAND,        /* = 144 */
+  EZS_IDX_CMD_SPP_SEND_COMMAND, /* = 144 */
 #endif
 
   EZS_IDX_CMD_MAX

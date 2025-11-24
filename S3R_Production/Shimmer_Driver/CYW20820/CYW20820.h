@@ -21,8 +21,8 @@
 #define BAUD_TO_USE                    2000000L
 #define FLOW_CONTROL                   1
 
-#define ENABLE_BT_RX_DEBUG_PRINTS 0
-#define ENABLE_BT_TX_DEBUG_PRINTS 0
+#define ENABLE_BT_RX_DEBUG_PRINTS      0
+#define ENABLE_BT_TX_DEBUG_PRINTS      0
 
 #if SUPPORT_SR48_6_0
 #define BAUD_TO_USE_SR48_6_0 115200L
