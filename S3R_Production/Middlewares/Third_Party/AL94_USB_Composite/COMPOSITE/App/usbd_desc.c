@@ -250,7 +250,7 @@ uint8_t * USBD_LangIDStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
   */
 uint8_t * USBD_ProductStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 {
-  char str_buffer[32] = "";
+  static char str_buffer[32] = "";
   LogAndStream_generateUsbCompositeDeviceId(str_buffer);
 
   if(speed == 0)
