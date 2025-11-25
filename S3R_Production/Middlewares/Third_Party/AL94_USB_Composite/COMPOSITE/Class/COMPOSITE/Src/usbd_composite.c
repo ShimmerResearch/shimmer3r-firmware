@@ -873,7 +873,7 @@ static uint8_t *USBD_COMPOSITE_GetUsrStringDesc(USBD_HandleTypeDef *pdev, uint8_
     if (index == MSC_BOT_STR_DESC_IDX)
     {
 //      USBD_GetString((uint8_t *)MSC_BOT_STR_DESC, USBD_StrDesc, length);
-      char usbDeviceIdStr[64] = "";
+      static char usbDeviceIdStr[64] = "";
       LogAndStream_generateUsbMscId(usbDeviceIdStr);
       USBD_GetString((uint8_t *) usbDeviceIdStr, USBD_StrDesc, length);
     }
