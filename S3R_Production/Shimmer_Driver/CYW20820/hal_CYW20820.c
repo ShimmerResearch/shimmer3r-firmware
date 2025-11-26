@@ -49,7 +49,7 @@
 #include "log_and_stream_externs.h"
 #include <Comms/shimmer_bt_uart.h>
 
-#define CONSOLE_PRINT_NON_EZ_SERIAL_BYTES 1
+#define CONSOLE_PRINT_NON_EZ_SERIAL_BYTES 0
 
 uint8_t pending_response = 0;
 //uint8_t timer_active = 0;
@@ -137,13 +137,13 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
   printf("\r\n");
 #endif
 
-  ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *)data, length);
+//  ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *)data, length);
   //ret_val = HAL_UART_Transmit(huart, (uint8_t *)data, length, 1500*HAL_GetTickFreq());
-//  ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
+  ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
 
   if (ret_val != HAL_OK)
   {
-    SHIMMER_PRINTF("DMA problem in appOutput\r\n");
+    SHIMMER_PRINTF("UART transmit problem in appOutput\r\n");
   }
 
   return EZS_OUTPUT_RESULT_DATA_WRITTEN;
@@ -247,9 +247,13 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     }
     else if (skippingBytesCount > 0)
     {
+#if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
+      SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+#endif
       skippingBytesCount--;
       i += 1;
     }
+#if TRANSPARANT_MODE
 //    /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
 //     * parse is ideal and the header byte is a Shimmer packet header byte,
 //     * parse as Shimmer packet */
@@ -258,15 +262,18 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 //            && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
 //            && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
 //    {
-//      //Parse as Shimmer packet
-//#if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
-//      SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
-//#endif
-//      count = btRxWaitByteCount;
-//      ShimBt_dmaConversionDone(&rxBuf[i]);
-//      i += count;
-//      count = btRxWaitByteCount;
-//    }
+    else if (shimmerStatus.btFirstConnectionEstablished)
+    {
+      //Parse as Shimmer packet
+#if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
+      SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+#endif
+      count = btRxWaitByteCount;
+      ShimBt_dmaConversionDone(&rxBuf[i]);
+      i += count;
+      count = btRxWaitByteCount;
+    }
+#endif
     else
     {
       ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
@@ -321,13 +328,14 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 
 HAL_StatusTypeDefShimmer BtTransmit(uint8_t *buf, uint8_t len)
 {
-//  HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
-
+#if TRANSPARANT_MODE
+  HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
+#else
   HAL_StatusTypeDef ret_val = HAL_OK;
   ezs_output_result_t ezs_ret;
 
   ezs_cmd_spp_send_command_t spp_send_command;
-  spp_send_command.conn_handle = 2;
+  spp_send_command.conn_handle = BT_getConnectionHandle();
   spp_send_command.data.length = len;
   memcpy(spp_send_command.data.data, buf, len);
   ezs_ret = ezs_cmd_spp_send_command(spp_send_command.conn_handle, &spp_send_command.data);
@@ -337,7 +345,7 @@ HAL_StatusTypeDefShimmer BtTransmit(uint8_t *buf, uint8_t len)
     SHIMMER_PRINTF("BtTransmit EZS fault=%d\r\n", ezs_ret);
     ret_val = HAL_ERROR;
   }
-
+#endif
   return (HAL_StatusTypeDefShimmer) ret_val;
 }
 
@@ -346,7 +354,7 @@ void resetEzsPendingResponse(void)
   pending_response = 0;
 }
 
-uint8_t isPendingResponse(void)
+uint8_t isPendingResponseFromBtModule(void)
 {
   return pending_response;
 }

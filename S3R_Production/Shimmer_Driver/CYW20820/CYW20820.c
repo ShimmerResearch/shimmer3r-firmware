@@ -291,16 +291,17 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
     printf("Enter Binary Mode\r\n");
     setExpectedResponse(EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE);
-//    appOutput(10, (uint8_t *) "SPPM,M=1\r\n"); //Enter binary mode
-
-//    appOutput(10, (uint8_t *) "SPPM,M=1\r\n"); //Enter auto-detect mode
 
     //Skip the "SPPM,M=x\r\n" response as EZ-Serial can't parse it
     setSkippingBytesCount(10);
 
+#if TRANSPARANT_MODE
+    /* Enable binary mode */
+    appOutput(10, (uint8_t *) "SPPM,M=1\r\n");
+#else
     /* Enable binary and non-transparent mode */
     appOutput(10, (uint8_t *) "SPPM,M=3\r\n");
-
+#endif
     return;
   }
 
@@ -1060,6 +1061,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printHex8(packet->payload.evt_gap_connected.bond);
     printf("\r\n");
 #endif
+    BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
     setBtConnectionState(true);
     break;
 
@@ -1071,6 +1073,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printHex16(packet->payload.evt_gap_disconnected.reason);
     printf("\r\n");
 #endif
+    BT_setConnectionHandle(0xFF);
     setBtConnectionState(false);
     break;
 
@@ -1270,8 +1273,13 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf("\r\n");
 #endif
 
+#if TRANSPARANT_MODE
+    shimmerStatus.btFirstConnectionEstablished = 1;
+#else
+    BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
     setBtConnectionState(true);
     setBtCysppState(true);
+#endif
     break;
 
   case EZS_IDX_EVT_BT_DISCONNECTED:
@@ -1283,6 +1291,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf("\r\n");
 #endif
 
+    BT_setConnectionHandle(0xFF);
     setBtCysppState(false);
     setBtConnectionState(false);
     break;
@@ -1450,16 +1459,20 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_spp_data_received: conn_handle=");
     printHex8(packet->payload.evt_spp_data_received.conn_handle);
-    printf(", length=");
-    printHex16(packet->payload.evt_spp_data_received.data.length);
-    printf(", data=");
+    printf(", length=%d", packet->payload.evt_spp_data_received.data.length);
+    printf(", data=[");
     for (uint16_t i = 0; i < packet->payload.evt_spp_data_received.data.length; i++)
     {
       printHex8(packet->payload.evt_spp_data_received.data.data[i]);
-      printf(" ");
+      if(i<packet->payload.evt_spp_data_received.data.length-1)
+      {
+        printf(" ");
+      }
     }
-    printf("\r\n");
+    printf("]\r\n");
 #endif
+    BT_setConnectionHandle(packet->payload.evt_spp_data_received.conn_handle);
+
     uint16_t count = 1;
     uint16_t i = 0;
     while (i < packet->payload.evt_spp_data_received.data.length)
@@ -1472,8 +1485,8 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   case EZS_IDX_RSP_SPP_SEND_COMMAND:
 #if ENABLE_BT_RX_DEBUG_PRINTS
-    printf("RX: rsp_spp_send_command: conn_handle=");
-    printHex16(packet->payload.rsp_spp_send_command.conn_handle);
+    printf("RX: rsp_spp_send_command: result=");
+    printHex16(packet->payload.rsp_spp_send_command.result);
     printf("\r\n");
 #endif
     ShimBt_triggerNextTransfer();
@@ -1722,4 +1735,14 @@ void BT_connectionFailed(uint8_t conn_handle, uint16_t reason)
 void BT_startDone_cb(void (*callback)(void))
 {
   btIsInitialised_cb = callback;
+}
+
+void BT_setConnectionHandle(uint8_t conn_handle)
+{
+  active_conn_handle = conn_handle;
+}
+
+uint8_t BT_getConnectionHandle(void)
+{
+  return active_conn_handle;
 }

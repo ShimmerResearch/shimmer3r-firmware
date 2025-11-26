@@ -2394,7 +2394,7 @@ __PACKDEF(ezs_cmd_spp_send_command_t, {
   longuint8a_t data;
 });
 
-__PACKDEF(ezs_rsp_spp_send_command_t, { uint16_t conn_handle; });
+__PACKDEF(ezs_rsp_spp_send_command_t, { uint16_t result; });
 #endif
 
 /*******************************************************************************

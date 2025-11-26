@@ -30,6 +30,7 @@
 #include "Button/shimmer_button.h"
 #include "TaskList/shimmer_taskList.h"
 #include "log_and_stream_externs.h"
+#include "CYW20820/CYW20820.h"
 
 /* USER CODE END 0 */
 
@@ -345,10 +346,14 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
   switch (GPIO_Pin)
   {
   case BT_CONNECTION_Pin:
-    //setBtConnectionState(isRising);
+#if TRANSPARANT_MODE
+    setBtConnectionState(!isRising);
+#endif
     break;
   case BT_CYSPP_Pin:
-    //setBtCysppState(isRising);
+#if TRANSPARANT_MODE
+    setBtCysppState(!isRising);
+#endif
     break;
   case DOCK_DETECT_Pin:
     Board_checkDockedDetectState();
@@ -825,7 +830,7 @@ void initBtPins(void)
   HAL_GPIO_Init(BT_CP_ROLE_GPIO_Port, &GPIO_InitStruct);
 
   GPIO_InitStruct.Pin = BT_CYSPP_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BT_CYSPP_GPIO_Port, &GPIO_InitStruct);
 

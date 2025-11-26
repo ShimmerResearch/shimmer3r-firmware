@@ -21,6 +21,8 @@
 #define BAUD_TO_USE                    2000000L
 #define FLOW_CONTROL                   1
 
+#define TRANSPARANT_MODE 0
+
 #define ENABLE_BT_RX_DEBUG_PRINTS 0
 #define ENABLE_BT_TX_DEBUG_PRINTS 0
 
@@ -119,5 +121,7 @@ uint8_t BT_disconnect(void);
 void BT_cancelConnection(void);
 void BT_connectionFailed(uint8_t conn_handle, uint16_t reason);
 void BT_startDone_cb(void (*callback)(void));
+void BT_setConnectionHandle(uint8_t conn_handle);
+uint8_t BT_getConnectionHandle(void);
 
 #endif /* SRC_CYW20820_H_ */
