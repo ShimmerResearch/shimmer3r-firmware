@@ -45,6 +45,7 @@ extern "C"
 
   void mmc1DeInit(void);
   void printSdCardInfo(char *outputStr);
+  void printSdCardSize(char *outputStr);
 
   /* USER CODE END Prototypes */
 
