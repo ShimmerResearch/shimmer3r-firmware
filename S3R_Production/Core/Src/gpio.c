@@ -28,9 +28,9 @@
 
 #include "Boards/shimmer_boards.h"
 #include "Button/shimmer_button.h"
+#include "CYW20820/CYW20820.h"
 #include "TaskList/shimmer_taskList.h"
 #include "log_and_stream_externs.h"
-#include "CYW20820/CYW20820.h"
 
 /* USER CODE END 0 */
 

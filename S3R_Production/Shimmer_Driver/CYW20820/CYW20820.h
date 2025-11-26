@@ -22,10 +22,10 @@
 #define FLOW_CONTROL                   1
 
 //TODO this doesn't seem to work on v1.4.16.16 firmware, need to investigate further
-#define TRANSPARANT_MODE 1
+#define TRANSPARANT_MODE               0
 
-#define ENABLE_BT_RX_DEBUG_PRINTS 0
-#define ENABLE_BT_TX_DEBUG_PRINTS 0
+#define ENABLE_BT_RX_DEBUG_PRINTS      0
+#define ENABLE_BT_TX_DEBUG_PRINTS      0
 
 #if SUPPORT_SR48_6_0
 #define BAUD_TO_USE_SR48_6_0 115200L
