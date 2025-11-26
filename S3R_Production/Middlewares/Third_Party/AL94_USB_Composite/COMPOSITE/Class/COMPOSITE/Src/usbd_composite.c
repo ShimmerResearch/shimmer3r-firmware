@@ -39,6 +39,8 @@
 #include "usbd_composite.h"
 #include "usbd_ctlreq.h"
 
+#include "log_and_stream_common.h"
+
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
   */
@@ -804,12 +806,17 @@ static uint8_t *USBD_COMPOSITE_GetUsrStringDesc(USBD_HandleTypeDef *pdev, uint8_
   if (index <= USBD_Track_String_Index)
   {
 #if (USBD_USE_CDC_ACM == 1)
-    char str_buffer[16] = "";
+//    char str_buffer[16] = "";
+    char str_buffer[32] = "";
+
     for (uint8_t i = 0; i < USBD_CDC_ACM_COUNT; i++)
     {
       if (index == CDC_STR_DESC_IDX[i])
       {
-        snprintf(str_buffer, sizeof(str_buffer), CDC_ACM_STR_DESC, i);
+//        snprintf(str_buffer, sizeof(str_buffer), CDC_ACM_STR_DESC, i);
+        LogAndStream_generateUsbCdcId(str_buffer);
+        size_t len = strlen(str_buffer);
+        snprintf(str_buffer + len, sizeof(str_buffer) - len, "%d", i);
         USBD_GetString((uint8_t *)str_buffer, USBD_StrDesc, length);
       }
     }
@@ -865,7 +872,10 @@ static uint8_t *USBD_COMPOSITE_GetUsrStringDesc(USBD_HandleTypeDef *pdev, uint8_
 #if (USBD_USE_MSC == 1)
     if (index == MSC_BOT_STR_DESC_IDX)
     {
-      USBD_GetString((uint8_t *)MSC_BOT_STR_DESC, USBD_StrDesc, length);
+//      USBD_GetString((uint8_t *)MSC_BOT_STR_DESC, USBD_StrDesc, length);
+      static char usbDeviceIdStr[64] = "";
+      LogAndStream_generateUsbMscId(usbDeviceIdStr);
+      USBD_GetString((uint8_t *) usbDeviceIdStr, USBD_StrDesc, length);
     }
 #endif
 #if (USBD_USE_DFU == 1)

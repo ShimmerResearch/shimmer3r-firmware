@@ -56,8 +56,6 @@ void MX_USB_OTG_HS_PCD_Init(void)
   /* USER CODE BEGIN USB_OTG_HS_Init 2 */
 
   /* USER CODE END USB_OTG_HS_Init 2 */
-  ShimDock_resetVariables();
-  CRC_setState(CRC_SRC_USB, 1);
 }
 
 void HAL_PCD_MspInit(PCD_HandleTypeDef *pcdHandle)
