@@ -506,7 +506,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
         ShimTask_setStopSensing();
         break;
       case RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER:
-        ShimTask_setJumpToBootLoader();
+        ShimTask_set(TASK_JUMP_TO_BOOT_LOADER);
         break;
       default:
         //No action or error log
