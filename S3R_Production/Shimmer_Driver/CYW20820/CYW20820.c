@@ -1463,7 +1463,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     for (uint16_t i = 0; i < packet->payload.evt_spp_data_received.data.length; i++)
     {
       printHex8(packet->payload.evt_spp_data_received.data.data[i]);
-      if(i<packet->payload.evt_spp_data_received.data.length-1)
+      if (i < packet->payload.evt_spp_data_received.data.length - 1)
       {
         printf(" ");
       }
