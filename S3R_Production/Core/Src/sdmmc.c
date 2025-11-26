@@ -230,6 +230,10 @@ void printSdCardInfo(char *outputStr)
   sprintf(outputStr + strlen(outputStr), "\r\n");
 }
 
+/**
+ * Formats the SD card size as a string with a "GB" suffix (e.g., "7.45GB").
+ * Writes the result to outputStr.
+ */
 void printSdCardSize(char *outputStr)
 {
   sprintf(outputStr, "%.2lfGB",
