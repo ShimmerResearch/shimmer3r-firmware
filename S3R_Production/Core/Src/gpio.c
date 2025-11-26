@@ -352,6 +352,8 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
   case BT_CYSPP_Pin:
 #if TRANSPARANT_MODE
+    //TODO v1.4.17.17 FW doesn't seem to toggle BT_CONNECTION_Pin after boot
+    //setBtConnectionState(!isRising);
     setBtCysppState(!isRising);
 #endif
     break;

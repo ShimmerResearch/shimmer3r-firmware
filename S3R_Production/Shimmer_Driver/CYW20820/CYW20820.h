@@ -21,7 +21,8 @@
 #define BAUD_TO_USE                    2000000L
 #define FLOW_CONTROL                   1
 
-#define TRANSPARANT_MODE 0
+//TODO this doesn't seem to work on v1.4.16.16 firmware, need to investigate further
+#define TRANSPARANT_MODE 1
 
 #define ENABLE_BT_RX_DEBUG_PRINTS 0
 #define ENABLE_BT_TX_DEBUG_PRINTS 0

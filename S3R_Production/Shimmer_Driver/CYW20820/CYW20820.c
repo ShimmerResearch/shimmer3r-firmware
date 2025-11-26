@@ -1060,6 +1060,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printHex8(packet->payload.evt_gap_connected.bond);
     printf("\r\n");
 #endif
+    shimmerStatus.btFirstConnectionEstablished = 1;
     BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
     setBtConnectionState(true);
     break;

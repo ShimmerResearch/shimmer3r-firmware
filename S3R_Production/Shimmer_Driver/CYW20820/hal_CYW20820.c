@@ -267,7 +267,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     {
       //Parse as Shimmer packet
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
-      SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+      SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
       count = btRxWaitByteCount;
       ShimBt_dmaConversionDone(&rxBuf[i]);
@@ -302,7 +302,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
           if (getEzsPacketLength() == 0)
           {
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
-            SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+            SHIMMER_PRINTF("S3=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
           }
         }
