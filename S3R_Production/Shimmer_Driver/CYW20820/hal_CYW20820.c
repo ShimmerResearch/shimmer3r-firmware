@@ -130,8 +130,9 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
   {
     printf("%c",
         ((data[i] >> 4) & 0xF) < 10 ? ('0' + ((data[i] >> 4) & 0xF)) :
-                                    ('A' - 10 + ((data[i] >> 4) & 0xF)));
-    printf("%c", (data[i] & 0xF) < 10 ? ('0' + (data[i] & 0xF)) : ('A' - 10 + (data[i] & 0xF)));
+                                      ('A' - 10 + ((data[i] >> 4) & 0xF)));
+    printf("%c",
+        (data[i] & 0xF) < 10 ? ('0' + (data[i] & 0xF)) : ('A' - 10 + (data[i] & 0xF)));
     printf(" ");
   }
   printf("\r\n");
@@ -338,7 +339,8 @@ HAL_StatusTypeDefShimmer BtTransmit(uint8_t *buf, uint8_t len)
   spp_send_command.conn_handle = BT_getConnectionHandle();
   spp_send_command.data.length = len;
   memcpy(spp_send_command.data.data, buf, len);
-  ezs_ret = ezs_cmd_spp_send_command(spp_send_command.conn_handle, &spp_send_command.data);
+  ezs_ret = ezs_cmd_spp_send_command(
+      spp_send_command.conn_handle, &spp_send_command.data);
 
   if (ezs_ret != EZS_OUTPUT_RESULT_DATA_WRITTEN)
   {

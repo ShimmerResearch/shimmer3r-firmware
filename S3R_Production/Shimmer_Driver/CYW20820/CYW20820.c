@@ -19,20 +19,20 @@
 #include "log_and_stream_includes.h"
 
 /* convenience functions for pretty-printing binary data as zero-padded hexadecimal */
-#define printHex8(VARIABLE)            printHex((uint8_t *) &VARIABLE, 1, 1, 0)
-#define printHex16(VARIABLE)           printHex((uint8_t *) &VARIABLE, 2, 1, 0)
-#define printHex32(VARIABLE)           printHex((uint8_t *) &VARIABLE, 4, 1, 0)
-#define printHexMac(VARIABLE)          printHex((uint8_t *) &VARIABLE, 6, 1, ':')
+#define printHex8(VARIABLE)   printHex((uint8_t *) &VARIABLE, 1, 1, 0)
+#define printHex16(VARIABLE)  printHex((uint8_t *) &VARIABLE, 2, 1, 0)
+#define printHex32(VARIABLE)  printHex((uint8_t *) &VARIABLE, 4, 1, 0)
+#define printHexMac(VARIABLE) printHex((uint8_t *) &VARIABLE, 6, 1, ':')
 
 /*
  * Index: {1,2,3,4,5,6,7,8}
  * BR:    {-2,0,2,4,6,8,10,12},
  * EDR:   {-2,0,2,4,6,8,10,12},
  * BLE:   {-2,0,2,4,6,8,10,10}, */
-#define BT_TX_POWER                    8
+#define BT_TX_POWER           8
 
 //#define CONNECTION_TIMEOUT_MS          10000 //10 seconds timeout
-#define CONNECTION_TIMEOUT_S           10 //10 seconds timeout
+#define CONNECTION_TIMEOUT_S  10 //10 seconds timeout
 
 uint8_t advNameMacIdStartIdx = 11;
 static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
@@ -827,9 +827,8 @@ void btInitCommands(void)
       rsp_bt_get_parameters.discoverable = BT_DISC_MODE_GENERAL_DISCOVERABLE;
       rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
       ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
-          rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
-          flags, rsp_bt_get_parameters.scn,
-          rsp_bt_get_parameters.active_bt_discoverability,
+          rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable, flags,
+          rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
           rsp_bt_get_parameters.active_bt_connectability);
       return;
     }
