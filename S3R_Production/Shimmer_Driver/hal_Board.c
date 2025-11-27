@@ -422,7 +422,6 @@ void Board_sdPowerCycle(uint8_t dockAccessToSd)
   Board_setDockAccessToSd(dockAccessToSd);
   HAL_Delay(120);
   Board_setSdPower(1);
-  HAL_Delay(50);
 }
 
 /**
@@ -432,21 +431,21 @@ void Board_sdPowerCycle(uint8_t dockAccessToSd)
  */
 void Board_sd2Pc(void)
 {
-  ///* ADC pins are shared with two dat pins, ensure both are inputs */
-  //HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP0_GPIO_Port, GPIO_ADC_EXT_EXP0_Pin);
-  //HAL_GPIO_DeInit(GPIO_ADC_EXT_EXP1_GPIO_Port, GPIO_ADC_EXT_EXP1_Pin);
+  /* Ensure the dock sees "no card" during the entire handover */
+  Board_dockDetectN(DOCK_CARD_NOT_PRESENT);
 
-  //Power cycle the SD card with access to dock
-  Board_sdPowerCycle(1);
+  /* Cleanly release SD from MCU side before power/route changes */
+  ShimSd_mount(SD_UNMOUNT); /* Unmount FS while MCU still owns the bus */
+  mmc1DeInit();             /* De-init SDMMC to tri-state pins */
 
-  //Setup pin to indicate SD ready for dock access
-  Board_dockDetectN(0);
+  /* Power cycle the SD and hand bus control to the dock/PC side */
+  Board_sdPowerCycle(1); /* setDockAccessToSd(1) inside power cycle */
 
-  //Unmount SD card
-  ShimSd_mount(0);
+  /* Give the USB-SD bridge time to see power, enumerate media, and be ready */
+  HAL_Delay(SD_PC_STABILIZE_MS);
 
-  //De-initialize SD card peripheral
-  mmc1DeInit();
+  /* Now tell the dock/PC that a card is present */
+  Board_dockDetectN(DOCK_CARD_PRESENT);
 }
 
 /**
@@ -456,23 +455,28 @@ void Board_sd2Pc(void)
  */
 void Board_sd2Mcu(void)
 {
-  //Setup pin to indicate SD not ready for dock access
-  Board_dockDetectN(1);
+  /* Setup pin to indicate SD not ready for dock access */
+  Board_dockDetectN(DOCK_CARD_NOT_PRESENT);
 
-  //Power cycle the SD card with access to MCU
+  /* Clears any lingering FatFs work area, BPB/cache, and “mounted” flags if a prior path failed to unmount. */
+  ShimSd_mount(SD_UNMOUNT);
+
+  /* Power cycle the SD card with access to MCU */
   Board_sdPowerCycle(0);
 
-  //Initialize SD card peripheral
+  /* Allow time for SD card to stabilize */
+  HAL_Delay(SD_MCU_STABILIZE_MS);
+
+  /* Initialize SD card peripheral */
   MX_SDMMC1_SD_Init();
 
 #if USE_FATFS
-  //Initialize file system driver
+  /* Initialize file system driver */
   MX_FATFS_Init();
 #endif
 
-  //Mount SD card
-  ShimSd_mount(0);
-  ShimSd_mount(1);
+  /* Mount SD card */
+  ShimSd_mount(SD_MOUNT);
 }
 
 /***************************************************************************/
