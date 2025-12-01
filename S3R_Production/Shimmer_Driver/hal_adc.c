@@ -863,8 +863,10 @@ void S4_NORM_ADC_bufPoll()
   shimmerStatus.battVal[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   if (configBytes->chEnVBattery)
   {
-    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.batteryAnalog + 0] = shimmerStatus.battVal[0];
-    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.batteryAnalog + 1] = shimmerStatus.battVal[1];
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.batteryAnalog + 0]
+        = shimmerStatus.battVal[0];
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.batteryAnalog + 1]
+        = shimmerStatus.battVal[1];
   }
 #else
   if (configBytes->chEnVBattery)
@@ -948,8 +950,10 @@ void S4_NORM_ADC_bufPoll()
   }
   if (configBytes->chEnGsr)
   {
-    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.gsr + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.gsr + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.gsr + 0]
+        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.gsr + 1]
+        = *((uint8_t *) adcBufSens + adc_offset_sens++);
     GSR_range(&ShimSens_getDataBuffAtWrIdx()[sensing.ptr.gsr]);
   }
   else if (configBytes->chEnIntADC3)

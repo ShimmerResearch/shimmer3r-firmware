@@ -43,10 +43,10 @@
 #ifndef EXG_H
 #define EXG_H
 
+#include "Util/shimmer_util.h"
 #include "ads1292.h"
 #include "stm32u5xx_hal.h"
 #include <stdint.h>
-#include "Util/shimmer_util.h"
 //ADS1292R registers
 //There are two of these chips on the ExG board
 #define ADS1292R_DEVID     0x00
