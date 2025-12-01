@@ -11,7 +11,7 @@
 
 CRC_HandleTypeDef *hcrcToUse;
 
-uint32_t CRC_data(uint8_t *buf, uint8_t len)
+uint32_t CRC_data(volatile uint8_t *buf, uint8_t len)
 {
   HAL_CRC_Calculate(hcrcToUse, (uint32_t *) buf, (uint32_t) len);
 
@@ -31,7 +31,7 @@ uint32_t CRC_data(uint8_t *buf, uint8_t len)
   return hcrcToUse->Instance->DR;
 }
 
-void calculateCrcAndInsert(uint8_t crcMode, uint8_t *aryPtr, uint8_t len)
+void calculateCrcAndInsert(uint8_t crcMode, volatile uint8_t *aryPtr, uint8_t len)
 {
   uint32_t crc_value;
   if (crcMode != CRC_OFF)
@@ -46,7 +46,7 @@ void calculateCrcAndInsert(uint8_t crcMode, uint8_t *aryPtr, uint8_t len)
   }
 }
 
-uint8_t checkCrc(uint8_t crcMode, uint8_t *aryPtr, uint8_t payloadLen)
+uint8_t checkCrc(uint8_t crcMode, volatile uint8_t *aryPtr, uint8_t payloadLen)
 {
   uint32_t crc_value_calc;
   if (crcMode != CRC_OFF)

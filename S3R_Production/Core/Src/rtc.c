@@ -440,7 +440,9 @@ void RTC_wakeUpSetSlow(void)
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  //TODO carried from Shimmer4, LED blinking only works when not sensing
+
+#if 0
+ // TODO carried from Shimmer4, LED blinking only works when not sensing
   if (shimmerStatus.sensing && !shimmerStatus.configuring)
   {
 #if SAVE_DATA_FROM_RTC_INT
@@ -457,14 +459,16 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
   else
   {
     S4Led_Blink();
-  }
+ // }
 #endif
   /* Prevent unused argument(s) compilation warning */
-  UNUSED(hrtc);
+//  UNUSED(hrtc);
 
   /* NOTE : This function Should not be modified, when the callback is needed,
             the HAL_RTC_WakeUpTimerEventCallback could be implemented in the user file
    */
+#endif
+  ShimSens_sampleTimerTriggered();
 }
 
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)

@@ -840,19 +840,19 @@ void S4_NORM_ADC_bufPoll()
   if (configBytes->chEnLnAccel)
   {
     //X
-    sensing.dataBuf[sensing.ptr.analogAccel + 0]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.analogAccel + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.analogAccel + 1]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.analogAccel + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
     //Y
-    sensing.dataBuf[sensing.ptr.analogAccel + 2]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.analogAccel + 2]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.analogAccel + 3]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.analogAccel + 3]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
     //Z
-    sensing.dataBuf[sensing.ptr.analogAccel + 4]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.analogAccel + 4]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.analogAccel + 5]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.analogAccel + 5]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
 #endif
@@ -863,15 +863,15 @@ void S4_NORM_ADC_bufPoll()
   shimmerStatus.battVal[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   if (configBytes->chEnVBattery)
   {
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 0] = shimmerStatus.battVal[0];
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 1] = shimmerStatus.battVal[1];
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.batteryAnalog + 0] = shimmerStatus.battVal[0];
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.batteryAnalog + 1] = shimmerStatus.battVal[1];
   }
 #else
   if (configBytes->chEnVBattery)
   {
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 0]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.batteryAnalog + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.batteryAnalog + 1]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.batteryAnalog + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
 #endif
@@ -879,39 +879,39 @@ void S4_NORM_ADC_bufPoll()
   //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
   if (configBytes->chEnExtADC0)
   {
-    sensing.dataBuf[sensing.ptr.extADC0 + 0]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.extADC0 + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.extADC0 + 1]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.extADC0 + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
   //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
   if (configBytes->chEnExtADC1)
   {
-    sensing.dataBuf[sensing.ptr.extADC1 + 0]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.extADC1 + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.extADC1 + 1]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.extADC1 + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
   if (configBytes->chEnExtADC2)
   {
-    sensing.dataBuf[sensing.ptr.extADC2 + 0]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.extADC2 + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.extADC2 + 1]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.extADC2 + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
   if (configBytes->chEnIntADC0)
   {
-    sensing.dataBuf[sensing.ptr.intADC0 + 0]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.intADC0 + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.intADC0 + 1]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.intADC0 + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
 #if defined(SHIMMER4_SDK)
   if (configBytes->chEnIntADC4)
   {
-    sensing.dataBuf[sensing.ptr.intADC4 + 0]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.intADC4 + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.intADC4 + 1]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.intADC4 + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
 #endif
@@ -919,44 +919,44 @@ void S4_NORM_ADC_bufPoll()
   if (configBytes->chEnBridgeAmp)
   {
     //SG_LOW channel
-    sensing.dataBuf[sensing.ptr.strainGauge + 0]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.strainGauge + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.strainGauge + 1]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.strainGauge + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
     //SG_HIGH channel
-    sensing.dataBuf[sensing.ptr.strainGauge + 2]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.strainGauge + 2]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.strainGauge + 3]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.strainGauge + 3]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
   else
   {
     if (configBytes->chEnIntADC1)
     {
-      sensing.dataBuf[sensing.ptr.intADC1 + 0]
+      ShimSens_getDataBuffAtWrIdx()[sensing.ptr.intADC1 + 0]
           = *((uint8_t *) adcBufSens + adc_offset_sens++);
-      sensing.dataBuf[sensing.ptr.intADC1 + 1]
+      ShimSens_getDataBuffAtWrIdx()[sensing.ptr.intADC1 + 1]
           = *((uint8_t *) adcBufSens + adc_offset_sens++);
     }
     if (configBytes->chEnIntADC2)
     {
-      sensing.dataBuf[sensing.ptr.intADC2 + 0]
+      ShimSens_getDataBuffAtWrIdx()[sensing.ptr.intADC2 + 0]
           = *((uint8_t *) adcBufSens + adc_offset_sens++);
-      sensing.dataBuf[sensing.ptr.intADC2 + 1]
+      ShimSens_getDataBuffAtWrIdx()[sensing.ptr.intADC2 + 1]
           = *((uint8_t *) adcBufSens + adc_offset_sens++);
     }
   }
   if (configBytes->chEnGsr)
   {
-    sensing.dataBuf[sensing.ptr.gsr + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.gsr + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    GSR_range(&sensing.dataBuf[sensing.ptr.gsr]);
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.gsr + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.gsr + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    GSR_range(&ShimSens_getDataBuffAtWrIdx()[sensing.ptr.gsr]);
   }
   else if (configBytes->chEnIntADC3)
   {
-    sensing.dataBuf[sensing.ptr.intADC3 + 0]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.intADC3 + 0]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    sensing.dataBuf[sensing.ptr.intADC3 + 1]
+    ShimSens_getDataBuffAtWrIdx()[sensing.ptr.intADC3 + 1]
         = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
 }
@@ -1155,7 +1155,7 @@ void manageReadBatt(uint8_t isBlockingRead)
   if (shimmerStatus.sensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
   {
     saveBatteryVoltageAndUpdateStatus(
-        *(uint16_t *) &sensing.dataBuf[sensing.ptr.batteryAnalog], hadcBattPtr);
+        *(uint16_t *) &ShimSens_getDataBuffAtWrIdx()[sensing.ptr.batteryAnalog], hadcBattPtr);
   }
   else
   {

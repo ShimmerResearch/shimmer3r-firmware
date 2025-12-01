@@ -991,7 +991,7 @@ void SPI_startSensing()
 void SPI_pollSensors(void)
 {
   currentSpiBusCbFlags = 0;
-
+  volatile uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   //ExG (SPI)
   if (ShimBrd_isAds1292Present())
   {
@@ -1003,24 +1003,24 @@ void SPI_pollSensors(void)
     {
       if (storedConfigPtr->chEnExg1_24Bit)
       {
-        EXG_readData(0, 0, &sensing.dataBuf[sensing.ptr.exg1]);
+        EXG_readData(0, 0, &dataBufPtr[sensing.ptr.exg1]);
       }
       else if (storedConfigPtr->chEnExg1_16Bit)
       {
-        EXG_readData(0, 1, &sensing.dataBuf[sensing.ptr.exg1]);
+        EXG_readData(0, 1, &dataBufPtr[sensing.ptr.exg1]);
       }
       if (storedConfigPtr->chEnExg2_24Bit)
       {
-        EXG_readData(1, 0, &sensing.dataBuf[sensing.ptr.exg2]);
-        if (!(sensing.dataBuf[sensing.ptr.exg2 + 1] == 0x00
-                || sensing.dataBuf[sensing.ptr.exg2 + 1] == 0xff))
+        EXG_readData(1, 0, &dataBufPtr[sensing.ptr.exg2]);
+        if (!(dataBufPtr[sensing.ptr.exg2 + 1] == 0x00
+                || dataBufPtr[sensing.ptr.exg2 + 1] == 0xff))
         {
           __NOP();
         }
       }
       else if (storedConfigPtr->chEnExg2_16Bit)
       {
-        EXG_readData(1, 1, &sensing.dataBuf[sensing.ptr.exg2]);
+        EXG_readData(1, 1, &dataBufPtr[sensing.ptr.exg2]);
       }
       SPI_busGatherDataDone_cb(spi3Sens.busId);
     }
@@ -1298,29 +1298,30 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 
 void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+  volatile uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
   {
   case SPI1_LSM6DSV_GYRO_AND_ACCEL:
     lsm6dsv_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.gyro,
+    ShimUtil_memcpy_v(dataBufPtr + sensing.ptr.gyro,
         &spi1Sens_buf.lsm6dsvGyroAndAccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvGyroAndAccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_LSM6DSV_ACCEL_ONLY:
     lsm6dsv_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.accel1,
+    ShimUtil_memcpy_v(dataBufPtr + sensing.ptr.accel1,
         &spi1Sens_buf.lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvAccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_LSM6DSV_GYRO_ONLY:
     lsm6dsv_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.gyro,
+    ShimUtil_memcpy_v(dataBufPtr + sensing.ptr.gyro,
         &spi1Sens_buf.lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvGyroBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_ADXL371_ACCEL:
     adxl371_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.accel3,
+    ShimUtil_memcpy_v(dataBufPtr + sensing.ptr.accel3,
         &spi1Sens_buf.adxl371Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
     break;
@@ -1331,7 +1332,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
       bmp3_read_sensor_status();
     }
     bmp3_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.pressure,
+    ShimUtil_memcpy_v(dataBufPtr + sensing.ptr.pressure,
         &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;
@@ -1403,13 +1404,13 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
       break;
     }
 
-    sensing.dataBuf[dataBufIndex + 0] = adcTempbuf & 0xFF;
-    sensing.dataBuf[dataBufIndex + 1] = (adcTempbuf >> 8) & 0xFF;
+    dataBufPtr[dataBufIndex + 0] = adcTempbuf & 0xFF;
+    dataBufPtr[dataBufIndex + 1] = (adcTempbuf >> 8) & 0xFF;
 
     if (spi1Sens.sensorList[spi1Sens.sensorCnt] == SPI1_ADS7028_INT_EXP3
         && ShimConfig_isGSREnabled())
     {
-      GSR_range(&sensing.dataBuf[dataBufIndex]);
+      GSR_range(&dataBufPtr[dataBufIndex]);
     }
 
     stopAds7028Conversions();
@@ -1424,17 +1425,18 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+  volatile uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   switch (spi2Sens.sensorList[spi2Sens.sensorCnt])
   {
   case SPI2_LIS2DW12_ACCEL:
     lis2dw12_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.accel2,
+    ShimUtil_memcpy_v(dataBufPtr + sensing.ptr.accel2,
         &spi2Sens_buf.lis2dw12AccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis2dw12AccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI2_LIS3MDL_MAG:
     lis3mdl_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.mag2,
+    ShimUtil_memcpy_v(dataBufPtr + sensing.ptr.mag2,
         &spi2Sens_buf.lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis3mdlMagBuf) - SPI_DMA_TXRX_OFFSET);
     break;
@@ -1448,6 +1450,7 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+
 #if !IS_EXG_DATA_READ_BLOCKING
   switch (spi3Sens.sensorList[spi3Sens.sensorCnt])
   {

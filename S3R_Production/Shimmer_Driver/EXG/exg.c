@@ -247,7 +247,7 @@ HAL_StatusTypeDef EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size
   return res;
 }
 
-void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf)
+void EXG_readData(uint8_t chip, uint8_t size, volatile uint8_t *buf)
 {
   if (chip)
   {
@@ -268,7 +268,7 @@ void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf)
       else
       {
         //24-bit
-        memcpy(buf + 1, data + 3, 6);
+        ShimUtil_memcpy_v(buf + 1, data + 3, 6);
       }
     }
     else
@@ -293,7 +293,7 @@ void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf)
       else
       {
         //24-bit
-        memcpy(buf + 1, data + 3, 6);
+        ShimUtil_memcpy_v(buf + 1, data + 3, 6);
       }
     }
     else
