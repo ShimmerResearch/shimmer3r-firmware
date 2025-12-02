@@ -912,7 +912,7 @@ void SPI_startSensing()
       GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks);
     }
 
-    configureAutoSequenceChannel(enabledAds7028Channels); //Configuring ADS7028 needs SPI1 threfore moving it here where it is initialised.
+    configureAutoSequenceChannel(enabledAds7028Channels); //Configuring ADS7028 needs SPI1 therefore moving it here where it is initialised.
     enableAds7028AutoSequenceMode();
   }
 
