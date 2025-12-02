@@ -879,15 +879,13 @@ bool areI2cChannelsEnabled(void)
 
 void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-  volatile uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
+  uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   switch (i2c1Sens.sensorList[i2c1Sens.sensorCnt])
   {
   case I2C_LIS2MDL_MAG:
-    /* memcpy(dataBufPtr + sensing.ptr.mag1, &i2cSens_buf.lis2mdlMagBuf[0],
-         sizeof(i2cSens_buf.lis2mdlMagBuf)); */
-    ShimUtil_memcpy_v(dataBufPtr + sensing.ptr.mag1,
-        &i2cSens_buf.lis2mdlMagBuf[0], sizeof(i2cSens_buf.lis2mdlMagBuf));
-    break;
+     memcpy(dataBufPtr + sensing.ptr.mag1, &i2cSens_buf.lis2mdlMagBuf[0],
+         sizeof(i2cSens_buf.lis2mdlMagBuf));
+     break;
   default:
     break;
   }

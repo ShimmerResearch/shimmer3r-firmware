@@ -135,7 +135,7 @@ EXG_writeRegs(uint8_t chip, uint8_t startaddress, uint8_t size, uint8_t *wdata);
 //so returns 5 or 7 bytes in total, depending on size setting
 //The data format for each channel data is twos complement, MSB first.
 //If data is valid MSB of status byte for each chip is 1, else 0
-void EXG_readData(uint8_t chip, uint8_t size, volatile uint8_t *buf);
+void EXG_readData(uint8_t chip, uint8_t size, uint8_t *buf);
 
 void EXG_prepareData(uint8_t chip, uint8_t *data, uint8_t *buf, uint8_t size);
 

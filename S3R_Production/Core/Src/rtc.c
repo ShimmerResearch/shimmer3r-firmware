@@ -459,7 +459,7 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
   else
   {
     S4Led_Blink();
- // }
+  }
 #endif
   /* Prevent unused argument(s) compilation warning */
 //  UNUSED(hrtc);
