@@ -26,8 +26,9 @@
 
 /* USER CODE BEGIN INCLUDE */
 #include "usbd_composite.h"
-/* USER CODE END INCLUDE */
 #include "log_and_stream_common.h"
+/* USER CODE END INCLUDE */
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
