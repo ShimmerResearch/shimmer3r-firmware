@@ -864,10 +864,8 @@ void S4_NORM_ADC_bufPoll()
   shimmerStatus.battVal[1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   if (configBytes->chEnVBattery)
   {
-    dataBufPtr[sensing.ptr.batteryAnalog + 0]
-        = shimmerStatus.battVal[0];
-    dataBufPtr[sensing.ptr.batteryAnalog + 1]
-        = shimmerStatus.battVal[1];
+    dataBufPtr[sensing.ptr.batteryAnalog + 0] = shimmerStatus.battVal[0];
+    dataBufPtr[sensing.ptr.batteryAnalog + 1] = shimmerStatus.battVal[1];
   }
 #else
   if (configBytes->chEnVBattery)
@@ -882,40 +880,30 @@ void S4_NORM_ADC_bufPoll()
   //External ADC A7 - ADC7_FLASHDAT1 - ADC1_IN9 as per SH_ARM.brd Allegro file
   if (configBytes->chEnExtADC0)
   {
-    dataBufPtr[sensing.ptr.extADC0 + 0]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    dataBufPtr[sensing.ptr.extADC0 + 1]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.extADC0 + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.extADC0 + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
   //External ADC A6 - ADC6_FLASHDAT2 - ADC1_IN8 as per SH_ARM.brd Allegro file
   if (configBytes->chEnExtADC1)
   {
-    dataBufPtr[sensing.ptr.extADC1 + 0]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    dataBufPtr[sensing.ptr.extADC1 + 1]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.extADC1 + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.extADC1 + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
   if (configBytes->chEnExtADC2)
   {
-    dataBufPtr[sensing.ptr.extADC2 + 0]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    dataBufPtr[sensing.ptr.extADC2 + 1]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.extADC2 + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.extADC2 + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
   if (configBytes->chEnIntADC0)
   {
-    dataBufPtr[sensing.ptr.intADC0 + 0]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    dataBufPtr[sensing.ptr.intADC0 + 1]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.intADC0 + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.intADC0 + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
 #if defined(SHIMMER4_SDK)
   if (configBytes->chEnIntADC4)
   {
-    dataBufPtr[sensing.ptr.intADC4 + 0]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    dataBufPtr[sensing.ptr.intADC4 + 1]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.intADC4 + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.intADC4 + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
 #endif
   //Bridge Amplifier/Strain Gauge
@@ -936,33 +924,25 @@ void S4_NORM_ADC_bufPoll()
   {
     if (configBytes->chEnIntADC1)
     {
-      dataBufPtr[sensing.ptr.intADC1 + 0]
-          = *((uint8_t *) adcBufSens + adc_offset_sens++);
-      dataBufPtr[sensing.ptr.intADC1 + 1]
-          = *((uint8_t *) adcBufSens + adc_offset_sens++);
+      dataBufPtr[sensing.ptr.intADC1 + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+      dataBufPtr[sensing.ptr.intADC1 + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
     }
     if (configBytes->chEnIntADC2)
     {
-      dataBufPtr[sensing.ptr.intADC2 + 0]
-          = *((uint8_t *) adcBufSens + adc_offset_sens++);
-      dataBufPtr[sensing.ptr.intADC2 + 1]
-          = *((uint8_t *) adcBufSens + adc_offset_sens++);
+      dataBufPtr[sensing.ptr.intADC2 + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+      dataBufPtr[sensing.ptr.intADC2 + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
     }
   }
   if (configBytes->chEnGsr)
   {
-    dataBufPtr[sensing.ptr.gsr + 0]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    dataBufPtr[sensing.ptr.gsr + 1]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.gsr + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.gsr + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
     GSR_range(&dataBufPtr[sensing.ptr.gsr]);
   }
   else if (configBytes->chEnIntADC3)
   {
-    dataBufPtr[sensing.ptr.intADC3 + 0]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
-    dataBufPtr[sensing.ptr.intADC3 + 1]
-        = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.intADC3 + 0] = *((uint8_t *) adcBufSens + adc_offset_sens++);
+    dataBufPtr[sensing.ptr.intADC3 + 1] = *((uint8_t *) adcBufSens + adc_offset_sens++);
   }
 }
 
