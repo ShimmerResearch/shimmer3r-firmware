@@ -1315,14 +1315,12 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     break;
   case SPI1_LSM6DSV_GYRO_ONLY:
     lsm6dsv_unselectDevice();
-    memcpy(dataBufPtr + sensing.ptr.gyro,
-        &spi1Sens_buf.lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET],
+    memcpy(dataBufPtr + sensing.ptr.gyro, &spi1Sens_buf.lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvGyroBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_ADXL371_ACCEL:
     adxl371_unselectDevice();
-    memcpy(dataBufPtr + sensing.ptr.accel3,
-        &spi1Sens_buf.adxl371Buf[SPI_DMA_TXRX_OFFSET],
+    memcpy(dataBufPtr + sensing.ptr.accel3, &spi1Sens_buf.adxl371Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
@@ -1436,8 +1434,7 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     break;
   case SPI2_LIS3MDL_MAG:
     lis3mdl_unselectDevice();
-    memcpy(dataBufPtr + sensing.ptr.mag2,
-        &spi2Sens_buf.lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET],
+    memcpy(dataBufPtr + sensing.ptr.mag2, &spi2Sens_buf.lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis3mdlMagBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   default:
