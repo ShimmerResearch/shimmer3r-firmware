@@ -553,7 +553,7 @@ HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx)
 void configureAutoSequenceChannel(uint8_t ChannelID)
 {
   //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_DEFAULT); //put all channels to default
-  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID); //select channels for auto-sequencing
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID); //select channel for auto-sequencing
 }
 
 bool ads7028_areAnyChannelsEnabled(void)
