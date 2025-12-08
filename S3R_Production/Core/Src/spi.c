@@ -1344,7 +1344,8 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     /* Original ADC data is MSB order and left-aligned whereas Shimmer normally
      * uses LSB order right-aligned */
     uint16_t adcTempbuf = (((uint16_t) spi1Sens_buf.ads2078Buf[0]) << 4
-                              | spi1Sens_buf.ads2078Buf[1] >> 4) & 0x0FFF;
+                              | spi1Sens_buf.ads2078Buf[1] >> 4)
+        & 0x0FFF;
 
     switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
     {
@@ -1407,8 +1408,8 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
       GSR_range(&sensing.dataBuf[dataBufIndex]);
     }
 
-    ads7028_setCS(HIGH); // end of SPI frame → trigger next conversion
-    delay_us(1); //CS_HIGH for 1us before it starts next conversion.
+    ads7028_setCS(HIGH); //end of SPI frame → trigger next conversion
+    delay_us(1);         //CS_HIGH for 1us before it starts next conversion.
     break;
   default:
     break;
