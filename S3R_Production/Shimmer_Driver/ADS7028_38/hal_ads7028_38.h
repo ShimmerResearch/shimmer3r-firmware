@@ -32,6 +32,8 @@
  *  Source:
  *  "https://github.com/TexasInstruments/precision-adc-examples/tree/main
  *  /devices/ads7038"
+ *
+ *  modified by: Ramesh Chhetri
  */
 
 #ifndef HAL_ADC7028_38_H_
@@ -159,8 +161,9 @@ void TIMER0IntHandler(void);
 self_test_result_t ads7028_factoryTestChipId(void);
 void ads7028_swI2C4PpgOn(uint8_t state);
 HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx);
-void configureAutoSequenceChannel(uint8_t ChannelID);
+void configureAutoSequenceChannel(uint8_t ChannelIDs);
 bool ads7028_areAnyChannelsEnabled(void);
 void ads7028_factoryTestGsrInit(void);
 HAL_StatusTypeDef ads7028_factoryTestGetGsrResistance(uint32_t *gsrResistance);
+void enableAds7028AutoSequenceMode(void);
 #endif /* HAL_ADC7028_38_H_ */
