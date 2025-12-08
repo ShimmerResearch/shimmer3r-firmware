@@ -1343,10 +1343,8 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
     /* Original ADC data is MSB order and left-aligned whereas Shimmer normally
      * uses LSB order right-aligned */
-    //ads7028_setCS(HIGH);  // end of SPI frame → trigger next conversion
     uint16_t adcTempbuf = (((uint16_t) spi1Sens_buf.ads2078Buf[0]) << 4
-                              | spi1Sens_buf.ads2078Buf[1] >> 4)
-        & 0x0FFF;
+                              | spi1Sens_buf.ads2078Buf[1] >> 4) & 0x0FFF;
 
     switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
     {
@@ -1409,8 +1407,8 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
       GSR_range(&sensing.dataBuf[dataBufIndex]);
     }
 
-    //stopAds7028Conversions();
-    ads7028_setCS(HIGH);
+    ads7028_setCS(HIGH); // end of SPI frame → trigger next conversion
+    delay_us(1); //CS_HIGH for 1us before it starts next conversion.
     break;
   default:
     break;
@@ -1511,10 +1509,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
   memset(&spiAdc, 0x00, sizeof(spiAdc));
   enabledAds7028Channels = 0; //all channels disabled initially;
 
-  //MX_SPI1_Init(); //initialize SPI1 for ADS7028 configuration
-
-  //Select channel  and enable as per config
-
+  //Select channel  and enable as per configuration bytes
   if (configBytes->chEnVBattery)
   {
     *channel_contents_ptr++ = VBATT;
@@ -1629,8 +1624,6 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP0;
     enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH0_ENABLED;
   }
-  //configureAutoSequenceChannel(enabledAds7028Channels, flagsEnabledAds7028Channels);
-  //SPI1_DeInit(); //de-initialize SPI1 after ADS7028 configuration
 }
 #endif
 

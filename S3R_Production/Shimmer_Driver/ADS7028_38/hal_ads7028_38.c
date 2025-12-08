@@ -541,19 +541,14 @@ void ads7028_swI2C4PpgOn(uint8_t state)
 HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx)
 {
   HAL_StatusTypeDef returnedStatus = HAL_OK;
-
-  ////TODO : Is this delay needed?
-  //delay_us(3);
-
   returnedStatus = readDataDma(dataRx, &SENSOR_BUS);
 
   return returnedStatus;
 }
 
-void configureAutoSequenceChannel(uint8_t ChannelID)
+void configureAutoSequenceChannel(uint8_t ChannelIDs)
 {
-  //writeSingleRegister(SEQUENCE_CFG_ADDRESS, SEQUENCE_CFG_DEFAULT); //put all channels to default
-  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelID); //select channel for auto-sequencing
+  writeSingleRegister(AUTO_SEQ_CHSEL_ADDRESS, ChannelIDs); //select channels for auto-sequencing
 }
 
 bool ads7028_areAnyChannelsEnabled(void)
@@ -631,7 +626,6 @@ void enableAds7028AutoSequenceMode(void)
       SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
 
   ads7028_setCS(HIGH); //put nCS high to start conversion
-  //delay_ms(5);
 }
 
 //*****************************************************************************
