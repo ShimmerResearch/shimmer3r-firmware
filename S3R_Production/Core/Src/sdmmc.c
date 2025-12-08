@@ -223,12 +223,21 @@ void printSdCardInfo(char *outputStr)
     break;
   }
 
-  sprintf(outputStr + strlen(outputStr), ", Size=%.2lfGB",
-      (hsd1.SdCard.BlockSize * ((float) hsd1.SdCard.BlockNbr / 1024 / 1024 / 1024)));
+  printSdCardSize(outputStr + strlen(outputStr));
   sprintf(outputStr + strlen(outputStr), ", Manufacture Date=%d-%02d",
       (pCID.ManufactDate >> 4) + 2000, pCID.ManufactDate & 0x0F);
 
   sprintf(outputStr + strlen(outputStr), "\r\n");
+}
+
+/**
+ * Formats the SD card size as a string with a "GB" suffix (e.g., "7.45GB").
+ * Writes the result to outputStr.
+ */
+void printSdCardSize(char *outputStr)
+{
+  sprintf(outputStr, "%.2lfGB",
+      (hsd1.SdCard.BlockSize * ((float) hsd1.SdCard.BlockNbr / 1024 / 1024 / 1024)));
 }
 
 /* USER CODE END 1 */

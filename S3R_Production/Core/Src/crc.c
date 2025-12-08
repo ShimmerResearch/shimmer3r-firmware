@@ -24,8 +24,10 @@
 
 #include "hal_CRC.h"
 
-/* USER CODE END 0 */
 volatile uint8_t crcSrcFlags = 0;
+
+/* USER CODE END 0 */
+
 CRC_HandleTypeDef hcrc;
 
 /* CRC init function */

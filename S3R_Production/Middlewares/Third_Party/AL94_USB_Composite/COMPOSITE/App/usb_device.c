@@ -26,6 +26,8 @@
 
 /* USER CODE BEGIN Includes */
 #include "usbd_composite.h"
+
+#include "log_and_stream_common.h"
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN PV */
@@ -45,6 +47,9 @@ USBD_HandleTypeDef hUsbDevice;
  * -- Insert your variables declaration here --
  */
 /* USER CODE BEGIN 0 */
+
+/* 36 is the standard length of USB MSC Inquiry Data */
+int8_t STORAGE_InquirydataEdited[36];
 
 /* USER CODE END 0 */
 
@@ -130,6 +135,13 @@ void MX_USB_DEVICE_Init(void)
   }
 #endif
 #if (USBD_USE_MSC == 1)
+
+  /* Modify the USB MSC Inquiry Data to include custom Manufacturer and Product ID */
+  memcpy(STORAGE_InquirydataEdited, USBD_Storage_Interface_fops.pInquiry, sizeof(STORAGE_InquirydataEdited));
+  /* Index 8 is where the Manufacturer ID starts in the Inquiry Data */
+  LogAndStream_generateUsbDiskDriveId((char *)&STORAGE_InquirydataEdited[8]);
+  USBD_Storage_Interface_fops.pInquiry = (int8_t *)STORAGE_InquirydataEdited;
+
   if (USBD_MSC_RegisterStorage(&hUsbDevice, &USBD_Storage_Interface_fops) != USBD_OK)
   {
     Error_Handler();
