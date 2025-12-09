@@ -461,11 +461,11 @@ static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 
       stuckCount++;
 
-//      /* escalate after a few timer ticks (adjust TASK_STUCK_RESET_COUNT as desired) */
-//      if (stuckCount >= TASK_STUCK_RESET_COUNT)
-//      {
-//        NVIC_SystemReset(); /* recover by reboot */
-//      }
+      ///* escalate after a few timer ticks (adjust TASK_STUCK_RESET_COUNT as
+      //desired) */ if (stuckCount >= TASK_STUCK_RESET_COUNT)
+      //{
+      //  NVIC_SystemReset(); /* recover by reboot */
+      //}
 
       /* do not run normal blink processing while stuck */
       return;
