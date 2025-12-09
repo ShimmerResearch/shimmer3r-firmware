@@ -437,47 +437,9 @@ void TIM_reinitLeds(void)
 
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
-  static uint8_t stuckCount = 0;
-
   /* pet the HW watchdog */
   petWatchdog();
 
-  /* If a task appears to be executing for too long, blinking stops
-     and escalate to a reset after repeated timer ticks. */
-  if (ShimTask_getExecutingTask())
-  {
-    uint32_t start = ShimTask_getExecStartTick();
-    uint32_t elapsed = (HAL_GetTick() - start);
-
-    if (elapsed > TASK_STUCK_TIMEOUT_MS)
-    {
-      /* first hit: stop the LED timers so the existing blinking stops and user sees a change */
-      if (stuckCount == 0)
-      {
-        Board_ledOff(LED_ALL);
-        Board_ledOn(LED_UPR_GREEN);
-        Board_ledOn(LED_LWR_GREEN);
-      }
-
-      stuckCount++;
-
-      ///* escalate after a few timer ticks (adjust TASK_STUCK_RESET_COUNT as
-      //desired) */ if (stuckCount >= TASK_STUCK_RESET_COUNT)
-      //{
-      //  NVIC_SystemReset(); /* recover by reboot */
-      //}
-
-      /* do not run normal blink processing while stuck */
-      return;
-    }
-    else
-    {
-      /* task is within allowed time, clear counter */
-      stuckCount = 0;
-    }
-  }
-
-  /* normal behavior */
   LogAndStream_blinkTimerCommon();
 }
 
