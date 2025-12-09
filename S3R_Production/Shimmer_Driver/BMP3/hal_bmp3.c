@@ -251,10 +251,6 @@ int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
 
   settings.op_mode = BMP3_MODE_NORMAL;
   rslt = bmp3_set_op_mode(&settings, &bmp3);
-  if (rslt != BMP3_SENSOR_OK)
-  {
-    __NOP();
-  }
 
   return rslt;
 }

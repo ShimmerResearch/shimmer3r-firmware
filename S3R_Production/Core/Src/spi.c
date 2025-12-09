@@ -898,6 +898,11 @@ void SPI_startSensing()
   {
     int8_t rslt = bmp3_configure(shimmerSamplingFreq,
         ShimConfig_configBytePressureOversamplingRatioGet());
+    if (rslt != BMP3_SENSOR_OK)
+    {
+      //Here for debugging purposes but not doing anything else with it currently
+      __NOP();
+    }
   }
 
   if (configBytes->chEnAltAccel)
