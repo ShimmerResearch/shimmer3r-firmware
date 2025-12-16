@@ -628,7 +628,7 @@ void enableAds7028AutoSequenceMode(void)
   writeSingleRegister(SEQUENCE_CFG_ADDRESS,
       SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
 
-  delay_us(3);         //wait for conversion to complete
+  delay_us(3); //wait for conversion to complete
 
   //Read initial data and discard it.
   for (uint8_t i = 0; i < (spiAdc.sensorLen - 1); i++)
