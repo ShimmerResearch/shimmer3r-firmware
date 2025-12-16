@@ -1149,7 +1149,9 @@ uint8_t startManualConversions(uint8_t channelID, uint32_t samplesPerSecond);
 void stopAds7028Conversions(void);
 
 int16_t readData(uint8_t *dataRx);
+int16_t readDataAutoSeq(uint8_t *dataRx);
 uint8_t readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle);
+uint8_t readDataDmaAutoSeq(uint8_t *dataRx, SPI_HandleTypeDef *handle);
 uint8_t readSingleRegister(uint8_t address, uint8_t *buf);
 uint8_t getRegisterValue(uint8_t address);
 

@@ -138,7 +138,7 @@ extern "C"
     uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t adxl371Buf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET + 1 + 6]; //+1 for BMP390 dummy byte
-    uint8_t ads2078Buf[SPI_DMA_TXRX_OFFSET + 3]; //grabbing  only 1 channel at a time.
+    uint8_t ads2078Buf[3]; //grabbing  only 1 channel at a time 2 data + 1 if in case SPI CRC is enabled.
   } spi1ReadBuf;
 
   typedef struct
