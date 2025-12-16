@@ -179,12 +179,12 @@ void stopAds7028Conversions(void)
 
 int16_t readData(uint8_t *dataRx)
 {
-  uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
+  uint8_t numberOfBytes = SPI_CRC_ENABLED ? 3 : 2;
 
-  uint8_t dataTx[4] = { 0 };
+  uint8_t dataTx[3] = { 0 };
   if (SPI_CRC_ENABLED)
   {
-    dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
+    dataTx[2] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
   spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
 
@@ -194,14 +194,12 @@ int16_t readData(uint8_t *dataRx)
 uint8_t readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle)
 {
   uint8_t ret = 0;
-  uint8_t dataTx[4] = { 0 };
-  uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
-
-  dataTx[0] = SPI_READ_REGISTER;
+  uint8_t dataTx[3] = { 0 };
+  uint8_t numberOfBytes = SPI_CRC_ENABLED ? 3 : 2;
 
   if (SPI_CRC_ENABLED)
   {
-    dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
+    dataTx[2] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
   }
 
   ads7028_setCS(LOW);
