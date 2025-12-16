@@ -629,7 +629,7 @@ void enableAds7028AutoSequenceMode(void)
       SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
 
   ads7028_setCS(HIGH); //put nCS high to start conversion
-  delay_us(3);  //wait for conversion to complete
+  delay_us(3);         //wait for conversion to complete
 
   //Read initial  data and discard it.
   for (uint8_t i = 0; i < (spiAdc.sensorLen - 1); i++)
