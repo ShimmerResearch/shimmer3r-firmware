@@ -176,8 +176,21 @@ void stopAds7028Conversions(void)
 //!\return int16_t (sign-extended data).
 //
 //*****************************************************************************
-
 int16_t readData(uint8_t *dataRx)
+{
+  uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
+
+  uint8_t dataTx[4] = { 0 };
+  if (SPI_CRC_ENABLED)
+  {
+    dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
+  }
+  spiSendReceiveArray(dataTx, dataRx, numberOfBytes);
+
+  return signExtend(dataRx);
+}
+
+int16_t readDataAutoSeq(uint8_t *dataRx)
 {
   uint8_t numberOfBytes = SPI_CRC_ENABLED ? 3 : 2;
 
@@ -192,6 +205,28 @@ int16_t readData(uint8_t *dataRx)
 }
 
 uint8_t readDataDma(uint8_t *dataRx, SPI_HandleTypeDef *handle)
+{
+  uint8_t ret = 0;
+  uint8_t dataTx[4] = { 0 };
+  uint8_t numberOfBytes = SPI_CRC_ENABLED ? 4 : 3;
+
+  dataTx[0] = SPI_READ_REGISTER;
+
+  if (SPI_CRC_ENABLED)
+  {
+    dataTx[3] = calculateCRC(dataTx, numberOfBytes - 1, CRC_INITIAL_SEED);
+  }
+
+  ads7028_setCS(LOW);
+  ret = HAL_SPI_TransmitReceive_DMA(handle, &dataTx[0], dataRx, numberOfBytes);
+  if (ret != 0)
+  {
+    ads7028_setCS(HIGH);
+  }
+  return ret;
+}
+
+uint8_t readDataDmaAutoSeq(uint8_t *dataRx, SPI_HandleTypeDef *handle)
 {
   uint8_t ret = 0;
   uint8_t dataTx[3] = { 0 };

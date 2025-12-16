@@ -541,7 +541,7 @@ void ads7028_swI2C4PpgOn(uint8_t state)
 HAL_StatusTypeDef ads7028_dataGetDma(uint8_t *dataRx)
 {
   HAL_StatusTypeDef returnedStatus = HAL_OK;
-  returnedStatus = readDataDma(dataRx, &SENSOR_BUS);
+  returnedStatus = readDataDmaAutoSeq(dataRx, &SENSOR_BUS);
 
   return returnedStatus;
 }
@@ -628,13 +628,12 @@ void enableAds7028AutoSequenceMode(void)
   writeSingleRegister(SEQUENCE_CFG_ADDRESS,
       SEQUENCE_CFG_SEQ_MODE_AUTO_SEQ | SEQUENCE_CFG_SEQ_START_ENABLED);
 
-  ads7028_setCS(HIGH); //put nCS high to start conversion
   delay_us(3);         //wait for conversion to complete
 
-  //Read initial  data and discard it.
+  //Read initial data and discard it.
   for (uint8_t i = 0; i < (spiAdc.sensorLen - 1); i++)
   {
-    (void) readData(discardBytes);
+    (void) readDataAutoSeq(discardBytes);
   }
 }
 
