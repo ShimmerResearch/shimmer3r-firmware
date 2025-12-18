@@ -108,13 +108,13 @@ uint8_t testCrcDriver(void)
 
 uint8_t getCrcLength(uint8_t mode)
 {
-    switch (mode)
-    {
-        case CRC_1BYTES_ENABLED:
-          return 1;
-        case CRC_2BYTES_ENABLED:
-          return 2;
-        default:
-          return 0;
-    }
+  switch (mode)
+  {
+  case CRC_1BYTES_ENABLED:
+    return 1;
+  case CRC_2BYTES_ENABLED:
+    return 2;
+  default:
+    return 0;
+  }
 }
