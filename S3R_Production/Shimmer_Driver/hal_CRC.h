@@ -27,6 +27,4 @@ uint8_t checkCrc(uint8_t crcMode, uint8_t *aryPtr, uint8_t payloadLen);
 void setCrcHandleToUse(CRC_HandleTypeDef *hcrc);
 
 uint8_t testCrcDriver(void);
-uint8_t getCrcLength(uint8_t mode);
-
 #endif /* HAL_CRC_H_ */
