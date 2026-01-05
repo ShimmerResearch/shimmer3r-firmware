@@ -697,6 +697,16 @@ void platform_delayMs(const uint32_t delay_time_ms)
   HAL_Delay(delay_time_ms);
 }
 
+void platform_reset(void)
+{
+  NVIC_SystemReset();
+}
+
+uint32_t platform_getTick(void)
+{
+  return HAL_GetTick();
+}
+
 //Overrides weak function in LogAndStream driver
 uint8_t ShimBrd_doesDeviceSupportBle(void)
 {
