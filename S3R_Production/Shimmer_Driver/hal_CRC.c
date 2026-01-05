@@ -11,6 +11,20 @@
 
 CRC_HandleTypeDef *hcrcToUse;
 
+/**
+ * @brief  Compute CRC over a buffer using the configured CRC peripheral.
+ *
+ * This function calculates a CRC over the provided buffer using the CRC
+ * handle previously set via setCrcHandleToUse(). To maintain compatibility
+ * with other Shimmer3 microcontrollers, a 0x00 padding byte is added when
+ * the buffer length is an odd number of bytes.
+ *
+ * @param buf Pointer to the input buffer containing data bytes to be
+ *            processed by the CRC peripheral.
+ * @param len Length of the input buffer in bytes.
+ *
+ * @return The computed CRC value read from the CRC peripheral data register.
+ */
 uint32_t platform_CrcData(uint8_t *buf, uint8_t len)
 {
   HAL_CRC_Calculate(hcrcToUse, (uint32_t *) buf, (uint32_t) len);
