@@ -13,7 +13,7 @@
 
 #define CRC_INIT 0xB0CA
 
-// CRC modes - the ordinal corresponds to the number of CRC bytes
+//CRC modes - the ordinal corresponds to the number of CRC bytes
 typedef enum
 {
   CRC_OFF,
