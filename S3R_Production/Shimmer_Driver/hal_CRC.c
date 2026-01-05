@@ -35,4 +35,3 @@ void setCrcHandleToUse(CRC_HandleTypeDef *hcrc)
 {
   hcrcToUse = hcrc;
 }
-
