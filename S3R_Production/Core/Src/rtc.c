@@ -543,20 +543,20 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
 
   if (nextAlarmIdx == -1)
   {
-    // no pending alarms
+    //no pending alarms
     return;
   }
 
-  // Ensure alarm is in the future
-  time_t now = (time_t)RTC_get64() / 32768; // approx seconds from rtc64
+  //Ensure alarm is in the future
+  time_t now = (time_t) RTC_get64() / 32768; //approx seconds from rtc64
   if (nextAlarmTime <= now)
   {
     nextAlarmTime = now + 1;
     nextAlarms[nextAlarmIdx] = nextAlarmTime;
   }
 
-//  SHIMMER_PRINTF("RTC: Setting Alarm A for context %d at time %lu (now %lu)\r\n",
-//      nextAlarmIdx, (unsigned long)nextAlarmTime, (unsigned long)now);
+  //SHIMMER_PRINTF("RTC: Setting Alarm A for context %d at time %lu (now %lu)\r\n",
+  //    nextAlarmIdx, (unsigned long)nextAlarmTime, (unsigned long)now);
 
   struct tm alarm_tm;
   time_t t = nextAlarmTime;
@@ -571,17 +571,23 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
   sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
   sAlarm.Alarm = RTC_ALARM_A;
 
-  // Disable Alarm A and its IRQ before reprogramming
+  //Disable Alarm A and its IRQ before reprogramming
   __HAL_RTC_ALARMA_DISABLE(hrtc);
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
-  // Small barrier to allow hardware to settle
-  for (volatile int i = 0; i < 1000; ++i) __NOP();
+  //Small barrier to allow hardware to settle
+  for (volatile int i = 0; i < 1000; ++i)
+  {
+    __NOP();
+  }
 
   HAL_StatusTypeDef ret = HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN);
   if (ret != HAL_OK)
   {
-    // retry once after a short delay
-    for (volatile int i = 0; i < 10000; ++i) __NOP();
+    //retry once after a short delay
+    for (volatile int i = 0; i < 10000; ++i)
+    {
+      __NOP();
+    }
     ret = HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN);
     if (ret != HAL_OK)
     {
