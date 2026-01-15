@@ -28,6 +28,8 @@
 #include <hal_Board.h>
 #include <log_and_stream_common.h>
 
+#include "usbd_cdc_acm_if.h"
+
 //static void ledBlinkTimerCallback(void);
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim);
 
@@ -178,13 +180,13 @@ void MX_TIM6_Init(void)
 
   /* USER CODE BEGIN TIM6_Init 1 */
 
-  //100ms timer for LED blinking
+  //1ms timer for LED blinking
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 59999;
+  htim6.Init.Prescaler = 47;                /* divides 48MHz -> 1 MHz */
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 79;
+  htim6.Init.Period = 999;                  /* 1 MHz / 1000 = 1 kHz -> 1 ms */
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -435,12 +437,27 @@ void TIM_reinitLeds(void)
   Board_ledTimersStart(&htim3, &htim2, &htim6);
 }
 
+/* 1 ms callback: run CDC tick every ms and run LED/watchdog every 100 ms */
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
-  /* pet the HW watchdog */
-  petWatchdog();
+  (void)htim;
 
-  LogAndStream_blinkTimerCommon();
+  if (shimmerStatus.usbPluggedIn)
+  {
+    /* drive CDC coalesce/watchdog tick */
+    for (uint8_t i = 0; i < NUMBER_OF_CDC; i++)
+    {
+      CDC_FlushTimerTick(i);
+    }
+  }
+  /* software divider for 100 ms LED/watchdog work */
+  static uint16_t led_ms_count = 0;
+  if (++led_ms_count >= 100)
+  {
+    led_ms_count = 0;
+    petWatchdog();
+    LogAndStream_blinkTimerCommon();
+  }
 }
 
 void delay_us(uint16_t us)
@@ -449,5 +466,4 @@ void delay_us(uint16_t us)
   while (__HAL_TIM_GET_COUNTER(&htim7) < us)
     ; //wait for the counter to reach the us input in the parameter
 }
-
 /* USER CODE END 1 */

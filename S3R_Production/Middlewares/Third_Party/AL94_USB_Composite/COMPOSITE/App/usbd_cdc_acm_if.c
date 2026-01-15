@@ -44,6 +44,10 @@
 //#define CDC_COALESCE_DELAY_TICKS 2u
 #define CDC_COALESCE_DELAY_TICKS 0
 #endif
+
+#ifndef CDC_TX_STALL_TIMEOUT_MS
+#define CDC_TX_STALL_TIMEOUT_MS 200u /* ms before considering an IN transfer stalled */
+#endif
 /* USER CODE END DEFINES */
 
 /* RX buffer (one per CDC channel) */
@@ -66,11 +70,17 @@ typedef struct
   uint8_t need_zlp; /* send ZLP after draining */
   uint8_t ring[CDC_TX_RING_SIZE]; /* ring storage */
   uint8_t pkt_buf[CDC_EP_MAX_PKT];/* staging buffer per packet */
+#if (CDC_COALESCE_DELAY_TICKS > 0)
   uint8_t coalesce_ticks; /* remaining ticks before forcing send */
+#endif
+  uint32_t tx_start_tick; /* HAL_GetTick() when packet was started */
 } cdc_tx_ctx_t;
 static cdc_tx_ctx_t cdcTxCtx[NUMBER_OF_CDC];
 
 extern USBD_HandleTypeDef hUsbDevice; /* Provided by USB device stack */
+
+/* forward prototype for the watchdog */
+static void CDC_CheckStalledTx(uint8_t ch);
 
 /* Ring helpers */
 static inline uint16_t _ring_count(cdc_tx_ctx_t *c)
@@ -106,6 +116,13 @@ static uint16_t _ring_pop(cdc_tx_ctx_t *c, uint8_t *dst, uint16_t maxLen)
     dst[i] = c->ring[(c->tail + i) % CDC_TX_RING_SIZE];
   c->tail = (uint16_t) ((c->tail + first) % CDC_TX_RING_SIZE);
   return first;
+}
+
+/* Helper: check device configured */
+static inline uint8_t _usb_ready(void)
+{
+  extern USBD_HandleTypeDef hUsbDevice;
+  return (hUsbDevice.dev_state == USBD_STATE_CONFIGURED);
 }
 
 /* Forward */
@@ -252,6 +269,7 @@ static int8_t CDC_TransmitCplt(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len,
     return (USBD_OK);
   cdc_tx_ctx_t *ctx = &cdcTxCtx[cdc_ch];
   ctx->in_flight_len = 0;
+  ctx->tx_start_tick = 0; /* <--- clear watchdog timestamp */
   if (_ring_count(ctx) == 0 && ctx->need_zlp)
   {
     ctx->need_zlp = 0;
@@ -295,7 +313,7 @@ uint8_t CDC_Transmit(uint8_t ch, uint8_t *Buf, uint16_t Len)
 
   _ring_push(ctx, Buf, Len);
 
-  #if CDC_COALESCE_DELAY_TICKS == 0
+#if CDC_COALESCE_DELAY_TICKS == 0
   /* Coalescing disabled: start immediately if idle */
   if (ctx->in_flight_len == 0)
     CDC_TryStartTx(ch, 1);
@@ -336,7 +354,9 @@ void CDC_Flush(uint8_t ch)
   if (ch >= NUMBER_OF_CDC)
     return;
   cdc_tx_ctx_t *ctx = &cdcTxCtx[ch];
+#if (CDC_COALESCE_DELAY_TICKS > 0)
   ctx->coalesce_ticks = 0;
+#endif
   CDC_TryStartTx(ch, 1);
 }
 
@@ -346,11 +366,16 @@ void CDC_FlushAll(void)
     CDC_Flush(i);
 }
 
+/* CDC_FlushTimerTick: always run watchdog; coalescing tick logic only when enabled */
 void CDC_FlushTimerTick(uint8_t ch)
 {
   if (ch >= NUMBER_OF_CDC)
     return;
   cdc_tx_ctx_t *ctx = &cdcTxCtx[ch];
+  /* check for stalled IN transfers first */
+  CDC_CheckStalledTx(ch);
+
+#if (CDC_COALESCE_DELAY_TICKS > 0)
   if (ctx->in_flight_len == 0 && _ring_count(ctx) > 0)
   {
     if (ctx->coalesce_ticks > 0)
@@ -360,33 +385,107 @@ void CDC_FlushTimerTick(uint8_t ch)
         CDC_TryStartTx(ch, 1);
     }
   }
+#endif
 }
 
-/* Internal: attempt to start transmission */
 static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate)
 {
   if (ch >= NUMBER_OF_CDC)
     return;
+
+  /* do not transmit until USB is configured */
+  if (!_usb_ready())
+    return;
+
   cdc_tx_ctx_t *ctx = &cdcTxCtx[ch];
   if (ctx->in_flight_len != 0)
     return;
   if (_ring_count(ctx) == 0)
     return;
+#if (CDC_COALESCE_DELAY_TICKS > 0)
   if (!forceImmediate && ctx->coalesce_ticks)
     return;
+#endif
+
   extern USBD_CDC_ACM_HandleTypeDef CDC_ACM_Class_Data[];
   USBD_CDC_ACM_HandleTypeDef *hcdc = &CDC_ACM_Class_Data[ch];
   if (hcdc->TxState != 0)
     return;
+
   uint16_t sendLen = _ring_pop(ctx, ctx->pkt_buf, CDC_EP_MAX_PKT);
   if (!sendLen)
     return;
+
   ctx->in_flight_len = sendLen;
-  ctx->need_zlp =
-      (sendLen == CDC_EP_MAX_PKT && _ring_count(ctx) == 0) ? 1u : 0u;
+  ctx->tx_start_tick = HAL_GetTick();
+  ctx->need_zlp = (sendLen == CDC_EP_MAX_PKT && _ring_count(ctx) == 0) ? 1u : 0u;
+#if (CDC_COALESCE_DELAY_TICKS > 0)
   ctx->coalesce_ticks = 0;
+#endif
+
+  /* Ensure D-Cache coherency for USB DMA on STM32U5 */
+#if (__DCACHE_PRESENT == 1U)
+  /* Clean cache lines covering pkt_buf area before USB reads it */
+  SCB_CleanDCache_by_Addr((uint32_t *)ctx->pkt_buf, (int32_t)sendLen);
+#endif
+
   USBD_CDC_SetTxBuffer(ch, &hUsbDevice, ctx->pkt_buf, sendLen);
-  USBD_CDC_TransmitPacket(ch, &hUsbDevice);
+  USBD_StatusTypeDef st = USBD_CDC_TransmitPacket(ch, &hUsbDevice);
+
+  /* If transmit failed (e.g., not ready), roll back and retry later */
+  if (st != USBD_OK)
+  {
+    ctx->in_flight_len = 0;
+    ctx->tx_start_tick = 0;
+    /* Re-push data at head of ring so it is not lost */
+    /* Note: simple fallback: put back into ring front if space permits */
+    if (_ring_free(ctx) >= sendLen)
+    {
+      /* Move tail backward to "undo" pop */
+      ctx->tail = (uint16_t)((CDC_TX_RING_SIZE + ctx->tail - sendLen) % CDC_TX_RING_SIZE);
+      /* Copy bytes back to ring positions */
+      uint16_t first = sendLen;
+      if (ctx->tail + first > CDC_TX_RING_SIZE)
+        first = (uint16_t)(CDC_TX_RING_SIZE - ctx->tail);
+      for (uint16_t i = 0; i < first; i++)
+        ctx->ring[(ctx->tail + i) % CDC_TX_RING_SIZE] = ctx->pkt_buf[i];
+      /* Remaining (if wrapped) */
+      for (uint16_t i = first; i < sendLen; i++)
+        ctx->ring[(ctx->tail + i) % CDC_TX_RING_SIZE] = ctx->pkt_buf[i];
+    }
+    /* Leave for watchdog or next tick to retry */
+  }
+}
+
+/* watchdog remains the same; optional: also check configured state before recovery */
+static void CDC_CheckStalledTx(uint8_t ch)
+{
+  if (ch >= NUMBER_OF_CDC)
+    return;
+
+  cdc_tx_ctx_t *ctx = &cdcTxCtx[ch];
+  if (ctx->in_flight_len == 0)
+    return;
+
+  uint32_t now = HAL_GetTick();
+  if (ctx->tx_start_tick == 0)
+    ctx->tx_start_tick = now;
+
+  if ((uint32_t)(now - ctx->tx_start_tick) >= CDC_TX_STALL_TIMEOUT_MS)
+  {
+    ctx->in_flight_len = 0;
+    ctx->tx_start_tick = 0;
+
+    extern USBD_CDC_ACM_HandleTypeDef CDC_ACM_Class_Data[];
+    USBD_CDC_ACM_HandleTypeDef *hcdc = &CDC_ACM_Class_Data[ch];
+    if (hcdc->TxState != 0)
+    {
+      hcdc->TxState = 0;
+    }
+
+    if (_usb_ready())
+      CDC_TryStartTx(ch, 1);
+  }
 }
 
 /* USER CODE BEGIN Additional_User_Code */
