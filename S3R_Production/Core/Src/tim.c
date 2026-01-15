@@ -30,8 +30,8 @@
 
 #include "usbd_cdc_acm_if.h"
 
-//static void ledBlinkTimerCallback(void);
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim);
+static void cdc1msTimerCallback(struct __TIM_HandleTypeDef *htim);
 
 /* USER CODE END 0 */
 
@@ -39,6 +39,7 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
+TIM_HandleTypeDef htim15;
 
 /* TIM2 init function */
 void MX_TIM2_Init(void)
@@ -180,13 +181,13 @@ void MX_TIM6_Init(void)
 
   /* USER CODE BEGIN TIM6_Init 1 */
 
-  //1ms timer for LED blinking
+  //100ms timer for LED blinking
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 47;                /* divides 48MHz -> 1 MHz */
+  htim6.Init.Prescaler = 59999;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 999;                  /* 1 MHz / 1000 = 1 kHz -> 1 ms */
+  htim6.Init.Period = 79;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -240,6 +241,52 @@ void MX_TIM7_Init(void)
   /* USER CODE END TIM7_Init 2 */
 }
 
+/* TIM15 init function */
+void MX_TIM15_Init(void)
+{
+
+  /* USER CODE BEGIN TIM15_Init 0 */
+
+  //1ms timer for CDC tick only when USB active
+
+  /* USER CODE END TIM15_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = { 0 };
+  TIM_MasterConfigTypeDef sMasterConfig = { 0 };
+
+  /* USER CODE BEGIN TIM15_Init 1 */
+
+  /* USER CODE END TIM15_Init 1 */
+  htim15.Instance = TIM15;
+  htim15.Init.Prescaler = 47;
+  htim15.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim15.Init.Period = 999;
+  htim15.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim15.Init.RepetitionCounter = 0;
+  htim15.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim15) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim15, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim15, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM15_Init 2 */
+
+  /* Register CDC 1 ms tick callback */
+  HAL_TIM_RegisterCallback(&htim15, HAL_TIM_PERIOD_ELAPSED_CB_ID, cdc1msTimerCallback);
+
+  /* USER CODE END TIM15_Init 2 */
+}
+
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
 {
 
@@ -290,6 +337,21 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
     /* USER CODE BEGIN TIM7_MspInit 1 */
 
     /* USER CODE END TIM7_MspInit 1 */
+  }
+  else if (tim_baseHandle->Instance == TIM15)
+  {
+    /* USER CODE BEGIN TIM15_MspInit 0 */
+
+    /* USER CODE END TIM15_MspInit 0 */
+    /* TIM15 clock enable */
+    __HAL_RCC_TIM15_CLK_ENABLE();
+
+    /* TIM15 interrupt Init */
+    HAL_NVIC_SetPriority(TIM15_IRQn, 1, 0);
+    HAL_NVIC_EnableIRQ(TIM15_IRQn);
+    /* USER CODE BEGIN TIM15_MspInit 1 */
+
+    /* USER CODE END TIM15_MspInit 1 */
   }
 }
 
@@ -418,6 +480,20 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle)
 
     /* USER CODE END TIM7_MspDeInit 1 */
   }
+  else if (tim_baseHandle->Instance == TIM15)
+  {
+    /* USER CODE BEGIN TIM15_MspDeInit 0 */
+
+    /* USER CODE END TIM15_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM15_CLK_DISABLE();
+
+    /* TIM15 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(TIM15_IRQn);
+    /* USER CODE BEGIN TIM15_MspDeInit 1 */
+
+    /* USER CODE END TIM15_MspDeInit 1 */
+  }
 }
 
 /* USER CODE BEGIN 1 */
@@ -440,24 +516,10 @@ void TIM_reinitLeds(void)
 /* 1 ms callback: run CDC tick every ms and run LED/watchdog every 100 ms */
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
-  (void)htim;
+  /* pet the HW watchdog */
+  petWatchdog();
 
-  if (shimmerStatus.usbPluggedIn)
-  {
-    /* drive CDC coalesce/watchdog tick */
-    for (uint8_t i = 0; i < NUMBER_OF_CDC; i++)
-    {
-      CDC_FlushTimerTick(i);
-    }
-  }
-  /* software divider for 100 ms LED/watchdog work */
-  static uint16_t led_ms_count = 0;
-  if (++led_ms_count >= 100)
-  {
-    led_ms_count = 0;
-    petWatchdog();
-    LogAndStream_blinkTimerCommon();
-  }
+  LogAndStream_blinkTimerCommon();
 }
 
 void delay_us(uint16_t us)
@@ -466,4 +528,40 @@ void delay_us(uint16_t us)
   while (__HAL_TIM_GET_COUNTER(&htim7) < us)
     ; //wait for the counter to reach the us input in the parameter
 }
+
+/* CDC-only 1 ms callback: coalesce/watchdog tick */
+static void cdc1msTimerCallback(struct __TIM_HandleTypeDef *htim)
+{
+  (void) htim;
+  for (uint8_t i = 0; i < NUMBER_OF_CDC; i++)
+  {
+    CDC_FlushTimerTick(i);
+  }
+}
+
+/* Control helper: enable/disable CDC 1 ms timer (TIM15) */
+void CDC_1msTimerEnable(uint8_t enable)
+{
+  if (enable)
+  {
+    /* Ensure timer is initialized */
+    static uint8_t inited = 0;
+    if (!inited)
+    {
+      MX_TIM15_Init();
+      inited = 1;
+    }
+    if (HAL_TIM_Base_Start_IT(&htim15) != HAL_OK)
+    {
+      Error_Handler();
+    }
+    HAL_NVIC_EnableIRQ(TIM15_IRQn);
+  }
+  else
+  {
+    (void) HAL_TIM_Base_Stop_IT(&htim15);
+    HAL_NVIC_DisableIRQ(TIM15_IRQn);
+  }
+}
+
 /* USER CODE END 1 */
