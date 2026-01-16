@@ -85,7 +85,8 @@ static void CDC_CheckStalledTx(uint8_t ch);
 /* Ring helpers */
 static inline uint16_t _ring_count(cdc_tx_ctx_t *c)
 {
-  return (uint16_t) ((c->head + CDC_TX_RING_SIZE - c->tail) % CDC_TX_RING_SIZE);
+//  return (uint16_t) ((c->head + CDC_TX_RING_SIZE - c->tail) % CDC_TX_RING_SIZE);
+  return (uint16_t)((c->head - c->tail) & (CDC_TX_RING_SIZE - 1));
 }
 
 static inline uint16_t _ring_free(cdc_tx_ctx_t *c)
@@ -109,13 +110,27 @@ static uint16_t _ring_pop(cdc_tx_ctx_t *c, uint8_t *dst, uint16_t maxLen)
     return 0;
   if (avail > maxLen)
     avail = maxLen;
+
+  /* amount we can copy before wrapping to index 0 */
   uint16_t first = avail;
-  if (c->tail + first > CDC_TX_RING_SIZE)
-    first = (uint16_t) (CDC_TX_RING_SIZE - c->tail);
+  if ((uint32_t)c->tail + first > (uint32_t)CDC_TX_RING_SIZE)
+    first = (uint16_t)(CDC_TX_RING_SIZE - c->tail);
+
+  /* copy first contiguous chunk */
   for (uint16_t i = 0; i < first; i++)
     dst[i] = c->ring[(c->tail + i) % CDC_TX_RING_SIZE];
-  c->tail = (uint16_t) ((c->tail + first) % CDC_TX_RING_SIZE);
-  return first;
+
+  /* if wrapped, copy the remaining bytes from start of ring */
+  if (first < avail)
+  {
+    uint16_t rem = avail - first;
+    for (uint16_t i = 0; i < rem; i++)
+      dst[first + i] = c->ring[i];
+  }
+
+  /* advance tail by total bytes copied */
+  c->tail = (uint16_t)((c->tail + avail) % CDC_TX_RING_SIZE);
+  return avail;
 }
 
 /* Helper: check device configured */
@@ -136,6 +151,7 @@ static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate);
 static int8_t CDC_Init(uint8_t cdc_ch)
 {
   USBD_CDC_SetRxBuffer(cdc_ch, &hUsbDevice, RX_Buffer[cdc_ch]);
+  /* Do NOT start CDC 1 ms timer here; it's controlled by VBUS state (GPIO) */
   return (USBD_OK);
 }
 
@@ -146,6 +162,7 @@ static int8_t CDC_Init(uint8_t cdc_ch)
 static int8_t CDC_DeInit(uint8_t cdc_ch)
 {
   (void) cdc_ch;
+  /* Do NOT stop CDC 1 ms timer here; it's controlled by VBUS state (GPIO) */
   return (USBD_OK);
 }
 
@@ -238,6 +255,7 @@ static int8_t CDC_Control(uint8_t cdc_ch, uint8_t cmd, uint8_t *pbuf,
   */
 static int8_t CDC_Receive(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len)
 {
+  /* D-Cache maintenance not needed: D-Cache is deactivated in this project */
   for (uint32_t i = 0; i < *Len; i++)
   {
     ShimDock_rxCallback(Buf[i]);
@@ -388,6 +406,33 @@ void CDC_FlushTimerTick(uint8_t ch)
 #endif
 }
 
+
+/* Diagnostic: print USB & CDC TX state for channel `ch` */
+static void CDC_DumpTxState(uint8_t ch)
+{
+  if (ch >= NUMBER_OF_CDC) return;
+
+  extern USBD_HandleTypeDef hUsbDevice;
+  extern USBD_CDC_ACM_HandleTypeDef CDC_ACM_Class_Data[];
+  cdc_tx_ctx_t *ctx = &cdcTxCtx[ch];
+  USBD_CDC_ACM_HandleTypeDef *hcdc = &CDC_ACM_Class_Data[ch];
+
+  printf("USB dev_state=%u, tick=%lu\n",
+         (unsigned)hUsbDevice.dev_state, (unsigned long)HAL_GetTick());
+  printf("ch=%u: in_flight_len=%u need_zlp=%u ring_count=%u\n",
+         (unsigned)ch, (unsigned)ctx->in_flight_len, (unsigned)ctx->need_zlp,
+         (unsigned)_ring_count(ctx));
+  printf("class TxState=%u\n", (unsigned)hcdc->TxState);
+  printf("\r\n");
+
+  /* optional: if PCD handle is available, dump EP status (if accessible) */
+#ifdef hpcd_USB_FS
+  extern PCD_HandleTypeDef hpcd_USB_FS;
+  /* example: print device status register or a marker you use in your driver */
+  printf("PCD state=%u\n", (unsigned)hpcd_USB_FS.State);
+#endif
+}
+
 static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate)
 {
   if (ch >= NUMBER_OF_CDC)
@@ -416,21 +461,19 @@ static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate)
   if (!sendLen)
     return;
 
-  ctx->in_flight_len = sendLen;
-  ctx->tx_start_tick = HAL_GetTick();
-  ctx->need_zlp = (sendLen == CDC_EP_MAX_PKT && _ring_count(ctx) == 0) ? 1u : 0u;
-#if (CDC_COALESCE_DELAY_TICKS > 0)
-  ctx->coalesce_ticks = 0;
-#endif
+  /* Modified fragment of CDC_TryStartTx: fix precedence when computing need_zlp */
+    ctx->in_flight_len = sendLen;
+    ctx->tx_start_tick = HAL_GetTick();
+  /* correct parentheses so the ?: applies to the whole boolean expression */
+    ctx->need_zlp = ((sendLen == CDC_EP_MAX_PKT && _ring_count(ctx) == 0) || forceImmediate) ? 1u : 0u;
+  #if (CDC_COALESCE_DELAY_TICKS > 0)
+    ctx->coalesce_ticks = 0;
+  #endif
 
-  /* Ensure D-Cache coherency for USB DMA on STM32U5 */
-#if (__DCACHE_PRESENT == 1U)
-  /* Clean cache lines covering pkt_buf area before USB reads it */
-  SCB_CleanDCache_by_Addr((uint32_t *)ctx->pkt_buf, (int32_t)sendLen);
-#endif
+    USBD_CDC_SetTxBuffer(ch, &hUsbDevice, ctx->pkt_buf, sendLen);
+    USBD_StatusTypeDef st = USBD_CDC_TransmitPacket(ch, &hUsbDevice);
 
-  USBD_CDC_SetTxBuffer(ch, &hUsbDevice, ctx->pkt_buf, sendLen);
-  USBD_StatusTypeDef st = USBD_CDC_TransmitPacket(ch, &hUsbDevice);
+    CDC_DumpTxState(ch);
 
   /* If transmit failed (e.g., not ready), roll back and retry later */
   if (st != USBD_OK)
@@ -457,7 +500,7 @@ static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate)
   }
 }
 
-/* watchdog remains the same; optional: also check configured state before recovery */
+/* Modified CDC_CheckStalledTx: after clearing stalled state, explicitly send ZLP if needed */
 static void CDC_CheckStalledTx(uint8_t ch)
 {
   if (ch >= NUMBER_OF_CDC)
@@ -476,11 +519,22 @@ static void CDC_CheckStalledTx(uint8_t ch)
     ctx->in_flight_len = 0;
     ctx->tx_start_tick = 0;
 
+    /* Clear TxState so stack will accept a new packet */
     extern USBD_CDC_ACM_HandleTypeDef CDC_ACM_Class_Data[];
     USBD_CDC_ACM_HandleTypeDef *hcdc = &CDC_ACM_Class_Data[ch];
     if (hcdc->TxState != 0)
     {
       hcdc->TxState = 0;
+    }
+
+    /* If we needed to send a ZLP to terminate a full packet and the ring is empty,
+       send it now so host sees packet boundary. */
+    if (ctx->need_zlp && _ring_count(ctx) == 0 && _usb_ready())
+    {
+      ctx->need_zlp = 0;
+      USBD_CDC_SetTxBuffer(ch, &hUsbDevice, NULL, 0);
+      USBD_CDC_TransmitPacket(ch, &hUsbDevice);
+      return;
     }
 
     if (_usb_ready())

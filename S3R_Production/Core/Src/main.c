@@ -215,6 +215,22 @@ void Init()
 
 /* USER CODE END 0 */
 
+/* Simple diagnostic: log SystemCoreClock and SysTick registers */
+void Tick_Diagnostics(void)
+{
+  uint32_t sc = SystemCoreClock;
+  uint32_t load = SysTick->LOAD;
+  uint32_t val = SysTick->VAL;
+  uint32_t ctrl = SysTick->CTRL;
+  uint32_t expected_reload = (sc / 1000) ? (sc / 1000 - 1) : 0;
+
+  /* Replace this with your logging function (UART/CDC/LED) */
+  printf("SystemCoreClock=%lu\n", (unsigned long)sc);
+  printf("SYSTICK LOAD=%lu VAL=%lu CTRL=0x%08lX\n",
+         (unsigned long)load, (unsigned long)val, (unsigned long)ctrl);
+  printf("expected reload (1ms)=%lu\n", (unsigned long)expected_reload);
+}
+
 /**
  * @brief  The application entry point.
  * @retval int
@@ -271,6 +287,8 @@ int main(void)
 
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
+
+  Tick_Diagnostics();
 
   /* USER CODE END 2 */
 
