@@ -759,13 +759,11 @@ void vbusPinStateCheck(void)
 #if !USE_USBX
       MX_USB_DEVICE_Init();
 #endif //USE_USBX
-      CDC_1msTimerEnable(1);
     }
   }
   else if (pin == GPIO_PIN_RESET)
   {
     shimmerStatus.usbPluggedIn = 0;
-    CDC_1msTimerEnable(0);
 #if SUPPORT_SR48_6_0
     /* SR48-6-0 patch for VBUS sense - start */
     if (ShimBrd_isBoardSr48_6_0())

@@ -24,6 +24,7 @@
 
 /* USER CODE BEGIN INCLUDE */
 #include <shimmer_include.h>
+#include "tim.h" /* for CDC_1msTimerEnable */
 /* USER CODE END INCLUDE */
 
 /* USER CODE BEGIN DEFINES */
@@ -151,7 +152,8 @@ static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate);
 static int8_t CDC_Init(uint8_t cdc_ch)
 {
   USBD_CDC_SetRxBuffer(cdc_ch, &hUsbDevice, RX_Buffer[cdc_ch]);
-  /* Do NOT start CDC 1 ms timer here; it's controlled by VBUS state (GPIO) */
+  /* Start CDC 1 ms timer when CDC is initialized (device configured) */
+  CDC_1msTimerEnable(1);
   return (USBD_OK);
 }
 
@@ -162,7 +164,8 @@ static int8_t CDC_Init(uint8_t cdc_ch)
 static int8_t CDC_DeInit(uint8_t cdc_ch)
 {
   (void) cdc_ch;
-  /* Do NOT stop CDC 1 ms timer here; it's controlled by VBUS state (GPIO) */
+  /* Stop CDC 1 ms timer when CDC is deinitialized (device unconfigured/suspended) */
+  CDC_1msTimerEnable(0);
   return (USBD_OK);
 }
 
@@ -326,6 +329,13 @@ uint8_t CDC_Transmit(uint8_t ch, uint8_t *Buf, uint16_t Len)
   if (Len == 0)
     return USBD_OK;
   cdc_tx_ctx_t *ctx = &cdcTxCtx[ch];
+
+  /* Kick watchdog here in case the periodic tick isn't running and TX got stuck */
+  if (ctx->in_flight_len != 0)
+  {
+    CDC_CheckStalledTx(ch);
+  }
+
   if (_ring_free(ctx) < Len)
     return USBD_BUSY;
 
@@ -461,19 +471,19 @@ static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate)
   if (!sendLen)
     return;
 
-  /* Modified fragment of CDC_TryStartTx: fix precedence when computing need_zlp */
-    ctx->in_flight_len = sendLen;
-    ctx->tx_start_tick = HAL_GetTick();
-  /* correct parentheses so the ?: applies to the whole boolean expression */
-    ctx->need_zlp = ((sendLen == CDC_EP_MAX_PKT && _ring_count(ctx) == 0) || forceImmediate) ? 1u : 0u;
-  #if (CDC_COALESCE_DELAY_TICKS > 0)
-    ctx->coalesce_ticks = 0;
-  #endif
+  /* Start new IN transfer */
+  ctx->in_flight_len = sendLen;
+  ctx->tx_start_tick = HAL_GetTick();
+  /* Set need_zlp only when last packet exactly equals max packet and ring is empty */
+  ctx->need_zlp = ((sendLen == CDC_EP_MAX_PKT) && (_ring_count(ctx) == 0)) ? 1u : 0u;
+#if (CDC_COALESCE_DELAY_TICKS > 0)
+  ctx->coalesce_ticks = 0;
+#endif
 
-    USBD_CDC_SetTxBuffer(ch, &hUsbDevice, ctx->pkt_buf, sendLen);
-    USBD_StatusTypeDef st = USBD_CDC_TransmitPacket(ch, &hUsbDevice);
+  USBD_CDC_SetTxBuffer(ch, &hUsbDevice, ctx->pkt_buf, sendLen);
+  USBD_StatusTypeDef st = USBD_CDC_TransmitPacket(ch, &hUsbDevice);
 
-    CDC_DumpTxState(ch);
+  CDC_DumpTxState(ch);
 
   /* If transmit failed (e.g., not ready), roll back and retry later */
   if (st != USBD_OK)
@@ -481,7 +491,6 @@ static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate)
     ctx->in_flight_len = 0;
     ctx->tx_start_tick = 0;
     /* Re-push data at head of ring so it is not lost */
-    /* Note: simple fallback: put back into ring front if space permits */
     if (_ring_free(ctx) >= sendLen)
     {
       /* Move tail backward to "undo" pop */
