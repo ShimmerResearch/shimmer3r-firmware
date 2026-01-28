@@ -559,7 +559,7 @@ void CDC_1msTimerEnable(uint8_t enable)
   }
   else
   {
-    if(htim15.State != HAL_TIM_STATE_RESET)
+    if (htim15.State != HAL_TIM_STATE_RESET)
     {
       (void) HAL_TIM_Base_Stop_IT(&htim15);
       HAL_NVIC_DisableIRQ(TIM15_IRQn);
