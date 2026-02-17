@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "app_usbx_device.h"
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
@@ -35,11 +36,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if !USE_USBX
-#include "usb_device.h"
-#endif
-
+#include "cachel1_armv7.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,6 +65,10 @@
 /* USER CODE BEGIN PV */
 
 volatile uint32_t time_start, time_end, time_diff;
+#define BLOCK_START_ADDR         0     /* Block start address      */
+#define NUM_OF_BLOCKS            5     /* Total number of blocks   */
+#define BUFFER_WORDS_SIZE        ((MMC_BLOCKSIZE * NUM_OF_BLOCKS) >> 2) /* Total data size in bytes */
+
 
 /* USER CODE END PV */
 
@@ -200,8 +201,8 @@ void Init()
 #endif
 
   //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
-  GPIO_usbVbusIntInit(1);
-  vbusPinStateCheck();
+  //GPIO_usbVbusIntInit(1);
+  //vbusPinStateCheck();
 
   /* Take initial measurement to update LED state */
   manageReadBatt(1);
@@ -246,19 +247,21 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
   MX_ICACHE_Init();
+//  SCB_DisableDCache();
   MX_RNG_Init();
   MX_RTC_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
+  Board_sd2Mcu();
+  MX_USBX_Device_Init();
   /* USER CODE BEGIN 2 */
 
   //MX_IWDG_Init();
@@ -267,7 +270,7 @@ int main(void)
   setMockExpansionBrdDetails();
 #endif
 
-  Init();
+  //Init();
 
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
@@ -279,9 +282,9 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+    USBX_Device_Process(NULL);
     /* USER CODE BEGIN 3 */
-    ShimTask_manage();
+    //ShimTask_manage();
   }
   /* USER CODE END 3 */
 }

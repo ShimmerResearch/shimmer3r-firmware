@@ -22,10 +22,6 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-
-#include "usb_device.h"
-#include "usbd_core.h"
-
 #include "Boards/shimmer_boards.h"
 #include "Button/shimmer_button.h"
 #include "TaskList/shimmer_taskList.h"
@@ -120,8 +116,9 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA15 PA7 PA4 PA5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15 | GPIO_PIN_7 | GPIO_PIN_4 | GPIO_PIN_5;
+  /*Configure GPIO pins : PA15 PA9 PA7 PA4
+                           PA5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15 | GPIO_PIN_9 | GPIO_PIN_7 | GPIO_PIN_4 | GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -247,7 +244,7 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 2 */
-
+#if 0
 void GPIO_usbVbusIntInit(uint8_t state)
 {
   if (state)
@@ -279,13 +276,14 @@ void GPIO_usbVbusIntInit(uint8_t state)
     HAL_GPIO_DeInit(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   }
 }
-
+#endif
 //TODO copy Shimmer4 pins from HAL_GPIO_EXTI_Callback to HAL_GPIO_EXTI_Rising_Callback and HAL_GPIO_EXTI_Falling_Callback
 #if defined(SHIMMER3R)
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin)
   {
+#if 0
 #if SUPPORT_SR48_6_0
   /* SR48-6-0 patch for VBUS sense - start */
   case USB_VBUS_Pin:
@@ -307,6 +305,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
     }
     break;
 #endif //SUPPORT_SR48_6_0
+#endif
   default:
     gpioExtiCommon(GPIO_Pin, 1);
     break;
@@ -367,6 +366,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     }
     /* SR48-6-0 patch for dock detection - end */
     /* SR48-6-0 patch for VBUS sense - start */
+#if 0
   case USB_VBUS_Pin:
     if (ShimBrd_isBoardSr48_6_0())
     {
@@ -378,6 +378,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     }
     /* SR48-6-0 patch for VBUS sense - end */
     /* no break */
+#endif
 #endif //SUPPORT_SR48_6_0
   case USER_BTN_Pin:
     (void) ShimBtn_pressReleaseAction();
@@ -722,7 +723,7 @@ void platform_initGpioForRevision(void)
     //HAL_GPIO_Init(J4_GPIO_INTERNAL6_GPIO_Port, &GPIO_InitStruct);
   }
 }
-
+#if 0
 void vbusPinStateCheck(void)
 {
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
@@ -792,7 +793,7 @@ void vbusPinStateCheck(void)
       }
     }
     /* SR48-6-0 patch for VBUS sense - end */
-#else //SUPPORT_SR48_6_0
+#else  //SUPPORT_SR48_6_0
     USB_STATE state = usbPlugInState();
     if (state == USB_CABLE_UNPLUGGED)
     {
@@ -808,6 +809,7 @@ void vbusPinStateCheck(void)
 #endif //SUPPORT_SR48_6_0
   }
 }
+#endif
 
 void initBtPins(void)
 {

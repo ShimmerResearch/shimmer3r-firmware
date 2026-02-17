@@ -482,6 +482,7 @@ DRESULT SD_ioctl(BYTE lun, BYTE cmd, void *buff)
   * @param hsd: SD handle
   * @retval None
   */
+#if 0
 void BSP_SD_WriteCpltCallback(void)
 {
 
@@ -497,7 +498,7 @@ void BSP_SD_ReadCpltCallback(void)
 {
   ReadStatus = 1;
 }
-
+#endif
 /* USER CODE BEGIN ErrorAbortCallbacks */
 /*
 ==============================================================================================

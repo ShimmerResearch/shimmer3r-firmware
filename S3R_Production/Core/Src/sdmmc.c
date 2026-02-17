@@ -23,7 +23,7 @@
 /* USER CODE BEGIN 0 */
 #include "gpio.h"
 #include "stdio.h"
-
+#include "ux_device_msc.h"
 extern STATTypeDef stat;
 
 /* USER CODE END 0 */
@@ -52,7 +52,7 @@ void MX_SDMMC1_SD_Init(void)
     hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
     hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
     hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-    hsd1.Init.ClockDiv = 2;
+    hsd1.Init.ClockDiv = 0;
     if (HAL_SD_Init(&hsd1) != HAL_OK)
     {
       Error_Handler();
@@ -123,7 +123,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef *sdHandle)
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     /* SDMMC1 interrupt Init */
-    HAL_NVIC_SetPriority(SDMMC1_IRQn, 6, 0);
+    HAL_NVIC_SetPriority(SDMMC1_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
     /* USER CODE BEGIN SDMMC1_MspInit 1 */
 
@@ -240,4 +240,15 @@ void printSdCardSize(char *outputStr)
       (hsd1.SdCard.BlockSize * ((float) hsd1.SdCard.BlockNbr / 1024 / 1024 / 1024)));
 }
 
+#ifdef DMA
+void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd1)
+{
+  USDB_ReadCpltCallback(hsd1);
+}
+
+void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd1)
+{
+  USBD_WriteCpltCallback(hsd1);
+}
+#endif
 /* USER CODE END 1 */

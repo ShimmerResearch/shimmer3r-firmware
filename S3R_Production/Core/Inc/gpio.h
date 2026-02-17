@@ -44,14 +44,14 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
-  void GPIO_usbVbusIntInit(uint8_t state);
+  //void GPIO_usbVbusIntInit(uint8_t state);
 
 #if defined(SHIMMER3R)
   void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising);
 #endif
 
   uint8_t isSdPowerOn(void);
-  void vbusPinStateCheck(void);
+  //void vbusPinStateCheck(void);
   void initBtPins(void);
   void initBtInterrupts(void);
   void deinitBtPins(void);
