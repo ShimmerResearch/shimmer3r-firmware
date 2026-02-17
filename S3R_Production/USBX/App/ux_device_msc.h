@@ -28,11 +28,11 @@ extern "C"
 
 /* Includes ------------------------------------------------------------------*/
 #include "ux_api.h"
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+  /* Private includes ----------------------------------------------------------*/
+  /* USER CODE BEGIN Includes */
 
-#include "main.h"
 #include "cachel1_armv7.h"
+#include "main.h"
 #include "stm32u5xx_hal.h"
 #include "ux_api.h"
 #include "ux_dcd_stm32.h"

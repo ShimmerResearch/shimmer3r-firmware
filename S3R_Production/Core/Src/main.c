@@ -29,6 +29,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "cachel1_armv7.h"
 #include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
@@ -36,7 +37,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cachel1_armv7.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,10 +65,10 @@
 /* USER CODE BEGIN PV */
 
 volatile uint32_t time_start, time_end, time_diff;
-#define BLOCK_START_ADDR         0     /* Block start address      */
-#define NUM_OF_BLOCKS            5     /* Total number of blocks   */
-#define BUFFER_WORDS_SIZE        ((MMC_BLOCKSIZE * NUM_OF_BLOCKS) >> 2) /* Total data size in bytes */
-
+#define BLOCK_START_ADDR 0 /* Block start address      */
+#define NUM_OF_BLOCKS    5 /* Total number of blocks   */
+#define BUFFER_WORDS_SIZE \
+  ((MMC_BLOCKSIZE * NUM_OF_BLOCKS) >> 2) /* Total data size in bytes */
 
 /* USER CODE END PV */
 
@@ -253,7 +253,7 @@ int main(void)
   MX_GPIO_Init();
   MX_GPDMA1_Init();
   MX_ICACHE_Init();
-//  SCB_DisableDCache();
+  //SCB_DisableDCache();
   MX_RNG_Init();
   MX_RTC_Init();
   MX_TIM2_Init();
