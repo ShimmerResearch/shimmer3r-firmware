@@ -55,7 +55,8 @@ void MX_SDMMC1_SD_Init(void)
     hsd1.Init.ClockDiv = 2;
     if (HAL_SD_Init(&hsd1) != HAL_OK)
     {
-      Error_Handler();
+      /* Commenting it out to avoid FW lockup when there is a Hardware issue with SD card or slot. */
+      //Error_Handler(); /*TODO: to handle it better*/
     }
     /* USER CODE BEGIN SDMMC1_Init 2 */
     else
