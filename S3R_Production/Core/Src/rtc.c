@@ -29,7 +29,8 @@
 
 uint32_t SHIM_RTC_Status = RTC_STATUS_ZERO;
 
-#define RTC_MIN_ALARM_OFFSET_SECONDS 1U /* minimum offset (s) to ensure alarm is in the future */
+#define RTC_MIN_ALARM_OFFSET_SECONDS \
+  1U /* minimum offset (s) to ensure alarm is in the future */
 
 volatile time_t nextAlarms[RTC_NUM_ALARMS] = { RTC_ALARM_CONTEXT_NONE };
 
