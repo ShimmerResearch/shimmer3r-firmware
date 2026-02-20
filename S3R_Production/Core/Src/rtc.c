@@ -29,6 +29,8 @@
 
 uint32_t SHIM_RTC_Status = RTC_STATUS_ZERO;
 
+/* minimum offset (s) to ensure alarm is in the future */
+#define RTC_MIN_ALARM_OFFSET_SECONDS 1U
 /* Number of NOP cycles to delay before retrying a failed RTC alarm set operation */
 #define RTC_ALARM_RETRY_DELAY_CYCLES 10000
 
