@@ -30,8 +30,6 @@ extern "C"
 #include "main.h"
 
   /* USER CODE BEGIN Includes */
-
-#include "usbd_def.h"
 #include <shimmer_include.h>
   /* USER CODE END Includes */
 
@@ -39,7 +37,7 @@ extern "C"
 
   /* USER CODE BEGIN Private defines */
 
-  extern USBD_HandleTypeDef hUsbDevice;
+
 
   typedef enum
   {

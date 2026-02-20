@@ -282,7 +282,7 @@ void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
   }
 }
 #endif
-
+#if 0
 USB_STATE usbPlugInState(void)
 {
   uint8_t stateNow = hUsbDevice.dev_state;
@@ -299,5 +299,5 @@ USB_STATE usbPlugInState(void)
   //TODO no else and not all conditions handled
   return lastState;
 }
-
+#endif
 /* USER CODE END 1 */
