@@ -606,7 +606,7 @@ void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
 
-  if(secondsFromNow == 0)
+  if (secondsFromNow == 0)
   {
     nextAlarms[context] = 0; //Clear the alarm if 0 is passed in
   }
@@ -628,7 +628,7 @@ void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
     time_t future_time = mktime(&current_tm) + secondsFromNow;
     nextAlarms[context] = future_time; //Store the future time for this alarm
   }
-  RTC_setNextRtcAlarmA(&hrtc);       //Set up the next alarm
+  RTC_setNextRtcAlarmA(&hrtc); //Set up the next alarm
 }
 
 void RTC_setupAndStartSdSyncAlarm(void)
