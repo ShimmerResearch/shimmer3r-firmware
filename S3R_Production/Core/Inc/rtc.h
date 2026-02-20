@@ -47,6 +47,9 @@ extern "C"
 #define RTC_STATUS_TIME_OK 0x4321       /* RTC time OK */
 #define RTC_STATUS_ZERO    0x0000
 
+/* Minimum offset in seconds when scheduling an alarm in the future */
+#define RTC_MIN_ALARM_OFFSET_SECONDS 1U
+
   typedef enum
   {
     RTC_ALARM_CONTEXT_NONE = 0,
