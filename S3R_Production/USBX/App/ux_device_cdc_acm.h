@@ -27,57 +27,59 @@ extern "C"
 #endif
 
 /* Includes ------------------------------------------------------------------*/
+#include "Comms/shimmer_dock_usart.h"
 #include "ux_api.h"
 #include "ux_device_class_cdc_acm.h"
-#include "Comms/shimmer_dock_usart.h"
 
   /* Private includes ----------------------------------------------------------*/
   /* USER CODE BEGIN Includes */
 
   /* USER CODE END Includes */
- /* Exported types ------------------------------------------------------------*/
+  /* Exported types ------------------------------------------------------------*/
   /* USER CODE BEGIN ET */
-#define APP_RX_DATA_SIZE   1024*4
-#define APP_TX_DATA_SIZE   1024*4
+#define APP_RX_DATA_SIZE       1024 * 4
+#define APP_TX_DATA_SIZE       1024 * 4
 #define RX_COMMAND_BUFFER_SIZE 256
-typedef struct usbx_cdc_acm
-{
- uint8_t* tx_buffer;
- uint8_t* rx_buffer;
- uint16_t tx_length;
- uint16_t rx_length;
- uint16_t tx_count;
- uint16_t rx_count;
- uint16_t tx_engine_state;
- uint16_t rx_engine_state;
- uint16_t tx_result;
- uint16_t rx_result;
- uint8_t tx_active;
- uint8_t rx_active;
- uint8_t tx_scheduled;
- uint8_t rx_scheduled;
- uint8_t tx_pending;
- uint8_t rx_pending;
- uint8_t* rx_command_buffer;
- uint8_t rx_command_length;
- volatile uint8_t rx_command_ready;
-}usbx_cdc_acm_t;
 
-typedef enum
-{
- usbx_success = 0,
- usbx_error = 1,
- usbx_busy = 2
-}usbx_cdc_acm_result_t;
+  typedef struct usbx_cdc_acm
+  {
+    uint8_t *tx_buffer;
+    uint8_t *rx_buffer;
+    uint16_t tx_length;
+    uint16_t rx_length;
+    uint16_t tx_count;
+    uint16_t rx_count;
+    uint16_t tx_engine_state;
+    uint16_t rx_engine_state;
+    uint16_t tx_result;
+    uint16_t rx_result;
+    uint8_t tx_active;
+    uint8_t rx_active;
+    uint8_t tx_scheduled;
+    uint8_t rx_scheduled;
+    uint8_t tx_pending;
+    uint8_t rx_pending;
+    uint8_t *rx_command_buffer;
+    uint8_t rx_command_length;
+    volatile uint8_t rx_command_ready;
+  } usbx_cdc_acm_t;
+
+  typedef enum
+  {
+    usbx_success = 0,
+    usbx_error = 1,
+    usbx_busy = 2
+  } usbx_cdc_acm_result_t;
+
   /* USER CODE END ET */
 
   /* Exported constants --------------------------------------------------------*/
   /* USER CODE BEGIN EC */
-extern UX_SLAVE_CLASS_CDC_ACM  *cdc_acm;
-extern usbx_cdc_acm_t usbx_cdc_tx_rx;
-extern uint8_t cdc_tx_buffer[APP_TX_DATA_SIZE];
-extern uint8_t cdc_rx_buffer[APP_RX_DATA_SIZE];
-extern uint8_t user_command_buffer[RX_COMMAND_BUFFER_SIZE];
+  extern UX_SLAVE_CLASS_CDC_ACM *cdc_acm;
+  extern usbx_cdc_acm_t usbx_cdc_tx_rx;
+  extern uint8_t cdc_tx_buffer[APP_TX_DATA_SIZE];
+  extern uint8_t cdc_rx_buffer[APP_RX_DATA_SIZE];
+  extern uint8_t user_command_buffer[RX_COMMAND_BUFFER_SIZE];
   /* USER CODE END EC */
 
   /* Exported macro ------------------------------------------------------------*/
@@ -96,8 +98,8 @@ extern uint8_t user_command_buffer[RX_COMMAND_BUFFER_SIZE];
 
   /* Private defines -----------------------------------------------------------*/
   /* USER CODE BEGIN PD */
-  usbx_cdc_acm_result_t USBX_CDC_ACM_Transmit(uint8_t* buffer, uint16_t size);
-  usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t* buffer, uint16_t size);
+  usbx_cdc_acm_result_t USBX_CDC_ACM_Transmit(uint8_t *buffer, uint16_t size);
+  usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t *buffer, uint16_t size);
   VOID cdc_acm_write_task(VOID);
   VOID cdc_acm_read_task(VOID);
   /* USER CODE END PD */

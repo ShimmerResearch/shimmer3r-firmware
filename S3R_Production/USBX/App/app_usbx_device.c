@@ -60,7 +60,7 @@ static ULONG cdc_acm_configuration_number;
 static UX_SLAVE_CLASS_CDC_ACM_PARAMETER cdc_acm_parameter;
 
 /* USER CODE BEGIN PV */
-extern PCD_HandleTypeDef            hpcd_USB_OTG_HS;
+extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -301,7 +301,6 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 VOID USBX_Device_Process(VOID *arg)
 {
   ux_device_stack_tasks_run();
-
 }
 
 VOID USBX_APP_Device_Init(VOID)
@@ -321,7 +320,7 @@ VOID USBX_APP_Device_Init(VOID)
   /* USER CODE END USB_Device_Init_PreTreatment_1 */
 
   /* initialize and link controller HAL driver to USBx */
-  if(_ux_dcd_stm32_initialize((ULONG)USB_OTG_HS, (ULONG)&hpcd_USB_OTG_HS) != UX_SUCCESS)
+  if (_ux_dcd_stm32_initialize((ULONG) USB_OTG_HS, (ULONG) &hpcd_USB_OTG_HS) != UX_SUCCESS)
   {
     Error_Handler();
   }
@@ -331,4 +330,5 @@ VOID USBX_APP_Device_Init(VOID)
 
   /* USER CODE END USB_Device_Init_PostTreatment */
 }
+
 /* USER CODE END 1 */

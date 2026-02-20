@@ -19,13 +19,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "app_usbx_device.h"
-#include "ux_device_cdc_acm.h"
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
 #include "rng.h"
 #include "rtc.h"
 #include "tim.h"
+#include "ux_device_cdc_acm.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -198,8 +198,8 @@ void Init()
 #endif
 
   //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
-//  GPIO_usbVbusIntInit(1);
- // vbusPinStateCheck();
+  //GPIO_usbVbusIntInit(1);
+  //vbusPinStateCheck();
 
   /* Take initial measurement to update LED state */
   manageReadBatt(1);
@@ -277,20 +277,21 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  // 4. Main loop: transmit safely at host pace
+  //4. Main loop: transmit safely at host pace
   while (1)
   {
-      ux_device_stack_tasks_run();
-      cdc_acm_write_task();
-      cdc_acm_read_task();
-      if (usbx_cdc_tx_rx.rx_command_ready)
-      {
-        USBX_CDC_ACM_Receive(usbx_cdc_tx_rx.rx_command_buffer, usbx_cdc_tx_rx.rx_command_length);
-         // allow next command to be copied
-      }
-      HAL_Delay(5);
+    ux_device_stack_tasks_run();
+    cdc_acm_write_task();
+    cdc_acm_read_task();
+    if (usbx_cdc_tx_rx.rx_command_ready)
+    {
+      USBX_CDC_ACM_Receive(usbx_cdc_tx_rx.rx_command_buffer, usbx_cdc_tx_rx.rx_command_length);
+      //allow next command to be copied
+    }
+    HAL_Delay(5);
   }
 }
+
 /**
  * @brief System Clock Configuration
  * @retval None

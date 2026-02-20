@@ -37,8 +37,6 @@ extern "C"
 
   /* USER CODE BEGIN Private defines */
 
-
-
   typedef enum
   {
     USB_CABLE_RESET = 0U,
