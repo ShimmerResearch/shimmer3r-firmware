@@ -29,6 +29,9 @@
 
 uint32_t SHIM_RTC_Status = RTC_STATUS_ZERO;
 
+/* Number of NOP cycles to delay before retrying a failed RTC alarm set operation */
+#define RTC_ALARM_RETRY_DELAY_CYCLES 10000
+
 volatile time_t nextAlarms[RTC_NUM_ALARMS] = { RTC_ALARM_CONTEXT_NONE };
 
 #if RTC_FAST
@@ -584,7 +587,7 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
   if (ret != HAL_OK)
   {
     //retry once after a short delay
-    for (volatile int i = 0; i < 10000; ++i)
+    for (volatile int i = 0; i < RTC_ALARM_RETRY_DELAY_CYCLES; ++i)
     {
       __NOP();
     }
