@@ -42,10 +42,10 @@ extern "C"
 
 /* Private macros */
 /* Internal status registers for RTC */
-#define RTC_STATUS_REG     RTC_BKP_DR19 /* Status Register */
-#define RTC_STATUS_INIT_OK 0x1234       /* RTC initialised */
-#define RTC_STATUS_TIME_OK 0x4321       /* RTC time OK */
-#define RTC_STATUS_ZERO    0x0000
+#define RTC_STATUS_REG               RTC_BKP_DR19 /* Status Register */
+#define RTC_STATUS_INIT_OK           0x1234       /* RTC initialised */
+#define RTC_STATUS_TIME_OK           0x4321       /* RTC time OK */
+#define RTC_STATUS_ZERO              0x0000
 
 /* Minimum offset in seconds when scheduling an alarm in the future */
 #define RTC_MIN_ALARM_OFFSET_SECONDS 1U
