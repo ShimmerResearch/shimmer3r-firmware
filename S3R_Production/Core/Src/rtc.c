@@ -551,7 +551,7 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
   time_t now = (time_t) RTC_get64() / 32768; //approx seconds from rtc64
   if (nextAlarmTime <= now)
   {
-    nextAlarmTime = now + 1;
+    nextAlarmTime = now + RTC_MIN_ALARM_OFFSET_SECONDS;
     nextAlarms[nextAlarmIdx] = nextAlarmTime;
   }
 
