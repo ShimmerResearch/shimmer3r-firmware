@@ -570,21 +570,29 @@ void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
 {
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
-  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN); //Must be called after GetTime()
 
-  struct tm current_tm = {
-    .tm_sec = sTime.Seconds,
-    .tm_min = sTime.Minutes,
-    .tm_hour = sTime.Hours,
-    .tm_mday = sDate.Date,
-    .tm_mon = sDate.Month - 1,  //struct tm uses 0-11 for months
-    .tm_year = sDate.Year + 100 //struct tm uses years since 1900
-  };
+  if(secondsFromNow == 0)
+  {
+    nextAlarms[context] = 0; //Clear the alarm if 0 is passed in
+  }
+  else
+  {
+    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN); //Must be called after GetTime()
 
-  //Add offset
-  time_t future_time = mktime(&current_tm) + secondsFromNow;
-  nextAlarms[context] = future_time; //Store the future time for this alarm
+    struct tm current_tm = {
+      .tm_sec = sTime.Seconds,
+      .tm_min = sTime.Minutes,
+      .tm_hour = sTime.Hours,
+      .tm_mday = sDate.Date,
+      .tm_mon = sDate.Month - 1,  //struct tm uses 0-11 for months
+      .tm_year = sDate.Year + 100 //struct tm uses years since 1900
+    };
+
+    //Add offset
+    time_t future_time = mktime(&current_tm) + secondsFromNow;
+    nextAlarms[context] = future_time; //Store the future time for this alarm
+  }
   RTC_setNextRtcAlarmA(&hrtc);       //Set up the next alarm
 }
 
