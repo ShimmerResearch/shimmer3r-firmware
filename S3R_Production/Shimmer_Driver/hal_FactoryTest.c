@@ -524,7 +524,7 @@ void I2C_test(void)
       ShimFactoryTest_sendReport(
           " - S3R_TEST_0024 - FAIL: I2C4 - no test rig detected\r\n");
       ShimFactoryTest_sendReport(
-          " - S3R_TEST_0025 - FAIL: GSR - no test rig detected\r\n");
+          " - S3R_TEST_0025 - FAIL: GSR - refer to S3R_TEST_0024\r\n");
       i2c4_result = 1;
     }
     else if (test_i2c_addr_list_len == 3) //GSR Test Rig detected
@@ -553,7 +553,7 @@ void I2C_test(void)
       if (ShimBrd_isHwId(EXP_BRD_GSR_UNIFIED))
       {
         ShimFactoryTest_sendReport(
-            " - S3R_TEST_0025 - WARNING: GSR - no test rig detected\r\n");
+            " - S3R_TEST_0025 - WARNING: GSR - Correct test rig not detected\r\n");
       }
       else
       {
@@ -566,7 +566,7 @@ void I2C_test(void)
       ShimFactoryTest_sendReport(
           " - S3R_TEST_0024 - FAIL: I2C4 - test rig not recognised\r\n");
       ShimFactoryTest_sendReport(
-          " - S3R_TEST_0025 - FAIL: GSR - test rig not recognised\r\n");
+          " - S3R_TEST_0025 - FAIL: GSR - refer to S3R_TEST_0024\r\n");
       i2c4_result = 1;
     }
 
