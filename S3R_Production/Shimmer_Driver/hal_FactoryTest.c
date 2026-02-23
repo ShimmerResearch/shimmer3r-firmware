@@ -552,8 +552,8 @@ void I2C_test(void)
       ShimFactoryTest_sendReport(buffer);
       if (ShimBrd_isHwId(EXP_BRD_GSR_UNIFIED))
       {
-        ShimFactoryTest_sendReport(
-            " - S3R_TEST_0025 - WARNING: GSR - Correct test rig not detected\r\n");
+        ShimFactoryTest_sendReport(" - S3R_TEST_0025 - WARNING: GSR - Correct "
+                                   "test rig not detected\r\n");
       }
       else
       {
