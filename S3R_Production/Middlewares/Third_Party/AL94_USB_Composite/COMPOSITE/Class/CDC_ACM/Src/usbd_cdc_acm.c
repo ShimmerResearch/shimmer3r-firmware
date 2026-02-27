@@ -58,7 +58,8 @@ EndBSPDependencies */
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_acm.h"
 #include "usbd_ctlreq.h"
-
+#include "usbd_cdc_acm_if.h"
+UsbRxRingFifo_t* crx = &usbCmdRx;
 #define _CDC_IN_EP 0x81U  /* EP1 for data IN */
 #define _CDC_OUT_EP 0x01U /* EP1 for data OUT */
 #define _CDC_CMD_EP 0x82U /* EP2 for CDC commands */
@@ -1887,6 +1888,7 @@ static uint8_t USBD_CDC_Setup(USBD_HandleTypeDef *pdev,
   */
 static uint8_t USBD_CDC_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
+  UsbRxRingFifo_t* crx = &usbCmdRx;
   USBD_CDC_ACM_HandleTypeDef *hcdc = NULL;
   PCD_HandleTypeDef *hpcd = pdev->pData;
   uint8_t ep_to_ch = 0;
@@ -1907,7 +1909,7 @@ static uint8_t USBD_CDC_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
   {
     /* Update the packet total length */
     pdev->ep_in[epnum].total_length = 0U;
-
+    crx-> usb_cdc_data_in_zlp_send_count++;
     /* Send ZLP */
     (void)USBD_LL_Transmit(pdev, epnum, NULL, 0U);
   }
@@ -1917,6 +1919,7 @@ static uint8_t USBD_CDC_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
 
     if (((USBD_CDC_ACM_ItfTypeDef *)pdev->pUserData_CDC_ACM)->TransmitCplt != NULL)
     {
+      crx-> usb_cdc_data_in_received_count++;
       ((USBD_CDC_ACM_ItfTypeDef *)pdev->pUserData_CDC_ACM)->TransmitCplt(ep_to_ch, hcdc->TxBuffer, &hcdc->TxLength, epnum);
     }
   }
@@ -1952,7 +1955,7 @@ static uint8_t USBD_CDC_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum)
 
   /* USB data will be immediately processed, this allow next USB traffic being
   NAKed till the end of the application Xfer */
-
+crx-> usb_cdc_data_out_received_count++;
   ((USBD_CDC_ACM_ItfTypeDef *)pdev->pUserData_CDC_ACM)->Receive(ep_to_ch, hcdc->RxBuffer, &hcdc->RxLength);
 
   return (uint8_t)USBD_OK;

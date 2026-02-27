@@ -27,18 +27,7 @@
 /* USER CODE END INCLUDE */
 
 /* USER CODE BEGIN DEFINES */
-#ifndef APP_RX_DATA_SIZE
-#define APP_RX_DATA_SIZE 128
-#endif
-#ifndef APP_TX_DATA_SIZE
-#define APP_TX_DATA_SIZE 128
-#endif
-#ifndef CDC_EP_MAX_PKT
-#define CDC_EP_MAX_PKT 64u
-#endif
-#ifndef CDC_TX_RING_SIZE
-#define CDC_TX_RING_SIZE 512u
-#endif
+
 /* Coalescing: number of timer ticks to wait before sending a short packet (tick = call to CDC_FlushTimerTick). */
 #ifndef CDC_COALESCE_DELAY_TICKS
 //#define CDC_COALESCE_DELAY_TICKS 2u
@@ -67,45 +56,142 @@ typedef struct
   uint8_t ring[CDC_TX_RING_SIZE]; /* ring storage */
   uint8_t pkt_buf[CDC_EP_MAX_PKT];/* staging buffer per packet */
   uint8_t coalesce_ticks; /* remaining ticks before forcing send */
+  uint8_t enumerated;
+  uint64_t tx_task_entry_count;
+  uint64_t tx_interrupt_sent_count;
 } cdc_tx_ctx_t;
 static cdc_tx_ctx_t cdcTxCtx[NUMBER_OF_CDC];
 
+
+ UsbRxRingFifo_t usbCmdRx={0};
 extern USBD_HandleTypeDef hUsbDevice; /* Provided by USB device stack */
 
 /* Ring helpers */
-static inline uint16_t _ring_count(cdc_tx_ctx_t *c)
+static inline uint16_t _ring_count(void* c,ring_type_t type)
 {
-  return (uint16_t) ((c->head + CDC_TX_RING_SIZE - c->tail) % CDC_TX_RING_SIZE);
-}
-
-static inline uint16_t _ring_free(cdc_tx_ctx_t *c)
-{
-  return (uint16_t) (CDC_TX_RING_SIZE - 1 - _ring_count(c));
-}
-
-static void _ring_push(cdc_tx_ctx_t *c, const uint8_t *data, uint16_t len)
-{
-  for (uint16_t i = 0; i < len; i++)
+  switch(type)
   {
-    c->ring[c->head] = data[i];
-    c->head = (uint16_t) ((c->head + 1) % CDC_TX_RING_SIZE);
+    case RING_TYPE_CDC_TX:
+      cdc_tx_ctx_t* ctx = (cdc_tx_ctx_t*)c;
+      return (uint16_t) ((ctx->head + CDC_TX_RING_SIZE - ctx->tail) % CDC_TX_RING_SIZE);
+      break;
+    case RING_TYPE_CDC_RX:
+      UsbRxRingFifo_t* crx = (UsbRxRingFifo_t*)c;
+      return (uint16_t) ((crx->usbRingHead + USB_RX_RING_SIZE - crx->usbRingTail) % USB_RX_RING_SIZE);
+      break;
+    default:
+      return 0;
   }
 }
 
-static uint16_t _ring_pop(cdc_tx_ctx_t *c, uint8_t *dst, uint16_t maxLen)
+static inline uint16_t _ring_free(void *c, ring_type_t type)
 {
-  uint16_t avail = _ring_count(c);
-  if (!avail)
+  switch(type)
+  {
+    case RING_TYPE_CDC_TX:
+      cdc_tx_ctx_t* ctx = (cdc_tx_ctx_t*)c;
+      return (uint16_t) (CDC_TX_RING_SIZE - 1 - _ring_count(ctx,type));
+      break;
+    case RING_TYPE_CDC_RX:
+      UsbRxRingFifo_t* crx = (UsbRxRingFifo_t*)c;
+      return (uint16_t) (USB_RX_RING_SIZE - 1 - _ring_count(crx,type));
+      break;
+    default:
+      return 0;
+  }
+}
+
+static void _ring_push(void *c, const uint8_t *data, uint16_t len, ring_type_t type)
+{
+  switch(type)
+  {
+    case RING_TYPE_CDC_TX:
+      cdc_tx_ctx_t* ctx = (cdc_tx_ctx_t*)c;
+      for (uint16_t i = 0; i < len; i++)
+      {
+        ctx->ring[ctx->head] = data[i];
+        ctx->head = (uint16_t) ((ctx->head + 1) % CDC_TX_RING_SIZE);
+      }
+      break;
+    case RING_TYPE_CDC_RX:
+      UsbRxRingFifo_t* crx = (UsbRxRingFifo_t*)c;
+      for (uint16_t i = 0; i < len; i++)
+      {
+        crx->usbRingBuf[crx->usbRingHead] = data[i];
+        crx->usbRingHead = (uint16_t) ((crx->usbRingHead + 1) % USB_RX_RING_SIZE);
+      }
+      break;
+    default:
+      return;
+  }
+}
+
+/**
+ * @brief  Copies data from the ring buffer without removing it.
+ * @param  ctx: Pointer to the CDC TX context
+ * @param  pData: Destination buffer (pkt_buf)
+ * @param  len: Number of bytes to peek
+ * @param  type: Ring type identifier
+ * @return Number of bytes successfully copied
+ */
+static uint16_t _ring_peek(cdc_tx_ctx_t *ctx, uint8_t *pData, uint16_t len, uint8_t type)
+{
+  uint16_t i;
+  uint16_t count = _ring_count(ctx, type);
+
+  if (len > count)
+  {
+    len = count;
+  }
+
+  for (i = 0; i < len; i++)
+  {
+    /* Use the existing tail as a starting point without modifying it */
+    pData[i] = ctx->ring[(ctx->tail + i) % CDC_TX_RING_SIZE];
+  }
+
+  return len;
+}
+
+static uint16_t _ring_pop(void *c, uint8_t *dst, uint16_t maxLen, ring_type_t type)
+{
+  switch(type)
+  {
+  case RING_TYPE_CDC_TX:
+  {
+    cdc_tx_ctx_t *ctx = (cdc_tx_ctx_t*)c;
+    uint16_t avail = _ring_count(c, type);
+    if (!avail)
+     return 0;
+    if (avail > maxLen)
+     avail = maxLen;
+    uint16_t first = avail;
+    if (ctx->tail + first > CDC_TX_RING_SIZE)
+      first = (uint16_t)(CDC_TX_RING_SIZE - ctx->tail);
+    if (dst != NULL) {
+        for (uint16_t i = 0; i < first; i++)
+            dst[i] = ctx->ring[(ctx->tail + i) % CDC_TX_RING_SIZE];
+    }
+   ctx->tail = (uint16_t)((ctx->tail + first) % CDC_TX_RING_SIZE);
+    return first;
+  }
+  case RING_TYPE_CDC_RX:
+  {
+    UsbRxRingFifo_t *crx = (UsbRxRingFifo_t*)c;
+    uint16_t avail = _ring_count(crx, type);
+    if (!avail)
+      return 0;
+    uint16_t first = avail;
+    if (crx->usbRingTail + avail > USB_RX_RING_SIZE)
+      first = (uint16_t)(USB_RX_RING_SIZE - crx->usbRingTail);
+    for (uint16_t i = 0; i < first; i++)
+      dst[i] = crx->usbRingBuf[(crx->usbRingTail + i) % USB_RX_RING_SIZE];
+    crx->usbRingTail = (uint16_t)((crx->usbRingTail + first) % USB_RX_RING_SIZE);
+    return first;
+  }
+  default:
     return 0;
-  if (avail > maxLen)
-    avail = maxLen;
-  uint16_t first = avail;
-  if (c->tail + first > CDC_TX_RING_SIZE)
-    first = (uint16_t) (CDC_TX_RING_SIZE - c->tail);
-  for (uint16_t i = 0; i < first; i++)
-    dst[i] = c->ring[(c->tail + i) % CDC_TX_RING_SIZE];
-  c->tail = (uint16_t) ((c->tail + first) % CDC_TX_RING_SIZE);
-  return first;
+  }
 }
 
 /* Forward */
@@ -118,7 +204,14 @@ static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate);
   */
 static int8_t CDC_Init(uint8_t cdc_ch)
 {
+ // CDC_HardResetAll();
   USBD_CDC_SetRxBuffer(cdc_ch, &hUsbDevice, RX_Buffer[cdc_ch]);
+  cdc_tx_ctx_t *ctx = &cdcTxCtx[cdc_ch];
+    if (ctx->enumerated == 0)  /* Guard to prevent multiple sets */
+    {
+      ctx->enumerated = 1;
+    }
+
   return (USBD_OK);
 }
 
@@ -129,6 +222,11 @@ static int8_t CDC_Init(uint8_t cdc_ch)
 static int8_t CDC_DeInit(uint8_t cdc_ch)
 {
   (void) cdc_ch;
+  cdc_tx_ctx_t *ctx = &cdcTxCtx[cdc_ch];
+        /* Guard to prevent multiple sets */
+
+        ctx->enumerated = 0;
+
   return (USBD_OK);
 }
 
@@ -221,9 +319,18 @@ static int8_t CDC_Control(uint8_t cdc_ch, uint8_t cmd, uint8_t *pbuf,
   */
 static int8_t CDC_Receive(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len)
 {
-  for (uint32_t i = 0; i < *Len; i++)
+
+  UsbRxRingFifo_t* c = &usbCmdRx;
+  c->usb_interrupt_cdc_receive_entry_count++;
+  if (_ring_free(c, RING_TYPE_CDC_RX) == 0)
   {
-    ShimDock_rxCallback(Buf[i]);
+    c-> usb_cdc_receive_rx_ring_full_count++;
+  }
+  else
+  {
+    _ring_push(c, Buf, (uint16_t)*Len, RING_TYPE_CDC_RX);
+    ShimTask_set(TASK_USB_PROCESS_CMD);
+    c->usb_pr_usb_process_cmd_task_set_count++;
   }
   USBD_CDC_SetRxBuffer(cdc_ch, &hUsbDevice, &Buf[0]);
   USBD_CDC_ReceivePacket(cdc_ch, &hUsbDevice);
@@ -242,9 +349,12 @@ static int8_t CDC_Receive(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len)
   * @param  Len: Number of data received (in bytes)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
+#if 0
 static int8_t CDC_TransmitCplt(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len,
     uint8_t epnum)
 {
+  UsbRxRingFifo_t* crx = &usbCmdRx;
+  crx-> usb_pr_cdc_transmit_cplt_fn_entry_count++;
   (void) Buf;
   (void) Len;
   (void) epnum;
@@ -252,7 +362,7 @@ static int8_t CDC_TransmitCplt(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len,
     return (USBD_OK);
   cdc_tx_ctx_t *ctx = &cdcTxCtx[cdc_ch];
   ctx->in_flight_len = 0;
-  if (_ring_count(ctx) == 0 && ctx->need_zlp)
+  if (_ring_count(ctx,RING_TYPE_CDC_TX) == 0 && ctx->need_zlp)
   {
     ctx->need_zlp = 0;
     extern USBD_CDC_ACM_HandleTypeDef CDC_ACM_Class_Data[];
@@ -264,6 +374,38 @@ static int8_t CDC_TransmitCplt(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len,
       return (USBD_OK);
     }
   }
+  CDC_TryStartTx(cdc_ch, 0);
+  return (USBD_OK);
+}
+#endif
+static int8_t CDC_TransmitCplt(uint8_t cdc_ch, uint8_t *Buf, uint32_t *Len, uint8_t epnum)
+{
+  UsbRxRingFifo_t* crx = &usbCmdRx;
+  crx->usb_pr_cdc_transmit_cplt_fn_entry_count++;
+
+  if (cdc_ch >= NUMBER_OF_CDC) return (USBD_OK);
+
+  cdc_tx_ctx_t *ctx = &cdcTxCtx[cdc_ch];
+  extern USBD_CDC_ACM_HandleTypeDef CDC_ACM_Class_Data[];
+  USBD_CDC_ACM_HandleTypeDef *hcdc = &CDC_ACM_Class_Data[cdc_ch];
+
+  /* ISSUE TYPE 1 FIX: Logic must clear in_flight_len to allow new attempts */
+  ctx->in_flight_len = 0;
+
+  /* Handle ZLP Requirement */
+  if (ctx->need_zlp)
+  {
+    ctx->need_zlp = 0;
+
+       USBD_CDC_SetTxBuffer(cdc_ch, &hUsbDevice, NULL, 0);
+    if (USBD_CDC_TransmitPacket(cdc_ch, &hUsbDevice) == USBD_OK)
+    {
+       /* Wait for the ZLP's own Cplt interrupt to call CDC_TryStartTx */
+       return (USBD_OK);
+    }
+  }
+
+  /* Restart the pump for any remaining data in the ring buffer */
   CDC_TryStartTx(cdc_ch, 0);
   return (USBD_OK);
 }
@@ -285,19 +427,21 @@ USBD_CDC_ACM_ItfTypeDef USBD_CDC_ACM_fops =
   */
 uint8_t CDC_Transmit(uint8_t ch, uint8_t *Buf, uint16_t Len)
 {
+  UsbRxRingFifo_t* crx = &usbCmdRx;
+  crx->usb_pr_cdc_transmit_fn_entry_count1++;
   if (ch >= NUMBER_OF_CDC)
     return USBD_FAIL;
   if (Len == 0)
     return USBD_OK;
   cdc_tx_ctx_t *ctx = &cdcTxCtx[ch];
-  if (_ring_free(ctx) < Len)
+  if (_ring_free(ctx,RING_TYPE_CDC_TX) < Len)
     return USBD_BUSY;
 
-  _ring_push(ctx, Buf, Len);
-
+  _ring_push(ctx, Buf, Len, RING_TYPE_CDC_TX);
+  crx->usb_pr_cdc_transmit_fn_entry_count2++;
   #if CDC_COALESCE_DELAY_TICKS == 0
   /* Coalescing disabled: start immediately if idle */
-  if (ctx->in_flight_len == 0)
+  //if (ctx->in_flight_len == 0)
     CDC_TryStartTx(ch, 1);
 #else
   /* Coalescing enabled */
@@ -318,17 +462,17 @@ uint8_t CDC_Transmit(uint8_t ch, uint8_t *Buf, uint16_t Len)
   return USBD_OK;
 }
 
-uint16_t CDC_TxFree(uint8_t ch)
+uint16_t CDC_TxFree(uint8_t ch,ring_type_t type)
 {
   if (ch >= NUMBER_OF_CDC)
     return 0;
-  return _ring_free(&cdcTxCtx[ch]);
+  return _ring_free(&cdcTxCtx[ch],type);
 }
-uint16_t CDC_TxPending(uint8_t ch)
+uint16_t CDC_TxPending(uint8_t ch,ring_type_t type)
 {
   if (ch >= NUMBER_OF_CDC)
     return 0;
-  return _ring_count(&cdcTxCtx[ch]);
+  return _ring_count(&cdcTxCtx[ch],type);
 }
 
 void CDC_Flush(uint8_t ch)
@@ -351,7 +495,7 @@ void CDC_FlushTimerTick(uint8_t ch)
   if (ch >= NUMBER_OF_CDC)
     return;
   cdc_tx_ctx_t *ctx = &cdcTxCtx[ch];
-  if (ctx->in_flight_len == 0 && _ring_count(ctx) > 0)
+  if (ctx->in_flight_len == 0 && _ring_count(ctx,RING_TYPE_CDC_TX) > 0)
   {
     if (ctx->coalesce_ticks > 0)
     {
@@ -362,15 +506,17 @@ void CDC_FlushTimerTick(uint8_t ch)
   }
 }
 
+#if 0
 /* Internal: attempt to start transmission */
 static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate)
 {
+  UsbRxRingFifo_t* crx = &usbCmdRx;
   if (ch >= NUMBER_OF_CDC)
     return;
   cdc_tx_ctx_t *ctx = &cdcTxCtx[ch];
   if (ctx->in_flight_len != 0)
     return;
-  if (_ring_count(ctx) == 0)
+  if (_ring_count(ctx,RING_TYPE_CDC_TX) == 0)
     return;
   if (!forceImmediate && ctx->coalesce_ticks)
     return;
@@ -378,15 +524,180 @@ static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate)
   USBD_CDC_ACM_HandleTypeDef *hcdc = &CDC_ACM_Class_Data[ch];
   if (hcdc->TxState != 0)
     return;
-  uint16_t sendLen = _ring_pop(ctx, ctx->pkt_buf, CDC_EP_MAX_PKT);
+  uint16_t sendLen = _ring_pop(ctx, ctx->pkt_buf, CDC_EP_MAX_PKT,RING_TYPE_CDC_TX);
   if (!sendLen)
     return;
   ctx->in_flight_len = sendLen;
   ctx->need_zlp =
-      (sendLen == CDC_EP_MAX_PKT && _ring_count(ctx) == 0) ? 1u : 0u;
+      (sendLen == CDC_EP_MAX_PKT && _ring_count(ctx,RING_TYPE_CDC_TX) == 0) ? 1u : 0u;
   ctx->coalesce_ticks = 0;
   USBD_CDC_SetTxBuffer(ch, &hUsbDevice, ctx->pkt_buf, sendLen);
-  USBD_CDC_TransmitPacket(ch, &hUsbDevice);
+  if(USBD_CDC_TransmitPacket(ch, &hUsbDevice) != USBD_OK)
+  {
+    crx->usb_pr_cdc_transmit_cplt_fn_error_count++;
+  }
+}
+#endif
+static void CDC_TryStartTx(uint8_t ch, uint8_t forceImmediate)
+{
+  UsbRxRingFifo_t* crx = &usbCmdRx;
+  if (ch >= NUMBER_OF_CDC) return;
+
+  cdc_tx_ctx_t *ctx = &cdcTxCtx[ch];
+
+  if (!ctx->enumerated)
+     return;
+
+  extern USBD_CDC_ACM_HandleTypeDef CDC_ACM_Class_Data[];
+  USBD_CDC_ACM_HandleTypeDef *hcdc = &CDC_ACM_Class_Data[ch];
+
+  /* --- NEW RECOVERY LOGIC START --- */
+  /* RECOVERY 1: Fix 'Orphaned' logic If hardware says it's IDLE (0) but our logic is stuck at 13, reset it. */
+  __disable_irq();
+  if (hcdc->TxState == 0 && ctx->in_flight_len != 0)
+  {
+  ctx->in_flight_len = 0;
+  }
+
+  /* --- NEW RECOVERY LOGIC END --- */
+
+  /* ISSUE TYPE 2 FIX: Ensure we don't start if logic thinks we are busy
+     OR if the hardware library is still in a busy state */
+  if (ctx->in_flight_len != 0 || hcdc->TxState != 0)
+  {
+    __enable_irq();
+    return;
+  }
+  __enable_irq();
+  uint16_t count = _ring_count(ctx, RING_TYPE_CDC_TX);
+  if (count == 0)
+    return;
+
+  if (!forceImmediate && ctx->coalesce_ticks)
+    return;
+
+  /* Peek instead of Pop: Keep data in ring until hardware accepts it */
+  uint16_t sendLen = (count > CDC_EP_MAX_PKT) ? CDC_EP_MAX_PKT : count;
+  _ring_peek(ctx, ctx->pkt_buf, sendLen, RING_TYPE_CDC_TX);
+
+  USBD_CDC_SetTxBuffer(ch, &hUsbDevice, ctx->pkt_buf, sendLen);
+
+  /* CRITICAL CHANGE: Only update state if hardware returns USBD_OK */
+  if (USBD_CDC_TransmitPacket(ch, &hUsbDevice) == USBD_OK)
+  {
+    ctx->in_flight_len = sendLen;
+    /* Determine if we need ZLP: packet is full and no more data in ring */
+    ctx->need_zlp = (sendLen == CDC_EP_MAX_PKT) ? 1u : 0u;
+    ctx->coalesce_ticks = 0;
+    /* Now safe to remove from ring buffer */
+    _ring_pop(ctx, NULL, sendLen, RING_TYPE_CDC_TX);
+  }
+  else
+  {
+    /* Hardware rejected it: hcdc->TxState was likely 1.
+       Wait for the next Cplt interrupt to trigger this again. */
+    crx->usb_pr_cdc_transmit_cplt_fn_error_count++;
+  }
+}
+
+uint8_t ShimUsbProcessCmd(void)
+{
+  UsbRxRingFifo_t *c = &usbCmdRx;
+  c->usb_pr_cmd_fn_entry_count_Start1++;
+  uint8_t data[150] = {0};
+  uint8_t temp = 0;
+ static uint8_t sendLen = 0;
+ static uint8_t pending = 0;
+ static uint8_t offset = 0;
+ uint8_t dollar_found = 0;
+static  uint64_t count_end = 0;
+static  uint64_t count_start = 0;
+ uint8_t count = _ring_count(c, RING_TYPE_CDC_RX);
+ if (!count && !pending)
+   return USBD_BUSY;
+
+ for(offset = 0 ; offset < count;offset++)
+ {
+   if(c->usbRingBuf[(c->usbRingTail+offset)% USB_RX_RING_SIZE] == '$')
+   {
+     dollar_found = 1;
+     break;
+   }
+ }
+ if (!dollar_found)
+ {
+     if (!pending)
+     {
+         // Junk bytes, discard them all
+         _ring_pop(c, data, offset, RING_TYPE_CDC_RX);
+         return USBD_BUSY;
+     }
+     else
+     {
+         // Waiting for previous pending command → do nothing
+         return USBD_BUSY;
+     }
+ }
+
+ if (offset > 0 && !pending)
+ {
+   _ring_pop(c, data, offset, RING_TYPE_CDC_RX); //
+ }
+ else if(offset > 0 && pending)
+ {
+   // Bytes before '$' are part of previously pending command
+   // Do nothing, wait for remaining bytes to arrive
+   // pending stays 1
+ }
+ c->usb_pr_cmd_fn_entry_count_Start2++;
+ // tail is now guaranteed to point to '$' and offset 0
+ count = _ring_count(c, RING_TYPE_CDC_RX);
+ if(count>=3)
+ {
+   sendLen = c->usbRingBuf[(c->usbRingTail+2)% USB_RX_RING_SIZE]+5;
+   if(sendLen <= count)
+   {
+     _ring_pop(c,data,sendLen,RING_TYPE_CDC_RX);
+     for(uint8_t i = 0; i<sendLen; i++)
+     {
+
+       ShimDock_rxCallback(data[i]);
+     }
+     pending = 0;
+     sendLen = 0;
+     c->usb_pr_cmd_clbck_count_end++;
+     return USBD_OK;
+   }
+   else
+   {
+     pending = 1;
+     return USBD_BUSY;
+  }
+}
+return USBD_OK;
+}
+
+void CDC_HardResetAll(void)
+{
+  for (uint8_t i = 0; i < NUMBER_OF_CDC; i++)
+  {
+    cdc_tx_ctx_t *ctx = &cdcTxCtx[i];
+    __disable_irq();
+    ctx->head = 0;
+    ctx->tail = 0;
+    ctx->in_flight_len = 0;      /* CRITICAL */
+    ctx->need_zlp = 0;
+    ctx->coalesce_ticks = 0;
+    ctx->enumerated = 0;
+    ctx->enumerated = 0;  /* Reset during USB reset */
+    __enable_irq();
+  }
+}
+
+void cdc_setEnumerate(void)
+{
+  cdc_tx_ctx_t *ctx = &cdcTxCtx[0];
+  ctx->enumerated = 1;
 }
 
 /* USER CODE BEGIN Additional_User_Code */

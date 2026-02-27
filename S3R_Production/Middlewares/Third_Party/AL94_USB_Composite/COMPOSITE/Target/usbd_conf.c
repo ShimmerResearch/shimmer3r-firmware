@@ -30,11 +30,12 @@
 #else
 #include "usb_otg.h"
 #endif
-
+#include "usbd_cdc_acm_if.h"
 #include <TaskList/shimmer_taskList.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
+
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 
@@ -115,6 +116,8 @@ static void PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 #endif /* USE_HAL_PCD_REGISTER_CALLBACKS */
 {
+  UsbRxRingFifo_t* crx = &usbCmdRx;
+  crx->usb_otg_pcd_datout_recevied_count++;
   USBD_LL_DataOutStage((USBD_HandleTypeDef *)hpcd->pData, epnum, hpcd->OUT_ep[epnum].xfer_buff);
 }
 
@@ -130,6 +133,8 @@ static void PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 #endif /* USE_HAL_PCD_REGISTER_CALLBACKS */
 {
+  UsbRxRingFifo_t* crx = &usbCmdRx;
+    crx->usb_otg_pcd_datin_recevied_count++;
   USBD_LL_DataInStage((USBD_HandleTypeDef *)hpcd->pData, epnum, hpcd->IN_ep[epnum].xfer_buff);
 }
 
@@ -159,6 +164,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 #endif /* USE_HAL_PCD_REGISTER_CALLBACKS */
 {
   USBD_SpeedTypeDef speed = USBD_SPEED_FULL;
+  CDC_HardResetAll();
 
   if (hpcd->Init.speed == PCD_SPEED_FULL)
   {
@@ -179,6 +185,9 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 
   /* Reset Device. */
   USBD_LL_Reset((USBD_HandleTypeDef *)hpcd->pData);
+
+  /* Force-reset all CDC TX contexts to clear orphaned state */
+
 }
 
 /**

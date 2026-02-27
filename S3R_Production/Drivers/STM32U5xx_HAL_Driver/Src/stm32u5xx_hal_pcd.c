@@ -60,7 +60,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32u5xx_hal.h"
-
+#include "usbd_cdc_acm_if.h"
 /** @addtogroup STM32U5xx_HAL_Driver
   * @{
   */
@@ -1083,6 +1083,7 @@ HAL_StatusTypeDef HAL_PCD_Stop(PCD_HandleTypeDef *hpcd)
   */
 void HAL_PCD_IRQHandler(PCD_HandleTypeDef *hpcd)
 {
+  UsbRxRingFifo_t *crx = &usbCmdRx;
   USB_OTG_GlobalTypeDef *USBx = hpcd->Instance;
   uint32_t USBx_BASE = (uint32_t)USBx;
   USB_OTG_EPTypeDef *ep;
@@ -1159,6 +1160,7 @@ void HAL_PCD_IRQHandler(PCD_HandleTypeDef *hpcd)
 
           if ((epint & USB_OTG_DOEPINT_XFRC) == USB_OTG_DOEPINT_XFRC)
           {
+            crx->usb_otg_pcd_irq_handler_xr_received_count++;
             CLEAR_OUT_EP_INTR(epnum, USB_OTG_DOEPINT_XFRC);
             (void)PCD_EP_OutXfrComplete_int(hpcd, epnum);
           }
@@ -1249,6 +1251,7 @@ void HAL_PCD_IRQHandler(PCD_HandleTypeDef *hpcd)
             }
 
 #if (USE_HAL_PCD_REGISTER_CALLBACKS == 1U)
+            crx->usb_otg_pcd_irq_handler_datain_received_count++;
             hpcd->DataInStageCallback(hpcd, (uint8_t)epnum);
 #else
             HAL_PCD_DataInStageCallback(hpcd, (uint8_t)epnum);
@@ -2490,6 +2493,7 @@ static HAL_StatusTypeDef PCD_EP_OutXfrComplete_int(PCD_HandleTypeDef *hpcd, uint
       }
 
 #if (USE_HAL_PCD_REGISTER_CALLBACKS == 1U)
+
       hpcd->DataOutStageCallback(hpcd, (uint8_t)epnum);
 #else
       HAL_PCD_DataOutStageCallback(hpcd, (uint8_t)epnum);

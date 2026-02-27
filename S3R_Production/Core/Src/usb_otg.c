@@ -250,7 +250,7 @@ void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
     HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
 
     /* USB_OTG_HS interrupt Init */
-    HAL_NVIC_SetPriority(OTG_HS_IRQn, 7, 0);
+    HAL_NVIC_SetPriority(OTG_HS_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
     /* USER CODE BEGIN USB_OTG_HS_MspInit 1 */
 
