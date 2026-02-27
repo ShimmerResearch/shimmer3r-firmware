@@ -23,8 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include <Boards/shimmer_boards.h>
 #include "usbd_cdc_acm_if.h"
+#include <Boards/shimmer_boards.h>
 
 /* USER CODE END Includes */
 
@@ -496,7 +496,7 @@ void OTG_HS_IRQHandler(void)
 {
   UsbRxRingFifo_t *crx = &usbCmdRx;
   /* USER CODE BEGIN OTG_HS_IRQn 0 */
- crx->usb_otg_hs_interrupt_received_count++;
+  crx->usb_otg_hs_interrupt_received_count++;
   /* USER CODE END OTG_HS_IRQn 0 */
   HAL_PCD_IRQHandler(&hpcd_USB_OTG_HS);
   /* USER CODE BEGIN OTG_HS_IRQn 1 */
