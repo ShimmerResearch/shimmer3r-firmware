@@ -30,19 +30,19 @@ extern "C"
 #include "Comms/shimmer_dock_usart.h"
 #include "ux_api.h"
 #include "ux_device_class_cdc_acm.h"
-
+#include "Comms/shimmer_dock_usart.h"
+#include "TaskList/shimmer_taskList.h"
   /* Private includes ----------------------------------------------------------*/
   /* USER CODE BEGIN Includes */
 
   /* USER CODE END Includes */
   /* Exported types ------------------------------------------------------------*/
   /* USER CODE BEGIN ET */
-#define APP_RX_DATA_SIZE       1024 * 4
-#define APP_TX_DATA_SIZE       1024 * 4
-#define RX_COMMAND_BUFFER_SIZE 256
-
-  typedef struct usbx_cdc_acm
-  {
+#define APP_RX_DATA_SIZE   1024*4
+#define APP_TX_DATA_SIZE   1024*4
+#define RX_COMMAND_BUFFER_SIZE 512
+typedef struct usbx_cdc_acm
+{
     uint8_t *tx_buffer;
     uint8_t *rx_buffer;
     uint16_t tx_length;

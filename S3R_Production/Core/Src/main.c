@@ -154,7 +154,7 @@ void Init()
     LogAndStream_setupUndock();
   }
 
-  //(void)ShimBtn_pressReleaseAction();
+ (void)ShimBtn_pressReleaseAction();
 
 #if defined(SHIMMER3R)
   LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH);
@@ -280,15 +280,10 @@ int main(void)
   //4. Main loop: transmit safely at host pace
   while (1)
   {
-    ux_device_stack_tasks_run();
-    cdc_acm_write_task();
-    cdc_acm_read_task();
-    if (usbx_cdc_tx_rx.rx_command_ready)
-    {
-      USBX_CDC_ACM_Receive(usbx_cdc_tx_rx.rx_command_buffer, usbx_cdc_tx_rx.rx_command_length);
-      //allow next command to be copied
-    }
-    HAL_Delay(5);
+      ux_device_stack_tasks_run();
+      cdc_acm_write_task();
+      cdc_acm_read_task();
+      ShimTask_manage();
   }
 }
 
