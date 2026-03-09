@@ -26,8 +26,8 @@
 #include "Boards/shimmer_boards.h"
 #include "Button/shimmer_button.h"
 #include "TaskList/shimmer_taskList.h"
-#include "log_and_stream_externs.h"
 #include "app_usbx_device.h"
+#include "log_and_stream_externs.h"
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -730,7 +730,7 @@ void vbusPinStateCheck(void)
     if (usbx_init_state != UX_SUCCESS)
     {
 
-       //Disable GPIO interrupt on pin so that USB peripheral can take control
+      //Disable GPIO interrupt on pin so that USB peripheral can take control
       GPIO_usbVbusIntInit(0);
       //Clear interrupt flag else it triggers multiple times.
       __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
