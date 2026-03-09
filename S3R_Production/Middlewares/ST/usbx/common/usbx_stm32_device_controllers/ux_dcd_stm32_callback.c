@@ -779,7 +779,6 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 
     /* Mark the device as attached now.  */
     _ux_system_slave -> ux_system_slave_device.ux_slave_device_state =  UX_DEVICE_ATTACHED;
-    shimmerStatus.usbPluggedIn = 1;
 }
 
 
@@ -943,7 +942,6 @@ void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
        /* Inform the application if a callback function was programmed.  */
         _ux_system_slave -> ux_system_slave_change_function(UX_DCD_STM32_DEVICE_SUSPENDED);
     }
-    shimmerStatus.usbPluggedIn = 0;
 }
 
 

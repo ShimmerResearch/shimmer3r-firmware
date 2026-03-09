@@ -244,7 +244,7 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
   case UX_DCD_STM32_DEVICE_CONNECTED:
 
     /* USER CODE BEGIN UX_DCD_STM32_DEVICE_CONNECTED */
-
+    shimmerStatus.usbCableState = 1;
     /* USER CODE END UX_DCD_STM32_DEVICE_CONNECTED */
 
     break;
@@ -252,7 +252,7 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
   case UX_DCD_STM32_DEVICE_DISCONNECTED:
 
     /* USER CODE BEGIN UX_DCD_STM32_DEVICE_DISCONNECTED */
-
+    shimmerStatus.usbCableState = 0;
     /* USER CODE END UX_DCD_STM32_DEVICE_DISCONNECTED */
 
     break;

@@ -39,10 +39,9 @@ extern "C"
 
   typedef enum
   {
-    USB_CABLE_RESET = 0U,
-    USB_CABLE_UNPLUGGED = 1U,
-    USB_CABLE_PLUGGED = 2U
-  } USB_STATE;
+    USB_CABLE_UNPLUGGED = 0U,
+    USB_CABLE_PLUGGED = 1U
+  } USB_CABLE_STATE;
 
   /* USER CODE END Private defines */
 
@@ -55,8 +54,6 @@ extern "C"
   void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef *hpcd);
   void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *hpcd);
 #endif
-
-  USB_STATE usbPlugInState(void);
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

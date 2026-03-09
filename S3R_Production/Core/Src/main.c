@@ -198,8 +198,8 @@ void Init()
 #endif
 
   //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
-  //GPIO_usbVbusIntInit(1);
-  //vbusPinStateCheck();
+  GPIO_usbVbusIntInit(1);
+  vbusPinStateCheck();
 
   /* Take initial measurement to update LED state */
   manageReadBatt(1);
@@ -257,8 +257,8 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
-  MX_USB_OTG_HS_PCD_Init();
-  MX_USBX_Device_Init();
+ // MX_USB_OTG_HS_PCD_Init();
+//  MX_USBX_Device_Init();
   /* USER CODE BEGIN 2 */
 
   //MX_IWDG_Init();
@@ -280,9 +280,12 @@ int main(void)
   //4. Main loop: transmit safely at host pace
   while (1)
   {
+    if(shimmerStatus.usbPluggedIn)
+    {
     ux_device_stack_tasks_run();
     cdc_acm_write_task();
     cdc_acm_read_task();
+    }
     ShimTask_manage();
   }
 }

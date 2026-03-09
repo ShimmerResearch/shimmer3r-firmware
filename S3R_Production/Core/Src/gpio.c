@@ -27,7 +27,7 @@
 #include "Button/shimmer_button.h"
 #include "TaskList/shimmer_taskList.h"
 #include "log_and_stream_externs.h"
-
+#include "app_usbx_device.h"
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -244,7 +244,7 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 2 */
-#if 0
+
 void GPIO_usbVbusIntInit(uint8_t state)
 {
   if (state)
@@ -309,7 +309,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
     break;
   }
 }
-#endif
+
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin)
@@ -719,93 +719,45 @@ void platform_initGpioForRevision(void)
     //HAL_GPIO_Init(J4_GPIO_INTERNAL6_GPIO_Port, &GPIO_InitStruct);
   }
 }
-#if 0
+
 void vbusPinStateCheck(void)
 {
+  static uint8_t usbx_init_state = UX_BUSY;
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   if (pin == GPIO_PIN_SET)
   {
     shimmerStatus.usbPluggedIn = 1;
-    if (hUsbDevice.pDesc == NULL)
+    if (usbx_init_state != UX_SUCCESS)
     {
-      //Enable USB peripheral
-#if SUPPORT_SR48_6_0
-      /* SR48-6-0 patch for VBUS sense - start */
-      if (ShimBrd_isBoardSr48_6_0())
-      {
-        MX_USB_OTG_HS_PCD_Init_NoVbusSense();
-      }
-      else
-      {
-        //Disable GPIO interrupt on pin so that USB peripheral can take control
-        GPIO_usbVbusIntInit(0);
-        //Clear interrupt flag else it triggers multiple times.
-        __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
 
-        MX_USB_OTG_HS_PCD_Init();
-      }
-      /* SR48-6-0 patch for VBUS sense - end */
-#else  //SUPPORT_SR48_6_0
        //Disable GPIO interrupt on pin so that USB peripheral can take control
       GPIO_usbVbusIntInit(0);
       //Clear interrupt flag else it triggers multiple times.
       __HAL_GPIO_EXTI_CLEAR_IT(USB_VBUS_Pin);
-
-      MX_USB_OTG_HS_PCD_Init();
-#endif //SUPPORT_SR48_6_0
-#if !USE_USBX
-      MX_USB_DEVICE_Init();
-#endif //USE_USBX
+      //Enable USB peripheral and usbx init
+      usbx_init_state = MX_USBX_Device_Init();
     }
   }
   else if (pin == GPIO_PIN_RESET)
   {
     shimmerStatus.usbPluggedIn = 0;
-#if SUPPORT_SR48_6_0
-    /* SR48-6-0 patch for VBUS sense - start */
-    if (ShimBrd_isBoardSr48_6_0())
-    {
-      if (hUsbDevice.pDesc != NULL)
-      {
-#if !USE_USBX
-        USBD_DeInit(&hUsbDevice);
-#endif
-        HAL_PCD_MspDeInit_NoVbusSense(&hpcd_USB_OTG_HS);
-      }
-    }
-    else
-    {
-      USB_STATE state = usbPlugInState();
-      if (state == USB_CABLE_UNPLUGGED)
-      {
-        //Disable USB peripheral
-#if !USE_USBX
-        USBD_DeInit(&hUsbDevice);
-#endif //USE_USBX
-        HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS);
-
-        //Re-enable GPIO interrupt on pin
-        GPIO_usbVbusIntInit(1);
-      }
-    }
-    /* SR48-6-0 patch for VBUS sense - end */
-#else  //SUPPORT_SR48_6_0
-    USB_STATE state = usbPlugInState();
-    if (state == USB_CABLE_UNPLUGGED)
+    if (usbx_init_state == UX_SUCCESS)
     {
       //Disable USB peripheral
-#if !USE_USBX
-      USBD_DeInit(&hUsbDevice);
-#endif //USE_USBX
+      HAL_PCD_DevDisconnect(&hpcd_USB_OTG_HS);
+      HAL_PCD_Stop(&hpcd_USB_OTG_HS);
+      ux_device_stack_uninitialize();
+      ux_system_uninitialize();
+      HAL_PCD_DeInit(&hpcd_USB_OTG_HS);
+      usbx_init_state = UX_BUSY;
       HAL_PCD_MspDeInit(&hpcd_USB_OTG_HS);
 
       //Re-enable GPIO interrupt on pin
       GPIO_usbVbusIntInit(1);
     }
-#endif //SUPPORT_SR48_6_0
   }
 }
-#endif
+
 void initBtPins(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };
