@@ -15,7 +15,7 @@
 #include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
 #include "PCM/pcm_config.h"
-#include "usbd_cdc_acm_if.h"
+
 
 char *buffer;
 
@@ -830,7 +830,7 @@ void ShimFactoryTest_sendReportImpl(const char *str, factory_test_target_t facto
   case PRINT_TO_DOCK_UART:
     if (shimmerStatus.usbPluggedIn)
     {
-      CDC_Transmit(CDC_CH_DOCK_COMMS, (uint8_t *) str, strlen(str));
+
     }
     else if (shimmerStatus.docked)
     {

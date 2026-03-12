@@ -36,9 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !USE_USBX
-#include "usb_device.h"
-#endif
 
 /* USER CODE END Includes */
 
@@ -199,10 +196,11 @@ void Init()
   S4_RTC_WakeUpSetSlow();
 #endif
 
+#if 0
   //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
   GPIO_usbVbusIntInit(1);
   vbusPinStateCheck();
-
+#endif
   /* Take initial measurement to update LED state */
   manageReadBatt(1);
 

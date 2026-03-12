@@ -43,15 +43,16 @@ extern "C"
   void MX_GPIO_Init(void);
 
   /* USER CODE BEGIN Prototypes */
-
+#if 0
   void GPIO_usbVbusIntInit(uint8_t state);
-
+  void vbusPinStateCheck(void);
+#endif
 #if defined(SHIMMER3R)
   void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising);
 #endif
 
   uint8_t isSdPowerOn(void);
-  void vbusPinStateCheck(void);
+
   void initBtPins(void);
   void initBtInterrupts(void);
   void deinitBtPins(void);

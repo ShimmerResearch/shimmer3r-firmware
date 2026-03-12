@@ -23,8 +23,6 @@
 
 /* USER CODE BEGIN 0 */
 
-#include "usb_device.h"
-#include "usbd_core.h"
 
 #include "Boards/shimmer_boards.h"
 #include "Button/shimmer_button.h"
@@ -248,6 +246,7 @@ void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 2 */
 
+#if 0
 void GPIO_usbVbusIntInit(uint8_t state)
 {
   if (state)
@@ -279,6 +278,7 @@ void GPIO_usbVbusIntInit(uint8_t state)
     HAL_GPIO_DeInit(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   }
 }
+#endif
 
 //TODO copy Shimmer4 pins from HAL_GPIO_EXTI_Callback to HAL_GPIO_EXTI_Rising_Callback and HAL_GPIO_EXTI_Falling_Callback
 #if defined(SHIMMER3R)
@@ -723,6 +723,7 @@ void platform_initGpioForRevision(void)
   }
 }
 
+#if 0
 void vbusPinStateCheck(void)
 {
   GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
@@ -808,7 +809,7 @@ void vbusPinStateCheck(void)
 #endif //SUPPORT_SR48_6_0
   }
 }
-
+#endif
 void initBtPins(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = { 0 };

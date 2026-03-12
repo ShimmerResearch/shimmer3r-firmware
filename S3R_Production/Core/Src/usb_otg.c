@@ -22,7 +22,6 @@
 
 /* USER CODE BEGIN 0 */
 
-USB_STATE lastState = USB_CABLE_RESET;
 /* USER CODE END 0 */
 
 PCD_HandleTypeDef hpcd_USB_OTG_HS;
@@ -282,7 +281,7 @@ void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
   }
 }
 #endif
-
+#if 0
 USB_STATE usbPlugInState(void)
 {
   uint8_t stateNow = hUsbDevice.dev_state;
@@ -299,5 +298,5 @@ USB_STATE usbPlugInState(void)
   //TODO no else and not all conditions handled
   return lastState;
 }
-
+#endif
 /* USER CODE END 1 */

@@ -30,8 +30,6 @@ extern "C"
 #include "main.h"
 
   /* USER CODE BEGIN Includes */
-
-#include "usbd_def.h"
 #include <shimmer_include.h>
   /* USER CODE END Includes */
 
@@ -39,7 +37,7 @@ extern "C"
 
   /* USER CODE BEGIN Private defines */
 
-  extern USBD_HandleTypeDef hUsbDevice;
+#if 0
 
   typedef enum
   {
@@ -47,9 +45,9 @@ extern "C"
     USB_CABLE_UNPLUGGED = 1U,
     USB_CABLE_PLUGGED = 2U
   } USB_STATE;
-
+  USB_STATE usbPlugInState(void);
   /* USER CODE END Private defines */
-
+#endif
   void MX_USB_OTG_HS_PCD_Init(void);
 
   /* USER CODE BEGIN Prototypes */
@@ -60,7 +58,7 @@ extern "C"
   void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *hpcd);
 #endif
 
-  USB_STATE usbPlugInState(void);
+
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
