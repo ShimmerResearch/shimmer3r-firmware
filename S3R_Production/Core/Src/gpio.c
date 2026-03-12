@@ -287,7 +287,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
   switch (GPIO_Pin)
   {
 #if SUPPORT_SR48_6_0
-  /* SR48-6-0 patch for VBUS sense - start */
+    /* SR48-6-0 patch for VBUS sense - start */
 #if 0
   case USB_VBUS_Pin:
     if (!ShimBrd_isBoardSr48_6_0())
@@ -300,7 +300,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
     }
     /* no break */
     /* SR48-6-0 patch for VBUS sense - end */
-#else  //SUPPORT_SR48_6_0
+#else //SUPPORT_SR48_6_0
 #if 0
   case USB_VBUS_Pin:
     if (!(ShimTask_getList() & TASK_USB_SETUP))

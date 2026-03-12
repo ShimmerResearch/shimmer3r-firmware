@@ -270,7 +270,7 @@ int main(void)
   setMockExpansionBrdDetails();
 #endif
 
- //  Init();
+  //Init();
 
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
@@ -284,7 +284,7 @@ int main(void)
     /* USER CODE END WHILE */
     USBX_Device_Process();
     /* USER CODE BEGIN 3 */
-   // ShimTask_manage();
+    //ShimTask_manage();
   }
   /* USER CODE END 3 */
 }

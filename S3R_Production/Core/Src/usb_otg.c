@@ -69,7 +69,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *pcdHandle)
     /* Enable SYSCFG Clock */
     __HAL_RCC_SYSCFG_CLK_ENABLE();
 
- //   HAL_GPIO_DeInit(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
+    //HAL_GPIO_DeInit(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
     /* USER CODE END USB_OTG_HS_MspInit 0 */
 
     /** Initializes the peripherals clock

@@ -31,9 +31,8 @@ extern "C"
   /* Private includes ----------------------------------------------------------*/
   /* USER CODE BEGIN Includes */
 
-
-#include "main.h"
 #include "cachel1_armv7.h"
+#include "main.h"
 #include "stm32u5xx_hal.h"
 #include "ux_api.h"
 #include "ux_dcd_stm32.h"
@@ -102,13 +101,13 @@ extern "C"
 #ifndef STORAGE_READ_ONLY
 #define STORAGE_READ_ONLY UX_FALSE
 #endif
-  /* USER CODE BEGIN 1 */
-  /* USER CODE BEGIN 1 */
-  #ifdef DMA
-    void USDB_ReadCpltCallback(SD_HandleTypeDef *hsd1);
-    void USBD_WriteCpltCallback(SD_HandleTypeDef *hsd1);
-  #endif
-    /* USER CODE END 1 */
+/* USER CODE BEGIN 1 */
+/* USER CODE BEGIN 1 */
+#ifdef DMA
+  void USDB_ReadCpltCallback(SD_HandleTypeDef *hsd1);
+  void USBD_WriteCpltCallback(SD_HandleTypeDef *hsd1);
+#endif
+  /* USER CODE END 1 */
   /* USER CODE END 1 */
 
 #ifdef __cplusplus

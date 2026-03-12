@@ -27,12 +27,12 @@ extern "C"
 #endif
 
 /* Includes ------------------------------------------------------------------*/
+#include "usb_otg.h"
 #include "ux_api.h"
 #include "ux_dcd_stm32.h"
 #include "ux_device_cdc_acm.h"
 #include "ux_device_descriptors.h"
 #include "ux_device_msc.h"
-#include "usb_otg.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 

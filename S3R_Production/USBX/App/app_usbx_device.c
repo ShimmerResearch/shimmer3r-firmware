@@ -349,7 +349,6 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
   /* USER CODE BEGIN USBD_ChangeFunction1 */
 
-
   /* USER CODE END USBD_ChangeFunction1 */
 
   return status;
@@ -358,7 +357,7 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 /* USER CODE BEGIN 1 */
 VOID USBX_Device_Process(VOID)
 {
-//  ux_device_stack_tasks_run();
+  //ux_device_stack_tasks_run();
   _ux_system_tasks_run();
 }
 
@@ -389,4 +388,5 @@ VOID USBX_APP_Device_Init(VOID)
 
   /* USER CODE END USB_Device_Init_PostTreatment */
 }
+
 /* USER CODE END 1 */

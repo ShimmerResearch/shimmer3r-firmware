@@ -20,8 +20,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "ux_device_msc.h"
-#include "sdmmc.h"
 #include "hal_board.h"
+#include "sdmmc.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -34,10 +34,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define BLOCK_START_ADDR 0 /* Block start address      */
-#define NUM_OF_BLOCKS    5 /* Total number of blocks   */
-#define BUFFER_WORDS_SIZE \
-/* USER CODE END PD */
+#define BLOCK_START_ADDR  0 /* Block start address      */
+#define NUM_OF_BLOCKS     5 /* Total number of blocks   */
+#define BUFFER_WORDS_SIZE   /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
@@ -48,6 +47,7 @@
 /* USER CODE BEGIN PV */
 volatile uint8_t SD_READ_FLAG = 0;
 volatile uint8_t SD_WRITE_FLAG = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -110,51 +110,51 @@ UINT USBD_STORAGE_Read(VOID *storage_instance,
     ULONG *media_status)
 {
   UINT status = UX_SUCCESS;
-    /* USER CODE BEGIN USBD_STORAGE_Read */
-    /* UX_PARAMETER_NOT_USED(storage_instance);
-     UX_PARAMETER_NOT_USED(lun);
-     UX_PARAMETER_NOT_USED(data_pointer);
-     UX_PARAMETER_NOT_USED(number_blocks);
-     UX_PARAMETER_NOT_USED(lba);
-     UX_PARAMETER_NOT_USED(media_status);*/
-    /* USER CODE BEGIN USBD_STORAGE_Read */
-    uint32_t timeout_ms = 2000;
-    uint32_t start_tick = 0;
-    uint32_t total_length = number_blocks * 512; //SD_BLOCKSIZE is 512
+  /* USER CODE BEGIN USBD_STORAGE_Read */
+  /* UX_PARAMETER_NOT_USED(storage_instance);
+   UX_PARAMETER_NOT_USED(lun);
+   UX_PARAMETER_NOT_USED(data_pointer);
+   UX_PARAMETER_NOT_USED(number_blocks);
+   UX_PARAMETER_NOT_USED(lba);
+   UX_PARAMETER_NOT_USED(media_status);*/
+  /* USER CODE BEGIN USBD_STORAGE_Read */
+  uint32_t timeout_ms = 2000;
+  uint32_t start_tick = 0;
+  uint32_t total_length = number_blocks * 512; //SD_BLOCKSIZE is 512
 
-  #ifdef DMA
-    SD_READ_FLAG = 0;
-    /* Start the Dma write */
-    if (HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *) data_pointer, lba, number_blocks) != HAL_OK)
+#ifdef DMA
+  SD_READ_FLAG = 0;
+  /* Start the Dma write */
+  if (HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *) data_pointer, lba, number_blocks) != HAL_OK)
+  {
+    return UX_ERROR;
+  }
+  //Wait until DMA transfer complete
+  start_tick = HAL_GetTick();
+  while (SD_READ_FLAG == 0)
+  {
+    if ((HAL_GetTick() - start_tick) > timeout_ms)
+    {
+      return UX_ERROR; //DMA timeout
+    }
+  }
+#else
+  if (HAL_SD_ReadBlocks(&hsd1, (uint8_t *) data_pointer, lba, number_blocks, timeout_ms) != HAL_OK)
+  {
+    return UX_ERROR;
+  }
+#endif
+  uint32_t alignedAddr = ((uint32_t) data_pointer) & ~0x1F;
+  SCB_InvalidateDCache_by_Addr((uint32_t *) alignedAddr,
+      total_length + ((uint32_t) data_pointer - alignedAddr));
+  while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER)
+  {
+    if ((HAL_GetTick() - start_tick) > timeout_ms)
     {
       return UX_ERROR;
     }
-    //Wait until DMA transfer complete
-    start_tick = HAL_GetTick();
-    while (SD_READ_FLAG == 0)
-    {
-      if ((HAL_GetTick() - start_tick) > timeout_ms)
-      {
-        return UX_ERROR; //DMA timeout
-      }
-    }
-  #else
-    if (HAL_SD_ReadBlocks(&hsd1, (uint8_t *) data_pointer, lba, number_blocks, timeout_ms) != HAL_OK)
-    {
-      return UX_ERROR;
-    }
-  #endif
-    uint32_t alignedAddr = ((uint32_t) data_pointer) & ~0x1F;
-    SCB_InvalidateDCache_by_Addr((uint32_t *) alignedAddr,
-        total_length + ((uint32_t) data_pointer - alignedAddr));
-    while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER)
-    {
-      if ((HAL_GetTick() - start_tick) > timeout_ms)
-      {
-        return UX_ERROR;
-      }
-    }
-    status = UX_STATE_NEXT;
+  }
+  status = UX_STATE_NEXT;
 
   return status;
 }
@@ -242,27 +242,28 @@ UINT USBD_STORAGE_Write(VOID *storage_instance,
  * @retval status
  */
 UINT USBD_STORAGE_Flush(VOID *storage_instance, ULONG lun, ULONG number_blocks, ULONG lba, ULONG *media_status)
-{UINT status = UX_SUCCESS;
-
-/* USER CODE BEGIN USBD_STORAGE_Flush
-UX_PARAMETER_NOT_USED(storage_instance);
-UX_PARAMETER_NOT_USED(lun);
-UX_PARAMETER_NOT_USED(number_blocks);
-UX_PARAMETER_NOT_USED(lba);
-UX_PARAMETER_NOT_USED(media_status);
- USER CODE END USBD_STORAGE_Flush */
-
-if (HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER)
 {
+  UINT status = UX_SUCCESS;
+
+  /* USER CODE BEGIN USBD_STORAGE_Flush
+  UX_PARAMETER_NOT_USED(storage_instance);
+  UX_PARAMETER_NOT_USED(lun);
+  UX_PARAMETER_NOT_USED(number_blocks);
+  UX_PARAMETER_NOT_USED(lba);
+  UX_PARAMETER_NOT_USED(media_status);
+   USER CODE END USBD_STORAGE_Flush */
+
+  if (HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER)
+  {
+    status = UX_STATE_NEXT;
+  }
+  else
+  {
+    status = UX_ERROR;
+  }
+  /* USER CODE END USBD_STORAGE_Flush */
   status = UX_STATE_NEXT;
-}
-else
-{
-  status = UX_ERROR;
-}
-/* USER CODE END USBD_STORAGE_Flush */
-status = UX_STATE_NEXT;
-return status;
+  return status;
 }
 
 /**
@@ -283,21 +284,21 @@ UINT USBD_STORAGE_Status(VOID *storage_instance, ULONG lun, ULONG media_id, ULON
     UX_PARAMETER_NOT_USED(media_id);
     UX_PARAMETER_NOT_USED(media_status);*/
 
-    UINT status = UX_SUCCESS;
-    HAL_SD_CardCIDTypeDef pCID;
-    HAL_SD_CardCSDTypeDef pCSD;
+  UINT status = UX_SUCCESS;
+  HAL_SD_CardCIDTypeDef pCID;
+  HAL_SD_CardCSDTypeDef pCSD;
 
-    if (HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER)
-    {
-      status = UX_SUCCESS;
-    }
-    else
-    {
-      status = UX_ERROR;
-    }
-    HAL_SD_GetCardCID(&hsd1, &pCID);
-    HAL_SD_GetCardCSD(&hsd1, &pCSD);
-    return status;
+  if (HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER)
+  {
+    status = UX_SUCCESS;
+  }
+  else
+  {
+    status = UX_ERROR;
+  }
+  HAL_SD_GetCardCID(&hsd1, &pCID);
+  HAL_SD_GetCardCSD(&hsd1, &pCSD);
+  return status;
 }
 
 /**
@@ -344,17 +345,15 @@ ULONG USBD_STORAGE_GetMediaLastLba(VOID)
 
   /* USER CODE BEGIN USBD_STORAGE_GetMediaLastLba */
 
-
-   /* USER CODE BEGIN USBD_STORAGE_GetMediaLastLba */
-   if ((!shimmerStatus.sdPeripheralInit))
-   {
-     Board_sd2Mcu();
-   }
-   HAL_SD_CardInfoTypeDef CardInfo = { 0 };
-   HAL_SD_GetCardInfo(&hsd1, &CardInfo);
-   LastLba = CardInfo.BlockNbr - 1;
-   /* USER CODE END USBD_STORAGE_GetMediaLastLba */
-
+  /* USER CODE BEGIN USBD_STORAGE_GetMediaLastLba */
+  if ((!shimmerStatus.sdPeripheralInit))
+  {
+    Board_sd2Mcu();
+  }
+  HAL_SD_CardInfoTypeDef CardInfo = { 0 };
+  HAL_SD_GetCardInfo(&hsd1, &CardInfo);
+  LastLba = CardInfo.BlockNbr - 1;
+  /* USER CODE END USBD_STORAGE_GetMediaLastLba */
 
   return LastLba;
 }
@@ -369,16 +368,16 @@ ULONG USBD_STORAGE_GetMediaBlocklength(VOID)
 {
   ULONG MediaBlockLen = 0U;
 
-    /* USER CODE BEGIN USBD_STORAGE_GetMediaBlocklength */
-    if ((!shimmerStatus.sdPeripheralInit))
-    {
-      Board_sd2Mcu();
-    }
+  /* USER CODE BEGIN USBD_STORAGE_GetMediaBlocklength */
+  if ((!shimmerStatus.sdPeripheralInit))
+  {
+    Board_sd2Mcu();
+  }
 
-    HAL_SD_CardInfoTypeDef CardInfo = { 0 };
-    HAL_SD_GetCardInfo(&hsd1, &CardInfo);
-    MediaBlockLen = CardInfo.BlockSize;
-    /* USER CODE END USBD_STORAGE_GetMediaBlocklength */
+  HAL_SD_CardInfoTypeDef CardInfo = { 0 };
+  HAL_SD_GetCardInfo(&hsd1, &CardInfo);
+  MediaBlockLen = CardInfo.BlockSize;
+  /* USER CODE END USBD_STORAGE_GetMediaBlocklength */
 
   return MediaBlockLen;
 }
