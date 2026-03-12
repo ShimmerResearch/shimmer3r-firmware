@@ -23,7 +23,6 @@
 
 /* USER CODE BEGIN 0 */
 
-
 #include "Boards/shimmer_boards.h"
 #include "Button/shimmer_button.h"
 #include "TaskList/shimmer_taskList.h"
@@ -793,7 +792,7 @@ void vbusPinStateCheck(void)
       }
     }
     /* SR48-6-0 patch for VBUS sense - end */
-#else //SUPPORT_SR48_6_0
+#else  //SUPPORT_SR48_6_0
     USB_STATE state = usbPlugInState();
     if (state == USB_CABLE_UNPLUGGED)
     {

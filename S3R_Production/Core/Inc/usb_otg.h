@@ -58,7 +58,6 @@ extern "C"
   void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *hpcd);
 #endif
 
-
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
