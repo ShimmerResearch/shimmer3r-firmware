@@ -117,8 +117,9 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA15 PA7 PA4 PA5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15 | GPIO_PIN_7 | GPIO_PIN_4 | GPIO_PIN_5;
+  /*Configure GPIO pins : PA15 PA9 PA7 PA4
+                           PA5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15 | GPIO_PIN_9 | GPIO_PIN_7 | GPIO_PIN_4 | GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -287,6 +288,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
   {
 #if SUPPORT_SR48_6_0
   /* SR48-6-0 patch for VBUS sense - start */
+#if 0
   case USB_VBUS_Pin:
     if (!ShimBrd_isBoardSr48_6_0())
     {
@@ -299,13 +301,16 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
     /* no break */
     /* SR48-6-0 patch for VBUS sense - end */
 #else  //SUPPORT_SR48_6_0
+#if 0
   case USB_VBUS_Pin:
     if (!(ShimTask_getList() & TASK_USB_SETUP))
     {
       ShimTask_set(TASK_USB_SETUP);
     }
     break;
+#endif
 #endif //SUPPORT_SR48_6_0
+#endif
   default:
     gpioExtiCommon(GPIO_Pin, 1);
     break;
@@ -366,6 +371,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     }
     /* SR48-6-0 patch for dock detection - end */
     /* SR48-6-0 patch for VBUS sense - start */
+#if 0
   case USB_VBUS_Pin:
     if (ShimBrd_isBoardSr48_6_0())
     {
@@ -377,6 +383,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     }
     /* SR48-6-0 patch for VBUS sense - end */
     /* no break */
+#endif
 #endif //SUPPORT_SR48_6_0
   case USER_BTN_Pin:
     (void) ShimBtn_pressReleaseAction();

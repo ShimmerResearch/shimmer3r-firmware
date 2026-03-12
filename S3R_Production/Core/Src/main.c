@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "app_usbx_device.h"
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
@@ -27,7 +28,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
 #include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
@@ -64,7 +64,10 @@
 /* USER CODE BEGIN PV */
 
 volatile uint32_t time_start, time_end, time_diff;
-
+#define BLOCK_START_ADDR 0 /* Block start address      */
+#define NUM_OF_BLOCKS    5 /* Total number of blocks   */
+#define BUFFER_WORDS_SIZE \
+  ((MMC_BLOCKSIZE * NUM_OF_BLOCKS) >> 2) /* Total data size in bytes */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -256,6 +259,9 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
+  MX_USB_OTG_HS_PCD_Init();
+  Board_sd2Mcu();
+  MX_USBX_Device_Init();
   /* USER CODE BEGIN 2 */
 
   //MX_IWDG_Init();
@@ -264,7 +270,7 @@ int main(void)
   setMockExpansionBrdDetails();
 #endif
 
-  Init();
+ //  Init();
 
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
@@ -276,9 +282,9 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+    USBX_Device_Process();
     /* USER CODE BEGIN 3 */
-    ShimTask_manage();
+   // ShimTask_manage();
   }
   /* USER CODE END 3 */
 }

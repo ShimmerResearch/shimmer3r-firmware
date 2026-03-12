@@ -23,7 +23,7 @@
 /* USER CODE BEGIN 0 */
 #include "gpio.h"
 #include "stdio.h"
-
+#include "ux_device_msc.h"
 extern STATTypeDef stat;
 
 /* USER CODE END 0 */
@@ -55,8 +55,7 @@ void MX_SDMMC1_SD_Init(void)
     hsd1.Init.ClockDiv = 2;
     if (HAL_SD_Init(&hsd1) != HAL_OK)
     {
-      /* Commenting it out to avoid FW lockup when there is a Hardware issue with SD card or slot. */
-      //Error_Handler(); /*TODO: to handle it better*/
+      Error_Handler();
     }
     /* USER CODE BEGIN SDMMC1_Init 2 */
     else
@@ -241,4 +240,15 @@ void printSdCardSize(char *outputStr)
       (hsd1.SdCard.BlockSize * ((float) hsd1.SdCard.BlockNbr / 1024 / 1024 / 1024)));
 }
 
+#ifdef DMA
+void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd1)
+{
+  USDB_ReadCpltCallback(hsd1);
+}
+
+void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd1)
+{
+  USBD_WriteCpltCallback(hsd1);
+}
+#endif
 /* USER CODE END 1 */

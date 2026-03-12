@@ -46,7 +46,10 @@ extern "C"
   void mmc1DeInit(void);
   void printSdCardInfo(char *outputStr);
   void printSdCardSize(char *outputStr);
-
+#ifdef DMA
+  void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd1);
+  void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd1);
+#endif
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
