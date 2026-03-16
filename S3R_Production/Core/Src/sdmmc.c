@@ -243,12 +243,16 @@ void printSdCardSize(char *outputStr)
 #ifdef DMA
 void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd1)
 {
-  USDB_ReadCpltCallback(hsd1);
+  if(shimmerStatus.usbPluggedIn)
+    USDB_ReadCpltCallback(hsd1);
+    BSP_SD_ReadCpltCallback();
 }
 
 void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd1)
 {
-  USBD_WriteCpltCallback(hsd1);
+  if(shimmerStatus.usbPluggedIn)
+    USBD_WriteCpltCallback(hsd1);
+    BSP_SD_WriteCpltCallback();
 }
 #endif
 /* USER CODE END 1 */

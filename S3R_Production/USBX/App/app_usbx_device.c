@@ -370,13 +370,25 @@ VOID USBX_APP_Device_Init(VOID)
   /* initialize the device controller HAL driver */
   MX_USB_OTG_HS_PCD_Init();
 
-  /* USER CODE BEGIN USB_Device_Init_PreTreatment_1 */
-  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x200);
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, USBD_MAX_EP0_SIZE / 4);
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, USBD_CDCACM_EPIN_HS_MPS / 4);
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, USBD_CDCACM_EPOUT_HS_MPS / 4);
-  /* USER CODE END USB_Device_Init_PreTreatment_1 */
+  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x100);
 
+  // 2. Tx FIFO 0: Control Endpoint (Common)
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20);
+
+  // 3. Tx FIFO 1: MSC Data IN (Matches USBD_MSC_EPIN_ADDR 0x81)
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, USBD_MSC_EPIN_HS_MPS / 4);
+
+  /* 4. Set FIFO 2 (Placeholder - REQUIRED by the logic you posted) */
+  /* Since you use FIFO 3 and 4, FIFO 2 MUST be at least 16 words */
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, 0x10);
+
+  // 4. Tx FIFO 3: CDC Command IN (Matches USBD_CDCACM_EPINCMD_ADDR 0x83)
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 3, 0x20);
+
+  // 5. Tx FIFO 4: CDC Data IN (Matches USBD_CDCACM_EPIN_ADDR 0x84)
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4,0x100);
+  /* USER CODE END USB_Device_Init_PreTreatment_1 */
+    /* USER CODE END USB_Device_Init_PreTreatment_1 */
   /* initialize and link controller HAL driver to USBx */
   if (_ux_dcd_stm32_initialize((ULONG) USB_OTG_HS, (ULONG) &hpcd_USB_OTG_HS) != UX_SUCCESS)
   {
@@ -387,6 +399,45 @@ VOID USBX_APP_Device_Init(VOID)
   HAL_PCD_Start(&hpcd_USB_OTG_HS);
 
   /* USER CODE END USB_Device_Init_PostTreatment */
+}
+
+VOID USBX_APP_Device_DeInit(VOID)
+{
+  /* Stop USB peripheral */
+  HAL_PCD_Stop(&hpcd_USB_OTG_HS);
+
+  /* Deinitialize USB peripheral */
+  HAL_PCD_DeInit(&hpcd_USB_OTG_HS);
+
+   /* Uninitialize USBX DCD driver */
+  _ux_dcd_stm32_uninitialize((ULONG) USB_OTG_HS, (ULONG) &hpcd_USB_OTG_HS);
+}
+
+UINT MX_USBX_Device_DeInit(VOID)
+{
+  UINT ret = UX_SUCCESS;
+
+  /* 1. Unregister CDC ACM class */
+  /* Do this first so the stack knows these interfaces are no longer active */
+  ux_device_stack_class_unregister(_ux_system_slave_class_cdc_acm_name,
+                                   ux_device_class_cdc_acm_entry);
+
+  /* 2. Unregister MSC class */
+  ux_device_stack_class_unregister(_ux_system_slave_class_storage_name,
+                                   ux_device_class_storage_entry);
+
+  /* 3. Uninitialize USBX device stack */
+  ux_device_stack_uninitialize();
+
+  /* 4. Uninitialize USBX system */
+  /* This cleans up the memory pool and internal system resources */
+  ux_system_uninitialize();
+
+  /* 5. Stop USBX device hardware controller (HAL) */
+  /* Pull the plug on the hardware last */
+  USBX_APP_Device_DeInit();
+
+  return ret;
 }
 
 /* USER CODE END 1 */

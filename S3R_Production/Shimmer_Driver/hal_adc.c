@@ -1086,14 +1086,14 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 #if defined(SHIMMER3R)
   if (hadc->Instance == hadcSensPtr->Instance)
   {
-    if (shimmerStatus.sensing)
+    if (waitingForDebugData)
+    {
+      waitingForDebugData = 0;
+    }
+    else if(shimmerStatus.sensing)
     {
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
-    }
-    else
-    {
-      waitingForDebugData = 0;
     }
     HAL_ADC_Stop_DMA(hadcSensPtr);
   }

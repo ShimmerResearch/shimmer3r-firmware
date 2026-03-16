@@ -35,7 +35,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include "app_usbx_device.h"
+#include "ux_device_cdc_acm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -155,7 +156,7 @@ void Init()
     LogAndStream_setupUndock();
   }
 
-  //(void)ShimBtn_pressReleaseAction();
+  (void)ShimBtn_pressReleaseAction();
 
 #if defined(SHIMMER3R)
   LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH);
@@ -270,7 +271,7 @@ int main(void)
   setMockExpansionBrdDetails();
 #endif
 
-  //Init();
+  Init();
 
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
@@ -282,9 +283,15 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    USBX_Device_Process();
+    if(shimmerStatus.usbPluggedIn)
+    {
+      ux_device_stack_tasks_run();
+      cdc_acm_write_task();
+      cdc_acm_read_task();
+      ux_device_stack_tasks_run();
+    }
+    ShimTask_manage();
     /* USER CODE BEGIN 3 */
-    //ShimTask_manage();
   }
   /* USER CODE END 3 */
 }

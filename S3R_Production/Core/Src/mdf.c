@@ -84,7 +84,7 @@ void MX_ADF1_Init(void)
   AdfFilterConfig0.DataSource = MDF_DATA_SOURCE_BSMX;
   AdfFilterConfig0.Delay = 0;
   AdfFilterConfig0.CicMode = MDF_ONE_FILTER_SINC5;
-  AdfFilterConfig0.DecimationRatio = 24;
+  AdfFilterConfig0.DecimationRatio = 64;
   AdfFilterConfig0.Gain = 6;
   AdfFilterConfig0.ReshapeFilter.Activation = ENABLE;
   AdfFilterConfig0.ReshapeFilter.DecimationRatio = MDF_RSF_DECIMATION_RATIO_4;
@@ -269,6 +269,8 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
 
 void HAL_MDF_ErrorCallback(MDF_HandleTypeDef *hmdf)
 {
+//  micStopSensing();
+
   if (micTestRunning && Mic_CountSkip >= FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
   {
     micTestErrorCnt++;
