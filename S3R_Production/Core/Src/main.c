@@ -262,7 +262,7 @@ int main(void)
   MX_TIM7_Init();
   MX_USB_OTG_HS_PCD_Init();
   Board_sd2Mcu();
-//  MX_USBX_Device_Init();
+  //MX_USBX_Device_Init();
   /* USER CODE BEGIN 2 */
 
   //MX_IWDG_Init();
@@ -276,8 +276,8 @@ int main(void)
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
 
-//  MX_USB_OTG_HS_PCD_Init();
-//  Board_sd2Mcu();
+  //MX_USB_OTG_HS_PCD_Init();
+  //Board_sd2Mcu();
   MX_USBX_Device_Init();
 
   /* USER CODE END 2 */

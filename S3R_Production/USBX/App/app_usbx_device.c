@@ -176,10 +176,10 @@ UINT MX_USBX_Device_Init(VOID)
 
   /* USER CODE BEGIN STORAGE_PARAMETER */
 
-  storage_parameter.ux_slave_class_storage_parameter_vendor_id = (UCHAR *)&vendor_id;
-  storage_parameter.ux_slave_class_storage_parameter_product_id = (UCHAR *)&product_id;
-//  storage_parameter.ux_slave_class_storage_parameter_product_rev = (UCHAR *)STORAGE_PRODUCT_REV;
-//  storage_parameter.ux_slave_class_storage_parameter_product_serial = (UCHAR *)STORAGE_SERIAL_NUMBER;
+  storage_parameter.ux_slave_class_storage_parameter_vendor_id = (UCHAR *) &vendor_id;
+  storage_parameter.ux_slave_class_storage_parameter_product_id = (UCHAR *) &product_id;
+  //storage_parameter.ux_slave_class_storage_parameter_product_rev = (UCHAR *)STORAGE_PRODUCT_REV;
+  //storage_parameter.ux_slave_class_storage_parameter_product_serial = (UCHAR *)STORAGE_SERIAL_NUMBER;
 
   /* USER CODE END STORAGE_PARAMETER */
 

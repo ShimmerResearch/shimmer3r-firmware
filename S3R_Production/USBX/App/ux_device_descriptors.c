@@ -211,11 +211,11 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_IDX_MFC_STR;
 
   /* Set the Manufacturer string in string_framework */
-//  USBD_Desc_GetString(
-//      (uint8_t *) USBD_MANUFACTURER_STRING, USBD_string_framework + count, &len);
+  //USBD_Desc_GetString(
+  //    (uint8_t *) USBD_MANUFACTURER_STRING, USBD_string_framework + count, &len);
   /* Overwrite the manufacturer string with Shimmers */
-  USBD_Desc_GetString(
-      (uint8_t *) SHIMMER_MANUFACTURER_STRING, USBD_string_framework + count, &len);
+  USBD_Desc_GetString((uint8_t *) SHIMMER_MANUFACTURER_STRING,
+      USBD_string_framework + count, &len);
 
   /* Set the Product language Id and index in USBD_string_framework */
   count += len + 1;
@@ -224,9 +224,10 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_IDX_PRODUCT_STR;
 
   /* Set the Product string in USBD_string_framework */
-//  USBD_Desc_GetString((uint8_t *) USBD_PRODUCT_STRING, USBD_string_framework + count, &len);
+  //USBD_Desc_GetString((uint8_t *) USBD_PRODUCT_STRING, USBD_string_framework + count, &len);
   /* Overwrite the product string with the runtime product string that contains the Shimmer's MAC ID */
-  USBD_Desc_GetString((uint8_t *) runtime_product_string, USBD_string_framework + count, &len);
+  USBD_Desc_GetString(
+      (uint8_t *) runtime_product_string, USBD_string_framework + count, &len);
 
   /* Set Serial language Id and index in string_framework */
   count += len + 1;
