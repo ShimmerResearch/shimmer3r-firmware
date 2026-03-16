@@ -125,8 +125,7 @@ UINT USBD_STORAGE_Read(VOID *storage_instance,
 #ifdef DMA
   SD_READ_FLAG = 0;
   /* Start the Dma write */
-  if (HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *) data_pointer, lba, number_blocks) != HAL_OK)
-  {
+  if (HAL_SD_SharedRead(OWNER_USB,(uint8_t *) data_pointer, lba, number_blocks) != HAL_OK) {
     return UX_ERROR;
   }
   //Wait until DMA transfer complete
@@ -197,8 +196,7 @@ UINT USBD_STORAGE_Write(VOID *storage_instance,
 #ifdef DMA
   /* Start the Dma write */
   SD_WRITE_FLAG = 0;
-  if (HAL_SD_WriteBlocks_DMA(&hsd1, (uint8_t *) data_pointer, lba, number_blocks) != HAL_OK)
-  {
+  if (HAL_SD_SharedWrite(OWNER_USB, (uint8_t *) data_pointer, lba, number_blocks) != HAL_OK) {
     return UX_ERROR;
   }
   //Wait until DMA transfer complete

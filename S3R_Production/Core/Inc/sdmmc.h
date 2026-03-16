@@ -36,7 +36,11 @@ extern "C"
   extern SD_HandleTypeDef hsd1;
 
   /* USER CODE BEGIN Private defines */
-
+  typedef enum {
+      OWNER_IDLE = 0,
+      OWNER_FATFS,
+      OWNER_USB
+  } sdOwner_t;
   /* USER CODE END Private defines */
 
   void MX_SDMMC1_SD_Init(void);
@@ -46,10 +50,12 @@ extern "C"
   void mmc1DeInit(void);
   void printSdCardInfo(char *outputStr);
   void printSdCardSize(char *outputStr);
-#ifdef DMA
+  void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd1);
   void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd1);
   void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd1);
-#endif
+  HAL_StatusTypeDef HAL_SD_SharedRead(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t blocks);
+  HAL_StatusTypeDef HAL_SD_SharedWrite(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t blocks);
+
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

@@ -33,7 +33,7 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 extern const Diskio_drvTypeDef  SD_Driver;
-
+extern volatile  UINT  WriteStatus, ReadStatus;
 /* USER CODE BEGIN lastSection */
 /* can be used to modify / undefine previous code or add new definitions */
 /* USER CODE END lastSection */
