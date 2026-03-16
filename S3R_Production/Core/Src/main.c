@@ -262,7 +262,7 @@ int main(void)
   MX_TIM7_Init();
   MX_USB_OTG_HS_PCD_Init();
   Board_sd2Mcu();
-  MX_USBX_Device_Init();
+//  MX_USBX_Device_Init();
   /* USER CODE BEGIN 2 */
 
   //MX_IWDG_Init();
@@ -276,20 +276,29 @@ int main(void)
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
 
+//  MX_USB_OTG_HS_PCD_Init();
+//  Board_sd2Mcu();
+  MX_USBX_Device_Init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-    if (shimmerStatus.usbPluggedIn)
+    /* Let USBX progress enumeration/state machine */
+    if (USBX_IsInitialised())
     {
       ux_device_stack_tasks_run();
-      cdc_acm_write_task();
-      cdc_acm_read_task();
-      ux_device_stack_tasks_run();
+
+      /* Only touch the CDC class once the device is configured by the host */
+      if (USBX_CDC_ACM_IsActive())
+      {
+        cdc_acm_write_task();
+        cdc_acm_read_task();
+      }
     }
+
     ShimTask_manage();
     /* USER CODE BEGIN 3 */
   }

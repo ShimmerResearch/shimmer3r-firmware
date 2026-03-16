@@ -60,6 +60,9 @@ extern "C"
   UINT MX_USBX_Device_Init(VOID);
   VOID USBX_Device_Process(VOID);
   VOID USBX_APP_Device_Init(VOID);
+  VOID USBX_APP_Device_DeInit(VOID);
+  UINT MX_USBX_Device_DeInit(VOID);
+  bool USBX_IsInitialised(void);
   /* USER CODE BEGIN EFP */
 
   /* USER CODE END EFP */

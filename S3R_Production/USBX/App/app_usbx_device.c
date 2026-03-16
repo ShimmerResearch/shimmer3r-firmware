@@ -60,6 +60,11 @@ static UX_SLAVE_CLASS_CDC_ACM_PARAMETER cdc_acm_parameter;
 
 /* USER CODE BEGIN PV */
 
+static UCHAR vendor_id[] = "Shimmer";
+static UCHAR product_id[] = "XXXX";
+
+bool usbx_initialized = false;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -90,6 +95,9 @@ UINT MX_USBX_Device_Init(VOID)
   UCHAR *pointer;
 
   /* USER CODE BEGIN MX_USBX_Device_Init0 */
+
+  /* Build the product ID for the Disk Drive string based on the Shimmer's MAC ID */
+  LogAndStream_buildShimmerMacSuffix(&product_id, sizeof(product_id));
 
   /* USER CODE END MX_USBX_Device_Init0 */
   pointer = ux_device_byte_pool_buffer;
@@ -168,6 +176,11 @@ UINT MX_USBX_Device_Init(VOID)
 
   /* USER CODE BEGIN STORAGE_PARAMETER */
 
+  storage_parameter.ux_slave_class_storage_parameter_vendor_id = (UCHAR *)&vendor_id;
+  storage_parameter.ux_slave_class_storage_parameter_product_id = (UCHAR *)&product_id;
+//  storage_parameter.ux_slave_class_storage_parameter_product_rev = (UCHAR *)STORAGE_PRODUCT_REV;
+//  storage_parameter.ux_slave_class_storage_parameter_product_serial = (UCHAR *)STORAGE_SERIAL_NUMBER;
+
   /* USER CODE END STORAGE_PARAMETER */
 
   /* Get storage configuration number */
@@ -213,6 +226,8 @@ UINT MX_USBX_Device_Init(VOID)
 
   /* USER CODE BEGIN MX_USBX_Device_Init1 */
   USBX_APP_Device_Init();
+
+  usbx_initialized = true;
   /* USER CODE END MX_USBX_Device_Init1 */
 
   return ret;
@@ -437,7 +452,14 @@ UINT MX_USBX_Device_DeInit(VOID)
   /* Pull the plug on the hardware last */
   USBX_APP_Device_DeInit();
 
+  usbx_initialized = false;
+
   return ret;
+}
+
+bool USBX_IsInitialised(void)
+{
+  return usbx_initialized;
 }
 
 /* USER CODE END 1 */
