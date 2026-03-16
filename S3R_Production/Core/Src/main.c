@@ -28,15 +28,15 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app_usbx_device.h"
 #include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
 #include "usb_otg.h"
+#include "ux_device_cdc_acm.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include "app_usbx_device.h"
-#include "ux_device_cdc_acm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -156,7 +156,7 @@ void Init()
     LogAndStream_setupUndock();
   }
 
-  (void)ShimBtn_pressReleaseAction();
+  (void) ShimBtn_pressReleaseAction();
 
 #if defined(SHIMMER3R)
   LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH);
@@ -283,7 +283,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    if(shimmerStatus.usbPluggedIn)
+    if (shimmerStatus.usbPluggedIn)
     {
       ux_device_stack_tasks_run();
       cdc_acm_write_task();

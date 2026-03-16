@@ -269,7 +269,7 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
 
 void HAL_MDF_ErrorCallback(MDF_HandleTypeDef *hmdf)
 {
-//  micStopSensing();
+  //micStopSensing();
 
   if (micTestRunning && Mic_CountSkip >= FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
   {

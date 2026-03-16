@@ -1090,7 +1090,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
     {
       waitingForDebugData = 0;
     }
-    else if(shimmerStatus.sensing)
+    else if (shimmerStatus.sensing)
     {
       S4_ADC_bufPoll();
       ADC_gatherDataDone_cb();
