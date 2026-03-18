@@ -43,11 +43,11 @@ extern "C"
 
 /* USER CODE END ET */
 
+  /* USER CODE BEGIN EC */
+
 /* Exported constants --------------------------------------------------------*/
 #define UX_DEVICE_APP_MEM_POOL_SIZE   1024 * 128
 #define USBX_DEVICE_MEMORY_STACK_SIZE 1024 * 64
-
-  /* USER CODE BEGIN EC */
 
   /* USER CODE END EC */
 
@@ -56,14 +56,16 @@ extern "C"
 
   /* USER CODE END EM */
 
-  /* Exported functions prototypes ---------------------------------------------*/
-  UINT MX_USBX_Device_Init(VOID);
-  VOID USBX_Device_Process(VOID);
-  VOID USBX_APP_Device_Init(VOID);
-  VOID USBX_APP_Device_DeInit(VOID);
-  UINT MX_USBX_Device_DeInit(VOID);
-  bool USBX_IsInitialised(void);
   /* USER CODE BEGIN EFP */
+
+/* Exported functions prototypes ---------------------------------------------*/
+UINT MX_USBX_Device_Init(VOID);
+VOID USBX_Device_Process(VOID);
+VOID USBX_APP_Device_Init(VOID);
+VOID USBX_APP_Device_DeInit(VOID);
+UINT MX_USBX_Device_DeInit(VOID);
+bool USBX_IsInitialised(void);
+bool USBX_IsUsbConnected(void);
 
   /* USER CODE END EFP */
 

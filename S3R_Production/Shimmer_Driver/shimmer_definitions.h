@@ -18,7 +18,7 @@
 #define FW_IDENTIFIER 12
 #endif
 
-#define SUPPORT_SR48_6_0    1
+#define SUPPORT_SR48_6_0    0
 #define IS_CONNECTED_EEPROM 1
 
 #define USE_DEFAULT_SENSOR  0
@@ -32,7 +32,6 @@
 #define USE_VBATT_ALWAYS      0
 #define HAL_TEST_INFOMEM      0
 #define USE_BMPX80            2 //x=1 for 180, x=2 for 280
-#define USE_USBX              0
 #define SHIMMER_ENABLE_PRINTF 1
 
 #ifdef SHIMMER_ENABLE_PRINTF

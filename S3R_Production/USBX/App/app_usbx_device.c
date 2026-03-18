@@ -63,7 +63,9 @@ static UX_SLAVE_CLASS_CDC_ACM_PARAMETER cdc_acm_parameter;
 static UCHAR vendor_id[] = "Shimmer";
 static UCHAR product_id[] = "XXXX";
 
-bool usbx_initialized = false;
+static volatile bool usbx_initialized = false;
+static volatile bool usbx_isUsbConnected = false;
+static volatile bool firstSuspendSkipped = false;
 
 /* USER CODE END PV */
 
@@ -97,7 +99,7 @@ UINT MX_USBX_Device_Init(VOID)
   /* USER CODE BEGIN MX_USBX_Device_Init0 */
 
   /* Build the product ID for the Disk Drive string based on the Shimmer's MAC ID */
-  LogAndStream_buildShimmerMacSuffix(&product_id, sizeof(product_id));
+  LogAndStream_buildShimmerMacSuffix(product_id, sizeof(product_id));
 
   /* USER CODE END MX_USBX_Device_Init0 */
   pointer = ux_device_byte_pool_buffer;
@@ -228,6 +230,7 @@ UINT MX_USBX_Device_Init(VOID)
   USBX_APP_Device_Init();
 
   usbx_initialized = true;
+  firstSuspendSkipped = false;
   /* USER CODE END MX_USBX_Device_Init1 */
 
   return ret;
@@ -276,6 +279,8 @@ ULONG _ux_utility_time_get(VOID)
 
   /* USER CODE BEGIN _ux_utility_time_get */
 
+  time_tick = (ULONG)HAL_GetTick();
+
   /* USER CODE END _ux_utility_time_get */
 
   return time_tick;
@@ -293,6 +298,9 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
   /* USER CODE BEGIN USBD_ChangeFunction0 */
 
+  //TODO remove temporary printfs once VBUS interrupt handling is finalized
+  SHIMMER_PRINTF("USB Device State Changed: 0x%lX\n", Device_State);
+
   /* USER CODE END USBD_ChangeFunction0 */
 
   switch (Device_State)
@@ -300,6 +308,9 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
   case UX_DEVICE_ATTACHED:
 
     /* USER CODE BEGIN UX_DEVICE_ATTACHED */
+
+//    usbx_isUsbConnected = true;
+    firstSuspendSkipped = true;
 
     /* USER CODE END UX_DEVICE_ATTACHED */
 
@@ -332,6 +343,14 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
   case UX_DCD_STM32_DEVICE_SUSPENDED:
 
     /* USER CODE BEGIN UX_DCD_STM32_DEVICE_SUSPENDED */
+
+    if(firstSuspendSkipped)
+    {
+      usbx_isUsbConnected = false;
+
+      ShimTask_set(TASK_USB_SETUP);
+    }
+    firstSuspendSkipped = true;
 
     /* USER CODE END UX_DCD_STM32_DEVICE_SUSPENDED */
 
@@ -372,8 +391,7 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 /* USER CODE BEGIN 1 */
 VOID USBX_Device_Process(VOID)
 {
-  //ux_device_stack_tasks_run();
-  _ux_system_tasks_run();
+  ux_device_stack_tasks_run();
 }
 
 VOID USBX_APP_Device_Init(VOID)
@@ -418,19 +436,38 @@ VOID USBX_APP_Device_Init(VOID)
 
 VOID USBX_APP_Device_DeInit(VOID)
 {
+  HAL_StatusTypeDef hal_status;
+  UINT usbx_status;
+
   /* Stop USB peripheral */
-  HAL_PCD_Stop(&hpcd_USB_OTG_HS);
+  hal_status = HAL_PCD_Stop(&hpcd_USB_OTG_HS);
+  if (hal_status != HAL_OK)
+  {
+    Error_Handler();
+  }
 
   /* Deinitialize USB peripheral */
-  HAL_PCD_DeInit(&hpcd_USB_OTG_HS);
+  hal_status = HAL_PCD_DeInit(&hpcd_USB_OTG_HS);
+  if (hal_status != HAL_OK)
+  {
+    Error_Handler();
+  }
 
   /* Uninitialize USBX DCD driver */
-  _ux_dcd_stm32_uninitialize((ULONG) USB_OTG_HS, (ULONG) &hpcd_USB_OTG_HS);
+  usbx_status = _ux_dcd_stm32_uninitialize((ULONG) USB_OTG_HS, (ULONG) &hpcd_USB_OTG_HS);
+  if (usbx_status != UX_SUCCESS)
+  {
+    Error_Handler();
+  }
 }
 
 UINT MX_USBX_Device_DeInit(VOID)
 {
   UINT ret = UX_SUCCESS;
+
+  /* 0. Stop USBX device hardware controller (HAL) */
+  /* Pull the plug on the hardware last */
+  USBX_APP_Device_DeInit();
 
   /* 1. Unregister CDC ACM class */
   /* Do this first so the stack knows these interfaces are no longer active */
@@ -448,10 +485,6 @@ UINT MX_USBX_Device_DeInit(VOID)
   /* This cleans up the memory pool and internal system resources */
   ux_system_uninitialize();
 
-  /* 5. Stop USBX device hardware controller (HAL) */
-  /* Pull the plug on the hardware last */
-  USBX_APP_Device_DeInit();
-
   usbx_initialized = false;
 
   return ret;
@@ -460,6 +493,11 @@ UINT MX_USBX_Device_DeInit(VOID)
 bool USBX_IsInitialised(void)
 {
   return usbx_initialized;
+}
+
+bool USBX_IsUsbConnected(void)
+{
+  return usbx_isUsbConnected;
 }
 
 /* USER CODE END 1 */

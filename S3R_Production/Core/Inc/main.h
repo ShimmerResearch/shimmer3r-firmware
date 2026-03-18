@@ -104,6 +104,8 @@ extern "C"
 #define DOCK_RXD_GPIO_Port       GPIOB
 #define CS_LIS2DW12_Pin          GPIO_PIN_7
 #define CS_LIS2DW12_GPIO_Port    GPIOD
+#define USB_VBUS_Pin             GPIO_PIN_9
+#define USB_VBUS_GPIO_Port       GPIOA
 #define CS_HIGH_G_Pin            GPIO_PIN_10
 #define CS_HIGH_G_GPIO_Port      GPIOA
 #define SW_MIC_Pin               GPIO_PIN_8

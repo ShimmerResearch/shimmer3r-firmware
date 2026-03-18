@@ -25,6 +25,8 @@
 
 #include <Boards/shimmer_boards.h>
 
+#include "app_usbx_device.h"  // add this include so we can query USBX state
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -682,13 +684,12 @@ void EXTI8_IRQHandler(void)
 /**
  * @brief This function handles EXTI Line9 interrupt.
  */
-#if 0
 void EXTI9_IRQHandler(void)
 {
   //HAL_GPIO_EXTI_IRQHandler(GPIO_EXTERNAL_Pin);
   HAL_GPIO_EXTI_IRQHandler(USB_VBUS_Pin);
 }
-#endif
+
 /**
  * @brief This function handles EXTI Line10 interrupt.
  */

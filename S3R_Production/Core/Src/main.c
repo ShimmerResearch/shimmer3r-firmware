@@ -156,7 +156,7 @@ void Init()
     LogAndStream_setupUndock();
   }
 
-  (void) ShimBtn_pressReleaseAction();
+  //(void) ShimBtn_pressReleaseAction();
 
 #if defined(SHIMMER3R)
   LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH);
@@ -199,11 +199,10 @@ void Init()
   S4_RTC_WakeUpSetSlow();
 #endif
 
-#if 0
   //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
   GPIO_usbVbusIntInit(1);
   vbusPinStateCheck();
-#endif
+
   /* Take initial measurement to update LED state */
   manageReadBatt(1);
 
@@ -260,8 +259,8 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
-  MX_USB_OTG_HS_PCD_Init();
-  Board_sd2Mcu();
+//  MX_USB_OTG_HS_PCD_Init();
+//  Board_sd2Mcu();
   //MX_USBX_Device_Init();
   /* USER CODE BEGIN 2 */
 
@@ -278,7 +277,7 @@ int main(void)
 
   //MX_USB_OTG_HS_PCD_Init();
   //Board_sd2Mcu();
-  MX_USBX_Device_Init();
+//  MX_USBX_Device_Init();
 
   /* USER CODE END 2 */
 
@@ -286,13 +285,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* USER CODE END WHILE */
+  
+    /* USER CODE BEGIN 3 */
     /* Let USBX progress enumeration/state machine */
     if (USBX_IsInitialised())
     {
       ux_device_stack_tasks_run();
 
       /* Only touch the CDC class once the device is configured by the host */
-      if (USBX_CDC_ACM_IsActive())
+      if (USBX_CDC_ACM_IsPortOpen())
       {
         cdc_acm_write_task();
         cdc_acm_read_task();
@@ -300,7 +302,6 @@ int main(void)
     }
 
     ShimTask_manage();
-    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
