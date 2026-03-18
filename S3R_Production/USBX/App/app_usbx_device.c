@@ -279,7 +279,7 @@ ULONG _ux_utility_time_get(VOID)
 
   /* USER CODE BEGIN _ux_utility_time_get */
 
-  time_tick = (ULONG)HAL_GetTick();
+  time_tick = (ULONG) HAL_GetTick();
 
   /* USER CODE END _ux_utility_time_get */
 
@@ -309,7 +309,7 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
     /* USER CODE BEGIN UX_DEVICE_ATTACHED */
 
-//    usbx_isUsbConnected = true;
+    //usbx_isUsbConnected = true;
     firstSuspendSkipped = true;
 
     /* USER CODE END UX_DEVICE_ATTACHED */
@@ -344,7 +344,7 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
     /* USER CODE BEGIN UX_DCD_STM32_DEVICE_SUSPENDED */
 
-    if(firstSuspendSkipped)
+    if (firstSuspendSkipped)
     {
       usbx_isUsbConnected = false;
 

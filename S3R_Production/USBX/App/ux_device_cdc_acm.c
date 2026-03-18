@@ -50,6 +50,7 @@ uint8_t cdc_rx_buffer[APP_RX_DATA_SIZE];
 uint8_t cdc_command_buffer[RX_COMMAND_BUFFER_SIZE];
 
 static volatile bool cdc_port_open = false;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -290,9 +291,13 @@ usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t *buffer, uint16_t size)
 bool USBX_CDC_ACM_IsPortOpen(void)
 {
   if (cdc_acm == UX_NULL)
+  {
     return false;
+  }
   if (_ux_system_slave->ux_system_slave_device.ux_slave_device_state != UX_DEVICE_CONFIGURED)
+  {
     return false;
+  }
   return cdc_port_open;
 }
 
