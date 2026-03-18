@@ -29,15 +29,12 @@ extern "C"
 /* Includes ------------------------------------------------------------------*/
 #include "ux_api.h"
   /* Private includes ----------------------------------------------------------*/
-  /* USER CODE BEGIN Includes */
-
-#include "cachel1_armv7.h"
-#include "main.h"
-#include "stm32u5xx_hal.h"
-#include "ux_api.h"
-#include "ux_dcd_stm32.h"
+/* USER CODE BEGIN Includes */
+#include "main.h"            // Usually contains the #include "stm32u5xx_hal.h"
+#include "ux_api.h"          // USBX Base API
+#include "ux_dcd_stm32.h"    // Device Controller Driver
 #include "ux_device_descriptors.h"
-#include "ux_device_msc.h"
+/* USER CODE END Includes */
   /* USER CODE END Includes */
 
   /* Exported types ------------------------------------------------------------*/
