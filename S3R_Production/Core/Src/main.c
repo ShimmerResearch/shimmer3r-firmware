@@ -19,10 +19,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "app_usbx_device.h"
+#include "dcache.h"
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
-#include "dcache.h"
 #include "rng.h"
 #include "rtc.h"
 #include "tim.h"

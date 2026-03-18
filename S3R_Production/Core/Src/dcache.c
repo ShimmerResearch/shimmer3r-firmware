@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 DCACHE_HandleTypeDef dcache1;
+
 /* USER CODE END 0 */
 
 /* ICACHE init function */
@@ -39,12 +40,12 @@ void MX_DCACHE_Init(void)
   dcache1.Instance = DCACHE1;
   dcache1.Init.ReadBurstType = DCACHE_READ_BURST_WRAP;
   if (HAL_DCACHE_Init(&dcache1) != HAL_OK)
-    {
-      /* If DCACHE fails to init, DMA transfers will likely CORRUPT DATA.
-         It is safer to stop here during development than to have
-         random file system corruption later. */
-      Error_Handler();
-    }
+  {
+    /* If DCACHE fails to init, DMA transfers will likely CORRUPT DATA.
+       It is safer to stop here during development than to have
+       random file system corruption later. */
+    Error_Handler();
+  }
 
   /* USER CODE BEGIN DCACHE_Init 2 */
 

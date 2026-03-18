@@ -36,8 +36,8 @@ extern "C"
   /* USER CODE BEGIN Private defines */
 
   /* USER CODE END Private defines */
-extern DCACHE_HandleTypeDef dcache1;
-void MX_DCACHE_Init(void);
+  extern DCACHE_HandleTypeDef dcache1;
+  void MX_DCACHE_Init(void);
   /* USER CODE BEGIN Prototypes */
 
   /* USER CODE END Prototypes */
