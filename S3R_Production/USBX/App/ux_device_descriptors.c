@@ -104,10 +104,7 @@ __ALIGN_BEGIN UCHAR USBD_language_id_framework[LANGUAGE_ID_MAX_LENGTH] __ALIGN_E
 #if defined ( __ICCARM__ ) /*!< IAR Compiler */
   #pragma data_alignment=4
 #endif
-__ALIGN_BEGIN uint8_t USBD_StringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
-  USB_SIZ_STRING_SERIAL,
-  USBD_IDX_SERIAL_STR,
-};
+__ALIGN_BEGIN uint8_t USBD_StringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = { 0 };
 
 /* USER CODE END PV1 */
 
@@ -874,12 +871,15 @@ static void Get_SerialNum(void)
   deviceserial1 = *(uint32_t *) DEVICE_ID2;
   deviceserial2 = *(uint32_t *) DEVICE_ID3;
 
+  memset(USBD_StringSerial, 0, sizeof(USBD_StringSerial));
+
   deviceserial0 += deviceserial2;
 
-  if (deviceserial0 != 0)
+  if (deviceserial0 != 0U)
   {
-    IntToUnicode(deviceserial0, &USBD_StringSerial[2], 8);
-    IntToUnicode(deviceserial1, &USBD_StringSerial[18], 4);
+    IntToUnicode(deviceserial0, &USBD_StringSerial[0], 8U);
+    IntToUnicode(deviceserial1, &USBD_StringSerial[8], 4U);
+    USBD_StringSerial[12] = '\0';
   }
 }
 
@@ -892,22 +892,22 @@ static void Get_SerialNum(void)
   */
 static void IntToUnicode(uint32_t value, uint8_t * pbuf, uint8_t len)
 {
-  uint8_t idx = 0;
+  uint8_t idx = 0U;
 
-  for (idx = 0; idx < len; idx++)
+  for (idx = 0U; idx < len; idx++)
   {
-    if (((value >> 28)) < 0xA)
+    uint8_t nibble = (uint8_t) ((value >> 28) & 0xFU);
+
+    if (nibble < 0xAU)
     {
-      pbuf[2 * idx] = (value >> 28) + '0';
+      pbuf[idx] = nibble + '0';
     }
     else
     {
-      pbuf[2 * idx] = (value >> 28) + 'A' - 10;
+      pbuf[idx] = nibble + 'A' - 10U;
     }
 
-    value = value << 4;
-
-    pbuf[2 * idx + 1] = 0;
+    value <<= 4;
   }
 }
 
