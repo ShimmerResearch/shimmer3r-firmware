@@ -65,7 +65,6 @@ extern "C"
   VOID USBX_APP_Device_DeInit(VOID);
   UINT MX_USBX_Device_DeInit(VOID);
   bool USBX_IsInitialised(void);
-  bool USBX_IsUsbConnected(void);
 
   /* USER CODE END EFP */
 

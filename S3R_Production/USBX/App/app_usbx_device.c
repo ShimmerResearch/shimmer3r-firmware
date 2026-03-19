@@ -64,7 +64,6 @@ static UCHAR vendor_id[] = "Shimmer";
 static UCHAR product_id[] = "XXXX";
 
 static volatile bool usbx_initialized = false;
-static volatile bool usbx_isUsbConnected = false;
 static volatile bool firstSuspendSkipped = false;
 
 /* USER CODE END PV */
@@ -306,7 +305,9 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
     /* USER CODE BEGIN UX_DEVICE_ATTACHED */
 
-    //usbx_isUsbConnected = true;
+    /* Skip the first suspend event after attachment, as it's a spurious event
+     * triggered by the host during enumeration. Sometimes it doesn't get
+     * triggered and the first event is ATTACHED */
     firstSuspendSkipped = true;
 
     /* USER CODE END UX_DEVICE_ATTACHED */
@@ -341,11 +342,14 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
     /* USER CODE BEGIN UX_DCD_STM32_DEVICE_SUSPENDED */
 
+    /* Skip the first suspend event after attachment, as it's a spurious event
+     * triggered by the host during enumeration. Using this event to determine
+     * USB un-plug as we're currently unable to use VBUS within the USB
+     * peripheral (SCH issue with voltage divider?) in order to get
+     * UX_DEVICE_REMOVED working. */
     if (firstSuspendSkipped)
     {
-      usbx_isUsbConnected = false;
-
-      ShimTask_set(TASK_USB_SETUP);
+      ShimTask_setUsbSetup();
     }
     firstSuspendSkipped = true;
 
@@ -493,11 +497,6 @@ UINT MX_USBX_Device_DeInit(VOID)
 bool USBX_IsInitialised(void)
 {
   return usbx_initialized;
-}
-
-bool USBX_IsUsbConnected(void)
-{
-  return usbx_isUsbConnected;
 }
 
 /* USER CODE END 1 */

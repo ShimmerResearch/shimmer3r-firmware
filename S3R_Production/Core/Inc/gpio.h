@@ -48,7 +48,6 @@ extern "C"
 #if defined(SHIMMER3R)
   void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising);
 #endif
-  void GPIO_triggerUsbTask(void);
   uint8_t isSdPowerOn(void);
 
   void initBtPins(void);

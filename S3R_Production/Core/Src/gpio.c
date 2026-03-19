@@ -293,14 +293,14 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
   case USB_VBUS_Pin:
     if (!ShimBrd_isBoardSr48_6_0())
     {
-      GPIO_triggerUsbTask();
+      ShimTask_setUsbSetup();
       break;
     }
     /* fall-through */
     /* SR48-6-0 patch for VBUS sense - end */
 #else  //SUPPORT_SR48_6_0
   case USB_VBUS_Pin:
-    GPIO_triggerUsbTask();
+    ShimTask_setUsbSetup();
     break;
 #endif //SUPPORT_SR48_6_0
   default:
@@ -366,7 +366,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
   case USB_VBUS_Pin:
     if (ShimBrd_isBoardSr48_6_0())
     {
-      GPIO_triggerUsbTask();
+      ShimTask_setUsbSetup();
       break;
     }
     /* SR48-6-0 patch for VBUS sense - end */
@@ -380,14 +380,6 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
   default:
     break;
-  }
-}
-
-void GPIO_triggerUsbTask(void)
-{
-  if (!(ShimTask_getList() & TASK_USB_SETUP))
-  {
-    ShimTask_set(TASK_USB_SETUP);
   }
 }
 

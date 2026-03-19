@@ -266,22 +266,4 @@ void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
 }
 #endif
 
-USB_STATE usbPlugInState(void)
-{
-  //uint8_t stateNow = hUsbDevice.dev_state;
-  //uint8_t stateOld = hUsbDevice.dev_old_state;
-  //
-  //if ((stateNow == USBD_STATE_SUSPENDED) && (stateOld == USBD_STATE_DEFAULT))
-  //{
-  //  lastState = USB_CABLE_PLUGGED;
-  //}
-  //else if ((stateNow == USBD_STATE_CONFIGURED) && (stateOld == USBD_STATE_CONFIGURED))
-  //{
-  //  lastState = USB_CABLE_UNPLUGGED;
-  //}
-  ////TODO no else and not all conditions handled
-  //return lastState;
-  return USBX_IsUsbConnected() ? USB_CABLE_PLUGGED : USB_CABLE_UNPLUGGED;
-}
-
 /* USER CODE END 1 */
