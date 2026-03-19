@@ -180,7 +180,8 @@ UINT MX_USBX_Device_Init(VOID)
   storage_parameter.ux_slave_class_storage_parameter_vendor_id = (UCHAR *) &vendor_id;
   storage_parameter.ux_slave_class_storage_parameter_product_id = (UCHAR *) &product_id;
   //storage_parameter.ux_slave_class_storage_parameter_product_rev = (UCHAR *)STORAGE_PRODUCT_REV;
-  storage_parameter.ux_slave_class_storage_parameter_product_serial = (UCHAR *)USBD_Get_UsbSerialStringPtr();
+  storage_parameter.ux_slave_class_storage_parameter_product_serial
+      = (UCHAR *) USBD_Get_UsbSerialStringPtr();
 
   /* USER CODE END STORAGE_PARAMETER */
 
