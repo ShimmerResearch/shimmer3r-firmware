@@ -304,8 +304,8 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
       break;
     }
     /* fall-through */
-  /* SR48-6-0 patch for VBUS sense - end */
-#else //SUPPORT_SR48_6_0
+    /* SR48-6-0 patch for VBUS sense - end */
+#else  //SUPPORT_SR48_6_0
   case USB_VBUS_Pin:
     GPIO_triggerUsbTask();
     break;
