@@ -261,9 +261,6 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
-  //MX_USB_OTG_HS_PCD_Init();
-  //Board_sd2Mcu();
-  //MX_USBX_Device_Init();
   /* USER CODE BEGIN 2 */
 
   //MX_IWDG_Init();
@@ -276,10 +273,6 @@ int main(void)
 
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
-
-  //MX_USB_OTG_HS_PCD_Init();
-  //Board_sd2Mcu();
-  //MX_USBX_Device_Init();
 
   /* USER CODE END 2 */
 
@@ -576,39 +569,14 @@ void HAL_Delay(uint32_t Delay)
 
 void sleepWhenNoTask(void)
 {
-  /* Only wake MCU when new Task is set. See corresponding
-   * HAL_PWR_DisableSleepOnExit() in ShimTask_set() */
-  HAL_PWR_EnableSleepOnExit();
+  if (!USBX_IsInitialised())
+  {
+    /* Only wake MCU when new Task is set. See corresponding
+     * HAL_PWR_DisableSleepOnExit() in ShimTask_set() */
+    HAL_PWR_EnableSleepOnExit();
 
-  Power_SleepUntilInterrupt();
-
-  //if(shimmerStatus.isBtConnected && !shimmerStatus.isSensing){
-  //   Power_SleepUntilInterrupt();
-  //
-  //   __NOP();
-  //   __NOP();
-  //   __NOP();
-  //}else{
-  //   if(shimmerStatus.periStat == 0)
-  //   {
-  ////            static uint8_t green1_cnt = 0;
-  ////            if(!green1_cnt++){
-  ////               Board_ledToggle(LED_GREEN1);
-  ////            }
-  //Power_StopUntilInterrupt();
-  //}
-  //else
-  //{
-  //static uint8_t blue_cnt = 0;
-  //if(!blue_cnt++){
-  //   Board_ledToggle(LED_BLUE);
-  //}
-  //__NOP();
-  //__NOP();
-  //__NOP();
-  //Power_SleepUntilInterrupt();
-  //}
-  //}
+    Power_SleepUntilInterrupt();
+  }
 }
 
 void BtStart(void)

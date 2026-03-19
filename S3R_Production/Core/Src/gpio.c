@@ -295,27 +295,21 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin)
   {
-    //#if SUPPORT_SR48_6_0
-    //    /* SR48-6-0 patch for VBUS sense - start */
-    //  case USB_VBUS_Pin:
-    //    if (!ShimBrd_isBoardSr48_6_0())
-    //    {
-    //      if (!(ShimTask_getList() & TASK_USB_SETUP))
-    //      {
-    //        ShimTask_set(TASK_USB_SETUP);
-    //      }
-    //      break;
-    //    }
-    //    /* no break */
-    //    /* SR48-6-0 patch for VBUS sense - end */
-    //#else //SUPPORT_SR48_6_0
-    //  case USB_VBUS_Pin:
-    //    if (!(ShimTask_getList() & TASK_USB_SETUP))
-    //    {
-    //      ShimTask_set(TASK_USB_SETUP);
-    //    }
-    //    break;
-    //#endif //SUPPORT_SR48_6_0
+#if SUPPORT_SR48_6_0
+  /* SR48-6-0 patch for VBUS sense - start */
+  case USB_VBUS_Pin:
+    if (!ShimBrd_isBoardSr48_6_0())
+    {
+      GPIO_triggerUsbTask();
+      break;
+    }
+    /* fall-through */
+  /* SR48-6-0 patch for VBUS sense - end */
+#else //SUPPORT_SR48_6_0
+  case USB_VBUS_Pin:
+    GPIO_triggerUsbTask();
+    break;
+#endif //SUPPORT_SR48_6_0
   default:
     gpioExtiCommon(GPIO_Pin, 1);
     break;
@@ -379,21 +373,12 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
   case USB_VBUS_Pin:
     if (ShimBrd_isBoardSr48_6_0())
     {
-      if (!(ShimTask_getList() & TASK_USB_SETUP))
-      {
-        ShimTask_set(TASK_USB_SETUP);
-      }
+      GPIO_triggerUsbTask();
       break;
     }
     /* SR48-6-0 patch for VBUS sense - end */
     /* no break */
 #endif //SUPPORT_SR48_6_0
-  case USB_VBUS_Pin:
-    if (!(ShimTask_getList() & TASK_USB_SETUP))
-    {
-      ShimTask_set(TASK_USB_SETUP);
-    }
-    break;
   case USER_BTN_Pin:
     (void) ShimBtn_pressReleaseAction();
     break;
@@ -402,6 +387,14 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     break;
   default:
     break;
+  }
+}
+
+void GPIO_triggerUsbTask(void)
+{
+  if (!(ShimTask_getList() & TASK_USB_SETUP))
+  {
+    ShimTask_set(TASK_USB_SETUP);
   }
 }
 

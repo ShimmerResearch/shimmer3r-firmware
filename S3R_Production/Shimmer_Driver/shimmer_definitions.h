@@ -18,7 +18,7 @@
 #define FW_IDENTIFIER 12
 #endif
 
-#define SUPPORT_SR48_6_0    0
+#define SUPPORT_SR48_6_0    1
 #define IS_CONNECTED_EEPROM 1
 
 #define USE_DEFAULT_SENSOR  0
