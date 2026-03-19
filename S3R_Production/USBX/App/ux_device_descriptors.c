@@ -101,8 +101,8 @@ __ALIGN_BEGIN UCHAR USBD_language_id_framework[LANGUAGE_ID_MAX_LENGTH] __ALIGN_E
 
 /* USER CODE BEGIN PV1 */
 
-#if defined ( __ICCARM__ ) /*!< IAR Compiler */
-  #pragma data_alignment=4
+#if defined(__ICCARM__) /*!< IAR Compiler */
+#pragma data_alignment = 4
 #endif
 __ALIGN_BEGIN uint8_t USBD_StringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
   USB_SIZ_STRING_SERIAL,
@@ -150,7 +150,7 @@ USBD_FrameWork_MSCDesc(USBD_DevClassHandleTypeDef *pdev, uint32_t pConf, uint32_
 /* USER CODE BEGIN PFP */
 
 static void Get_SerialNum(void);
-static void IntToUnicode(uint32_t value, uint8_t * pbuf, uint8_t len);
+static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len);
 
 /* USER CODE END PFP */
 
@@ -223,8 +223,8 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_IDX_MFC_STR;
 
   /* Set the Manufacturer string in string_framework */
-  USBD_Desc_GetString((uint8_t*) USBD_MANUFACTURER_STRING,
-      USBD_string_framework + count, &len);
+  USBD_Desc_GetString(
+      (uint8_t *) USBD_MANUFACTURER_STRING, USBD_string_framework + count, &len);
 
   /* Set the Product language Id and index in USBD_string_framework */
   count += len + 1;
@@ -245,10 +245,9 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_IDX_SERIAL_STR;
 
   /* Set the Serial number in USBD_string_framework */
-//  USBD_Desc_GetString((uint8_t *) USBD_SERIAL_NUMBER, USBD_string_framework + count, &len);
+  //USBD_Desc_GetString((uint8_t *) USBD_SERIAL_NUMBER, USBD_string_framework + count, &len);
   /* Overwrite the serial string with the MCU's UID */
   USBD_Desc_GetString(&USBD_StringSerial[0], USBD_string_framework + count, &len);
-
 
   /* USER CODE BEGIN String_Framework1 */
 
@@ -862,10 +861,10 @@ static void USBD_FrameWork_CDCDesc(USBD_DevClassHandleTypeDef *pdev, uint32_t pC
 /* USER CODE BEGIN 1 */
 
 /**
-  * @brief  Create the serial number string descriptor
-  * @param  None
-  * @retval None
-  */
+ * @brief  Create the serial number string descriptor
+ * @param  None
+ * @retval None
+ */
 static void Get_SerialNum(void)
 {
   uint32_t deviceserial0, deviceserial1, deviceserial2;
@@ -884,13 +883,13 @@ static void Get_SerialNum(void)
 }
 
 /**
-  * @brief  Convert Hex 32Bits value into char
-  * @param  value: value to convert
-  * @param  pbuf: pointer to the buffer
-  * @param  len: buffer length
-  * @retval None
-  */
-static void IntToUnicode(uint32_t value, uint8_t * pbuf, uint8_t len)
+ * @brief  Convert Hex 32Bits value into char
+ * @param  value: value to convert
+ * @param  pbuf: pointer to the buffer
+ * @param  len: buffer length
+ * @retval None
+ */
+static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len)
 {
   uint8_t idx = 0;
 
