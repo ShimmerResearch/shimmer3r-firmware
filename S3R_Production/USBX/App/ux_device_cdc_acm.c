@@ -274,4 +274,9 @@ usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t *buffer, uint16_t size)
   return usbx_success;
 }
 
+bool USBX_CDC_ACM_IsActive(void)
+{
+  return cdc_acm != NULL;
+}
+
 /* USER CODE END 1 */
