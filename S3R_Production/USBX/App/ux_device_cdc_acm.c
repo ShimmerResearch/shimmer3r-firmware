@@ -115,9 +115,8 @@ VOID USBD_CDC_ACM_ParameterChange(VOID *cdc_acm_instance)
 
     /* Query the CDC ACM line state using the official USBX API
      * instead of accessing internal struct members directly. */
-    status = ux_device_class_cdc_acm_ioctl(cdc_acm,
-                                           UX_SLAVE_CLASS_CDC_ACM_IOCTL_GET_LINE_STATE,
-                                           &line_state);
+    status = ux_device_class_cdc_acm_ioctl(
+        cdc_acm, UX_SLAVE_CLASS_CDC_ACM_IOCTL_GET_LINE_STATE, &line_state);
 
     if (status == UX_SUCCESS)
     {
