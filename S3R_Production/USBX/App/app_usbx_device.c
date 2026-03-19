@@ -298,9 +298,6 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
   /* USER CODE BEGIN USBD_ChangeFunction0 */
 
-  //TODO remove temporary printfs once VBUS interrupt handling is finalized
-  SHIMMER_PRINTF("USB Device State Changed: 0x%lX\n", Device_State);
-
   /* USER CODE END USBD_ChangeFunction0 */
 
   switch (Device_State)

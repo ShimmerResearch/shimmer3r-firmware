@@ -280,13 +280,6 @@ void GPIO_usbVbusIntInit(uint8_t state)
   {
     HAL_GPIO_DeInit(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   }
-
-  //TODO remove temporary printfs once VBUS interrupt handling is finalized
-  SHIMMER_PRINTF("USB VBUS interrupt = %s\r\n", state ? "on" : "off");
-  if (!state)
-  {
-    SHIMMER_PRINTF("\r\n");
-  }
 }
 
 //TODO copy Shimmer4 pins from HAL_GPIO_EXTI_Callback to HAL_GPIO_EXTI_Rising_Callback and HAL_GPIO_EXTI_Falling_Callback
