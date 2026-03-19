@@ -101,6 +101,14 @@ __ALIGN_BEGIN UCHAR USBD_language_id_framework[LANGUAGE_ID_MAX_LENGTH] __ALIGN_E
 
 /* USER CODE BEGIN PV1 */
 
+#if defined ( __ICCARM__ ) /*!< IAR Compiler */
+  #pragma data_alignment=4
+#endif
+__ALIGN_BEGIN uint8_t USBD_StringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
+  USB_SIZ_STRING_SERIAL,
+  USBD_IDX_SERIAL_STR,
+};
+
 /* USER CODE END PV1 */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -140,6 +148,9 @@ USBD_FrameWork_MSCDesc(USBD_DevClassHandleTypeDef *pdev, uint32_t pConf, uint32_
 #endif /* USBD_MSC_CLASS_ACTIVATED == 1U */
 
 /* USER CODE BEGIN PFP */
+
+static void Get_SerialNum(void);
+static void IntToUnicode(uint32_t value, uint8_t * pbuf, uint8_t len);
 
 /* USER CODE END PFP */
 
@@ -212,10 +223,7 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_IDX_MFC_STR;
 
   /* Set the Manufacturer string in string_framework */
-  //USBD_Desc_GetString(
-  //    (uint8_t *) USBD_MANUFACTURER_STRING, USBD_string_framework + count, &len);
-  /* Overwrite the manufacturer string with Shimmers */
-  USBD_Desc_GetString((uint8_t *) SHIMMER_MANUFACTURER_STRING,
+  USBD_Desc_GetString((uint8_t*) USBD_MANUFACTURER_STRING,
       USBD_string_framework + count, &len);
 
   /* Set the Product language Id and index in USBD_string_framework */
@@ -237,7 +245,10 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_IDX_SERIAL_STR;
 
   /* Set the Serial number in USBD_string_framework */
-  USBD_Desc_GetString((uint8_t *) USBD_SERIAL_NUMBER, USBD_string_framework + count, &len);
+//  USBD_Desc_GetString((uint8_t *) USBD_SERIAL_NUMBER, USBD_string_framework + count, &len);
+  /* Overwrite the serial string with the MCU's UID */
+  USBD_Desc_GetString(&USBD_StringSerial[0], USBD_string_framework + count, &len);
+
 
   /* USER CODE BEGIN String_Framework1 */
 
@@ -397,6 +408,7 @@ static uint8_t *USBD_Device_Framework_Builder(USBD_DevClassHandleTypeDef *pdev,
   //TODO only reset what we need to, not the entire structure. Hint: count/list of services not getting reset with deint
   memset(pdev, 0, sizeof(*pdev));
   memset(pDevFrameWorkDesc, 0, USBD_FRAMEWORK_MAX_DESC_SZ);
+  Get_SerialNum();
 
   /* Set Dev and conf descriptors size to 0 */
   pdev->CurrConfDescSz = 0U;
@@ -848,5 +860,60 @@ static void USBD_FrameWork_CDCDesc(USBD_DevClassHandleTypeDef *pdev, uint32_t pC
 #endif /* USBD_CDC_ACM_CLASS_ACTIVATED == 1 */
 
 /* USER CODE BEGIN 1 */
+
+/**
+  * @brief  Create the serial number string descriptor
+  * @param  None
+  * @retval None
+  */
+static void Get_SerialNum(void)
+{
+  uint32_t deviceserial0, deviceserial1, deviceserial2;
+
+  deviceserial0 = *(uint32_t *) DEVICE_ID1;
+  deviceserial1 = *(uint32_t *) DEVICE_ID2;
+  deviceserial2 = *(uint32_t *) DEVICE_ID3;
+
+  deviceserial0 += deviceserial2;
+
+  if (deviceserial0 != 0)
+  {
+    IntToUnicode(deviceserial0, &USBD_StringSerial[2], 8);
+    IntToUnicode(deviceserial1, &USBD_StringSerial[18], 4);
+  }
+}
+
+/**
+  * @brief  Convert Hex 32Bits value into char
+  * @param  value: value to convert
+  * @param  pbuf: pointer to the buffer
+  * @param  len: buffer length
+  * @retval None
+  */
+static void IntToUnicode(uint32_t value, uint8_t * pbuf, uint8_t len)
+{
+  uint8_t idx = 0;
+
+  for (idx = 0; idx < len; idx++)
+  {
+    if (((value >> 28)) < 0xA)
+    {
+      pbuf[2 * idx] = (value >> 28) + '0';
+    }
+    else
+    {
+      pbuf[2 * idx] = (value >> 28) + 'A' - 10;
+    }
+
+    value = value << 4;
+
+    pbuf[2 * idx + 1] = 0;
+  }
+}
+
+uint8_t *USBD_Get_UsbSerialStringPtr(void)
+{
+  return &USBD_StringSerial[0];
+}
 
 /* USER CODE END 1 */

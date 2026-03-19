@@ -46,7 +46,7 @@ extern "C"
 #define USBD_MSC_CLASS_ACTIVATED              1U
 #define USBD_CDC_ACM_CLASS_ACTIVATED          1U
 
-#define USBD_CONFIG_MAXPOWER                  25U
+#define USBD_CONFIG_MAXPOWER                  250U
 #define USBD_COMPOSITE_USE_IAD                1U
 #define USBD_DEVICE_FRAMEWORK_BUILDER_ENABLED 1U
 
@@ -259,16 +259,23 @@ extern "C"
   uint8_t *USBD_Get_Language_Id_Framework(ULONG *Length);
   uint16_t USBD_Get_Interface_Number(uint8_t class_type, uint8_t interface_type);
   uint16_t USBD_Get_Configuration_Number(uint8_t class_type, uint8_t interface_type);
+  uint8_t *USBD_Get_UsbSerialStringPtr(void);
 
   /* Private defines -----------------------------------------------------------*/
   /* USER CODE BEGIN Private_defines */
+
+#define         DEVICE_ID1          (UID_BASE)
+#define         DEVICE_ID2          (UID_BASE + 0x4)
+#define         DEVICE_ID3          (UID_BASE + 0x8)
+
+#define  USB_SIZ_STRING_SERIAL       0x1A
 
   /* USER CODE END Private_defines */
 
 #define USBD_VID                         1155
 #define USBD_PID                         22288
 #define USBD_LANGID_STRING               1033
-#define USBD_MANUFACTURER_STRING         "STMicroelectronics"
+#define USBD_MANUFACTURER_STRING         "Shimmer Research Ltd."
 #define USBD_PRODUCT_STRING              "STM32 USB Device"
 #define USBD_SERIAL_NUMBER               "000000000001"
 
@@ -323,7 +330,7 @@ extern "C"
 #endif /* USBD_CONFIG_STR_DESC_IDX */
 
 #ifndef USBD_CONFIG_BMATTRIBUTES
-#define USBD_CONFIG_BMATTRIBUTES 0xC0U
+#define USBD_CONFIG_BMATTRIBUTES 0x80U
 #endif /* USBD_CONFIG_BMATTRIBUTES */
 
 /* Private macro -----------------------------------------------------------*/
