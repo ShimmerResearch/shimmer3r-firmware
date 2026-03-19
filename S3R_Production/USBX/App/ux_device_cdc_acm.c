@@ -110,11 +110,20 @@ VOID USBD_CDC_ACM_ParameterChange(VOID *cdc_acm_instance)
 
   if (cdc_acm != UX_NULL)
   {
-    /* The CDC ACM instance holds the latest control-line state.
-     * The field name below is the typical USBX field; adjust if your
-     * USBX version uses a different member name. DTR is bit 0. */
-    uint16_t line_state = (uint16_t) cdc_acm->ux_slave_class_cdc_acm_data_dtr_state;
-    cdc_port_open = (line_state & 0x01) ? true : false; /* DTR == bit0 */
+    ULONG status;
+    ULONG line_state = 0U;
+
+    /* Query the CDC ACM line state using the official USBX API
+     * instead of accessing internal struct members directly. */
+    status = ux_device_class_cdc_acm_ioctl(cdc_acm,
+                                           UX_SLAVE_CLASS_CDC_ACM_IOCTL_GET_LINE_STATE,
+                                           &line_state);
+
+    if (status == UX_SUCCESS)
+    {
+      /* DTR line state is indicated by the DTR bit in the line_state. */
+      cdc_port_open = ((line_state & UX_SLAVE_CLASS_CDC_ACM_LINE_STATE_DTR) != 0U);
+    }
   }
   /* USER CODE END USBD_CDC_ACM_ParameterChange */
 
