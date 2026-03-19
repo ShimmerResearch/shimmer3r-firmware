@@ -394,6 +394,7 @@ static uint8_t *USBD_Device_Framework_Builder(USBD_DevClassHandleTypeDef *pdev,
   //Added by Shimmer to properly reset when init/deint the USB stack/peripheral
   /* Reset the generated builder state so repeated init/deinit cycles rebuild
      descriptors from a clean composite-class model. */
+  //TODO only reset what we need to, not the entire structure. Hint: count/list of services not getting reset with deint
   memset(pdev, 0, sizeof(*pdev));
   memset(pDevFrameWorkDesc, 0, USBD_FRAMEWORK_MAX_DESC_SZ);
 
