@@ -81,8 +81,7 @@ __ALIGN_BEGIN static uint8_t scratch[BLOCKSIZE] __ALIGN_END;
 #endif
 /* Disk status */
 static volatile DSTATUS Stat = STA_NOINIT;
-
-static volatile  UINT  WriteStatus = 0, ReadStatus = 0;
+volatile  UINT  WriteStatus = 0, ReadStatus = 0;
 /* Private function prototypes -----------------------------------------------*/
 static DSTATUS SD_CheckStatus(BYTE lun);
 DSTATUS SD_initialize (BYTE);
@@ -205,16 +204,14 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
   {
     return res;
   }
-
-#if defined(ENABLE_SCRATCH_BUFFER)
+ #if defined(ENABLE_SCRATCH_BUFFER)
   if (!((uint32_t)buff & 0x3))
   {
 #endif
-    if(BSP_SD_ReadBlocks_DMA((uint32_t*)buff,
+    if(HAL_SD_SharedRead(OWNER_FATFS,(uint8_t*)buff,
                              (uint32_t) (sector),
                              count) == MSD_OK)
     {
-      ReadStatus = 0;
       /* Wait that the reading process is completed or a timeout occurs */
       timeout = HAL_GetTick();
       while((ReadStatus == 0) && ((HAL_GetTick() - timeout) < SD_TIMEOUT))
@@ -227,7 +224,6 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
       }
       else
       {
-        ReadStatus = 0;
         timeout = HAL_GetTick();
 
         while((HAL_GetTick() - timeout) < SD_TIMEOUT)
@@ -256,7 +252,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
       int i;
 
       for (i = 0; i < count; i++) {
-        ret = BSP_SD_ReadBlocks_DMA((uint32_t*)scratch, (uint32_t)sector++, 1);
+        ret = HAL_SD_SharedRead(OWNER_FATFS,(uint8_t*)scratch, (uint32_t)sector++, 1);
         if (ret == MSD_OK) {
           /* wait until the read is successful or a timeout occurs */
 
@@ -269,7 +265,6 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
             res = RES_ERROR;
             break;
           }
-          ReadStatus = 0;
 
 #if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
           /*
@@ -291,9 +286,9 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
         res = RES_OK;
     }
 #endif
-
   return res;
 }
+
 
 /* USER CODE BEGIN beforeWriteSection */
 /* can be used to modify previous code / undefine following code / add new code */
@@ -317,7 +312,6 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
   int i;
 #endif
 
-   WriteStatus = 0;
 #if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
   uint32_t alignedAddr;
 #endif
@@ -341,7 +335,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
     SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, count*BLOCKSIZE + ((uint32_t)buff - alignedAddr));
 #endif
 
-    if(BSP_SD_WriteBlocks_DMA((uint32_t*)buff,
+    if(HAL_SD_SharedWrite(OWNER_FATFS,(uint8_t*)buff,
                               (uint32_t)(sector),
                               count) == MSD_OK)
     {
@@ -358,7 +352,6 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
       }
       else
       {
-        WriteStatus = 0;
         timeout = HAL_GetTick();
 
         while((HAL_GetTick() - timeout) < SD_TIMEOUT)
@@ -385,12 +378,10 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 
       for (i = 0; i < count; i++)
       {
-        WriteStatus = 0;
-
         memcpy((void *)scratch, (void *)buff, BLOCKSIZE);
         buff += BLOCKSIZE;
 
-        ret = BSP_SD_WriteBlocks_DMA((uint32_t*)scratch, (uint32_t)sector++, 1);
+        ret = HAL_SD_SharedWrite(OWNER_FATFS,(uint8_t*)scratch, (uint32_t)sector++, 1);
         if (ret == MSD_OK) {
           /* wait for a message from the queue or a timeout */
           timeout = HAL_GetTick();

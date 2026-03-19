@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
  ******************************************************************************
- * @file    sdmmc.h
+ * @file    dcache.h
  * @brief   This file contains all the function prototypes for
- *          the sdmmc.c file
+ *          the icache.c file
  ******************************************************************************
  * @attention
  *
@@ -18,8 +18,8 @@
  */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __SDMMC_H__
-#define __SDMMC_H__
+#ifndef __DCACHE_H__
+#define __DCACHE_H__
 
 #ifdef __cplusplus
 extern "C"
@@ -33,32 +33,12 @@ extern "C"
 
   /* USER CODE END Includes */
 
-  extern SD_HandleTypeDef hsd1;
-
   /* USER CODE BEGIN Private defines */
-  typedef enum
-  {
-    OWNER_IDLE = 0,
-    OWNER_FATFS,
-    OWNER_USB
-  } sdOwner_t;
 
   /* USER CODE END Private defines */
-
-  void MX_SDMMC1_SD_Init(void);
-
+  extern DCACHE_HandleTypeDef dcache1;
+  void MX_DCACHE_Init(void);
   /* USER CODE BEGIN Prototypes */
-
-  void mmc1DeInit(void);
-  void printSdCardInfo(char *outputStr);
-  void printSdCardSize(char *outputStr);
-  void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd1);
-  void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd1);
-  void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd1);
-  HAL_StatusTypeDef
-  HAL_SD_SharedRead(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t blocks);
-  HAL_StatusTypeDef
-  HAL_SD_SharedWrite(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t blocks);
 
   /* USER CODE END Prototypes */
 
@@ -66,4 +46,4 @@ extern "C"
 }
 #endif
 
-#endif /* __SDMMC_H__ */
+#endif /* __ICACHE_H__ */
