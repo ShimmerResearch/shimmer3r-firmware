@@ -26,8 +26,8 @@
 #include "Boards/shimmer_boards.h"
 #include "Button/shimmer_button.h"
 #include "TaskList/shimmer_taskList.h"
-#include "log_and_stream_externs.h"
 #include "app_usbx_device.h"
+#include "log_and_stream_externs.h"
 
 /* USER CODE END 0 */
 
@@ -295,27 +295,27 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
   switch (GPIO_Pin)
   {
-//#if SUPPORT_SR48_6_0
-//    /* SR48-6-0 patch for VBUS sense - start */
-//  case USB_VBUS_Pin:
-//    if (!ShimBrd_isBoardSr48_6_0())
-//    {
-//      if (!(ShimTask_getList() & TASK_USB_SETUP))
-//      {
-//        ShimTask_set(TASK_USB_SETUP);
-//      }
-//      break;
-//    }
-//    /* no break */
-//    /* SR48-6-0 patch for VBUS sense - end */
-//#else //SUPPORT_SR48_6_0
-//  case USB_VBUS_Pin:
-//    if (!(ShimTask_getList() & TASK_USB_SETUP))
-//    {
-//      ShimTask_set(TASK_USB_SETUP);
-//    }
-//    break;
-//#endif //SUPPORT_SR48_6_0
+    //#if SUPPORT_SR48_6_0
+    //    /* SR48-6-0 patch for VBUS sense - start */
+    //  case USB_VBUS_Pin:
+    //    if (!ShimBrd_isBoardSr48_6_0())
+    //    {
+    //      if (!(ShimTask_getList() & TASK_USB_SETUP))
+    //      {
+    //        ShimTask_set(TASK_USB_SETUP);
+    //      }
+    //      break;
+    //    }
+    //    /* no break */
+    //    /* SR48-6-0 patch for VBUS sense - end */
+    //#else //SUPPORT_SR48_6_0
+    //  case USB_VBUS_Pin:
+    //    if (!(ShimTask_getList() & TASK_USB_SETUP))
+    //    {
+    //      ShimTask_set(TASK_USB_SETUP);
+    //    }
+    //    break;
+    //#endif //SUPPORT_SR48_6_0
   default:
     gpioExtiCommon(GPIO_Pin, 1);
     break;
@@ -502,7 +502,7 @@ void platform_initGpioForRevision(void)
     }
     else
 #endif
-    if (ShimBrd_isI2cOnPPGControlledByAdcChip())
+        if (ShimBrd_isI2cOnPPGControlledByAdcChip())
     {
       //External ADC controls I2C4 switch
     }
@@ -761,7 +761,7 @@ void vbusPinStateCheck(void)
       Board_sd2Mcu();
       status = MX_USBX_Device_Init();
     }
-    if(status == UX_SUCCESS)
+    if (status == UX_SUCCESS)
     {
       GPIO_usbVbusIntInit(0);
     }
@@ -774,7 +774,7 @@ void vbusPinStateCheck(void)
     {
       status = MX_USBX_Device_DeInit();
     }
-    if(status == UX_SUCCESS)
+    if (status == UX_SUCCESS)
     {
       GPIO_usbVbusIntInit(1);
     }

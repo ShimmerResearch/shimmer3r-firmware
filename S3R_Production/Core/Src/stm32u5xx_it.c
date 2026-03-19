@@ -25,7 +25,7 @@
 
 #include <Boards/shimmer_boards.h>
 
-#include "app_usbx_device.h"  // add this include so we can query USBX state
+#include "app_usbx_device.h" // add this include so we can query USBX state
 
 /* USER CODE END Includes */
 

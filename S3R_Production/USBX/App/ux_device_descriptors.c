@@ -24,8 +24,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include <string.h>
 #include "log_and_stream_common.h"
+#include <string.h>
 
 /* USER CODE END Includes */
 

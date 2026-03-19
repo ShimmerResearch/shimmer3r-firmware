@@ -261,8 +261,8 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
-//  MX_USB_OTG_HS_PCD_Init();
-//  Board_sd2Mcu();
+  //MX_USB_OTG_HS_PCD_Init();
+  //Board_sd2Mcu();
   //MX_USBX_Device_Init();
   /* USER CODE BEGIN 2 */
 
@@ -279,7 +279,7 @@ int main(void)
 
   //MX_USB_OTG_HS_PCD_Init();
   //Board_sd2Mcu();
-//  MX_USBX_Device_Init();
+  //MX_USBX_Device_Init();
 
   /* USER CODE END 2 */
 
@@ -288,7 +288,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-  
+
     /* USER CODE BEGIN 3 */
     /* Let USBX progress enumeration/state machine */
     if (USBX_IsInitialised())
