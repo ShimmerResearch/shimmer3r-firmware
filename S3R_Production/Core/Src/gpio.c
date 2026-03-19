@@ -297,8 +297,8 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
       break;
     }
     /* fall-through */
-  /* SR48-6-0 patch for VBUS sense - end */
-#else //SUPPORT_SR48_6_0
+    /* SR48-6-0 patch for VBUS sense - end */
+#else  //SUPPORT_SR48_6_0
   case USB_VBUS_Pin:
     GPIO_triggerUsbTask();
     break;
@@ -486,9 +486,10 @@ void platform_initGpioForRevision(void)
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
       HAL_GPIO_Init(SR48_6_0_GPIO_ADC_INT_EXP2_GPIO_Port, &GPIO_InitStruct);
     }
-    else
+    else if (ShimBrd_isI2cOnPPGControlledByAdcChip())
+#else
+    if (ShimBrd_isI2cOnPPGControlledByAdcChip())
 #endif
-        if (ShimBrd_isI2cOnPPGControlledByAdcChip())
     {
       //External ADC controls I2C4 switch
     }
