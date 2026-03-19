@@ -97,7 +97,7 @@ UINT MX_USBX_Device_Init(VOID)
   /* USER CODE BEGIN MX_USBX_Device_Init0 */
 
   /* Build the product ID for the Disk Drive string based on the Shimmer's MAC ID */
-  LogAndStream_buildShimmerMacSuffix(&product_id, sizeof(product_id));
+  LogAndStream_buildShimmerMacSuffix((char *)product_id, sizeof(product_id));
 
   /* USER CODE END MX_USBX_Device_Init0 */
   pointer = ux_device_byte_pool_buffer;
