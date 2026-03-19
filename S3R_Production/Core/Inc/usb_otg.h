@@ -37,17 +37,7 @@ extern "C"
 
   /* USER CODE BEGIN Private defines */
 
-#if 0
-
-  typedef enum
-  {
-    USB_CABLE_RESET = 0U,
-    USB_CABLE_UNPLUGGED = 1U,
-    USB_CABLE_PLUGGED = 2U
-  } USB_STATE;
-  USB_STATE usbPlugInState(void);
   /* USER CODE END Private defines */
-#endif
   void MX_USB_OTG_HS_PCD_Init(void);
 
   /* USER CODE BEGIN Prototypes */

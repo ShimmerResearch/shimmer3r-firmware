@@ -19,8 +19,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "usb_otg.h"
+#include "main.h" // for USB_VBUS_Pin/Port
 
 /* USER CODE BEGIN 0 */
+
+#include "app_usbx_device.h"
 
 /* USER CODE END 0 */
 
@@ -262,22 +265,5 @@ void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
   }
 }
 #endif
-#if 0
-USB_STATE usbPlugInState(void)
-{
-  uint8_t stateNow = hUsbDevice.dev_state;
-  uint8_t stateOld = hUsbDevice.dev_old_state;
 
-  if ((stateNow == USBD_STATE_SUSPENDED) && (stateOld == USBD_STATE_DEFAULT))
-  {
-    lastState = USB_CABLE_PLUGGED;
-  }
-  else if ((stateNow == USBD_STATE_CONFIGURED) && (stateOld == USBD_STATE_CONFIGURED))
-  {
-    lastState = USB_CABLE_UNPLUGGED;
-  }
-  //TODO no else and not all conditions handled
-  return lastState;
-}
-#endif
 /* USER CODE END 1 */

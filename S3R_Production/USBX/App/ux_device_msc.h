@@ -29,12 +29,11 @@ extern "C"
 /* Includes ------------------------------------------------------------------*/
 #include "ux_api.h"
   /* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+  /* USER CODE BEGIN Includes */
 #include "main.h"         // Usually contains the #include "stm32u5xx_hal.h"
 #include "ux_api.h"       // USBX Base API
 #include "ux_dcd_stm32.h" // Device Controller Driver
 #include "ux_device_descriptors.h"
-  /* USER CODE END Includes */
   /* USER CODE END Includes */
 
   /* Exported types ------------------------------------------------------------*/

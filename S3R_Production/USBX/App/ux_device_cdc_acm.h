@@ -98,7 +98,7 @@ extern "C"
   /* USER CODE BEGIN EFP */
   usbx_cdc_acm_result_t USBX_CDC_ACM_Transmit(uint8_t *buffer, uint16_t size);
   usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t *buffer, uint16_t size);
-  bool USBX_CDC_ACM_IsActive(void);
+  bool USBX_CDC_ACM_IsPortOpen(void);
   VOID cdc_acm_write_task(VOID);
   VOID cdc_acm_read_task(VOID);
   /* USER CODE END EFP */

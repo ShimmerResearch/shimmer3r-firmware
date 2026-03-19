@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "log_and_stream_common.h"
+#include <string.h>
 
 /* USER CODE END Includes */
 
@@ -389,6 +390,13 @@ static uint8_t *USBD_Device_Framework_Builder(USBD_DevClassHandleTypeDef *pdev,
   static USBD_DeviceDescTypedef *pDevDesc;
   static USBD_DevQualiDescTypedef *pDevQualDesc;
   uint8_t Idx_Instance = 0U;
+
+  //Added by Shimmer to properly reset when init/deint the USB stack/peripheral
+  /* Reset the generated builder state so repeated init/deinit cycles rebuild
+     descriptors from a clean composite-class model. */
+  //TODO only reset what we need to, not the entire structure. Hint: count/list of services not getting reset with deint
+  memset(pdev, 0, sizeof(*pdev));
+  memset(pDevFrameWorkDesc, 0, USBD_FRAMEWORK_MAX_DESC_SZ);
 
   /* Set Dev and conf descriptors size to 0 */
   pdev->CurrConfDescSz = 0U;

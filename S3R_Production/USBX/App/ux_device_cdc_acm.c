@@ -49,6 +49,8 @@ uint8_t cdc_tx_buffer[APP_TX_DATA_SIZE];
 uint8_t cdc_rx_buffer[APP_RX_DATA_SIZE];
 uint8_t cdc_command_buffer[RX_COMMAND_BUFFER_SIZE];
 
+static volatile bool cdc_port_open = false;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,6 +74,7 @@ VOID USBD_CDC_ACM_Activate(VOID *cdc_acm_instance)
   /* USER CODE BEGIN USBD_CDC_ACM_Activate */
   UX_PARAMETER_NOT_USED(cdc_acm_instance);
   cdc_acm = (UX_SLAVE_CLASS_CDC_ACM *) cdc_acm_instance;
+  cdc_port_open = false; /* host hasn't opened the serial port yet */
   /* USER CODE END USBD_CDC_ACM_Activate */
 
   return;
@@ -88,6 +91,7 @@ VOID USBD_CDC_ACM_Deactivate(VOID *cdc_acm_instance)
   /* USER CODE BEGIN USBD_CDC_ACM_Deactivate */
   UX_PARAMETER_NOT_USED(cdc_acm_instance);
   cdc_acm = UX_NULL;
+  cdc_port_open = false;
   /* USER CODE END USBD_CDC_ACM_Deactivate */
 
   return;
@@ -103,6 +107,23 @@ VOID USBD_CDC_ACM_ParameterChange(VOID *cdc_acm_instance)
 {
   /* USER CODE BEGIN USBD_CDC_ACM_ParameterChange */
   UX_PARAMETER_NOT_USED(cdc_acm_instance);
+
+  if (cdc_acm != UX_NULL)
+  {
+    ULONG status;
+    ULONG line_state = 0U;
+
+    /* Query the CDC ACM line state using the official USBX API
+     * instead of accessing internal struct members directly. */
+    status = ux_device_class_cdc_acm_ioctl(
+        cdc_acm, UX_SLAVE_CLASS_CDC_ACM_IOCTL_GET_LINE_STATE, &line_state);
+
+    if (status == UX_SUCCESS)
+    {
+      /* DTR line state is indicated by the DTR bit in the line_state. */
+      cdc_port_open = ((line_state & UX_SLAVE_CLASS_CDC_ACM_LINE_STATE_DTR) != 0U);
+    }
+  }
   /* USER CODE END USBD_CDC_ACM_ParameterChange */
 
   return;
@@ -274,9 +295,18 @@ usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t *buffer, uint16_t size)
   return usbx_success;
 }
 
-bool USBX_CDC_ACM_IsActive(void)
+/* Reports the COM port open state (configured + class active + DTR set) */
+bool USBX_CDC_ACM_IsPortOpen(void)
 {
-  return cdc_acm != NULL;
+  if (cdc_acm == UX_NULL)
+  {
+    return false;
+  }
+  if (_ux_system_slave->ux_system_slave_device.ux_slave_device_state != UX_DEVICE_CONFIGURED)
+  {
+    return false;
+  }
+  return cdc_port_open;
 }
 
 /* USER CODE END 1 */
