@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "app_usbx_device.h"
+#include "dcache.h"
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
@@ -253,6 +254,7 @@ int main(void)
   MX_GPIO_Init();
   MX_GPDMA1_Init();
   MX_ICACHE_Init();
+  MX_DCACHE_Init();
   MX_RNG_Init();
   MX_RTC_Init();
   MX_TIM2_Init();

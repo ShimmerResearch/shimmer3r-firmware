@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "ux_device_msc.h"
+#include "dcache.h"
 #include "hal_board.h"
 #include "sdmmc.h"
 /* Private includes ----------------------------------------------------------*/
@@ -47,6 +48,7 @@
 /* USER CODE BEGIN PV */
 volatile uint8_t SD_READ_FLAG = 0;
 volatile uint8_t SD_WRITE_FLAG = 0;
+extern DCACHE_HandleTypeDef dcache1;
 
 /* USER CODE END PV */
 
@@ -125,7 +127,7 @@ UINT USBD_STORAGE_Read(VOID *storage_instance,
 #ifdef DMA
   SD_READ_FLAG = 0;
   /* Start the Dma write */
-  if (HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *) data_pointer, lba, number_blocks) != HAL_OK)
+  if (HAL_SD_SharedRead(OWNER_USB, (uint8_t *) data_pointer, lba, number_blocks) != HAL_OK)
   {
     return UX_ERROR;
   }
@@ -145,7 +147,7 @@ UINT USBD_STORAGE_Read(VOID *storage_instance,
   }
 #endif
   uint32_t alignedAddr = ((uint32_t) data_pointer) & ~0x1F;
-  SCB_InvalidateDCache_by_Addr((uint32_t *) alignedAddr,
+  HAL_DCACHE_InvalidateByAddr(&dcache1, (uint32_t *) alignedAddr,
       total_length + ((uint32_t) data_pointer - alignedAddr));
   while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER)
   {
@@ -192,12 +194,12 @@ UINT USBD_STORAGE_Write(VOID *storage_instance,
   /* In USBD_STORAGE_Write, before HAL_SD_WriteBlocks_DMA */
   uint32_t alignedAddr = (uint32_t) data_pointer & ~0x1F;
   uint32_t full_size = (((uint32_t) data_pointer + total_length + 31U) & ~0x1F) - alignedAddr;
-  SCB_CleanDCache_by_Addr((uint32_t *) alignedAddr, full_size);
+  HAL_DCACHE_CleanByAddr(&dcache1, (uint32_t *) alignedAddr, full_size);
 
 #ifdef DMA
   /* Start the Dma write */
   SD_WRITE_FLAG = 0;
-  if (HAL_SD_WriteBlocks_DMA(&hsd1, (uint8_t *) data_pointer, lba, number_blocks) != HAL_OK)
+  if (HAL_SD_SharedWrite(OWNER_USB, (uint8_t *) data_pointer, lba, number_blocks) != HAL_OK)
   {
     return UX_ERROR;
   }
