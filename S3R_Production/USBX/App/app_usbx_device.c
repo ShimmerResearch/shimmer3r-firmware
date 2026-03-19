@@ -443,21 +443,24 @@ VOID USBX_APP_Device_DeInit(VOID)
   hal_status = HAL_PCD_Stop(&hpcd_USB_OTG_HS);
   if (hal_status != HAL_OK)
   {
-    Error_Handler();
+    /* In deinit/unplug path, failures should not cause a fatal reset. */
+    return;
   }
 
   /* Deinitialize USB peripheral */
   hal_status = HAL_PCD_DeInit(&hpcd_USB_OTG_HS);
   if (hal_status != HAL_OK)
   {
-    Error_Handler();
+    /* In deinit/unplug path, failures should not cause a fatal reset. */
+    return;
   }
 
   /* Uninitialize USBX DCD driver */
   usbx_status = _ux_dcd_stm32_uninitialize((ULONG) USB_OTG_HS, (ULONG) &hpcd_USB_OTG_HS);
   if (usbx_status != UX_SUCCESS)
   {
-    Error_Handler();
+    /* In deinit/unplug path, failures should not cause a fatal reset. */
+    return;
   }
 }
 
