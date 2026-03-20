@@ -24,6 +24,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <string.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,6 +64,7 @@ static UX_SLAVE_CLASS_CDC_ACM_PARAMETER cdc_acm_parameter;
 
 static UCHAR vendor_id[] = "Shimmer";
 static UCHAR product_id[] = "XXXX";
+static UCHAR serial_id[20] = { ' ' };
 
 static volatile bool usbx_initialized = false;
 static volatile bool firstSuspendSkipped = false;
@@ -97,8 +100,24 @@ UINT MX_USBX_Device_Init(VOID)
 
   /* USER CODE BEGIN MX_USBX_Device_Init0 */
 
+  const UCHAR *usb_serial;
+  size_t usb_serial_len;
+
   /* Build the product ID for the Disk Drive string based on the Shimmer's MAC ID */
   LogAndStream_buildShimmerMacSuffix((char *) product_id, sizeof(product_id));
+
+  usb_serial = USBD_Get_UsbSerialStringPtr();
+  memset(serial_id, ' ', sizeof(serial_id));
+
+  if (usb_serial != UX_NULL)
+  {
+    usb_serial_len = strlen((const char *) usb_serial);
+    if (usb_serial_len > sizeof(serial_id))
+    {
+      usb_serial_len = sizeof(serial_id);
+    }
+    memcpy(serial_id, usb_serial, usb_serial_len);
+  }
 
   /* USER CODE END MX_USBX_Device_Init0 */
   pointer = ux_device_byte_pool_buffer;
@@ -177,11 +196,10 @@ UINT MX_USBX_Device_Init(VOID)
 
   /* USER CODE BEGIN STORAGE_PARAMETER */
 
-  storage_parameter.ux_slave_class_storage_parameter_vendor_id = (UCHAR *) &vendor_id;
-  storage_parameter.ux_slave_class_storage_parameter_product_id = (UCHAR *) &product_id;
+  storage_parameter.ux_slave_class_storage_parameter_vendor_id = vendor_id;
+  storage_parameter.ux_slave_class_storage_parameter_product_id = product_id;
   //storage_parameter.ux_slave_class_storage_parameter_product_rev = (UCHAR *)STORAGE_PRODUCT_REV;
-  storage_parameter.ux_slave_class_storage_parameter_product_serial
-      = (UCHAR *) USBD_Get_UsbSerialStringPtr();
+  storage_parameter.ux_slave_class_storage_parameter_product_serial = serial_id;
 
   /* USER CODE END STORAGE_PARAMETER */
 

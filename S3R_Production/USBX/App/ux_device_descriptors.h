@@ -35,6 +35,8 @@ extern "C"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "usbx_overrides.h"
+
 /* USER CODE END Includes */
 
 /* Private defines -----------------------------------------------------------*/
@@ -330,7 +332,7 @@ extern "C"
 #endif /* USBD_CONFIG_STR_DESC_IDX */
 
 #ifndef USBD_CONFIG_BMATTRIBUTES
-#define USBD_CONFIG_BMATTRIBUTES 0x80U
+#define USBD_CONFIG_BMATTRIBUTES 0xC0U
 #endif /* USBD_CONFIG_BMATTRIBUTES */
 
 /* Private macro -----------------------------------------------------------*/

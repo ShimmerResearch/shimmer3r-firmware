@@ -209,6 +209,8 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
 
   /* USER CODE BEGIN String_Framework0 */
 
+  memset(USBD_string_framework, 0, sizeof(USBD_string_framework));
+
   /* Build the runtime product string based on the Shimmer's MAC ID */
   LogAndStream_buildShimmerPrefix(runtime_product_string, sizeof(runtime_product_string));
 
@@ -242,7 +244,7 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_IDX_SERIAL_STR;
 
   /* Set the Serial number in USBD_string_framework */
-  //USBD_Desc_GetString((uint8_t *) USBD_SERIAL_NUMBER, USBD_string_framework + count, &len);
+//  USBD_Desc_GetString((uint8_t *) USBD_SERIAL_NUMBER, USBD_string_framework + count, &len);
   /* Overwrite the serial string with the MCU's UID */
   USBD_Desc_GetString(&USBD_StringSerial[0], USBD_string_framework + count, &len);
 
@@ -251,7 +253,7 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   /* USER CODE END String_Framework1 */
 
   /* Get the length of USBD_string_framework */
-  *Length = strlen((const char *) USBD_string_framework);
+  *Length = (ULONG) (count + len + 1U);
 
   return USBD_string_framework;
 }
@@ -266,12 +268,14 @@ uint8_t *USBD_Get_Language_Id_Framework(ULONG *Length)
 {
   uint8_t count = 0U;
 
+  memset(USBD_language_id_framework, 0, sizeof(USBD_language_id_framework));
+
   /* Set the language Id in USBD_language_id_framework */
   USBD_language_id_framework[count++] = USBD_LANGID_STRING & 0xFF;
   USBD_language_id_framework[count++] = USBD_LANGID_STRING >> 8;
 
   /* Get the length of USBD_language_id_framework */
-  *Length = strlen((const char *) USBD_language_id_framework);
+  *Length = (ULONG) count;
 
   return USBD_language_id_framework;
 }
