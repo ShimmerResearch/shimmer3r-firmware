@@ -32,8 +32,8 @@ extern "C"
 #include "ux_device_class_storage.h"
 #include "ux_stm32_config.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+  /* Private includes ----------------------------------------------------------*/
+  /* USER CODE BEGIN Includes */
 
 #include "usbx_overrides.h"
 

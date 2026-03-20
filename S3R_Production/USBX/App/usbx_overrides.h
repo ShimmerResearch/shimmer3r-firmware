@@ -5,5 +5,4 @@
  *      Author: MarkNolan
  */
 
-
 #define USBD_CONFIG_BMATTRIBUTES 0x80U
