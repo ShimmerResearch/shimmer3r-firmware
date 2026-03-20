@@ -1380,22 +1380,23 @@ void enableI2cOnSr48OrSr38PpgSocket(uint8_t state)
     {
       Board_SR48_6_0_SW_I2C4_ON_PPG(1);
     }
-    else
+    else if (ShimBrd_isI2cOnPPGControlledByAdcChip())
+#else
+    if (ShimBrd_isI2cOnPPGControlledByAdcChip())
 #endif //SUPPORT_SR48_6_0
-      if (ShimBrd_isI2cOnPPGControlledByAdcChip())
-      {
-        //SPI is needed to change GPIO state in ADS7028
-        MX_SPI1_Init();
-        ads7028_swI2C4PpgOn(1);
-      }
-      else if (ShimBrd_isExpBrdId(EXP_BRD_PROTO3_DELUXE))
-      {
-        Board_SW_PROTO3_DELUXE_I2C4_ON_J2(1);
-      }
-      else
-      {
-        Board_SW_I2C4_ON_PPG(1);
-      }
+    {
+      //SPI is needed to change GPIO state in ADS7028
+      MX_SPI1_Init();
+      ads7028_swI2C4PpgOn(1);
+    }
+    else if (ShimBrd_isExpBrdId(EXP_BRD_PROTO3_DELUXE))
+    {
+      Board_SW_PROTO3_DELUXE_I2C4_ON_J2(1);
+    }
+    else
+    {
+      Board_SW_I2C4_ON_PPG(1);
+    }
     MX_I2C4_Init();
   }
   else
@@ -1407,21 +1408,22 @@ void enableI2cOnSr48OrSr38PpgSocket(uint8_t state)
     {
       Board_SR48_6_0_SW_I2C4_ON_PPG(0);
     }
-    else
+    else if (ShimBrd_isI2cOnPPGControlledByAdcChip())
+#else
+    if (ShimBrd_isI2cOnPPGControlledByAdcChip())
 #endif //SUPPORT_SR48_6_0
-      if (ShimBrd_isI2cOnPPGControlledByAdcChip())
-      {
-        ads7028_swI2C4PpgOn(0);
-        SPI1_DeInit();
-      }
-      else if (ShimBrd_isExpBrdId(EXP_BRD_PROTO3_DELUXE))
-      {
-        Board_SW_PROTO3_DELUXE_I2C4_ON_J2(0);
-      }
-      else
-      {
-        Board_SW_I2C4_ON_PPG(0);
-      }
+    {
+      ads7028_swI2C4PpgOn(0);
+      SPI1_DeInit();
+    }
+    else if (ShimBrd_isExpBrdId(EXP_BRD_PROTO3_DELUXE))
+    {
+      Board_SW_PROTO3_DELUXE_I2C4_ON_J2(0);
+    }
+    else
+    {
+      Board_SW_I2C4_ON_PPG(0);
+    }
   }
 }
 
