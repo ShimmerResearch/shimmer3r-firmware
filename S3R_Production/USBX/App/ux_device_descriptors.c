@@ -916,6 +916,14 @@ static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len)
 
 uint8_t *USBD_Get_UsbSerialStringPtr(void)
 {
+  static uint8_t serial_initialized = 0U;
+
+  if (serial_initialized == 0U)
+  {
+    Get_SerialNum();
+    serial_initialized = 1U;
+  }
+
   return &USBD_StringSerial[0];
 }
 
