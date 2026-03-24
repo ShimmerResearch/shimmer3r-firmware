@@ -25,12 +25,12 @@
 
 
 /* Include necessary system files.  */
-#include "TaskList/shimmer_taskList.h"
+
 #include "ux_api.h"
 #include "ux_dcd_stm32.h"
 #include "ux_device_stack.h"
 #include "ux_utility.h"
-#include "log_and_stream_externs.h"
+
 
 static inline void _ux_dcd_stm32_setup_in(UX_DCD_STM32_ED * ed, UX_SLAVE_TRANSFER *transfer_request)
 {
@@ -741,6 +741,7 @@ UX_SLAVE_ENDPOINT       *endpoint;
 /**************************************************************************/
 void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 {
+
     /* If the device is attached or configured, we need to disconnect it.  */
     if (_ux_system_slave -> ux_system_slave_device.ux_slave_device_state !=  UX_DEVICE_RESET)
     {
@@ -777,11 +778,6 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 
     /* Mark the device as attached now.  */
     _ux_system_slave -> ux_system_slave_device.ux_slave_device_state =  UX_DEVICE_ATTACHED;
-//    if (!(ShimTask_getList() & TASK_USB_SETUP))
-//    {
-//      ShimTask_set(TASK_USB_SETUP);
-//    }
-//    shimmerStatus.usbPluggedIn = 1;
 }
 
 
@@ -945,7 +941,6 @@ void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
        /* Inform the application if a callback function was programmed.  */
         _ux_system_slave -> ux_system_slave_change_function(UX_DCD_STM32_DEVICE_SUSPENDED);
     }
-//    shimmerStatus.usbPluggedIn = 0;
 }
 
 

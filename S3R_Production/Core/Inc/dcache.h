@@ -33,11 +33,14 @@ extern "C"
 
   /* USER CODE END Includes */
 
+  extern DCACHE_HandleTypeDef hdcache1;
+
   /* USER CODE BEGIN Private defines */
 
   /* USER CODE END Private defines */
-  extern DCACHE_HandleTypeDef dcache1;
-  void MX_DCACHE_Init(void);
+
+  void MX_DCACHE1_Init(void);
+
   /* USER CODE BEGIN Prototypes */
 
   /* USER CODE END Prototypes */
@@ -46,4 +49,4 @@ extern "C"
 }
 #endif
 
-#endif /* __ICACHE_H__ */
+#endif /* __DCACHE_H__ */

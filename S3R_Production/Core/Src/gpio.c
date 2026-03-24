@@ -121,9 +121,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA15 PA9 PA7 PA4
-                           PA5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15 | /*GPIO_PIN_9 |*/ GPIO_PIN_7 | GPIO_PIN_4 | GPIO_PIN_5;
+  /*Configure GPIO pins : PA15 PA7 PA4 PA5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15 | GPIO_PIN_7 | GPIO_PIN_4 | GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);

@@ -104,8 +104,6 @@ extern "C"
 #define DOCK_RXD_GPIO_Port       GPIOB
 #define CS_LIS2DW12_Pin          GPIO_PIN_7
 #define CS_LIS2DW12_GPIO_Port    GPIOD
-#define USB_VBUS_Pin             GPIO_PIN_9
-#define USB_VBUS_GPIO_Port       GPIOA
 #define CS_HIGH_G_Pin            GPIO_PIN_10
 #define CS_HIGH_G_GPIO_Port      GPIOA
 #define SW_MIC_Pin               GPIO_PIN_8
@@ -183,6 +181,9 @@ extern "C"
 #define GPIO_INTERNAL6_Pin       GPIO_PIN_4
 #define GPIO_INTERNAL6_GPIO_Port GPIOA
 
+#define USB_VBUS_Pin             GPIO_PIN_9
+#define USB_VBUS_GPIO_Port       GPIOA
+
 /* TODO including these expansion board pin definitions here because CubeMX
  * randomly stopped automatically generating them */
 #define BSL_TX_Pin               GPIO_PIN_2
@@ -232,7 +233,7 @@ extern "C"
 #define SR48_6_0_GPIO_ADC_INT_EXP0_GPIO_Port GPIOA
 #endif //SUPPORT_SR48_6_0
 
-#define DMA
+#define USBX_MSC_DMA
   /* USER CODE END Private defines */
 
 #ifdef __cplusplus

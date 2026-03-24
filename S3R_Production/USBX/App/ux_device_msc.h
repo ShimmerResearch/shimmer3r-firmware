@@ -38,10 +38,10 @@ extern "C"
 
   /* Exported types ------------------------------------------------------------*/
   /* USER CODE BEGIN ET */
-
+extern volatile uint8_t SD_READ_FLAG;
+extern volatile uint8_t SD_WRITE_FLAG;
   /* USER CODE END ET */
-  extern volatile uint8_t SD_READ_FLAG;
-  extern volatile uint8_t SD_WRITE_FLAG;
+
   /* Exported constants --------------------------------------------------------*/
   /* USER CODE BEGIN EC */
 
@@ -99,12 +99,10 @@ extern "C"
 #define STORAGE_READ_ONLY UX_FALSE
 #endif
 /* USER CODE BEGIN 1 */
-/* USER CODE BEGIN 1 */
-#ifdef DMA
+#ifdef USBX_MSC_DMA
   void USDB_ReadCpltCallback(SD_HandleTypeDef *hsd1);
   void USBD_WriteCpltCallback(SD_HandleTypeDef *hsd1);
 #endif
-  /* USER CODE END 1 */
   /* USER CODE END 1 */
 
 #ifdef __cplusplus

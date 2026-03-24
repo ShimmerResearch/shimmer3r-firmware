@@ -253,7 +253,7 @@ extern "C"
 
   /* Exported functions prototypes ---------------------------------------------*/
   /* USER CODE BEGIN EFP */
-
+  uint8_t *USBD_Get_UsbSerialStringPtr(void);
   /* USER CODE END EFP */
 
   uint8_t *USBD_Get_Device_Framework_Speed(uint8_t Speed, ULONG *Length);
@@ -261,7 +261,7 @@ extern "C"
   uint8_t *USBD_Get_Language_Id_Framework(ULONG *Length);
   uint16_t USBD_Get_Interface_Number(uint8_t class_type, uint8_t interface_type);
   uint16_t USBD_Get_Configuration_Number(uint8_t class_type, uint8_t interface_type);
-  uint8_t *USBD_Get_UsbSerialStringPtr(void);
+
 
   /* Private defines -----------------------------------------------------------*/
   /* USER CODE BEGIN Private_defines */

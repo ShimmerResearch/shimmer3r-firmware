@@ -231,9 +231,9 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_LANGID_STRING >> 8;
   USBD_string_framework[count++] = USBD_IDX_PRODUCT_STR;
 
+  /* USER CODE BEGIN String_Framework1 */
   /* Set the Product string in USBD_string_framework */
-  //USBD_Desc_GetString((uint8_t *) USBD_PRODUCT_STRING, USBD_string_framework + count, &len);
-  /* Overwrite the product string with the runtime product string that contains the Shimmer's MAC ID */
+    /* Overwrite the product string with the runtime product string that contains the Shimmer's MAC ID */
   USBD_Desc_GetString(
       (uint8_t *) runtime_product_string, USBD_string_framework + count, &len);
 
@@ -242,19 +242,13 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_LANGID_STRING & 0xFF;
   USBD_string_framework[count++] = USBD_LANGID_STRING >> 8;
   USBD_string_framework[count++] = USBD_IDX_SERIAL_STR;
-
   /* Set the Serial number in USBD_string_framework */
-  //USBD_Desc_GetString((uint8_t *) USBD_SERIAL_NUMBER, USBD_string_framework + count, &len);
   /* Overwrite the serial string with the MCU's UID */
   USBD_Desc_GetString(&USBD_StringSerial[0], USBD_string_framework + count, &len);
-
-  /* USER CODE BEGIN String_Framework1 */
-
+  *Length = (ULONG) (count + len + 1U);
   /* USER CODE END String_Framework1 */
 
   /* Get the length of USBD_string_framework */
-  *Length = (ULONG) (count + len + 1U);
-
   return USBD_string_framework;
 }
 
