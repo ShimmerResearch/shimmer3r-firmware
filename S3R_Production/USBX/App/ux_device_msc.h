@@ -38,8 +38,8 @@ extern "C"
 
   /* Exported types ------------------------------------------------------------*/
   /* USER CODE BEGIN ET */
-extern volatile uint8_t SD_READ_FLAG;
-extern volatile uint8_t SD_WRITE_FLAG;
+  extern volatile uint8_t SD_READ_FLAG;
+  extern volatile uint8_t SD_WRITE_FLAG;
   /* USER CODE END ET */
 
   /* Exported constants --------------------------------------------------------*/

@@ -242,11 +242,11 @@ UINT USBD_STORAGE_Flush(VOID *storage_instance, ULONG lun, ULONG number_blocks, 
   UINT status = UX_SUCCESS;
 
   /* USER CODE BEGIN USBD_STORAGE_Flush */
- /* UX_PARAMETER_NOT_USED(storage_instance);
-  UX_PARAMETER_NOT_USED(lun);
-  UX_PARAMETER_NOT_USED(number_blocks);
-  UX_PARAMETER_NOT_USED(lba);
-  UX_PARAMETER_NOT_USED(media_status); */
+  /* UX_PARAMETER_NOT_USED(storage_instance);
+   UX_PARAMETER_NOT_USED(lun);
+   UX_PARAMETER_NOT_USED(number_blocks);
+   UX_PARAMETER_NOT_USED(lba);
+   UX_PARAMETER_NOT_USED(media_status); */
   if (HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER)
   {
     status = UX_STATE_NEXT;

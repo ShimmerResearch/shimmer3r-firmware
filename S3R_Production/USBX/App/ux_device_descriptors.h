@@ -262,7 +262,6 @@ extern "C"
   uint16_t USBD_Get_Interface_Number(uint8_t class_type, uint8_t interface_type);
   uint16_t USBD_Get_Configuration_Number(uint8_t class_type, uint8_t interface_type);
 
-
   /* Private defines -----------------------------------------------------------*/
   /* USER CODE BEGIN Private_defines */
 

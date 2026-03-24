@@ -233,7 +233,7 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
 
   /* USER CODE BEGIN String_Framework1 */
   /* Set the Product string in USBD_string_framework */
-    /* Overwrite the product string with the runtime product string that contains the Shimmer's MAC ID */
+  /* Overwrite the product string with the runtime product string that contains the Shimmer's MAC ID */
   USBD_Desc_GetString(
       (uint8_t *) runtime_product_string, USBD_string_framework + count, &len);
 
