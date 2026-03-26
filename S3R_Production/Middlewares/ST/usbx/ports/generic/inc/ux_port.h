@@ -139,7 +139,7 @@ typedef LONG                        SLONG;
 #endif
 
 #ifndef UX_MAX_SLAVE_CLASS_DRIVER
-#define UX_MAX_SLAVE_CLASS_DRIVER                           4
+#define UX_MAX_SLAVE_CLASS_DRIVER                           2
 #endif
 
 #ifndef UX_MAX_HCD

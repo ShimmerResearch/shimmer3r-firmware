@@ -340,7 +340,7 @@ void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd1)
 {
   if (currentSdOwner == OWNER_USB)
   {
-#ifdef DMA
+#ifdef USBX_MSC_DMA
     USDB_ReadCpltCallback(hsd1); //Signal the USB stack
 #endif
   }
@@ -355,7 +355,7 @@ void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd1)
 {
   if (currentSdOwner == OWNER_USB)
   {
-#ifdef DMA
+#ifdef USBX_MSC_DMA
     USBD_WriteCpltCallback(hsd1);
 #endif
   }

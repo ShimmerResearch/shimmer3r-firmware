@@ -254,13 +254,13 @@ int main(void)
   MX_GPIO_Init();
   MX_GPDMA1_Init();
   MX_ICACHE_Init();
-  MX_DCACHE_Init();
   MX_RNG_Init();
   MX_RTC_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
+  MX_DCACHE1_Init();
   /* USER CODE BEGIN 2 */
 
   //MX_IWDG_Init();

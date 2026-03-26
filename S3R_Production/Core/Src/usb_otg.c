@@ -19,11 +19,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "usb_otg.h"
-#include "main.h" // for USB_VBUS_Pin/Port
 
 /* USER CODE BEGIN 0 */
-
 #include "app_usbx_device.h"
+#include "main.h" // for USB_VBUS_Pin/Port
 
 /* USER CODE END 0 */
 
