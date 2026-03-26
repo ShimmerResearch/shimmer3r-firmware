@@ -218,7 +218,7 @@ extern   "C" {
    1 - Endpoint buffer managed by classes. In this case not all endpoints consume UX_SLAVE_REQUEST_DATA_MAX_LENGTH bytes.
 */
 #ifndef UX_DEVICE_ENDPOINT_BUFFER_OWNER
-#define UX_DEVICE_ENDPOINT_BUFFER_OWNER             1
+#define UX_DEVICE_ENDPOINT_BUFFER_OWNER             0
 #endif
 #define UX_DEVICE_ENDPOINT_BUFFER_OWNER_CORE        0
 #define UX_DEVICE_ENDPOINT_BUFFER_OWNER_CLASS       1
