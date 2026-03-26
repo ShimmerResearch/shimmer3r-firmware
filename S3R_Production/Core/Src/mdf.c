@@ -46,7 +46,7 @@ void MX_ADF1_Init(void)
 {
 
   /* USER CODE BEGIN ADF1_Init 0 */
-//   AdfFilterConfig0.DecimationRatio = 24 is changed to value of 64 so that mic tests pass
+  //AdfFilterConfig0.DecimationRatio = 24 is changed to value of 64 so that mic tests pass
   /* USER CODE END ADF1_Init 0 */
 
   /* USER CODE BEGIN ADF1_Init 1 */
