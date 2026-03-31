@@ -374,7 +374,7 @@ void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd)
   WriteStatus = 1;
   ReadStatus = 1;
   sdTransferDone = 1;
-  currentSdOwner = IDLE;
+  currentSdOwner = OWNER_IDLE;
 }
 
 /* USER CODE END 1 */
