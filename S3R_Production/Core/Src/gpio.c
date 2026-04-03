@@ -754,8 +754,7 @@ void vbusPinStateCheck(void)
   else
   {
     shimmerStatus.usbPluggedIn = 0;
-    shimmerStatus.sdlogReady = LogAndStream_checkSdInSlot()
-                               && !shimmerStatus.sdBadFile;
+    shimmerStatus.sdlogReady = LogAndStream_checkSdInSlot() && !shimmerStatus.sdBadFile;
     if (USBX_IsInitialised())
     {
       status = MX_USBX_Device_DeInit();

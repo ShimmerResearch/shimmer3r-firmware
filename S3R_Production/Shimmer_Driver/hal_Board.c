@@ -464,7 +464,7 @@ void Board_sd2Mcu(void)
   if (hsd1.Instance != NULL)
   {
     HAL_SD_Abort(&hsd1);
-    HAL_SD_DeInit(&hsd1);       /* Reset HAL state and disable interrupts */
+    HAL_SD_DeInit(&hsd1); /* Reset HAL state and disable interrupts */
   }
 
   /* 3. HARDWARE RESET (Force the SDMMC1 registers to default) */
