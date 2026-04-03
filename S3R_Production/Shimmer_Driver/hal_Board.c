@@ -461,6 +461,17 @@ void Board_sd2Mcu(void)
   /* Clears any lingering FatFs work area, BPB/cache, and “mounted” flags if a prior path failed to unmount. */
   ShimSd_mount(SD_UNMOUNT);
 
+  if (hsd1.Instance != NULL)
+  {
+    HAL_SD_Abort(&hsd1);
+    HAL_SD_DeInit(&hsd1);       /* Reset HAL state and disable interrupts */
+  }
+
+  /* 3. HARDWARE RESET (Force the SDMMC1 registers to default) */
+  __HAL_RCC_SDMMC1_FORCE_RESET();
+  HAL_Delay(2);
+  __HAL_RCC_SDMMC1_RELEASE_RESET();
+
   /* Power cycle the SD card with access to MCU */
   Board_sdPowerCycle(0);
 

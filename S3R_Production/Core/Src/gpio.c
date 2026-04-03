@@ -742,7 +742,8 @@ void vbusPinStateCheck(void)
 
     if (!USBX_IsInitialised())
     {
-      Board_sd2Mcu();
+      shimmerStatus.sdlogReady = 0;
+      LogAndStream_setupDockUndock();
       status = MX_USBX_Device_Init();
     }
     if (status == UX_SUCCESS)
@@ -753,7 +754,8 @@ void vbusPinStateCheck(void)
   else
   {
     shimmerStatus.usbPluggedIn = 0;
-
+    shimmerStatus.sdlogReady = LogAndStream_checkSdInSlot()
+                               && !shimmerStatus.sdBadFile;
     if (USBX_IsInitialised())
     {
       status = MX_USBX_Device_DeInit();
