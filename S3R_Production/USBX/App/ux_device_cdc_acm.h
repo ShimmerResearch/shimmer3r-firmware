@@ -96,11 +96,14 @@ extern "C"
   VOID USBD_CDC_ACM_ParameterChange(VOID *cdc_acm_instance);
 
   /* USER CODE BEGIN EFP */
+
   usbx_cdc_acm_result_t USBX_CDC_ACM_Transmit(uint8_t *buffer, uint16_t size);
-  usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t *buffer, uint16_t size);
-  bool USBX_CDC_ACM_IsPortOpen(void);
   VOID cdc_acm_write_task(VOID);
   VOID cdc_acm_read_task(VOID);
+  usbx_cdc_acm_result_t USBX_CDC_ACM_Receive_To_RxBuf(VOID);
+  usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t *buffer, uint16_t size);
+  bool USBX_CDC_ACM_IsPortOpen(void);
+
   /* USER CODE END EFP */
 
   /* Private defines -----------------------------------------------------------*/
