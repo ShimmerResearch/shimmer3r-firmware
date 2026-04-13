@@ -291,6 +291,12 @@ usbx_cdc_acm_result_t USBX_CDC_ACM_Receive_To_RxBuf(VOID)
   return USBX_CDC_ACM_Receive(usbx_cdc_tx_rx.rx_command_buffer, usbx_cdc_tx_rx.rx_command_length);
 }
 
+VOID USBX_CDC_ACM_RxBuf_Reset(VOID)
+{
+  memset(usbx_cdc_tx_rx.rx_command_buffer, 0, usbx_cdc_tx_rx.rx_command_length);
+  usbx_cdc_tx_rx.rx_command_length = 0;
+}
+
 usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t *buffer, uint16_t size)
 {
   for (uint32_t i = 0; i < size; i++)
