@@ -46,7 +46,7 @@ void MX_ADF1_Init(void)
 {
 
   /* USER CODE BEGIN ADF1_Init 0 */
-
+  //AdfFilterConfig0.DecimationRatio = 24 is changed to value of 64 so that mic tests pass
   /* USER CODE END ADF1_Init 0 */
 
   /* USER CODE BEGIN ADF1_Init 1 */
@@ -84,7 +84,7 @@ void MX_ADF1_Init(void)
   AdfFilterConfig0.DataSource = MDF_DATA_SOURCE_BSMX;
   AdfFilterConfig0.Delay = 0;
   AdfFilterConfig0.CicMode = MDF_ONE_FILTER_SINC5;
-  AdfFilterConfig0.DecimationRatio = 24;
+  AdfFilterConfig0.DecimationRatio = 64;
   AdfFilterConfig0.Gain = 6;
   AdfFilterConfig0.ReshapeFilter.Activation = ENABLE;
   AdfFilterConfig0.ReshapeFilter.DecimationRatio = MDF_RSF_DECIMATION_RATIO_4;
@@ -98,7 +98,7 @@ void MX_ADF1_Init(void)
   AdfFilterConfig0.Trigger.Edge = MDF_FILTER_TRIG_RISING_EDGE;
   /* USER CODE BEGIN ADF1_Init 2 */
   AdfFilterConfig0.SnapshotFormat = MDF_SNAPSHOT_23BITS;
-
+  AdfFilterConfig0.DecimationRatio = 64;
   //DMA & Linkedlist config
   micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
   micDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);
@@ -269,6 +269,8 @@ void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
 
 void HAL_MDF_ErrorCallback(MDF_HandleTypeDef *hmdf)
 {
+  //micStopSensing();
+
   if (micTestRunning && Mic_CountSkip >= FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
   {
     micTestErrorCnt++;

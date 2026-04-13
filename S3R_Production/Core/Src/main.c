@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "app_usbx_device.h"
+#include "dcache.h"
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
@@ -27,19 +29,15 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "app_usbx_device.h"
 #include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
 #include "usb_otg.h"
+#include "ux_device_cdc_acm.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if !USE_USBX
-#include "usb_device.h"
-#endif
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +66,10 @@
 /* USER CODE BEGIN PV */
 
 volatile uint32_t time_start, time_end, time_diff;
-
+#define BLOCK_START_ADDR 0 /* Block start address      */
+#define NUM_OF_BLOCKS    5 /* Total number of blocks   */
+#define BUFFER_WORDS_SIZE \
+  ((MMC_BLOCKSIZE * NUM_OF_BLOCKS) >> 2) /* Total data size in bytes */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -156,7 +157,7 @@ void Init()
     LogAndStream_setupUndock();
   }
 
-  //(void)ShimBtn_pressReleaseAction();
+  //(void) ShimBtn_pressReleaseAction();
 
 #if defined(SHIMMER3R)
   LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH);
@@ -259,6 +260,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
+  MX_DCACHE1_Init();
   /* USER CODE BEGIN 2 */
 
   //MX_IWDG_Init();
@@ -281,6 +283,19 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /* Let USBX progress enumeration/state machine */
+    if (USBX_IsInitialised())
+    {
+      ux_device_stack_tasks_run();
+
+      /* Only touch the CDC class once the device is configured by the host */
+      if (USBX_CDC_ACM_IsPortOpen())
+      {
+        cdc_acm_write_task();
+        cdc_acm_read_task();
+      }
+    }
+
     ShimTask_manage();
   }
   /* USER CODE END 3 */
@@ -554,39 +569,14 @@ void HAL_Delay(uint32_t Delay)
 
 void sleepWhenNoTask(void)
 {
-  /* Only wake MCU when new Task is set. See corresponding
-   * HAL_PWR_DisableSleepOnExit() in ShimTask_set() */
-  HAL_PWR_EnableSleepOnExit();
+  if (!USBX_IsInitialised())
+  {
+    /* Only wake MCU when new Task is set. See corresponding
+     * HAL_PWR_DisableSleepOnExit() in ShimTask_set() */
+    HAL_PWR_EnableSleepOnExit();
 
-  Power_SleepUntilInterrupt();
-
-  //if(shimmerStatus.isBtConnected && !shimmerStatus.isSensing){
-  //   Power_SleepUntilInterrupt();
-  //
-  //   __NOP();
-  //   __NOP();
-  //   __NOP();
-  //}else{
-  //   if(shimmerStatus.periStat == 0)
-  //   {
-  ////            static uint8_t green1_cnt = 0;
-  ////            if(!green1_cnt++){
-  ////               Board_ledToggle(LED_GREEN1);
-  ////            }
-  //Power_StopUntilInterrupt();
-  //}
-  //else
-  //{
-  //static uint8_t blue_cnt = 0;
-  //if(!blue_cnt++){
-  //   Board_ledToggle(LED_BLUE);
-  //}
-  //__NOP();
-  //__NOP();
-  //__NOP();
-  //Power_SleepUntilInterrupt();
-  //}
-  //}
+    Power_SleepUntilInterrupt();
+  }
 }
 
 void BtStart(void)

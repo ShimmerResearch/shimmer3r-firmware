@@ -16,7 +16,6 @@
 #include "Test/shimmer_test.h"
 
 #define DELAY_BETWEEN_LED_CHANGES_MS               2000
-
 #define TEST_THRESHOLD_VREF_LOWER                  (VREF_EXTERNAL_SUPPLY_MV - 80)
 #define TEST_THRESHOLD_VREF_UPPER                  (VREF_EXTERNAL_SUPPLY_MV + 80)
 /*
