@@ -330,7 +330,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     if (ShimBrd_isBoardSr48_6_0())
     {
       /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection.
-       * Defer to unified debounced handler via TASK_USB_SETUP */
+ * Defer to unified debounced handler via TASK_USB_SETUP */
       ShimTask_setDockOrUsbStateChange();
       break;
     }
@@ -689,11 +689,15 @@ void platform_initGpioForRevision(void)
 
 /**
  * @brief  Unified debounced handler for both dock and USB-VBUS state changes.
- *
+
+ * *
  * Called from the task runner (TASK_USB_SETUP) so that both DOCK_DETECT and
- * USB_VBUS interrupts are funnelled through a single deferred path with
- * debounce.  Re-reads both pins after the debounce window, updates
- * shimmerStatus, and triggers the dock/undock sequence only when something
+
+ * * USB_VBUS interrupts are funnelled through a single deferred path with
+ * debounce.
+ * Re-reads both pins after the debounce window, updates
+ * shimmerStatus, and
+ * triggers the dock/undock sequence only when something
  * has actually changed (or on first boot).
  */
 void dockOrUsbStateUpdate(void)
@@ -709,15 +713,15 @@ void dockOrUsbStateUpdate(void)
 
   /* --- Sample both pins --- */
   uint8_t prevDocked = shimmerStatus.docked;
-  uint8_t prevUsb    = shimmerStatus.usbPluggedIn;
+  uint8_t prevUsb = shimmerStatus.usbPluggedIn;
 
-  Board_checkDockedDetectState();   /* updates shimmerStatus.docked */
+  Board_checkDockedDetectState(); /* updates shimmerStatus.docked */
 
   GPIO_PinState vbusPin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
   shimmerStatus.usbPluggedIn = (vbusPin == GPIO_PIN_SET) ? 1 : 0;
 
   uint8_t dockChanged = (prevDocked != shimmerStatus.docked);
-  uint8_t usbChanged  = (prevUsb    != shimmerStatus.usbPluggedIn);
+  uint8_t usbChanged = (prevUsb != shimmerStatus.usbPluggedIn);
 
   if (dockChanged || usbChanged || shimmerStatus.booting)
   {
