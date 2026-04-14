@@ -44,7 +44,7 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
   void GPIO_usbVbusIntInit(uint8_t state);
-  void vbusPinStateCheck(void);
+  void dockOrUsbStateUpdate(void);
 #if defined(SHIMMER3R)
   void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising);
 #endif

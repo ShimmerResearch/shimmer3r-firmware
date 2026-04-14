@@ -113,15 +113,14 @@ UINT USBD_STORAGE_Read(VOID *storage_instance,
 {
   UINT status = UX_SUCCESS;
   /* USER CODE BEGIN USBD_STORAGE_Read */
-  /* UX_PARAMETER_NOT_USED(storage_instance);
-   UX_PARAMETER_NOT_USED(lun);
-   UX_PARAMETER_NOT_USED(data_pointer);
-   UX_PARAMETER_NOT_USED(number_blocks);
-   UX_PARAMETER_NOT_USED(lba);
-   UX_PARAMETER_NOT_USED(media_status);*/
   uint32_t timeout_ms = 2000;
   uint32_t start_tick = 0;
   uint32_t total_length = number_blocks * 512; //SD_BLOCKSIZE is 512
+
+  if (hsd1.Instance == NULL)
+  {
+    return UX_ERROR;
+  }
 
 #ifdef USBX_MSC_DMA
   SD_READ_FLAG = 0;
@@ -185,6 +184,11 @@ UINT USBD_STORAGE_Write(VOID *storage_instance,
   uint32_t start_tick = 0;
   uint32_t total_length = number_blocks * 512;
 
+  if (hsd1.Instance == NULL)
+  {
+    return UX_ERROR;
+  }
+
   /* In USBD_STORAGE_Write, before HAL_SD_WriteBlocks_DMA */
   uint32_t alignedAddr = (uint32_t) data_pointer & ~0x1F;
   uint32_t full_size = (((uint32_t) data_pointer + total_length + 31U) & ~0x1F) - alignedAddr;
@@ -247,6 +251,11 @@ UINT USBD_STORAGE_Flush(VOID *storage_instance, ULONG lun, ULONG number_blocks, 
    UX_PARAMETER_NOT_USED(number_blocks);
    UX_PARAMETER_NOT_USED(lba);
    UX_PARAMETER_NOT_USED(media_status); */
+  if (hsd1.Instance == NULL)
+  {
+    return UX_ERROR;
+  }
+
   if (HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER)
   {
     status = UX_STATE_NEXT;
@@ -279,6 +288,11 @@ UINT USBD_STORAGE_Status(VOID *storage_instance, ULONG lun, ULONG media_id, ULON
      UX_PARAMETER_NOT_USED(lun);
      UX_PARAMETER_NOT_USED(media_id);
      UX_PARAMETER_NOT_USED(media_status); */
+  if (hsd1.Instance == NULL)
+  {
+    return UX_ERROR;
+  }
+
   HAL_SD_CardCIDTypeDef pCID;
   HAL_SD_CardCSDTypeDef pCSD;
 
@@ -340,10 +354,11 @@ ULONG USBD_STORAGE_GetMediaLastLba(VOID)
   ULONG LastLba = 0U;
 
   /* USER CODE BEGIN USBD_STORAGE_GetMediaLastLba */
-  if ((!shimmerStatus.sdPeripheralInit))
+  if (hsd1.Instance == NULL)
   {
-    Board_sd2Mcu();
+    return 0U;
   }
+
   HAL_SD_CardInfoTypeDef CardInfo = { 0 };
   HAL_SD_GetCardInfo(&hsd1, &CardInfo);
   LastLba = CardInfo.BlockNbr - 1;
@@ -363,9 +378,9 @@ ULONG USBD_STORAGE_GetMediaBlocklength(VOID)
   ULONG MediaBlockLen = 0U;
 
   /* USER CODE BEGIN USBD_STORAGE_GetMediaBlocklength */
-  if ((!shimmerStatus.sdPeripheralInit))
+  if (hsd1.Instance == NULL)
   {
-    Board_sd2Mcu();
+    return 0U;
   }
 
   HAL_SD_CardInfoTypeDef CardInfo = { 0 };

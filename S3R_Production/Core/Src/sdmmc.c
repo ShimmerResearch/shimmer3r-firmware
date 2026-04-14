@@ -56,7 +56,11 @@ void MX_SDMMC1_SD_Init(void)
     hsd1.Init.ClockDiv = 2;
     if (HAL_SD_Init(&hsd1) != HAL_OK)
     {
-      Error_Handler();
+      /* Do not call Error_Handler() here — HAL_SD_Init can legitimately
+       * fail during a hot-swap (e.g. dock→MCU transition).  Leave
+       * sdBadFile = 1 so callers know the card is unusable and allow
+       * the system to continue or retry on the next dock/undock cycle. */
+      hsd1.Instance = NULL;
     }
     /* USER CODE BEGIN SDMMC1_Init 2 */
     else

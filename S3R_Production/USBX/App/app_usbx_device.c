@@ -368,7 +368,7 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
      * UX_DEVICE_REMOVED working. */
     if (firstSuspendSkipped)
     {
-      ShimTask_setUsbSetup();
+      ShimTask_setDockOrUsbStateChange();
     }
     firstSuspendSkipped = true;
 

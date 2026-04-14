@@ -181,7 +181,18 @@ void Init()
   ShimConfig_loadSensorConfigAndCalib();
   bmp3_readCalibrationDataOnBoot();
 
-  //Pass control of SD card to dock if docked
+  /* Sample both dock and USB-VBUS pins so the ownership decision below has
+   * the complete picture.  Board_checkDockedDetectState() was already called
+   * earlier (line 152) but we re-read here for consistency.  We deliberately
+   * do NOT call dockOrUsbStateUpdate() because it fires
+   * LogAndStream_dockedStateChange() → TASK_SETUP_DOCK, which would cause a
+   * redundant second pass through setupDock() from the main loop. */
+  GPIO_usbVbusIntInit(1);
+  Board_checkDockedDetectState();
+  shimmerStatus.usbPluggedIn =
+      (HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_SET) ? 1 : 0;
+
+  //Pass control of SD card to dock or USB (dock has priority)
   if (LogAndStream_isDockedOrUsbIn())
   {
     LogAndStream_setupDock();
@@ -199,10 +210,6 @@ void Init()
 #if defined(SHIMMER4_SDK)
   S4_RTC_WakeUpSetSlow();
 #endif
-
-  //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
-  GPIO_usbVbusIntInit(1);
-  vbusPinStateCheck();
 
   /* Take initial measurement to update LED state */
   manageReadBatt(1);

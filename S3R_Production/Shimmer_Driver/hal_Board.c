@@ -437,6 +437,7 @@ void Board_sd2Pc(void)
   /* Cleanly release SD from MCU side before power/route changes */
   ShimSd_mount(SD_UNMOUNT); /* Unmount FS while MCU still owns the bus */
   mmc1DeInit();             /* De-init SDMMC to tri-state pins */
+  hsd1.Instance = NULL;     /* Mark peripheral as released */
 
   /* Power cycle the SD and hand bus control to the dock/PC side */
   Board_sdPowerCycle(1); /* setDockAccessToSd(1) inside power cycle */
@@ -509,14 +510,20 @@ void Board_setDockAccessToSd(uint8_t mcu0dock1)
   shimmerStatus.sdMcu0Pc1 = mcu0dock1;
 }
 
+/**
+ * @brief  Check docked state and update shimmerStatus.docked, return whether state has changed
+ * @param  none
+ * @return 1 if docked state has changed, 0 if not
+ */
 uint8_t Board_checkDockedDetectState(void)
 {
+  uint8_t previousDockedState = shimmerStatus.docked;
 #if TEST_UNDOCKED
   shimmerStatus.docked = 0;
 #else  //TEST_UNDOCKED
   shimmerStatus.docked = Board_isDocked();
 #endif //TEST_UNDOCKED
-  return shimmerStatus.docked;
+  return previousDockedState != shimmerStatus.docked;
 }
 
 /**
