@@ -417,7 +417,6 @@ void Board_sd2Pc(void);
 void Board_sd2Mcu(void);
 void Board_setSdPower(uint8_t state);
 void Board_setDockAccessToSd(uint8_t mcu0dock1);
-uint8_t Board_checkDockedDetectState(void);
 
 extern void Board_delayMicrosInit(void);
 extern void Board_delayMicros(uint32_t micros);

@@ -149,7 +149,7 @@ void Init()
 
   setUartPeripheralPointers();
 
-  Board_checkDockedDetectState();
+  LogAndStream_updateDockedStateAndCheckChanged();
   LogAndStream_checkSdInSlot();
   if (shimmerStatus.sdInserted)
   {
@@ -184,11 +184,11 @@ void Init()
   /* Sample both dock and USB-VBUS pins so the ownership decision below has
    * the complete picture.  Board_checkDockedDetectState() was already called
    * earlier (line 152) but we re-read here for consistency.  We deliberately
-   * do NOT call dockOrUsbStateUpdate() because it fires
+   * do NOT call LogAndStream_dockOrUsbStateUpdate() because it fires
    * LogAndStream_dockedStateChange() → TASK_SETUP_DOCK, which would cause a
    * redundant second pass through setupDock() from the main loop. */
   GPIO_usbVbusIntInit(1);
-  Board_checkDockedDetectState();
+  LogAndStream_updateDockedStateAndCheckChanged();
   shimmerStatus.usbPluggedIn
       = (HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_SET) ? 1 : 0;
 

@@ -511,22 +511,6 @@ void Board_setDockAccessToSd(uint8_t mcu0dock1)
 }
 
 /**
- * @brief  Check docked state and update shimmerStatus.docked, return whether state has changed
- * @param  none
- * @return 1 if docked state has changed, 0 if not
- */
-uint8_t Board_checkDockedDetectState(void)
-{
-  uint8_t previousDockedState = shimmerStatus.docked;
-#if TEST_UNDOCKED
-  shimmerStatus.docked = 0;
-#else  //TEST_UNDOCKED
-  shimmerStatus.docked = Board_isDocked();
-#endif //TEST_UNDOCKED
-  return previousDockedState != shimmerStatus.docked;
-}
-
-/**
  * use while loop to do delay microseconds
  */
 uint32_t multiplier;
