@@ -356,7 +356,10 @@ ULONG USBD_STORAGE_GetMediaLastLba(VOID)
   /* USER CODE BEGIN USBD_STORAGE_GetMediaLastLba */
   if (hsd1.Instance == NULL)
   {
-    return 0U;
+    /* Return a non-zero default so the MSC stack sees valid geometry during
+       class setup. Actual media-not-ready is reported by the Status, Read
+       and Write callbacks. */
+    return 1U;
   }
 
   HAL_SD_CardInfoTypeDef CardInfo = { 0 };
@@ -380,7 +383,10 @@ ULONG USBD_STORAGE_GetMediaBlocklength(VOID)
   /* USER CODE BEGIN USBD_STORAGE_GetMediaBlocklength */
   if (hsd1.Instance == NULL)
   {
-    return 0U;
+    /* Return a default block size so the MSC stack sees valid geometry during
+       class setup. Actual media-not-ready is reported by the Status, Read
+       and Write callbacks. */
+    return 512U;
   }
 
   HAL_SD_CardInfoTypeDef CardInfo = { 0 };

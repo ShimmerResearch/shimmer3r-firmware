@@ -189,8 +189,7 @@ void Init()
    * redundant second pass through setupDock() from the main loop. */
   GPIO_usbVbusIntInit(1);
   LogAndStream_updateDockedStateAndCheckChanged();
-  shimmerStatus.usbPluggedIn
-      = (HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_SET) ? 1 : 0;
+  shimmerStatus.usbPluggedIn = Board_isUsbPluggedIn();
 
   //Pass control of SD card to USB or dock (USB has priority)
   if (LogAndStream_isDockedOrUsbIn())
