@@ -327,7 +327,7 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     if (ShimBrd_isBoardSr48_6_0())
     {
       /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection.
- * Defer to unified debounced handler via TASK_USB_SETUP */
+       * Defer to unified debounced handler via TASK_USB_SETUP */
       ShimTask_setDockOrUsbStateChange();
       break;
     }
