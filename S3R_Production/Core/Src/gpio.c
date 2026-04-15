@@ -47,9 +47,6 @@ uint16_t ext_cnt5 = 0;
 uint16_t ext_cnt6 = 0;
 #endif
 
-static uint32_t g_dock_usb_last_tick = 0U;
-#define DOCK_USB_DEBOUNCE_MS 50U
-
 /* USER CODE END 1 */
 
 /** Configure pins
@@ -684,48 +681,6 @@ void platform_initGpioForRevision(void)
     //GPIO_InitStruct.Pull = GPIO_NOPULL;
     //GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     //HAL_GPIO_Init(J4_GPIO_INTERNAL6_GPIO_Port, &GPIO_InitStruct);
-  }
-}
-
-/**
- * @brief  Unified debounced handler for both dock and USB-VBUS state changes.
-
- * *
- * Called from the task runner (TASK_USB_SETUP) so that both DOCK_DETECT and
-
- * * USB_VBUS interrupts are funnelled through a single deferred path with
- * debounce.
- * Re-reads both pins after the debounce window, updates
- * shimmerStatus, and
- * triggers the dock/undock sequence only when something
- * has actually changed (or on first boot).
- */
-void dockOrUsbStateUpdate(void)
-{
-  const uint32_t now = HAL_GetTick();
-  if ((now - g_dock_usb_last_tick) < DOCK_USB_DEBOUNCE_MS)
-  {
-    /* Still inside the debounce window – reschedule so we come back later */
-    ShimTask_setDockOrUsbStateChange();
-    return;
-  }
-  g_dock_usb_last_tick = now;
-
-  /* --- Sample both pins --- */
-  uint8_t prevDocked = shimmerStatus.docked;
-  uint8_t prevUsb = shimmerStatus.usbPluggedIn;
-
-  Board_checkDockedDetectState(); /* updates shimmerStatus.docked */
-
-  GPIO_PinState vbusPin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
-  shimmerStatus.usbPluggedIn = (vbusPin == GPIO_PIN_SET) ? 1 : 0;
-
-  uint8_t dockChanged = (prevDocked != shimmerStatus.docked);
-  uint8_t usbChanged = (prevUsb != shimmerStatus.usbPluggedIn);
-
-  if (dockChanged || usbChanged || shimmerStatus.booting)
-  {
-    LogAndStream_dockedStateChange();
   }
 }
 

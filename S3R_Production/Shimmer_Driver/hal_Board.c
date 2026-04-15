@@ -649,6 +649,11 @@ uint8_t Board_isDocked(void)
 #endif //SUPPORT_SR48_6_0
 }
 
+bool Board_isUsbPluggedIn(void)
+{
+  return HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_SET;
+}
+
 void Board_setMicPower(uint8_t state)
 {
   Board_SW_MIC(state);

@@ -192,7 +192,7 @@ void Init()
   shimmerStatus.usbPluggedIn
       = (HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_SET) ? 1 : 0;
 
-  //Pass control of SD card to dock or USB (dock has priority)
+  //Pass control of SD card to USB or dock (USB has priority)
   if (LogAndStream_isDockedOrUsbIn())
   {
     LogAndStream_setupDock();
@@ -702,6 +702,16 @@ void platform_reset(void)
 uint32_t platform_getTick(void)
 {
   return HAL_GetTick();
+}
+
+bool platform_isDockUartInitialised(void)
+{
+  return DockUart_isInitialised();
+}
+
+bool platform_isUsbUartInitialised(void)
+{
+  return USBX_IsInitialised();
 }
 
 //Overrides weak function in LogAndStream driver

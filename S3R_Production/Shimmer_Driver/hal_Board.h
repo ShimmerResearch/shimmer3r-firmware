@@ -428,6 +428,7 @@ void Board_setExpansionBrdPower(uint8_t state);
 uint8_t Board_isBtnPressed(void);
 uint8_t Board_isSdInserted(void);
 uint8_t Board_isDocked(void);
+bool Board_isUsbPluggedIn(void);
 void Board_setMicPower(uint8_t state);
 
 #endif
