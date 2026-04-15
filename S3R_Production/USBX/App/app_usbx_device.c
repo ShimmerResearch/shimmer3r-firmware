@@ -26,6 +26,8 @@
 
 #include <string.h>
 
+#include "hal_Board.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -67,7 +69,15 @@ static UCHAR product_id[] = "XXXX";
 static UCHAR serial_id[20] = { ' ' };
 
 static volatile bool usbx_initialized = false;
-static volatile bool firstSuspendSkipped = false;
+
+/** Tick value recorded when the USB device stack is started.  Suspend events
+ *  received within SUSPEND_GRACE_MS of this timestamp are considered spurious
+ *  (hosts – especially Mac USB-C/Thunderbolt ports – may issue multiple
+ *  suspend events during HS chirp, PD probing or alternate-mode negotiation)
+ *  and are ignored.  Only suspends after the grace window are treated as
+ *  genuine cable-unplug events. */
+static volatile uint32_t usbInitTick = 0;
+#define SUSPEND_GRACE_MS 2000U
 
 /* USER CODE END PV */
 
@@ -248,7 +258,7 @@ UINT MX_USBX_Device_Init(VOID)
   USBX_APP_Device_Init();
 
   usbx_initialized = true;
-  firstSuspendSkipped = false;
+  usbInitTick = HAL_GetTick();
   /* USER CODE END MX_USBX_Device_Init1 */
 
   return ret;
@@ -324,11 +334,6 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
     /* USER CODE BEGIN UX_DEVICE_ATTACHED */
 
-    /* Skip the first suspend event after attachment, as it's a spurious event
-     * triggered by the host during enumeration. Sometimes it doesn't get
-     * triggered and the first event is ATTACHED */
-    firstSuspendSkipped = true;
-
     /* USER CODE END UX_DEVICE_ATTACHED */
 
     break;
@@ -361,16 +366,24 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
     /* USER CODE BEGIN UX_DCD_STM32_DEVICE_SUSPENDED */
 
-    /* Skip the first suspend event after attachment, as it's a spurious event
-     * triggered by the host during enumeration. Using this event to determine
-     * USB un-plug as we're currently unable to use VBUS within the USB
-     * peripheral (SCH issue with voltage divider?) in order to get
-     * UX_DEVICE_REMOVED working. */
-    if (firstSuspendSkipped)
+    /* Hosts (especially Mac USB-C / Thunderbolt ports) may issue multiple
+     * spurious suspend events during enumeration, HS chirp, or USB-PD / alt-
+     * mode probing.  Ignore all suspend events that arrive within the grace
+     * window after USB init.
+     *
+     * After the grace window, treat suspend as a cable-unplug indicator
+     * (because VBUS sensing inside the OTG peripheral is not usable on this
+     * hardware — see SCH voltage-divider note). As an extra safety check,
+     * confirm that the VBUS GPIO has actually gone low before triggering
+     * the dock/USB state change; a genuine host-initiated selective suspend
+     * will still have VBUS high and should be ignored here. */
+    if ((HAL_GetTick() - usbInitTick) >= SUSPEND_GRACE_MS)
     {
-      ShimTask_setDockOrUsbStateChange();
+      if (!Board_isUsbPluggedIn())
+      {
+        ShimTask_setDockOrUsbStateChange();
+      }
     }
-    firstSuspendSkipped = true;
 
     /* USER CODE END UX_DCD_STM32_DEVICE_SUSPENDED */
 
