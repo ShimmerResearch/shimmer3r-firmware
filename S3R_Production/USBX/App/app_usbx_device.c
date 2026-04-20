@@ -50,9 +50,6 @@
 /* USER CODE BEGIN UX_Device_Memory_Buffer */
 
 /* USER CODE END UX_Device_Memory_Buffer */
-#if defined(__ICCARM__)
-#pragma data_alignment = 32
-#endif
 /* The USBX byte pool backs all endpoint transfer buffers handed to the
  * SDMMC DMA via USBD_STORAGE_Read/Write. Align the pool itself to a full
  * 32-byte D-cache line (STM32U5 DCACHE line = 32 B) so that when we
@@ -61,9 +58,13 @@
  * sitting just before/after the pool. The individual sub-allocations
  * inside the pool are still only 8-byte aligned (ThreadX byte pool), which
  * is why the MSC callbacks must also round the maintenance range down/up
- * to the cache line. */
-__ALIGN_BEGIN static UCHAR ux_device_byte_pool_buffer[UX_DEVICE_APP_MEM_POOL_SIZE]
-    __attribute__((aligned(32))) __ALIGN_END;
+ * to the cache line.
+ *
+ * Use the HAL ALIGN_32BYTES() macro (from stm32u5xx_hal_def.h) so the
+ * alignment directive works for every supported toolchain (GCC / IAR /
+ * ARMCC) without sprinkling compiler-specific #pragma / __attribute__
+ * lines here. */
+ALIGN_32BYTES(static UCHAR ux_device_byte_pool_buffer[UX_DEVICE_APP_MEM_POOL_SIZE]);
 
 static ULONG storage_interface_number;
 static ULONG storage_configuration_number;
@@ -273,10 +274,24 @@ UINT MX_USBX_Device_Init(VOID)
   }
 
   /* USER CODE BEGIN MX_USBX_Device_Init1 */
+
+  /* Record the init timestamp BEFORE bringing up the PCD / enabling USB
+   * interrupts. Otherwise a SUSPENDED event delivered during enumeration
+   * (between HAL_PCD_Start and the assignment below) would see
+   * usbInitTick == 0 and the (HAL_GetTick() - 0) delta would immediately
+   * exceed SUSPEND_GRACE_MS, triggering a false unplug. As a belt-and-
+   * braces measure, USBD_ChangeFunction() also treats usbInitTick == 0 as
+   * "still within the grace window". Use 1 as a sentinel for the unlikely
+   * case that HAL_GetTick() returns 0 right at boot. */
+  usbInitTick = HAL_GetTick();
+  if (usbInitTick == 0U)
+  {
+    usbInitTick = 1U;
+  }
+
   USBX_APP_Device_Init();
 
   usbx_initialized = true;
-  usbInitTick = HAL_GetTick();
   /* USER CODE END MX_USBX_Device_Init1 */
 
   return ret;
@@ -395,7 +410,7 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
      * confirm that the VBUS GPIO has actually gone low before triggering
      * the dock/USB state change; a genuine host-initiated selective suspend
      * will still have VBUS high and should be ignored here. */
-    if ((HAL_GetTick() - usbInitTick) >= SUSPEND_GRACE_MS)
+    if ((usbInitTick != 0U) && ((HAL_GetTick() - usbInitTick) >= SUSPEND_GRACE_MS))
     {
       if (!Board_isUsbPluggedIn())
       {
