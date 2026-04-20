@@ -260,6 +260,23 @@
 
 /* #define UX_SLAVE_REQUEST_DATA_MAX_LENGTH                 2048 */
 
+/* Allow MSC to transfer up to 64 KB (128 SD blocks) per SCSI READ/WRITE.
+ * Default is 2048 (4 blocks). This is the single biggest MSC throughput
+ * knob on USBX. 64 KB is at/near the diminishing-returns knee; in practice
+ * 32 KB -> 64 KB gives only a small additional gain on this target because
+ * throughput is dominated by the SD card's post-write PROG time rather than
+ * the per-SCSI-CBW overhead, but we keep 64 KB as it's free once the pool
+ * is sized for it.
+ *
+ * Pool sizing: with UX_DEVICE_ENDPOINT_BUFFER_OWNER = 0 (core-managed,
+ * default), USBX allocates one buffer of this size per active data endpoint.
+ * ~6 endpoints x 64 KB = ~384 KB + stack/class overhead. The pool must be
+ * grown accordingly in app_usbx_device.h (UX_DEVICE_APP_MEM_POOL_SIZE).
+ * ALSO: ux_system_initialize() must be called with the pool size, not the
+ * legacy USBX_DEVICE_MEMORY_STACK_SIZE macro — otherwise stack_initialize
+ * fails silently and the device does not enumerate. */
+#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH   (64 * 1024)
+
 /* Defined, this enables processing of Get String Descriptor requests with zero
    Language ID. The first language ID in the language ID framework will be used
    if the request has a zero Language ID.  */

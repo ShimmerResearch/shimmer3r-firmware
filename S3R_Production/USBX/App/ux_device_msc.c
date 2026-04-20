@@ -144,9 +144,15 @@ UINT USBD_STORAGE_Read(VOID *storage_instance,
     return UX_ERROR;
   }
 #endif
-  uint32_t alignedAddr = ((uint32_t) data_pointer) & ~0x1F;
-  HAL_DCACHE_InvalidateByAddr(&hdcache1, (uint32_t *) alignedAddr,
-      total_length + ((uint32_t) data_pointer - alignedAddr));
+  /* D-cache invalidate for the region the SDMMC DMA just wrote into.
+   * Round the start down AND the end up to the 32-byte cache-line boundary,
+   * otherwise any partial cache line at either end can hold stale data that
+   * masks the DMA-fresh bytes the host is about to read back.
+   * (This mirrors the Clean range used in USBD_STORAGE_Write.) */
+  uint32_t alignedAddr = ((uint32_t) data_pointer) & ~0x1FU;
+  uint32_t full_size = (((uint32_t) data_pointer + total_length + 31U) & ~0x1FU) - alignedAddr;
+  HAL_DCACHE_InvalidateByAddr(&hdcache1, (uint32_t *) alignedAddr, full_size);
+  start_tick = HAL_GetTick();
   while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER)
   {
     if ((HAL_GetTick() - start_tick) > timeout_ms)

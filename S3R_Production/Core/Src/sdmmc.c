@@ -52,8 +52,8 @@ void MX_SDMMC1_SD_Init(void)
     hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
     hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
     hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
-    hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-    hsd1.Init.ClockDiv = 2;
+    hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_ENABLE;
+    hsd1.Init.ClockDiv = 0;
     if (HAL_SD_Init(&hsd1) != HAL_OK)
     {
       /* Do not call Error_Handler() here — HAL_SD_Init can legitimately
@@ -65,6 +65,13 @@ void MX_SDMMC1_SD_Init(void)
     /* USER CODE BEGIN SDMMC1_Init 2 */
     else
     {
+      /* Negotiate the card into SDR High-Speed mode (up to 50 MHz on the
+       * SDMMC_CK pin). Without this, SD spec caps the bus at 25 MHz
+       * regardless of ClockDiv, so a 48 MHz peripheral clock is wasted.
+       * If the card or host does not support HS we fall through and keep
+       * running — SDR12/Default-Speed is still functional. */
+      (void) HAL_SD_ConfigSpeedBusOperation(&hsd1, SDMMC_SPEED_MODE_HIGH);
+
       shimmerStatus.sdBadFile = 0;
       shimmerStatus.sdPeripheralInit = 1;
     }
