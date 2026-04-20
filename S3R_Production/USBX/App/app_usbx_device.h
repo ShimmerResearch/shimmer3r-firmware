@@ -47,13 +47,13 @@ extern "C"
 /* USER CODE BEGIN EC */
 
 /* Exported constants --------------------------------------------------------*/
-/* USBX memory pool. With UX_SLAVE_REQUEST_DATA_MAX_LENGTH = 32KB and
- * core-managed endpoint buffers, the stack allocates one ~32KB buffer per
+/* USBX memory pool. With UX_SLAVE_REQUEST_DATA_MAX_LENGTH = 64KB and
+ * core-managed endpoint buffers, the stack allocates one ~64KB buffer per
  * active endpoint plus framework/string/class overhead. ThreadX byte-pool
  * fragmentation + per-block headers means the practical need is noticeably
- * higher than the raw sum, so we allocate 384KB to be comfortable. RAM
+ * higher than the raw sum, so we allocate 640KB to be comfortable. RAM
  * budget is fine on STM32U5A5xJ (2.5MB SRAM). */
-#define UX_DEVICE_APP_MEM_POOL_SIZE 1024 * 640
+#define UX_DEVICE_APP_MEM_POOL_SIZE (1024U * 640U)
   //#define USBX_DEVICE_MEMORY_STACK_SIZE 1024 * 64
 
   /* USER CODE END EC */
