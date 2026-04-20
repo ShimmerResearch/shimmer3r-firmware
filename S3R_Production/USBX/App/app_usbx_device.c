@@ -461,7 +461,7 @@ VOID USBX_APP_Device_Init(VOID)
   HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x200); //512 (was 0x100)
 
   //2. Tx FIFO 0: Control Endpoint (Common)
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20); //64 (was 0x20) – 4× EP0 MPS
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20); //32 words (0x20 = 128 bytes) – 4× EP0 MPS
 
   //3. Tx FIFO 1: MSC Data IN (Matches USBD_MSC_EPIN_ADDR 0x81)
   /* MSC-biased: 256 words = 2x HS bulk MPS so the core can queue the next IN
