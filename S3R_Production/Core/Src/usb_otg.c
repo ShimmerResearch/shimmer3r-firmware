@@ -117,7 +117,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *pcdHandle)
     HAL_NVIC_SetPriority(OTG_HS_IRQn, 4, 0);
     HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
     /* USER CODE BEGIN USB_OTG_HS_MspInit 1 */
-
+    CRC_setState(CRC_SRC_USB, 1);
     /* USER CODE END USB_OTG_HS_MspInit 1 */
   }
 }
@@ -235,7 +235,7 @@ void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
     HAL_NVIC_SetPriority(OTG_HS_IRQn, 7, 0);
     HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
     /* USER CODE BEGIN USB_OTG_HS_MspInit 1 */
-
+    CRC_setState(CRC_SRC_USB, 1);
     /* USER CODE END USB_OTG_HS_MspInit 1 */
   }
 }
@@ -264,5 +264,21 @@ void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *pcdHandle)
   }
 }
 #endif
+
+void USB_init(void)
+{
+  if (!USBX_IsInitialised())
+  {
+    MX_USBX_Device_Init();
+  }
+}
+
+void USB_deinit(void)
+{
+  if (USBX_IsInitialised())
+  {
+    MX_USBX_Device_DeInit();
+  }
+}
 
 /* USER CODE END 1 */

@@ -47,6 +47,8 @@ extern "C"
   void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef *hpcd);
   void HAL_PCD_MspDeInit_NoVbusSense(PCD_HandleTypeDef *hpcd);
 #endif
+  void USB_init(void);
+  void USB_deinit(void);
 
   /* USER CODE END Prototypes */
 
