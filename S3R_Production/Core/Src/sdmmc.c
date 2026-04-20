@@ -192,8 +192,8 @@ void printSdCardInfo(char *outputStr)
   HAL_SD_GetCardCID(&hsd1, &pCID);
 
   //TODO decide if we want to print CSD info too - currently just prints CID (which has the manufacturer date)
-//  HAL_SD_CardCSDTypeDef pCSD;
-//  HAL_SD_GetCardCSD(&hsd1, &pCSD);
+  //HAL_SD_CardCSDTypeDef pCSD;
+  //HAL_SD_GetCardCSD(&hsd1, &pCSD);
 
   sprintf(outputStr, "Manufacturer: ");
   switch (pCID.ManufacturerID)

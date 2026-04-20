@@ -144,7 +144,7 @@
 /* Defined, this value represents how many ticks per seconds for a specific
    hardware platform. The default is 1000 indicating 1 tick per millisecond.  */
 
-#define UX_PERIODIC_RATE          1000
+#define UX_PERIODIC_RATE                 1000
 
 /* Define control transfer timeout value in millisecond.
    The default is 10000 milliseconds.  */
@@ -167,7 +167,7 @@
 /* Defined, this value is the maximum number of classes in the device stack that
    can be loaded by USBX.  */
 
-#define UX_MAX_SLAVE_CLASS_DRIVER 4
+#define UX_MAX_SLAVE_CLASS_DRIVER        4
 
 /* Defined, this value represents the number of different host controllers
    available in the system. For USB 1.1 support, this value will usually be 1.
@@ -275,7 +275,7 @@
  * ALSO: ux_system_initialize() must be called with the pool size, not the
  * legacy USBX_DEVICE_MEMORY_STACK_SIZE macro — otherwise stack_initialize
  * fails silently and the device does not enumerate. */
-#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH   (64 * 1024)
+#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH (64 * 1024)
 
 /* Defined, this enables processing of Get String Descriptor requests with zero
    Language ID. The first language ID in the language ID framework will be used

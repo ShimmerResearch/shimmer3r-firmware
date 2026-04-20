@@ -454,30 +454,32 @@ VOID USBX_APP_Device_Init(VOID)
   /* initialize the device controller HAL driver */
   MX_USB_OTG_HS_PCD_Init();
 
-  //1. Set Rx FIFO.  Must be at least big enough to hold the largest packet size (512 words for HS) plus some overhead for control transfers and status information.  The ST example sets this to 512 words, which is sufficient for HS with 2 bulk OUT EPs, but may need to be increased if more/larger OUT EPs are added.
+  //1. Set Rx FIFO.  Must be at least big enough to hold the largest packet size
+  //(512 words for HS) plus some overhead for control transfers and status information.
+  //The ST example sets this to 512 words, which is sufficient for HS with 2 bulk OUT EPs, but may need to be increased if more/larger OUT EPs are added.
   // 512 words RX is the ST example default for HS with 2 bulk OUT EPs.
-  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x200);   // 512 (was 0x100)
+  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x200); //512 (was 0x100)
 
   //2. Tx FIFO 0: Control Endpoint (Common)
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20); //  64 (was 0x20) – 4× EP0 MPS
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20); //64 (was 0x20) – 4× EP0 MPS
 
   //3. Tx FIFO 1: MSC Data IN (Matches USBD_MSC_EPIN_ADDR 0x81)
   /* MSC-biased: 256 words = 2x HS bulk MPS so the core can queue the next IN
    * packet while the previous one is still on the wire, maximising MSC
    * throughput. CDC Data IN (TX4) is sized down accordingly. */
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x100); // 256 MSC Data IN (2x HS MPS)
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x100); //256 MSC Data IN (2x HS MPS)
 
   /* 4. Set FIFO 2 */
   /* Since you use FIFO 3 and 4, FIFO 2 MUST be at least 16 words */
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, 0x10);  //  16 placeholder (unused IN EP2)
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, 0x10); //16 placeholder (unused IN EP2)
 
   //4. Tx FIFO 3: CDC Command IN (Matches USBD_CDCACM_EPINCMD_ADDR 0x83)
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 3, 0x20); //  32 CDC CMD IN
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 3, 0x20); //32 CDC CMD IN
 
   //5. Tx FIFO 4: CDC Data IN (Matches USBD_CDCACM_EPIN_ADDR 0x84)
   /* CDC is low-throughput (commands/telemetry); 128 words = ~2x HS MPS is
    * plenty and leaves FIFO budget for the MSC-biased TX1 above. */
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4, 0x80); // 128 CDC Data IN
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4, 0x80); //128 CDC Data IN
 
   /* USER CODE END USB_Device_Init_PreTreatment_1 */
 

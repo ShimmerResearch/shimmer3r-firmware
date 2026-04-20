@@ -53,8 +53,8 @@ extern "C"
  * fragmentation + per-block headers means the practical need is noticeably
  * higher than the raw sum, so we allocate 384KB to be comfortable. RAM
  * budget is fine on STM32U5A5xJ (2.5MB SRAM). */
-#define UX_DEVICE_APP_MEM_POOL_SIZE   1024 * 640
-//#define USBX_DEVICE_MEMORY_STACK_SIZE 1024 * 64
+#define UX_DEVICE_APP_MEM_POOL_SIZE 1024 * 640
+  //#define USBX_DEVICE_MEMORY_STACK_SIZE 1024 * 64
 
   /* USER CODE END EC */
 
