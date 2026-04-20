@@ -336,8 +336,21 @@
       x ? GPIO_PIN_RESET : GPIO_PIN_SET) //EXT_MEM: 0 for arm, 1 for pc
 #define Board_SW_FLASH(x) \
   HAL_GPIO_WritePin(SW_FLASH_GPIO_Port, SW_FLASH_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define Board_dockDetectN(x) \
-  HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET)
+/*
+ * Tell the dock's USB-SD bridge whether the shimmer is presenting an SD card.
+ *
+ * There are two different physical pins depending on board revision:
+ *   - Standard Shimmer3R: DETECT_N_Pin (PC5) is an active-low output routed
+ *     to the dock's USB-SD bridge CD input.  DOCK_DETECT_Pin (PB1) is an
+ *     input used by the shimmer to sense whether it is docked.
+ *   - SR48_6_0 prototype: no DETECT_N_Pin is wired; DOCK_DETECT_Pin (PB1)
+ *     is re-purposed at runtime (see gpio.c) as the output going to the
+ *     dock's USB-SD bridge CD input.
+ *
+ * Argument convention matches the DOCK_CARD_PRESENT / DOCK_CARD_NOT_PRESENT
+ * enum: 0 = card present (line asserted LOW), 1 = card absent (line HIGH).
+ */
+void Board_dockDetectN(uint8_t state);
 #elif defined(SHIMMER4_SDK)
 #define Board_sdMcu0Dock1(x) \
   HAL_GPIO_WritePin(GPIOG, EXT_MEM_Pin, x ? GPIO_PIN_SET : GPIO_PIN_RESET) //EXT_MEM: 0 for arm, 1 for pc
