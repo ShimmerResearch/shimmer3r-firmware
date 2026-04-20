@@ -293,9 +293,6 @@ UINT USBD_STORAGE_Status(VOID *storage_instance, ULONG lun, ULONG media_id, ULON
     return UX_ERROR;
   }
 
-  HAL_SD_CardCIDTypeDef pCID;
-  HAL_SD_CardCSDTypeDef pCSD;
-
   if (HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER)
   {
     status = UX_SUCCESS;
@@ -304,8 +301,7 @@ UINT USBD_STORAGE_Status(VOID *storage_instance, ULONG lun, ULONG media_id, ULON
   {
     status = UX_ERROR;
   }
-  HAL_SD_GetCardCID(&hsd1, &pCID);
-  HAL_SD_GetCardCSD(&hsd1, &pCSD);
+
   /* USER CODE END USBD_STORAGE_Status */
 
   return status;
