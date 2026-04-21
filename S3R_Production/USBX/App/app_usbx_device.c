@@ -111,6 +111,47 @@ static volatile bool usbx_initialized = false;
 static volatile uint32_t usbInitTick = 0;
 #define SUSPEND_GRACE_MS 2000U
 
+/* Re-entry guard for ux_device_stack_tasks_run().
+ *
+ * The stack task is pumped from two contexts:
+ *   (a) the main super-loop via USBX_Device_Process(), and
+ *   (b) the OTG_HS SOF interrupt (every 125 us at HS, 1 ms at FS) via the
+ *       UX_DCD_STM32_SOF_RECEIVED case in USBD_ChangeFunction, to guarantee
+ *       the USB out-endpoint re-arm / CBW handling happens on time even
+ *       when ShimTask_manage() holds the super-loop for many ms (SD
+ *       housekeeping, I2C battery read, dock (un)mount, etc.).  Without
+ *       (b), a direct USB-C -> USB-C HS link to a Mac xHCI root port
+ *       will NAK the MSC bulk-OUT CBW long enough (~30 s) to trigger the
+ *       host's BOT reset timeout and eventually unpublish the disk.
+ *
+ * USBX standalone uses __disable_irq based critical sections
+ * (_ux_utility_interrupt_disable) to protect its internal state, so an
+ * ISR-context invocation is safe in isolation.  However, USBX_CDC_ACM_
+ * Transmit() already spins in main context calling cdc_acm_write_task()
+ * which calls into ux_device_class_cdc_acm_write_run() -> the same state
+ * the SOF pump would otherwise walk.  To avoid re-entering the stack's
+ * transfer engine from the SOF ISR while the main context is mid-call,
+ * guard both entry points with a simple "in-progress" flag.  If the ISR
+ * finds the flag set it skips this tick; another SOF will come in 125 us. */
+static volatile uint8_t ux_tasks_run_inflight = 0;
+
+static inline VOID USBX_RunTasksGuarded(VOID)
+{
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  if (ux_tasks_run_inflight)
+  {
+    __set_PRIMASK(primask);
+    return;
+  }
+  ux_tasks_run_inflight = 1;
+  __set_PRIMASK(primask);
+
+  ux_device_stack_tasks_run();
+
+  ux_tasks_run_inflight = 0;
+}
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -479,6 +520,29 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
     /* USER CODE BEGIN UX_DCD_STM32_SOF_RECEIVED */
 
+    /* Intentionally NOT pumping ux_device_stack_tasks_run() from here.
+     *
+     * An earlier attempt did that (to guarantee OUT-endpoint re-arm at
+     * SOF rate on direct USB-C->USB-C HS links to Mac xHCI) but it
+     * broke MSC on USB-A / Windows.  Reason:
+     *   ux_device_stack_tasks_run() walks every registered class,
+     *   including MSC, which on a bulk-OUT CBW calls
+     *   USBD_STORAGE_Write -> HAL_SD_SharedWrite -> HAL_SD_WriteBlocks_DMA
+     *   and then SPINS (polled on sdTransferDone) waiting for the SDMMC
+     *   DMA completion ISR.  From OTG_HS SOF ISR context that's either:
+     *     (a) a priority-inversion hang if OTG_HS IRQ preempts SDMMC
+     *         IRQ (SDMMC completion can't fire while we're spinning in
+     *         the OTG ISR) -> 1000ms timeout -> HAL_TIMEOUT -> UX_ERROR
+     *         -> MSC endpoint stalls and never recovers, or
+     *     (b) at best, blocking the OTG_HS ISR for tens of ms per SD
+     *         op, during which every other USB event is missed.
+     *
+     * The correct place to pump the USBX task stack is the super-loop
+     * (USBX_Device_Process), where blocking SD I/O is acceptable.  If
+     * SOF-driven pumping is ever re-introduced, it MUST only service
+     * classes that are guaranteed non-blocking (e.g. CDC state machine)
+     * and MUST NOT call into MSC callbacks. */
+
     /* USER CODE END UX_DCD_STM32_SOF_RECEIVED */
 
     break;
@@ -502,7 +566,13 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 /* USER CODE BEGIN 1 */
 VOID USBX_Device_Process(VOID)
 {
-  ux_device_stack_tasks_run();
+  /* Super-loop pump for the USBX standalone task engine.
+   *
+   * Routed through the re-entry guard so that if any USBX API is ever
+   * added that also calls into the task engine from another context
+   * (e.g. USBX_CDC_ACM_Transmit's internal cdc_acm_write_task spin),
+   * the two cannot walk the stack state concurrently. */
+  USBX_RunTasksGuarded();
 }
 
 VOID USBX_APP_Device_Init(VOID)

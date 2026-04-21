@@ -54,6 +54,33 @@ void MX_USB_OTG_HS_PCD_Init(void)
   hpcd_USB_OTG_HS.Init.lpm_enable = DISABLE;
   hpcd_USB_OTG_HS.Init.use_dedicated_ep1 = DISABLE;
   hpcd_USB_OTG_HS.Init.vbus_sensing_enable = DISABLE;
+  /* Keep the Synopsys OTG_HS core in CPU-FIFO (slave) mode.
+   *
+   * Enabling dma_enable = ENABLE was tried as a fix for the Mac USB-C
+   * HS-only MSC write-timeout symptom (bulk-OUT 0x02 NAK'd for 30s on
+   * WRITE(10) CBWs) on the theory that the Mac xHCI root port streams
+   * 12KB bulk-OUT bursts faster than the super-loop can service the
+   * OUT FIFO in slave mode.  In practice, flipping it caused an
+   * immediate HardFault on Windows USB-A in the CDC-ACM write path
+   * (ux_device_class_cdc_acm_write_run), because:
+   *
+   *   - Every buffer handed to USBX must be 4-byte aligned and in
+   *     DMA-reachable RAM when DMA is enabled.  Many CDC-ACM tx call
+   *     sites in this project (dock response packets, factory-test
+   *     strings, etc.) pass arbitrarily-aligned buffers that the CPU-
+   *     FIFO path tolerated silently.
+   *   - USBX_CDC_ACM_Transmit forwards the caller's buffer pointer
+   *     straight to _ux_device_stack_transfer_run without bouncing
+   *     through an aligned staging buffer.
+   *
+   * Re-enabling DMA mode safely therefore requires a wider audit:
+   *    (a) bounce-copy CDC TX into an aligned internal buffer inside
+   *        USBX_CDC_ACM_Transmit, and
+   *    (b) verify every other USBX callsite (CDC RX, MSC, control)
+   *        uses aligned DMA-reachable buffers (MSC already does via
+   *        ux_device_byte_pool_buffer[]; CDC RX uses cdc_rx_buffer[]
+   *        which is .bss-located but alignment is not asserted).
+   * That work is out of scope here; keep slave mode for now. */
   hpcd_USB_OTG_HS.Init.dma_enable = DISABLE;
   if (HAL_PCD_Init(&hpcd_USB_OTG_HS) != HAL_OK)
   {

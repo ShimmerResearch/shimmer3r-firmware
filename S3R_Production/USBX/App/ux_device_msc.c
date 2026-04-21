@@ -238,8 +238,24 @@ UINT USBD_STORAGE_Write(VOID *storage_instance,
     return UX_ERROR;
   }
 
-  /* Round the cache-clean range to whole cache lines at BOTH ends so we
-   * don't leave a dirty partial line unwritten. */
+  /* D-cache maintenance for the host-filled buffer before the SDMMC DMA
+   * reads from it.
+   *
+   * In OTG_HS CPU-FIFO (slave) mode — the current configuration; see the
+   * comment in MX_USB_OTG_HS_PCD_Init — the CPU copies the host bulk-OUT
+   * packets out of the Synopsys FIFO and into this buffer via normal
+   * store instructions, which go through the D-cache.  The SDMMC DMA
+   * that is about to read this buffer bypasses the cache, so we MUST
+   * Clean the cache lines covering the buffer first, otherwise the
+   * SDMMC DMA would read stale pre-USB bytes from SRAM.
+   *
+   * (If we ever re-enable OTG DMA mode — hpcd_USB_OTG_HS.Init.dma_enable
+   * = ENABLE — this must flip to Invalidate, because the USB DMA would
+   * then write directly to SRAM bypassing cache and Clean would
+   * overwrite the USB-fresh bytes with stale cached data.)
+   *
+   * Round the range to whole 32-byte cache lines at BOTH ends so no
+   * dirty partial line at either boundary is left un-flushed. */
   uint32_t alignedAddr = (uint32_t) data_pointer & ~0x1F;
   uint32_t full_size = (((uint32_t) data_pointer + total_length + 31U) & ~0x1F) - alignedAddr;
   HAL_DCACHE_CleanByAddr(&hdcache1, (uint32_t *) alignedAddr, full_size);

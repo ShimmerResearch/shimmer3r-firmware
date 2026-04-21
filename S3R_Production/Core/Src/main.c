@@ -575,7 +575,12 @@ void HAL_Delay(uint32_t Delay)
 
 void sleepWhenNoTask(void)
 {
-  if (!USBX_IsInitialised())
+  if (USBX_IsInitialised())
+  {
+    /* idle: sleep until next IRQ (SOF, UART RX, HAL_GetTick SysTick, etc.) */
+    __WFI();
+  }
+  else
   {
     /* Only wake MCU when new Task is set. See corresponding
      * HAL_PWR_DisableSleepOnExit() in ShimTask_set() */
