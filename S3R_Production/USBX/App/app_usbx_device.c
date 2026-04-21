@@ -75,9 +75,30 @@ static UX_SLAVE_CLASS_CDC_ACM_PARAMETER cdc_acm_parameter;
 
 /* USER CODE BEGIN PV */
 
-static UCHAR vendor_id[] = "Shimmer";
-static UCHAR product_id[] = "XXXX";
-static UCHAR serial_id[20] = { ' ' };
+/* SCSI INQUIRY identity fields.
+ *
+ * USBX's _ux_device_class_storage_inquiry() does a FIXED-LENGTH memcpy of
+ *   - 8 bytes from vendor_id
+ *   - 16 bytes from product_id
+ *   - 4 bytes from product_rev
+ *   - 20 bytes from product_serial  (used by serial-page inquiry)
+ * regardless of the actual C string length.  The SCSI SPC standard
+ * requires these fields to be ASCII space-padded (0x20), NOT
+ * null-terminated.  If the source buffer is shorter than the fixed
+ * length, USBX reads out-of-bounds memory into the INQUIRY response;
+ * and if any byte in the response is 0x00, strict SCSI parsers (in
+ * particular Mac USB-C xHCI + AppleUSBMSC) reject the device and the
+ * storage interface never attaches — on the same cable the CDC TTY
+ * interface still comes up fine.  USB-A-through-a-TT and Windows are
+ * lenient about this and hide the bug.
+ *
+ * Size these buffers to exactly the widths USBX reads, pre-fill with
+ * 0x20, and do NOT leave a NUL terminator. */
+static UCHAR vendor_id[8]   = { 'S', 'h', 'i', 'm', 'm', 'e', 'r', ' ' };
+static UCHAR product_id[16] = { 'S', 'h', 'i', 'm', 'm', 'e', 'r', ' ',
+                                ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
+static UCHAR product_rev[4] = { '2', '.', '0', '0' };
+static UCHAR serial_id[20]  = { ' ' };
 
 static volatile bool usbx_initialized = false;
 
@@ -124,8 +145,28 @@ UINT MX_USBX_Device_Init(VOID)
   const UCHAR *usb_serial;
   size_t usb_serial_len;
 
-  /* Build the product ID for the Disk Drive string based on the Shimmer's MAC ID */
-  LogAndStream_buildShimmerMacSuffix((char *) product_id, sizeof(product_id));
+  /* Embed the Shimmer's 4-character MAC suffix into the SCSI INQUIRY
+   * product_id field.  product_id MUST remain exactly 16 bytes,
+   * space-padded, NOT null-terminated (see declaration comment).  Build
+   * the suffix into a temporary and copy only the ASCII digits into
+   * product_id[8..11], leaving the rest of the field as the pre-filled
+   * spaces. */
+  {
+    char mac_suffix[8];
+    size_t suffix_len;
+
+    LogAndStream_buildShimmerMacSuffix(mac_suffix, sizeof(mac_suffix));
+    suffix_len = strlen(mac_suffix);
+    if (suffix_len > 4U)
+    {
+      suffix_len = 4U;
+    }
+    if (suffix_len > 0U)
+    {
+      /* product_id[0..6] = "Shimmer", [7] = ' ', so put suffix at [8..11] */
+      memcpy(&product_id[8], mac_suffix, suffix_len);
+    }
+  }
 
   usb_serial = USBD_Get_UsbSerialStringPtr();
   memset(serial_id, ' ', sizeof(serial_id));
@@ -227,7 +268,11 @@ UINT MX_USBX_Device_Init(VOID)
 
   storage_parameter.ux_slave_class_storage_parameter_vendor_id = vendor_id;
   storage_parameter.ux_slave_class_storage_parameter_product_id = product_id;
-  //storage_parameter.ux_slave_class_storage_parameter_product_rev = (UCHAR *)STORAGE_PRODUCT_REV;
+  /* product_rev MUST be a valid 4-byte ASCII space-padded buffer.  USBX
+   * reads 4 bytes unconditionally from this pointer; leaving it NULL (as
+   * the previous code did) caused a 4-byte read from address 0 in the
+   * INQUIRY response, which strict SCSI parsers (Mac USB-C xHCI) reject. */
+  storage_parameter.ux_slave_class_storage_parameter_product_rev = product_rev;
   storage_parameter.ux_slave_class_storage_parameter_product_serial = serial_id;
 
   /* USER CODE END STORAGE_PARAMETER */
@@ -472,8 +517,16 @@ VOID USBX_APP_Device_Init(VOID)
   //1. Set Rx FIFO.  Must be at least big enough to hold the largest packet size
   //(512 words for HS) plus some overhead for control transfers and status information.
   //The ST example sets this to 512 words, which is sufficient for HS with 2 bulk OUT EPs, but may need to be increased if more/larger OUT EPs are added.
-  // 512 words RX is the ST example default for HS with 2 bulk OUT EPs.
-  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x200); //512 (was 0x100)
+  /* RX is shared across EP0 + MSC-OUT (0x02) + CDC-OUT (0x05).  At HS with
+   * two 512-byte bulk OUT endpoints plus EP0 SETUP overhead, 512 words is
+   * the Synopsys minimum but leaves no headroom for back-to-back bulk-OUT
+   * packets arriving from a Mac USB-C xHCI root port (no upstream TT to
+   * rate-limit).  Bumping to 576 words gives an extra 512-byte packet of
+   * cushion and has been observed to be necessary for reliable MSC
+   * enumeration on direct USB-C-to-USB-C HS links.  Budget (total 1024):
+   *   RX 0x240 + TX0 0x20 + TX1 0x100 + TX2 0x10 + TX3 0x20 + TX4 0x60
+   *   = 576 + 32 + 256 + 16 + 32 + 96 = 1008 words. */
+  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x240); //576 (was 0x200 = 512)
 
   //2. Tx FIFO 0: Control Endpoint (Common)
   HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20); //32 words (0x20 = 128 bytes) – 4× EP0 MPS
@@ -492,9 +545,9 @@ VOID USBX_APP_Device_Init(VOID)
   HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 3, 0x20); //32 CDC CMD IN
 
   //5. Tx FIFO 4: CDC Data IN (Matches USBD_CDCACM_EPIN_ADDR 0x84)
-  /* CDC is low-throughput (commands/telemetry); 128 words = ~2x HS MPS is
-   * plenty and leaves FIFO budget for the MSC-biased TX1 above. */
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4, 0x80); //128 CDC Data IN
+  /* CDC is low-throughput (commands/telemetry); 96 words = ~1.5x HS MPS is
+   * still plenty for CDC and frees words for the enlarged RX FIFO above. */
+  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4, 0x60); //96 CDC Data IN (was 0x80)
 
   /* USER CODE END USB_Device_Init_PreTreatment_1 */
 

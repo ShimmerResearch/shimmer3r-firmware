@@ -323,8 +323,19 @@ extern "C"
 #define USBD_CDCACM_EPIN_HS_MPS          512U
 #define USBD_CDCACM_EPOUT_FS_MPS         64U
 #define USBD_CDCACM_EPOUT_HS_MPS         512U
-#define USBD_CDCACM_EPINCMD_FS_BINTERVAL 5U
-#define USBD_CDCACM_EPINCMD_HS_BINTERVAL 5U
+/* CDC interrupt-IN polling interval.
+ * FS: bInterval is in frames (ms).  16 ms is the value used by the ST
+ *     reference CDC+MSC composite descriptors and by the Microsoft CDC
+ *     driver examples.
+ * HS: bInterval is 2^(n-1) * 125us.  9 -> 2^8 * 125us = 32 ms.  The
+ *     previous value of 5 was 2^4 * 125us = 2 ms which, on a composite
+ *     device, hogs a periodic microframe slot and has been observed to
+ *     cause Mac xHCI USB-C-to-USB-C HS enumeration to drop the MSC
+ *     interface (CDC TTY appears, MSC SD card does not).  The CDC
+ *     interrupt endpoint is only used to notify of control-line state
+ *     changes, so a 32 ms poll rate is more than sufficient. */
+#define USBD_CDCACM_EPINCMD_FS_BINTERVAL 0x10U
+#define USBD_CDCACM_EPINCMD_HS_BINTERVAL 0x09U
 
 #ifndef USBD_CONFIG_STR_DESC_IDX
 #define USBD_CONFIG_STR_DESC_IDX 0U

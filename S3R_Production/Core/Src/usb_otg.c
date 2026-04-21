@@ -46,6 +46,11 @@ void MX_USB_OTG_HS_PCD_Init(void)
   hpcd_USB_OTG_HS.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
   hpcd_USB_OTG_HS.Init.Sof_enable = DISABLE;
   hpcd_USB_OTG_HS.Init.low_power_enable = DISABLE;
+  /* LPM kept DISABLED.  Enabling it on STM32U5 OTG_HS requires the
+   * application to service LPM L1 suspend/resume callbacks; with USBX
+   * the default path does not, which can cause the link to stay in L1
+   * after a host LPM probe.  Mac USB-C xHCI root ports probe LPM during
+   * HS enumeration but will happily enumerate a non-LPM device. */
   hpcd_USB_OTG_HS.Init.lpm_enable = DISABLE;
   hpcd_USB_OTG_HS.Init.use_dedicated_ep1 = DISABLE;
   hpcd_USB_OTG_HS.Init.vbus_sensing_enable = DISABLE;

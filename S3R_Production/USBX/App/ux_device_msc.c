@@ -323,31 +323,44 @@ UINT USBD_STORAGE_Status(VOID *storage_instance, ULONG lun, ULONG media_id, ULON
   UINT status = UX_SUCCESS;
 
   /* USER CODE BEGIN USBD_STORAGE_Status */
+  UX_PARAMETER_NOT_USED(storage_instance);
+  UX_PARAMETER_NOT_USED(lun);
+  UX_PARAMETER_NOT_USED(media_id);
+  UX_PARAMETER_NOT_USED(media_status);
+
   if (hsd1.Instance == NULL)
   {
     return UX_ERROR;
   }
 
-  /* SCSI Test Unit Ready. If the card is (or may be) in PROG from a
-   * previous write, we still report READY here — the next actual Read or
-   * Write will wait for TRANSFER via USBD_STORAGE_WaitCardReady, and the
-   * host's MSC driver would otherwise interpret a NOT READY reply during
-   * heavy write bursts as a drive disconnect. Only if the card is in a
-   * truly bad state (not TRANSFER and not PROG) do we return error. */
-  if (sd_card_may_be_programming)
-  {
-    return UX_SUCCESS;
-  }
-
-  HAL_SD_CardStateTypeDef card_state = HAL_SD_GetCardState(&hsd1);
-  if (card_state == HAL_SD_CARD_TRANSFER || card_state == HAL_SD_CARD_PROGRAMMING)
-  {
-    status = UX_SUCCESS;
-  }
-  else
-  {
-    status = UX_ERROR;
-  }
+  /* SCSI Test Unit Ready / equivalent poll from the host.  This is called
+   * from the MSC class thread at the head of every CBW that isn't a
+   * read/write.  It MUST be fast and MUST NOT issue any SD-bus traffic
+   * of its own, for two reasons:
+   *
+   *  1. On a shared-SD design (see HAL_SD_SharedRead/Write in sdmmc.c)
+   *     issuing CMD13 via HAL_SD_GetCardState() here while another
+   *     owner (FatFs / sensing task) has an SDMMC DMA transfer in
+   *     flight will collide with that transfer, corrupt status, or
+   *     hang this callback waiting on a busy peripheral.  That hang
+   *     directly stalls the MSC bulk-OUT endpoint because the USBX
+   *     task cannot re-arm the endpoint until we return.  On direct
+   *     USB-C->USB-C HS links the Mac xHCI host gives up after ~30 s
+   *     of NAKs and triggers a BOT reset (endpoint 0x02 timeout,
+   *     fConsecutiveResetCount++).
+   *
+   *  2. Semantically TUR only needs to report "medium present / not
+   *     present / becoming ready".  If the card is actually bad, the
+   *     next Read/Write callback will fail and the CSW will carry a
+   *     FAILED status anyway — which is the correct SCSI way to
+   *     surface a transient error.
+   *
+   * So report READY unconditionally whenever the peripheral is
+   * initialised.  The previous implementation's use of
+   * HAL_SD_GetCardState + a may_be_programming hint is moved out; the
+   * real PROG-state wait already happens at the head of Read/Write/
+   * Flush via USBD_STORAGE_WaitCardReady, which is where it belongs. */
+  status = UX_SUCCESS;
 
   /* USER CODE END USBD_STORAGE_Status */
 
