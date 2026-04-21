@@ -54,6 +54,69 @@ void MX_USB_OTG_HS_PCD_Init(void)
   hpcd_USB_OTG_HS.Init.lpm_enable = DISABLE;
   hpcd_USB_OTG_HS.Init.use_dedicated_ep1 = DISABLE;
   hpcd_USB_OTG_HS.Init.vbus_sensing_enable = DISABLE;
+  /* Synopsys internal OTG DMA ENABLED.
+   *
+   * With dma_enable = ENABLE the OTG core DMA engine fetches/pushes
+   * transfer payload directly from/to the application buffer supplied to
+   * HAL_PCD_EP_Transmit/Receive, bypassing the CPU FIFO-copy loop. This
+   * is a throughput and IRQ-load win (no more per-packet FIFO copy in
+   * the OTG ISR), but imposes hard requirements on every bulk-endpoint
+   * buffer handed to the USBX stack:
+   *
+   *   1) Pointer alignment: the Synopsys DMA requires the transfer
+   *      buffer pointer to be 4-byte aligned. Misalignment -> AHB bus
+   *      fault -> HardFault. Audited and addressed for every USBX call
+   *      site -- see Doc/USBX_DMA_Alignment_And_Cache.md.
+   *        * MSC: buffers come from ux_device_byte_pool_buffer[] which
+   *          is ALIGN_32BYTES (app_usbx_device.c).
+   *        * CDC RX: cdc_rx_buffer[] is ALIGN_32BYTES
+   *          (ux_device_cdc_acm.c).
+   *        * CDC TX: USBX_CDC_ACM_Transmit() now bounces caller payload
+   *          through the ALIGN_32BYTES cdc_tx_buffer[] before handing
+   *          it to USBX, so caller pointer alignment is irrelevant.
+   *
+   *   2) D-cache coherency: OTG internal DMA bypasses the D-cache.
+   *      Every CPU<->DMA handoff needs HAL_DCACHE_CleanByAddr before
+   *      DMA reads CPU-written data, and HAL_DCACHE_InvalidateByAddr
+   *      before CPU reads DMA-written data. Ranges are rounded to
+   *      whole 32-byte cache lines at both ends. Audited and in place
+   *      for MSC R/W and CDC TX/RX.
+   *
+   *   3) Memory placement: all buffers live in main SRAM1/2/3, which
+   *      the OTG_HS DMA can reach over the AHB bus matrix. No linker
+   *      changes required.
+   *
+   *   4) FIFO sizing (HAL_PCDEx_SetRxFiFo / SetTxFiFo in
+   *      app_usbx_device.c::USBX_APP_Device_Init) stays valid; in DMA
+   *      mode the FIFOs are still used as the staging area between the
+   *      AHB DMA engine and the USB serial interface. Current budget
+   *      (RX 0x240 + TX0..4) totals 1008/1024 HS words and is unchanged.
+   *
+   * STATUS 2026-04-21: DMA mode DISABLED again.
+   * ------------------------------------------
+   * Extensive bring-up showed that the USBX-in-standalone-mode x
+   * OTG-DMA combination has layered pathologies in ST's HAL/USBX that
+   * show up as CDC-ACM endpoint wedges after the first host-side pause
+   * (Windows selective-suspend / CDC read-queue back-pressure):
+   *   - HAL_PCD_EP_Abort -> USB_EPStopXfer does not clear its internal
+   *     state cleanly if the host has stopped polling.
+   *   - USBX's own _ux_dcd_stm32_transfer_abort leaves the DCD ED
+   *     TRANSFER flag set, wedging _ux_dcd_stm32_transfer_run.
+   *   - USBX arms ZLP terminators that the Synopsys core parks waiting
+   *     to transmit, with no way to recover cleanly.
+   * MSC alone works fine in DMA mode (zero-copy from USBD_STORAGE_*
+   * into the DMA engine, no abort/recovery ever needed on the bulk-IN
+   * side). CDC is the pain point.
+   *
+   * Slave mode (FIFO copy) works reliably for both CDC and MSC on this
+   * platform, and MSC throughput in slave mode is still adequate for
+   * SD-card-backup-over-USB use cases. All the alignment / cache /
+   * bounce-buffer / DTR-gate / stall-watchdog / fault-register
+   * instrumentation stays in place -- it is correct regardless of
+   * DMA state, and makes slave-mode CDC more robust too.
+   *
+   * If DMA mode is re-attempted in future, the known outstanding
+   * issues are captured in Doc/USBX_DMA_Alignment_And_Cache.md. */
   hpcd_USB_OTG_HS.Init.dma_enable = DISABLE;
   if (HAL_PCD_Init(&hpcd_USB_OTG_HS) != HAL_OK)
   {
@@ -169,6 +232,11 @@ void MX_USB_OTG_HS_PCD_Init_NoVbusSense(void)
   hpcd_USB_OTG_HS.Init.lpm_enable = DISABLE;
   hpcd_USB_OTG_HS.Init.use_dedicated_ep1 = DISABLE;
   hpcd_USB_OTG_HS.Init.vbus_sensing_enable = DISABLE;
+  /* Keep the NoVbusSense variant consistent with the main init. See the
+   * large comment above MX_USB_OTG_HS_PCD_Init()'s dma_enable line for
+   * the reason this is currently DISABLE (USBX + OTG-DMA CDC wedges).
+   * If/when DMA mode is re-attempted for the main path, flip both in
+   * lockstep. */
   hpcd_USB_OTG_HS.Init.dma_enable = DISABLE;
 
   hpcd_USB_OTG_HS.MspInitCallback = HAL_PCD_MspInit_NoVbusSense;

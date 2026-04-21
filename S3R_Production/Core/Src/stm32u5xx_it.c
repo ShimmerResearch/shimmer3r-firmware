@@ -57,6 +57,103 @@
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+/* -------------------------------------------------------------------------
+ * Fault diagnostics
+ * -------------------------------------------------------------------------
+ * The default CubeMX HardFault_Handler is just a `while(1)`, which drops
+ * all information about WHY the fault occurred. When the USB OTG internal
+ * DMA is enabled, a large fraction of observed faults are IMPRECISE bus
+ * faults caused by a misaligned or out-of-range DMA buffer pointer.
+ * Without the fault registers it is nearly impossible to tell those apart
+ * from CPU-side pointer bugs or stack overflows.
+ *
+ * On entry to any of these handlers we latch:
+ *   - CFSR   (Configurable Fault Status)    : MemManage / BusFault / UsageFault reasons
+ *   - HFSR   (HardFault Status)             : forced vs. direct HardFault
+ *   - DFSR   (Debug Fault Status)
+ *   - MMFAR  (MemManage Fault Address)      : valid when CFSR.MMARVALID set
+ *   - BFAR   (BusFault Address)             : valid when CFSR.BFARVALID set
+ *   - AFSR   (Auxiliary Fault Status)
+ *   - stacked R0..R3, R12, LR, PC, xPSR     : from the faulting context
+ * so that a debugger halted on the subsequent __BKPT / while(1) can read
+ * them out directly. The stacked frame lets you find exactly which
+ * instruction faulted (PC) and which pointer operand it used (R0..R3).
+ *
+ * Look at fault_pc first. Cross-reference against the .list / .map.
+ * BFAR is the offending memory address for precise bus faults (most
+ * DMA-induced faults are IMPRECISE on M33 and BFAR will be invalid — in
+ * that case the fault is decoupled in time from the instruction that
+ * kicked the DMA; enable write-through on the relevant buffer or flip
+ * OTG DMA off temporarily to confirm). */
+volatile uint32_t fault_cfsr;
+volatile uint32_t fault_hfsr;
+volatile uint32_t fault_dfsr;
+volatile uint32_t fault_mmfar;
+volatile uint32_t fault_bfar;
+volatile uint32_t fault_afsr;
+volatile uint32_t fault_r0;
+volatile uint32_t fault_r1;
+volatile uint32_t fault_r2;
+volatile uint32_t fault_r3;
+volatile uint32_t fault_r12;
+volatile uint32_t fault_lr;
+volatile uint32_t fault_pc;
+volatile uint32_t fault_psr;
+volatile uint32_t fault_exc_return;
+volatile const char *fault_source;
+
+__attribute__((used)) void Fault_CaptureFromStack(uint32_t *stack, uint32_t exc_return, const char *src)
+{
+  fault_source     = src;
+  fault_exc_return = exc_return;
+  fault_cfsr       = SCB->CFSR;
+  fault_hfsr       = SCB->HFSR;
+  fault_dfsr       = SCB->DFSR;
+  fault_mmfar      = SCB->MMFAR;
+  fault_bfar       = SCB->BFAR;
+  fault_afsr       = SCB->AFSR;
+  if (stack != NULL)
+  {
+    fault_r0  = stack[0];
+    fault_r1  = stack[1];
+    fault_r2  = stack[2];
+    fault_r3  = stack[3];
+    fault_r12 = stack[4];
+    fault_lr  = stack[5];
+    fault_pc  = stack[6];
+    fault_psr = stack[7];
+  }
+}
+
+/* Common naked trampoline: pick MSP or PSP depending on EXC_RETURN bit 2,
+ * then call the C capture helper with that stack pointer, EXC_RETURN,
+ * and a fault-source string. Ends in BKPT (halts a connected debugger on
+ * the fault site) followed by an infinite loop if no debugger is
+ * attached.  Implemented as a naked function body so the prologue can
+ * never touch the stacked fault frame. */
+#define DEFINE_FAULT_HANDLER(_handler_name, _src_literal)                    \
+  __attribute__((naked, noreturn)) void _handler_name(void)                  \
+  {                                                                           \
+    __asm volatile(                                                           \
+        "tst   lr, #4                 \n" /* bit 2 of EXC_RETURN       */    \
+        "ite   eq                     \n"                                     \
+        "mrseq r0, msp                \n" /* stack was MSP             */    \
+        "mrsne r0, psp                \n" /* stack was PSP             */    \
+        "mov   r1, lr                 \n" /* EXC_RETURN                */    \
+        "ldr   r2, =1f                \n" /* pointer to label 1's str  */    \
+        "bl    Fault_CaptureFromStack \n"                                     \
+        "bkpt  #0                     \n" /* halt debugger here        */    \
+        "b     .                      \n" /* spin if no debugger       */    \
+        ".align 2                     \n"                                     \
+        "1: .asciz \"" _src_literal "\"\n"                                   \
+        ".align 2                     \n");                                   \
+  }
+
+DEFINE_FAULT_HANDLER(HardFault_Handler,  "HardFault")
+DEFINE_FAULT_HANDLER(MemManage_Handler,  "MemManage")
+DEFINE_FAULT_HANDLER(BusFault_Handler,   "BusFault")
+DEFINE_FAULT_HANDLER(UsageFault_Handler, "UsageFault")
+
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -109,63 +206,26 @@ void NMI_Handler(void)
 
 /**
  * @brief This function handles Hard fault interrupt.
+ *        Implemented above as a naked trampoline via
+ *        DEFINE_FAULT_HANDLER(HardFault_Handler, ...). The CubeMX
+ *        default while(1) stub is intentionally omitted here so we keep
+ *        the register-capturing version.
  */
-void HardFault_Handler(void)
-{
-  /* USER CODE BEGIN HardFault_IRQn 0 */
-
-  /* USER CODE END HardFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-    /* USER CODE END W1_HardFault_IRQn 0 */
-  }
-}
 
 /**
  * @brief This function handles Memory management fault.
+ *        See DEFINE_FAULT_HANDLER(MemManage_Handler, ...).
  */
-void MemManage_Handler(void)
-{
-  /* USER CODE BEGIN MemoryManagement_IRQn 0 */
-
-  /* USER CODE END MemoryManagement_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
-    /* USER CODE END W1_MemoryManagement_IRQn 0 */
-  }
-}
 
 /**
  * @brief This function handles Prefetch fault, memory access fault.
+ *        See DEFINE_FAULT_HANDLER(BusFault_Handler, ...).
  */
-void BusFault_Handler(void)
-{
-  /* USER CODE BEGIN BusFault_IRQn 0 */
-
-  /* USER CODE END BusFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
-    /* USER CODE END W1_BusFault_IRQn 0 */
-  }
-}
 
 /**
  * @brief This function handles Undefined instruction or illegal state.
+ *        See DEFINE_FAULT_HANDLER(UsageFault_Handler, ...).
  */
-void UsageFault_Handler(void)
-{
-  /* USER CODE BEGIN UsageFault_IRQn 0 */
-
-  /* USER CODE END UsageFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-    /* USER CODE END W1_UsageFault_IRQn 0 */
-  }
-}
 
 /**
  * @brief This function handles System service call via SWI instruction.

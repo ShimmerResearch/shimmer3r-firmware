@@ -31,6 +31,13 @@
 #include "ux_utility.h"
 #include "ux_device_stack.h"
 
+/* Needed for HAL_DCACHE_CleanByAddr / HAL_DCACHE_InvalidateByAddr and
+ * DCACHE_HandleTypeDef, used by the cache-maintenance block below. The
+ * MX-generated "dcache.h" provides `extern DCACHE_HandleTypeDef hdcache1`
+ * but we fall back to an inline extern declaration locally so this file
+ * does not depend on the application's Core/Inc layout. */
+#include "stm32u5xx_hal.h"
+
 
 #if defined(UX_DEVICE_STANDALONE)
 /**************************************************************************/
@@ -139,6 +146,58 @@ ULONG                   ed_status;
 
     /* Start transfer.  */
     ed -> ux_dcd_stm32_ed_status |= UX_DCD_STM32_ED_STATUS_TRANSFER;
+
+    /* D-cache maintenance around the OTG DMA hand-off.
+     * ------------------------------------------------
+     * In DMA mode (hpcd.Init.dma_enable = ENABLE) the Synopsys OTG core
+     * fetches/pushes the transfer payload over the AHB bus directly
+     * from/to transfer_request->ux_slave_transfer_request_data_pointer,
+     * bypassing the CPU D-cache. The HAL's PCD DMA path does NOT perform
+     * cache maintenance, so unless the application does it here the DMA
+     * will see stale SRAM and the host will receive zeros / time out.
+     *
+     * This matters more for classes that copy payload into a USBX-owned
+     * endpoint buffer via CPU memcpy (e.g. CDC-ACM, HID) than for
+     * zero-copy classes like MSC where the app already owns the buffer
+     * and does its own maintenance. Putting the maintenance here covers
+     * BOTH paths in one place (MSC's own clean becomes a cheap no-op on
+     * already-clean lines).
+     *
+     * Rules:
+     *   - IN (device -> host, DATA_OUT from the app's perspective):
+     *       CPU wrote last, DMA will read -> Clean before DMA start.
+     *   - OUT (host -> device, DATA_IN from the app's perspective):
+     *       DMA will write, CPU will read -> Invalidate before DMA
+     *       start. (Invalidate-before is safe for aligned buffers on
+     *       M33 when the CPU does not access the buffer during DMA.)
+     *
+     * The maintenance range is rounded down-at-start and up-at-end to
+     * the 32-byte D-cache line so any partial cache line at either end
+     * is flushed/invalidated too. The USBX byte pool is ALIGN_32BYTES
+     * (app_usbx_device.c) so the rounding never touches memory outside
+     * the pool. */
+    {
+        uint32_t dma_addr = (uint32_t)transfer_request->ux_slave_transfer_request_data_pointer;
+        uint32_t dma_len  = (uint32_t)transfer_request->ux_slave_transfer_request_requested_length;
+        if (dma_len != 0U && dma_addr != 0U)
+        {
+            uint32_t aligned_start = dma_addr & ~0x1FU;
+            uint32_t aligned_end   = (dma_addr + dma_len + 31U) & ~0x1FU;
+            uint32_t aligned_size  = aligned_end - aligned_start;
+            extern DCACHE_HandleTypeDef hdcache1;
+
+            if (transfer_request->ux_slave_transfer_request_phase == UX_TRANSFER_PHASE_DATA_OUT)
+            {
+                /* TX to host: CPU wrote last -> Clean. */
+                HAL_DCACHE_CleanByAddr(&hdcache1, (uint32_t *)aligned_start, aligned_size);
+            }
+            else
+            {
+                /* RX from host: DMA will write -> Invalidate. */
+                HAL_DCACHE_InvalidateByAddr(&hdcache1, (uint32_t *)aligned_start, aligned_size);
+            }
+        }
+    }
 
     /* Check for transfer direction.  Is this a IN endpoint ? */
     if (transfer_request -> ux_slave_transfer_request_phase == UX_TRANSFER_PHASE_DATA_OUT)
