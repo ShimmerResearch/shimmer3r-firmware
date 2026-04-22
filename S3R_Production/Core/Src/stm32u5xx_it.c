@@ -102,25 +102,26 @@ volatile uint32_t fault_psr;
 volatile uint32_t fault_exc_return;
 volatile const char *fault_source;
 
-__attribute__((used)) void Fault_CaptureFromStack(uint32_t *stack, uint32_t exc_return, const char *src)
+__attribute__((used)) void
+Fault_CaptureFromStack(uint32_t *stack, uint32_t exc_return, const char *src)
 {
-  fault_source     = src;
+  fault_source = src;
   fault_exc_return = exc_return;
-  fault_cfsr       = SCB->CFSR;
-  fault_hfsr       = SCB->HFSR;
-  fault_dfsr       = SCB->DFSR;
-  fault_mmfar      = SCB->MMFAR;
-  fault_bfar       = SCB->BFAR;
-  fault_afsr       = SCB->AFSR;
+  fault_cfsr = SCB->CFSR;
+  fault_hfsr = SCB->HFSR;
+  fault_dfsr = SCB->DFSR;
+  fault_mmfar = SCB->MMFAR;
+  fault_bfar = SCB->BFAR;
+  fault_afsr = SCB->AFSR;
   if (stack != NULL)
   {
-    fault_r0  = stack[0];
-    fault_r1  = stack[1];
-    fault_r2  = stack[2];
-    fault_r3  = stack[3];
+    fault_r0 = stack[0];
+    fault_r1 = stack[1];
+    fault_r2 = stack[2];
+    fault_r3 = stack[3];
     fault_r12 = stack[4];
-    fault_lr  = stack[5];
-    fault_pc  = stack[6];
+    fault_lr = stack[5];
+    fault_pc = stack[6];
     fault_psr = stack[7];
   }
 }
@@ -131,27 +132,26 @@ __attribute__((used)) void Fault_CaptureFromStack(uint32_t *stack, uint32_t exc_
  * the fault site) followed by an infinite loop if no debugger is
  * attached.  Implemented as a naked function body so the prologue can
  * never touch the stacked fault frame. */
-#define DEFINE_FAULT_HANDLER(_handler_name, _src_literal)                    \
-  __attribute__((naked, noreturn)) void _handler_name(void)                  \
-  {                                                                           \
-    __asm volatile(                                                           \
-        "tst   lr, #4                 \n" /* bit 2 of EXC_RETURN       */    \
-        "ite   eq                     \n"                                     \
-        "mrseq r0, msp                \n" /* stack was MSP             */    \
-        "mrsne r0, psp                \n" /* stack was PSP             */    \
-        "mov   r1, lr                 \n" /* EXC_RETURN                */    \
-        "ldr   r2, =1f                \n" /* pointer to label 1's str  */    \
-        "bl    Fault_CaptureFromStack \n"                                     \
-        "bkpt  #0                     \n" /* halt debugger here        */    \
-        "b     .                      \n" /* spin if no debugger       */    \
-        ".align 2                     \n"                                     \
-        "1: .asciz \"" _src_literal "\"\n"                                   \
-        ".align 2                     \n");                                   \
+#define DEFINE_FAULT_HANDLER(_handler_name, _src_literal)   \
+  __attribute__((naked, noreturn)) void _handler_name(void) \
+  {                                                         \
+    __asm volatile("tst   lr, #4                 \n" /* bit 2 of EXC_RETURN */                                                         \
+                   "ite   eq                     \n"        \
+                   "mrseq r0, msp                \n" /* stack was MSP */                                                         \
+                   "mrsne r0, psp                \n" /* stack was PSP */                                                         \
+                   "mov   r1, lr                 \n" /* EXC_RETURN */                                                         \
+                   "ldr   r2, =1f                \n" /* pointer to label 1's str  */                                                    \
+                   "bl    Fault_CaptureFromStack \n"        \
+                   "bkpt  #0                     \n" /* halt debugger here */                                                         \
+                   "b     .                      \n" /* spin if no debugger */                                                         \
+                   ".align 2                     \n"        \
+                   "1: .asciz \"" _src_literal "\"\n"       \
+                   ".align 2                     \n");      \
   }
 
-DEFINE_FAULT_HANDLER(HardFault_Handler,  "HardFault")
-DEFINE_FAULT_HANDLER(MemManage_Handler,  "MemManage")
-DEFINE_FAULT_HANDLER(BusFault_Handler,   "BusFault")
+DEFINE_FAULT_HANDLER(HardFault_Handler, "HardFault")
+DEFINE_FAULT_HANDLER(MemManage_Handler, "MemManage")
+DEFINE_FAULT_HANDLER(BusFault_Handler, "BusFault")
 DEFINE_FAULT_HANDLER(UsageFault_Handler, "UsageFault")
 
 /* USER CODE END 0 */

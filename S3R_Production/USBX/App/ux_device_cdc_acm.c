@@ -159,14 +159,14 @@ VOID USBD_CDC_ACM_ParameterChange(VOID *cdc_acm_instance)
 static inline void cdc_dcache_clean(const void *addr, uint32_t size)
 {
   uint32_t start = ((uint32_t) addr) & ~0x1FU;
-  uint32_t end   = (((uint32_t) addr) + size + 31U) & ~0x1FU;
+  uint32_t end = (((uint32_t) addr) + size + 31U) & ~0x1FU;
   HAL_DCACHE_CleanByAddr(&hdcache1, (uint32_t *) start, end - start);
 }
 
 static inline void cdc_dcache_invalidate(const void *addr, uint32_t size)
 {
   uint32_t start = ((uint32_t) addr) & ~0x1FU;
-  uint32_t end   = (((uint32_t) addr) + size + 31U) & ~0x1FU;
+  uint32_t end = (((uint32_t) addr) + size + 31U) & ~0x1FU;
   HAL_DCACHE_InvalidateByAddr(&hdcache1, (uint32_t *) start, end - start);
 }
 
@@ -238,29 +238,33 @@ static inline void cdc_dcache_invalidate(const void *addr, uint32_t size)
  * in ~ tens of microseconds, so 20 ms is orders of magnitude above the
  * expected completion time. If completion has not occurred by then,
  * the host is pausing and we return to the main loop. */
-#define CDC_TX_SYNC_DRIVE_MS 20U
+#define CDC_TX_SYNC_DRIVE_MS    20U
 
 /* How long USBX_CDC_ACM_Transmit() will wait for a PREVIOUSLY-queued
  * transfer to drain before refusing a new one. Kept small. If we
  * return usbx_busy, the caller can either retry or drop the payload. */
-#define CDC_TX_QUEUE_DRAIN_MS 10U
+#define CDC_TX_QUEUE_DRAIN_MS   10U
 
 /* Diagnostics. Exposed as volatiles so they can be inspected from a
  * debugger Expressions view without recompiling. They are cumulative
  * across the lifetime of the device. */
-volatile uint32_t cdc_tx_calls               = 0; /* USBX_CDC_ACM_Transmit() entries */
-volatile uint32_t cdc_tx_dropped_not_open    = 0; /* dropped because host had not opened the port */
-volatile uint32_t cdc_tx_dropped_not_configd = 0; /* dropped because device not CONFIGURED or cdc_acm NULL */
-volatile uint32_t cdc_tx_dropped_bad_args    = 0; /* NULL buffer / zero size */
-volatile uint32_t cdc_tx_dropped_busy        = 0; /* dropped because a previous transfer was still in flight */
-volatile uint32_t cdc_tx_truncated           = 0; /* caller payload > APP_TX_DATA_SIZE: truncated */
-volatile uint32_t cdc_tx_chunks_ok           = 0; /* chunks that completed cleanly */
-volatile uint32_t cdc_tx_chunks_queued       = 0; /* chunks that outlived the sync window and were finished asynchronously */
-volatile uint32_t cdc_tx_chunks_timeout      = 0; /* chunks aborted on the stall watchdog */
-volatile uint32_t cdc_tx_chunks_error        = 0; /* chunks aborted by engine error (non-timeout) */
-volatile uint32_t cdc_tx_bytes_ok            = 0; /* cumulative bytes successfully handed off */
-volatile uint32_t cdc_tx_last_timeout_tick   = 0; /* HAL_GetTick() of most recent timeout */
-volatile uint32_t cdc_tx_queued_tick         = 0; /* HAL_GetTick() when the current in-flight transfer was queued */
+volatile uint32_t cdc_tx_calls = 0; /* USBX_CDC_ACM_Transmit() entries */
+volatile uint32_t cdc_tx_dropped_not_open = 0; /* dropped because host had not opened the port */
+volatile uint32_t cdc_tx_dropped_not_configd
+    = 0; /* dropped because device not CONFIGURED or cdc_acm NULL */
+volatile uint32_t cdc_tx_dropped_bad_args = 0; /* NULL buffer / zero size */
+volatile uint32_t cdc_tx_dropped_busy
+    = 0; /* dropped because a previous transfer was still in flight */
+volatile uint32_t cdc_tx_truncated = 0; /* caller payload > APP_TX_DATA_SIZE: truncated */
+volatile uint32_t cdc_tx_chunks_ok = 0; /* chunks that completed cleanly */
+volatile uint32_t cdc_tx_chunks_queued
+    = 0; /* chunks that outlived the sync window and were finished asynchronously */
+volatile uint32_t cdc_tx_chunks_timeout = 0; /* chunks aborted on the stall watchdog */
+volatile uint32_t cdc_tx_chunks_error = 0; /* chunks aborted by engine error (non-timeout) */
+volatile uint32_t cdc_tx_bytes_ok = 0; /* cumulative bytes successfully handed off */
+volatile uint32_t cdc_tx_last_timeout_tick = 0; /* HAL_GetTick() of most recent timeout */
+volatile uint32_t cdc_tx_queued_tick
+    = 0; /* HAL_GetTick() when the current in-flight transfer was queued */
 
 /* Snapshot of the OTG-HS CDC bulk-IN (EP 0x84) registers taken at the
  * moment of the most recent timeout. Populated by cdc_tx_abort_and_reset()
@@ -279,12 +283,12 @@ volatile uint32_t cdc_tx_queued_tick         = 0; /* HAL_GetTick() when the curr
  *   - fault_diepdma4:   current DMA address; should equal the buffer
  *                       we handed to HAL_PCD_EP_Transmit + any bytes
  *                       the core already consumed. */
-volatile uint32_t fault_diepctl4   = 0;
-volatile uint32_t fault_dieptsiz4  = 0;
-volatile uint32_t fault_diepint4   = 0;
-volatile uint32_t fault_diepdma4   = 0;
-volatile uint32_t fault_gintsts    = 0;
-volatile uint32_t fault_dsts       = 0;
+volatile uint32_t fault_diepctl4 = 0;
+volatile uint32_t fault_dieptsiz4 = 0;
+volatile uint32_t fault_diepint4 = 0;
+volatile uint32_t fault_diepdma4 = 0;
+volatile uint32_t fault_gintsts = 0;
+volatile uint32_t fault_dsts = 0;
 
 /* Abort the CDC bulk-IN transfer in progress and put all state machines
  * back into a clean RESET so the next USBX_CDC_ACM_Transmit() call can
@@ -325,17 +329,18 @@ static void cdc_tx_abort_and_reset(void)
    * the peripheral is actually up. */
   if (hpcd_USB_OTG_HS.Instance != NULL)
   {
-    USB_OTG_GlobalTypeDef   *USBx    = hpcd_USB_OTG_HS.Instance;
-    uint32_t                 base    = (uint32_t) USBx;
-    USB_OTG_INEndpointTypeDef *in_ep4 = (USB_OTG_INEndpointTypeDef *) (base + USB_OTG_IN_ENDPOINT_BASE + (4U * USB_OTG_EP_REG_SIZE));
-    USB_OTG_DeviceTypeDef   *dev_reg = (USB_OTG_DeviceTypeDef *) (base + USB_OTG_DEVICE_BASE);
+    USB_OTG_GlobalTypeDef *USBx = hpcd_USB_OTG_HS.Instance;
+    uint32_t base = (uint32_t) USBx;
+    USB_OTG_INEndpointTypeDef *in_ep4 = (USB_OTG_INEndpointTypeDef *) (base
+        + USB_OTG_IN_ENDPOINT_BASE + (4U * USB_OTG_EP_REG_SIZE));
+    USB_OTG_DeviceTypeDef *dev_reg = (USB_OTG_DeviceTypeDef *) (base + USB_OTG_DEVICE_BASE);
 
-    fault_diepctl4  = in_ep4->DIEPCTL;
+    fault_diepctl4 = in_ep4->DIEPCTL;
     fault_dieptsiz4 = in_ep4->DIEPTSIZ;
-    fault_diepint4  = in_ep4->DIEPINT;
-    fault_diepdma4  = in_ep4->DIEPDMA;
-    fault_gintsts   = USBx->GINTSTS;
-    fault_dsts      = dev_reg->DSTS;
+    fault_diepint4 = in_ep4->DIEPINT;
+    fault_diepdma4 = in_ep4->DIEPDMA;
+    fault_gintsts = USBx->GINTSTS;
+    fault_dsts = dev_reg->DSTS;
   }
 
   /* Kick the hardware off the endpoint first so no stale DMA descriptor
@@ -371,10 +376,12 @@ static void cdc_tx_abort_and_reset(void)
      * issue CGINAK here: writing 1 to DCTL.CGINAK when global NAK is
      * not set is harmless (it's self-clearing). */
     {
-      USB_OTG_GlobalTypeDef      *USBx    = hpcd_USB_OTG_HS.Instance;
-      uint32_t                    base    = (uint32_t) USBx;
-      USB_OTG_INEndpointTypeDef  *in_ep4  = (USB_OTG_INEndpointTypeDef *) (base + USB_OTG_IN_ENDPOINT_BASE + (4U * USB_OTG_EP_REG_SIZE));
-      USB_OTG_DeviceTypeDef      *dev_reg = (USB_OTG_DeviceTypeDef *) (base + USB_OTG_DEVICE_BASE);
+      USB_OTG_GlobalTypeDef *USBx = hpcd_USB_OTG_HS.Instance;
+      uint32_t base = (uint32_t) USBx;
+      USB_OTG_INEndpointTypeDef *in_ep4 = (USB_OTG_INEndpointTypeDef *) (base
+          + USB_OTG_IN_ENDPOINT_BASE + (4U * USB_OTG_EP_REG_SIZE));
+      USB_OTG_DeviceTypeDef *dev_reg
+          = (USB_OTG_DeviceTypeDef *) (base + USB_OTG_DEVICE_BASE);
 
       /* Write-1-to-clear all pending flags on this EP. */
       in_ep4->DIEPINT = 0xFFFFFFFFU;
@@ -398,8 +405,8 @@ static void cdc_tx_abort_and_reset(void)
       UX_DCD_STM32_ED *ed = _stm32_ed_get(dcd_stm32, 0x84U); /* CDC Data IN */
       if (ed != UX_NULL)
       {
-        ed->ux_dcd_stm32_ed_status &= ~(UX_DCD_STM32_ED_STATUS_TRANSFER
-            | UX_DCD_STM32_ED_STATUS_DONE);
+        ed->ux_dcd_stm32_ed_status
+            &= ~(UX_DCD_STM32_ED_STATUS_TRANSFER | UX_DCD_STM32_ED_STATUS_DONE);
       }
     }
   }
@@ -409,19 +416,19 @@ static void cdc_tx_abort_and_reset(void)
    * complete on a freed/stale transfer_request next time. */
   if (cdc_acm != UX_NULL)
   {
-    cdc_acm->ux_device_class_cdc_acm_write_state         = UX_STATE_RESET;
-    cdc_acm->ux_device_class_cdc_acm_write_status        = UX_TRANSFER_NO_ANSWER;
+    cdc_acm->ux_device_class_cdc_acm_write_state = UX_STATE_RESET;
+    cdc_acm->ux_device_class_cdc_acm_write_status = UX_TRANSFER_NO_ANSWER;
     cdc_acm->ux_device_class_cdc_acm_write_actual_length = 0;
     cdc_acm->ux_device_class_cdc_acm_write_requested_length = 0;
   }
 
   /* Reset our wrapper state machine. */
-  usbx_cdc_tx_rx.tx_active       = 0;
+  usbx_cdc_tx_rx.tx_active = 0;
   usbx_cdc_tx_rx.tx_engine_state = UX_STATE_RESET;
-  usbx_cdc_tx_rx.tx_count        = 0;
-  usbx_cdc_tx_rx.tx_pending      = 0;
-  usbx_cdc_tx_rx.tx_scheduled    = 0;
-  usbx_cdc_tx_rx.tx_result       = usbx_error;
+  usbx_cdc_tx_rx.tx_count = 0;
+  usbx_cdc_tx_rx.tx_pending = 0;
+  usbx_cdc_tx_rx.tx_scheduled = 0;
+  usbx_cdc_tx_rx.tx_result = usbx_error;
 
   /* IMPORTANT: clear the stall-watchdog timestamp. Without this, if the
    * next transfer gets queued and the watchdog re-evaluates before the
@@ -511,8 +518,7 @@ usbx_cdc_acm_result_t USBX_CDC_ACM_Transmit(uint8_t *buffer, uint16_t size)
   if (usbx_cdc_tx_rx.tx_active)
   {
     uint32_t drain_start = HAL_GetTick();
-    while (usbx_cdc_tx_rx.tx_active
-        && (HAL_GetTick() - drain_start) < CDC_TX_QUEUE_DRAIN_MS)
+    while (usbx_cdc_tx_rx.tx_active && (HAL_GetTick() - drain_start) < CDC_TX_QUEUE_DRAIN_MS)
     {
       cdc_acm_write_task();
     }
@@ -521,8 +527,7 @@ usbx_cdc_acm_result_t USBX_CDC_ACM_Transmit(uint8_t *buffer, uint16_t size)
     {
       /* Transfer is wedged. If the stall watchdog has expired, abort
        * it here so this new transmit can proceed. Otherwise drop. */
-      if (cdc_tx_queued_tick != 0U
-          && (HAL_GetTick() - cdc_tx_queued_tick) >= CDC_TX_STALL_TIMEOUT_MS)
+      if (cdc_tx_queued_tick != 0U && (HAL_GetTick() - cdc_tx_queued_tick) >= CDC_TX_STALL_TIMEOUT_MS)
       {
         cdc_tx_chunks_timeout++;
         cdc_tx_last_timeout_tick = HAL_GetTick();
@@ -542,9 +547,7 @@ usbx_cdc_acm_result_t USBX_CDC_ACM_Transmit(uint8_t *buffer, uint16_t size)
    * chained multi-chunk queue. None of the current callers exceed this
    * (factory test strings, dock response packets). The counter lets
    * future callers notice. */
-  uint16_t chunk = (size > (uint16_t) APP_TX_DATA_SIZE)
-                       ? (uint16_t) APP_TX_DATA_SIZE
-                       : size;
+  uint16_t chunk = (size > (uint16_t) APP_TX_DATA_SIZE) ? (uint16_t) APP_TX_DATA_SIZE : size;
   if (size > (uint16_t) APP_TX_DATA_SIZE)
   {
     cdc_tx_truncated++;
@@ -557,15 +560,15 @@ usbx_cdc_acm_result_t USBX_CDC_ACM_Transmit(uint8_t *buffer, uint16_t size)
    * bytes from cache down to SRAM before the DMA engine fetches them. */
   cdc_dcache_clean(cdc_tx_buffer, chunk);
 
-  usbx_cdc_tx_rx.tx_buffer       = cdc_tx_buffer;
-  usbx_cdc_tx_rx.tx_length       = chunk;
-  usbx_cdc_tx_rx.tx_count        = 0;
+  usbx_cdc_tx_rx.tx_buffer = cdc_tx_buffer;
+  usbx_cdc_tx_rx.tx_length = chunk;
+  usbx_cdc_tx_rx.tx_count = 0;
   usbx_cdc_tx_rx.tx_engine_state = UX_STATE_RESET;
-  usbx_cdc_tx_rx.tx_scheduled    = 1;
-  usbx_cdc_tx_rx.tx_active       = 1;
-  usbx_cdc_tx_rx.tx_pending      = 0;
-  usbx_cdc_tx_rx.tx_result       = usbx_success;
-  cdc_tx_queued_tick             = HAL_GetTick();
+  usbx_cdc_tx_rx.tx_scheduled = 1;
+  usbx_cdc_tx_rx.tx_active = 1;
+  usbx_cdc_tx_rx.tx_pending = 0;
+  usbx_cdc_tx_rx.tx_result = usbx_success;
+  cdc_tx_queued_tick = HAL_GetTick();
 
   /* Synchronous-ish fast path: drive the engine briefly so small
    * messages typically complete before we return. Bounded so the main
@@ -577,8 +580,7 @@ usbx_cdc_acm_result_t USBX_CDC_ACM_Transmit(uint8_t *buffer, uint16_t size)
    * main loop's cdc_acm_write_task() carries it to completion (or the
    * stall watchdog eventually reaps it). */
   uint32_t sync_start = HAL_GetTick();
-  while (usbx_cdc_tx_rx.tx_active
-      && (HAL_GetTick() - sync_start) < CDC_TX_SYNC_DRIVE_MS)
+  while (usbx_cdc_tx_rx.tx_active && (HAL_GetTick() - sync_start) < CDC_TX_SYNC_DRIVE_MS)
   {
     cdc_acm_write_task();
 
@@ -639,8 +641,7 @@ VOID cdc_acm_write_task(VOID)
    * transfer. We ONLY check in this async/main-loop path; the
    * synchronous path in USBX_CDC_ACM_Transmit() never waits this
    * long so it never trips here. */
-  if (cdc_tx_queued_tick != 0U
-      && (HAL_GetTick() - cdc_tx_queued_tick) >= CDC_TX_STALL_TIMEOUT_MS)
+  if (cdc_tx_queued_tick != 0U && (HAL_GetTick() - cdc_tx_queued_tick) >= CDC_TX_STALL_TIMEOUT_MS)
   {
     cdc_tx_chunks_timeout++;
     cdc_tx_last_timeout_tick = HAL_GetTick();
@@ -767,8 +768,7 @@ VOID cdc_acm_read_task(VOID)
        * just filled so the subsequent CPU read (memcpy into
        * cdc_command_buffer below) observes the freshly received bytes
        * instead of a stale cache line. */
-      cdc_dcache_invalidate(usbx_cdc_tx_rx.rx_buffer + usbx_cdc_tx_rx.rx_count,
-          actual_length);
+      cdc_dcache_invalidate(usbx_cdc_tx_rx.rx_buffer + usbx_cdc_tx_rx.rx_count, actual_length);
     }
     usbx_cdc_tx_rx.rx_count += actual_length;
     if (status < UX_STATE_IDLE)
