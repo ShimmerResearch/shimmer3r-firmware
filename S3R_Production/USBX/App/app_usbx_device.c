@@ -511,66 +511,109 @@ VOID USBX_APP_Device_Init(VOID)
 
   /* USER CODE END USB_Device_Init_PreTreatment_0 */
 
-  /* initialize the device controller HAL driver */
+  /* Initialize the device controller HAL driver.  MX_USB_OTG_HS_PCD_Init()
+   * reads USB_getSpeed() internally and configures the peripheral for
+   * either HS or FS accordingly. */
   MX_USB_OTG_HS_PCD_Init();
 
-  //1. Set Rx FIFO.  Must be at least big enough to hold the largest packet size
-  //(512 words for HS) plus some overhead for control transfers and status information.
-  //The ST example sets this to 512 words, which is sufficient for HS with 2 bulk OUT EPs, but may need to be increased if more/larger OUT EPs are added.
-  /* RX is shared across EP0 + MSC-OUT (0x02) + CDC-OUT (0x05).  At HS with
-   * two 512-byte bulk OUT endpoints plus EP0 SETUP overhead, 512 words is
-   * the Synopsys minimum. 560 words (0x230) gives ~4.5x HS bulk packet
-   * depth of cushion for back-to-back bulk-OUT packets from xHCI hosts
-   * (no upstream TT to rate-limit). We shaved 16 words off the previous
-   * 576-word size to reclaim budget for the CDC Data IN FIFO fix below. */
-  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x230); //560 (was 0x240 = 576)
-
-  //2. Tx FIFO 0: Control Endpoint (Common)
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20); //32 words (0x20 = 128 bytes) – 4× EP0 MPS
-
-  //3. Tx FIFO 1: MSC Data IN (Matches USBD_MSC_EPIN_ADDR 0x81)
-  /* MSC-biased: 256 words = 2x HS bulk MPS so the core can queue the next IN
-   * packet while the previous one is still on the wire, maximising MSC
-   * throughput. */
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x100); //256 MSC Data IN (2x HS MPS)
-
-  /* 4. Set FIFO 2 */
-  /* Since you use FIFO 3 and 4, FIFO 2 MUST be at least 16 words */
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, 0x10); //16 placeholder (unused IN EP2)
-
-  //4. Tx FIFO 3: CDC Command IN (Matches USBD_CDCACM_EPINCMD_ADDR 0x83)
-  /* CDC Notification endpoint: interrupt IN, wMaxPacketSize = 8 bytes
-   * (2 words). The previous 32-word allocation was a large over-commit.
-   * 16 words is still 4x the MPS, plenty for SERIAL_STATE / line-state
-   * notifications which are tiny and infrequent. Reclaimed words are
-   * reassigned to the CDC Data IN FIFO below. */
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 3, 0x10); //16 CDC CMD IN (was 0x20)
-
-  //5. Tx FIFO 4: CDC Data IN (Matches USBD_CDCACM_EPIN_ADDR 0x84)
-  /* FIX: must be >= 1x HS bulk MPS (128 words = 512 bytes).
+  /* ------------------------------------------------------------------
+   * OTG_HS FIFO allocation
    *
-   * The previous 0x60 (= 96 words = 384 bytes) was UNDERSIZED for HS
-   * bulk-IN: the Synopsys OTG core requires each TxFIFO to hold at
-   * least one full max-packet-size. With a 384-byte FIFO the 512-byte
-   * CDC bulk-IN packet can never be fully staged, so in DMA mode the
-   * endpoint NEVER transmits and ux_device_class_cdc_acm_write_run()
-   * stays in UX_STATE_WAIT forever (observed symptom: CDC enumerates,
-   * the TTY opens, but no bytes come out of the device until Windows
-   * eventually tears the entire composite device down ~60 s later).
+   * The STM32U5 OTG_HS peripheral has a shared 1024-word FIFO RAM that
+   * is partitioned between one RX FIFO (shared by all OUT endpoints)
+   * and up to N TX FIFOs (one per IN endpoint).  The numbers below are
+   * in 32-bit words.  Endpoint map (matches the USB descriptors):
    *
-   * In pre-DMA FIFO mode this latent bug was partially masked because
-   * the CPU-driven TxFIFO-copy path could tolerate the FIFO underrun
-   * for short/partial packets; in DMA mode the packet engine is
-   * stricter and the bug becomes a hard hang.
+   *   EP0  IN/OUT  control      (TX FIFO 0, RX shared)
+   *   EP1  IN      MSC bulk-IN       (TX FIFO 1)
+   *   EP2  OUT     MSC bulk-OUT      (RX shared)
+   *   EP3  IN      CDC notification  (TX FIFO 3)
+   *   EP4  IN      CDC bulk-IN       (TX FIFO 4)
+   *   EP5  OUT     CDC bulk-OUT      (RX shared)
    *
-   * 128 words (1x HS MPS) is the minimum. 2x MPS would be nicer for
-   * back-to-back throughput but the total FIFO budget is 1024 words
-   * and MSC is prioritised for large-file-copy performance. */
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4, 0x80); //128 CDC Data IN = 1x HS MPS (was 0x60 = 96; UNDERSIZED)
+   * FIFO sizes differ for HS vs FS because the bulk max-packet-size
+   * differs (HS = 512 bytes = 128 words, FS = 64 bytes = 16 words) and
+   * each TX FIFO must be at least one full MPS.
+   * ------------------------------------------------------------------ */
+  if (USB_getSpeed() == USB_SPEED_HIGH)
+  {
+    /* ---------------- High-Speed FIFO layout ---------------------
+     * Budget: 1024 words total.  HS bulk MPS = 128 words (512 bytes).
+     *
+     *   RX  0x230 + TX0 0x20 + TX1 0x100 + TX2 0x10 + TX3 0x10 + TX4 0x80
+     *    = 560 + 32 + 256 + 16 + 16 + 128 = 1008 / 1024 words.
+     */
 
-  /* FIFO budget check (total must be <= 1024 HS words):
-   *   RX 0x230 + TX0 0x20 + TX1 0x100 + TX2 0x10 + TX3 0x10 + TX4 0x80
-   *   = 560 + 32 + 256 + 16 + 16 + 128 = 1008 / 1024 words. */
+    /* RX: shared across EP0 SETUP + MSC-OUT + CDC-OUT.  560 words gives
+     * ~4.5x HS bulk MPS of cushion for back-to-back bulk-OUT packets
+     * from xHCI hosts (no upstream TT to rate-limit). */
+    HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x230); //560 words
+
+    /* TX0 – EP0 control IN.  4x EP0 MPS (64B). */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20); //32 words
+
+    /* TX1 – MSC bulk-IN.  2x HS MPS so the core can queue the next IN
+     * packet while the previous one is still on the wire, maximising
+     * MSC throughput. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x100); //256 words (2x HS MPS)
+
+    /* TX2 – unused IN EP2 placeholder.  Must still be >= 16 words
+     * because TX3 and TX4 are populated. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, 0x10); //16 words
+
+    /* TX3 – CDC notification (interrupt IN, MPS = 8 bytes = 2 words).
+     * 16 words is 8x MPS, plenty for SERIAL_STATE / line-state
+     * notifications which are tiny and infrequent. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 3, 0x10); //16 words
+
+    /* TX4 – CDC bulk-IN.  MUST be >= 1x HS bulk MPS (128 words / 512
+     * bytes): the Synopsys OTG core requires each TxFIFO to hold at
+     * least one full max-packet-size, otherwise the endpoint can hang
+     * with ux_device_class_cdc_acm_write_run() stuck in UX_STATE_WAIT
+     * (symptom: CDC enumerates and the TTY opens but no bytes come out
+     * of the device until the host eventually tears the composite
+     * device down ~60 s later).  2x MPS would be nicer for back-to-back
+     * throughput but the total budget is 1024 words and MSC is
+     * prioritised for large-file-copy performance. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4, 0x80); //128 words (1x HS MPS)
+  }
+  else
+  {
+    /* ---------------- Full-Speed FIFO layout ---------------------
+     * Budget: 1024 words total.  FS bulk/control MPS = 16 words (64
+     * bytes), interrupt MPS here = 2 words (8 bytes).  FS needs far
+     * less RAM than HS; we still allocate a generous cushion because
+     * the budget is plentiful.
+     *
+     *   RX  0x80 + TX0 0x20 + TX1 0x40 + TX2 0x10 + TX3 0x10 + TX4 0x40
+     *    = 128 + 32 + 64 + 16 + 16 + 64 = 320 / 1024 words.
+     */
+
+    /* RX: shared across EP0 SETUP + MSC-OUT + CDC-OUT.  128 words is
+     * ~8x FS bulk MPS of cushion – easily enough for two back-to-back
+     * 64-byte OUT packets plus SETUP overhead. */
+    HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x80); //128 words
+
+    /* TX0 – EP0 control IN.  2x EP0 MPS. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20); //32 words
+
+    /* TX1 – MSC bulk-IN.  4x FS MPS so the core can queue several IN
+     * packets ahead of the wire.  At FS the wall-clock throughput is
+     * bounded by the 12 Mbps line rate, so over-provisioning beyond
+     * ~4x MPS offers no benefit. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x40); //64 words (4x FS MPS)
+
+    /* TX2 – unused IN EP2 placeholder.  Must still be >= 16 words. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, 0x10); //16 words
+
+    /* TX3 – CDC notification (interrupt IN, MPS = 8 bytes = 2 words). */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 3, 0x10); //16 words
+
+    /* TX4 – CDC bulk-IN.  Must be >= 1x FS MPS.  4x MPS gives headroom
+     * for back-to-back IN packets without forcing the CDC write path to
+     * wait for FIFO drain. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4, 0x40); //64 words (4x FS MPS)
+  }
 
   /* USER CODE END USB_Device_Init_PreTreatment_1 */
 

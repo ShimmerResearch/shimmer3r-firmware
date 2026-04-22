@@ -24,6 +24,28 @@
 #include "app_usbx_device.h"
 #include "main.h" // for USB_VBUS_Pin/Port
 
+/* Currently-selected USB bus speed.  Defaults to High-Speed; may be
+ * overridden at boot via USB_setSpeed() (e.g. from an EEPROM setting)
+ * before USB_init() is called.  Both MX_USB_OTG_HS_PCD_Init() and the
+ * FIFO allocation in USBX_APP_Device_Init() read this value. */
+static USB_Speed_t usb_selected_speed = USB_SPEED_HIGH;
+
+void USB_setSpeed(USB_Speed_t speed)
+{
+  usb_selected_speed = speed;
+}
+
+USB_Speed_t USB_getSpeed(void)
+{
+  return usb_selected_speed;
+}
+
+/* Map the logical USB_Speed_t selection to the HAL PCD speed constant. */
+static uint32_t USB_getPcdSpeed(void)
+{
+  return (usb_selected_speed == USB_SPEED_FULL) ? PCD_SPEED_FULL : PCD_SPEED_HIGH;
+}
+
 /* USER CODE END 0 */
 
 PCD_HandleTypeDef hpcd_USB_OTG_HS;
@@ -42,7 +64,7 @@ void MX_USB_OTG_HS_PCD_Init(void)
   /* USER CODE END USB_OTG_HS_Init 1 */
   hpcd_USB_OTG_HS.Instance = USB_OTG_HS;
   hpcd_USB_OTG_HS.Init.dev_endpoints = 9;
-  hpcd_USB_OTG_HS.Init.speed = PCD_SPEED_HIGH;
+  hpcd_USB_OTG_HS.Init.speed = USB_getPcdSpeed();
   hpcd_USB_OTG_HS.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
   hpcd_USB_OTG_HS.Init.Sof_enable = DISABLE;
   hpcd_USB_OTG_HS.Init.low_power_enable = DISABLE;
@@ -269,6 +291,7 @@ void USB_init(void)
 {
   if (!USBX_IsInitialised())
   {
+    USB_setSpeed(ShimEeprom_getRadioDetails()->usbHighSpeed ? USB_SPEED_HIGH : USB_SPEED_FULL);
     MX_USBX_Device_Init();
   }
 }

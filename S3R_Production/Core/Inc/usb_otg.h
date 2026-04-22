@@ -42,6 +42,24 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
+  /**
+   * USB bus speed selection.  The STM32U5 OTG_HS peripheral with the
+   * embedded HS PHY can enumerate either at High-Speed (480 Mbps) or be
+   * forced to Full-Speed (12 Mbps) via PCD_SPEED_FULL.  The selected
+   * value feeds both hpcd_USB_OTG_HS.Init.speed and the FIFO allocation
+   * in USBX_APP_Device_Init().  Set this BEFORE calling USB_init().
+   */
+  typedef enum
+  {
+    USB_SPEED_HIGH = 0, /*!< USB 2.0 High-Speed (480 Mbps) – default */
+    USB_SPEED_FULL = 1, /*!< USB 2.0 Full-Speed (12 Mbps) */
+  } USB_Speed_t;
+
+  /** Select the USB speed used on the next USB_init(). */
+  void USB_setSpeed(USB_Speed_t speed);
+  /** Return the currently-selected USB speed. */
+  USB_Speed_t USB_getSpeed(void);
+
 #if SUPPORT_SR48_6_0
   void MX_USB_OTG_HS_PCD_Init_NoVbusSense(void);
   void HAL_PCD_MspInit_NoVbusSense(PCD_HandleTypeDef *hpcd);
