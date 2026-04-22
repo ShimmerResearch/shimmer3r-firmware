@@ -50,18 +50,6 @@ volatile uint8_t SD_READ_FLAG = 0;
 volatile uint8_t SD_WRITE_FLAG = 0;
 extern DCACHE_HandleTypeDef hdcache1;
 
-/* Set true at the end of a write DMA, cleared once the card has been
- * observed to return to the TRANSFER state. While this is true the card is
- * (or may still be) in its internal PROG phase committing data to NAND and
- * cannot accept a new read/write command. By deferring the PROG-state
- * poll from the end of the previous write to the start of the NEXT
- * read/write/flush, the PROG time overlaps with the USB bulk-OUT phase
- * of the next chunk (host streaming the next 32/64 KB into our buffer
- * while the card still programs the previous chunk), instead of being
- * pure dead time. On cheap class-10 cards this is a ~2-3x MSC write
- * throughput improvement. */
-static volatile bool sd_card_may_be_programming = false;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -88,7 +76,6 @@ static UINT USBD_STORAGE_WaitCardReady(uint32_t timeout_ms)
       return UX_ERROR;
     }
   }
-  sd_card_may_be_programming = false;
   return UX_SUCCESS;
 }
 
@@ -258,15 +245,6 @@ UINT USBD_STORAGE_Write(VOID *storage_instance,
     return UX_ERROR;
   }
 #endif
-
-  /* DMA complete means the card has received the data; the card will now
-   * spend tens of ms in PROG committing it to NAND. We DO NOT wait for
-   * that to finish here — returning UX_STATE_NEXT immediately lets USBX
-   * send CSW to the host so the next bulk-OUT can start flowing in
-   * parallel with the PROG phase. The next Read/Write/Flush/Status will
-   * wait for TRANSFER state via USBD_STORAGE_WaitCardReady before issuing
-   * a new command. */
-  sd_card_may_be_programming = true;
 
   status = UX_STATE_NEXT;
   /* USER CODE END USBD_STORAGE_Write */
