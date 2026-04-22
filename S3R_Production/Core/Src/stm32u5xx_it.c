@@ -132,21 +132,21 @@ Fault_CaptureFromStack(uint32_t *stack, uint32_t exc_return, const char *src)
  * the fault site) followed by an infinite loop if no debugger is
  * attached.  Implemented as a naked function body so the prologue can
  * never touch the stacked fault frame. */
-#define DEFINE_FAULT_HANDLER(_handler_name, _src_literal)   \
-  __attribute__((naked, noreturn)) void _handler_name(void) \
-  {                                                         \
-    __asm volatile("tst   lr, #4                 \n" /* bit 2 of EXC_RETURN */                                                         \
-                   "ite   eq                     \n"        \
-                   "mrseq r0, msp                \n" /* stack was MSP */                                                         \
-                   "mrsne r0, psp                \n" /* stack was PSP */                                                         \
-                   "mov   r1, lr                 \n" /* EXC_RETURN */                                                         \
-                   "ldr   r2, =1f                \n" /* pointer to label 1's str  */                                                    \
-                   "bl    Fault_CaptureFromStack \n"        \
-                   "bkpt  #0                     \n" /* halt debugger here */                                                         \
-                   "b     .                      \n" /* spin if no debugger */                                                         \
-                   ".align 2                     \n"        \
-                   "1: .asciz \"" _src_literal "\"\n"       \
-                   ".align 2                     \n");      \
+#define DEFINE_FAULT_HANDLER(_handler_name, _src_literal)                      \
+  __attribute__((naked, noreturn)) void _handler_name(void)                    \
+  {                                                                            \
+    __asm volatile("tst   lr, #4                 \n" /* bit 2 of EXC_RETURN */ \
+                   "ite   eq                     \n"                           \
+                   "mrseq r0, msp                \n" /* stack was MSP */       \
+                   "mrsne r0, psp                \n" /* stack was PSP */       \
+                   "mov   r1, lr                 \n" /* EXC_RETURN */          \
+                   "ldr   r2, =1f                \n" /* pointer to label 1's str  */                                                                       \
+                   "bl    Fault_CaptureFromStack \n"                           \
+                   "bkpt  #0                     \n" /* halt debugger here */  \
+                   "b     .                      \n" /* spin if no debugger */ \
+                   ".align 2                     \n"                           \
+                   "1: .asciz \"" _src_literal "\"\n"                          \
+                   ".align 2                     \n");                         \
   }
 
 DEFINE_FAULT_HANDLER(HardFault_Handler, "HardFault")
