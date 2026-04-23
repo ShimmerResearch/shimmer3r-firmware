@@ -22,7 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 #include "app_usbx_device.h"
-#include "main.h" // for USB_VBUS_Pin/Port
+#include "main.h"                // for USB_VBUS_Pin/Port
 #include "stm32u5xx_ll_system.h" // for LL_SYSCFG_DisableOTGPHY()
 
 /* Currently-selected USB bus speed.  Defaults to Full-Speed; may be
