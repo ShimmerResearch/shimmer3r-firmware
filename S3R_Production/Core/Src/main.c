@@ -302,18 +302,21 @@ int main(void)
     {
       ux_device_stack_tasks_run();
 
-      /* CDC TX: always poll the write task. It has its own guards for
-       * (cdc_acm == NULL || device_state != CONFIGURED) and will early-
-       * return when there's no work. We MUST poll this even when the
-       * host has closed the COM port (!IsPortOpen) so the internal
-       * stall watchdog gets a chance to abort transfers that were
-       * queued while the port was open and then got stranded when the
-       * host stopped polling / closed the port. Gating it behind
-       * IsPortOpen() (as the old code did) meant a stale in-flight
-       * transfer could wedge tx_active=1 forever until the next port
-       * open, at which point every new USBX_CDC_ACM_Transmit() would
-       * return usbx_busy. */
-      cdc_acm_write_task();
+      /* CDC TX: poll the write task whenever the CDC ACM instance is
+       * valid and the device is configured, even if the host has
+       * closed the COM port (!IsPortOpen). This still allows the
+       * internal stall watchdog to abort transfers that were queued
+       * while the port was open and then got stranded when the host
+       * stopped polling / closed the port, without risking a NULL
+       * dereference if the device disconnects or deactivates while a
+       * TX is in flight. Gating only on IsPortOpen() (as the old code
+       * did) meant a stale in-flight transfer could wedge tx_active=1
+       * forever until the next port open, at which point every new
+       * USBX_CDC_ACM_Transmit() would return usbx_busy. */
+      if ((cdc_acm != NULL) && (device_state == UX_DEVICE_CONFIGURED))
+      {
+        cdc_acm_write_task();
+      }
 
       /* CDC RX: only touch once the host has opened the port (DTR
        * asserted). Before that, arming a bulk-OUT receive is wasted
