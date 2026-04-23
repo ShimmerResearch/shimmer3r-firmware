@@ -166,6 +166,16 @@ void Init()
   InitialiseBt();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
+
+  /* Check if radio details in EEPROM are correct - if not, update them and
+   * write to EEPROM. This is only currently used for Shimmer3 but implementing
+   * for completeness */
+  if (ShimEeprom_areRadioDetailsIncorrect())
+  {
+    ShimEeprom_updateRadioDetails();
+    ShimEeprom_writeSensorSettingsPage();
+  }
+
   //BtStop(true);
 
 #elif defined(SHIMMER4_SDK)
