@@ -431,20 +431,41 @@ void Board_sdPowerCycle(uint8_t dockAccessToSd)
  */
 void Board_sd2Pc(void)
 {
-  /* Ensure the dock sees "no card" during the entire handover */
+  /* Ensure the dock sees "no card" during the entire handover.
+   *
+   * This is critical for the USB→Dock transition: during USB ownership
+   * the MCU was driving the SDMMC1 bus and the dock's USB-SD bridge
+   * saw DETECT_N asserted LOW the whole time.  The bridge only probes
+   * SD when CD goes LOW, so without a HIGH→LOW edge here it will keep
+   * showing stale / no media to the host PC.  A physical undock→redock
+   * works by accident today because the bridge loses its connection to
+   * the shimmer-side CD signal at the dock connector during undock. */
   Board_dockDetectN(DOCK_CARD_NOT_PRESENT);
 
   /* Cleanly release SD from MCU side before power/route changes */
   ShimSd_mount(SD_UNMOUNT); /* Unmount FS while MCU still owns the bus */
-  mmc1DeInit();             /* De-init SDMMC to tri-state pins */
+
+  /* Only tear down SDMMC1 if it was actually in use (USBX MSC path or
+   * MCU-side FATFS).  On a truly fresh dock-only boot hsd1.Instance is
+   * still NULL and there is nothing to abort. */
+  if (hsd1.Instance != NULL)
+  {
+    HAL_SD_Abort(&hsd1);
+    mmc1DeInit();
+    hsd1.Instance = NULL;
+  }
 
   /* Power cycle the SD and hand bus control to the dock/PC side */
   Board_sdPowerCycle(1); /* setDockAccessToSd(1) inside power cycle */
 
-  /* Give the USB-SD bridge time to see power, enumerate media, and be ready */
+  /* Give the USB-SD bridge time to see power on the card before we
+   * assert CD so the bridge's enumeration starts from a stable bus. */
   HAL_Delay(SD_PC_STABILIZE_MS);
 
-  /* Now tell the dock/PC that a card is present */
+  /* Now generate the HIGH→LOW edge on DETECT_N the dock's USB-SD
+   * bridge uses as its "card inserted" trigger.  On non-SR48_6_0 this
+   * drives PC5 (DETECT_N); on SR48_6_0 it drives PB1 (re-purposed
+   * DOCK_DETECT).  See Board_dockDetectN() for routing details. */
   Board_dockDetectN(DOCK_CARD_PRESENT);
 }
 
@@ -507,16 +528,6 @@ void Board_setDockAccessToSd(uint8_t mcu0dock1)
 {
   Board_sdMcu0Dock1(mcu0dock1);
   shimmerStatus.sdMcu0Pc1 = mcu0dock1;
-}
-
-uint8_t Board_checkDockedDetectState(void)
-{
-#if TEST_UNDOCKED
-  shimmerStatus.docked = 0;
-#else  //TEST_UNDOCKED
-  shimmerStatus.docked = Board_isDocked();
-#endif //TEST_UNDOCKED
-  return shimmerStatus.docked;
 }
 
 /**
@@ -640,6 +651,51 @@ uint8_t Board_isDocked(void)
 #else  //SUPPORT_SR48_6_0
   return HAL_GPIO_ReadPin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin) == GPIO_PIN_SET;
 #endif //SUPPORT_SR48_6_0
+}
+
+bool Board_isUsbPluggedIn(void)
+{
+  return HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin) == GPIO_PIN_SET;
+}
+
+/*
+ * Drive the active-low card-detect line going to the dock's USB-SD bridge.
+ *
+ *   state = 0  →  line LOW  (card present, asserted)
+ *   state = 1  →  line HIGH (card absent / dock sees "no media")
+ *
+ * Routing depends on board revision:
+ *   - Standard Shimmer3R: DETECT_N_Pin (PC5, configured as output in gpio.c)
+ *     is the dock's card-detect input.  DOCK_DETECT_Pin (PB1) is the
+ *     shimmer's input for sensing whether it is docked and must NOT be
+ *     driven.
+ *   - SR48_6_0 prototype: no PC5 net is wired; gpio.c deinits DETECT_N_Pin
+ *     and re-purposes DOCK_DETECT_Pin (PB1) as an output driving the
+ *     dock's card-detect input.
+ *
+ * Historically a macro wrote to DOCK_DETECT_Pin unconditionally, which on
+ * standard boards is a no-op (pin is input).  That meant the dock's USB-SD
+ * bridge never saw a CD edge on a soft USB→Dock handover – it only saw the
+ * pin as LOW from power-on.  Boot-docked and physical undock→redock work
+ * because the bridge is either freshly powered-up or mechanically
+ * disconnected from the CD net in those scenarios; software handovers
+ * require a true HIGH→LOW edge on the dock-side CD signal.
+ */
+void Board_dockDetectN(uint8_t state)
+{
+  const GPIO_PinState level = state ? GPIO_PIN_SET : GPIO_PIN_RESET;
+
+#if SUPPORT_SR48_6_0
+  if (ShimBrd_isBoardSr48_6_0())
+  {
+    /* SR48_6_0 re-purposes PB1 as the dock CD output. */
+    HAL_GPIO_WritePin(DOCK_DETECT_GPIO_Port, DOCK_DETECT_Pin, level);
+    return;
+  }
+#endif
+
+  /* Standard Shimmer3R: dock CD is PC5 (DETECT_N). */
+  HAL_GPIO_WritePin(DETECT_N_GPIO_Port, DETECT_N_Pin, level);
 }
 
 void Board_setMicPower(uint8_t state)
