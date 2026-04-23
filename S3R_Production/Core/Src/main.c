@@ -190,11 +190,11 @@ void Init()
   bmp3_readCalibrationDataOnBoot();
 
   /* Sample both dock and USB-VBUS pins so the ownership decision below has
-   * the complete picture.  Board_checkDockedDetectState() was already called
-   * earlier (line 152) but we re-read here for consistency.  We deliberately
-   * do NOT call LogAndStream_dockOrUsbStateUpdate() because it fires
-   * LogAndStream_dockedStateChange() → TASK_SETUP_DOCK, which would cause a
-   * redundant second pass through setupDock() from the main loop. */
+   * the complete picture.  LogAndStream_updateDockedStateAndCheckChanged() was
+   * already called earlier (line 152) but we re-read here for consistency.  We
+   * deliberately do NOT call LogAndStream_dockOrUsbStateUpdate() because it
+   * fires LogAndStream_dockedStateChange() → TASK_SETUP_DOCK, which would cause
+   * a redundant second pass through setupDock() from the main loop. */
   GPIO_usbVbusIntInit(1);
   LogAndStream_updateDockedStateAndCheckChanged();
   shimmerStatus.usbPluggedIn = Board_isUsbPluggedIn();

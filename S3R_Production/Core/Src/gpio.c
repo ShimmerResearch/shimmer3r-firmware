@@ -387,7 +387,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     BtUart_connectIntCheck();
     break;
   case DOCK_DETECT_Pin:
-    Board_checkDockedDetectState();
+    LogAndStream_updateDockedStateAndCheckChanged();
     break;
   case USER_BTN_N_Pin:
     (void) ShimBtn_pressReleaseAction();
