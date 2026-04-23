@@ -313,17 +313,17 @@ int main(void)
        * did) meant a stale in-flight transfer could wedge tx_active=1
        * forever until the next port open, at which point every new
        * USBX_CDC_ACM_Transmit() would return usbx_busy. */
-      if ((cdc_acm != NULL) && (device_state == UX_DEVICE_CONFIGURED))
+      if (USBX_CDC_ACM_IsPortConfigured())
       {
         cdc_acm_write_task();
-      }
 
-      /* CDC RX: only touch once the host has opened the port (DTR
-       * asserted). Before that, arming a bulk-OUT receive is wasted
-       * work. */
-      if (USBX_CDC_ACM_IsPortOpen())
-      {
-        cdc_acm_read_task();
+        /* CDC RX: only touch once the host has opened the port (DTR
+         * asserted). Before that, arming a bulk-OUT receive is wasted
+         * work. */
+        if (USBX_CDC_ACM_IsPortOpen())
+        {
+          cdc_acm_read_task();
+        }
       }
     }
 

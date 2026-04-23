@@ -103,6 +103,7 @@ extern "C"
   usbx_cdc_acm_result_t USBX_CDC_ACM_Receive_To_RxBuf(VOID);
   VOID USBX_CDC_ACM_RxBuf_Reset(VOID);
   usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t *buffer, uint16_t size);
+  bool USBX_CDC_ACM_IsPortConfigured(void);
   bool USBX_CDC_ACM_IsPortOpen(void);
 
   /* USER CODE END EFP */
