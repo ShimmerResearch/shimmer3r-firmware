@@ -24,11 +24,11 @@
 #include "app_usbx_device.h"
 #include "main.h" // for USB_VBUS_Pin/Port
 
-/* Currently-selected USB bus speed.  Defaults to High-Speed; may be
+/* Currently-selected USB bus speed.  Defaults to Full-Speed; may be
  * overridden at boot via USB_setSpeed() (e.g. from an EEPROM setting)
  * before USB_init() is called.  Both MX_USB_OTG_HS_PCD_Init() and the
  * FIFO allocation in USBX_APP_Device_Init() read this value. */
-static USB_Speed_t usb_selected_speed = USB_SPEED_HIGH;
+static USB_Speed_t usb_selected_speed = USB_SPEED_FULL;
 
 void USB_setSpeed(USB_Speed_t speed)
 {
