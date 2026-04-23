@@ -167,9 +167,8 @@ void Init()
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
 
-  /* Check if radio details in EEPROM are correct - if not, update them and
-   * write to EEPROM. This is only currently used for Shimmer3 but implementing
-   * for completeness */
+  /* Check if radio details in EEPROM are correct and, if not, update them
+   * and write them to EEPROM for the SHIMMER3R boot path. */
   if (ShimEeprom_areRadioDetailsIncorrect())
   {
     ShimEeprom_updateRadioDetails();
