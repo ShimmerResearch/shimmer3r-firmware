@@ -510,6 +510,10 @@ void Board_sd2Mcu(void)
 
   /* Mount SD card */
   ShimSd_mount(SD_MOUNT);
+
+#if defined(SHIMMER3R)
+  shimmerStatus.sdOwner = SD_OWNER_MCU;
+#endif
 }
 
 /***************************************************************************/
