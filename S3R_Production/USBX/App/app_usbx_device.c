@@ -97,8 +97,9 @@ static UX_SLAVE_CLASS_CDC_ACM_PARAMETER cdc_acm_parameter;
 static UCHAR vendor_id[8] = { 'S', 'h', 'i', 'm', 'm', 'e', 'r', ' ' };
 static UCHAR product_id[16] = { 'S', 'h', 'i', 'm', 'm', 'e', 'r', ' ', ' ',
   ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
-static UCHAR product_rev[4] = { '10', '.', '0', '0' };
-static UCHAR serial_id[20] = { ' ' };
+static UCHAR product_rev[4] = { '1', '.', '0', '0' };
+static UCHAR serial_id[20] = { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
 
 static volatile bool usbx_initialized = false;
 
