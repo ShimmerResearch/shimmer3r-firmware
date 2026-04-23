@@ -24,6 +24,7 @@
 #include "app_usbx_device.h"
 #include "main.h"                // for USB_VBUS_Pin/Port
 #include "stm32u5xx_ll_system.h" // for LL_SYSCFG_DisableOTGPHY()
+#include "dcache.h"
 
 /* Currently-selected USB bus speed.  Defaults to Full-Speed; may be
  * overridden at boot via USB_setSpeed() (e.g. from an EEPROM setting)
@@ -358,6 +359,7 @@ void USB_init(void)
 {
   if (!USBX_IsInitialised())
   {
+    DCACHE_invalidate();
     USB_setSpeed(ShimEeprom_getSensorSettingsPage()->usbFullSpeed ? USB_SPEED_FULL : USB_SPEED_HIGH);
     MX_USBX_Device_Init();
   }
