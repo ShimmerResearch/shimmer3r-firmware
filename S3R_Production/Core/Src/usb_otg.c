@@ -291,7 +291,7 @@ void USB_init(void)
 {
   if (!USBX_IsInitialised())
   {
-    USB_setSpeed(ShimEeprom_getRadioDetails()->usbHighSpeed ? USB_SPEED_HIGH : USB_SPEED_FULL);
+    USB_setSpeed(ShimEeprom_getSensorSettingsPage()->usbFullSpeed ? USB_SPEED_FULL : USB_SPEED_HIGH);
     MX_USBX_Device_Init();
   }
 }
