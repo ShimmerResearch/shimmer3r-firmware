@@ -166,6 +166,15 @@ void Init()
   InitialiseBt();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
+
+  /* Check if radio details in EEPROM are correct and, if not, update them
+   * and write them to EEPROM for the SHIMMER3R boot path. */
+  if (ShimEeprom_areRadioDetailsIncorrect())
+  {
+    ShimEeprom_updateRadioDetails();
+    ShimEeprom_writeSensorSettingsPage();
+  }
+
   //BtStop(true);
 
 #elif defined(SHIMMER4_SDK)
