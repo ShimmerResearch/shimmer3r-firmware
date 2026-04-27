@@ -26,6 +26,8 @@
 
 #include <string.h>
 
+#include "hal_Board.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,10 +50,21 @@
 /* USER CODE BEGIN UX_Device_Memory_Buffer */
 
 /* USER CODE END UX_Device_Memory_Buffer */
-#if defined(__ICCARM__)
-#pragma data_alignment = 4
-#endif
-__ALIGN_BEGIN static UCHAR ux_device_byte_pool_buffer[UX_DEVICE_APP_MEM_POOL_SIZE] __ALIGN_END;
+/* The USBX byte pool backs all endpoint transfer buffers handed to the
+ * SDMMC DMA via USBD_STORAGE_Read/Write. Align the pool itself to a full
+ * 32-byte D-cache line (STM32U5 DCACHE line = 32 B) so that when we
+ * Clean/Invalidate the rounded-up transfer range in the MSC callbacks we
+ * cannot accidentally flush a cache line that also holds unrelated data
+ * sitting just before/after the pool. The individual sub-allocations
+ * inside the pool are still only 8-byte aligned (ThreadX byte pool), which
+ * is why the MSC callbacks must also round the maintenance range down/up
+ * to the cache line.
+ *
+ * Use the HAL ALIGN_32BYTES() macro (from stm32u5xx_hal_def.h) so the
+ * alignment directive works for every supported toolchain (GCC / IAR /
+ * ARMCC) without sprinkling compiler-specific #pragma / __attribute__
+ * lines here. */
+ALIGN_32BYTES(static UCHAR ux_device_byte_pool_buffer[UX_DEVICE_APP_MEM_POOL_SIZE]);
 
 static ULONG storage_interface_number;
 static ULONG storage_configuration_number;
@@ -62,12 +75,42 @@ static UX_SLAVE_CLASS_CDC_ACM_PARAMETER cdc_acm_parameter;
 
 /* USER CODE BEGIN PV */
 
-static UCHAR vendor_id[] = "Shimmer";
-static UCHAR product_id[] = "XXXX";
-static UCHAR serial_id[20] = { ' ' };
+/* SCSI INQUIRY identity fields.
+ *
+ * USBX's _ux_device_class_storage_inquiry() does a FIXED-LENGTH memcpy of
+ *   - 8 bytes from vendor_id
+ *   - 16 bytes from product_id
+ *   - 4 bytes from product_rev
+ *   - 20 bytes from product_serial  (used by serial-page inquiry)
+ * regardless of the actual C string length.  The SCSI SPC standard
+ * requires these fields to be ASCII space-padded (0x20), NOT
+ * null-terminated.  If the source buffer is shorter than the fixed
+ * length, USBX reads out-of-bounds memory into the INQUIRY response;
+ * and if any byte in the response is 0x00, strict SCSI parsers (in
+ * particular Mac USB-C xHCI + AppleUSBMSC) reject the device and the
+ * storage interface never attaches — on the same cable the CDC TTY
+ * interface still comes up fine.  USB-A-through-a-TT and Windows are
+ * lenient about this and hide the bug.
+ *
+ * Size these buffers to exactly the widths USBX reads, pre-fill with
+ * 0x20, and do NOT leave a NUL terminator. */
+static UCHAR vendor_id[8] = { 'S', 'h', 'i', 'm', 'm', 'e', 'r', ' ' };
+static UCHAR product_id[16] = { 'S', 'h', 'i', 'm', 'm', 'e', 'r', ' ', ' ',
+  ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
+static UCHAR product_rev[4] = { '1', '.', '0', '0' };
+static UCHAR serial_id[20] = { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
 
 static volatile bool usbx_initialized = false;
-static volatile bool firstSuspendSkipped = false;
+
+/** Tick value recorded when the USB device stack is started.  Suspend events
+ *  received within SUSPEND_GRACE_MS of this timestamp are considered spurious
+ *  (hosts – especially Mac USB-C/Thunderbolt ports – may issue multiple
+ *  suspend events during HS chirp, PD probing or alternate-mode negotiation)
+ *  and are ignored.  Only suspends after the grace window are treated as
+ *  genuine cable-unplug events. */
+static volatile uint32_t usbInitTick = 0;
+#define SUSPEND_GRACE_MS 2000U
 
 /* USER CODE END PV */
 
@@ -103,8 +146,28 @@ UINT MX_USBX_Device_Init(VOID)
   const UCHAR *usb_serial;
   size_t usb_serial_len;
 
-  /* Build the product ID for the Disk Drive string based on the Shimmer's MAC ID */
-  LogAndStream_buildShimmerMacSuffix((char *) product_id, sizeof(product_id));
+  /* Embed the Shimmer's 4-character MAC suffix into the SCSI INQUIRY
+   * product_id field.  product_id MUST remain exactly 16 bytes,
+   * space-padded, NOT null-terminated (see declaration comment).  Build
+   * the suffix into a temporary and copy only the ASCII digits into
+   * product_id[8..11], leaving the rest of the field as the pre-filled
+   * spaces. */
+  {
+    char mac_suffix[8];
+    size_t suffix_len;
+
+    LogAndStream_buildShimmerMacSuffix(mac_suffix, sizeof(mac_suffix));
+    suffix_len = strlen(mac_suffix);
+    if (suffix_len > 4U)
+    {
+      suffix_len = 4U;
+    }
+    if (suffix_len > 0U)
+    {
+      /* product_id[0..6] = "Shimmer", [7] = ' ', so put suffix at [8..11] */
+      memcpy(&product_id[8], mac_suffix, suffix_len);
+    }
+  }
 
   usb_serial = USBD_Get_UsbSerialStringPtr();
   memset(serial_id, ' ', sizeof(serial_id));
@@ -122,8 +185,16 @@ UINT MX_USBX_Device_Init(VOID)
   /* USER CODE END MX_USBX_Device_Init0 */
   pointer = ux_device_byte_pool_buffer;
 
-  /* Initialize USBX Memory */
-  if (ux_system_initialize(pointer, USBX_DEVICE_MEMORY_STACK_SIZE, UX_NULL, 0) != UX_SUCCESS)
+  /* Initialize USBX Memory.
+   *
+   * The second argument is the size of the memory region (pool) that USBX
+   * manages from 'pointer'. It must match the size of
+   * ux_device_byte_pool_buffer[] (UX_DEVICE_APP_MEM_POOL_SIZE), NOT the
+   * unrelated USBX_DEVICE_MEMORY_STACK_SIZE (which is a leftover ThreadX
+   * stack-size macro in the ST template). Passing the smaller value causes
+   * ux_device_stack_initialize() to fail with UX_MEMORY_INSUFFICIENT as
+   * soon as UX_SLAVE_REQUEST_DATA_MAX_LENGTH is raised above the default. */
+  if (ux_system_initialize(pointer, UX_DEVICE_APP_MEM_POOL_SIZE, UX_NULL, 0) != UX_SUCCESS)
   {
     /* USER CODE BEGIN USBX_SYSTEM_INITIALIZE_ERROR */
     return UX_ERROR;
@@ -198,7 +269,11 @@ UINT MX_USBX_Device_Init(VOID)
 
   storage_parameter.ux_slave_class_storage_parameter_vendor_id = vendor_id;
   storage_parameter.ux_slave_class_storage_parameter_product_id = product_id;
-  //storage_parameter.ux_slave_class_storage_parameter_product_rev = (UCHAR *)STORAGE_PRODUCT_REV;
+  /* product_rev MUST be a valid 4-byte ASCII space-padded buffer.  USBX
+   * reads 4 bytes unconditionally from this pointer; leaving it NULL (as
+   * the previous code did) caused a 4-byte read from address 0 in the
+   * INQUIRY response, which strict SCSI parsers (Mac USB-C xHCI) reject. */
+  storage_parameter.ux_slave_class_storage_parameter_product_rev = product_rev;
   storage_parameter.ux_slave_class_storage_parameter_product_serial = serial_id;
 
   /* USER CODE END STORAGE_PARAMETER */
@@ -245,10 +320,24 @@ UINT MX_USBX_Device_Init(VOID)
   }
 
   /* USER CODE BEGIN MX_USBX_Device_Init1 */
+
+  /* Record the init timestamp BEFORE bringing up the PCD / enabling USB
+   * interrupts. Otherwise a SUSPENDED event delivered during enumeration
+   * (between HAL_PCD_Start and the assignment below) would see
+   * usbInitTick == 0 and the (HAL_GetTick() - 0) delta would immediately
+   * exceed SUSPEND_GRACE_MS, triggering a false unplug. As a belt-and-
+   * braces measure, USBD_ChangeFunction() also treats usbInitTick == 0 as
+   * "still within the grace window". Use 1 as a sentinel for the unlikely
+   * case that HAL_GetTick() returns 0 right at boot. */
+  usbInitTick = HAL_GetTick();
+  if (usbInitTick == 0U)
+  {
+    usbInitTick = 1U;
+  }
+
   USBX_APP_Device_Init();
 
   usbx_initialized = true;
-  firstSuspendSkipped = false;
   /* USER CODE END MX_USBX_Device_Init1 */
 
   return ret;
@@ -324,11 +413,6 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
     /* USER CODE BEGIN UX_DEVICE_ATTACHED */
 
-    /* Skip the first suspend event after attachment, as it's a spurious event
-     * triggered by the host during enumeration. Sometimes it doesn't get
-     * triggered and the first event is ATTACHED */
-    firstSuspendSkipped = true;
-
     /* USER CODE END UX_DEVICE_ATTACHED */
 
     break;
@@ -361,16 +445,24 @@ static UINT USBD_ChangeFunction(ULONG Device_State)
 
     /* USER CODE BEGIN UX_DCD_STM32_DEVICE_SUSPENDED */
 
-    /* Skip the first suspend event after attachment, as it's a spurious event
-     * triggered by the host during enumeration. Using this event to determine
-     * USB un-plug as we're currently unable to use VBUS within the USB
-     * peripheral (SCH issue with voltage divider?) in order to get
-     * UX_DEVICE_REMOVED working. */
-    if (firstSuspendSkipped)
+    /* Hosts (especially Mac USB-C / Thunderbolt ports) may issue multiple
+     * spurious suspend events during enumeration, HS chirp, or USB-PD / alt-
+     * mode probing.  Ignore all suspend events that arrive within the grace
+     * window after USB init.
+     *
+     * After the grace window, treat suspend as a cable-unplug indicator
+     * (because VBUS sensing inside the OTG peripheral is not usable on this
+     * hardware — see SCH voltage-divider note). As an extra safety check,
+     * confirm that the VBUS GPIO has actually gone low before triggering
+     * the dock/USB state change; a genuine host-initiated selective suspend
+     * will still have VBUS high and should be ignored here. */
+    if ((usbInitTick != 0U) && ((HAL_GetTick() - usbInitTick) >= SUSPEND_GRACE_MS))
     {
-      ShimTask_setUsbSetup();
+      if (!Board_isUsbPluggedIn())
+      {
+        ShimTask_setDockOrUsbStateChange();
+      }
     }
-    firstSuspendSkipped = true;
 
     /* USER CODE END UX_DCD_STM32_DEVICE_SUSPENDED */
 
@@ -420,28 +512,112 @@ VOID USBX_APP_Device_Init(VOID)
 
   /* USER CODE END USB_Device_Init_PreTreatment_0 */
 
-  /* initialize the device controller HAL driver */
+  /* Initialize the device controller HAL driver.  MX_USB_OTG_HS_PCD_Init()
+   * reads USB_getSpeed() internally and configures the peripheral for
+   * either HS or FS accordingly. */
   MX_USB_OTG_HS_PCD_Init();
 
-  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x100);
+  /* ------------------------------------------------------------------
+   * OTG_HS FIFO allocation
+   *
+   * The STM32U5 OTG_HS peripheral has a shared 1024-word FIFO RAM that
+   * is partitioned between one RX FIFO (shared by all OUT endpoints)
+   * and up to N TX FIFOs (one per IN endpoint).  The numbers below are
+   * in 32-bit words.  Endpoint map (matches the USB descriptors):
+   *
+   *   EP0  IN/OUT  control      (TX FIFO 0, RX shared)
+   *   EP1  IN      MSC bulk-IN       (TX FIFO 1)
+   *   EP2  OUT     MSC bulk-OUT      (RX shared)
+   *   EP3  IN      CDC notification  (TX FIFO 3)
+   *   EP4  IN      CDC bulk-IN       (TX FIFO 4)
+   *   EP5  OUT     CDC bulk-OUT      (RX shared)
+   *
+   * FIFO sizes differ for HS vs FS because the bulk max-packet-size
+   * differs (HS = 512 bytes = 128 words, FS = 64 bytes = 16 words) and
+   * each TX FIFO must be at least one full MPS.
+   * ------------------------------------------------------------------ */
+  if (USB_getSpeed() == USB_SPEED_HIGH)
+  {
+    /* ---------------- High-Speed FIFO layout ---------------------
+     * Budget: 1024 words total.  HS bulk MPS = 128 words (512 bytes).
+     *
+     *   RX  0x230 + TX0 0x20 + TX1 0x100 + TX2 0x10 + TX3 0x10 + TX4 0x80
+     *    = 560 + 32 + 256 + 16 + 16 + 128 = 1008 / 1024 words.
+     */
 
-  //2. Tx FIFO 0: Control Endpoint (Common)
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20);
+    /* RX: shared across EP0 SETUP + MSC-OUT + CDC-OUT.  560 words gives
+     * ~4.5x HS bulk MPS of cushion for back-to-back bulk-OUT packets
+     * from xHCI hosts (no upstream TT to rate-limit). */
+    HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x230); //560 words
 
-  //3. Tx FIFO 1: MSC Data IN (Matches USBD_MSC_EPIN_ADDR 0x81)
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, USBD_MSC_EPIN_HS_MPS / 4);
+    /* TX0 – EP0 control IN.  4x EP0 MPS (64B). */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20); //32 words
 
-  /* 4. Set FIFO 2 (Placeholder - REQUIRED by the logic you posted) */
-  /* Since you use FIFO 3 and 4, FIFO 2 MUST be at least 16 words */
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, 0x10);
+    /* TX1 – MSC bulk-IN.  2x HS MPS so the core can queue the next IN
+     * packet while the previous one is still on the wire, maximising
+     * MSC throughput. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x100); //256 words (2x HS MPS)
 
-  //4. Tx FIFO 3: CDC Command IN (Matches USBD_CDCACM_EPINCMD_ADDR 0x83)
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 3, 0x20);
+    /* TX2 – unused IN EP2 placeholder.  Must still be >= 16 words
+     * because TX3 and TX4 are populated. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, 0x10); //16 words
 
-  //5. Tx FIFO 4: CDC Data IN (Matches USBD_CDCACM_EPIN_ADDR 0x84)
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4, 0x100);
+    /* TX3 – CDC notification (interrupt IN, MPS = 8 bytes = 2 words).
+     * 16 words is 8x MPS, plenty for SERIAL_STATE / line-state
+     * notifications which are tiny and infrequent. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 3, 0x10); //16 words
+
+    /* TX4 – CDC bulk-IN.  MUST be >= 1x HS bulk MPS (128 words / 512
+     * bytes): the Synopsys OTG core requires each TxFIFO to hold at
+     * least one full max-packet-size, otherwise the endpoint can hang
+     * with ux_device_class_cdc_acm_write_run() stuck in UX_STATE_WAIT
+     * (symptom: CDC enumerates and the TTY opens but no bytes come out
+     * of the device until the host eventually tears the composite
+     * device down ~60 s later).  2x MPS would be nicer for back-to-back
+     * throughput but the total budget is 1024 words and MSC is
+     * prioritised for large-file-copy performance. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4, 0x80); //128 words (1x HS MPS)
+  }
+  else
+  {
+    /* ---------------- Full-Speed FIFO layout ---------------------
+     * Budget: 1024 words total.  FS bulk/control MPS = 16 words (64
+     * bytes), interrupt MPS here = 2 words (8 bytes).  FS needs far
+     * less RAM than HS; we still allocate a generous cushion because
+     * the budget is plentiful.
+     *
+     *   RX  0x80 + TX0 0x20 + TX1 0x40 + TX2 0x10 + TX3 0x10 + TX4 0x40
+     *    = 128 + 32 + 64 + 16 + 16 + 64 = 320 / 1024 words.
+     */
+
+    /* RX: shared across EP0 SETUP + MSC-OUT + CDC-OUT.  128 words is
+     * ~8x FS bulk MPS of cushion – easily enough for two back-to-back
+     * 64-byte OUT packets plus SETUP overhead. */
+    HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x80); //128 words
+
+    /* TX0 – EP0 control IN.  2x EP0 MPS. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x20); //32 words
+
+    /* TX1 – MSC bulk-IN.  4x FS MPS so the core can queue several IN
+     * packets ahead of the wire.  At FS the wall-clock throughput is
+     * bounded by the 12 Mbps line rate, so over-provisioning beyond
+     * ~4x MPS offers no benefit. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x40); //64 words (4x FS MPS)
+
+    /* TX2 – unused IN EP2 placeholder.  Must still be >= 16 words. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, 0x10); //16 words
+
+    /* TX3 – CDC notification (interrupt IN, MPS = 8 bytes = 2 words). */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 3, 0x10); //16 words
+
+    /* TX4 – CDC bulk-IN.  Must be >= 1x FS MPS.  4x MPS gives headroom
+     * for back-to-back IN packets without forcing the CDC write path to
+     * wait for FIFO drain. */
+    HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 4, 0x40); //64 words (4x FS MPS)
+  }
+
   /* USER CODE END USB_Device_Init_PreTreatment_1 */
-  /* USER CODE END USB_Device_Init_PreTreatment_1 */
+
   /* initialize and link controller HAL driver to USBx */
   if (_ux_dcd_stm32_initialize((ULONG) USB_OTG_HS, (ULONG) &hpcd_USB_OTG_HS) != UX_SUCCESS)
   {

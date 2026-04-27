@@ -47,9 +47,6 @@ uint16_t ext_cnt5 = 0;
 uint16_t ext_cnt6 = 0;
 #endif
 
-static uint32_t g_vbus_last_tick = 0U;
-#define VBUS_DEBOUNCE_MS 50U
-
 /* USER CODE END 1 */
 
 /** Configure pins
@@ -262,19 +259,8 @@ void GPIO_usbVbusIntInit(uint8_t state)
     GPIO_InitTypeDef GPIO_InitStruct = { 0 };
     __HAL_RCC_GPIOA_CLK_ENABLE();
     GPIO_InitStruct.Pin = USB_VBUS_Pin;
-#if SUPPORT_SR48_6_0
-    /* SR48-6-0 patch for dock detection */
-    if (ShimBrd_isBoardSr48_6_0())
-    {
-      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-    }
-    else
-    {
-      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-    }
-#else
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-#endif
+    /* Detect both plug-in (rising) and unplug (falling) */
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(USB_VBUS_GPIO_Port, &GPIO_InitStruct);
 
@@ -291,27 +277,7 @@ void GPIO_usbVbusIntInit(uint8_t state)
 #if defined(SHIMMER3R)
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
-  switch (GPIO_Pin)
-  {
-#if SUPPORT_SR48_6_0
-  /* SR48-6-0 patch for VBUS sense - start */
-  case USB_VBUS_Pin:
-    if (!ShimBrd_isBoardSr48_6_0())
-    {
-      ShimTask_setUsbSetup();
-      break;
-    }
-    /* fall-through */
-    /* SR48-6-0 patch for VBUS sense - end */
-#else  //SUPPORT_SR48_6_0
-  case USB_VBUS_Pin:
-    ShimTask_setUsbSetup();
-    break;
-#endif //SUPPORT_SR48_6_0
-  default:
-    gpioExtiCommon(GPIO_Pin, 1);
-    break;
-  }
+  gpioExtiCommon(GPIO_Pin, 1);
 }
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
@@ -352,33 +318,28 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     //setBtCysppState(isRising);
     break;
   case DOCK_DETECT_Pin:
-    Board_checkDockedDetectState();
-    LogAndStream_dockedStateChange();
+    /* Defer to unified debounced handler via TASK_USB_SETUP */
+    ShimTask_setDockOrUsbStateChange();
     break;
 #if SUPPORT_SR48_6_0
     /* SR48-6-0 patch for dock detection - start */
   case SR48_6_0_BOOT0_USER_BTN_Pin:
     if (ShimBrd_isBoardSr48_6_0())
     {
-      /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection*/
-      Board_checkDockedDetectState();
-      LogAndStream_dockedStateChange();
-      /* no break */
+      /* Re-purposing SR48-6-0 BOOT0/USER button interrupt for dock detection.
+       * Defer to unified debounced handler via TASK_USB_SETUP */
+      ShimTask_setDockOrUsbStateChange();
       break;
     }
     /* SR48-6-0 patch for dock detection - end */
-    /* SR48-6-0 patch for VBUS sense - start */
-  case USB_VBUS_Pin:
-    if (ShimBrd_isBoardSr48_6_0())
-    {
-      ShimTask_setUsbSetup();
-      break;
-    }
-    /* SR48-6-0 patch for VBUS sense - end */
+    /* fall-through to USER_BTN_Pin for non-SR48-6-0 boards */
     /* no break */
 #endif //SUPPORT_SR48_6_0
   case USER_BTN_Pin:
     (void) ShimBtn_pressReleaseAction();
+    break;
+  case USB_VBUS_Pin:
+    ShimTask_setDockOrUsbStateChange();
     break;
   case SD_DETECT_N_Pin:
     LogAndStream_checkSdInSlot();
@@ -426,7 +387,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     BtUart_connectIntCheck();
     break;
   case DOCK_DETECT_Pin:
-    Board_checkDockedDetectState();
+    LogAndStream_updateDockedStateAndCheckChanged();
     break;
   case USER_BTN_N_Pin:
     (void) ShimBtn_pressReleaseAction();
@@ -720,48 +681,6 @@ void platform_initGpioForRevision(void)
     //GPIO_InitStruct.Pull = GPIO_NOPULL;
     //GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     //HAL_GPIO_Init(J4_GPIO_INTERNAL6_GPIO_Port, &GPIO_InitStruct);
-  }
-}
-
-void vbusPinStateCheck(void)
-{
-  UINT status = UX_SUCCESS;
-
-  const uint32_t now = HAL_GetTick();
-  if ((now - g_vbus_last_tick) < VBUS_DEBOUNCE_MS)
-  {
-    return;
-  }
-  g_vbus_last_tick = now;
-
-  GPIO_PinState pin = HAL_GPIO_ReadPin(USB_VBUS_GPIO_Port, USB_VBUS_Pin);
-
-  if (pin == GPIO_PIN_SET)
-  {
-    shimmerStatus.usbPluggedIn = 1;
-
-    if (!USBX_IsInitialised())
-    {
-      Board_sd2Mcu();
-      status = MX_USBX_Device_Init();
-    }
-    if (status == UX_SUCCESS)
-    {
-      GPIO_usbVbusIntInit(0);
-    }
-  }
-  else
-  {
-    shimmerStatus.usbPluggedIn = 0;
-
-    if (USBX_IsInitialised())
-    {
-      status = MX_USBX_Device_DeInit();
-    }
-    if (status == UX_SUCCESS)
-    {
-      GPIO_usbVbusIntInit(1);
-    }
   }
 }
 

@@ -43,6 +43,8 @@ extern "C"
 
   /* USER CODE BEGIN Prototypes */
 
+  void DCACHE_invalidate(void);
+
   /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

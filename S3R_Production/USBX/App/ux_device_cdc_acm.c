@@ -306,17 +306,15 @@ usbx_cdc_acm_result_t USBX_CDC_ACM_Receive(uint8_t *buffer, uint16_t size)
   return usbx_success;
 }
 
+bool USBX_CDC_ACM_IsPortConfigured(void)
+{
+  return cdc_acm != UX_NULL
+      && _ux_system_slave->ux_system_slave_device.ux_slave_device_state == UX_DEVICE_CONFIGURED;
+}
+
 /* Reports the COM port open state (configured + class active + DTR set) */
 bool USBX_CDC_ACM_IsPortOpen(void)
 {
-  if (cdc_acm == UX_NULL)
-  {
-    return false;
-  }
-  if (_ux_system_slave->ux_system_slave_device.ux_slave_device_state != UX_DEVICE_CONFIGURED)
-  {
-    return false;
-  }
   return cdc_port_open;
 }
 
