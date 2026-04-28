@@ -186,8 +186,13 @@ VOID cdc_acm_write_task(VOID)
       retVal = ux_device_class_cdc_acm_write_run(cdc_acm,
           usbx_cdc_tx_rx.tx_buffer + usbx_cdc_tx_rx.tx_count,
           usbx_cdc_tx_rx.tx_length - usbx_cdc_tx_rx.tx_count, &actual_length);
-      //Handle error
-      if (retVal < UX_STATE_IDLE)
+      /* Use "< UX_STATE_NEXT" (== 4) rather than "< UX_STATE_IDLE"
+       * (== 2) so that UX_STATE_ERROR (3) and UX_STATE_IDLE (2) also
+       * enter the fatal-error recovery branch.  USBX itself uses this
+       * same criterion internally to decide whether a transfer has
+       * failed; "< UX_STATE_IDLE" would let UX_STATE_ERROR fall
+       * through silently and leave the TX state machine stuck. */
+      if (retVal < UX_STATE_NEXT)
       {
         //Fatal error: stop everything
         usbx_cdc_tx_rx.tx_result = usbx_error;
@@ -245,11 +250,42 @@ VOID cdc_acm_read_task(VOID)
     }
     break;
   case UX_STATE_WAIT:
-    status = ux_device_class_cdc_acm_read_run(cdc_acm,
-        usbx_cdc_tx_rx.rx_buffer + usbx_cdc_tx_rx.rx_count,
-        usbx_cdc_tx_rx.rx_length - usbx_cdc_tx_rx.rx_count, &actual_length);
-    usbx_cdc_tx_rx.rx_count += actual_length;
-    if (status < UX_STATE_IDLE)
+    /* IMPORTANT: ux_device_class_cdc_acm_read_run() reads ONE
+     * wMaxPacketSize chunk per invocation and reports *actual_length as
+     * the CUMULATIVE total received so far for the current logical
+     * transfer, NOT a per-call delta. Termination (UX_STATE_NEXT)
+     * happens only when the requested length is reached or a short
+     * packet (< MPS) is received.
+     *
+     * At HS the bulk-OUT MPS is 512 B, so any command shorter than
+     * that is a single short packet and the function returns NEXT on
+     * the first call -- a (broken) "rx_count += actual_length" on every
+     * call accidentally produces the right answer.
+     *
+     * At FS the MPS is only 64 B, so a >64 B command is split across
+     * multiple chunks and read_run() returns WAIT between them, each
+     * time setting *actual_length to the running total. Adding the
+     * cumulative value to rx_count on every call double/triple-counts
+     * and corrupts the forwarded command length. That is why packets
+     * "just over 128 bytes" (i.e. 64+64+short) fail at FS while HS is
+     * fine.
+     *
+     * Also note that on continuation calls USBX ignores the buffer and
+     * requested_length arguments -- it uses the values captured on the
+     * very first (UX_STATE_RESET) call. So always pass the original
+     * full-buffer pointer/size; do NOT advance them by rx_count. */
+    status = ux_device_class_cdc_acm_read_run(cdc_acm, usbx_cdc_tx_rx.rx_buffer,
+        usbx_cdc_tx_rx.rx_length, &actual_length);
+    /* Treat anything that is not "in progress" (UX_STATE_WAIT == 5) or
+     * "completed OK" (UX_STATE_NEXT == 4) as an error.  USBX returns
+     * UX_STATE_ERROR (3) and UX_STATE_EXIT (1) on different failure
+     * paths inside _ux_device_class_cdc_acm_read_run(); using
+     * "status < UX_STATE_IDLE" (< 2) would miss UX_STATE_ERROR and
+     * UX_STATE_IDLE and leave the RX state machine stuck in WAIT with
+     * no transfer rearmed.  Match USBX's own internal convention of
+     * "status < UX_STATE_NEXT" so RESET/EXIT/IDLE/ERROR all enter the
+     * fatal-error recovery branch. */
+    if (status < UX_STATE_NEXT)
     {
       //Fatal error: stop everything
       usbx_cdc_tx_rx.rx_result = usbx_error;
@@ -260,10 +296,12 @@ VOID cdc_acm_read_task(VOID)
     }
     else if (status == UX_STATE_NEXT)
     {
-      //one full usb packet received
+      /* Logical transfer complete. actual_length is the TOTAL number
+       * of bytes USBX wrote into rx_buffer for this transfer; assign
+       * (do not add) it to rx_count. */
+      usbx_cdc_tx_rx.rx_count = actual_length;
       usbx_cdc_tx_rx.rx_result = usbx_success;
       usbx_cdc_tx_rx.rx_engine_state = UX_STATE_RESET;
-      //usbx_cdc_tx_rx.rx_count        += actual_length; // or process data here
       usbx_cdc_tx_rx.rx_pending = 0;
       usbx_cdc_tx_rx.rx_command_buffer = cdc_command_buffer;
       usbx_cdc_tx_rx.rx_command_length += usbx_cdc_tx_rx.rx_count;
@@ -275,7 +313,9 @@ VOID cdc_acm_read_task(VOID)
     }
     else if (status == UX_STATE_WAIT)
     {
-      //Partial reception: mark pending
+      /* Partial reception: mark pending. Do NOT update rx_count here --
+       * USBX is still accumulating chunks internally and *actual_length
+       * is cumulative, not a delta (see comment above). */
       usbx_cdc_tx_rx.rx_pending = 1;
     }
     //else still waiting, do nothing
