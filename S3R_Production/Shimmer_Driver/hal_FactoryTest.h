@@ -45,8 +45,7 @@ given above */
 
 #define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID -1.0
 
-//#define TEST_BT_MODULE_FW                          "v01.04.16.16"
-#define TEST_BT_MODULE_FW                          "v01.04.17.17"
+#define TEST_BT_MODULE_FW                          "v01.04.18.18"
 
 #define GSR_TEST_TOLERANCE_7_PERCENT               0.07
 #define GSR_TEST_TOLERANCE_8_PERCENT               0.08
