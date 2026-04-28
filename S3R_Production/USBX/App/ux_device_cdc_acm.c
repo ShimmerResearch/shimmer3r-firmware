@@ -269,8 +269,8 @@ VOID cdc_acm_read_task(VOID)
      * requested_length arguments -- it uses the values captured on the
      * very first (UX_STATE_RESET) call. So always pass the original
      * full-buffer pointer/size; do NOT advance them by rx_count. */
-    status = ux_device_class_cdc_acm_read_run(cdc_acm,
-        usbx_cdc_tx_rx.rx_buffer, usbx_cdc_tx_rx.rx_length, &actual_length);
+    status = ux_device_class_cdc_acm_read_run(cdc_acm, usbx_cdc_tx_rx.rx_buffer,
+        usbx_cdc_tx_rx.rx_length, &actual_length);
     if (status < UX_STATE_IDLE)
     {
       //Fatal error: stop everything
