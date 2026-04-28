@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "app_usbx_device.h"
+#include "dcache.h"
 #include "gpdma.h"
 #include "gpio.h"
 #include "icache.h"
@@ -27,19 +29,15 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "app_usbx_device.h"
 #include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
 #include "usb_otg.h"
+#include "ux_device_cdc_acm.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if !USE_USBX
-#include "usb_device.h"
-#endif
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +66,10 @@
 /* USER CODE BEGIN PV */
 
 volatile uint32_t time_start, time_end, time_diff;
-
+#define BLOCK_START_ADDR 0 /* Block start address      */
+#define NUM_OF_BLOCKS    5 /* Total number of blocks   */
+#define BUFFER_WORDS_SIZE \
+  ((MMC_BLOCKSIZE * NUM_OF_BLOCKS) >> 2) /* Total data size in bytes */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -87,7 +88,6 @@ bool isBtConnected(void);
 #if USE_CUSTOM_HAL_DELAY
 void HAL_Delay(uint32_t Delay);
 #endif
-void sleepWhenNoTask(void);
 
 void BtStart(void);
 void BtStop(uint8_t isCalledFromMain);
@@ -148,7 +148,7 @@ void Init()
 
   setUartPeripheralPointers();
 
-  Board_checkDockedDetectState();
+  LogAndStream_updateDockedStateAndCheckChanged();
   LogAndStream_checkSdInSlot();
   if (shimmerStatus.sdInserted)
   {
@@ -156,7 +156,7 @@ void Init()
     LogAndStream_setupUndock();
   }
 
-  //(void)ShimBtn_pressReleaseAction();
+  //(void) ShimBtn_pressReleaseAction();
 
 #if defined(SHIMMER3R)
   LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH);
@@ -166,6 +166,15 @@ void Init()
   InitialiseBt();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
+
+  /* Check if radio details in EEPROM are correct and, if not, update them
+   * and write them to EEPROM for the SHIMMER3R boot path. */
+  if (ShimEeprom_areRadioDetailsIncorrect())
+  {
+    ShimEeprom_updateRadioDetails();
+    ShimEeprom_writeSensorSettingsPage();
+  }
+
   //BtStop(true);
 
 #elif defined(SHIMMER4_SDK)
@@ -180,7 +189,17 @@ void Init()
   ShimConfig_loadSensorConfigAndCalib();
   bmp3_readCalibrationDataOnBoot();
 
-  //Pass control of SD card to dock if docked
+  /* Sample both dock and USB-VBUS pins so the ownership decision below has
+   * the complete picture.  LogAndStream_updateDockedStateAndCheckChanged() was
+   * already called earlier (line 152) but we re-read here for consistency.  We
+   * deliberately do NOT call LogAndStream_dockOrUsbStateUpdate() because it
+   * fires LogAndStream_dockedStateChange() → TASK_SETUP_DOCK, which would cause
+   * a redundant second pass through setupDock() from the main loop. */
+  GPIO_usbVbusIntInit(1);
+  LogAndStream_updateDockedStateAndCheckChanged();
+  shimmerStatus.usbPluggedIn = Board_isUsbPluggedIn();
+
+  //Pass control of SD card to USB or dock (USB has priority)
   if (LogAndStream_isDockedOrUsbIn())
   {
     LogAndStream_setupDock();
@@ -198,10 +217,6 @@ void Init()
 #if defined(SHIMMER4_SDK)
   S4_RTC_WakeUpSetSlow();
 #endif
-
-  //Enable USB VBUS input detection on boot for initial vbusPinStateCheck();
-  GPIO_usbVbusIntInit(1);
-  vbusPinStateCheck();
 
   /* Take initial measurement to update LED state */
   manageReadBatt(1);
@@ -259,6 +274,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
+  MX_DCACHE1_Init();
   /* USER CODE BEGIN 2 */
 
   //MX_IWDG_Init();
@@ -281,6 +297,36 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /* Let USBX progress enumeration/state machine */
+    if (USBX_IsInitialised())
+    {
+      ux_device_stack_tasks_run();
+
+      /* CDC TX: poll the write task whenever the CDC ACM instance is
+       * valid and the device is configured, even if the host has
+       * closed the COM port (!IsPortOpen). This still allows the
+       * internal stall watchdog to abort transfers that were queued
+       * while the port was open and then got stranded when the host
+       * stopped polling / closed the port, without risking a NULL
+       * dereference if the device disconnects or deactivates while a
+       * TX is in flight. Gating only on IsPortOpen() (as the old code
+       * did) meant a stale in-flight transfer could wedge tx_active=1
+       * forever until the next port open, at which point every new
+       * USBX_CDC_ACM_Transmit() would return usbx_busy. */
+      if (USBX_CDC_ACM_IsPortConfigured())
+      {
+        cdc_acm_write_task();
+
+        /* CDC RX: only touch once the host has opened the port (DTR
+         * asserted). Before that, arming a bulk-OUT receive is wasted
+         * work. */
+        if (USBX_CDC_ACM_IsPortOpen())
+        {
+          cdc_acm_read_task();
+        }
+      }
+    }
+
     ShimTask_manage();
   }
   /* USER CODE END 3 */
@@ -552,41 +598,21 @@ void HAL_Delay(uint32_t Delay)
 }
 #endif
 
-void sleepWhenNoTask(void)
+void platform_sleepWhenNoTask(void)
 {
-  /* Only wake MCU when new Task is set. See corresponding
-   * HAL_PWR_DisableSleepOnExit() in ShimTask_set() */
-  HAL_PWR_EnableSleepOnExit();
+  if (USBX_IsInitialised())
+  {
+    /* idle: sleep until next IRQ (SOF, UART RX, HAL_GetTick SysTick, etc.) */
+    __WFI();
+  }
+  else
+  {
+    /* Only wake MCU when new Task is set. See corresponding
+     * HAL_PWR_DisableSleepOnExit() in ShimTask_set() */
+    HAL_PWR_EnableSleepOnExit();
 
-  Power_SleepUntilInterrupt();
-
-  //if(shimmerStatus.isBtConnected && !shimmerStatus.isSensing){
-  //   Power_SleepUntilInterrupt();
-  //
-  //   __NOP();
-  //   __NOP();
-  //   __NOP();
-  //}else{
-  //   if(shimmerStatus.periStat == 0)
-  //   {
-  ////            static uint8_t green1_cnt = 0;
-  ////            if(!green1_cnt++){
-  ////               Board_ledToggle(LED_GREEN1);
-  ////            }
-  //Power_StopUntilInterrupt();
-  //}
-  //else
-  //{
-  //static uint8_t blue_cnt = 0;
-  //if(!blue_cnt++){
-  //   Board_ledToggle(LED_BLUE);
-  //}
-  //__NOP();
-  //__NOP();
-  //__NOP();
-  //Power_SleepUntilInterrupt();
-  //}
-  //}
+    Power_SleepUntilInterrupt();
+  }
 }
 
 void BtStart(void)
@@ -695,6 +721,26 @@ HAL_StatusTypeDef checknBoot0OptionByte(void)
 void platform_delayMs(const uint32_t delay_time_ms)
 {
   HAL_Delay(delay_time_ms);
+}
+
+void platform_reset(void)
+{
+  NVIC_SystemReset();
+}
+
+uint32_t platform_getTick(void)
+{
+  return HAL_GetTick();
+}
+
+bool platform_isDockUartInitialised(void)
+{
+  return DockUart_isInitialised();
+}
+
+bool platform_isUsbUartInitialised(void)
+{
+  return USBX_IsInitialised();
 }
 
 //Overrides weak function in LogAndStream driver

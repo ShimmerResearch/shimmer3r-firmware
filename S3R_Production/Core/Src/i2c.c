@@ -879,10 +879,11 @@ bool areI2cChannelsEnabled(void)
 
 void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
+  uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   switch (i2c1Sens.sensorList[i2c1Sens.sensorCnt])
   {
   case I2C_LIS2MDL_MAG:
-    memcpy(sensing.dataBuf + sensing.ptr.mag1, &i2cSens_buf.lis2mdlMagBuf[0],
+    memcpy(dataBufPtr + sensing.ptr.mag1, &i2cSens_buf.lis2mdlMagBuf[0],
         sizeof(i2cSens_buf.lis2mdlMagBuf));
     break;
   default:
@@ -1374,11 +1375,15 @@ void enableI2cOnSr48OrSr38PpgSocket(uint8_t state)
   if (state)
   {
     Board_setExpansionBrdPower(1);
+#if SUPPORT_SR48_6_0
     if (ShimBrd_isBoardSr48_6_0())
     {
       Board_SR48_6_0_SW_I2C4_ON_PPG(1);
     }
     else if (ShimBrd_isI2cOnPPGControlledByAdcChip())
+#else
+    if (ShimBrd_isI2cOnPPGControlledByAdcChip())
+#endif //SUPPORT_SR48_6_0
     {
       //SPI is needed to change GPIO state in ADS7028
       MX_SPI1_Init();
@@ -1398,11 +1403,15 @@ void enableI2cOnSr48OrSr38PpgSocket(uint8_t state)
   {
     I2C4_DeInit();
     Board_setExpansionBrdPower(0);
+#if SUPPORT_SR48_6_0
     if (ShimBrd_isBoardSr48_6_0())
     {
       Board_SR48_6_0_SW_I2C4_ON_PPG(0);
     }
     else if (ShimBrd_isI2cOnPPGControlledByAdcChip())
+#else
+    if (ShimBrd_isI2cOnPPGControlledByAdcChip())
+#endif //SUPPORT_SR48_6_0
     {
       ads7028_swI2C4PpgOn(0);
       SPI1_DeInit();

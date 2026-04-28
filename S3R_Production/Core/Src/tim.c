@@ -437,7 +437,9 @@ void TIM_reinitLeds(void)
 
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
+  /* pet the HW watchdog */
   petWatchdog();
+
   LogAndStream_blinkTimerCommon();
 }
 

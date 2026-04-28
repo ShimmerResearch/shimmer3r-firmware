@@ -232,6 +232,7 @@ extern "C"
 #define SR48_6_0_GPIO_ADC_INT_EXP0_GPIO_Port GPIOA
 #endif //SUPPORT_SR48_6_0
 
+#define USBX_MSC_DMA
   /* USER CODE END Private defines */
 
 #ifdef __cplusplus

@@ -238,7 +238,7 @@ void HAL_SD_AbortCallback(SD_HandleTypeDef *hsd)
 {
   BSP_SD_AbortCallback();
 }
-
+#if 0
 /**
   * @brief Tx Transfer completed callback
   * @param hsd: SD handle
@@ -258,7 +258,7 @@ void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd)
 {
   BSP_SD_ReadCpltCallback();
 }
-
+#endif
 /* USER CODE BEGIN CallBacksSection_C */
 /**
   * @brief BSP SD Abort callback

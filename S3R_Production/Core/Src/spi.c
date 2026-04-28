@@ -45,6 +45,8 @@ SPITypeDef spi3Sens;
 volatile uint8_t expectedSpiBusCbFlags = 0;
 volatile uint8_t currentSpiBusCbFlags = 0;
 SPI_ADCTypeDef spiAdc;
+uint8_t enabledAds7028Channels = 0; //all channels disabled initially;
+
 #endif
 
 void (*SPI_gatherDataDone_cb)(void);
@@ -909,7 +911,9 @@ void SPI_startSensing()
     {
       GSR_init(configBytes->gsrRange, configBytes->samplingRateTicks);
     }
-    //configureAutoSequenceChannel(enabledAdcChannels);
+
+    configureAutoSequenceChannel(enabledAds7028Channels); //Configuring ADS7028 needs SPI1 therefore moving it here where it is initialised.
+    enableAds7028AutoSequenceMode();
   }
 
   /* SPI2 */
@@ -991,7 +995,7 @@ void SPI_startSensing()
 void SPI_pollSensors(void)
 {
   currentSpiBusCbFlags = 0;
-
+  uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   //ExG (SPI)
   if (ShimBrd_isAds1292Present())
   {
@@ -1003,24 +1007,24 @@ void SPI_pollSensors(void)
     {
       if (storedConfigPtr->chEnExg1_24Bit)
       {
-        EXG_readData(0, 0, &sensing.dataBuf[sensing.ptr.exg1]);
+        EXG_readData(0, 0, &dataBufPtr[sensing.ptr.exg1]);
       }
       else if (storedConfigPtr->chEnExg1_16Bit)
       {
-        EXG_readData(0, 1, &sensing.dataBuf[sensing.ptr.exg1]);
+        EXG_readData(0, 1, &dataBufPtr[sensing.ptr.exg1]);
       }
       if (storedConfigPtr->chEnExg2_24Bit)
       {
-        EXG_readData(1, 0, &sensing.dataBuf[sensing.ptr.exg2]);
-        if (!(sensing.dataBuf[sensing.ptr.exg2 + 1] == 0x00
-                || sensing.dataBuf[sensing.ptr.exg2 + 1] == 0xff))
+        EXG_readData(1, 0, &dataBufPtr[sensing.ptr.exg2]);
+        if (!(dataBufPtr[sensing.ptr.exg2 + 1] == 0x00
+                || dataBufPtr[sensing.ptr.exg2 + 1] == 0xff))
         {
           __NOP();
         }
       }
       else if (storedConfigPtr->chEnExg2_16Bit)
       {
-        EXG_readData(1, 1, &sensing.dataBuf[sensing.ptr.exg2]);
+        EXG_readData(1, 1, &dataBufPtr[sensing.ptr.exg2]);
       }
       SPI_busGatherDataDone_cb(spi3Sens.busId);
     }
@@ -1211,49 +1215,41 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     break;
   case SPI1_ADS7028_INT_EXP0:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP0_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH0_ENABLED);
     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_INT_EXP1:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP1_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH1_ENABLED);
     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_INT_EXP2:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP2_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH2_ENABLED);
     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_INT_EXP3:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP3_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED);
     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP0:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP0_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED);
     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP1:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP1_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED);
     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_EXT_EXP2:
     spiSensingInfo->status = SPI_STAT_ADS7028_EXT_EXP2_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH6_ENABLED);
     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
   case SPI1_ADS7028_VBATT_SENSE:
     spiSensingInfo->status = SPI_STAT_ADS7028_VBATT_GET;
-    configureAutoSequenceChannel(AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH7_ENABLED);
     halRet = ads7028_dataGetDma(spi1Sens_buf.ads2078Buf);
     retVal = 1;
     break;
@@ -1298,30 +1294,29 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 
 void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+  uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
   {
   case SPI1_LSM6DSV_GYRO_AND_ACCEL:
     lsm6dsv_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.gyro,
+    memcpy(dataBufPtr + sensing.ptr.gyro,
         &spi1Sens_buf.lsm6dsvGyroAndAccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvGyroAndAccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_LSM6DSV_ACCEL_ONLY:
     lsm6dsv_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.accel1,
+    memcpy(dataBufPtr + sensing.ptr.accel1,
         &spi1Sens_buf.lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvAccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_LSM6DSV_GYRO_ONLY:
     lsm6dsv_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.gyro,
-        &spi1Sens_buf.lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET],
+    memcpy(dataBufPtr + sensing.ptr.gyro, &spi1Sens_buf.lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvGyroBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_ADXL371_ACCEL:
     adxl371_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.accel3,
-        &spi1Sens_buf.adxl371Buf[SPI_DMA_TXRX_OFFSET],
+    memcpy(dataBufPtr + sensing.ptr.accel3, &spi1Sens_buf.adxl371Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_BMP390_PRESSURE_TEMP:
@@ -1331,7 +1326,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
       bmp3_read_sensor_status();
     }
     bmp3_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.pressure,
+    memcpy(dataBufPtr + sensing.ptr.pressure,
         &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
         sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     break;
@@ -1403,16 +1398,17 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
       break;
     }
 
-    sensing.dataBuf[dataBufIndex + 0] = adcTempbuf & 0xFF;
-    sensing.dataBuf[dataBufIndex + 1] = (adcTempbuf >> 8) & 0xFF;
+    dataBufPtr[dataBufIndex + 0] = adcTempbuf & 0xFF;
+    dataBufPtr[dataBufIndex + 1] = (adcTempbuf >> 8) & 0xFF;
 
     if (spi1Sens.sensorList[spi1Sens.sensorCnt] == SPI1_ADS7028_INT_EXP3
         && ShimConfig_isGSREnabled())
     {
-      GSR_range(&sensing.dataBuf[dataBufIndex]);
+      GSR_range(&dataBufPtr[dataBufIndex]);
     }
 
-    stopAds7028Conversions();
+    ads7028_setCS(HIGH); //end of SPI frame → trigger next conversion
+    delay_us(1);         //CS_HIGH for 1us before it starts next conversion.
     break;
   default:
     break;
@@ -1424,18 +1420,18 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+  uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   switch (spi2Sens.sensorList[spi2Sens.sensorCnt])
   {
   case SPI2_LIS2DW12_ACCEL:
     lis2dw12_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.accel2,
+    memcpy(dataBufPtr + sensing.ptr.accel2,
         &spi2Sens_buf.lis2dw12AccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis2dw12AccelBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI2_LIS3MDL_MAG:
     lis3mdl_unselectDevice();
-    memcpy(sensing.dataBuf + sensing.ptr.mag2,
-        &spi2Sens_buf.lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET],
+    memcpy(dataBufPtr + sensing.ptr.mag2, &spi2Sens_buf.lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis3mdlMagBuf) - SPI_DMA_TXRX_OFFSET);
     break;
   default:
@@ -1448,6 +1444,7 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 void SPI3_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+
 #if !IS_EXG_DATA_READ_BLOCKING
   switch (spi3Sens.sensorList[spi3Sens.sensorCnt])
   {
@@ -1511,6 +1508,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
 {
   gConfigBytes *configBytes = ShimConfig_getStoredConfig();
   memset(&spiAdc, 0x00, sizeof(spiAdc));
+  enabledAds7028Channels = 0; //all channels disabled initially;
 
   //Select channel  and enable as per config
   //Internal ADC 0
@@ -1522,6 +1520,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
     sensing.dataLen += 2;
     spiAdc.sensorList[spiAdc.sensorLen++] = INTERNAL_ADC_0;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP0;
+    enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH0_ENABLED;
   }
   //Bridge Amplifier/Strain Gauge
   if (configBytes->chEnBridgeAmp)
@@ -1535,6 +1534,8 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
     spiAdc.sensorList[spiAdc.sensorLen++] = STRAIN_LOW;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP1;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP2;
+    enabledAds7028Channels |= (AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH1_ENABLED
+        | AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH2_ENABLED);
   }
   else
   {
@@ -1547,6 +1548,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
       sensing.dataLen += 2;
       spiAdc.sensorList[spiAdc.sensorLen++] = INTERNAL_ADC_1;
       spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP1;
+      enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH1_ENABLED;
     }
     //Internal ADC 2
     if (configBytes->chEnIntADC2)
@@ -1557,6 +1559,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
       sensing.dataLen += 2;
       spiAdc.sensorList[spiAdc.sensorLen++] = INTERNAL_ADC_2;
       spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP2;
+      enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH2_ENABLED;
     }
   }
   //Internal ADC 3
@@ -1577,6 +1580,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_INT_EXP3;
     sensing.nbrSpiChans += 1;
     sensing.dataLen += 2;
+    enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH3_ENABLED;
   }
   //External ADC 0
   if (configBytes->chEnExtADC0)
@@ -1587,6 +1591,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
     sensing.dataLen += 2;
     spiAdc.sensorList[spiAdc.sensorLen++] = EXTERNAL_ADC_0;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_EXT_EXP0;
+    enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH4_ENABLED;
   }
   //External ADC 1
   if (configBytes->chEnExtADC1)
@@ -1597,6 +1602,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
     sensing.dataLen += 2;
     spiAdc.sensorList[spiAdc.sensorLen++] = EXTERNAL_ADC_1;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_EXT_EXP1;
+    enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH5_ENABLED;
   }
   //External ADC 2
   if (configBytes->chEnExtADC2)
@@ -1607,6 +1613,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
     sensing.dataLen += 2;
     spiAdc.sensorList[spiAdc.sensorLen++] = EXTERNAL_ADC_2;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_EXT_EXP2;
+    enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH6_ENABLED;
   }
   if (configBytes->chEnVBattery)
   {
@@ -1616,6 +1623,7 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
     sensing.dataLen += 2;
     spiAdc.sensorList[spiAdc.sensorLen++] = VBATT;
     spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_ADS7028_VBATT_SENSE;
+    enabledAds7028Channels |= AUTO_SEQ_CHSEL_AUTO_SEQ_CHSEL_CH7_ENABLED;
   }
 }
 #endif

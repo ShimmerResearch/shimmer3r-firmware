@@ -168,7 +168,8 @@ int8_t bmp3_drdy_test(void)
 int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
 {
   int8_t rslt;
-  uint8_t rate = BMP3_ODR_200_HZ;
+  uint8_t start_odr = BMP3_ODR_200_HZ;
+  uint8_t next_odr = BMP3_ODR_200_HZ;
 
   /* Used to select the settings user needs to change */
   uint16_t settings_sel;
@@ -193,58 +194,64 @@ int8_t bmp3_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
 
   if (shimmerSamplingFreq >= (float) 100.0)
   {
-    rate = BMP3_ODR_200_HZ;
+    start_odr = BMP3_ODR_200_HZ;
   }
   else if ((shimmerSamplingFreq >= (float) 50.0))
   {
-    rate = BMP3_ODR_100_HZ;
+    start_odr = BMP3_ODR_100_HZ;
   }
   else if ((shimmerSamplingFreq >= (float) 25.0))
   {
-    rate = BMP3_ODR_50_HZ;
+    start_odr = BMP3_ODR_50_HZ;
   }
   else if ((shimmerSamplingFreq >= (float) 12.5))
   {
-    rate = BMP3_ODR_25_HZ;
+    start_odr = BMP3_ODR_25_HZ;
   }
   else if ((shimmerSamplingFreq >= (float) 6.25))
   {
-    rate = BMP3_ODR_12_5_HZ;
+    start_odr = BMP3_ODR_12_5_HZ;
   }
   else if ((shimmerSamplingFreq >= (float) 3.1))
   {
-    rate = BMP3_ODR_6_25_HZ;
+    start_odr = BMP3_ODR_6_25_HZ;
   }
   else if ((shimmerSamplingFreq >= (float) 1.5))
   {
-    rate = BMP3_ODR_3_1_HZ;
+    start_odr = BMP3_ODR_3_1_HZ;
   }
   else
   {
-    rate = BMP3_ODR_1_5_HZ;
+    start_odr = BMP3_ODR_1_5_HZ;
   }
-  settings.odr_filter.odr = rate;
+
+  rslt = find_next_supported_odr(start_odr, &next_odr, &settings);
+
+  settings.odr_filter.odr = next_odr;
 
   /* Assign the settings which needs to be set in the sensor */
   settings_sel = BMP3_SEL_PRESS_EN | BMP3_SEL_TEMP_EN | BMP3_SEL_PRESS_OS
       | BMP3_SEL_TEMP_OS | BMP3_SEL_ODR;
 
   isDrdyIntEnabled = false;
-  if (bmp3_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
+  if (bmp3_is_shimmer_freq_higher(shimmerSamplingFreq, settings.odr_filter.odr))
   {
     isDrdyIntEnabled = true;
     settings_sel |= BMP3_SEL_DRDY_EN | BMP3_SEL_LATCH;
 
-    settings.int_settings.drdy_en = 1;
-    settings.int_settings.latch = 1;
+    settings.int_settings.drdy_en = BMP3_ENABLE;
+    settings.int_settings.latch = BMP3_ENABLE;
   }
 
   rslt = bmp3_set_sensor_settings(settings_sel, &settings, &bmp3);
-  if (rslt == BMP3_SENSOR_OK)
+  if (rslt != BMP3_SENSOR_OK)
   {
-    settings.op_mode = BMP3_MODE_NORMAL;
-    rslt = bmp3_set_op_mode(&settings, &bmp3);
+    return rslt;
   }
+
+  settings.op_mode = BMP3_MODE_NORMAL;
+  rslt = bmp3_set_op_mode(&settings, &bmp3);
+
   return rslt;
 }
 

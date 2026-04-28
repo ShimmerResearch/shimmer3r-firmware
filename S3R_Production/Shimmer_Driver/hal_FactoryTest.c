@@ -15,8 +15,7 @@
 #include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
 #include "PCM/pcm_config.h"
-#include "usbd_cdc_acm_if.h"
-
+#include "ux_device_cdc_acm.h"
 char *buffer;
 
 uint8_t test_i2c_addr_list[128], test_i2c_addr_list_len;
@@ -524,7 +523,7 @@ void I2C_test(void)
       ShimFactoryTest_sendReport(
           " - S3R_TEST_0024 - FAIL: I2C4 - no test rig detected\r\n");
       ShimFactoryTest_sendReport(
-          " - S3R_TEST_0025 - FAIL: GSR - no test rig detected\r\n");
+          " - S3R_TEST_0025 - FAIL: GSR - refer to S3R_TEST_0024\r\n");
       i2c4_result = 1;
     }
     else if (test_i2c_addr_list_len == 3) //GSR Test Rig detected
@@ -552,8 +551,8 @@ void I2C_test(void)
       ShimFactoryTest_sendReport(buffer);
       if (ShimBrd_isHwId(EXP_BRD_GSR_UNIFIED))
       {
-        ShimFactoryTest_sendReport(
-            " - S3R_TEST_0025 - WARNING: GSR - no test rig detected\r\n");
+        ShimFactoryTest_sendReport(" - S3R_TEST_0025 - WARNING: GSR - Correct "
+                                   "test rig not detected\r\n");
       }
       else
       {
@@ -566,7 +565,7 @@ void I2C_test(void)
       ShimFactoryTest_sendReport(
           " - S3R_TEST_0024 - FAIL: I2C4 - test rig not recognised\r\n");
       ShimFactoryTest_sendReport(
-          " - S3R_TEST_0025 - FAIL: GSR - test rig not recognised\r\n");
+          " - S3R_TEST_0025 - FAIL: GSR - refer to S3R_TEST_0024\r\n");
       i2c4_result = 1;
     }
 
@@ -830,7 +829,7 @@ void ShimFactoryTest_sendReportImpl(const char *str, factory_test_target_t facto
   case PRINT_TO_DOCK_UART:
     if (shimmerStatus.usbPluggedIn)
     {
-      CDC_Transmit(CDC_CH_DOCK_COMMS, (uint8_t *) str, strlen(str));
+      USBX_CDC_ACM_Transmit((uint8_t *) str, strlen(str));
     }
     else if (shimmerStatus.docked)
     {
