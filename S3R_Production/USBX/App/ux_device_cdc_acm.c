@@ -186,8 +186,13 @@ VOID cdc_acm_write_task(VOID)
       retVal = ux_device_class_cdc_acm_write_run(cdc_acm,
           usbx_cdc_tx_rx.tx_buffer + usbx_cdc_tx_rx.tx_count,
           usbx_cdc_tx_rx.tx_length - usbx_cdc_tx_rx.tx_count, &actual_length);
-      //Handle error
-      if (retVal < UX_STATE_IDLE)
+      /* Use "< UX_STATE_NEXT" (== 4) rather than "< UX_STATE_IDLE"
+       * (== 2) so that UX_STATE_ERROR (3) and UX_STATE_IDLE (2) also
+       * enter the fatal-error recovery branch.  USBX itself uses this
+       * same criterion internally to decide whether a transfer has
+       * failed; "< UX_STATE_IDLE" would let UX_STATE_ERROR fall
+       * through silently and leave the TX state machine stuck. */
+      if (retVal < UX_STATE_NEXT)
       {
         //Fatal error: stop everything
         usbx_cdc_tx_rx.tx_result = usbx_error;
@@ -271,7 +276,16 @@ VOID cdc_acm_read_task(VOID)
      * full-buffer pointer/size; do NOT advance them by rx_count. */
     status = ux_device_class_cdc_acm_read_run(cdc_acm,
         usbx_cdc_tx_rx.rx_buffer, usbx_cdc_tx_rx.rx_length, &actual_length);
-    if (status < UX_STATE_IDLE)
+    /* Treat anything that is not "in progress" (UX_STATE_WAIT == 5) or
+     * "completed OK" (UX_STATE_NEXT == 4) as an error.  USBX returns
+     * UX_STATE_ERROR (3) and UX_STATE_EXIT (1) on different failure
+     * paths inside _ux_device_class_cdc_acm_read_run(); using
+     * "status < UX_STATE_IDLE" (< 2) would miss UX_STATE_ERROR and
+     * UX_STATE_IDLE and leave the RX state machine stuck in WAIT with
+     * no transfer rearmed.  Match USBX's own internal convention of
+     * "status < UX_STATE_NEXT" so RESET/EXIT/IDLE/ERROR all enter the
+     * fatal-error recovery branch. */
+    if (status < UX_STATE_NEXT)
     {
       //Fatal error: stop everything
       usbx_cdc_tx_rx.rx_result = usbx_error;
