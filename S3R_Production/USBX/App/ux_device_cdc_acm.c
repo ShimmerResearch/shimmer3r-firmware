@@ -274,8 +274,8 @@ VOID cdc_acm_read_task(VOID)
      * requested_length arguments -- it uses the values captured on the
      * very first (UX_STATE_RESET) call. So always pass the original
      * full-buffer pointer/size; do NOT advance them by rx_count. */
-    status = ux_device_class_cdc_acm_read_run(cdc_acm,
-        usbx_cdc_tx_rx.rx_buffer, usbx_cdc_tx_rx.rx_length, &actual_length);
+    status = ux_device_class_cdc_acm_read_run(cdc_acm, usbx_cdc_tx_rx.rx_buffer,
+        usbx_cdc_tx_rx.rx_length, &actual_length);
     /* Treat anything that is not "in progress" (UX_STATE_WAIT == 5) or
      * "completed OK" (UX_STATE_NEXT == 4) as an error.  USBX returns
      * UX_STATE_ERROR (3) and UX_STATE_EXIT (1) on different failure
