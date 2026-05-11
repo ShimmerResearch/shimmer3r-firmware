@@ -108,15 +108,22 @@ void appHandler(ezs_packet_t *packet)
 
 ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
 {
+  /* Atomically check and increment: disable IRQs so the ISR cannot decrement
+   * pending_response between the check and the increment. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+
   /* make sure we aren't already waiting for a response */
   if (pending_response != 0)
   {
+    __set_PRIMASK(primask);
     /* only one pending response at a time is allowed */
     return EZS_OUTPUT_RESULT_RESPONSE_PENDING;
   }
 
   /* increment pending response counter */
   pending_response++;
+  __set_PRIMASK(primask);
 
   /* send data out through UART */
   //UART_SpiUartPutArray((uint8_t *)data, length);
