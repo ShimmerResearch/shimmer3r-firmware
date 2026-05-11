@@ -167,4 +167,4 @@ A `clang-format` check runs automatically on every pull request via GitHub Actio
 ## License
 
 Copyright © Shimmer Research, Ltd. All rights reserved.  
-Redistribution and use are governed by the BSD-style licence found in each source file header.
+Redistribution and use are governed by the BSD-style license found in each source file header.
