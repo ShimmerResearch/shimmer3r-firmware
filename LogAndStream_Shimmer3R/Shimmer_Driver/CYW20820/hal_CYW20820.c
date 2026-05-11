@@ -86,7 +86,10 @@ void appHandler(ezs_packet_t *packet)
   if (packet->packet_type == EZS_PACKET_TYPE_RESPONSE)
   {
     /* clear pending response flag */
-    pending_response = 0;
+    if (pending_response != 0)
+    {
+      pending_response--;
+    }
   }
 
   /* send packet to app-level callback, if defined */
@@ -113,7 +116,7 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
   }
 
   /* increment pending response counter */
-  pending_response = 1;
+  pending_response++;
 
   /* send data out through UART */
   //UART_SpiUartPutArray((uint8_t *)data, length);
