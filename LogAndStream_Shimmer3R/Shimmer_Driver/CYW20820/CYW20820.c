@@ -129,9 +129,9 @@ static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref
 #endif
 
 uint8_t *btInitCmdsSteps;
-uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
+volatile uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
 uint8_t btNameTypeBeingRead;
-bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
+volatile bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
 static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
   UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2, UPDATE_UART_SETTINGS_STAGE3,
