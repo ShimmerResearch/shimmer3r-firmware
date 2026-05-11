@@ -25,6 +25,7 @@
 
 #include "Boards/shimmer_boards.h"
 #include "Button/shimmer_button.h"
+#include "CYW20820/CYW20820.h"
 #include "TaskList/shimmer_taskList.h"
 #include "app_usbx_device.h"
 #include "log_and_stream_externs.h"
@@ -312,10 +313,16 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
   switch (GPIO_Pin)
   {
   case BT_CONNECTION_Pin:
-    //setBtConnectionState(isRising);
+#if TRANSPARANT_MODE
+    setBtConnectionState(!isRising);
+#endif
     break;
   case BT_CYSPP_Pin:
-    //setBtCysppState(isRising);
+#if TRANSPARANT_MODE
+    //TODO v1.4.17.17 FW doesn't seem to toggle BT_CONNECTION_Pin after boot
+    //setBtConnectionState(!isRising);
+    setBtCysppState(!isRising);
+#endif
     break;
   case DOCK_DETECT_Pin:
     /* Defer to unified debounced handler via TASK_USB_SETUP */
@@ -700,7 +707,7 @@ void initBtPins(void)
   HAL_GPIO_Init(BT_CP_ROLE_GPIO_Port, &GPIO_InitStruct);
 
   GPIO_InitStruct.Pin = BT_CYSPP_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BT_CYSPP_GPIO_Port, &GPIO_InitStruct);
 
