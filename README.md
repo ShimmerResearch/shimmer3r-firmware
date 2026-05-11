@@ -1,6 +1,6 @@
 # Shimmer3R Firmware — LogAndStream
 
-Firmware for the **Shimmer3R** wearable sensing platform. The main application (`S3R_Production`) implements the **LogAndStream** protocol, enabling simultaneous data logging to a microSD card and wireless streaming over Bluetooth Low Energy.
+Firmware for the **Shimmer3R** wearable sensing platform. The main application (`S3R_Production`) implements the **LogAndStream** protocol, enabling simultaneous data logging to a microSD card and wireless streaming over Bluetooth (Classic Bluetooth and BLE).
 
 ---
 
@@ -9,7 +9,7 @@ Firmware for the **Shimmer3R** wearable sensing platform. The main application (
 | Item | Detail |
 |---|---|
 | MCU | STM32U5A5VJTXQ (ARM Cortex-M33, 160 MHz) |
-| Bluetooth | Infineon CYW20820 (BLE, CYSPP protocol) |
+| Bluetooth | Infineon CYW20820 (Classic Bluetooth & BLE, CYSPP protocol) |
 | Storage | microSD via SDMMC |
 | USB | USB-C (CDC-ACM virtual COM port) |
 
