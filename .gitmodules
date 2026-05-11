@@ -1,18 +1,18 @@
-[submodule "S3R_Production/Shimmer_Driver/LSM6DSV/lsm6dsv-pid"]
-	path = S3R_Production/Shimmer_Driver/LSM6DSV/lsm6dsv-pid
+[submodule "LogAndStream_Shimmer3R/Shimmer_Driver/LSM6DSV/lsm6dsv-pid"]
+	path = LogAndStream_Shimmer3R/Shimmer_Driver/LSM6DSV/lsm6dsv-pid
 	url = https://github.com/STMicroelectronics/lsm6dsv-pid/
-[submodule "S3R_Production/Shimmer_Driver/LIS3MDL/lis3mdl-pid"]
-	path = S3R_Production/Shimmer_Driver/LIS3MDL/lis3mdl-pid
+[submodule "LogAndStream_Shimmer3R/Shimmer_Driver/LIS3MDL/lis3mdl-pid"]
+	path = LogAndStream_Shimmer3R/Shimmer_Driver/LIS3MDL/lis3mdl-pid
 	url = https://github.com/STMicroelectronics/lis3mdl-pid/
-[submodule "S3R_Production/Shimmer_Driver/BMP3/BMP3_SensorAPI"]
-	path = S3R_Production/Shimmer_Driver/BMP3/BMP3_SensorAPI
+[submodule "LogAndStream_Shimmer3R/Shimmer_Driver/BMP3/BMP3_SensorAPI"]
+	path = LogAndStream_Shimmer3R/Shimmer_Driver/BMP3/BMP3_SensorAPI
 	url = https://github.com/ShimmerEngineering/BMP3_SensorAPI
-[submodule "S3R_Production/Shimmer_Driver/LIS2MDL/lis2mdl-pid"]
-	path = S3R_Production/Shimmer_Driver/LIS2MDL/lis2mdl-pid
+[submodule "LogAndStream_Shimmer3R/Shimmer_Driver/LIS2MDL/lis2mdl-pid"]
+	path = LogAndStream_Shimmer3R/Shimmer_Driver/LIS2MDL/lis2mdl-pid
 	url = https://github.com/STMicroelectronics/lis2mdl-pid/
-[submodule "S3R_Production/Shimmer_Driver/LIS2DW12/lis2dw12-pid"]
-	path = S3R_Production/Shimmer_Driver/LIS2DW12/lis2dw12-pid
+[submodule "LogAndStream_Shimmer3R/Shimmer_Driver/LIS2DW12/lis2dw12-pid"]
+	path = LogAndStream_Shimmer3R/Shimmer_Driver/LIS2DW12/lis2dw12-pid
 	url = https://github.com/STMicroelectronics/lis2dw12-pid/
-[submodule "S3R_Production/log-and-stream-common"]
-	path = S3R_Production/log-and-stream-common
+[submodule "LogAndStream_Shimmer3R/log-and-stream-common"]
+	path = LogAndStream_Shimmer3R/log-and-stream-common
 	url = https://github.com/ShimmerResearch/log-and-stream-common.git
