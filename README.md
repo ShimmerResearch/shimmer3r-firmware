@@ -1,6 +1,6 @@
 # Shimmer3R Firmware — LogAndStream
 
-Firmware for the **Shimmer3R** wearable sensing platform. The main application (`S3R_Production`) implements the **LogAndStream** protocol, enabling simultaneous data logging to a microSD card and wireless streaming over Bluetooth (Classic Bluetooth and BLE).
+Firmware for the **Shimmer3R** wearable sensing platform. The main application (`LogAndStream_Shimmer3R`) implements the **LogAndStream** protocol, enabling simultaneous data logging to a microSD card and wireless streaming over Bluetooth (Classic Bluetooth and BLE).
 
 ---
 
@@ -40,7 +40,7 @@ Firmware for the **Shimmer3R** wearable sensing platform. The main application (
 
 ```
 shimmer3r-firmware/
-├── S3R_Production/          # Main LogAndStream firmware project (STM32CubeIDE)
+├── LogAndStream_Shimmer3R/          # Main LogAndStream firmware project (STM32CubeIDE)
 │   ├── Core/                # STM32 HAL-generated peripheral init code
 │   ├── Shimmer_Driver/      # Sensor and board support drivers
 │   │   ├── LSM6DSV/         # IMU driver + STMicroelectronics PID submodule
@@ -60,7 +60,7 @@ shimmer3r-firmware/
 │   │   └── version.h        # Auto-generated firmware version header
 │   ├── log-and-stream-common/   # Shared LogAndStream protocol code (submodule)
 │   ├── Middlewares/         # USB, FATFS, ThreadX/USBX middleware
-│   └── S3R_Production_UBGA132_SMPS.ioc  # STM32CubeMX project file
+│   └── LogAndStream_Shimmer3R_UBGA132_SMPS.ioc  # STM32CubeMX project file
 ├── test_proj/               # Standalone test and example projects
 │   ├── ADC_DMA_Transfer/
 │   ├── FatFs_STM32U5/
@@ -97,25 +97,25 @@ git submodule update --init --recursive
 ### Build in STM32CubeIDE
 
 1. Open STM32CubeIDE.
-2. **File → Open Projects from File System…** and select the `S3R_Production` directory.
+2. **File → Open Projects from File System…** and select the `LogAndStream_Shimmer3R` directory.
 3. Choose the desired build configuration (**Debug** or **Release**).
 4. Click **Build** (hammer icon) or press `Ctrl+B`.
 
-The compiled `.hex` file is written to `S3R_Production/Debug/` or `S3R_Production/Release/`.
+The compiled `.hex` file is written to `LogAndStream_Shimmer3R/Debug/` or `LogAndStream_Shimmer3R/Release/`.
 
 ### Flash the device
 
 Use STM32CubeIDE's built-in debug/flash runner, the **STM32CubeProgrammer**, or any ST-LINK-compatible tool:
 
 ```bash
-STM32_Programmer_CLI -c port=SWD -w S3R_Production/Debug/S3R_Production.hex -rst
+STM32_Programmer_CLI -c port=SWD -w LogAndStream_Shimmer3R/Debug/LogAndStream_Shimmer3R.hex -rst
 ```
 
 ---
 
 ## Firmware versioning
 
-The version is stored in `S3R_Production/build/version.txt` and reflected in `S3R_Production/Shimmer_Driver/version.h`.  
+The version is stored in `LogAndStream_Shimmer3R/build/version.txt` and reflected in `LogAndStream_Shimmer3R/Shimmer_Driver/version.h`.
 The current version follows the `vMAJOR.MINOR.PATCH` scheme (e.g. `v1.00.058`).
 
 Releases are created automatically by the **LogAndStream S3R Build & Release** GitHub Actions workflow, which:
@@ -131,7 +131,7 @@ Releases are created automatically by the **LogAndStream S3R Build & Release** G
 ## Code style
 
 The project uses **clang-format** for consistent C code formatting.  
-The style profile is defined in `S3R_Production/.clang-format` and `STM32CubeIDE_Format_Profile.xml`.
+The style profile is defined in `LogAndStream_Shimmer3R/.clang-format` and `STM32CubeIDE_Format_Profile.xml`.
 
 To format all files locally (Windows):
 
@@ -147,12 +147,12 @@ A `clang-format` check runs automatically on every pull request via GitHub Actio
 
 | Submodule path | Upstream repository |
 |---|---|
-| `S3R_Production/Shimmer_Driver/LSM6DSV/lsm6dsv-pid` | [STMicroelectronics/lsm6dsv-pid](https://github.com/STMicroelectronics/lsm6dsv-pid) |
-| `S3R_Production/Shimmer_Driver/LIS3MDL/lis3mdl-pid` | [STMicroelectronics/lis3mdl-pid](https://github.com/STMicroelectronics/lis3mdl-pid) |
-| `S3R_Production/Shimmer_Driver/LIS2MDL/lis2mdl-pid` | [STMicroelectronics/lis2mdl-pid](https://github.com/STMicroelectronics/lis2mdl-pid) |
-| `S3R_Production/Shimmer_Driver/LIS2DW12/lis2dw12-pid` | [STMicroelectronics/lis2dw12-pid](https://github.com/STMicroelectronics/lis2dw12-pid) |
-| `S3R_Production/Shimmer_Driver/BMP3/BMP3_SensorAPI` | [ShimmerEngineering/BMP3_SensorAPI](https://github.com/ShimmerEngineering/BMP3_SensorAPI) |
-| `S3R_Production/log-and-stream-common` | [ShimmerResearch/log-and-stream-common](https://github.com/ShimmerResearch/log-and-stream-common) |
+| `LogAndStream_Shimmer3R/Shimmer_Driver/LSM6DSV/lsm6dsv-pid` | [STMicroelectronics/lsm6dsv-pid](https://github.com/STMicroelectronics/lsm6dsv-pid) |
+| `LogAndStream_Shimmer3R/Shimmer_Driver/LIS3MDL/lis3mdl-pid` | [STMicroelectronics/lis3mdl-pid](https://github.com/STMicroelectronics/lis3mdl-pid) |
+| `LogAndStream_Shimmer3R/Shimmer_Driver/LIS2MDL/lis2mdl-pid` | [STMicroelectronics/lis2mdl-pid](https://github.com/STMicroelectronics/lis2mdl-pid) |
+| `LogAndStream_Shimmer3R/Shimmer_Driver/LIS2DW12/lis2dw12-pid` | [STMicroelectronics/lis2dw12-pid](https://github.com/STMicroelectronics/lis2dw12-pid) |
+| `LogAndStream_Shimmer3R/Shimmer_Driver/BMP3/BMP3_SensorAPI` | [ShimmerEngineering/BMP3_SensorAPI](https://github.com/ShimmerEngineering/BMP3_SensorAPI) |
+| `LogAndStream_Shimmer3R/log-and-stream-common` | [ShimmerResearch/log-and-stream-common](https://github.com/ShimmerResearch/log-and-stream-common) |
 
 ---
 
