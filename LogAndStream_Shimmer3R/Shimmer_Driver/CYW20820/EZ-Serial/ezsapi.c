@@ -269,7 +269,11 @@ const uint8_t ezs_tbl_cmd[] = {
   0x0E, 0x0C, 0x04, 0x01, T_U32, /* 139 | . , SBTDC (bt_set_device_class) */
   0x0E, 0x0D, 0x00, 0x00,        /* 140 | . , GBTDC (bt_get_device_class) */
   0x13, 0x03, 0x00, 0x00,        /* 141 | . , .SPPGC (spp_get_config) */
-  //-------------- Fix 06 End -------------------------//
+//-------------- Fix 06 End -------------------------//
+
+#if ENABLE_FIX_09
+  0x13, 0x01, 0x03, 0x02, T_U8, T_LU8A, /* 144 | SPPS (spp_send_command) */
+#endif
 };
 
 /*******************************************************************************
