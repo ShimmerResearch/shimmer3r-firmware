@@ -54,7 +54,7 @@
 void setCommandsContinue(void);
 
 static uint8_t deInit = 0;
-uint8_t setCommandsStep, setTempBaudRateStep;
+volatile uint8_t setCommandsStep, setTempBaudRateStep;
 UART_HandleTypeDef *huart_BT = 0;
 
 uint8_t messageInProgress, transmissionOverflow;

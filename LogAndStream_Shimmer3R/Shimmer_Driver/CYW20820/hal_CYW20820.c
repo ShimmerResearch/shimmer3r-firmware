@@ -51,7 +51,7 @@
 
 #define CONSOLE_PRINT_NON_EZ_SERIAL_BYTES 0
 
-uint8_t pending_response = 0;
+volatile uint8_t pending_response = 0;
 //uint8_t timer_active = 0;
 //volatile uint16_t timeout_ms_elapsed;
 
@@ -63,10 +63,10 @@ uint8_t bt_txBuf[512];
 uint8_t rxBuf[512];
 uint16_t expectedByteCount;
 
-uint8_t waitingForBtBoot = 0;
+volatile uint8_t waitingForBtBoot = 0;
 char btBootMsg[160] = { 0 }; //Measured to be 150 chars with v1.4.12.12
-uint8_t btBootMsgIndex = 0;
-uint8_t btBootMsgLineCount = 0;
+volatile uint8_t btBootMsgIndex = 0;
+volatile uint8_t btBootMsgLineCount = 0;
 
 uint16_t btRxWaitByteCount = 0;
 
@@ -88,7 +88,7 @@ void appHandler(ezs_packet_t *packet)
     /* clear pending response flag */
     if (pending_response != 0)
     {
-      pending_response--;
+      pending_response = 0;
     }
   }
 
@@ -116,7 +116,7 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
   }
 
   /* increment pending response counter */
-  pending_response++;
+  pending_response = 1;
 
   /* send data out through UART */
   //UART_SpiUartPutArray((uint8_t *)data, length);
