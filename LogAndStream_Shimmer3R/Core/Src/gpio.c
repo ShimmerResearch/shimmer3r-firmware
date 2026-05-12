@@ -160,7 +160,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pins : CHG_STAT1_Pin CHG_STAT2_Pin */
   GPIO_InitStruct.Pin = CHG_STAT1_Pin | CHG_STAT2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pin : USB_VBUS_Pin */
@@ -534,7 +534,7 @@ void platform_initGpioForRevision(void)
 
       GPIO_InitStruct.Pin = SR48_6_0_CHG_STAT1_Pin | SR48_6_0_CHG_STAT2_Pin;
       GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Pull = GPIO_PULLUP;
       HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
       /*Configure GPIO pin Output Level */

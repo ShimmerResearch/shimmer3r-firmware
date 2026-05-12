@@ -1204,24 +1204,95 @@ void deinitGsrMcuAdc(void)
 }
 #endif
 
+/* Number of consecutive SUSPENDED samples required before accepting the state.
+ * At the 2-second docked polling interval this is a 4-second confirmation
+ * window — long enough to reject single-sample glitches on the 698 kΩ
+ * pull-up network, short enough to be imperceptible to the user. */
+#define CHRG_STATUS_CONFIRM_N 3U
+
+/* Voltage rise above this band (mV) within one polling interval is treated as
+ * evidence of active charging, vetoing a concurrent SUSPENDED reading. */
+#define BATT_VOLTAGE_NOISE_BAND_MV 20U
+
 void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *hadcBattPtr)
 {
+  /* Static debounce state — persists across calls */
+  static uint8_t  chrgSuspendedConfirmCount = 0;
+  static uint16_t prevBattValMV             = 0;
+  /* Initialised to PRECONDITIONING encoding (stat2=SET, stat1=RESET) so that
+   * the very first dock session falls back to "Charging" during any debounce
+   * window rather than the misleading BAD_BATTERY (both pins RESET). */
+  static uint8_t lastConfirmedStat1 = GPIO_PIN_RESET;
+  static uint8_t lastConfirmedStat2 = GPIO_PIN_SET;
+
   //Multiplied by 2 due to voltage divider
   uint16_t battValMV = __HAL_ADC_CALC_DATA_TO_VOLTAGE(hadcBattPtr, VREF_EXTERNAL_SUPPLY_MV,
                            adcBattVal, hadcBattPtr->Init.Resolution)
       * 2;
+
+  /* Read the raw STAT pin levels once so the same sample is used throughout */
 #if SUPPORT_SR48_6_0
-  if (ShimBrd_isBoardSr48_6_0())
+  uint8_t stat1 = ShimBrd_isBoardSr48_6_0() ? LM3658SD_STAT1_SR48_6_0 : LM3658SD_STAT1;
+  uint8_t stat2 = ShimBrd_isBoardSr48_6_0() ? LM3658SD_STAT2_SR48_6_0 : LM3658SD_STAT2;
+#else
+  uint8_t stat1 = LM3658SD_STAT1;
+  uint8_t stat2 = LM3658SD_STAT2;
+#endif
+
+  if (!shimmerStatus.docked)
   {
-    ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1_SR48_6_0, LM3658SD_STAT2_SR48_6_0);
+    /* When undocked the STAT pins are irrelevant; reset debounce state so the
+     * next dock session starts fresh. */
+    chrgSuspendedConfirmCount = 0;
+    prevBattValMV             = 0;
+    lastConfirmedStat1        = GPIO_PIN_RESET;
+    lastConfirmedStat2        = GPIO_PIN_SET;
+  }
+  else if (stat1 == GPIO_PIN_SET && stat2 == GPIO_PIN_SET)
+  {
+    /* Both STAT pins HIGH = SUSPENDED encoding. Apply two complementary guards
+     * before accepting it as a genuine state change:
+     *
+     *   1. Voltage-trend veto: a rising battery voltage indicates active
+     *      charging, not a genuine post-charge sleep state.  Reject the
+     *      SUSPENDED reading and continue showing the previous confirmed state.
+     *
+     *   2. N-of-N confirm: require CHRG_STATUS_CONFIRM_N consecutive SUSPENDED
+     *      samples (with no rising-voltage veto) before accepting the
+     *      transition.  This rejects brief sampling glitches caused by
+     *      the slow rise time on the 698 kΩ external pull-up network. */
+    if (battValMV > prevBattValMV + BATT_VOLTAGE_NOISE_BAND_MV)
+    {
+      /* Voltage-trend veto: fall back to previous confirmed state */
+      chrgSuspendedConfirmCount = 0;
+      stat1                     = lastConfirmedStat1;
+      stat2                     = lastConfirmedStat2;
+    }
+    else
+    {
+      chrgSuspendedConfirmCount++;
+      if (chrgSuspendedConfirmCount < CHRG_STATUS_CONFIRM_N)
+      {
+        /* Not yet confirmed: hold the previous non-SUSPENDED state */
+        stat1 = lastConfirmedStat1;
+        stat2 = lastConfirmedStat2;
+      }
+      /* Once confirmed (count >= N), fall through and pass SUSPENDED as-is */
+    }
   }
   else
   {
-    ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
+    /* Any non-SUSPENDED reading resets the counter and records the last
+     * confirmed non-SUSPENDED STAT encoding for use during future debounce
+     * windows. */
+    chrgSuspendedConfirmCount = 0;
+    lastConfirmedStat1        = stat1;
+    lastConfirmedStat2        = stat2;
   }
-#else  //SUPPORT_SR48_6_0
-  ShimBatt_updateStatus(adcBattVal, battValMV, LM3658SD_STAT1, LM3658SD_STAT2);
-#endif //SUPPORT_SR48_6_0
+
+  prevBattValMV = battValMV;
+
+  ShimBatt_updateStatus(adcBattVal, battValMV, stat1, stat2);
 }
 
 /* USER CODE END 1 */
