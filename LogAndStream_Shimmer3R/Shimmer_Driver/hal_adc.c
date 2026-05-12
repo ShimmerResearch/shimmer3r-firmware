@@ -1261,7 +1261,7 @@ void saveBatteryVoltageAndUpdateStatus(uint16_t adcBattVal, ADC_HandleTypeDef *h
      *      samples (with no rising-voltage veto) before accepting the
      *      transition.  This rejects brief sampling glitches caused by
      *      the slow rise time on the 698 kΩ external pull-up network. */
-    if (battValMV > prevBattValMV + BATT_VOLTAGE_NOISE_BAND_MV)
+    if (prevBattValMV != 0 && battValMV > prevBattValMV + BATT_VOLTAGE_NOISE_BAND_MV)
     {
       /* Voltage-trend veto: fall back to previous confirmed state */
       chrgSuspendedConfirmCount = 0;
