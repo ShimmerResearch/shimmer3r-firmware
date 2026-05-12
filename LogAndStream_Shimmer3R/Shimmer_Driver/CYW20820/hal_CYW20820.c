@@ -61,14 +61,14 @@ uint8_t *inBytePtr;
 
 uint8_t bt_txBuf[512];
 uint8_t rxBuf[512];
-uint16_t expectedByteCount;
+volatile uint16_t expectedByteCount;
 
 volatile uint8_t waitingForBtBoot = 0;
 char btBootMsg[160] = { 0 }; //Measured to be 150 chars with v1.4.12.12
 volatile uint8_t btBootMsgIndex = 0;
 volatile uint8_t btBootMsgLineCount = 0;
 
-uint16_t btRxWaitByteCount = 0;
+volatile uint16_t btRxWaitByteCount = 0;
 
 /*******************************************************************************
  * Interrupt Handler Name: TimerInterruptHandler

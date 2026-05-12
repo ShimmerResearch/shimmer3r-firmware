@@ -37,7 +37,7 @@ uint32_t SHIM_RTC_Status = RTC_STATUS_ZERO;
 volatile time_t nextAlarms[RTC_NUM_ALARMS] = { RTC_ALARM_CONTEXT_NONE };
 
 #if RTC_FAST
-uint64_t rtc64_reg;
+volatile uint64_t rtc64_reg;
 #endif /* RTC_FAST */
 
 /* USER CODE END 0 */
