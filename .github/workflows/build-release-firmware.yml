@@ -15,7 +15,7 @@ on:
       build_mode:
         description: "Select build mode:"
         required: true
-        default: "Debug"
+        default: "Release"
         type: choice
         options:
           - Release
