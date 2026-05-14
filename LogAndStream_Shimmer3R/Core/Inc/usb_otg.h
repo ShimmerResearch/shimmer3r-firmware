@@ -46,8 +46,8 @@ extern "C"
    */
   typedef enum
   {
-    USB_SPEED_HIGH = 0, /*!< USB 2.0 High-Speed (480 Mbps) */
-    USB_SPEED_FULL = 1, /*!< USB 2.0 Full-Speed (12 Mbps) – default */
+    USB_SPEED_FULL = 0, /*!< USB 2.0 Full-Speed (12 Mbps) */
+    USB_SPEED_HIGH = 1 /*!< USB 2.0 High-Speed (480 Mbps) – default */
   } USB_Speed_t;
 
   /* USER CODE END Private defines */

@@ -26,11 +26,11 @@
 #include "main.h"                // for USB_VBUS_Pin/Port
 #include "stm32u5xx_ll_system.h" // for LL_SYSCFG_DisableOTGPHY()
 
-/* Currently-selected USB bus speed.  Defaults to Full-Speed; may be
+/* Currently-selected USB bus speed.  Defaults to High-Speed; may be
  * overridden at boot via USB_setSpeed() (e.g. from an EEPROM setting)
  * before USB_init() is called.  Both MX_USB_OTG_HS_PCD_Init() and the
  * FIFO allocation in USBX_APP_Device_Init() read this value. */
-static USB_Speed_t usb_selected_speed = USB_SPEED_FULL;
+static USB_Speed_t usb_selected_speed = USB_SPEED_HIGH;
 
 static uint32_t USB_getPcdSpeed(void);
 static void USB_OTG_HS_PhyTeardown(void);
@@ -360,7 +360,7 @@ void USB_init(void)
   if (!USBX_IsInitialised())
   {
     DCACHE_invalidate();
-    USB_setSpeed(ShimEeprom_getSensorSettingsPage()->usbFullSpeed ? USB_SPEED_FULL : USB_SPEED_HIGH);
+    USB_setSpeed(ShimEeprom_getSensorSettingsPage()->usbHighSpeed ? USB_SPEED_HIGH : USB_SPEED_FULL);
     MX_USBX_Device_Init();
   }
 }
