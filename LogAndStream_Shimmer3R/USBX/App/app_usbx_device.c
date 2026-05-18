@@ -635,7 +635,9 @@ VOID USBX_APP_Device_DeInit(VOID)
   HAL_StatusTypeDef hal_status;
   UINT usbx_status;
 
-  /* Force the next USB bring-up to start a fresh suspend grace window. */
+  /* Clear the init timestamp while tearing the device down so any suspend
+   * handling does not treat the deinitializing device as being within the
+   * recent post-init grace period. */
   usbInitTick = 0U;
 
   /* Stop USB peripheral */
