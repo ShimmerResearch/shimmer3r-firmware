@@ -635,6 +635,11 @@ VOID USBX_APP_Device_DeInit(VOID)
   HAL_StatusTypeDef hal_status;
   UINT usbx_status;
 
+  /* Clear the init timestamp while tearing the device down so any suspend
+   * handling does not treat the deinitializing device as being within the
+   * recent post-init grace period. */
+  usbInitTick = 0U;
+
   /* Stop USB peripheral */
   hal_status = HAL_PCD_Stop(&hpcd_USB_OTG_HS);
   if (hal_status != HAL_OK)
