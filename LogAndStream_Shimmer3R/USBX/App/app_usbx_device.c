@@ -635,6 +635,9 @@ VOID USBX_APP_Device_DeInit(VOID)
   HAL_StatusTypeDef hal_status;
   UINT usbx_status;
 
+  /* Force the next USB bring-up to start a fresh suspend grace window. */
+  usbInitTick = 0U;
+
   /* Stop USB peripheral */
   hal_status = HAL_PCD_Stop(&hpcd_USB_OTG_HS);
   if (hal_status != HAL_OK)
