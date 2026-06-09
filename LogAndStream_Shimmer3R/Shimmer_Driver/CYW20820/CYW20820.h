@@ -21,6 +21,12 @@
 #define BAUD_TO_USE                    2000000L
 #define FLOW_CONTROL                   1
 
+//TODO this doesn't seem to work on v1.4.16.16 firmware, need to investigate further
+#define TRANSPARANT_MODE               0
+
+#define ENABLE_BT_RX_DEBUG_PRINTS      0
+#define ENABLE_BT_TX_DEBUG_PRINTS      0
+
 #if SUPPORT_SR48_6_0
 #define BAUD_TO_USE_SR48_6_0 115200L
 #endif //SUPPORT_SR48_6_0
@@ -32,6 +38,7 @@ enum BT_SET_COMMAND_STAGES
   IDLE,
   WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2,
+  ENTER_BINARY_MODE,
   UPDATE_UART_SETTINGS_STAGE1,
   UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3,
@@ -106,6 +113,7 @@ void setBtCysppState(bool state);
 bool getBtCysppState(void);
 uint8_t *BT_getCyw20820MacAddressPtr(void);
 void BT_generateCyw20820FirmwareVersionStr(char *str);
+uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch);
 void setBtConnectionState(bool state);
 //connect to a specific device that was previously discovered
 uint8_t BT_connect(uint8_t *addr);
@@ -114,5 +122,7 @@ uint8_t BT_disconnect(void);
 void BT_cancelConnection(void);
 void BT_connectionFailed(uint8_t conn_handle, uint16_t reason);
 void BT_startDone_cb(void (*callback)(void));
+void BT_setConnectionHandle(uint8_t conn_handle);
+uint8_t BT_getConnectionHandle(void);
 
 #endif /* SRC_CYW20820_H_ */

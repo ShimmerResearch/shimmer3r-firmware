@@ -70,6 +70,8 @@ volatile uint8_t btBootMsgLineCount = 0;
 
 volatile uint16_t btRxWaitByteCount = 0;
 
+uint8_t skippingBytesCount = 0;
+
 /*******************************************************************************
  * Interrupt Handler Name: TimerInterruptHandler
  ****************************************************************************//**
@@ -122,13 +124,27 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
   //UART_SpiUartPutArray((uint8_t *)data, length);
   HAL_StatusTypeDef ret_val;
 
-  //ret_val = HAL_UART_Transmit_DMA(huart, (uint8_t *)data, length);
+#if ENABLE_BT_TX_DEBUG_PRINTS
+  printf("TX data=");
+  for (uint16_t i = 0; i < length; i++)
+  {
+    printf("%c",
+        ((data[i] >> 4) & 0xF) < 10 ? ('0' + ((data[i] >> 4) & 0xF)) :
+                                      ('A' - 10 + ((data[i] >> 4) & 0xF)));
+    printf("%c",
+        (data[i] & 0xF) < 10 ? ('0' + (data[i] & 0xF)) : ('A' - 10 + (data[i] & 0xF)));
+    printf(" ");
+  }
+  printf("\r\n");
+#endif
+
+  //ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *)data, length);
   //ret_val = HAL_UART_Transmit(huart, (uint8_t *)data, length, 1500*HAL_GetTickFreq());
   ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
 
   if (ret_val != HAL_OK)
   {
-    SHIMMER_PRINTF("DMA problem in appOutput\r\n");
+    SHIMMER_PRINTF("UART transmit problem in appOutput\r\n");
   }
 
   return EZS_OUTPUT_RESULT_DATA_WRITTEN;
@@ -208,44 +224,6 @@ void setBtUartInstance(UART_HandleTypeDef *huartToUse)
 
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 {
-  //SHIMMER_PRINTF("byte received\r\n");
-  //SHIMMER_PRINTF("%c", rxBuf[0]);
-
-  //if start byte is CYW header byte or if in middle of waiting for full CYW
-  //response if(!waitingForArgs
-  //    && (ezs_rx_packet_length != 0 || (b & EZS_BINARY_SOF_MASK) != 0)) {
-  //
-  //  ezs_input_result_t result = EZSerial_Parse(b);
-  //  if(result == EZS_INPUT_RESULT_IN_PROGRESS
-  //      || result == EZS_INPUT_RESULT_PACKET_COMPLETE) {
-  //
-  //  }
-  //} else {
-  //  //Assume Shimmer command
-  //}
-
-  //ezs_packet_t *result = ezs_parseSingleByte(rxBuf[0]);
-  //if(result!=0){
-  //  ezsHandlerShimmer(result);
-  //}
-  //HAL_StatusTypeDef status = setDmaRx(1);
-
-  //for (uint8_t i = 0; i < expectedByteCount; i++)
-  //{
-  //  ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
-  //  if (result != 0)
-  //  {
-  //    ezsHandlerShimmer(result);
-  //  }
-  //}
-  //
-  //uint16_t count = getEzsRemainingByteCount();
-  //if (count == 0)
-  //{
-  //  count = 1;
-  //}
-  //HAL_StatusTypeDef status = setDmaRx(count);
-
   uint16_t count = 1;
 
   uint8_t i = 0;
@@ -268,23 +246,35 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       }
       i += 1;
     }
-    /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
-     * parse is ideal and the header byte is a Shimmer packet header byte,
-     * parse as Shimmer packet */
-    else if (ShimBt_isWaitingForArgs()
-        || (getEzsPacketLength() == 0 && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
-            && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
-            && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
+    else if (skippingBytesCount > 0)
+    {
+#if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
+      SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+#endif
+      skippingBytesCount--;
+      i += 1;
+    }
+#if TRANSPARANT_MODE
+    ///* If were waiting for the rest of a Shimmer packet or the the EZ Serial
+    //* parse is ideal and the header byte is a Shimmer packet header byte,
+    //* parse as Shimmer packet */
+    //else if (ShimBt_isWaitingForArgs()
+    //   || (getEzsPacketLength() == 0 && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
+    //       && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
+    //       && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
+    //{
+    else if (shimmerStatus.btFirstConnectionEstablished)
     {
       //Parse as Shimmer packet
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
-      SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+      SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
       count = btRxWaitByteCount;
       ShimBt_dmaConversionDone(&rxBuf[i]);
       i += count;
       count = btRxWaitByteCount;
     }
+#endif
     else
     {
       ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
@@ -300,14 +290,10 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
         if (result == EZS_INPUT_RESULT_IN_PROGRESS)
         {
-          //if (getEzsPacketLength() != 0)
-          //{
-          //  count = getEzsRemainingByteCount();
-          //}
           count = getEzsRemainingByteCount();
         }
 
-        //TODO get working
+        //TODO get working if needed (doesn't seem necessary currently)
         else if (result == EZS_INPUT_RESULT_BUFFER_OVERFLOW || result == EZS_INPUT_RESULT_UNHANDLED_PACKET
             || result == EZS_INPUT_RESULT_INVALID_CHECKSUM)
         {
@@ -316,7 +302,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
           if (getEzsPacketLength() == 0)
           {
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
-            SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+            SHIMMER_PRINTF("S3=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
           }
         }
@@ -343,13 +329,36 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 
 HAL_StatusTypeDefShimmer BtTransmit(uint8_t *buf, uint8_t len)
 {
+#if TRANSPARANT_MODE
   HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
+#else
+  HAL_StatusTypeDef ret_val = HAL_OK;
+  ezs_output_result_t ezs_ret;
+
+  ezs_cmd_spp_send_command_t spp_send_command;
+  spp_send_command.conn_handle = BT_getConnectionHandle();
+  spp_send_command.data.length = len;
+  memcpy(spp_send_command.data.data, buf, len);
+  ezs_ret = ezs_cmd_spp_send_command(
+      spp_send_command.conn_handle, &spp_send_command.data);
+
+  if (ezs_ret != EZS_OUTPUT_RESULT_DATA_WRITTEN)
+  {
+    SHIMMER_PRINTF("BtTransmit EZS fault=%d\r\n", ezs_ret);
+    ret_val = HAL_ERROR;
+  }
+#endif
   return (HAL_StatusTypeDefShimmer) ret_val;
 }
 
 void resetEzsPendingResponse(void)
 {
   pending_response = 0;
+}
+
+uint8_t isPendingResponseFromBtModule(void)
+{
+  return pending_response;
 }
 
 void resetBtRxBuff(void)
@@ -368,6 +377,11 @@ void setWaitingForBtBoot(uint8_t state)
   }
 }
 
+void setSkippingBytesCount(uint8_t count)
+{
+  skippingBytesCount = count;
+}
+
 char *getBtBootMsgPtr(void)
 {
   return &btBootMsg[0];
@@ -376,4 +390,9 @@ char *getBtBootMsgPtr(void)
 void setDmaWaitingForResponse(uint16_t count)
 {
   btRxWaitByteCount = count;
+}
+
+uint16_t getDmaWaitingForResponse(void)
+{
+  return btRxWaitByteCount;
 }
