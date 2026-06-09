@@ -34,7 +34,7 @@ I2CTypeDef i2c3Sens;
 I2CTypeDef i2c4Sens;
 I2CTypeDef i2cBatt;
 
-uint8_t expectedI2cBusCbFlags = 0, currentI2cBusCbFlags = 0;
+volatile uint8_t expectedI2cBusCbFlags = 0, currentI2cBusCbFlags = 0;
 
 I2C_HandleTypeDef *hi2cMainBus;
 #if defined(SHIMMER4_SDK)

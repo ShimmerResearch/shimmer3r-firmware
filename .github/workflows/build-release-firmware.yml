@@ -1,4 +1,4 @@
-name: LogAndStream S3R Build & Release
+name: LogAndStream_Shimmer3R Build & Release
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ on:
       build_mode:
         description: "Select build mode:"
         required: true
-        default: "Debug"
+        default: "Release"
         type: choice
         options:
           - Release

@@ -72,7 +72,7 @@ uint8_t adcConfig;
 uint32_t battInterval = BATT_INTERVAL_D;
 #endif
 
-uint8_t waitingForDebugData = 0;
+volatile uint8_t waitingForDebugData = 0;
 
 #if defined(SHIMMER3R)
 static uint16_t ADC_RANK_ARRAY[] = { ADC_REGULAR_RANK_1, ADC_REGULAR_RANK_2,

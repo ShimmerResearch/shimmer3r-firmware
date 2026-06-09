@@ -54,10 +54,11 @@
 void setCommandsContinue(void);
 
 static uint8_t deInit = 0;
-uint8_t setCommandsStep, setTempBaudRateStep;
+volatile uint8_t setCommandsStep, setTempBaudRateStep;
 UART_HandleTypeDef *huart_BT = 0;
 
-uint8_t messageInProgress, transmissionOverflow;
+uint8_t messageInProgress;
+volatile uint8_t transmissionOverflow;
 uint8_t bt_txBuf[TX_BUFF_MAX], bt_txBuBuf[TX_BACKUP_BUFF_MAX]; //max possible size
 uint8_t bt_rxBuf[MAX_COMMAND_ARG_SIZE];
 uint16_t bt_txBufLen;
@@ -75,7 +76,7 @@ uint8_t discoverable, authenticate, encrypt, setNameRequest, setPINRequest,
     setCustomInquiryTime, setCustomPagingTime, newAuthMode, setFriendlyNameRequest;
 
 //master mode stuff
-uint8_t btConnected, deviceConn;
+volatile uint8_t btConnected, deviceConn;
 char targetBt[16];
 
 uint8_t (*dataAvailableFuncPtr)(uint8_t data) = 0;

@@ -52,7 +52,7 @@ void (*ADS1292_dataReadDone_cb)(void);
 uint8_t *activeBuffer, ads1292_bbuf;
 uint8_t chip1Buffer1[9], chip1Buffer2[9], chip2Buffer1[9], chip2Buffer2[9];
 volatile uint8_t chip1CurrentFullBuffer, chip2CurrentFullBuffer;
-uint8_t rxCount, chip1ReadPending, chip2ReadPending, chip2Enabled, chipBusy;
+volatile uint8_t rxCount, chip1ReadPending, chip2ReadPending, chip2Enabled, chipBusy;
 SPI_HandleTypeDef *hspi_exg;
 uint8_t dummy_tx_buf[9] = {
   0,
