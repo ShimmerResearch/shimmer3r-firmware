@@ -1138,19 +1138,26 @@ void manageReadBatt(uint8_t isBlockingRead)
     return;
   }
 
-  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
-  if (shimmerStatus.sensing && configBytes->chEnVBattery) //if sensing and if vbat enabled use previous reading
+  /* The battery is on a dedicated ADC (separate from the sensing ADC), so a read
+   * never disturbs the ADC sensor stream. Use the streamed VBatt sample if it is
+   * available, otherwise take a fresh measurement whenever one is required.
+   * (BATT_READ_REPEAT_LAST is Shimmer3-only and never returned here.) */
+  switch (LogAndStream_getBattReadAction())
   {
-    saveBatteryVoltageAndUpdateStatus(
-        *(uint16_t *) &ShimSens_getDataBuffAtWrIdx()[sensing.ptr.batteryAnalog], hadcBattPtr);
-  }
-  else
-  {
-    //Don't start a new measurement if one is already underway
-    if (hadcBattPtr->Instance == NULL || hadcBattPtr->State == HAL_ADC_STATE_RESET)
-    {
-      S4_ADC_readBatt(isBlockingRead);
-    }
+    case BATT_READ_USE_STREAM:
+      //Use the VBatt sample from the last completed sensing buffer (not the
+      //write index, which the DMA may be filling).
+      saveBatteryVoltageAndUpdateStatus(
+          *(uint16_t *) &ShimSens_getDataBuffAtPrevWrIdx()[sensing.ptr.batteryAnalog], hadcBattPtr);
+      break;
+    case BATT_READ_NEW:
+    default:
+      //Don't start a new measurement if one is already underway
+      if (hadcBattPtr->Instance == NULL || hadcBattPtr->State == HAL_ADC_STATE_RESET)
+      {
+        S4_ADC_readBatt(isBlockingRead);
+      }
+      break;
   }
 }
 
