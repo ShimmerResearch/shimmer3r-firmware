@@ -33,9 +33,9 @@
 #include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
-#include "version.h"
 #include "usb_otg.h"
 #include "ux_device_cdc_acm.h"
+#include "version.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
