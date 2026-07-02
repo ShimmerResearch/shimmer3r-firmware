@@ -35,6 +35,7 @@
 #include "shimmer_include.h"
 #include "usb_otg.h"
 #include "ux_device_cdc_acm.h"
+#include "version.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,6 +65,13 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
+/* Firmware version marker embedded in the .version linker section for
+ * traceability. Defined here (rather than in the auto-generated version.h) so
+ * version.h can be included by multiple translation units without duplicating
+ * this object across the .version section. */
+__attribute__((section(".version"), used)) const firmware_version_t fw_version_struct
+    = { .major = FW_VERSION_MAJOR, .minor = FW_VERSION_MINOR, .patch = FW_VERSION_PATCH };
 
 volatile uint32_t time_start, time_end, time_diff;
 #define BLOCK_START_ADDR 0 /* Block start address      */
