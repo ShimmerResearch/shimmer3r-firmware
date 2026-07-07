@@ -28,6 +28,9 @@
 #if defined(SHIMMER3R)
 #include "../Shimmer_Driver/BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #include "../Shimmer_Driver/BMP3/hal_bmp3.h"
+#include "../Shimmer_Driver/BMP5/BMP5_SensorAPI/bmp5_defs.h"
+#include "../Shimmer_Driver/BMP5/hal_bmp5.h"
+#include "../Shimmer_Driver/hal_pressure.h"
 #include "ADXL371/hal_adxl371.h"
 #include "LIS2DW12/hal_lis2dw12.h"
 #include "LIS2DW12/lis2dw12-pid/lis2dw12_reg.h"

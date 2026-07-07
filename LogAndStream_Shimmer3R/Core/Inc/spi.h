@@ -137,7 +137,9 @@ extern "C"
     uint8_t lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET + 6];
     uint8_t adxl371Buf[SPI_DMA_TXRX_OFFSET + 6];
-    uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET + 1 + 6]; //+1 for BMP390 dummy byte
+    /* Shared between the BMP390 and BMP581. +1 for the BMP390's dummy byte
+     * (the BMP581 has no dummy byte and so only uses the first 7 bytes) */
+    uint8_t bmp390Buf[SPI_DMA_TXRX_OFFSET + 1 + 6];
     uint8_t ads2078Buf[3]; //grabbing  only 1 channel at a time 2 data + 1 if in case SPI CRC is enabled.
   } spi1ReadBuf;
 
@@ -208,7 +210,7 @@ void SpiStepDone(void);
   bool areSpiChannelsEnabled(void);
 
   void ads7028_configureChannels(uint8_t *channel_contents_ptr);
-  void bmp3_readCalibrationDataOnBoot(void);
+  void PressureSensor_initOnBoot(void);
 #endif
 
   /* USER CODE END Prototypes */

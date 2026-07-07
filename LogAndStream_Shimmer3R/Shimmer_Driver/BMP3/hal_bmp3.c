@@ -41,7 +41,7 @@ static int32_t
 platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len);
 static void platform_delay(uint32_t ms);
 
-void bmp3_driver_init(void)
+void bmp3_setup_dev(void)
 {
   bmp3.read = bmp3_spi_read;
   bmp3.write = bmp3_spi_write;
@@ -49,8 +49,24 @@ void bmp3_driver_init(void)
   bmp3.delay_us = bmp3_delay_us;
   bmp3.intf_ptr = &dev_addr;
   bmp3.dummy_byte = 1; /* SPI interface, read extra byte */
+}
+
+void bmp3_driver_init(void)
+{
+  bmp3_setup_dev();
 
   save_calib_data_bytes();
+}
+
+int8_t bmp3_verify_chip_id(void)
+{
+  uint8_t chip_id = 0;
+  int8_t rslt = bmp3_get_regs(BMP3_REG_CHIP_ID, &chip_id, 1, &bmp3);
+  if (rslt == BMP3_OK && chip_id == BMP390_CHIP_ID)
+  {
+    return BMP3_OK;
+  }
+  return BMP3_E_DEV_NOT_FOUND;
 }
 
 void bmp3_selectDevice(void)

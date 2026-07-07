@@ -629,35 +629,72 @@ void SPI_test(void)
   print_chip_test_result("S3R_TEST_0016", "LSM6DSV", self_test_result, tempCal);
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
-  self_test_result = bmp3_self_test();
-  if (self_test_result == SELF_TEST_PASS)
+  if (isBmp581InUse())
   {
-    //Self test passed, now check temperature is reasonable
-    struct bmp3_data *bmp3_data = (struct bmp3_data *) get_bmp3_selftest_data();
-    tempCal = bmp3_data->temperature;
-
-    if (tempCal <= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
-        || tempCal >= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER)
+    self_test_result = bmp5_self_test();
+    if (self_test_result == SELF_TEST_PASS)
     {
-      self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
-    }
-  }
+      //Self test passed, now check temperature is reasonable
+      struct bmp5_sensor_data *bmp5_data = get_bmp5_selftest_data();
+      tempCal = bmp5_data->temperature;
 
-  /* If it's a Shimmer self-test result (i.e., <SELF_TEST_FAIL_COUNT), it will
-   *  be printed out like all other sensors using "print_chip_test_result".
-   *  Else, if it's specific to the BMP3 API, it is printed using
-   *  bmp3_check_rslt (subtracting the previously added offset from first so
-   *  that the function can recognise it) */
-  if (self_test_result < SELF_TEST_FAIL_COUNT)
-  {
-    print_chip_test_result("S3R_TEST_0017", "BMP390", self_test_result, tempCal);
+      if (tempCal <= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
+          || tempCal >= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER)
+      {
+        self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+      }
+    }
+
+    /* If it's a Shimmer self-test result (i.e., <SELF_TEST_FAIL_COUNT), it
+     *  will be printed out like all other sensors using
+     *  "print_chip_test_result". Else, if it's specific to the BMP5 API, it is
+     *  printed using bmp5_check_rslt (subtracting the previously added offset
+     *  from first so that the function can recognise it) */
+    if (self_test_result < SELF_TEST_FAIL_COUNT)
+    {
+      print_chip_test_result("S3R_TEST_0017", "BMP581", self_test_result, tempCal);
+    }
+    else
+    {
+      ShimFactoryTest_sendReport(" - S3R_TEST_0017 - FAIL: BMP581 - ");
+
+      bmp5_check_rslt("BMP581",
+          ((int8_t) self_test_result) - BMP581_API_ERROR_OFFSET, buffer);
+      ShimFactoryTest_sendReport(buffer);
+    }
   }
   else
   {
-    ShimFactoryTest_sendReport(" - S3R_TEST_0017 - FAIL: BMP390 - ");
+    self_test_result = bmp3_self_test();
+    if (self_test_result == SELF_TEST_PASS)
+    {
+      //Self test passed, now check temperature is reasonable
+      struct bmp3_data *bmp3_data = (struct bmp3_data *) get_bmp3_selftest_data();
+      tempCal = bmp3_data->temperature;
 
-    bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
-    ShimFactoryTest_sendReport(buffer);
+      if (tempCal <= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
+          || tempCal >= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER)
+      {
+        self_test_result = SELF_TEST_FAIL_TEMPERATURE_ISSUE;
+      }
+    }
+
+    /* If it's a Shimmer self-test result (i.e., <SELF_TEST_FAIL_COUNT), it
+     *  will be printed out like all other sensors using
+     *  "print_chip_test_result". Else, if it's specific to the BMP3 API, it is
+     *  printed using bmp3_check_rslt (subtracting the previously added offset
+     *  from first so that the function can recognise it) */
+    if (self_test_result < SELF_TEST_FAIL_COUNT)
+    {
+      print_chip_test_result("S3R_TEST_0017", "BMP390", self_test_result, tempCal);
+    }
+    else
+    {
+      ShimFactoryTest_sendReport(" - S3R_TEST_0017 - FAIL: BMP390 - ");
+
+      bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
+      ShimFactoryTest_sendReport(buffer);
+    }
   }
   if (self_test_result != SELF_TEST_PASS)
   {
