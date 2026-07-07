@@ -658,8 +658,7 @@ void SPI_test(void)
     {
       ShimFactoryTest_sendReport(" - S3R_TEST_0017 - FAIL: BMP581 - ");
 
-      bmp5_check_rslt("BMP581",
-          ((int8_t) self_test_result) - BMP581_API_ERROR_OFFSET, buffer);
+      bmp5_check_rslt("BMP581", ((int8_t) self_test_result) - BMP581_API_ERROR_OFFSET, buffer);
       ShimFactoryTest_sendReport(buffer);
     }
   }

@@ -78,6 +78,7 @@ static const struct
   { BMP5_ODR_0_250_HZ, 0.25f },
   { BMP5_ODR_0_125_HZ, 0.125f },
 };
+
 #define BMP5_ODR_TABLE_LEN (sizeof(bmp5OdrTable) / sizeof(bmp5OdrTable[0]))
 
 static BMP5_INTF_RET_TYPE
@@ -116,8 +117,7 @@ int8_t bmp5_verify_chip_id(void)
 {
   uint8_t chip_id = 0;
   int8_t rslt = bmp5_get_regs(BMP5_REG_CHIP_ID, &chip_id, 1, &bmp5);
-  if (rslt == BMP5_OK
-      && (chip_id == BMP5_CHIP_ID_PRIM || chip_id == BMP5_CHIP_ID_SEC))
+  if (rslt == BMP5_OK && (chip_id == BMP5_CHIP_ID_PRIM || chip_id == BMP5_CHIP_ID_SEC))
   {
     return BMP5_OK;
   }
@@ -333,7 +333,8 @@ HAL_StatusTypeDef bmp5_pressure_temperature_get(uint8_t *buf)
   HAL_StatusTypeDef ret;
   /* The BMP581 bursts temperature (0x1D-0x1F) followed by pressure
    * (0x20-0x22). No dummy byte is inserted after the register address. */
-  static uint8_t txBuff[] = { BMP5_REG_TEMP_DATA_XLSB | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
+  static uint8_t txBuff[]
+      = { BMP5_REG_TEMP_DATA_XLSB | SPI_READ_REGISTER, 0, 0, 0, 0, 0, 0 };
   ret = platform_read_raw_data_dma(&SENSOR_BUS, &txBuff[0], buf, sizeof(txBuff));
   return ret;
 }
