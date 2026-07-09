@@ -49,4 +49,9 @@ struct bmp5_sensor_data *get_bmp5_selftest_data(void);
  */
 void bmp5_check_rslt(const char api_name[], int8_t rslt, char *outputStr);
 
+/* TEMPORARY DIAGNOSTIC (DEV-818): soft-resets then dumps the raw CHIP_ID,
+ * STATUS and INT_STATUS registers so a failing self-test can be root-caused on
+ * hardware. */
+void bmp5_report_diagnostics(char *outputStr);
+
 #endif /* BMP5_BMP5_SENSORAPI_HAL_BMP5_H_ */

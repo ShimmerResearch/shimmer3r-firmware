@@ -116,7 +116,18 @@ void bmp5_driver_init(void)
 int8_t bmp5_verify_chip_id(void)
 {
   uint8_t chip_id = 0;
-  int8_t rslt = bmp5_get_regs(BMP5_REG_CHIP_ID, &chip_id, 1, &bmp5);
+  int8_t rslt;
+
+  /* The BMP581 returns invalid data on the very first SPI read after power-up
+   * (the Bosch driver performs the same throwaway CHIP_ID read inside
+   * bmp5_soft_reset() and bmp5_init() for exactly this reason). This function
+   * is the first access to the freshly-powered sensor in PressureSensor_detect(),
+   * so discard one read first - otherwise the chip ID reads as garbage and
+   * detection silently falls back to the SR number instead of confirming the
+   * part. */
+  (void) bmp5_get_regs(BMP5_REG_CHIP_ID, &chip_id, 1, &bmp5);
+
+  rslt = bmp5_get_regs(BMP5_REG_CHIP_ID, &chip_id, 1, &bmp5);
   if (rslt == BMP5_OK && (chip_id == BMP5_CHIP_ID_PRIM || chip_id == BMP5_CHIP_ID_SEC))
   {
     return BMP5_OK;
@@ -138,6 +149,18 @@ uint8_t bmp5_self_test(void)
 {
   uint8_t self_test_result = SELF_TEST_PASS;
   int8_t bmp5_result;
+
+  /* Soft-reset before the self-test. Unlike bmp3_selftest_check() (which
+   * soft-resets before bmp3_init()), the vendor's bmp5_selftest_check() calls
+   * bmp5_init() with no preceding reset, and bmp5_init()'s NVM-ready check
+   * reads STATUS.nvm_rdy just once with no settle/retry. The BMP581's first
+   * SPI read after power-up returns invalid data, so the single soft-reset in
+   * bmp5_driver_init() cannot reliably confirm POR/NVM-ready. Resetting here -
+   * with SPI already awake - reloads the NVM and makes the ready bit valid,
+   * avoiding a spurious BMP5_E_NVM_NOT_READY (-5) self-test failure. */
+  bmp5_soft_reset(&bmp5);
+  platform_delay(3);
+
   bmp5_result = bmp5_selftest_check(&bmp5);
   if (bmp5_result == BMP5_COMMUNICATION_ERROR_OR_WRONG_DEVICE
       || bmp5_result == BMP5_E_DEV_NOT_FOUND || bmp5_result == BMP5_E_INVALID_CHIP_ID)
@@ -437,6 +460,27 @@ void bmp5_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
     sprintf(outputStr, "API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
     break;
   }
+}
+
+/* TEMPORARY DIAGNOSTIC (DEV-818). Reads the identity/status registers directly
+ * so we can see, on hardware, whether a real BMP581 is responding and what the
+ * NVM-ready bits actually read. */
+void bmp5_report_diagnostics(char *outputStr)
+{
+  uint8_t chipId = 0xAA;
+  uint8_t status = 0xAA;
+  uint8_t intStatus = 0xAA;
+  int8_t rstRslt = bmp5_soft_reset(&bmp5);
+  platform_delay(5);
+  int8_t idRslt = bmp5_get_regs(BMP5_REG_CHIP_ID, &chipId, 1, &bmp5);
+  int8_t stRslt = bmp5_get_regs(BMP5_REG_STATUS, &status, 1, &bmp5);
+  int8_t isRslt = bmp5_get_regs(BMP5_REG_INT_STATUS, &intStatus, 1, &bmp5);
+  sprintf(outputStr,
+      " - BMP581 DIAG: rst=%d id=0x%02X(r%d) status=0x%02X(r%d) "
+      "int_status=0x%02X(r%d) [nvm_rdy=%d nvm_err=%d por=%d]\r\n",
+      rstRslt, chipId, idRslt, status, stRslt, intStatus, isRslt,
+      (status & BMP5_INT_NVM_RDY) ? 1 : 0, (status & BMP5_INT_NVM_ERR) ? 1 : 0,
+      (intStatus & BMP5_INT_ASSERTED_POR_SOFTRESET_COMPLETE) ? 1 : 0);
 }
 
 /* Recommended pairing of temperature oversampling with pressure oversampling
