@@ -30,6 +30,18 @@ void PressureSensor_detect(void)
   bmp3_setup_dev();
   bmp5_setup_dev();
 
+#if 1 /* ===== TEMPORARY DEV-818 ISOLATION TEST (revert me) =====
+       * Force the pre-DEV-818 BMP390-only path. Every DEV-818 code path
+       * dispatches on isBmp581InUse(), so forcing it to 0 makes ALL of the
+       * BMP581 code (boot init, detection, DMA callback, factory test, config
+       * and the common-repo command changes) inert - the firmware behaves as
+       * it did before DEV-818. Use this to confirm whether any DEV-818 change
+       * has a role in the BT-connect issue. */
+  bmp581InUse = 0;
+  pressureSensorDetected = 1;
+  return;
+#endif
+
   bmp581IdOk = (bmp5_verify_chip_id() == BMP5_OK);
   bmp390IdOk = (bmp3_verify_chip_id() == BMP3_OK);
 
