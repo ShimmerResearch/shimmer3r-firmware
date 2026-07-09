@@ -323,12 +323,7 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
   }
 
   bmp5DrdyIntEnabled = false;
-  /* ===== TEMPORARY DEV-818 TEST (revert me) =====
-   * Force polling mode by disabling the DRDY interrupt path. Testing whether
-   * enabling the latched/active-high DRDY interrupt on the shared BMP390_INT
-   * line (which floats when the BMP581 is dead/absent) storms the EXTI and
-   * starves the main loop, blocking BT. `0 &&` forces the else branch. */
-  if (0 && bmp5_is_shimmer_freq_higher(shimmerSamplingFreq, bmp5OsrOdrPressCfg.odr))
+  if (bmp5_is_shimmer_freq_higher(shimmerSamplingFreq, bmp5OsrOdrPressCfg.odr))
   {
     bmp5DrdyIntEnabled = true;
 
@@ -465,27 +460,6 @@ void bmp5_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
     sprintf(outputStr, "API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
     break;
   }
-}
-
-/* TEMPORARY DIAGNOSTIC (DEV-818). Reads the identity/status registers directly
- * so we can see, on hardware, whether a real BMP581 is responding and what the
- * NVM-ready bits actually read. */
-void bmp5_report_diagnostics(char *outputStr)
-{
-  uint8_t chipId = 0xAA;
-  uint8_t status = 0xAA;
-  uint8_t intStatus = 0xAA;
-  int8_t rstRslt = bmp5_soft_reset(&bmp5);
-  platform_delay(5);
-  int8_t idRslt = bmp5_get_regs(BMP5_REG_CHIP_ID, &chipId, 1, &bmp5);
-  int8_t stRslt = bmp5_get_regs(BMP5_REG_STATUS, &status, 1, &bmp5);
-  int8_t isRslt = bmp5_get_regs(BMP5_REG_INT_STATUS, &intStatus, 1, &bmp5);
-  sprintf(outputStr,
-      " - BMP581 DIAG: rst=%d id=0x%02X(r%d) status=0x%02X(r%d) "
-      "int_status=0x%02X(r%d) [nvm_rdy=%d nvm_err=%d por=%d]\r\n",
-      rstRslt, chipId, idRslt, status, stRslt, intStatus, isRslt,
-      (status & BMP5_INT_NVM_RDY) ? 1 : 0, (status & BMP5_INT_NVM_ERR) ? 1 : 0,
-      (intStatus & BMP5_INT_ASSERTED_POR_SOFTRESET_COMPLETE) ? 1 : 0);
 }
 
 /* Recommended pairing of temperature oversampling with pressure oversampling

@@ -631,21 +631,6 @@ void SPI_test(void)
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
   if (isBmp581InUse())
   {
-    /* TEMPORARY DIAGNOSTIC (DEV-818) - which pressure sensor is fitted and
-     * why detection chose it. Re-run both chip-ID probes here. */
-    bmp3_setup_dev();
-    bmp5_setup_dev();
-    {
-      int8_t presBmp390Probe = bmp3_verify_chip_id();
-      int8_t presBmp581Probe = bmp5_verify_chip_id();
-      sprintf(buffer, " - PRES DIAG: isBmp581InUse=%d bmp390_probe=%s bmp581_probe=%s\r\n",
-          isBmp581InUse(), (presBmp390Probe == BMP3_OK) ? "PASS(0x60)" : "FAIL",
-          (presBmp581Probe == BMP5_OK) ? "PASS(0x50/51)" : "FAIL");
-      ShimFactoryTest_sendReport(buffer);
-    }
-    bmp5_report_diagnostics(buffer);
-    ShimFactoryTest_sendReport(buffer);
-
     self_test_result = bmp5_self_test();
     if (self_test_result == SELF_TEST_PASS)
     {
