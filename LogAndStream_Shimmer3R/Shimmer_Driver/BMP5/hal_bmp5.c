@@ -121,10 +121,10 @@ int8_t bmp5_verify_chip_id(void)
   /* The BMP581 returns invalid data on the very first SPI read after power-up
    * (the Bosch driver performs the same throwaway CHIP_ID read inside
    * bmp5_soft_reset() and bmp5_init() for exactly this reason). This function
-   * is the first access to the freshly-powered sensor in PressureSensor_detect(),
-   * so discard one read first - otherwise the chip ID reads as garbage and
-   * detection silently falls back to the SR number instead of confirming the
-   * part. */
+   * is the first access to the freshly-powered sensor in
+   * PressureSensor_detect(), so discard one read first - otherwise the chip ID
+   * reads as garbage and detection silently falls back to the SR number instead
+   * of confirming the part. */
   (void) bmp5_get_regs(BMP5_REG_CHIP_ID, &chip_id, 1, &bmp5);
 
   rslt = bmp5_get_regs(BMP5_REG_CHIP_ID, &chip_id, 1, &bmp5);

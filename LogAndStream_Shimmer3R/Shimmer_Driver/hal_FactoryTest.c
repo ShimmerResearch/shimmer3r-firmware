@@ -638,8 +638,7 @@ void SPI_test(void)
     {
       int8_t presBmp390Probe = bmp3_verify_chip_id();
       int8_t presBmp581Probe = bmp5_verify_chip_id();
-      sprintf(buffer,
-          " - PRES DIAG: isBmp581InUse=%d bmp390_probe=%s bmp581_probe=%s\r\n",
+      sprintf(buffer, " - PRES DIAG: isBmp581InUse=%d bmp390_probe=%s bmp581_probe=%s\r\n",
           isBmp581InUse(), (presBmp390Probe == BMP3_OK) ? "PASS(0x60)" : "FAIL",
           (presBmp581Probe == BMP5_OK) ? "PASS(0x50/51)" : "FAIL");
       ShimFactoryTest_sendReport(buffer);
