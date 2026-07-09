@@ -137,10 +137,20 @@ uint8_t PressureSensor_selfTest(void)
 
 uint8_t isBmp390InUse(void)
 {
-  return !bmp581InUse;
+  /* ===== TEMPORARY DEV-818 BISECT (revert me) =====
+   * Report BMP390 to all external callers (common-repo command handling,
+   * spi.c DMA callback, factory test) while the internal PressureSensor_*
+   * dispatch keeps using the BMP581 driver (it reads the private bmp581InUse
+   * flag directly, not this getter). This runs the BMP581 boot/driver path
+   * but makes the common-repo BT command handling behave as BMP390 (no NACK
+   * on GET_PRESSURE_CALIBRATION_COEFFICIENTS). If Consensys connects with
+   * this build, the BT-connect failure is in the common-repo command
+   * handling; if it still fails, it is in the firmware BMP581 driver path. */
+  return 1;
 }
 
 uint8_t isBmp581InUse(void)
 {
-  return bmp581InUse;
+  /* TEMPORARY DEV-818 BISECT (revert me) - see isBmp390InUse() above. */
+  return 0;
 }
