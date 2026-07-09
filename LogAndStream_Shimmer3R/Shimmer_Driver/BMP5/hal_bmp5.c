@@ -323,7 +323,12 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
   }
 
   bmp5DrdyIntEnabled = false;
-  if (bmp5_is_shimmer_freq_higher(shimmerSamplingFreq, bmp5OsrOdrPressCfg.odr))
+  /* ===== TEMPORARY DEV-818 TEST (revert me) =====
+   * Force polling mode by disabling the DRDY interrupt path. Testing whether
+   * enabling the latched/active-high DRDY interrupt on the shared BMP390_INT
+   * line (which floats when the BMP581 is dead/absent) storms the EXTI and
+   * starves the main loop, blocking BT. `0 &&` forces the else branch. */
+  if (0 && bmp5_is_shimmer_freq_higher(shimmerSamplingFreq, bmp5OsrOdrPressCfg.odr))
   {
     bmp5DrdyIntEnabled = true;
 
