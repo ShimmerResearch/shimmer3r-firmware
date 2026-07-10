@@ -8,6 +8,7 @@
 #include "hal_FactoryTest.h"
 
 #include <inttypes.h>
+#include <string.h>
 
 #include "i2c.h"
 #include "spi.h"
@@ -29,6 +30,195 @@ uint32_t gsrResistance[sizeof(testGsrResistances)];
 
 static float gsrFactoryTest_getPassToleranceForTestResistor(uint32_t testResistor);
 static uint32_t gsrFactoryTest_getRefResistorForTestResistor(uint32_t testResistor);
+
+/* ---- LSE crystal error self-measurement (DEV-866) ----
+ *
+ * Measures the 32.768 kHz LSE crystal against the 16 MHz HSE crystal.
+ * SYSCLK on the S3R is MSI (an RC oscillator), so a timer cannot simply
+ * count "crystal-accurate" ticks the way the equivalent Verisense/nRF52840
+ * test (DEV-844) does. Instead TIM16 input-captures LSE and TIM17
+ * input-captures HSE/32 - both via their TISEL internal inputs - while both
+ * timers free-run from the same MSI-derived kernel clock. The unknown MSI
+ * frequency appears identically in both capture streams and cancels exactly
+ * in the ratio, leaving f_LSE measured against the HSE crystal: absolute
+ * accuracy = HSE tolerance, resolution ~0.1 ppm over the ~1 s windows.
+ * Hardware capture latches every timestamp, so CPU/IRQ latency does not
+ * affect the result (the same property the PPI gate gives the nRF version).
+ * Positive result = LSE fast = the RTC gains time. */
+
+#define LSE_MEAS_LSE_CAPTURES  32769U /* 32768 LSE periods   ~= 1 s window */
+#define LSE_MEAS_HSE_CAPTURES  62501U /* 62500 x 8/500 kHz   ~= 1 s window */
+#define LSE_MEAS_TIMEOUT_WRAPS 2000U  /* 16-bit wraps; ~2.7 s at 48 MHz */
+#define LSE_MEAS_MAX_ATTEMPTS  3U     /* overcapture (IRQ pressure) retries */
+
+typedef struct
+{
+  TIM_TypeDef *tim;
+  uint64_t firstCap;
+  uint64_t lastCap;
+  uint32_t capCount;
+  uint32_t capTarget;
+  uint32_t wraps;
+  uint8_t overcapture;
+} lse_meas_chan_t;
+
+static void lseMeasChanInit(lse_meas_chan_t *ch,
+    TIM_TypeDef *tim,
+    uint32_t tisel,
+    uint32_t ic1psc,
+    uint32_t capTarget)
+{
+  memset(ch, 0, sizeof(*ch));
+  ch->tim = tim;
+  ch->capTarget = capTarget;
+
+  tim->CR1 = 0U;
+  tim->PSC = 0U;
+  tim->ARR = 0xFFFFU;
+  tim->EGR = TIM_EGR_UG; /* latch PSC/ARR */
+  tim->TISEL = tisel;
+  /* CC1 <- TI1, optional input prescaler (HSE/32 is captured /8 so the
+   * poll loop only has to service one capture every 16 us) */
+  tim->CCMR1 = TIM_CCMR1_CC1S_0 | ic1psc;
+  tim->CCER = TIM_CCER_CC1E; /* capture rising edges */
+  tim->SR = 0U;              /* clear stale flags (incl. UG's UIF) */
+  tim->CR1 = TIM_CR1_CEN;
+}
+
+static void lseMeasChanPoll(lse_meas_chan_t *ch)
+{
+  TIM_TypeDef *tim = ch->tim;
+
+  if (tim->SR & TIM_SR_CC1IF)
+  {
+    /* A capture was missed before this one was read -> the interval count
+     * and the timestamps are no longer consistent. Detected, not fatal:
+     * the caller retries the whole measurement. */
+    if (tim->SR & TIM_SR_CC1OF)
+    {
+      ch->overcapture = 1U;
+    }
+    uint32_t ccr = tim->CCR1; /* read clears CC1IF */
+    uint32_t wraps = ch->wraps;
+    /* If an unserviced update event is pending and the captured count is in
+     * the lower half, the capture happened after the counter wrapped. */
+    if ((tim->SR & TIM_SR_UIF) && ccr < 0x8000U)
+    {
+      wraps++;
+    }
+    uint64_t t = ((uint64_t) wraps << 16) + ccr;
+    if (ch->capCount == 0U)
+    {
+      ch->firstCap = t;
+    }
+    ch->lastCap = t;
+    ch->capCount++;
+    if (ch->capCount >= ch->capTarget)
+    {
+      tim->CR1 = 0U; /* window complete - freeze so no overcapture follows */
+    }
+  }
+  if (tim->SR & TIM_SR_UIF)
+  {
+    tim->SR = ~TIM_SR_UIF; /* rc_w0: writing 0 clears only UIF */
+    ch->wraps++;
+  }
+}
+
+lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
+{
+  lse_meas_chan_t lseChan, hseChan;
+  lse_meas_result_t result = LSE_MEAS_OK;
+
+  if (lseErrorPpmX10 == NULL)
+  {
+    return LSE_MEAS_ERR_RANGE;
+  }
+  *lseErrorPpmX10 = 0;
+
+  if (!(RCC->BDCR & RCC_BDCR_LSERDY))
+  {
+    return LSE_MEAS_ERR_LSE_NOT_READY;
+  }
+  if (!(RCC->CR & RCC_CR_HSERDY))
+  {
+    return LSE_MEAS_ERR_HSE_NOT_READY;
+  }
+
+  __HAL_RCC_TIM16_CLK_ENABLE();
+  __HAL_RCC_TIM17_CLK_ENABLE();
+
+  for (uint8_t attempt = 0U; attempt < LSE_MEAS_MAX_ATTEMPTS; attempt++)
+  {
+    lseMeasChanInit(&lseChan, TIM16, TIM_TIM16_TI1_LSE, TIM_ICPSC_DIV1, LSE_MEAS_LSE_CAPTURES);
+    lseMeasChanInit(&hseChan, TIM17, TIM_TIM17_TI1_HSE_DIV32, TIM_ICPSC_DIV8,
+        LSE_MEAS_HSE_CAPTURES);
+
+    result = LSE_MEAS_OK;
+    while (lseChan.capCount < lseChan.capTarget || hseChan.capCount < hseChan.capTarget)
+    {
+      lseMeasChanPoll(&lseChan);
+      lseMeasChanPoll(&hseChan);
+      if (lseChan.overcapture || hseChan.overcapture)
+      {
+        result = LSE_MEAS_ERR_OVERCAPTURE;
+        break;
+      }
+      if (lseChan.wraps > LSE_MEAS_TIMEOUT_WRAPS || hseChan.wraps > LSE_MEAS_TIMEOUT_WRAPS)
+      {
+        result = LSE_MEAS_ERR_TIMEOUT;
+        break;
+      }
+    }
+
+    if (result != LSE_MEAS_ERR_OVERCAPTURE)
+    {
+      break; /* success or a non-retryable error */
+    }
+  }
+
+  TIM16->CR1 = 0U;
+  TIM17->CR1 = 0U;
+  TIM16->CCER = 0U;
+  TIM17->CCER = 0U;
+  __HAL_RCC_TIM16_CLK_DISABLE();
+  __HAL_RCC_TIM17_CLK_DISABLE();
+
+  if (result != LSE_MEAS_OK)
+  {
+    return result;
+  }
+
+  /* R = (lseIntervals/lseTicks) / (hseIntervals/hseTicks) = f_LSE/f_hsecap
+   * where f_hsecap = (16 MHz / 32) / 8 = 62.5 kHz nominally, so
+   * R_nominal = 32768 / 62500 = 8192 / 15625 exactly. The kernel-clock
+   * frequency cancels in the ratio. */
+  uint64_t lseTicks = lseChan.lastCap - lseChan.firstCap;
+  uint64_t hseTicks = hseChan.lastCap - hseChan.firstCap;
+  uint64_t lseIntervals = (uint64_t) lseChan.capCount - 1U;
+  uint64_t hseIntervals = (uint64_t) hseChan.capCount - 1U;
+  if (lseTicks == 0U || hseTicks == 0U)
+  {
+    return LSE_MEAS_ERR_TIMEOUT;
+  }
+
+  int64_t num = (int64_t) (lseIntervals * hseTicks) * 15625;
+  int64_t den = (int64_t) (hseIntervals * lseTicks) * 8192;
+  int64_t delta = num - den; /* positive = LSE fast = RTC gains time */
+
+  /* Beyond +/-1 % the capture streams are bogus, and the ppm conversion
+   * below would risk overflow. */
+  if ((delta > (den / 100)) || (delta < -(den / 100)))
+  {
+    return LSE_MEAS_ERR_RANGE;
+  }
+
+  /* ppm x10 = delta/den * 1e7; divide den first so everything stays within
+   * int64 (den/1e6 keeps ~10 significant digits - error << 0.1 ppm). */
+  *lseErrorPpmX10 = (int32_t) ((delta * 10) / (den / 1000000));
+
+  return LSE_MEAS_OK;
+}
 
 void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr)
 {
@@ -204,6 +394,39 @@ void print_mcu_details(void)
   if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0010;
+  }
+
+  /* DEV-866: LSE (32.768 kHz) crystal error vs the 16 MHz HSE crystal. The
+   * S3R fits the same crystal + 12 pF load caps as the Verisense boards
+   * (DEV-844 root cause), so the population is expected ~+40..+65 ppm fast
+   * (RTC gains ~+4 s/day) and this line is EXPECTED to FAIL on current
+   * boards until the 22 pF load-cap fix. Open-cap faults read ~+1000 ppm. */
+  int32_t lseErrPpmX10 = 0;
+  lse_meas_result_t lseMeasResult = measureLseErrorPpmX10(&lseErrPpmX10);
+  if (lseMeasResult == LSE_MEAS_OK)
+  {
+    int32_t absPpmX10 = (lseErrPpmX10 < 0) ? -lseErrPpmX10 : lseErrPpmX10;
+    testPass = (absPpmX10 <= TEST_THRESHOLD_LSE_ERROR_PPM_X10);
+    sprintf(buffer,
+        " - S3R_TEST_0027 - %s: LF crystal error = %s%ld.%ld ppm (limit +/-%d.%d ppm, vs HSE)\r\n",
+        testPass ? "PASS" : "FAIL", (lseErrPpmX10 < 0) ? "-" : "+",
+        (long) (absPpmX10 / 10), (long) (absPpmX10 % 10),
+        TEST_THRESHOLD_LSE_ERROR_PPM_X10 / 10, TEST_THRESHOLD_LSE_ERROR_PPM_X10 % 10);
+  }
+  else
+  {
+    static const char *lseMeasErrStr[] = { "OK", "LSE not ready",
+      "HSE not ready", "timeout", "overcapture", "result out of range" };
+    testPass = 0;
+    sprintf(buffer, " - S3R_TEST_0027 - FAIL: LF crystal error not measurable (%s)\r\n",
+        (lseMeasResult < (sizeof(lseMeasErrStr) / sizeof(lseMeasErrStr[0]))) ?
+            lseMeasErrStr[lseMeasResult] :
+            "unknown");
+  }
+  ShimFactoryTest_sendReport(buffer);
+  if (!testPass)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0027;
   }
 
   ShimFactoryTest_sendReport(" - I/O status:\r\n");
