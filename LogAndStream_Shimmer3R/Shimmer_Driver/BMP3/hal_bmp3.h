@@ -27,6 +27,7 @@
 void bmp3_setup_dev(void);
 void bmp3_driver_init(void);
 int8_t bmp3_verify_chip_id(void);
+uint8_t bmp3_read_chip_id(void); /* TEMP DEV-818 diagnostic */
 void bmp3_selectDevice(void);
 void bmp3_unselectDevice(void);
 uint8_t bmp3_self_test(void);

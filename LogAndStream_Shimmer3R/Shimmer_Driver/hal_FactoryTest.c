@@ -629,6 +629,22 @@ void SPI_test(void)
   print_chip_test_result("S3R_TEST_0016", "LSM6DSV", self_test_result, tempCal);
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
+
+  /* TEMPORARY DIAGNOSTIC (DEV-818): prove which pressure chip answers and show
+   * exactly why detection chose it. Reads the raw CHIP_ID via each sensor's own
+   * SPI protocol (BMP390 reg 0x00 -> 0x60; BMP581 reg 0x01 -> 0x50/0x51), the
+   * pass/fail of each probe, whether the SR number says BMP581, and the final
+   * isBmp581InUse() decision. */
+  bmp3_setup_dev();
+  bmp5_setup_dev();
+  sprintf(buffer,
+      " - PRES DIAG: bmp390_id=0x%02X(probe %s) bmp581_id=0x%02X(probe %s) "
+      "sr_says_bmp581=%d -> isBmp581InUse=%d\r\n",
+      bmp3_read_chip_id(), (bmp3_verify_chip_id() == BMP3_OK) ? "PASS" : "fail",
+      bmp5_read_chip_id(), (bmp5_verify_chip_id() == BMP5_OK) ? "PASS" : "fail",
+      ShimBrd_isBmp581PresentPerSrNumber(), isBmp581InUse());
+  ShimFactoryTest_sendReport(buffer);
+
   if (isBmp581InUse())
   {
     self_test_result = bmp5_self_test();

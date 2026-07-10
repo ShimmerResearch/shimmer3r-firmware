@@ -135,6 +135,17 @@ int8_t bmp5_verify_chip_id(void)
   return BMP5_E_INVALID_CHIP_ID;
 }
 
+/* TEMPORARY DIAGNOSTIC (DEV-818): return the raw CHIP_ID byte (reg 0x01) read
+ * via the BMP581 SPI protocol. A real BMP581 reads 0x50 (or 0x51). The first
+ * read after power-up is discarded per the datasheet. */
+uint8_t bmp5_read_chip_id(void)
+{
+  uint8_t chip_id = 0;
+  (void) bmp5_get_regs(BMP5_REG_CHIP_ID, &chip_id, 1, &bmp5);
+  bmp5_get_regs(BMP5_REG_CHIP_ID, &chip_id, 1, &bmp5);
+  return chip_id;
+}
+
 void bmp5_selectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);

@@ -69,6 +69,15 @@ int8_t bmp3_verify_chip_id(void)
   return BMP3_E_DEV_NOT_FOUND;
 }
 
+/* TEMPORARY DIAGNOSTIC (DEV-818): return the raw CHIP_ID byte (reg 0x00) read
+ * via the BMP390 SPI protocol. A real BMP390 reads 0x60. */
+uint8_t bmp3_read_chip_id(void)
+{
+  uint8_t chip_id = 0;
+  bmp3_get_regs(BMP3_REG_CHIP_ID, &chip_id, 1, &bmp3);
+  return chip_id;
+}
+
 void bmp3_selectDevice(void)
 {
   HAL_GPIO_WritePin(CS_PORT, CS_PIN, GPIO_PIN_RESET);
