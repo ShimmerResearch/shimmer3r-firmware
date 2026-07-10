@@ -129,7 +129,7 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
 
   if (lseErrorPpmX10 == NULL)
   {
-    return LSE_MEAS_ERR_RANGE;
+    return LSE_MEAS_ERR_PARAM;
   }
   *lseErrorPpmX10 = 0;
 
@@ -144,6 +144,12 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
 
   __HAL_RCC_TIM16_CLK_ENABLE();
   __HAL_RCC_TIM17_CLK_ENABLE();
+
+  /* HSE/32 as a TIM16/17 TI1 source is additionally gated by HSE32EN in the
+   * capturing timer's option register (RM0456 / HAL_TIMEx_EnableHSE32) -
+   * without it TIM17 sees no edges and the measurement times out. (The
+   * cross-timer Cut1.x workaround in the HAL applies to U575/585 only.) */
+  SET_BIT(TIM17->OR1, TIM_OR1_HSE32EN);
 
   for (uint8_t attempt = 0U; attempt < LSE_MEAS_MAX_ATTEMPTS; attempt++)
   {
@@ -178,6 +184,7 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
   TIM17->CR1 = 0U;
   TIM16->CCER = 0U;
   TIM17->CCER = 0U;
+  CLEAR_BIT(TIM17->OR1, TIM_OR1_HSE32EN);
   __HAL_RCC_TIM16_CLK_DISABLE();
   __HAL_RCC_TIM17_CLK_DISABLE();
 
@@ -412,7 +419,8 @@ void print_mcu_details(void)
   else
   {
     static const char *lseMeasErrStr[] = { "OK", "LSE not ready",
-      "HSE not ready", "timeout", "overcapture", "result out of range" };
+      "HSE not ready", "timeout", "overcapture", "result out of range",
+      "bad parameter" };
     testPass = 0;
     sprintf(buffer, " - S3R_TEST_0027 - FAIL: LF crystal error not measurable (%s)\r\n",
         (lseMeasResult < (sizeof(lseMeasErrStr) / sizeof(lseMeasErrStr[0]))) ?

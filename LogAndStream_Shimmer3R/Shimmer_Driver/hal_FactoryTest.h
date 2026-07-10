@@ -117,6 +117,7 @@ typedef enum
   LSE_MEAS_ERR_TIMEOUT,       /* capture stream never delivered */
   LSE_MEAS_ERR_OVERCAPTURE,   /* capture missed repeatedly (IRQ pressure) */
   LSE_MEAS_ERR_RANGE,         /* implausible result (beyond +/-10,000 ppm) */
+  LSE_MEAS_ERR_PARAM,         /* NULL output pointer */
 } lse_meas_result_t;
 
 void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr);
