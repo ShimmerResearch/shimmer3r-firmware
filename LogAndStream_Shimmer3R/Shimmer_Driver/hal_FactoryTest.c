@@ -418,9 +418,8 @@ void print_mcu_details(void)
   }
   else
   {
-    static const char *lseMeasErrStr[] = { "OK", "LSE not ready",
-      "HSE not ready", "timeout", "overcapture", "result out of range",
-      "bad parameter" };
+    static const char *lseMeasErrStr[] = { "OK", "LSE not ready", "HSE not ready",
+      "timeout", "overcapture", "result out of range", "bad parameter" };
     testPass = 0;
     sprintf(buffer, " - S3R_TEST_0027 - FAIL: LF crystal error not measurable (%s)\r\n",
         (lseMeasResult < (sizeof(lseMeasErrStr) / sizeof(lseMeasErrStr[0]))) ?
