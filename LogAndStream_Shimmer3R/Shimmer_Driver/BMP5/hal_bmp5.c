@@ -344,8 +344,8 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
    * dependency on the shared BMP390_INT line, which is unreliable on some
    * boards (DEV-818). The DRDY interrupt pin is left disabled. */
   bmp5DrdyIntEnabled = false;
-  rslt = bmp5_configure_interrupt(
-      BMP5_LATCHED, BMP5_ACTIVE_HIGH, BMP5_INTR_PUSH_PULL, BMP5_INTR_DISABLE, &bmp5);
+  rslt = bmp5_configure_interrupt(BMP5_LATCHED, BMP5_ACTIVE_HIGH,
+      BMP5_INTR_PUSH_PULL, BMP5_INTR_DISABLE, &bmp5);
   if (rslt != BMP5_OK)
   {
     return rslt;
