@@ -252,21 +252,19 @@ int8_t bmp5_drdy_test(void)
 
       if (rslt == BMP5_OK)
       {
-        /* New sample every 20ms @ 50Hz. Poll up to 100 x 2ms = 200ms for the
-         * data-ready interrupt to assert (generous margin over ~10 samples). */
+        /* Poll data-ready over SPI (the INT_STATUS DRDY bit) rather than the
+         * physical BMP581_INT pin, so the BMP581 passes independently of the
+         * shared BMP390_INT line (DEV-818: the sensor works fine over SPI even
+         * on boards where that interrupt line is unreliable). New sample every
+         * 20ms @ 50Hz; poll up to 100 x 2ms = 200ms (margin over ~10 samples). */
         for (i = 0; i < 100; i++)
         {
-          if (BMP581_INT)
+          rslt = bmp5_get_interrupt_status(&int_status, &bmp5);
+          if (rslt == BMP5_OK && (int_status & BMP5_INT_ASSERTED_DRDY))
           {
-            /* read the sensor data */
+            /* Data ready confirmed over SPI - read and keep the sample */
             bmp5_get_sensor_data(&bmp5SelftestData, &osr_odr_press_cfg, &bmp5);
-
-            /* NOTE : Read interrupt status register again to clear data ready
-             * interrupt status */
-            rslt = bmp5_get_interrupt_status(&int_status, &bmp5);
-            platform_delay(1);
-            //check for pin status, 0 = fail, 1 = pass
-            res = ((rslt == BMP5_OK) && (!BMP581_INT)) ? 1 : 0;
+            res = 1;
             break;
           }
           /* Wait 2 ms between polls (100 iterations -> 200ms window) */
@@ -288,7 +286,6 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
   uint8_t odrIdx = 0;
   uint8_t i;
   struct bmp5_osr_odr_eff osr_odr_eff = { 0 };
-  struct bmp5_int_source_select int_source_select = { 0 };
 
   /* Configuration registers can only be updated while in standby mode */
   rslt = bmp5_set_power_mode(BMP5_POWERMODE_STANDBY, &bmp5);
@@ -341,28 +338,14 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
     odrIdx++;
   }
 
+  /* The BMP581 continuously refreshes its (pre-compensated) data registers in
+   * NORMAL mode, so the pressure/temperature is read by polling on each sensing
+   * cycle rather than gating on the data-ready interrupt. This removes any
+   * dependency on the shared BMP390_INT line, which is unreliable on some
+   * boards (DEV-818). The DRDY interrupt pin is left disabled. */
   bmp5DrdyIntEnabled = false;
-  if (bmp5_is_shimmer_freq_higher(shimmerSamplingFreq, bmp5OsrOdrPressCfg.odr))
-  {
-    bmp5DrdyIntEnabled = true;
-
-    /* Configure the interrupt (latch/polarity) BEFORE routing the data-ready
-     * source to the pin - the BMP581 requires this order (Bosch note: "Select
-     * INT_SOURCE after configuring interrupt"). */
-    rslt = bmp5_configure_interrupt(BMP5_LATCHED, BMP5_ACTIVE_HIGH,
-        BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
-    if (rslt != BMP5_OK)
-    {
-      return rslt;
-    }
-    int_source_select.drdy_en = BMP5_ENABLE;
-    rslt = bmp5_int_source_select(&int_source_select, &bmp5);
-  }
-  else
-  {
-    rslt = bmp5_configure_interrupt(BMP5_LATCHED, BMP5_ACTIVE_HIGH,
-        BMP5_INTR_PUSH_PULL, BMP5_INTR_DISABLE, &bmp5);
-  }
+  rslt = bmp5_configure_interrupt(
+      BMP5_LATCHED, BMP5_ACTIVE_HIGH, BMP5_INTR_PUSH_PULL, BMP5_INTR_DISABLE, &bmp5);
   if (rslt != BMP5_OK)
   {
     return rslt;
