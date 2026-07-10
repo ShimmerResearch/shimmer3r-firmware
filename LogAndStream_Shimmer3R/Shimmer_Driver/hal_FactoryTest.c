@@ -62,11 +62,8 @@ typedef struct
   uint8_t overcapture;
 } lse_meas_chan_t;
 
-static void lseMeasChanInit(lse_meas_chan_t *ch,
-    TIM_TypeDef *tim,
-    uint32_t tisel,
-    uint32_t ic1psc,
-    uint32_t capTarget)
+static void
+lseMeasChanInit(lse_meas_chan_t *ch, TIM_TypeDef *tim, uint32_t tisel, uint32_t ic1psc, uint32_t capTarget)
 {
   memset(ch, 0, sizeof(*ch));
   ch->tim = tim;
@@ -407,8 +404,7 @@ void print_mcu_details(void)
   {
     int32_t absPpmX10 = (lseErrPpmX10 < 0) ? -lseErrPpmX10 : lseErrPpmX10;
     testPass = (absPpmX10 <= TEST_THRESHOLD_LSE_ERROR_PPM_X10);
-    sprintf(buffer,
-        " - S3R_TEST_0027 - %s: LF crystal error = %s%ld.%ld ppm (limit +/-%d.%d ppm, vs HSE)\r\n",
+    sprintf(buffer, " - S3R_TEST_0027 - %s: LF crystal error = %s%ld.%ld ppm (limit +/-%d.%d ppm, vs HSE)\r\n",
         testPass ? "PASS" : "FAIL", (lseErrPpmX10 < 0) ? "-" : "+",
         (long) (absPpmX10 / 10), (long) (absPpmX10 % 10),
         TEST_THRESHOLD_LSE_ERROR_PPM_X10 / 10, TEST_THRESHOLD_LSE_ERROR_PPM_X10 % 10);
