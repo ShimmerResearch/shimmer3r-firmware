@@ -225,14 +225,20 @@ int8_t bmp5_drdy_test(void)
 
       if (rslt == BMP5_OK)
       {
-        /* Enable data-ready interrupt and latch */
-        int_source_select.drdy_en = BMP5_ENABLE;
-        rslt = bmp5_int_source_select(&int_source_select, &bmp5);
+        /* Configure the interrupt (latched, active-high) BEFORE routing the
+         * data-ready source to the pin. The BMP581 requires the latch/polarity
+         * to be set while the INT source is still deselected (Bosch bmp5
+         * driver note + bmp5_selftest example: "Select INT_SOURCE after
+         * configuring interrupt"). Doing int_source_select first can leave
+         * DRDY not actually driven on the INT pin. */
+        rslt = bmp5_configure_interrupt(BMP5_LATCHED, BMP5_ACTIVE_HIGH,
+            BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
       }
       if (rslt == BMP5_OK)
       {
-        rslt = bmp5_configure_interrupt(BMP5_LATCHED, BMP5_ACTIVE_HIGH,
-            BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
+        /* Now route data-ready to the INT pin */
+        int_source_select.drdy_en = BMP5_ENABLE;
+        rslt = bmp5_int_source_select(&int_source_select, &bmp5);
       }
 
       if (rslt == BMP5_OK)
@@ -240,13 +246,15 @@ int8_t bmp5_drdy_test(void)
         rslt = bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp5);
       }
 
-      /* Added in case chip needs time to enable interrupt pin */
+      /* Give the sensor time to enter normal mode and produce the first
+       * conversion before polling the interrupt pin. */
       platform_delay(100);
 
       if (rslt == BMP5_OK)
       {
-        /* New sample is every 20ms @ 50Hz. Loop count + delay below allows 100ms for DRDY to toggle */
-        for (i = 0; i < 50; i++)
+        /* New sample every 20ms @ 50Hz. Poll up to 100 x 2ms = 200ms for the
+         * data-ready interrupt to assert (generous margin over ~10 samples). */
+        for (i = 0; i < 100; i++)
         {
           if (BMP581_INT)
           {
@@ -261,8 +269,8 @@ int8_t bmp5_drdy_test(void)
             res = ((rslt == BMP5_OK) && (!BMP581_INT)) ? 1 : 0;
             break;
           }
-          /* Wait for 1 ms */
-          platform_delay(1);
+          /* Wait 2 ms between polls (100 iterations -> 200ms window) */
+          platform_delay(2);
         }
       }
       if (rslt == BMP5_OK)
@@ -338,14 +346,17 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
   {
     bmp5DrdyIntEnabled = true;
 
-    int_source_select.drdy_en = BMP5_ENABLE;
-    rslt = bmp5_int_source_select(&int_source_select, &bmp5);
+    /* Configure the interrupt (latch/polarity) BEFORE routing the data-ready
+     * source to the pin - the BMP581 requires this order (Bosch note: "Select
+     * INT_SOURCE after configuring interrupt"). */
+    rslt = bmp5_configure_interrupt(BMP5_LATCHED, BMP5_ACTIVE_HIGH,
+        BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
     if (rslt != BMP5_OK)
     {
       return rslt;
     }
-    rslt = bmp5_configure_interrupt(BMP5_LATCHED, BMP5_ACTIVE_HIGH,
-        BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
+    int_source_select.drdy_en = BMP5_ENABLE;
+    rslt = bmp5_int_source_select(&int_source_select, &bmp5);
   }
   else
   {
