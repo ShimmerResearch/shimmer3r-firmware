@@ -427,8 +427,11 @@ void bmp5_debug_readTask(void)
   struct bmp5_sensor_data data = { 0 };
   uint32_t now;
 
+  uint8_t int_status = 0;
+
   if (!inited)
   {
+    struct bmp5_int_source_select int_src = { 0 };
     Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
     MX_SPI1_Init();
     bmp5_setup_dev();
@@ -441,6 +444,15 @@ void bmp5_debug_readTask(void)
     cfg.osr_t = BMP5_OVERSAMPLING_1X;
     cfg.odr = BMP5_ODR_50_HZ;
     bmp5_set_osr_odr_press_config(&cfg, &bmp5);
+    /* Enable the data-ready source so DRDY can be polled over SPI (INT_STATUS).
+     * Reading the data registers blindly returns inconsistent values between
+     * conversions, so a fresh sample must be confirmed first. The physical INT
+     * pin is not read - only the status register - so this stays independent of
+     * the (board-flaky) BMP390_INT line. */
+    bmp5_configure_interrupt(
+        BMP5_PULSED, BMP5_ACTIVE_HIGH, BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
+    int_src.drdy_en = BMP5_ENABLE;
+    bmp5_int_source_select(&int_src, &bmp5);
     bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp5);
     inited = 1;
   }
@@ -452,7 +464,10 @@ void bmp5_debug_readTask(void)
   }
   lastTick = now;
 
-  if (bmp5_get_sensor_data(&data, &cfg, &bmp5) == BMP5_OK)
+  /* Only read/print when the sensor reports data-ready (polled over SPI) */
+  if (bmp5_get_interrupt_status(&int_status, &bmp5) == BMP5_OK
+      && (int_status & BMP5_INT_ASSERTED_DRDY)
+      && bmp5_get_sensor_data(&data, &cfg, &bmp5) == BMP5_OK)
   {
     printf(" - BMP581: P=%.2f Pa  T=%.2f degC\r\n", (double) data.pressure,
         (double) data.temperature);
