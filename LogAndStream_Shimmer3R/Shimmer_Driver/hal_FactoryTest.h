@@ -115,7 +115,7 @@ typedef enum
   LSE_MEAS_ERR_LSE_NOT_READY, /* LSE oscillator not running */
   LSE_MEAS_ERR_HSE_NOT_READY, /* 16 MHz HSE reference not running */
   LSE_MEAS_ERR_TIMEOUT,       /* capture stream never delivered */
-  LSE_MEAS_ERR_OVERCAPTURE,   /* capture missed repeatedly (IRQ pressure) */
+  LSE_MEAS_ERR_GAP,           /* capture gap too long to reconstruct */
   LSE_MEAS_ERR_RANGE,         /* implausible result (beyond +/-10,000 ppm) */
   LSE_MEAS_ERR_PARAM,         /* NULL output pointer */
 } lse_meas_result_t;

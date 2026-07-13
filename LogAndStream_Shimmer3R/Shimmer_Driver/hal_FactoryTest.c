@@ -46,31 +46,47 @@ static uint32_t gsrFactoryTest_getRefResistorForTestResistor(uint32_t testResist
  * affect the result (the same property the PPI gate gives the nRF version).
  * Positive result = LSE fast = the RTC gains time. */
 
-#define LSE_MEAS_LSE_CAPTURES 32769U /* 32768 LSE periods   ~= 1 s window */
-#define LSE_MEAS_HSE_CAPTURES 62501U /* 62500 x 8/500 kHz   ~= 1 s window */
-#define LSE_MEAS_TIMEOUT_MS   2500U  /* per attempt; windows are ~1 s */
-#define LSE_MEAS_MAX_ATTEMPTS 3U     /* overcapture retries (paranoia) */
+#define LSE_MEAS_LSE_CAPTURES     32769U /* 32768 LSE periods   ~= 1 s window */
+#define LSE_MEAS_HSE_CAPTURES     62501U /* 62500 x 8/500 kHz   ~= 1 s window */
+#define LSE_MEAS_TIMEOUT_MS       2500U  /* per attempt; windows are ~1 s */
+#define LSE_MEAS_MAX_ATTEMPTS     3U     /* unreconstructable-gap retries */
+/* Longest service gap the edge-grid reconstruction below will bridge, in
+ * capture intervals. Needs the nominal interval known only to ~2 % (we have
+ * ~0.3 %: MSI trim + integer rounding), and 20 intervals stays far below the
+ * 16-bit counter wrap. 20 intervals = ~320 us (HSE chan) / ~610 us (LSE
+ * chan) of tolerated continuous interrupt masking. */
+#define LSE_MEAS_MAX_GAP_INTERVALS 20U
 
 typedef struct
 {
   TIM_TypeDef *tim;
   uint64_t firstCap;
   uint64_t lastCap;
-  uint32_t capCount;
-  uint32_t capTarget;
+  uint32_t edgeCount;  /* edges since firstCap, incl. reconstructed ones */
+  uint32_t edgeTarget;
+  uint32_t tNom;       /* nominal kernel ticks per capture interval */
+  uint32_t recovered;  /* edges reconstructed across oversized gaps */
   uint32_t wraps;
-  uint8_t overcapture;
+  uint8_t invalid;     /* gap too large to reconstruct - retry */
 } lse_meas_chan_t;
 
-/* ISR-owned capture state. Bench testing showed a polled loop cannot meet the
- * 16 us TIM17 capture spacing on this firmware: the USB OTG / UART interrupt
- * handlers that carry the test report steal >16 us bursts and every attempt
- * ended in overcapture. Captures are therefore serviced from the TIM16/TIM17
- * interrupts at NVIC preempt priority 0, above OTG_HS (4/7), SDMMC (6) and
- * the USARTs (8); the priority-0 sensor-path IRQs (ADC/GPDMA/EXTI) are idle
- * while the factory test runs. Capture values themselves are latched by
- * hardware, so ISR latency never biases the measurement - it only has to be
- * serviced within one capture interval. */
+/* ISR-owned capture state.
+ *
+ * Bench round 1: a polled loop cannot meet the 16 us TIM17 capture spacing -
+ * the USB OTG / UART interrupts carrying the test report steal longer bursts
+ * (overcapture every attempt). Round 2: even ISRs at NVIC preempt priority 0
+ * still overcaptured, because the comms stacks (shimmer_bt_uart, USBX
+ * transfer_request, Infomem) guard their state with __disable_irq() critical
+ * sections, and PRIMASK outranks every NVIC priority.
+ *
+ * The measurement is therefore made starvation-immune instead: both sources
+ * are strictly crystal-periodic, so when service arrives late the latched
+ * capture still sits exactly on the edge grid, and the number of edges the
+ * gap spans is round(gap / tNom) - exact while the gap stays within
+ * LSE_MEAS_MAX_GAP_INTERVALS. An overwritten capture (CC1OF) is thus plain
+ * arithmetic, not an error; only a gap too long to attribute unambiguously
+ * invalidates the attempt. Capture values are hardware-latched, so none of
+ * this biases the result. ISRs stay at priority 0 to keep gaps rare. */
 static volatile lse_meas_chan_t lseMeasLseChan;
 static volatile lse_meas_chan_t lseMeasHseChan;
 
@@ -85,12 +101,10 @@ static void lseMeasChanIrq(volatile lse_meas_chan_t *ch)
 
   if (tim->SR & TIM_SR_CC1IF)
   {
-    /* A capture was overwritten before this one was read -> the interval
-     * count and the timestamps are no longer consistent. Detected, not
-     * fatal: the caller retries the whole measurement. */
+    /* An overwritten capture only means this service spans >1 edge; the
+     * grid reconstruction below recovers the true count. */
     if (tim->SR & TIM_SR_CC1OF)
     {
-      ch->overcapture = 1U;
       tim->SR = ~TIM_SR_CC1OF;
     }
     uint32_t ccr = tim->CCR1; /* read clears CC1IF */
@@ -102,13 +116,35 @@ static void lseMeasChanIrq(volatile lse_meas_chan_t *ch)
       wraps++;
     }
     uint64_t t = ((uint64_t) wraps << 16) + ccr;
-    if (ch->capCount == 0U)
+    if (ch->edgeCount == 0U)
     {
       ch->firstCap = t;
+      ch->edgeCount = 1U;
+    }
+    else
+    {
+      uint32_t gap = (uint32_t) (t - ch->lastCap);
+      uint32_t k = (gap + (ch->tNom / 2U)) / ch->tNom;
+      if (k == 0U)
+      {
+        k = 1U; /* sub-interval jitter guard; cannot happen for real edges */
+      }
+      if (k > LSE_MEAS_MAX_GAP_INTERVALS)
+      {
+        /* Starved longer than the reconstruction can bridge (or the counter
+         * wrapped unseen) - this attempt's counts are untrustworthy. */
+        ch->invalid = 1U;
+        tim->CR1 = 0U;
+        tim->DIER = 0U;
+      }
+      else
+      {
+        ch->edgeCount += k;
+        ch->recovered += k - 1U;
+      }
     }
     ch->lastCap = t;
-    ch->capCount++;
-    if (ch->capCount >= ch->capTarget)
+    if (ch->edgeCount >= ch->edgeTarget)
     {
       tim->CR1 = 0U; /* window complete - freeze the channel */
       tim->DIER = 0U;
@@ -135,15 +171,18 @@ static void lseMeasChanInit(volatile lse_meas_chan_t *ch,
     TIM_TypeDef *tim,
     uint32_t tisel,
     uint32_t ic1psc,
-    uint32_t capTarget)
+    uint32_t edgeTarget,
+    uint32_t tNom)
 {
   ch->tim = NULL; /* keep the ISR out while (re)initialising */
   ch->firstCap = 0U;
   ch->lastCap = 0U;
-  ch->capCount = 0U;
-  ch->capTarget = capTarget;
+  ch->edgeCount = 0U;
+  ch->edgeTarget = edgeTarget;
+  ch->tNom = tNom;
+  ch->recovered = 0U;
   ch->wraps = 0U;
-  ch->overcapture = 0U;
+  ch->invalid = 0U;
 
   tim->CR1 = 0U;
   tim->DIER = 0U;
@@ -196,21 +235,28 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
   HAL_NVIC_EnableIRQ(TIM16_IRQn);
   HAL_NVIC_EnableIRQ(TIM17_IRQn);
 
+  /* Nominal kernel ticks per capture interval, from the live core clock:
+   * LSE captures every 32768th of a second, HSE-chan captures every
+   * (32 x 8)/16 MHz = 1/62500 s. Only ~2 % accuracy is needed for the
+   * edge-grid reconstruction; SystemCoreClock is well within that. */
+  uint32_t tNomLse = SystemCoreClock / 32768U;
+  uint32_t tNomHse = SystemCoreClock / 62500U;
+
   for (uint8_t attempt = 0U; attempt < LSE_MEAS_MAX_ATTEMPTS; attempt++)
   {
     lseMeasChanInit(&lseMeasLseChan, TIM16, TIM_TIM16_TI1_LSE, TIM_ICPSC_DIV1,
-        LSE_MEAS_LSE_CAPTURES);
-    lseMeasChanInit(&lseMeasHseChan, TIM17, TIM_TIM17_TI1_HSE_DIV32,
-        TIM_ICPSC_DIV8, LSE_MEAS_HSE_CAPTURES);
+        LSE_MEAS_LSE_CAPTURES, tNomLse);
+    lseMeasChanInit(&lseMeasHseChan, TIM17, TIM_TIM17_TI1_HSE_DIV32, TIM_ICPSC_DIV8,
+        LSE_MEAS_HSE_CAPTURES, tNomHse);
 
     result = LSE_MEAS_OK;
     uint32_t startMs = HAL_GetTick();
-    while (lseMeasLseChan.capCount < lseMeasLseChan.capTarget
-        || lseMeasHseChan.capCount < lseMeasHseChan.capTarget)
+    while (lseMeasLseChan.edgeCount < lseMeasLseChan.edgeTarget
+        || lseMeasHseChan.edgeCount < lseMeasHseChan.edgeTarget)
     {
-      if (lseMeasLseChan.overcapture || lseMeasHseChan.overcapture)
+      if (lseMeasLseChan.invalid || lseMeasHseChan.invalid)
       {
-        result = LSE_MEAS_ERR_OVERCAPTURE;
+        result = LSE_MEAS_ERR_GAP;
         break;
       }
       if ((HAL_GetTick() - startMs) > LSE_MEAS_TIMEOUT_MS)
@@ -220,7 +266,7 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
       }
     }
 
-    if (result != LSE_MEAS_ERR_OVERCAPTURE)
+    if (result != LSE_MEAS_ERR_GAP)
     {
       break; /* success or a non-retryable error */
     }
@@ -251,11 +297,23 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
    * frequency cancels in the ratio. */
   uint64_t lseTicks = lseMeasLseChan.lastCap - lseMeasLseChan.firstCap;
   uint64_t hseTicks = lseMeasHseChan.lastCap - lseMeasHseChan.firstCap;
-  uint64_t lseIntervals = (uint64_t) lseMeasLseChan.capCount - 1U;
-  uint64_t hseIntervals = (uint64_t) lseMeasHseChan.capCount - 1U;
+  uint64_t lseIntervals = (uint64_t) lseMeasLseChan.edgeCount - 1U;
+  uint64_t hseIntervals = (uint64_t) lseMeasHseChan.edgeCount - 1U;
   if (lseTicks == 0U || hseTicks == 0U)
   {
     return LSE_MEAS_ERR_TIMEOUT;
+  }
+
+  /* Wrap-loss cross-check: both windows are nominally 1.0000 s and start
+   * together, so their kernel-tick spans agree within a few thousand ticks.
+   * A UIF wrap silently lost to >1.37 ms of interrupt masking would skew one
+   * span by 65536 ticks - flag anything past half a wrap. */
+  {
+    int64_t spanDiff = (int64_t) lseTicks - (int64_t) hseTicks;
+    if ((spanDiff > 32768) || (spanDiff < -32768))
+    {
+      return LSE_MEAS_ERR_GAP;
+    }
   }
 
   int64_t num = (int64_t) (lseIntervals * hseTicks) * 15625;
@@ -471,7 +529,7 @@ void print_mcu_details(void)
   else
   {
     static const char *lseMeasErrStr[] = { "OK", "LSE not ready", "HSE not ready",
-      "timeout", "overcapture", "result out of range", "bad parameter" };
+      "timeout", "capture gap", "result out of range", "bad parameter" };
     testPass = 0;
     /* Capture progress (per channel, captures seen / target) pinpoints which
      * stream stalled or lost captures - key field-debug detail. */
@@ -479,8 +537,8 @@ void print_mcu_details(void)
         (lseMeasResult < (sizeof(lseMeasErrStr) / sizeof(lseMeasErrStr[0]))) ?
             lseMeasErrStr[lseMeasResult] :
             "unknown",
-        (unsigned long) lseMeasLseChan.capCount, LSE_MEAS_LSE_CAPTURES,
-        (unsigned long) lseMeasHseChan.capCount, LSE_MEAS_HSE_CAPTURES);
+        (unsigned long) lseMeasLseChan.edgeCount, LSE_MEAS_LSE_CAPTURES,
+        (unsigned long) lseMeasHseChan.edgeCount, LSE_MEAS_HSE_CAPTURES);
   }
   ShimFactoryTest_sendReport(buffer);
   if (!testPass)
