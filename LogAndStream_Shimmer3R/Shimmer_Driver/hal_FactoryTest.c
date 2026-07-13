@@ -46,10 +46,10 @@ static uint32_t gsrFactoryTest_getRefResistorForTestResistor(uint32_t testResist
  * affect the result (the same property the PPI gate gives the nRF version).
  * Positive result = LSE fast = the RTC gains time. */
 
-#define LSE_MEAS_LSE_CAPTURES  32769U /* 32768 LSE periods   ~= 1 s window */
-#define LSE_MEAS_HSE_CAPTURES  62501U /* 62500 x 8/500 kHz   ~= 1 s window */
-#define LSE_MEAS_TIMEOUT_WRAPS 2000U  /* 16-bit wraps; ~2.7 s at 48 MHz */
-#define LSE_MEAS_MAX_ATTEMPTS  3U     /* overcapture (IRQ pressure) retries */
+#define LSE_MEAS_LSE_CAPTURES 32769U /* 32768 LSE periods   ~= 1 s window */
+#define LSE_MEAS_HSE_CAPTURES 62501U /* 62500 x 8/500 kHz   ~= 1 s window */
+#define LSE_MEAS_TIMEOUT_MS   2500U  /* per attempt; windows are ~1 s */
+#define LSE_MEAS_MAX_ATTEMPTS 3U     /* overcapture retries (paranoia) */
 
 typedef struct
 {
@@ -62,38 +62,36 @@ typedef struct
   uint8_t overcapture;
 } lse_meas_chan_t;
 
-static void
-lseMeasChanInit(lse_meas_chan_t *ch, TIM_TypeDef *tim, uint32_t tisel, uint32_t ic1psc, uint32_t capTarget)
-{
-  memset(ch, 0, sizeof(*ch));
-  ch->tim = tim;
-  ch->capTarget = capTarget;
+/* ISR-owned capture state. Bench testing showed a polled loop cannot meet the
+ * 16 us TIM17 capture spacing on this firmware: the USB OTG / UART interrupt
+ * handlers that carry the test report steal >16 us bursts and every attempt
+ * ended in overcapture. Captures are therefore serviced from the TIM16/TIM17
+ * interrupts at NVIC preempt priority 0, above OTG_HS (4/7), SDMMC (6) and
+ * the USARTs (8); the priority-0 sensor-path IRQs (ADC/GPDMA/EXTI) are idle
+ * while the factory test runs. Capture values themselves are latched by
+ * hardware, so ISR latency never biases the measurement - it only has to be
+ * serviced within one capture interval. */
+static volatile lse_meas_chan_t lseMeasLseChan;
+static volatile lse_meas_chan_t lseMeasHseChan;
 
-  tim->CR1 = 0U;
-  tim->PSC = 0U;
-  tim->ARR = 0xFFFFU;
-  tim->EGR = TIM_EGR_UG; /* latch PSC/ARR */
-  tim->TISEL = tisel;
-  /* CC1 <- TI1, optional input prescaler (HSE/32 is captured /8 so the
-   * poll loop only has to service one capture every 16 us) */
-  tim->CCMR1 = TIM_CCMR1_CC1S_0 | ic1psc;
-  tim->CCER = TIM_CCER_CC1E; /* capture rising edges */
-  tim->SR = 0U;              /* clear stale flags (incl. UG's UIF) */
-  tim->CR1 = TIM_CR1_CEN;
-}
-
-static void lseMeasChanPoll(lse_meas_chan_t *ch)
+static void lseMeasChanIrq(volatile lse_meas_chan_t *ch)
 {
   TIM_TypeDef *tim = ch->tim;
 
+  if (tim == NULL)
+  {
+    return; /* spurious - measurement not armed */
+  }
+
   if (tim->SR & TIM_SR_CC1IF)
   {
-    /* A capture was missed before this one was read -> the interval count
-     * and the timestamps are no longer consistent. Detected, not fatal:
-     * the caller retries the whole measurement. */
+    /* A capture was overwritten before this one was read -> the interval
+     * count and the timestamps are no longer consistent. Detected, not
+     * fatal: the caller retries the whole measurement. */
     if (tim->SR & TIM_SR_CC1OF)
     {
       ch->overcapture = 1U;
+      tim->SR = ~TIM_SR_CC1OF;
     }
     uint32_t ccr = tim->CCR1; /* read clears CC1IF */
     uint32_t wraps = ch->wraps;
@@ -112,7 +110,8 @@ static void lseMeasChanPoll(lse_meas_chan_t *ch)
     ch->capCount++;
     if (ch->capCount >= ch->capTarget)
     {
-      tim->CR1 = 0U; /* window complete - freeze so no overcapture follows */
+      tim->CR1 = 0U; /* window complete - freeze the channel */
+      tim->DIER = 0U;
     }
   }
   if (tim->SR & TIM_SR_UIF)
@@ -122,9 +121,49 @@ static void lseMeasChanPoll(lse_meas_chan_t *ch)
   }
 }
 
+void TIM16_IRQHandler(void)
+{
+  lseMeasChanIrq(&lseMeasLseChan);
+}
+
+void TIM17_IRQHandler(void)
+{
+  lseMeasChanIrq(&lseMeasHseChan);
+}
+
+static void lseMeasChanInit(volatile lse_meas_chan_t *ch,
+    TIM_TypeDef *tim,
+    uint32_t tisel,
+    uint32_t ic1psc,
+    uint32_t capTarget)
+{
+  ch->tim = NULL; /* keep the ISR out while (re)initialising */
+  ch->firstCap = 0U;
+  ch->lastCap = 0U;
+  ch->capCount = 0U;
+  ch->capTarget = capTarget;
+  ch->wraps = 0U;
+  ch->overcapture = 0U;
+
+  tim->CR1 = 0U;
+  tim->DIER = 0U;
+  tim->PSC = 0U;
+  tim->ARR = 0xFFFFU;
+  tim->EGR = TIM_EGR_UG; /* latch PSC/ARR */
+  tim->TISEL = tisel;
+  /* CC1 <- TI1, optional input prescaler (HSE/32 is captured /8 so the ISR
+   * only runs once per 16 us on that channel) */
+  tim->CCMR1 = TIM_CCMR1_CC1S_0 | ic1psc;
+  tim->CCER = TIM_CCER_CC1E; /* capture rising edges */
+  tim->SR = 0U;              /* clear stale flags (incl. UG's UIF) */
+
+  ch->tim = tim;
+  tim->DIER = TIM_DIER_CC1IE | TIM_DIER_UIE;
+  tim->CR1 = TIM_CR1_CEN;
+}
+
 lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
 {
-  lse_meas_chan_t lseChan, hseChan;
   lse_meas_result_t result = LSE_MEAS_OK;
 
   if (lseErrorPpmX10 == NULL)
@@ -151,23 +190,30 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
    * cross-timer Cut1.x workaround in the HAL applies to U575/585 only.) */
   SET_BIT(TIM17->OR1, TIM_OR1_HSE32EN);
 
+  /* Preempt priority 0: see the note above lseMeasLseChan. */
+  HAL_NVIC_SetPriority(TIM16_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(TIM17_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(TIM16_IRQn);
+  HAL_NVIC_EnableIRQ(TIM17_IRQn);
+
   for (uint8_t attempt = 0U; attempt < LSE_MEAS_MAX_ATTEMPTS; attempt++)
   {
-    lseMeasChanInit(&lseChan, TIM16, TIM_TIM16_TI1_LSE, TIM_ICPSC_DIV1, LSE_MEAS_LSE_CAPTURES);
-    lseMeasChanInit(&hseChan, TIM17, TIM_TIM17_TI1_HSE_DIV32, TIM_ICPSC_DIV8,
+    lseMeasChanInit(&lseMeasLseChan, TIM16, TIM_TIM16_TI1_LSE, TIM_ICPSC_DIV1,
+        LSE_MEAS_LSE_CAPTURES);
+    lseMeasChanInit(&lseMeasHseChan, TIM17, TIM_TIM17_TI1_HSE_DIV32, TIM_ICPSC_DIV8,
         LSE_MEAS_HSE_CAPTURES);
 
     result = LSE_MEAS_OK;
-    while (lseChan.capCount < lseChan.capTarget || hseChan.capCount < hseChan.capTarget)
+    uint32_t startMs = HAL_GetTick();
+    while (lseMeasLseChan.capCount < lseMeasLseChan.capTarget
+        || lseMeasHseChan.capCount < lseMeasHseChan.capTarget)
     {
-      lseMeasChanPoll(&lseChan);
-      lseMeasChanPoll(&hseChan);
-      if (lseChan.overcapture || hseChan.overcapture)
+      if (lseMeasLseChan.overcapture || lseMeasHseChan.overcapture)
       {
         result = LSE_MEAS_ERR_OVERCAPTURE;
         break;
       }
-      if (lseChan.wraps > LSE_MEAS_TIMEOUT_WRAPS || hseChan.wraps > LSE_MEAS_TIMEOUT_WRAPS)
+      if ((HAL_GetTick() - startMs) > LSE_MEAS_TIMEOUT_MS)
       {
         result = LSE_MEAS_ERR_TIMEOUT;
         break;
@@ -180,13 +226,19 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
     }
   }
 
+  HAL_NVIC_DisableIRQ(TIM16_IRQn);
+  HAL_NVIC_DisableIRQ(TIM17_IRQn);
   TIM16->CR1 = 0U;
   TIM17->CR1 = 0U;
+  TIM16->DIER = 0U;
+  TIM17->DIER = 0U;
   TIM16->CCER = 0U;
   TIM17->CCER = 0U;
   CLEAR_BIT(TIM17->OR1, TIM_OR1_HSE32EN);
   __HAL_RCC_TIM16_CLK_DISABLE();
   __HAL_RCC_TIM17_CLK_DISABLE();
+  lseMeasLseChan.tim = NULL;
+  lseMeasHseChan.tim = NULL;
 
   if (result != LSE_MEAS_OK)
   {
@@ -197,10 +249,10 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
    * where f_hsecap = (16 MHz / 32) / 8 = 62.5 kHz nominally, so
    * R_nominal = 32768 / 62500 = 8192 / 15625 exactly. The kernel-clock
    * frequency cancels in the ratio. */
-  uint64_t lseTicks = lseChan.lastCap - lseChan.firstCap;
-  uint64_t hseTicks = hseChan.lastCap - hseChan.firstCap;
-  uint64_t lseIntervals = (uint64_t) lseChan.capCount - 1U;
-  uint64_t hseIntervals = (uint64_t) hseChan.capCount - 1U;
+  uint64_t lseTicks = lseMeasLseChan.lastCap - lseMeasLseChan.firstCap;
+  uint64_t hseTicks = lseMeasHseChan.lastCap - lseMeasHseChan.firstCap;
+  uint64_t lseIntervals = (uint64_t) lseMeasLseChan.capCount - 1U;
+  uint64_t hseIntervals = (uint64_t) lseMeasHseChan.capCount - 1U;
   if (lseTicks == 0U || hseTicks == 0U)
   {
     return LSE_MEAS_ERR_TIMEOUT;
@@ -421,10 +473,15 @@ void print_mcu_details(void)
     static const char *lseMeasErrStr[] = { "OK", "LSE not ready", "HSE not ready",
       "timeout", "overcapture", "result out of range", "bad parameter" };
     testPass = 0;
-    sprintf(buffer, " - S3R_TEST_0027 - FAIL: LF crystal error not measurable (%s)\r\n",
+    /* Capture progress (per channel, captures seen / target) pinpoints which
+     * stream stalled or lost captures - key field-debug detail. */
+    sprintf(buffer,
+        " - S3R_TEST_0027 - FAIL: LF crystal error not measurable (%s, L %lu/%u H %lu/%u)\r\n",
         (lseMeasResult < (sizeof(lseMeasErrStr) / sizeof(lseMeasErrStr[0]))) ?
             lseMeasErrStr[lseMeasResult] :
-            "unknown");
+            "unknown",
+        (unsigned long) lseMeasLseChan.capCount, LSE_MEAS_LSE_CAPTURES,
+        (unsigned long) lseMeasHseChan.capCount, LSE_MEAS_HSE_CAPTURES);
   }
   ShimFactoryTest_sendReport(buffer);
   if (!testPass)
