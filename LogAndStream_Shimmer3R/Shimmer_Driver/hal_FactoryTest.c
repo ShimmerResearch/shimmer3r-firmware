@@ -46,10 +46,10 @@ static uint32_t gsrFactoryTest_getRefResistorForTestResistor(uint32_t testResist
  * affect the result (the same property the PPI gate gives the nRF version).
  * Positive result = LSE fast = the RTC gains time. */
 
-#define LSE_MEAS_LSE_CAPTURES     32769U /* 32768 LSE periods   ~= 1 s window */
-#define LSE_MEAS_HSE_CAPTURES     62501U /* 62500 x 8/500 kHz   ~= 1 s window */
-#define LSE_MEAS_TIMEOUT_MS       2500U  /* per attempt; windows are ~1 s */
-#define LSE_MEAS_MAX_ATTEMPTS     3U     /* unreconstructable-gap retries */
+#define LSE_MEAS_LSE_CAPTURES      32769U /* 32768 LSE periods   ~= 1 s window */
+#define LSE_MEAS_HSE_CAPTURES      62501U /* 62500 x 8/500 kHz   ~= 1 s window */
+#define LSE_MEAS_TIMEOUT_MS        2500U  /* per attempt; windows are ~1 s */
+#define LSE_MEAS_MAX_ATTEMPTS      3U     /* unreconstructable-gap retries */
 /* Longest service gap the edge-grid reconstruction below will bridge, in
  * capture intervals. Needs the nominal interval known only to ~2 % (we have
  * ~0.3 %: MSI trim + integer rounding), and 20 intervals stays far below the
@@ -62,12 +62,12 @@ typedef struct
   TIM_TypeDef *tim;
   uint64_t firstCap;
   uint64_t lastCap;
-  uint32_t edgeCount;  /* edges since firstCap, incl. reconstructed ones */
+  uint32_t edgeCount; /* edges since firstCap, incl. reconstructed ones */
   uint32_t edgeTarget;
-  uint32_t tNom;       /* nominal kernel ticks per capture interval */
-  uint32_t recovered;  /* edges reconstructed across oversized gaps */
+  uint32_t tNom;      /* nominal kernel ticks per capture interval */
+  uint32_t recovered; /* edges reconstructed across oversized gaps */
   uint32_t wraps;
-  uint8_t invalid;     /* gap too large to reconstruct - retry */
+  uint8_t invalid; /* gap too large to reconstruct - retry */
 } lse_meas_chan_t;
 
 /* ISR-owned capture state.
@@ -246,8 +246,8 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
   {
     lseMeasChanInit(&lseMeasLseChan, TIM16, TIM_TIM16_TI1_LSE, TIM_ICPSC_DIV1,
         LSE_MEAS_LSE_CAPTURES, tNomLse);
-    lseMeasChanInit(&lseMeasHseChan, TIM17, TIM_TIM17_TI1_HSE_DIV32, TIM_ICPSC_DIV8,
-        LSE_MEAS_HSE_CAPTURES, tNomHse);
+    lseMeasChanInit(&lseMeasHseChan, TIM17, TIM_TIM17_TI1_HSE_DIV32,
+        TIM_ICPSC_DIV8, LSE_MEAS_HSE_CAPTURES, tNomHse);
 
     result = LSE_MEAS_OK;
     uint32_t startMs = HAL_GetTick();
