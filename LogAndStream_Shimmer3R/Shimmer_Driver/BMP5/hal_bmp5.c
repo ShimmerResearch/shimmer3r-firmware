@@ -10,6 +10,7 @@
 #include "gpio.h"
 #include "spi.h"
 #include "stm32u5xx.h"
+#include <stdio.h>
 #include <string.h>
 
 #include "BMP5_SensorAPI/bmp5.h"
@@ -410,6 +411,52 @@ int8_t bmp5_read_int_status(void)
 struct bmp5_sensor_data *get_bmp5_selftest_data(void)
 {
   return &bmp5SelftestData;
+}
+
+/* TEMPORARY DEV-818 bring-up: call every iteration of the main loop. On the
+ * first call it powers and configures the BMP581 (NORMAL mode); thereafter it
+ * polls the (pre-compensated) pressure/temperature over SPI and prints them to
+ * the debug (ITM/printf) console every ~200ms. Non-blocking - returns straight
+ * away between prints so the rest of the main loop keeps running. Reads by
+ * polling only (no DRDY interrupt). Remove after bring-up. */
+void bmp5_debug_readTask(void)
+{
+  static uint8_t inited = 0;
+  static uint32_t lastTick = 0;
+  static struct bmp5_osr_odr_press_config cfg = { 0 };
+  struct bmp5_sensor_data data = { 0 };
+  uint32_t now;
+
+  if (!inited)
+  {
+    Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
+    MX_SPI1_Init();
+    bmp5_setup_dev();
+    bmp5_soft_reset(&bmp5);
+    platform_delay(3);
+    bmp5_init(&bmp5);
+    bmp5_get_osr_odr_press_config(&cfg, &bmp5);
+    cfg.press_en = BMP5_ENABLE;
+    cfg.osr_p = BMP5_OVERSAMPLING_1X;
+    cfg.osr_t = BMP5_OVERSAMPLING_1X;
+    cfg.odr = BMP5_ODR_50_HZ;
+    bmp5_set_osr_odr_press_config(&cfg, &bmp5);
+    bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp5);
+    inited = 1;
+  }
+
+  now = HAL_GetTick();
+  if ((now - lastTick) < 200)
+  {
+    return;
+  }
+  lastTick = now;
+
+  if (bmp5_get_sensor_data(&data, &cfg, &bmp5) == BMP5_OK)
+  {
+    printf(" - BMP581: P=%.2f Pa  T=%.2f degC\r\n", (double) data.pressure,
+        (double) data.temperature);
+  }
 }
 
 void bmp5_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
