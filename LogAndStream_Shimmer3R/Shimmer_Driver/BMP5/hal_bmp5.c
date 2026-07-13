@@ -449,8 +449,8 @@ void bmp5_debug_readTask(void)
      * conversions, so a fresh sample must be confirmed first. The physical INT
      * pin is not read - only the status register - so this stays independent of
      * the (board-flaky) BMP390_INT line. */
-    bmp5_configure_interrupt(
-        BMP5_PULSED, BMP5_ACTIVE_HIGH, BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
+    bmp5_configure_interrupt(BMP5_PULSED, BMP5_ACTIVE_HIGH, BMP5_INTR_PUSH_PULL,
+        BMP5_INTR_ENABLE, &bmp5);
     int_src.drdy_en = BMP5_ENABLE;
     bmp5_int_source_select(&int_src, &bmp5);
     bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp5);
@@ -465,8 +465,7 @@ void bmp5_debug_readTask(void)
   lastTick = now;
 
   /* Only read/print when the sensor reports data-ready (polled over SPI) */
-  if (bmp5_get_interrupt_status(&int_status, &bmp5) == BMP5_OK
-      && (int_status & BMP5_INT_ASSERTED_DRDY)
+  if (bmp5_get_interrupt_status(&int_status, &bmp5) == BMP5_OK && (int_status & BMP5_INT_ASSERTED_DRDY)
       && bmp5_get_sensor_data(&data, &cfg, &bmp5) == BMP5_OK)
   {
     printf(" - BMP581: P=%.2f Pa  T=%.2f degC\r\n", (double) data.pressure,
