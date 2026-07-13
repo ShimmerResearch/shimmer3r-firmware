@@ -200,8 +200,8 @@ lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
   {
     lseMeasChanInit(&lseMeasLseChan, TIM16, TIM_TIM16_TI1_LSE, TIM_ICPSC_DIV1,
         LSE_MEAS_LSE_CAPTURES);
-    lseMeasChanInit(&lseMeasHseChan, TIM17, TIM_TIM17_TI1_HSE_DIV32, TIM_ICPSC_DIV8,
-        LSE_MEAS_HSE_CAPTURES);
+    lseMeasChanInit(&lseMeasHseChan, TIM17, TIM_TIM17_TI1_HSE_DIV32,
+        TIM_ICPSC_DIV8, LSE_MEAS_HSE_CAPTURES);
 
     result = LSE_MEAS_OK;
     uint32_t startMs = HAL_GetTick();
@@ -475,8 +475,7 @@ void print_mcu_details(void)
     testPass = 0;
     /* Capture progress (per channel, captures seen / target) pinpoints which
      * stream stalled or lost captures - key field-debug detail. */
-    sprintf(buffer,
-        " - S3R_TEST_0027 - FAIL: LF crystal error not measurable (%s, L %lu/%u H %lu/%u)\r\n",
+    sprintf(buffer, " - S3R_TEST_0027 - FAIL: LF crystal error not measurable (%s, L %lu/%u H %lu/%u)\r\n",
         (lseMeasResult < (sizeof(lseMeasErrStr) / sizeof(lseMeasErrStr[0]))) ?
             lseMeasErrStr[lseMeasResult] :
             "unknown",
