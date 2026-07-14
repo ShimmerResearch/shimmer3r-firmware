@@ -253,19 +253,24 @@ int8_t bmp5_drdy_test(void)
 
       if (rslt == BMP5_OK)
       {
-        /* Poll data-ready over SPI (the INT_STATUS DRDY bit) rather than the
-         * physical BMP581_INT pin, so the BMP581 passes independently of the
-         * shared BMP390_INT line (DEV-818: the sensor works fine over SPI even
-         * on boards where that interrupt line is unreliable). New sample every
-         * 20ms @ 50Hz; poll up to 100 x 2ms = 200ms (margin over ~10 samples). */
+        /* Deliberately validate the physical DRDY interrupt line: wait for the
+         * BMP581_INT pin to assert. If it never toggles (broken/unrouted INT),
+         * the self-test fails rather than masking it - this is a manufacturing
+         * check, so we do NOT fall back to SPI-polled data-ready here (unlike
+         * the streaming path). New sample every 20ms @ 50Hz; allow up to
+         * 100 x 2ms = 200ms for the pin to toggle. */
         for (i = 0; i < 100; i++)
         {
-          rslt = bmp5_get_interrupt_status(&int_status, &bmp5);
-          if (rslt == BMP5_OK && (int_status & BMP5_INT_ASSERTED_DRDY))
+          if (BMP581_INT)
           {
-            /* Data ready confirmed over SPI - read and keep the sample */
+            /* read the sensor data */
             bmp5_get_sensor_data(&bmp5SelftestData, &osr_odr_press_cfg, &bmp5);
-            res = 1;
+
+            /* Read interrupt status again to clear the data-ready interrupt */
+            rslt = bmp5_get_interrupt_status(&int_status, &bmp5);
+            platform_delay(1);
+            /* pin should de-assert after clearing; 0 = fail, 1 = pass */
+            res = ((rslt == BMP5_OK) && (!BMP581_INT)) ? 1 : 0;
             break;
           }
           /* Wait 2 ms between polls (100 iterations -> 200ms window) */
