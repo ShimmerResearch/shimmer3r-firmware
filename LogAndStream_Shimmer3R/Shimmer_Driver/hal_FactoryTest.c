@@ -648,6 +648,19 @@ void SPI_test(void)
   if (isBmp581InUse())
   {
     self_test_result = bmp5_self_test();
+
+    /* Explicit DRDY (physical INT pin) result, so a genuine pass can't be
+     * confused with a masked/polled one. SELF_TEST_PASS here means the self
+     * test (incl. the physical DRDY-pin toggle in bmp5_drdy_test) passed. */
+    if (self_test_result == SELF_TEST_PASS)
+    {
+      ShimFactoryTest_sendReport(" - BMP581 DRDY: PASS (physical INT pin toggled)\r\n");
+    }
+    else if (self_test_result == SELF_TEST_FAIL_DRDY_ISSUE)
+    {
+      ShimFactoryTest_sendReport(" - BMP581 DRDY: FAIL (INT pin did not toggle)\r\n");
+    }
+
     if (self_test_result == SELF_TEST_PASS)
     {
       //Self test passed, now check temperature is reasonable
