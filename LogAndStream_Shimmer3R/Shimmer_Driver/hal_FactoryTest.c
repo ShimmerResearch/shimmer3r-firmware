@@ -533,8 +533,8 @@ void print_mcu_details(void)
     sprintf(buffer, " - S3R_TEST_0027 - %s: LF crystal error = %s%ld.%ld ppm (limit +/-%d.%d ppm, vs HSE%s)\r\n",
         testPass ? "PASS" : "FAIL", (lseErrPpmX10 < 0) ? "-" : "+",
         (long) (absPpmX10 / 10), (long) (absPpmX10 % 10),
-        TEST_THRESHOLD_LSE_ERROR_PPM_X10 / 10, TEST_THRESHOLD_LSE_ERROR_PPM_X10 % 10,
-        recNote);
+        TEST_THRESHOLD_LSE_ERROR_PPM_X10 / 10,
+        TEST_THRESHOLD_LSE_ERROR_PPM_X10 % 10, recNote);
   }
   else
   {
