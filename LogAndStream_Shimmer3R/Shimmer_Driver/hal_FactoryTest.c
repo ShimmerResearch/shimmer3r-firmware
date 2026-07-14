@@ -343,7 +343,7 @@ void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr)
     print_date_and_time();
     ShimFactoryTest_sendReport("\r\n");
 
-    sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f\xC2\xB0 C\r\n",
+    sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f degC\r\n",
         TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER, TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
     ShimFactoryTest_sendReport(buffer);
     ShimFactoryTest_sendReport("\r\n");
@@ -502,7 +502,7 @@ void print_mcu_details(void)
 
   testPass = (adcDebugInfo.temperature > TEST_THRESHOLD_MV_MCU_TEMPERATURE_LOWER
       && adcDebugInfo.temperature < TEST_THRESHOLD_MV_MCU_TEMPERATURE_UPPER);
-  sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xC2\xB0 C\r\n",
+  sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld degC\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   ShimFactoryTest_sendReport(buffer);
   if (!testPass)
@@ -521,10 +521,20 @@ void print_mcu_details(void)
   {
     int32_t absPpmX10 = (lseErrPpmX10 < 0) ? -lseErrPpmX10 : lseErrPpmX10;
     testPass = (absPpmX10 <= TEST_THRESHOLD_LSE_ERROR_PPM_X10);
-    sprintf(buffer, " - S3R_TEST_0027 - %s: LF crystal error = %s%ld.%ld ppm (limit +/-%d.%d ppm, vs HSE)\r\n",
+    /* Reconstructed-edge note (only when the ISR bridged capture gaps):
+     * lets repeatability questions separate measurement artefacts from real
+     * crystal/temperature movement. */
+    char recNote[24] = "";
+    if ((lseMeasLseChan.recovered != 0U) || (lseMeasHseChan.recovered != 0U))
+    {
+      sprintf(recNote, ", rec L%lu H%lu", (unsigned long) lseMeasLseChan.recovered,
+          (unsigned long) lseMeasHseChan.recovered);
+    }
+    sprintf(buffer, " - S3R_TEST_0027 - %s: LF crystal error = %s%ld.%ld ppm (limit +/-%d.%d ppm, vs HSE%s)\r\n",
         testPass ? "PASS" : "FAIL", (lseErrPpmX10 < 0) ? "-" : "+",
         (long) (absPpmX10 / 10), (long) (absPpmX10 % 10),
-        TEST_THRESHOLD_LSE_ERROR_PPM_X10 / 10, TEST_THRESHOLD_LSE_ERROR_PPM_X10 % 10);
+        TEST_THRESHOLD_LSE_ERROR_PPM_X10 / 10, TEST_THRESHOLD_LSE_ERROR_PPM_X10 % 10,
+        recNote);
   }
   else
   {
@@ -1153,7 +1163,7 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
   }
   else
   {
-    sprintf(buffer, " - %s - %s: %s%s (%.2f\xC2\xB0 C)\r\n", testId,
+    sprintf(buffer, " - %s - %s: %s%s (%.2f degC)\r\n", testId,
         selfTestResultStr, chipId, selfTestDetailsStr, tempCal);
   }
   ShimFactoryTest_sendReport(buffer);
