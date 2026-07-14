@@ -56,10 +56,15 @@ given above */
  * ~2 x C_L, so each crystal sees roughly half its specified load). The
  * CM315D with 12 pF caps runs ~+40..+65 ppm fast (DEV-844,
  * rework-validated +49.4 -> -8.4 ppm with 22 pF) and the NX2016SA 16 MHz
- * HSE with 6.8 pF caps runs ~+60..+110 ppm fast, so current boards read
- * ~-20..-70 ppm (first hardware: -49.8 / -68.2) and are EXPECTED TO FAIL
- * until BOTH cap sets are corrected (LSE: 22 pF; HSE: ~2 x (C_L - stray)
- * for the fitted NX2016SA variant's C_L; all 2 %, C0G/NP0). Fault
+ * HSE (variant EXS00A-CS07826, aka "CS07826-16M": C_L = 8 pF, +/-20 ppm
+ * at 25 degC) with 6.8 pF caps sees only ~4.9 pF and runs ~+60..+110 ppm
+ * fast, so current boards read ~-20..-70 ppm (first hardware:
+ * -49.8 / -68.2) and are EXPECTED TO FAIL until BOTH cap sets are
+ * corrected (LSE: 22 pF; HSE: ~13 pF = 2 x (8 pF - stray); all 2 %,
+ * C0G/NP0). Note the AT-cut HSE pulls ~23 ppm/pF near C_L = 8 pF and its
+ * tolerance is +/-20 ppm, so even corrected boards carry a
+ * ~+/-25..30 ppm reference uncertainty - revisit this limit against a
+ * sample of corrected boards after the respin. Fault
  * signatures sit far outside either way: an open load-cap joint reads
  * ~+/-650..1200 ppm, added capacitance/contamination pulls low, a dead
  * crystal reads "not measurable". */

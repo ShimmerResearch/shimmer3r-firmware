@@ -513,8 +513,8 @@ void print_mcu_details(void)
   /* DEV-866: LSE (32.768 kHz) crystal error vs the 16 MHz HSE crystal. The
    * result is DIFFERENTIAL (ppm_LSE - ppm_HSE) and on current boards BOTH
    * crystals are under-loaded: the CM315D (C_L 12.5 pF) with 12 pF caps runs
-   * ~+40..+65 ppm fast (DEV-844), and the NX2016SA HSE (C_L ~8-10 pF) with
-   * 6.8 pF caps runs ~+60..+110 ppm fast, so the line reads ~-20..-70 ppm
+   * ~+40..+65 ppm fast (DEV-844), and the NX2016SA HSE (CS07826: C_L = 8 pF)
+   * with 6.8 pF caps runs ~+60..+110 ppm fast, so the line reads ~-20..-70 ppm
    * (first hardware: -49.8 / -68.2) and is EXPECTED to FAIL until BOTH
    * load-cap sets are corrected. Fixing only the LSE caps would make the
    * reading MORE negative (~-60..-110). Open-cap faults still read
