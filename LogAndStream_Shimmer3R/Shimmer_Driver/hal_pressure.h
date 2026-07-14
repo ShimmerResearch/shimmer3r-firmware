@@ -24,6 +24,7 @@ void PressureSensor_init(void);
 int8_t PressureSensor_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio);
 HAL_StatusTypeDef PressureSensor_getDataDma(uint8_t *buf);
 bool PressureSensor_isDrdyIntEnabled(void);
+bool PressureSensor_isDataReadyPolled(void);
 void PressureSensor_clearDrdyInt(void);
 void PressureSensor_selectDevice(void);
 void PressureSensor_unselectDevice(void);

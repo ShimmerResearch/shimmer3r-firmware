@@ -287,6 +287,7 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
   uint8_t odrIdx = 0;
   uint8_t i;
   struct bmp5_osr_odr_eff osr_odr_eff = { 0 };
+  struct bmp5_int_source_select int_source_select = { 0 };
 
   /* Configuration registers can only be updated while in standby mode */
   rslt = bmp5_set_power_mode(BMP5_POWERMODE_STANDBY, &bmp5);
@@ -339,22 +340,58 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
     odrIdx++;
   }
 
-  /* The BMP581 continuously refreshes its (pre-compensated) data registers in
-   * NORMAL mode, so the pressure/temperature is read by polling on each sensing
-   * cycle rather than gating on the data-ready interrupt. This removes any
-   * dependency on the shared BMP390_INT line, which is unreliable on some
-   * boards (DEV-818). The DRDY interrupt pin is left disabled. */
-  bmp5DrdyIntEnabled = false;
-  rslt = bmp5_configure_interrupt(BMP5_LATCHED, BMP5_ACTIVE_HIGH,
-      BMP5_INTR_PUSH_PULL, BMP5_INTR_DISABLE, &bmp5);
+  /* Enable the data-ready interrupt (latched, active-high) - routed to both the
+   * INT pin and the STATUS register - and enter NORMAL mode. Configure the
+   * interrupt BEFORE selecting the source (Bosch note: "Select INT_SOURCE after
+   * configuring interrupt"). */
+  rslt = bmp5_configure_interrupt(
+      BMP5_LATCHED, BMP5_ACTIVE_HIGH, BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
+  if (rslt != BMP5_OK)
+  {
+    return rslt;
+  }
+  int_source_select.drdy_en = BMP5_ENABLE;
+  rslt = bmp5_int_source_select(&int_source_select, &bmp5);
+  if (rslt != BMP5_OK)
+  {
+    return rslt;
+  }
+  rslt = bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp5);
   if (rslt != BMP5_OK)
   {
     return rslt;
   }
 
-  rslt = bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp5);
+  /* Auto-detect the DRDY interrupt line. If the physical INT pin toggles within
+   * the window, gate sensing reads on it (efficient). If it does not - e.g. the
+   * shared BMP390_INT line is unreliable on this board - fall back to polling
+   * the data-ready status over SPI. The data-ready source stays enabled either
+   * way, so both the INT pin and the STATUS register track new samples and the
+   * data registers update consistently (a blind read otherwise returns
+   * transitional/invalid values). Up to 100 x 2ms = 200ms (~10 samples @50Hz). */
+  bmp5DrdyIntEnabled = false;
+  for (i = 0; i < 100; i++)
+  {
+    if (BMP581_INT)
+    {
+      bmp5DrdyIntEnabled = true;
+      bmp5_read_int_status(); /* clear the latched interrupt */
+      break;
+    }
+    platform_delay(2);
+  }
 
   return rslt;
+}
+
+/* Poll the data-ready status over SPI (INT_STATUS DRDY bit). Used by the
+ * sensing loop's polling fallback when the DRDY interrupt pin is unavailable,
+ * so only complete/fresh samples are read. */
+bool bmp5_is_data_ready(void)
+{
+  uint8_t int_status = 0;
+  int8_t rslt = bmp5_get_interrupt_status(&int_status, &bmp5);
+  return (rslt == BMP5_OK) && ((int_status & BMP5_INT_ASSERTED_DRDY) != 0);
 }
 
 HAL_StatusTypeDef bmp5_pressure_temperature_get(uint8_t *buf)

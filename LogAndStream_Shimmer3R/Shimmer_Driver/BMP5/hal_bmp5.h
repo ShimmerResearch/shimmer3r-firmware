@@ -34,6 +34,7 @@ int8_t bmp5_drdy_test(void);
 int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio);
 HAL_StatusTypeDef bmp5_pressure_temperature_get(uint8_t *buf);
 bool bmp5_is_drdy_int_enabled(void);
+bool bmp5_is_data_ready(void);
 bool bmp5_is_shimmer_freq_higher(float shimmerSamplingFreq, uint8_t rate);
 float bmp5_get_sensor_freq_from_rate(uint8_t rate);
 
