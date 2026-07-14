@@ -299,7 +299,8 @@ int main(void)
 
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
-
+  ShimFactoryTest_setup(PRINT_TO_DEBUGGER,FACTORY_TEST_MAIN);
+  ShimFactoryTest_run();
   /* USER CODE END 2 */
 
   /* Infinite loop */

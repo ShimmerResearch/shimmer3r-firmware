@@ -1358,6 +1358,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
           &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
           sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     }
+    printf(" streaming/logging \n");
     break;
   case SPI1_ADS7028_INT_EXP0:
   case SPI1_ADS7028_INT_EXP1:

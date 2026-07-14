@@ -511,7 +511,7 @@ void bmp5_debug_readTask(void)
       && bmp5_get_sensor_data(&data, &cfg, &bmp5) == BMP5_OK)
   {
     /* data.pressure is in Pa; 1 bar = 100000 Pa */
-    printf(" - BMP581: P=%.5f bar  T=%.2f degC\r\n",
+    printf(" main default_polling - BMP581: P=%.5f bar  T=%.2f degC\r\n",
         (double) data.pressure / 100000.0, (double) data.temperature);
   }
 }
