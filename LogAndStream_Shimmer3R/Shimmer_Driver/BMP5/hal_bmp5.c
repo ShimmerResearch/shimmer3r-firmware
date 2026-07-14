@@ -514,8 +514,7 @@ void bmp5_debug_readTask(void)
   int8_t dsr = bmp5_get_sensor_data(&data, &cfg, &bmp5);
   printf(" main default_polling - BMP581: isr=%d int_status=0x%02X dsr=%d "
          "P=%.5f bar  T=%.2f degC\r\n",
-      isr, int_status, dsr, (double) data.pressure / 100000.0,
-      (double) data.temperature);
+      isr, int_status, dsr, (double) data.pressure / 100000.0, (double) data.temperature);
 }
 
 void bmp5_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
