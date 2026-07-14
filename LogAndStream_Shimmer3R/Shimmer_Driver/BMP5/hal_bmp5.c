@@ -506,14 +506,16 @@ void bmp5_debug_readTask(void)
   }
   lastTick = now;
 
-  /* Only read/print when the sensor reports data-ready (polled over SPI) */
-  if (bmp5_get_interrupt_status(&int_status, &bmp5) == BMP5_OK && (int_status & BMP5_INT_ASSERTED_DRDY)
-      && bmp5_get_sensor_data(&data, &cfg, &bmp5) == BMP5_OK)
-  {
-    /* data.pressure is in Pa; 1 bar = 100000 Pa */
-    printf(" main default_polling - BMP581: P=%.5f bar  T=%.2f degC\r\n",
-        (double) data.pressure / 100000.0, (double) data.temperature);
-  }
+  /* Print unconditionally every 200ms with the raw status/return codes, so we
+   * can see whether this task runs at all and why the data-ready gate was
+   * skipping. isr/dsr are the get_interrupt_status/get_sensor_data return codes
+   * (0 = BMP5_OK), int_status is the raw INT_STATUS byte (DRDY bit = 0x01). */
+  int8_t isr = bmp5_get_interrupt_status(&int_status, &bmp5);
+  int8_t dsr = bmp5_get_sensor_data(&data, &cfg, &bmp5);
+  printf(" main default_polling - BMP581: isr=%d int_status=0x%02X dsr=%d "
+         "P=%.5f bar  T=%.2f degC\r\n",
+      isr, int_status, dsr, (double) data.pressure / 100000.0,
+      (double) data.temperature);
 }
 
 void bmp5_check_rslt(const char api_name[], int8_t rslt, char *outputStr)
