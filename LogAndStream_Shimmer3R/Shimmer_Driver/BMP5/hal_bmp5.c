@@ -344,8 +344,8 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
    * INT pin and the STATUS register - and enter NORMAL mode. Configure the
    * interrupt BEFORE selecting the source (Bosch note: "Select INT_SOURCE after
    * configuring interrupt"). */
-  rslt = bmp5_configure_interrupt(
-      BMP5_LATCHED, BMP5_ACTIVE_HIGH, BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
+  rslt = bmp5_configure_interrupt(BMP5_LATCHED, BMP5_ACTIVE_HIGH,
+      BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
   if (rslt != BMP5_OK)
   {
     return rslt;
