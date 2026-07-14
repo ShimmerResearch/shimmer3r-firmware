@@ -47,17 +47,22 @@ given above */
 
 /* LSE (32.768 kHz) crystal error acceptance in tenths of a ppm (DEV-866):
  * +/-25.0 ppm is what a correctly-loaded CM315D32768HZFT (+/-5 ppm,
- * C_L = 12.5 pF) should achieve - crystal tolerance + load-cap/stray spread
- * + the 16 MHz HSE reference tolerance (which floors this limit; the
- * crystal's own +/-5 ppm is not verifiable on-device). This is a SPEC
- * limit, not a current-population limit: boards fitted with 12 pF caps per
- * crystal pin only give the crystal ~7.5 pF effective load (the two caps
- * act in series), pulling the population ~+40..+65 ppm fast, so current
- * boards are EXPECTED TO FAIL until the 22 pF (2 %, C0G/NP0) load-cap fix.
- * Root cause + rework validation (+49.4 -> -8.4 ppm): DEV-844. Fault
+ * C_L = 12.5 pF) should achieve against a correctly-loaded HSE reference -
+ * crystal tolerance + load-cap/stray spread + the HSE tolerance (which
+ * floors this limit; the crystal's own +/-5 ppm is not verifiable
+ * on-device). This is a SPEC limit, not a current-population limit, and
+ * the measurement is DIFFERENTIAL (ppm_LSE - ppm_HSE): on current boards
+ * BOTH crystals are under-loaded (per-pin caps sized ~ C_L instead of
+ * ~2 x C_L, so each crystal sees roughly half its specified load). The
+ * CM315D with 12 pF caps runs ~+40..+65 ppm fast (DEV-844,
+ * rework-validated +49.4 -> -8.4 ppm with 22 pF) and the NX2016SA 16 MHz
+ * HSE with 6.8 pF caps runs ~+60..+110 ppm fast, so current boards read
+ * ~-20..-70 ppm (first hardware: -49.8 / -68.2) and are EXPECTED TO FAIL
+ * until BOTH cap sets are corrected (LSE: 22 pF; HSE: ~2 x (C_L - stray)
+ * for the fitted NX2016SA variant's C_L; all 2 %, C0G/NP0). Fault
  * signatures sit far outside either way: an open load-cap joint reads
- * ~+650..+1200 ppm, added capacitance/contamination reads low/negative, a
- * dead crystal reads "not measurable". */
+ * ~+/-650..1200 ppm, added capacitance/contamination pulls low, a dead
+ * crystal reads "not measurable". */
 #define TEST_THRESHOLD_LSE_ERROR_PPM_X10           250
 
 #define TEST_BT_MODULE_FW                          "v01.04.16.16"

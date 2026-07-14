@@ -511,10 +511,14 @@ void print_mcu_details(void)
   }
 
   /* DEV-866: LSE (32.768 kHz) crystal error vs the 16 MHz HSE crystal. The
-   * S3R fits the same crystal + 12 pF load caps as the Verisense boards
-   * (DEV-844 root cause), so the population is expected ~+40..+65 ppm fast
-   * (RTC gains ~+4 s/day) and this line is EXPECTED to FAIL on current
-   * boards until the 22 pF load-cap fix. Open-cap faults read ~+1000 ppm. */
+   * result is DIFFERENTIAL (ppm_LSE - ppm_HSE) and on current boards BOTH
+   * crystals are under-loaded: the CM315D (C_L 12.5 pF) with 12 pF caps runs
+   * ~+40..+65 ppm fast (DEV-844), and the NX2016SA HSE (C_L ~8-10 pF) with
+   * 6.8 pF caps runs ~+60..+110 ppm fast, so the line reads ~-20..-70 ppm
+   * (first hardware: -49.8 / -68.2) and is EXPECTED to FAIL until BOTH
+   * load-cap sets are corrected. Fixing only the LSE caps would make the
+   * reading MORE negative (~-60..-110). Open-cap faults still read
+   * ~+/-1000 ppm. */
   int32_t lseErrPpmX10 = 0;
   lse_meas_result_t lseMeasResult = measureLseErrorPpmX10(&lseErrPpmX10);
   if (lseMeasResult == LSE_MEAS_OK)
