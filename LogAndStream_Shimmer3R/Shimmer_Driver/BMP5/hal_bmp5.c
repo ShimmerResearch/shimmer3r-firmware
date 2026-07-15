@@ -507,8 +507,7 @@ void bmp5_debug_readTask(void)
   lastTick = now;
 
   /* Only read/print when the sensor reports data-ready (polled over SPI) */
-  if (bmp5_get_interrupt_status(&int_status, &bmp5) == BMP5_OK
-      && (int_status & BMP5_INT_ASSERTED_DRDY)
+  if (bmp5_get_interrupt_status(&int_status, &bmp5) == BMP5_OK && (int_status & BMP5_INT_ASSERTED_DRDY)
       && bmp5_get_sensor_data(&data, &cfg, &bmp5) == BMP5_OK)
   {
     /* data.pressure is in Pa; 1 bar = 100000 Pa */
