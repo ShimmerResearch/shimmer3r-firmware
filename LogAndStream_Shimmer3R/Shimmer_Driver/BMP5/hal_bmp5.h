@@ -26,7 +26,6 @@ void bmp5_setup_dev(void);
 void bmp5_driver_init(void);
 int8_t bmp5_verify_chip_id(void);
 uint8_t bmp5_read_chip_id(void); /* TEMP DEV-818 diagnostic */
-void bmp5_debug_readTask(void); /* TEMP DEV-818 bring-up: poll+print raw data */
 void bmp5_selectDevice(void);
 void bmp5_unselectDevice(void);
 uint8_t bmp5_self_test(void);

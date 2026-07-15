@@ -744,7 +744,7 @@ void SPI_configureChannels()
     sensing.ptr.pressure = sensing.dataLen;
     sensing.dataLen += 3;
 #endif
-    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_BMP390_PRESSURE_TEMP;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_PRESSURE_TEMP;
   }
 
   if (configBytes->chEnAltAccel)
@@ -900,11 +900,6 @@ void SPI_startSensing()
     int8_t rslt = PressureSensor_configure(shimmerSamplingFreq,
         ShimConfig_configBytePressureOversamplingRatioGet());
     (void) rslt;
-    /* Report which pressure sensor is in use and how its data is collected
-     * (DRDY interrupt vs polling) before the SPI1 sensing loop starts. */
-    printf(" sensor used : %s , sensor_data_mode : %s\r\n",
-        isBmp581InUse() ? "bmp_581" : "bmp_390",
-        PressureSensor_isDrdyIntEnabled() ? "drdy" : "polling");
   }
 
   if (configBytes->chEnAltAccel)
@@ -1212,7 +1207,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       retVal = 1;
     }
     break;
-  case SPI1_BMP390_PRESSURE_TEMP:
+  case SPI1_PRESSURE_TEMP:
     /* The BMP390 and BMP581 share the same interrupt line. When the DRDY
      * interrupt is in use, read once its pin has asserted. Otherwise (polling
      * fallback - e.g. the shared BMP390_INT line is unreliable) read only when
@@ -1220,7 +1215,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
      * read transitional/invalid data. */
     if (PressureSensor_isDrdyIntEnabled())
     {
-      if (BMP390_INT)
+      if (BMP390_INT || BMP581_INT)
       {
         spiSensingInfo->status = SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET;
         halRet = PressureSensor_getDataDma(spi1Sens_buf.bmp390Buf);
@@ -1340,7 +1335,7 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     memcpy(dataBufPtr + sensing.ptr.accel3, &spi1Sens_buf.adxl371Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
     break;
-  case SPI1_BMP390_PRESSURE_TEMP:
+  case SPI1_PRESSURE_TEMP:
     if (PressureSensor_isDrdyIntEnabled())
     {
       /* Read chip status registers to reset interrupt pin */
@@ -1358,20 +1353,6 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
           &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 3], 3);
       memcpy(dataBufPtr + sensing.ptr.temperature,
           &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET], 3);
-
-      /* DEBUG (DEV-818): convert the raw 6 bytes just captured over SPI1 into
-       * final BMP581 temperature/pressure and show which path captured them.
-       * Bytes: temp XLSB,LSB,MSB (0x1D-0x1F) then press XLSB,LSB,MSB (0x20-0x22).
-       * BMP581: temperature = signed24 / 65536 degC, pressure = uint24 / 64 Pa. */
-      {
-        uint8_t *praw = &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET];
-        int32_t rawTemp
-            = (int32_t) (((int8_t) praw[2] << 16) | (praw[1] << 8) | praw[0]);
-        uint32_t rawPress = (uint32_t) ((praw[5] << 16) | (praw[4] << 8) | praw[3]);
-        printf(" data path : %s , BMP581: P=%.5f bar  T=%.2f degC\r\n",
-            PressureSensor_isDrdyIntEnabled() ? "drdy" : "non_drdy",
-            (double) ((rawPress / 64.0f) / 100000.0f), (double) (rawTemp / 65536.0f));
-      }
     }
     else
     {
@@ -1379,7 +1360,6 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
           &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
           sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     }
-    printf(" streaming/logging \n");
     break;
   case SPI1_ADS7028_INT_EXP0:
   case SPI1_ADS7028_INT_EXP1:

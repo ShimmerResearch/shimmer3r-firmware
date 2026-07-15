@@ -253,13 +253,9 @@ int8_t bmp5_drdy_test(void)
 
       if (rslt == BMP5_OK)
       {
-        /* Deliberately validate the physical DRDY interrupt line: wait for the
-         * BMP581_INT pin to assert. If it never toggles (broken/unrouted INT),
-         * the self-test fails rather than masking it - this is a manufacturing
-         * check, so we do NOT fall back to SPI-polled data-ready here (unlike
-         * the streaming path). New sample every 20ms @ 50Hz; allow up to
-         * 100 x 2ms = 200ms for the pin to toggle. */
-        for (i = 0; i < 100; i++)
+        /* New sample is every 20ms @ 50Hz. Loop count + delay below allows
+         * ~50ms for DRDY to toggle. */
+        for (i = 0; i < 50; i++)
         {
           if (BMP581_INT)
           {
@@ -268,13 +264,25 @@ int8_t bmp5_drdy_test(void)
 
             /* Read interrupt status again to clear the data-ready interrupt */
             rslt = bmp5_get_interrupt_status(&int_status, &bmp5);
-            platform_delay(1);
-            /* pin should de-assert after clearing; 0 = fail, 1 = pass */
-            res = ((rslt == BMP5_OK) && (!BMP581_INT)) ? 1 : 0;
+
+            /* In latched mode the pin de-asserts the instant INT_STATUS is read,
+             * then re-asserts on the next sample. Verify de-assertion with a tight
+             * busy-poll immediately after the clear (no ms delay) so we don't race
+             * the next conversion and false-fail a good sensor. 0 = fail, 1 = pass */
+            uint8_t deasserted = 0;
+            for (uint16_t p = 0; p < 2000; p++)
+            {
+              if (!BMP581_INT)
+              {
+                deasserted = 1;
+                break;
+              }
+            }
+            res = ((rslt == BMP5_OK) && deasserted) ? 1 : 0;
             break;
           }
-          /* Wait 2 ms between polls (100 iterations -> 200ms window) */
-          platform_delay(2);
+          /* Wait for 1 ms */
+          platform_delay(1);
         }
       }
       if (rslt == BMP5_OK)
@@ -453,67 +461,6 @@ int8_t bmp5_read_int_status(void)
 struct bmp5_sensor_data *get_bmp5_selftest_data(void)
 {
   return &bmp5SelftestData;
-}
-
-/* TEMPORARY DEV-818 bring-up: call every iteration of the main loop. On the
- * first call it powers and configures the BMP581 (NORMAL mode); thereafter it
- * polls the (pre-compensated) pressure/temperature over SPI and prints them to
- * the debug (ITM/printf) console every ~200ms. Non-blocking - returns straight
- * away between prints so the rest of the main loop keeps running. Reads by
- * polling only (no DRDY interrupt). Remove after bring-up. */
-void bmp5_debug_readTask(void)
-{
-  static uint8_t inited = 0;
-  static uint32_t lastTick = 0;
-  static struct bmp5_osr_odr_press_config cfg = { 0 };
-  struct bmp5_sensor_data data = { 0 };
-  uint32_t now;
-
-  uint8_t int_status = 0;
-
-  if (!inited)
-  {
-    struct bmp5_int_source_select int_src = { 0 };
-    Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
-    MX_SPI1_Init();
-    bmp5_setup_dev();
-    bmp5_soft_reset(&bmp5);
-    platform_delay(3);
-    bmp5_init(&bmp5);
-    bmp5_get_osr_odr_press_config(&cfg, &bmp5);
-    cfg.press_en = BMP5_ENABLE;
-    cfg.osr_p = BMP5_OVERSAMPLING_1X;
-    cfg.osr_t = BMP5_OVERSAMPLING_1X;
-    cfg.odr = BMP5_ODR_50_HZ;
-    bmp5_set_osr_odr_press_config(&cfg, &bmp5);
-    /* Enable the data-ready source so DRDY can be polled over SPI (INT_STATUS).
-     * Reading the data registers blindly returns inconsistent values between
-     * conversions, so a fresh sample must be confirmed first. The physical INT
-     * pin is not read - only the status register - so this stays independent of
-     * the (board-flaky) BMP390_INT line. */
-    bmp5_configure_interrupt(BMP5_PULSED, BMP5_ACTIVE_HIGH, BMP5_INTR_PUSH_PULL,
-        BMP5_INTR_ENABLE, &bmp5);
-    int_src.drdy_en = BMP5_ENABLE;
-    bmp5_int_source_select(&int_src, &bmp5);
-    bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp5);
-    inited = 1;
-  }
-
-  now = HAL_GetTick();
-  if ((now - lastTick) < 200)
-  {
-    return;
-  }
-  lastTick = now;
-
-  /* Only read/print when the sensor reports data-ready (polled over SPI) */
-  if (bmp5_get_interrupt_status(&int_status, &bmp5) == BMP5_OK && (int_status & BMP5_INT_ASSERTED_DRDY)
-      && bmp5_get_sensor_data(&data, &cfg, &bmp5) == BMP5_OK)
-  {
-    /* data.pressure is in Pa; 1 bar = 100000 Pa */
-    printf(" main default_polling - BMP581: P=%.5f bar  T=%.2f degC\r\n",
-        (double) data.pressure / 100000.0, (double) data.temperature);
-  }
 }
 
 void bmp5_check_rslt(const char api_name[], int8_t rslt, char *outputStr)

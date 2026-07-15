@@ -339,12 +339,7 @@ int main(void)
         }
       }
     }
-
     ShimTask_manage();
-
-    /* TEMPORARY DEV-818 bring-up: poll the BMP581 and print raw
-     * pressure/temperature to the debug console. Remove after bring-up. */
-    bmp5_debug_readTask();
   }
   /* USER CODE END 3 */
 }
