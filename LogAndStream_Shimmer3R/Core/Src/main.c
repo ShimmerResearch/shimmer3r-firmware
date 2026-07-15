@@ -357,9 +357,19 @@ void SystemClock_Config(void)
   }
 
   /** Configure LSE Drive Capability
+   *
+   * DEV-866: raised from RCC_LSEDRIVE_LOW. The oscillator gain the LSE cell
+   * must deliver scales with (C0 + C_L)^2, so correcting the CM315D's load
+   * caps to spec (12 pF -> 22 pF per pin, ~7.5 -> ~12.5 pF effective C_L)
+   * raises the required gain ~2.5x. LOW drive was marginal even with the
+   * old under-load; with the corrected caps one reworked unit's LSE failed
+   * to run at all and another's dropped edges. MEDIUMHIGH restores startup
+   * margin per AN2867 for a ~70 kohm / 12.5 pF fork; the extra drive is
+   * sub-uA and safe for boards still carrying 12 pF caps. Verify the
+   * CM315D's 0.5 uW max drive level is respected before considering HIGH.
    */
   HAL_PWR_EnableBkUpAccess();
-  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
+  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_MEDIUMHIGH);
 
   /** Initializes the CPU, AHB and APB buses clocks
    */
