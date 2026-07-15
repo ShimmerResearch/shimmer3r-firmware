@@ -1358,6 +1358,19 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
           &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 3], 3);
       memcpy(dataBufPtr + sensing.ptr.temperature,
           &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET], 3);
+
+      /* DEBUG (DEV-818): convert the raw 6 bytes just captured over SPI1 into
+       * final BMP581 temperature/pressure and show which path captured them.
+       * Bytes: temp XLSB,LSB,MSB (0x1D-0x1F) then press XLSB,LSB,MSB (0x20-0x22).
+       * BMP581: temperature = signed24 / 65536 degC, pressure = uint24 / 64 Pa. */
+      {
+        uint8_t *praw = &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET];
+        int32_t rawTemp = (int32_t) (((int8_t) praw[2] << 16) | (praw[1] << 8) | praw[0]);
+        uint32_t rawPress = (uint32_t) ((praw[5] << 16) | (praw[4] << 8) | praw[3]);
+        printf(" data path : %s , BMP581: P=%.5f bar  T=%.2f degC\r\n",
+            PressureSensor_isDrdyIntEnabled() ? "drdy" : "non_drdy",
+            (double) ((rawPress / 64.0f) / 100000.0f), (double) (rawTemp / 65536.0f));
+      }
     }
     else
     {
