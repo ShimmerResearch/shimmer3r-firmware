@@ -87,7 +87,7 @@ extern "C"
     SPI1_LSM6DSV_ACCEL_ONLY,
     SPI1_LSM6DSV_GYRO_ONLY,
     SPI1_ADXL371_ACCEL,
-    SPI1_PRESSURE_TEMP, //BMP390 or BMP581 (shared pressure/temperature slot)
+    SPI1_PRESSURE_TEMP,    //BMP390 or BMP581 (shared pressure/temperature slot)
     SPI1_ADS7028_INT_EXP0, //External ADC
     SPI1_ADS7028_INT_EXP1,
     SPI1_ADS7028_INT_EXP2,
