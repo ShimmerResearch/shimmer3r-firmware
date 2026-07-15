@@ -24,6 +24,7 @@
 
 //TODO remove, needed until SW supports setting pressure sensor rate in config
 #include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
+#include <stdio.h>
 #define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
 #if defined(SHIMMER3R)
@@ -898,6 +899,12 @@ void SPI_startSensing()
   {
     int8_t rslt = PressureSensor_configure(shimmerSamplingFreq,
         ShimConfig_configBytePressureOversamplingRatioGet());
+    (void) rslt;
+    /* Report which pressure sensor is in use and how its data is collected
+     * (DRDY interrupt vs polling) before the SPI1 sensing loop starts. */
+    printf(" sensor used : %s , sensor_data_mode : %s\r\n",
+        isBmp581InUse() ? "bmp_581" : "bmp_390",
+        PressureSensor_isDrdyIntEnabled() ? "drdy" : "polling");
   }
 
   if (configBytes->chEnAltAccel)
