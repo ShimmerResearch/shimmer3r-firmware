@@ -16,3 +16,6 @@
 [submodule "LogAndStream_Shimmer3R/log-and-stream-common"]
 	path = LogAndStream_Shimmer3R/log-and-stream-common
 	url = https://github.com/ShimmerResearch/log-and-stream-common.git
+[submodule "LogAndStream_Shimmer3R/Shimmer_Driver/BMP5/BMP5_SensorAPI"]
+	path = LogAndStream_Shimmer3R/Shimmer_Driver/BMP5/BMP5_SensorAPI
+	url = https://github.com/boschsensortec/BMP5_SensorAPI

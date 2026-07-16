@@ -190,12 +190,16 @@ void Init()
 #endif
 
   LogAndStream_setBootStage(BOOT_STAGE_CONFIGURATION);
+  /* Detect which pressure sensor is fitted (BMP390 vs BMP581) and, for the
+   * BMP390, read its calibration data. This is done before the configuration
+   * is loaded so that any sensor specific validation (e.g. the pressure
+   * oversampling range) is carried out against the correct sensor. */
+  PressureSensor_initOnBoot();
   /* Calibration needs to be loaded after the chips have been detected in
    * order to know which default calib to set for attached chips.
    * It also needs to be loaded after the BT is initialised so that the
    * MAC ID can be used for default Shimmer name and calibration file names.*/
   ShimConfig_loadSensorConfigAndCalib();
-  bmp3_readCalibrationDataOnBoot();
 
   /* Sample both dock and USB-VBUS pins so the ownership decision below has
    * the complete picture.  LogAndStream_updateDockedStateAndCheckChanged() was
@@ -295,7 +299,6 @@ int main(void)
 
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -334,7 +337,6 @@ int main(void)
         }
       }
     }
-
     ShimTask_manage();
   }
   /* USER CODE END 3 */
