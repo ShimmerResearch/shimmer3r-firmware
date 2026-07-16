@@ -90,19 +90,6 @@ bool PressureSensor_isDrdyIntEnabled(void)
   return bmp3_is_drdy_int_enabled();
 }
 
-/* Used by the sensing loop's polling fallback (when the DRDY interrupt pin is
- * not being used) to decide whether a fresh sample is available to read. For
- * the BMP581 this polls the data-ready status over SPI; for the BMP390 it
- * returns true (its poll path reads every cycle, unchanged). */
-bool PressureSensor_isDataReadyPolled(void)
-{
-  if (bmp581InUse)
-  {
-    return bmp5_is_data_ready();
-  }
-  return true;
-}
-
 void PressureSensor_clearDrdyInt(void)
 {
   if (bmp581InUse)

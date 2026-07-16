@@ -1208,21 +1208,10 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     }
     break;
   case SPI1_PRESSURE_TEMP:
-    /* The BMP390 and BMP581 share the same interrupt line. When the DRDY
-     * interrupt is in use, read once its pin has asserted. Otherwise (polling
-     * fallback - e.g. the shared BMP390_INT line is unreliable) read only when
-     * the sensor reports a fresh sample via its status register, so we never
-     * read transitional/invalid data. */
-    if (PressureSensor_isDrdyIntEnabled())
-    {
-      if (BMP390_INT || BMP581_INT)
-      {
-        spiSensingInfo->status = SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET;
-        halRet = PressureSensor_getDataDma(spi1Sens_buf.bmp390Buf);
-        retVal = 1;
-      }
-    }
-    else if (PressureSensor_isDataReadyPolled())
+    /* Read once the DRDY interrupt pin has asserted, or every cycle when the
+     * DRDY interrupt isn't in use - mirroring the original BMP390 path. The
+     * BMP390 and BMP581 share the same interrupt line. */
+    if (!PressureSensor_isDrdyIntEnabled() || BMP390_INT)
     {
       spiSensingInfo->status = SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET;
       halRet = PressureSensor_getDataDma(spi1Sens_buf.bmp390Buf);

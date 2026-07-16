@@ -386,16 +386,6 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
   return rslt;
 }
 
-/* Poll the data-ready status over SPI (INT_STATUS DRDY bit). Used by the
- * sensing loop's polling fallback when the DRDY interrupt pin is unavailable,
- * so only complete/fresh samples are read. */
-bool bmp5_is_data_ready(void)
-{
-  uint8_t int_status = 0;
-  int8_t rslt = bmp5_get_interrupt_status(&int_status, &bmp5);
-  return (rslt == BMP5_OK) && ((int_status & BMP5_INT_ASSERTED_DRDY) != 0);
-}
-
 HAL_StatusTypeDef bmp5_pressure_temperature_get(uint8_t *buf)
 {
   HAL_StatusTypeDef ret;
