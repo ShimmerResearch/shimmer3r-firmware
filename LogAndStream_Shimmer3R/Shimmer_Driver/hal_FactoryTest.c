@@ -633,7 +633,7 @@ void SPI_test(void)
   /* BMP390 and BMP581 share the same self-test flow; only the driver call,
    * sensor name and API-error offset differ - dispatch on the fitted part via
    * the PressureSensor_* layer rather than duplicating the whole pathway. */
-  const char *presName = isBmp581InUse() ? "BMP581" : "BMP390";
+  char *presName = isBmp581InUse() ? "BMP581" : "BMP390";
   self_test_result = PressureSensor_selfTest();
 
   if (self_test_result == SELF_TEST_PASS)
