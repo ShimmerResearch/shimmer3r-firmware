@@ -534,7 +534,7 @@ void print_mcu_details(void)
       sprintf(recNote, ", rec L%lu H%lu", (unsigned long) lseMeasLseChan.recovered,
           (unsigned long) lseMeasHseChan.recovered);
     }
-    sprintf(buffer, " - S3R_TEST_0027 - %s: LF crystal error = %s%ld.%ld ppm (limit +/-%d.%d ppm, vs HSE%s)\r\n",
+    sprintf(buffer, " - S3R_TEST_0027 - %s: 32k LSE vs 16M HSE error = %s%ld.%ld ppm (limit +/-%d.%d ppm%s)\r\n",
         testPass ? "PASS" : "FAIL", (lseErrPpmX10 < 0) ? "-" : "+",
         (long) (absPpmX10 / 10), (long) (absPpmX10 % 10),
         TEST_THRESHOLD_LSE_ERROR_PPM_X10 / 10,
@@ -547,7 +547,7 @@ void print_mcu_details(void)
     testPass = 0;
     /* Capture progress (per channel, captures seen / target) pinpoints which
      * stream stalled or lost captures - key field-debug detail. */
-    sprintf(buffer, " - S3R_TEST_0027 - FAIL: LF crystal error not measurable (%s, L %lu/%u H %lu/%u)\r\n",
+    sprintf(buffer, " - S3R_TEST_0027 - FAIL: 32k LSE vs 16M HSE error not measurable (%s, L %lu/%u H %lu/%u)\r\n",
         (lseMeasResult < (sizeof(lseMeasErrStr) / sizeof(lseMeasErrStr[0]))) ?
             lseMeasErrStr[lseMeasResult] :
             "unknown",
