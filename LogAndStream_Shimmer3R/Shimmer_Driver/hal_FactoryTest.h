@@ -45,6 +45,31 @@ given above */
 
 #define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID -1.0
 
+/* LSE (32.768 kHz) crystal error acceptance in tenths of a ppm (DEV-866):
+ * +/-25.0 ppm is what a correctly-loaded CM315D32768HZFT (+/-5 ppm,
+ * C_L = 12.5 pF) should achieve against a correctly-loaded HSE reference -
+ * crystal tolerance + load-cap/stray spread + the HSE tolerance (which
+ * floors this limit; the crystal's own +/-5 ppm is not verifiable
+ * on-device). This is a SPEC limit, not a current-population limit, and
+ * the measurement is DIFFERENTIAL (ppm_LSE - ppm_HSE): on current boards
+ * BOTH crystals are under-loaded (per-pin caps sized ~ C_L instead of
+ * ~2 x C_L, so each crystal sees roughly half its specified load). The
+ * CM315D with 12 pF caps runs ~+40..+65 ppm fast (DEV-844,
+ * rework-validated +49.4 -> -8.4 ppm with 22 pF) and the NX2016SA 16 MHz
+ * HSE (variant EXS00A-CS07826, aka "CS07826-16M": C_L = 8 pF, +/-20 ppm
+ * at 25 degC) with 6.8 pF caps sees only ~4.9 pF and runs ~+60..+110 ppm
+ * fast, so current boards read ~-20..-70 ppm (first hardware:
+ * -49.8 / -68.2) and are EXPECTED TO FAIL until BOTH cap sets are
+ * corrected (LSE: 22 pF; HSE: ~13 pF = 2 x (8 pF - stray); all 2 %,
+ * C0G/NP0). Note the AT-cut HSE pulls ~23 ppm/pF near C_L = 8 pF and its
+ * tolerance is +/-20 ppm, so even corrected boards carry a
+ * ~+/-25..30 ppm reference uncertainty - revisit this limit against a
+ * sample of corrected boards after the respin. Fault
+ * signatures sit far outside either way: an open load-cap joint reads
+ * ~+/-650..1200 ppm, added capacitance/contamination pulls low, a dead
+ * crystal reads "not measurable". */
+#define TEST_THRESHOLD_LSE_ERROR_PPM_X10           250
+
 #define TEST_BT_MODULE_FW                          "v01.04.16.16"
 
 #define GSR_TEST_TOLERANCE_7_PERCENT               0.07
@@ -84,6 +109,7 @@ enum
   S3R_TEST_0024 = (1 << (24 - 1)), //I2C4 - CAT24C16 or GSR rig (S3R GSR+ unit)
   S3R_TEST_0025 = (1 << (25 - 1)), //GSR signal test
   S3R_TEST_0026 = (1 << (26 - 1)), //Microphone
+  S3R_TEST_0027 = (1 << (27 - 1)), //MCU LSE crystal (32.768 kHz) frequency error
 };
 
 typedef struct
@@ -92,7 +118,20 @@ typedef struct
   uint8_t selfTestResult;
 } micTestResult_t;
 
+/* Result codes for measureLseErrorPpmX10() (DEV-866). */
+typedef enum
+{
+  LSE_MEAS_OK = 0,
+  LSE_MEAS_ERR_LSE_NOT_READY, /* LSE oscillator not running */
+  LSE_MEAS_ERR_HSE_NOT_READY, /* 16 MHz HSE reference not running */
+  LSE_MEAS_ERR_TIMEOUT,       /* capture stream never delivered */
+  LSE_MEAS_ERR_GAP,           /* capture gap too long to reconstruct */
+  LSE_MEAS_ERR_RANGE,         /* implausible result (beyond +/-10,000 ppm) */
+  LSE_MEAS_ERR_PARAM,         /* NULL output pointer */
+} lse_meas_result_t;
+
 void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr);
+lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10);
 void print_date_and_time(void);
 void print_shimmer_model(void);
 void print_mcu_details(void);
