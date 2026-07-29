@@ -19,19 +19,19 @@
 #include "hal_Board.h"
 #include "hal_FactoryTest.h"
 
-#define SENSOR_BUS hspi1
+#define SENSOR_BUS                 hspi1
 
 /* The BMP581 is a drop-in replacement for the BMP390 and so shares the same
  * chip-select and interrupt lines. */
-#define CS_PORT    CS_BMP390_GPIO_Port
-#define CS_PIN     CS_BMP390_Pin
+#define CS_PORT                    CS_BMP390_GPIO_Port
+#define CS_PIN                     CS_BMP390_Pin
 
 /* The BMP581 loads its factory compensation trim from NVM on soft-reset; a
  * single reset+init can occasionally miss it (see bmp5_driver_init), so retry. */
-#define BMP5_INIT_MAX_ATTEMPTS 3U
+#define BMP5_INIT_MAX_ATTEMPTS     3U
 
-/* DEV-818 TEMP DIAG: force DSP_CONFIG.comp_pt_en at init to A/B-test the on-chip
- * compensation.  -1 = leave the reset default (0b11 = P&T compensated);
+/* DEV-818 TEMP DIAG: force DSP_CONFIG.comp_pt_en at init to A/B-test the
+ * on-chip compensation.  -1 = leave the reset default (0b11 = P&T compensated);
  * 0 = force OFF (raw, both);  3 = force ON.  Set to 0, reflash, and fridge-test
  * to compare against the default (comp=3) run: identical output => comp=3 is a
  * no-op (blank trim); different output => trim present but wrong. */
@@ -43,11 +43,11 @@
  *  - BMP5_STREAM_IIR_COEFF : enable the on-chip IIR low-pass. bmp5_configure()
  *    previously set no IIR, so it streamed bypassed (unfiltered). Higher coeff
  *    = more smoothing but more group delay. Comment out to bypass.
- *  - BMP5_STREAM_MIN_OSR_P : floor the pressure oversampling so a low configured
- *    OSR still gets adequate resolution (paired temp OSR follows automatically).
- *    Comment out to honour the configured OSR verbatim. */
-#define BMP5_STREAM_IIR_COEFF   BMP5_IIR_FILTER_COEFF_7
-#define BMP5_STREAM_MIN_OSR_P   BMP5_OVERSAMPLING_8X
+ *  - BMP5_STREAM_MIN_OSR_P : floor the pressure oversampling so a low
+ * configured OSR still gets adequate resolution (paired temp OSR follows
+ * automatically). Comment out to honour the configured OSR verbatim. */
+#define BMP5_STREAM_IIR_COEFF      BMP5_IIR_FILTER_COEFF_7
+#define BMP5_STREAM_MIN_OSR_P      BMP5_OVERSAMPLING_8X
 
 struct bmp5_dev bmp5;
 
@@ -58,20 +58,22 @@ static bool bmp5DrdyIntEnabled = false;
 /* DEV-818 TEMP DIAG (remove after validation): BMP581 compensation state
  * captured in bmp5_driver_init so an uncompensated boot (NVM trim not loaded)
  * can be confirmed on the bench via a debugger watch or the SWV/ITM console. */
-volatile uint8_t bmp5DiagDspConfig = 0xFF;  /* 0x30: comp_pt_en = bits[1:0], 0b11 = P&T comp */
-volatile uint8_t bmp5DiagStatus = 0xFF;     /* 0x28: nvm_rdy = 0x02, nvm_err = 0x04 */
-volatile uint8_t bmp5DiagInitAttempts = 0;  /* soft-reset+init attempts the loop needed */
-volatile int8_t bmp5DiagInitRslt = 0;       /* final result of the init retry loop */
+volatile uint8_t bmp5DiagDspConfig = 0xFF; /* 0x30: comp_pt_en = bits[1:0], 0b11 = P&T comp */
+volatile uint8_t bmp5DiagStatus = 0xFF; /* 0x28: nvm_rdy = 0x02, nvm_err = 0x04 */
+volatile uint8_t bmp5DiagInitAttempts = 0; /* soft-reset+init attempts the loop needed */
+volatile int8_t bmp5DiagInitRslt = 0; /* final result of the init retry loop */
 
 /* DEV-818 TEMP DIAG (remove after validation): BMP581 trim/config NVM integrity
  * (datasheet 4.8.1.4). Mismatch / blank trim / zero UID => the part's factory
  * calibration NVM is corrupt or un-programmed. */
-volatile uint16_t bmp5DiagNvmCrcCalcBe = 0;   /* CRC-16-CCITT (poly 0x1021, init 0xFFFF), word MSB-first */
-volatile uint16_t bmp5DiagNvmCrcCalcLe = 0;   /* same, word LSB-first (datasheet doesn't pin byte order) */
-volatile uint16_t bmp5DiagNvmCrcStored = 0;   /* factory CRC at NVM 0x27 */
-volatile uint16_t bmp5DiagNvmBlanks = 0;      /* # covered NVM words that are 0x0000 or 0xFFFF */
+volatile uint16_t bmp5DiagNvmCrcCalcBe
+    = 0; /* CRC-16-CCITT (poly 0x1021, init 0xFFFF), word MSB-first */
+volatile uint16_t bmp5DiagNvmCrcCalcLe
+    = 0; /* same, word LSB-first (datasheet doesn't pin byte order) */
+volatile uint16_t bmp5DiagNvmCrcStored = 0; /* factory CRC at NVM 0x27 */
+volatile uint16_t bmp5DiagNvmBlanks = 0; /* # covered NVM words that are 0x0000 or 0xFFFF */
 volatile uint16_t bmp5DiagUidWord[4] = { 0, 0, 0, 0 }; /* NVM 0x23..0x26 (UID source) */
-volatile int8_t bmp5DiagNvmReadRslt = 0;      /* NVM read status */
+volatile int8_t bmp5DiagNvmReadRslt = 0;               /* NVM read status */
 
 /* DEV-818 TEMP DIAG: comp_pt_en / STATUS re-read while STREAMING (see bmp5_configure). */
 volatile uint8_t bmp5DiagStreamDspConfig = 0xFF;
@@ -206,11 +208,9 @@ static int8_t bmp5_diag_nvm_read_raw(uint8_t addr, uint16_t *out)
  * calibration NVM => a bad/non-genuine part, not a firmware issue. */
 static void bmp5_diag_check_nvm(void)
 {
-  static const uint8_t addrs[] = {
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D,
-    0x1F, 0x23, 0x24, 0x25, 0x26
-  };
+  static const uint8_t addrs[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+    0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1F, 0x23, 0x24, 0x25, 0x26 };
   uint16_t crcBe = 0xFFFFU;
   uint16_t crcLe = 0xFFFFU;
   uint16_t blanks = 0U;
@@ -267,10 +267,11 @@ static void bmp5_diag_check_nvm(void)
   bmp5DiagNvmBlanks = blanks;
   bmp5DiagNvmReadRslt = rslt;
 
-  printf("BMP581 NVM diag: readRslt=%d blanks=%u/%u CRC_be=0x%04X CRC_le=0x%04X "
-         "stored[0x27]=0x%04X %s UID=%04X %04X %04X %04X\r\n",
-      (int) rslt, (unsigned) blanks, (unsigned) sizeof(addrs),
-      (unsigned) crcBe, (unsigned) crcLe, (unsigned) stored,
+  printf(
+      "BMP581 NVM diag: readRslt=%d blanks=%u/%u CRC_be=0x%04X CRC_le=0x%04X "
+      "stored[0x27]=0x%04X %s UID=%04X %04X %04X %04X\r\n",
+      (int) rslt, (unsigned) blanks, (unsigned) sizeof(addrs), (unsigned) crcBe,
+      (unsigned) crcLe, (unsigned) stored,
       ((crcBe == stored) || (crcLe == stored)) ? "MATCH" : "MISMATCH",
       (unsigned) bmp5DiagUidWord[0], (unsigned) bmp5DiagUidWord[1],
       (unsigned) bmp5DiagUidWord[2], (unsigned) bmp5DiagUidWord[3]);
@@ -350,11 +351,11 @@ void bmp5_driver_init(void)
     {
       bmp5DiagStatus = reg;
     }
-    printf("BMP581 init diag: attempts=%u rslt=%d DSP_CONFIG=0x%02X comp_pt_en=%u "
-           "STATUS=0x%02X nvm_rdy=%u nvm_err=%u\r\n",
-        (unsigned) bmp5DiagInitAttempts, (int) bmp5DiagInitRslt,
-        (unsigned) bmp5DiagDspConfig, (unsigned) (bmp5DiagDspConfig & 0x03U),
-        (unsigned) bmp5DiagStatus,
+    printf(
+        "BMP581 init diag: attempts=%u rslt=%d DSP_CONFIG=0x%02X comp_pt_en=%u "
+        "STATUS=0x%02X nvm_rdy=%u nvm_err=%u\r\n",
+        (unsigned) bmp5DiagInitAttempts, (int) bmp5DiagInitRslt, (unsigned) bmp5DiagDspConfig,
+        (unsigned) (bmp5DiagDspConfig & 0x03U), (unsigned) bmp5DiagStatus,
         (unsigned) ((bmp5DiagStatus & BMP5_INT_NVM_RDY) ? 1U : 0U),
         (unsigned) ((bmp5DiagStatus & BMP5_INT_NVM_ERR) ? 1U : 0U));
   }
@@ -602,10 +603,10 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
   }
 
 #ifdef BMP5_STREAM_IIR_COEFF
-  /* Enable the on-chip IIR low-pass to cut streaming noise. Config registers are
-   * writable here because we are still in standby. shdw_set_iir_* routes the
-   * filtered value to the data registers we read. bmp5_set_iir_config does a
-   * read-modify-write of DSP_CONFIG, so comp_pt_en is preserved. */
+  /* Enable the on-chip IIR low-pass to cut streaming noise. Config registers
+   * are writable here because we are still in standby. shdw_set_iir_* routes
+   * the filtered value to the data registers we read. bmp5_set_iir_config does
+   * a read-modify-write of DSP_CONFIG, so comp_pt_en is preserved. */
   {
     struct bmp5_iir_config iir_cfg = { 0 };
     iir_cfg.set_iir_t = BMP5_STREAM_IIR_COEFF;
@@ -677,9 +678,10 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
     {
       bmp5DiagStreamStatus = reg;
     }
-    printf("BMP581 stream diag: DSP_CONFIG=0x%02X comp_pt_en=%u STATUS=0x%02X nvm_rdy=%u nvm_err=%u\r\n",
-        (unsigned) bmp5DiagStreamDspConfig, (unsigned) (bmp5DiagStreamDspConfig & 0x03U),
-        (unsigned) bmp5DiagStreamStatus,
+    printf("BMP581 stream diag: DSP_CONFIG=0x%02X comp_pt_en=%u STATUS=0x%02X "
+           "nvm_rdy=%u nvm_err=%u\r\n",
+        (unsigned) bmp5DiagStreamDspConfig,
+        (unsigned) (bmp5DiagStreamDspConfig & 0x03U), (unsigned) bmp5DiagStreamStatus,
         (unsigned) ((bmp5DiagStreamStatus & BMP5_INT_NVM_RDY) ? 1U : 0U),
         (unsigned) ((bmp5DiagStreamStatus & BMP5_INT_NVM_ERR) ? 1U : 0U));
   }
