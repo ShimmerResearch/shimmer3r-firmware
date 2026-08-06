@@ -74,6 +74,12 @@ __attribute__((section(".version"), used)) const firmware_version_t fw_version_s
     = { .major = FW_VERSION_MAJOR, .minor = FW_VERSION_MINOR, .patch = FW_VERSION_PATCH };
 
 volatile uint32_t time_start, time_end, time_diff;
+
+/* DEV-866: LSE drive strength chosen by DEV866_BringUpLse() at boot, stashed so
+ * it can be printed from Init(). The print inside the escalation runs before
+ * the core clock is configured, so its SWV/ITM output goes out at the wrong SWO
+ * baud and is dropped by the host - hence a second, reliable print later. */
+static const char *g_dev866LseDriveName = "not run";
 #define BLOCK_START_ADDR 0 /* Block start address      */
 #define NUM_OF_BLOCKS    5 /* Total number of blocks   */
 #define BUFFER_WORDS_SIZE \
@@ -130,6 +136,13 @@ int _write(int file, char *ptr, int len)
 void Init()
 {
   LogAndStream_init();
+
+  /* DEV-866: report the LSE drive strength the boot escalation settled on. Done
+   * here rather than in DEV866_BringUpLse() because that runs before the core
+   * clock is configured (SWV output there is dropped); by Init() the clock is
+   * up and SWV is reliable. */
+  SHIMMER_PRINTF("DEV-866: LSE drive strength = %s\r\n", g_dev866LseDriveName);
+
   shimmerStatus.booting = 1; /* led flag, in initialisation period */
 
 #if defined(SHIMMER3R)
@@ -344,61 +357,90 @@ int main(void)
  * @brief System Clock Configuration
  * @retval None
  */
-/* DEV-866: bring up the 32.768 kHz LSE by escalating the oscillator drive.
- * The reworked crystals' effective load - and therefore the drive needed to
- * start - varies board to board (hand-rework cap tolerance, PCB stray, ESR), so
- * instead of hardcoding one level we try LOW -> MEDIUMLOW -> MEDIUMHIGH -> HIGH
- * and keep the FIRST that starts. Lowest working level = least power, no
- * over-drive.
- *
- * Each attempt turns the LSE OFF first (LSEDRV is writable only while
- * LSEON = 0), which also clears any stale LSERDY - the flag that caused the
- * original boot hang - so every attempt is a genuine restart. No full
- * backup-domain reset is used, so RTC time / backup registers are preserved;
- * the LSE only pauses for the duration of the restart.
- *
- * Returns the RCC_LSEDRIVE_* level that started the crystal, or 0xFFFFFFFF if
- * none did (the LSE is left enabled at HIGH, so HAL_RCC_OscConfig below then
- * times out on LSERDY and lands in Error_Handler with the diagnostic). */
 #define DEV866_LSE_STOP_TIMEOUT_MS  100U
-#define DEV866_LSE_START_TIMEOUT_MS 1000U
+#define DEV866_LSE_START_TIMEOUT_MS 1500U
+
+/* Try one LSE drive level: fully restart the LSE + its system clock at `drive`,
+ * then wait for LSESYSRDY - the LSE *system-clock* ready. Success is judged by
+ * LSESYSRDY, NOT bare LSERDY: LSERDY is a loose startup counter that a marginal
+ * / falsely-started oscillation can trip, whereas LSESYSRDY only sets when the
+ * LSE is genuinely stable and system-usable (and it is exactly the flag
+ * HAL_RCC_OscConfig() waits on afterward). LSEDRV is writable only while
+ * LSEON = 0, so the full stop is required; no backup-domain reset is used, so
+ * RTC time is preserved. Returns true if the level reached LSESYSRDY. */
+static bool DEV866_TryLseLevel(uint32_t drive)
+{
+  CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSESYSEN | RCC_BDCR_LSEON);
+  uint32_t start = HAL_GetTick();
+  while (((RCC->BDCR & (RCC_BDCR_LSERDY | RCC_BDCR_LSESYSRDY)) != 0U)
+      && ((HAL_GetTick() - start) < DEV866_LSE_STOP_TIMEOUT_MS))
+  {
+  }
+
+  MODIFY_REG(RCC->BDCR, RCC_BDCR_LSEDRV, drive);
+  SET_BIT(RCC->BDCR, RCC_BDCR_LSEON | RCC_BDCR_LSESYSEN);
+
+  start = HAL_GetTick();
+  while ((HAL_GetTick() - start) < DEV866_LSE_START_TIMEOUT_MS)
+  {
+    if ((RCC->BDCR & RCC_BDCR_LSESYSRDY) != 0U)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+/* DEV-866: bring up the 32.768 kHz LSE with a per-board minimum + margin.
+ * The reworked crystals' effective load - and the drive needed to start - vary
+ * board to board (hand-rework cap tolerance, PCB stray, ESR), so we escalate
+ * LOW -> MEDIUMLOW -> MEDIUMHIGH to find the LOWEST level that reaches
+ * LSESYSRDY, then run ONE LEVEL ABOVE that (capped at MEDIUMHIGH - per DEV-866
+ * 5f372ce7, HIGH may exceed the CM315D's 0.5 uW max drive level). The +1 gives
+ * temperature headroom: a 32 kHz fork's ESR rises at temperature extremes, so
+ * it can need more drive mid-session than at boot, and the drive is fixed until
+ * the next boot - the margin covers that swing without over-driving to the max.
+ *
+ * Caveat: the found minimum is only as trustworthy as the boot's start
+ * condition. A warm reset (crystal still ringing) lets a low level "pass"
+ * because it only has to sustain, not cold-start - so on a warm reset the
+ * baseline can read low and the +1 margin is measured from there. It is fully
+ * correct on a genuine cold boot; on warm resets the margin still adds a level
+ * of headroom over whatever sustained.
+ *
+ * Returns the RCC_LSEDRIVE_* level actually applied, or 0xFFFFFFFF if no level
+ * reached LSESYSRDY (LSE left at MEDIUMHIGH, so HAL_RCC_OscConfig below times
+ * out into Error_Handler with the diagnostic). */
 static uint32_t DEV866_BringUpLse(void)
 {
   static const uint32_t levels[] = {
-    RCC_LSEDRIVE_LOW, RCC_LSEDRIVE_MEDIUMLOW, RCC_LSEDRIVE_MEDIUMHIGH, RCC_LSEDRIVE_HIGH
+    RCC_LSEDRIVE_LOW, RCC_LSEDRIVE_MEDIUMLOW, RCC_LSEDRIVE_MEDIUMHIGH
   };
-  static const char *const levelNames[] = { "LOW", "MEDIUMLOW", "MEDIUMHIGH", "HIGH" };
+  static const char *const names[] = { "LOW", "MEDIUMLOW", "MEDIUMHIGH" };
+  const uint32_t nLevels = (uint32_t) (sizeof(levels) / sizeof(levels[0]));
 
-  for (uint32_t i = 0U; i < (sizeof(levels) / sizeof(levels[0])); i++)
+  for (uint32_t i = 0U; i < nLevels; i++)
   {
-    /* LSE off; wait for the oscillator to actually stop (clears LSERDY) */
-    CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSEON);
-    uint32_t start = HAL_GetTick();
-    while (((RCC->BDCR & RCC_BDCR_LSERDY) != 0U)
-        && ((HAL_GetTick() - start) < DEV866_LSE_STOP_TIMEOUT_MS))
+    if (DEV866_TryLseLevel(levels[i]))
     {
-    }
-
-    /* set this drive level (writable now the LSE is off), then re-enable */
-    MODIFY_REG(RCC->BDCR, RCC_BDCR_LSEDRV, levels[i]);
-    SET_BIT(RCC->BDCR, RCC_BDCR_LSEON);
-
-    /* wait for the crystal to start oscillating at this drive level */
-    start = HAL_GetTick();
-    while ((HAL_GetTick() - start) < DEV866_LSE_START_TIMEOUT_MS)
-    {
-      if ((RCC->BDCR & RCC_BDCR_LSERDY) != 0U)
+      /* This level is stable -> just run the next one up for margin (capped at
+       * MEDIUMHIGH), applied blindly: a higher drive works if a lower one did. */
+      uint32_t runIdx = ((i + 1U) < nLevels) ? (i + 1U) : i;
+      if (runIdx != i)
       {
-        SHIMMER_PRINTF("DEV-866: LSE started at drive strength %s (LSEDRV=%lu)\r\n",
-            levelNames[i],
-            (unsigned long) ((levels[i] & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos));
-        return levels[i];
+        (void) DEV866_TryLseLevel(levels[runIdx]);
       }
+      g_dev866LseDriveName = names[runIdx];
+      SHIMMER_PRINTF("DEV-866: LSE stable at %s, running at %s (+1 margin, LSEDRV=%lu)\r\n",
+          names[i], names[runIdx],
+          (unsigned long) ((levels[runIdx] & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos));
+      return levels[runIdx];
     }
   }
 
+  g_dev866LseDriveName = "NONE (LSE not stable at any drive)";
   SHIMMER_PRINTF(
-      "DEV-866: LSE did NOT start at any drive level - check 32k XTAL / rework\r\n");
+      "DEV-866: LSE did NOT reach LSESYSRDY at any drive level - check 32k XTAL / rework\r\n");
   return 0xFFFFFFFFU;
 }
 
@@ -418,11 +460,11 @@ void SystemClock_Config(void)
    */
   HAL_PWR_EnableBkUpAccess();
 
-  /* DEV-866: start the LSE by escalating drive LOW -> MEDIUMLOW -> MEDIUMHIGH ->
-   * HIGH so the board boots whatever the reworked crystal's effective load is.
-   * Keeps the lowest level that starts (no over-drive) and preserves RTC time
-   * (no backup-domain reset). If none start, HAL_RCC_OscConfig() below times
-   * out on LSERDY and lands in Error_Handler with the SWV diagnostic. */
+  /* DEV-866: bring up the LSE - escalate LOW -> MEDIUMLOW -> MEDIUMHIGH to the
+   * lowest level that reaches LSESYSRDY (genuinely stable, not a false LSERDY),
+   * then run ONE LEVEL ABOVE it for temperature margin (capped at MEDIUMHIGH).
+   * Per-board adaptive, preserves RTC time (no backup-domain reset). If nothing
+   * reaches LSESYSRDY, HAL_RCC_OscConfig() below times out into Error_Handler. */
   (void) DEV866_BringUpLse();
 
 
