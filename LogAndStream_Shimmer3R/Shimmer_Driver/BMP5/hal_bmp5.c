@@ -19,12 +19,12 @@
 #include "hal_Board.h"
 #include "hal_FactoryTest.h"
 
-#define SENSOR_BUS                 hspi1
+#define SENSOR_BUS hspi1
 
 /* The BMP581 is a drop-in replacement for the BMP390 and so shares the same
  * chip-select and interrupt lines. */
-#define CS_PORT                    CS_BMP390_GPIO_Port
-#define CS_PIN                     CS_BMP390_Pin
+#define CS_PORT    CS_BMP390_GPIO_Port
+#define CS_PIN     CS_BMP390_Pin
 
 struct bmp5_dev bmp5;
 
