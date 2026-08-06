@@ -344,6 +344,64 @@ int main(void)
  * @brief System Clock Configuration
  * @retval None
  */
+/* DEV-866: bring up the 32.768 kHz LSE by escalating the oscillator drive.
+ * The reworked crystals' effective load - and therefore the drive needed to
+ * start - varies board to board (hand-rework cap tolerance, PCB stray, ESR), so
+ * instead of hardcoding one level we try LOW -> MEDIUMLOW -> MEDIUMHIGH -> HIGH
+ * and keep the FIRST that starts. Lowest working level = least power, no
+ * over-drive.
+ *
+ * Each attempt turns the LSE OFF first (LSEDRV is writable only while
+ * LSEON = 0), which also clears any stale LSERDY - the flag that caused the
+ * original boot hang - so every attempt is a genuine restart. No full
+ * backup-domain reset is used, so RTC time / backup registers are preserved;
+ * the LSE only pauses for the duration of the restart.
+ *
+ * Returns the RCC_LSEDRIVE_* level that started the crystal, or 0xFFFFFFFF if
+ * none did (the LSE is left enabled at HIGH, so HAL_RCC_OscConfig below then
+ * times out on LSERDY and lands in Error_Handler with the diagnostic). */
+#define DEV866_LSE_STOP_TIMEOUT_MS  100U
+#define DEV866_LSE_START_TIMEOUT_MS 1000U
+static uint32_t DEV866_BringUpLse(void)
+{
+  static const uint32_t levels[] = {
+    RCC_LSEDRIVE_LOW, RCC_LSEDRIVE_MEDIUMLOW, RCC_LSEDRIVE_MEDIUMHIGH, RCC_LSEDRIVE_HIGH
+  };
+  static const char *const levelNames[] = { "LOW", "MEDIUMLOW", "MEDIUMHIGH", "HIGH" };
+
+  for (uint32_t i = 0U; i < (sizeof(levels) / sizeof(levels[0])); i++)
+  {
+    /* LSE off; wait for the oscillator to actually stop (clears LSERDY) */
+    CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSEON);
+    uint32_t start = HAL_GetTick();
+    while (((RCC->BDCR & RCC_BDCR_LSERDY) != 0U)
+        && ((HAL_GetTick() - start) < DEV866_LSE_STOP_TIMEOUT_MS))
+    {
+    }
+
+    /* set this drive level (writable now the LSE is off), then re-enable */
+    MODIFY_REG(RCC->BDCR, RCC_BDCR_LSEDRV, levels[i]);
+    SET_BIT(RCC->BDCR, RCC_BDCR_LSEON);
+
+    /* wait for the crystal to start oscillating at this drive level */
+    start = HAL_GetTick();
+    while ((HAL_GetTick() - start) < DEV866_LSE_START_TIMEOUT_MS)
+    {
+      if ((RCC->BDCR & RCC_BDCR_LSERDY) != 0U)
+      {
+        SHIMMER_PRINTF("DEV-866: LSE started at drive strength %s (LSEDRV=%lu)\r\n",
+            levelNames[i],
+            (unsigned long) ((levels[i] & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos));
+        return levels[i];
+      }
+    }
+  }
+
+  SHIMMER_PRINTF(
+      "DEV-866: LSE did NOT start at any drive level - check 32k XTAL / rework\r\n");
+  return 0xFFFFFFFFU;
+}
+
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
@@ -359,7 +417,14 @@ void SystemClock_Config(void)
   /** Configure LSE Drive Capability
    */
   HAL_PWR_EnableBkUpAccess();
-  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
+
+  /* DEV-866: start the LSE by escalating drive LOW -> MEDIUMLOW -> MEDIUMHIGH ->
+   * HIGH so the board boots whatever the reworked crystal's effective load is.
+   * Keeps the lowest level that starts (no over-drive) and preserves RTC time
+   * (no backup-domain reset). If none start, HAL_RCC_OscConfig() below times
+   * out on LSERDY and lands in Error_Handler with the SWV diagnostic. */
+  (void) DEV866_BringUpLse();
+
 
   /** Initializes the CPU, AHB and APB buses clocks
    */
@@ -773,6 +838,57 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+
+  /* DEV-866 boot bring-up diagnostic.
+   * Error_Handler() is the catch-all for every failed HAL_xxx call during
+   * boot. After the XTAL load-cap rework the common failure is the 32.768 kHz
+   * LSE not oscillating, which makes MX_RTC_Init() time out waiting for the RTC
+   * INITF flag (rtc.c). Dump the oscillator/RTC state to the SWV ITM console so
+   * a board can be triaged from the console alone, without the register view.
+   * All output is compiled out in release builds (printf -> _write is #ifdef
+   * DEBUG and also requires an attached debugger with ITM enabled). */
+  const uint32_t bdcr = RCC->BDCR;
+  const uint32_t rccCr = RCC->CR;
+  const uint32_t rtcIcsr = RTC->ICSR;
+
+  SHIMMER_PRINTF("\r\n==== Error_Handler (caller=0x%08lX) ====\r\n",
+      (unsigned long) (uint32_t) __builtin_return_address(0));
+  SHIMMER_PRINTF("RCC->CR  =0x%08lX  HSE_RDY(16MHz)=%lu  MSIS_RDY=%lu\r\n",
+      (unsigned long) rccCr, (unsigned long) ((rccCr & RCC_CR_HSERDY) != 0U),
+      (unsigned long) ((rccCr & RCC_CR_MSISRDY) != 0U));
+  SHIMMER_PRINTF(
+      "RCC->BDCR=0x%08lX  LSE_ON=%lu LSE_RDY(32k)=%lu LSE_DRV=%lu RTCSEL=%lu LSE_CSSD=%lu\r\n",
+      (unsigned long) bdcr, (unsigned long) ((bdcr & RCC_BDCR_LSEON) != 0U),
+      (unsigned long) ((bdcr & RCC_BDCR_LSERDY) != 0U),
+      (unsigned long) ((bdcr & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos),
+      (unsigned long) ((bdcr & RCC_BDCR_RTCSEL) >> RCC_BDCR_RTCSEL_Pos),
+      (unsigned long) ((bdcr & RCC_BDCR_LSECSSD) != 0U));
+  SHIMMER_PRINTF("RTC->ICSR=0x%08lX  INIT=%lu INITF=%lu INITS=%lu RSF=%lu\r\n",
+      (unsigned long) rtcIcsr, (unsigned long) ((rtcIcsr & RTC_ICSR_INIT) != 0U),
+      (unsigned long) ((rtcIcsr & RTC_ICSR_INITF) != 0U),
+      (unsigned long) ((rtcIcsr & RTC_ICSR_INITS) != 0U),
+      (unsigned long) ((rtcIcsr & RTC_ICSR_RSF) != 0U));
+
+  /* Plain-language verdict for the rework techs. */
+  if ((bdcr & RCC_BDCR_LSECSSD) != 0U)
+  {
+    SHIMMER_PRINTF(">> LSE Clock Security System fired: 32k XTAL failure detected.\r\n");
+  }
+  if ((bdcr & RCC_BDCR_LSERDY) == 0U)
+  {
+    SHIMMER_PRINTF(
+        ">> 32.768kHz LSE NOT READY: crystal not oscillating. Check 32k XTAL load caps / rework.\r\n");
+  }
+  else if ((rtcIcsr & RTC_ICSR_INITF) == 0U)
+  {
+    SHIMMER_PRINTF(
+        ">> LSE reports READY but RTC cannot enter INIT: marginal 32k XTAL (wrong load caps / high ESR). Try higher LSE drive.\r\n");
+  }
+  if ((rccCr & RCC_CR_HSERDY) == 0U)
+  {
+    SHIMMER_PRINTF(">> 16MHz HSE NOT READY: check 16MHz XTAL load caps / rework.\r\n");
+  }
+
   __disable_irq();
   while (1)
   {
