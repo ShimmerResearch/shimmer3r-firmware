@@ -198,8 +198,8 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef *rtcHandle)
      * rather than hanging. Prescalers/SSR math stay at 32768 Hz (see
      * DEV866_BringUpLse in main.c) - time runs ~2.4% slow +/- LSI tolerance,
      * which is acceptable for a flagged limp-home mode. */
-    PeriphClkInit.RTCClockSelection = Boot_rtcIsOnLsiFallback() ?
-        RCC_RTCCLKSOURCE_LSI : RCC_RTCCLKSOURCE_LSE;
+    PeriphClkInit.RTCClockSelection
+        = Boot_rtcIsOnLsiFallback() ? RCC_RTCCLKSOURCE_LSI : RCC_RTCCLKSOURCE_LSE;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
       Error_Handler();

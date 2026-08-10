@@ -412,9 +412,8 @@ static bool DEV866_TryLseLevel(uint32_t drive)
  * reached LSESYSRDY. */
 static uint32_t DEV866_WalkDriveLadder(void)
 {
-  static const uint32_t levels[] = {
-    RCC_LSEDRIVE_LOW, RCC_LSEDRIVE_MEDIUMLOW, RCC_LSEDRIVE_MEDIUMHIGH
-  };
+  static const uint32_t levels[]
+      = { RCC_LSEDRIVE_LOW, RCC_LSEDRIVE_MEDIUMLOW, RCC_LSEDRIVE_MEDIUMHIGH };
   static const char *const names[] = { "LOW", "MEDIUMLOW", "MEDIUMHIGH" };
   const uint32_t nLevels = (uint32_t) (sizeof(levels) / sizeof(levels[0]));
 
@@ -430,7 +429,8 @@ static uint32_t DEV866_WalkDriveLadder(void)
         (void) DEV866_TryLseLevel(levels[runIdx]);
       }
       g_dev866LseDriveName = names[runIdx];
-      SHIMMER_PRINTF("DEV-866: LSE stable at %s, running at %s (+1 margin, LSEDRV=%lu)\r\n",
+      SHIMMER_PRINTF("DEV-866: LSE stable at %s, running at %s (+1 margin, "
+                     "LSEDRV=%lu)\r\n",
           names[i], names[runIdx],
           (unsigned long) ((levels[runIdx] & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos));
       return levels[runIdx];
@@ -438,8 +438,8 @@ static uint32_t DEV866_WalkDriveLadder(void)
   }
 
   g_dev866LseDriveName = "NONE (LSE not stable at any drive)";
-  SHIMMER_PRINTF(
-      "DEV-866: LSE did NOT reach LSESYSRDY at any drive level - check 32k XTAL / rework\r\n");
+  SHIMMER_PRINTF("DEV-866: LSE did NOT reach LSESYSRDY at any drive level - "
+                 "check 32k XTAL / rework\r\n");
   return 0xFFFFFFFFU;
 }
 
@@ -485,8 +485,8 @@ static uint32_t DEV866_BringUpLse(void)
     return level;
   }
 
-  SHIMMER_PRINTF(
-      "DEV-866: forcing backup-domain reset (clears latched LSE state; RTC time already lost) and retrying\r\n");
+  SHIMMER_PRINTF("DEV-866: forcing backup-domain reset (clears latched LSE "
+                 "state; RTC time already lost) and retrying\r\n");
   __HAL_RCC_BACKUPRESET_FORCE();
   __HAL_RCC_BACKUPRESET_RELEASE();
   level = DEV866_WalkDriveLadder();
@@ -499,9 +499,10 @@ static uint32_t DEV866_BringUpLse(void)
    * forever; RCC_LSE_OFF in SystemClock_Config then matches this state. */
   CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSESYSEN | RCC_BDCR_LSEON);
   g_dev866RtcOnLsiFallback = 1U;
-  g_dev866LseDriveName = "NONE - RTC on LSI fallback (32k XTAL dead, timekeeping degraded)";
-  SHIMMER_PRINTF(
-      "DEV-866: LSE unrecoverable, booting with RTC on LSI - unit needs 32k XTAL service\r\n");
+  g_dev866LseDriveName
+      = "NONE - RTC on LSI fallback (32k XTAL dead, timekeeping degraded)";
+  SHIMMER_PRINTF("DEV-866: LSE unrecoverable, booting with RTC on LSI - unit "
+                 "needs 32k XTAL service\r\n");
   return 0xFFFFFFFFU;
 }
 
@@ -961,8 +962,8 @@ void Error_Handler(void)
   SHIMMER_PRINTF("RCC->CR  =0x%08lX  HSE_RDY(16MHz)=%lu  MSIS_RDY=%lu\r\n",
       (unsigned long) rccCr, (unsigned long) ((rccCr & RCC_CR_HSERDY) != 0U),
       (unsigned long) ((rccCr & RCC_CR_MSISRDY) != 0U));
-  SHIMMER_PRINTF(
-      "RCC->BDCR=0x%08lX  LSE_ON=%lu LSE_RDY(32k)=%lu LSE_DRV=%lu RTCSEL=%lu LSE_CSSD=%lu\r\n",
+  SHIMMER_PRINTF("RCC->BDCR=0x%08lX  LSE_ON=%lu LSE_RDY(32k)=%lu LSE_DRV=%lu "
+                 "RTCSEL=%lu LSE_CSSD=%lu\r\n",
       (unsigned long) bdcr, (unsigned long) ((bdcr & RCC_BDCR_LSEON) != 0U),
       (unsigned long) ((bdcr & RCC_BDCR_LSERDY) != 0U),
       (unsigned long) ((bdcr & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos),
@@ -977,21 +978,24 @@ void Error_Handler(void)
   /* Plain-language verdict for the rework techs. */
   if ((bdcr & RCC_BDCR_LSECSSD) != 0U)
   {
-    SHIMMER_PRINTF(">> LSE Clock Security System fired: 32k XTAL failure detected.\r\n");
+    SHIMMER_PRINTF(
+        ">> LSE Clock Security System fired: 32k XTAL failure detected.\r\n");
   }
   if ((bdcr & RCC_BDCR_LSERDY) == 0U)
   {
-    SHIMMER_PRINTF(
-        ">> 32.768kHz LSE NOT READY: crystal not oscillating. Check 32k XTAL load caps / rework.\r\n");
+    SHIMMER_PRINTF(">> 32.768kHz LSE NOT READY: crystal not oscillating. Check "
+                   "32k XTAL load caps / rework.\r\n");
   }
   else if ((rtcIcsr & RTC_ICSR_INITF) == 0U)
   {
     SHIMMER_PRINTF(
-        ">> LSE reports READY but RTC cannot enter INIT: marginal 32k XTAL (wrong load caps / high ESR). Try higher LSE drive.\r\n");
+        ">> LSE reports READY but RTC cannot enter INIT: marginal 32k XTAL "
+        "(wrong load caps / high ESR). Try higher LSE drive.\r\n");
   }
   if ((rccCr & RCC_CR_HSERDY) == 0U)
   {
-    SHIMMER_PRINTF(">> 16MHz HSE NOT READY: check 16MHz XTAL load caps / rework.\r\n");
+    SHIMMER_PRINTF(
+        ">> 16MHz HSE NOT READY: check 16MHz XTAL load caps / rework.\r\n");
   }
 
   __disable_irq();
