@@ -24,7 +24,6 @@
 
 //TODO remove, needed until SW supports setting pressure sensor rate in config
 #include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
-#include <stdio.h>
 #define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
 #if defined(SHIMMER3R)
@@ -899,7 +898,16 @@ void SPI_startSensing()
   {
     int8_t rslt = PressureSensor_configure(shimmerSamplingFreq,
         ShimConfig_configBytePressureOversamplingRatioGet());
-    (void) rslt;
+    if (rslt != 0)
+    {
+      /* A failed configure would otherwise stream meaningless data with no
+       * indication. A transient comms/NVM issue (e.g. the BMP581's NVM not
+       * ready straight after power-up) is recoverable, so retry once via a
+       * full re-init; a hard failure will simply fail again here. */
+      PressureSensor_init();
+      PressureSensor_configure(shimmerSamplingFreq,
+          ShimConfig_configBytePressureOversamplingRatioGet());
+    }
   }
 
   if (configBytes->chEnAltAccel)
@@ -1325,12 +1333,18 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
     break;
   case SPI1_PRESSURE_TEMP:
+    /* Raise CS to complete the DMA data-burst transaction BEFORE the status
+     * read below. platform_read_raw_data_dma() leaves CS asserted and the
+     * status read's own select is edge-less on an already-low pin, so the
+     * chip would otherwise treat the status read as a continuation of the
+     * data burst (address auto-increment, MOSI ignored) - INT_STATUS would
+     * never actually be read and the latched DRDY pin would never clear. */
+    PressureSensor_unselectDevice();
     if (PressureSensor_isDrdyIntEnabled())
     {
       /* Read chip status registers to reset interrupt pin */
       PressureSensor_clearDrdyInt();
     }
-    PressureSensor_unselectDevice();
     if (isBmp581InUse())
     {
       /* The BMP581 bursts temperature (0x1D-0x1F) followed by pressure

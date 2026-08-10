@@ -32,6 +32,11 @@ static struct bmp5_osr_odr_press_config bmp5OsrOdrPressCfg;
 
 static bool bmp5DrdyIntEnabled = false;
 
+/* Result of the last bmp5_driver_init() reset+init sequence. Anything other
+ * than BMP5_OK means the sensor (or its NVM trim load) never came up and its
+ * output cannot be trusted. */
+static int8_t bmp5InitRslt = BMP5_E_DEV_NOT_FOUND;
+
 /* Variable to store the device address */
 static uint8_t bmp5_dev_addr;
 
@@ -105,13 +110,38 @@ void bmp5_setup_dev(void)
 
 void bmp5_driver_init(void)
 {
+  uint8_t attempt;
+
   bmp5_setup_dev();
 
   /* Reads and verifies the chip ID and leaves the sensor in standby. Unlike the
    * BMP390, the BMP581 outputs pre-compensated pressure and temperature, so
-   * there are no calibration coefficients to read here. */
-  (void) bmp5_soft_reset(&bmp5);
-  (void) bmp5_init(&bmp5);
+   * there are no calibration coefficients to read here.
+   *
+   * The result MUST be checked: bmp5_init() validates STATUS.nvm_rdy/nvm_err,
+   * and if the NVM trim data has not (re)loaded after the reset the sensor
+   * streams uncompensated garbage with no other indication. Retry a couple of
+   * times (the NVM reload takes ~2ms and the ready bit can lag after a
+   * power-up) and store the final result so bmp5_configure() can refuse to
+   * start a sensor that never came up. */
+  for (attempt = 0; attempt < 3; attempt++)
+  {
+    bmp5InitRslt = bmp5_soft_reset(&bmp5);
+    if (bmp5InitRslt == BMP5_OK)
+    {
+      bmp5InitRslt = bmp5_init(&bmp5);
+    }
+    if (bmp5InitRslt == BMP5_OK)
+    {
+      break;
+    }
+    platform_delay(3);
+  }
+}
+
+int8_t bmp5_get_init_rslt(void)
+{
+  return bmp5InitRslt;
 }
 
 int8_t bmp5_verify_chip_id(void)
@@ -291,6 +321,14 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
   struct bmp5_osr_odr_eff osr_odr_eff = { 0 };
   struct bmp5_int_source_select int_source_select = { 0 };
 
+  /* Refuse to configure a sensor whose reset+init never completed - its NVM
+   * trim data may not be loaded and the output would be uncompensated
+   * garbage. The caller can retry via PressureSensor_init(). */
+  if (bmp5InitRslt != BMP5_OK)
+  {
+    return bmp5InitRslt;
+  }
+
   /* Configuration registers can only be updated while in standby mode */
   rslt = bmp5_set_power_mode(BMP5_POWERMODE_STANDBY, &bmp5);
   if (rslt != BMP5_OK)
@@ -343,9 +381,8 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
   }
 
   /* Enable the data-ready interrupt (latched, active-high) - routed to both the
-   * INT pin and the STATUS register - and enter NORMAL mode. Configure the
-   * interrupt BEFORE selecting the source (Bosch note: "Select INT_SOURCE after
-   * configuring interrupt"). */
+   * INT pin and the STATUS register. Configure the interrupt BEFORE selecting
+   * the source (Bosch note: "Select INT_SOURCE after configuring interrupt"). */
   rslt = bmp5_configure_interrupt(BMP5_LATCHED, BMP5_ACTIVE_HIGH,
       BMP5_INTR_PUSH_PULL, BMP5_INTR_ENABLE, &bmp5);
   if (rslt != BMP5_OK)
@@ -358,30 +395,19 @@ int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
   {
     return rslt;
   }
-  rslt = bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp5);
-  if (rslt != BMP5_OK)
-  {
-    return rslt;
-  }
 
-  /* Auto-detect the DRDY interrupt line. If the physical INT pin toggles within
-   * the window, gate sensing reads on it (efficient). If it does not - e.g. the
-   * shared BMP390_INT line is unreliable on this board - fall back to polling
-   * the data-ready status over SPI. The data-ready source stays enabled either
-   * way, so both the INT pin and the STATUS register track new samples and the
-   * data registers update consistently (a blind read otherwise returns
-   * transitional/invalid values). Up to 100 x 2ms = 200ms (~10 samples @50Hz). */
-  bmp5DrdyIntEnabled = false;
-  for (i = 0; i < 100; i++)
-  {
-    if (BMP581_INT)
-    {
-      bmp5DrdyIntEnabled = true;
-      bmp5_read_int_status(); /* clear the latched interrupt */
-      break;
-    }
-    platform_delay(2);
-  }
+  /* Gate sensing reads on the DRDY interrupt pin only when the Shimmer samples
+   * faster than the sensor produces data (i.e. the selected ODR ended up below
+   * the Shimmer sampling rate because of the OSR feasibility stepping above) -
+   * the same deterministic rule the BMP390 path uses. When the sensor is
+   * faster than the Shimmer, every read has fresh data and no gating is
+   * needed. This replaces an earlier probe-the-pin heuristic that blocked for
+   * up to 200ms at streaming start and raced the first conversion at low
+   * ODRs. */
+  bmp5DrdyIntEnabled
+      = bmp5_is_shimmer_freq_higher(shimmerSamplingFreq, bmp5OsrOdrPressCfg.odr);
+
+  rslt = bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp5);
 
   return rslt;
 }
@@ -418,15 +444,6 @@ float bmp5_get_sensor_freq_from_rate(uint8_t rate)
     }
   }
   return 0.0f;
-}
-
-int8_t bmp5_restore_default_config(void)
-{
-  int8_t rslt;
-  /* Reset the sensor */
-  rslt = bmp5_soft_reset(&bmp5);
-
-  return rslt;
 }
 
 int8_t bmp5_read_int_status(void)

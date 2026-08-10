@@ -35,7 +35,7 @@ bool bmp5_is_drdy_int_enabled(void);
 bool bmp5_is_shimmer_freq_higher(float shimmerSamplingFreq, uint8_t rate);
 float bmp5_get_sensor_freq_from_rate(uint8_t rate);
 
-int8_t bmp5_restore_default_config(void);
+int8_t bmp5_get_init_rslt(void);
 int8_t bmp5_read_int_status(void);
 struct bmp5_sensor_data *get_bmp5_selftest_data(void);
 

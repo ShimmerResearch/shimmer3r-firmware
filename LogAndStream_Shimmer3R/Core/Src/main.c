@@ -299,6 +299,7 @@ int main(void)
 
   /* Check nBOOT0 option byte is configured correctly */
   checknBoot0OptionByte();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -337,6 +338,7 @@ int main(void)
         }
       }
     }
+
     ShimTask_manage();
   }
   /* USER CODE END 3 */
