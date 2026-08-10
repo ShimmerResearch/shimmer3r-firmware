@@ -57,6 +57,13 @@ extern "C"
 
 /* USER CODE BEGIN EFP */
 
+/* DEV-866: true when the boot LSE bring-up exhausted every recovery step
+ * (drive escalation, backup-domain reset + re-escalation) and the RTC was
+ * started from the LSI instead so the device still boots. Timekeeping is
+ * degraded (LSI is a ~32 kHz RC, +/-5%, and the RTC prescalers/SSR math are
+ * left at their 32768 Hz values) - the unit needs its 32k crystal looked at. */
+uint8_t Boot_rtcIsOnLsiFallback(void);
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

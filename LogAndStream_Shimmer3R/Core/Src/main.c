@@ -409,9 +409,8 @@ static bool DEV866_TryLseLevel(uint32_t drive)
  * of headroom over whatever sustained.
  *
  * Returns the RCC_LSEDRIVE_* level actually applied, or 0xFFFFFFFF if no level
- * reached LSESYSRDY (LSE left at MEDIUMHIGH, so HAL_RCC_OscConfig below times
- * out into Error_Handler with the diagnostic). */
-static uint32_t DEV866_BringUpLse(void)
+ * reached LSESYSRDY. */
+static uint32_t DEV866_WalkDriveLadder(void)
 {
   static const uint32_t levels[] = {
     RCC_LSEDRIVE_LOW, RCC_LSEDRIVE_MEDIUMLOW, RCC_LSEDRIVE_MEDIUMHIGH
@@ -444,6 +443,68 @@ static uint32_t DEV866_BringUpLse(void)
   return 0xFFFFFFFFU;
 }
 
+/* DEV-866: set when every LSE recovery step failed and the RTC runs from the
+ * LSI instead (see Boot_rtcIsOnLsiFallback in main.h). */
+static uint8_t g_dev866RtcOnLsiFallback = 0U;
+
+uint8_t Boot_rtcIsOnLsiFallback(void)
+{
+  return g_dev866RtcOnLsiFallback;
+}
+
+/* DEV-866: full LSE bring-up ladder. Each rung only runs if the one before it
+ * failed, so a healthy board pays nothing beyond the normal LSE start wait:
+ *
+ * 1. Adaptive drive escalation (DEV866_WalkDriveLadder above) - recovers a
+ *    marginal / heavily-loaded crystal and, because each attempt toggles LSEON
+ *    (required anyway: LSEDRV is write-locked while LSEON = 1), also recovers
+ *    the battery-death case where a brown-out left LSEON = 1 latched in the
+ *    backup domain with the crystal stopped and the drive write-locked.
+ * 2. Backup-domain reset + one re-escalation - clears a poisoned RCC->BDCR
+ *    that even rung 1 cannot untangle. This does in firmware exactly what
+ *    removing all power does on the bench (the previous "fix" was a debugger
+ *    session, whose recovery was really the power removal it included). The
+ *    stored RTC time is the only cost, and it was already lost the moment the
+ *    crystal stopped - which is the only way to reach this rung.
+ * 3. LSI fallback - if the crystal is genuinely dead (broken part / rework
+ *    fault), flag it and let SystemClock_Config/HAL_RTC_MspInit start the RTC
+ *    from the LSI so the device still boots, connects and can report the
+ *    fault (factory test prints 'FAIL ... LSE not ready') instead of hanging
+ *    forever in Error_Handler. Timekeeping is degraded: LSI is a ~32 kHz RC
+ *    (+/-5%) and the RTC prescalers + SSR tick math are deliberately left at
+ *    their 32768 Hz values so every consumer stays self-consistent (rtc.c
+ *    hardcodes the 0x8000 SSR wrap and ticks*32768 conversions) - the clock
+ *    simply runs ~2.4% slow rather than lying differently in different places.
+ *
+ * Returns the RCC_LSEDRIVE_* level applied, or 0xFFFFFFFF when on rung 3. */
+static uint32_t DEV866_BringUpLse(void)
+{
+  uint32_t level = DEV866_WalkDriveLadder();
+  if (level != 0xFFFFFFFFU)
+  {
+    return level;
+  }
+
+  SHIMMER_PRINTF(
+      "DEV-866: forcing backup-domain reset (clears latched LSE state; RTC time already lost) and retrying\r\n");
+  __HAL_RCC_BACKUPRESET_FORCE();
+  __HAL_RCC_BACKUPRESET_RELEASE();
+  level = DEV866_WalkDriveLadder();
+  if (level != 0xFFFFFFFFU)
+  {
+    return level;
+  }
+
+  /* Leave the dead crystal's cell off rather than burning max drive into it
+   * forever; RCC_LSE_OFF in SystemClock_Config then matches this state. */
+  CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSESYSEN | RCC_BDCR_LSEON);
+  g_dev866RtcOnLsiFallback = 1U;
+  g_dev866LseDriveName = "NONE - RTC on LSI fallback (32k XTAL dead, timekeeping degraded)";
+  SHIMMER_PRINTF(
+      "DEV-866: LSE unrecoverable, booting with RTC on LSI - unit needs 32k XTAL service\r\n");
+  return 0xFFFFFFFFU;
+}
+
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
@@ -463,17 +524,19 @@ void SystemClock_Config(void)
   /* DEV-866: bring up the LSE - escalate LOW -> MEDIUMLOW -> MEDIUMHIGH to the
    * lowest level that reaches LSESYSRDY (genuinely stable, not a false LSERDY),
    * then run ONE LEVEL ABOVE it for temperature margin (capped at MEDIUMHIGH).
-   * Per-board adaptive, preserves RTC time (no backup-domain reset). If nothing
-   * reaches LSESYSRDY, HAL_RCC_OscConfig() below times out into Error_Handler. */
+   * Per-board adaptive; the normal path does NOT touch the backup domain, so
+   * RTC time is preserved. If the full recovery ladder fails (see
+   * DEV866_BringUpLse), the boot continues with the RTC on the LSI instead of
+   * hanging: LSE_OFF below keeps HAL_RCC_OscConfig() from waiting on the dead
+   * crystal, and HAL_RTC_MspInit (rtc.c) selects the matching RTC source. */
   (void) DEV866_BringUpLse();
-
 
   /** Initializes the CPU, AHB and APB buses clocks
    */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_LSI
       | RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+  RCC_OscInitStruct.LSEState = Boot_rtcIsOnLsiFallback() ? RCC_LSE_OFF : RCC_LSE_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
