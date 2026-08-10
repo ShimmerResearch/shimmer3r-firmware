@@ -70,6 +70,18 @@ given above */
  * crystal reads "not measurable". */
 #define TEST_THRESHOLD_LSE_ERROR_PPM_X10           250
 
+/* Deployed-fleet limit (DEV-866): boards BELOW the crystal-cap-fix SR
+ * revisions (see lseCapFixRevs in hal_FactoryTest.c) run in the thousands
+ * with the known under-loading above - failing them all against the spec
+ * limit tells nobody anything. Their looser limit is sized to pass the
+ * known loading offset (measured stock: -49.8 / -68.2 ppm) while still
+ * catching real faults, which sit far outside it (open cap joint
+ * ~+/-650..1200 ppm, dead crystal = "not measurable"). PROVISIONAL: both
+ * this value and the spec limit's centering should be revisited once the
+ * RTC-vs-PC 24 h drift result resolves whether the persistent ~-58 ppm on
+ * corrected boards is real LSE error or measurement bias. */
+#define TEST_THRESHOLD_LSE_ERROR_DEPLOYED_PPM_X10  1000
+
 #define TEST_BT_MODULE_FW                          "v01.04.16.16"
 
 #define GSR_TEST_TOLERANCE_7_PERCENT               0.07
