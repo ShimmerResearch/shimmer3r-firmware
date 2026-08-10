@@ -584,9 +584,8 @@ void print_mcu_details(void)
     }
     sprintf(buffer, " - S3R_TEST_0028 - %s: 32k LSE vs 16M HSE error = %s%ld.%ld ppm (limit +/-%ld.%ld ppm, %s caps rev%s)\r\n",
         testPass ? "PASS" : "FAIL", (lseErrPpmX10 < 0) ? "-" : "+",
-        (long) (absPpmX10 / 10), (long) (absPpmX10 % 10),
-        (long) (lseLimitPpmX10 / 10), (long) (lseLimitPpmX10 % 10),
-        capsFixed ? "corrected" : "pre-fix", recNote);
+        (long) (absPpmX10 / 10), (long) (absPpmX10 % 10), (long) (lseLimitPpmX10 / 10),
+        (long) (lseLimitPpmX10 % 10), capsFixed ? "corrected" : "pre-fix", recNote);
   }
   else
   {
