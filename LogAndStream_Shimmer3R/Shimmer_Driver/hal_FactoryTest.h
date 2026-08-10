@@ -103,7 +103,7 @@ void bt_module_test(void);
 void I2C_test(void);
 void SPI_test(void);
 uint8_t is_temperature_outside_of_range(float_t temperature);
-void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_test_result, float_t tempCal);
+void print_chip_test_result(const char *testId, const char *chipId, self_test_result_t self_test_result, float_t tempCal);
 uint8_t gsrFactoryTest_run(void);
 void gsrFactoryTest_printResults(void);
 HAL_StatusTypeDef gsrFactoryTest_getAvgGsr(uint32_t *gsrResistance);

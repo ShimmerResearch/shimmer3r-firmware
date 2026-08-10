@@ -1213,7 +1213,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
      * BMP390 and BMP581 share the same interrupt line. */
     if (!PressureSensor_isDrdyIntEnabled() || BMP390_INT)
     {
-      spiSensingInfo->status = SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET;
+      spiSensingInfo->status = SPI_STAT_PRESSURE_TEMPERATURE_GET;
       halRet = PressureSensor_getDataDma(spi1Sens_buf.bmp390Buf);
       retVal = 1;
     }
