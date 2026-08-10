@@ -426,9 +426,14 @@ void print_shimmer_model(void)
 }
 
 /* DEV-866: SR revisions from which the corrected crystal load caps (22 pF
- * LSE / 15 pF HSE) are fitted in production. Base board IDs are unchanged -
- * only the revision signifies the change. Compared as (major, minor) >=
- * threshold within the same board ID. */
+ * LSE / 15 pF HSE) are fitted in production - the ".2" respin that also adds
+ * the BMP581 (see Shimmer_PCBREV_INDEX.xlsx; the ".3" adds the IM68D121
+ * microphone on top). Base board IDs are unchanged - only the revision
+ * signifies the change. Compared as (major, minor) >= threshold within the
+ * same board ID. Deliberately NOT listed: SR48-7-2, the BMP581 development
+ * build on the older rev-7 PCB - it predates the production cap change.
+ * TODO(DEV-866): once log-and-stream-common PR #111 merges, replace this
+ * local compare with ShimBrd_isBoardSrNumberGte(). */
 typedef struct
 {
   uint8_t id;
@@ -437,11 +442,11 @@ typedef struct
 } lse_cap_fix_rev_t;
 
 static const lse_cap_fix_rev_t lseCapFixRevs[] = {
-  { 31, 11, 3 },
-  { 38, 4, 3 },
-  { 47, 8, 3 },
-  { 48, 8, 3 },
-  { 49, 4, 3 },
+  { 31, 11, 2 },
+  { 38, 4, 2 },
+  { 47, 8, 2 },
+  { 48, 8, 2 },
+  { 49, 4, 2 },
 };
 
 /* True when this board's SR revision says the production crystal-cap fix is
