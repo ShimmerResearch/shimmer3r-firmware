@@ -109,7 +109,10 @@ enum
   S3R_TEST_0024 = (1 << (24 - 1)), //I2C4 - CAT24C16 or GSR rig (S3R GSR+ unit)
   S3R_TEST_0025 = (1 << (25 - 1)), //GSR signal test
   S3R_TEST_0026 = (1 << (26 - 1)), //Microphone
-  S3R_TEST_0027 = (1 << (27 - 1)), //MCU LSE crystal (32.768 kHz) frequency error
+  /* 27 is skipped: the LED test heading in shipped reports already reads
+   * "LED test (S3R_TEST_0027)" (visual check, no pass/fail bit) - renumbering
+   * it would break comparison against old reports. */
+  S3R_TEST_0028 = (1 << (28 - 1)), //MCU LSE crystal (32.768 kHz) frequency error
 };
 
 typedef struct
