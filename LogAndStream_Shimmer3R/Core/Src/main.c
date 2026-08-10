@@ -452,6 +452,11 @@ uint8_t Boot_rtcIsOnLsiFallback(void)
   return g_dev866RtcOnLsiFallback;
 }
 
+const char *Boot_getLseDriveName(void)
+{
+  return g_dev866LseDriveName;
+}
+
 /* DEV-866: full LSE bring-up ladder. Each rung only runs if the one before it
  * failed, so a healthy board pays nothing beyond the normal LSE start wait:
  *
