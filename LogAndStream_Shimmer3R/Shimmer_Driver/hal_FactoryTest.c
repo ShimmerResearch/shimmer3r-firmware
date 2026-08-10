@@ -788,7 +788,10 @@ uint8_t is_temperature_outside_of_range(float_t temperature)
       || temperature > TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
 }
 
-void print_chip_test_result(const char *testId, const char *chipId, self_test_result_t self_test_result, float_t tempCal)
+void print_chip_test_result(const char *testId,
+    const char *chipId,
+    self_test_result_t self_test_result,
+    float_t tempCal)
 {
   char *selfTestResultStr;
   char *selfTestDetailsStr;
