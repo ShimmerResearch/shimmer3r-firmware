@@ -75,11 +75,11 @@ __attribute__((section(".version"), used)) const firmware_version_t fw_version_s
 
 volatile uint32_t time_start, time_end, time_diff;
 
-/* DEV-866: LSE drive strength chosen by DEV866_BringUpLse() at boot, stashed so
+/* DEV-866: LSE drive strength chosen by Lse_bringUp() at boot, stashed so
  * it can be printed from Init(). The print inside the escalation runs before
  * the core clock is configured, so its SWV/ITM output goes out at the wrong SWO
  * baud and is dropped by the host - hence a second, reliable print later. */
-static const char *g_dev866LseDriveName = "not run";
+static const char *gLseDriveName = "not run";
 #define BLOCK_START_ADDR 0 /* Block start address      */
 #define NUM_OF_BLOCKS    5 /* Total number of blocks   */
 #define BUFFER_WORDS_SIZE \
@@ -138,10 +138,10 @@ void Init()
   LogAndStream_init();
 
   /* DEV-866: report the LSE drive strength the boot escalation settled on. Done
-   * here rather than in DEV866_BringUpLse() because that runs before the core
+   * here rather than in Lse_bringUp() because that runs before the core
    * clock is configured (SWV output there is dropped); by Init() the clock is
    * up and SWV is reliable. */
-  SHIMMER_PRINTF("DEV-866: LSE drive strength = %s\r\n", g_dev866LseDriveName);
+  SHIMMER_PRINTF("LSE drive strength = %s\r\n", gLseDriveName);
 
   shimmerStatus.booting = 1; /* led flag, in initialisation period */
 
@@ -361,8 +361,8 @@ int main(void)
  * @brief System Clock Configuration
  * @retval None
  */
-#define DEV866_LSE_STOP_TIMEOUT_MS  100U
-#define DEV866_LSE_START_TIMEOUT_MS 1500U
+#define LSE_STOP_TIMEOUT_MS  100U
+#define LSE_START_TIMEOUT_MS 1500U
 
 /* Try one LSE drive level: fully restart the LSE + its system clock at `drive`,
  * then wait for LSESYSRDY - the LSE *system-clock* ready. Success is judged by
@@ -372,12 +372,12 @@ int main(void)
  * HAL_RCC_OscConfig() waits on afterward). LSEDRV is writable only while
  * LSEON = 0, so the full stop is required; no backup-domain reset is used, so
  * RTC time is preserved. Returns true if the level reached LSESYSRDY. */
-static bool DEV866_TryLseLevel(uint32_t drive)
+static bool Lse_tryDriveLevel(uint32_t drive)
 {
   CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSESYSEN | RCC_BDCR_LSEON);
   uint32_t start = HAL_GetTick();
   while (((RCC->BDCR & (RCC_BDCR_LSERDY | RCC_BDCR_LSESYSRDY)) != 0U)
-      && ((HAL_GetTick() - start) < DEV866_LSE_STOP_TIMEOUT_MS))
+      && ((HAL_GetTick() - start) < LSE_STOP_TIMEOUT_MS))
   {
   }
 
@@ -385,7 +385,7 @@ static bool DEV866_TryLseLevel(uint32_t drive)
   SET_BIT(RCC->BDCR, RCC_BDCR_LSEON | RCC_BDCR_LSESYSEN);
 
   start = HAL_GetTick();
-  while ((HAL_GetTick() - start) < DEV866_LSE_START_TIMEOUT_MS)
+  while ((HAL_GetTick() - start) < LSE_START_TIMEOUT_MS)
   {
     if ((RCC->BDCR & RCC_BDCR_LSESYSRDY) != 0U)
     {
@@ -414,7 +414,7 @@ static bool DEV866_TryLseLevel(uint32_t drive)
  *
  * Returns the RCC_LSEDRIVE_* level actually applied, or 0xFFFFFFFF if no level
  * reached LSESYSRDY. */
-static uint32_t DEV866_WalkDriveLadder(void)
+static uint32_t Lse_walkDriveLadder(void)
 {
   static const uint32_t levels[]
       = { RCC_LSEDRIVE_LOW, RCC_LSEDRIVE_MEDIUMLOW, RCC_LSEDRIVE_MEDIUMHIGH };
@@ -423,17 +423,17 @@ static uint32_t DEV866_WalkDriveLadder(void)
 
   for (uint32_t i = 0U; i < nLevels; i++)
   {
-    if (DEV866_TryLseLevel(levels[i]))
+    if (Lse_tryDriveLevel(levels[i]))
     {
       /* This level is stable -> just run the next one up for margin (capped at
        * MEDIUMHIGH), applied blindly: a higher drive works if a lower one did. */
       uint32_t runIdx = ((i + 1U) < nLevels) ? (i + 1U) : i;
       if (runIdx != i)
       {
-        (void) DEV866_TryLseLevel(levels[runIdx]);
+        (void) Lse_tryDriveLevel(levels[runIdx]);
       }
-      g_dev866LseDriveName = names[runIdx];
-      SHIMMER_PRINTF("DEV-866: LSE stable at %s, running at %s (+1 margin, "
+      gLseDriveName = names[runIdx];
+      SHIMMER_PRINTF("LSE stable at %s, running at %s (+1 margin, "
                      "LSEDRV=%lu)\r\n",
           names[i], names[runIdx],
           (unsigned long) ((levels[runIdx] & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos));
@@ -441,30 +441,30 @@ static uint32_t DEV866_WalkDriveLadder(void)
     }
   }
 
-  g_dev866LseDriveName = "NONE (LSE not stable at any drive)";
-  SHIMMER_PRINTF("DEV-866: LSE did NOT reach LSESYSRDY at any drive level - "
+  gLseDriveName = "NONE (LSE not stable at any drive)";
+  SHIMMER_PRINTF("LSE did NOT reach LSESYSRDY at any drive level - "
                  "check 32k XTAL / rework\r\n");
   return 0xFFFFFFFFU;
 }
 
 /* DEV-866: set when every LSE recovery step failed and the RTC runs from the
  * LSI instead (see Boot_rtcIsOnLsiFallback in main.h). */
-static uint8_t g_dev866RtcOnLsiFallback = 0U;
+static uint8_t gRtcOnLsiFallback = 0U;
 
 uint8_t Boot_rtcIsOnLsiFallback(void)
 {
-  return g_dev866RtcOnLsiFallback;
+  return gRtcOnLsiFallback;
 }
 
 const char *Boot_getLseDriveName(void)
 {
-  return g_dev866LseDriveName;
+  return gLseDriveName;
 }
 
 /* DEV-866: full LSE bring-up ladder. Each rung only runs if the one before it
  * failed, so a healthy board pays nothing beyond the normal LSE start wait:
  *
- * 1. Adaptive drive escalation (DEV866_WalkDriveLadder above) - recovers a
+ * 1. Adaptive drive escalation (Lse_walkDriveLadder above) - recovers a
  *    marginal / heavily-loaded crystal and, because each attempt toggles LSEON
  *    (required anyway: LSEDRV is write-locked while LSEON = 1), also recovers
  *    the battery-death case where a brown-out left LSEON = 1 latched in the
@@ -486,19 +486,19 @@ const char *Boot_getLseDriveName(void)
  *    simply runs ~2.4% slow rather than lying differently in different places.
  *
  * Returns the RCC_LSEDRIVE_* level applied, or 0xFFFFFFFF when on rung 3. */
-static uint32_t DEV866_BringUpLse(void)
+static uint32_t Lse_bringUp(void)
 {
-  uint32_t level = DEV866_WalkDriveLadder();
+  uint32_t level = Lse_walkDriveLadder();
   if (level != 0xFFFFFFFFU)
   {
     return level;
   }
 
-  SHIMMER_PRINTF("DEV-866: forcing backup-domain reset (clears latched LSE "
+  SHIMMER_PRINTF("Forcing backup-domain reset (clears latched LSE "
                  "state; RTC time already lost) and retrying\r\n");
   __HAL_RCC_BACKUPRESET_FORCE();
   __HAL_RCC_BACKUPRESET_RELEASE();
-  level = DEV866_WalkDriveLadder();
+  level = Lse_walkDriveLadder();
   if (level != 0xFFFFFFFFU)
   {
     return level;
@@ -507,10 +507,10 @@ static uint32_t DEV866_BringUpLse(void)
   /* Leave the dead crystal's cell off rather than burning max drive into it
    * forever; RCC_LSE_OFF in SystemClock_Config then matches this state. */
   CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSESYSEN | RCC_BDCR_LSEON);
-  g_dev866RtcOnLsiFallback = 1U;
-  g_dev866LseDriveName
+  gRtcOnLsiFallback = 1U;
+  gLseDriveName
       = "NONE - RTC on LSI fallback (32k XTAL dead, timekeeping degraded)";
-  SHIMMER_PRINTF("DEV-866: LSE unrecoverable, booting with RTC on LSI - unit "
+  SHIMMER_PRINTF("LSE unrecoverable, booting with RTC on LSI - unit "
                  "needs 32k XTAL service\r\n");
   return 0xFFFFFFFFU;
 }
@@ -536,10 +536,10 @@ void SystemClock_Config(void)
    * then run ONE LEVEL ABOVE it for temperature margin (capped at MEDIUMHIGH).
    * Per-board adaptive; the normal path does NOT touch the backup domain, so
    * RTC time is preserved. If the full recovery ladder fails (see
-   * DEV866_BringUpLse), the boot continues with the RTC on the LSI instead of
+   * Lse_bringUp), the boot continues with the RTC on the LSI instead of
    * hanging: LSE_OFF below keeps HAL_RCC_OscConfig() from waiting on the dead
    * crystal, and HAL_RTC_MspInit (rtc.c) selects the matching RTC source. */
-  (void) DEV866_BringUpLse();
+  (void) Lse_bringUp();
 
   /** Initializes the CPU, AHB and APB buses clocks
    */
