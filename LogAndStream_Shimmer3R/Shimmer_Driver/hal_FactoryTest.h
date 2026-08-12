@@ -45,6 +45,39 @@ given above */
 
 #define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID -1.0
 
+/* LSE (32.768 kHz) crystal error acceptance in tenths of a ppm (DEV-866).
+ * The measurement is DIFFERENTIAL (ppm_LSE - ppm_HSE), so the limit budgets
+ * BOTH crystals. Hardware-measured population (2026-08-11, overnight
+ * RTC-vs-host drift runs paired with this test on three boards):
+ *   - LSE with the production 12 pF caps: -7 +/- 2 ppm (near-spec; the
+ *     STM32 pin strays complete the CM315D's load - unlike the Verisense
+ *     nRF52840 fleet, whose identical BOM ran +40..+65 fast; DEV-844).
+ *     22 pF was tried and OVER-loads it: -54 / -113 ppm with a ~60 ppm
+ *     unit-to-unit spread - the LSE caps stay 12 pF on all revisions.
+ *   - HSE (NX2016SA variant EXS00A-CS07826, C_L = 8 pF, +/-20 ppm at
+ *     25 degC) with the ".2"-respin 15 pF caps: +14 +/- 1 ppm measured.
+ * Healthy HSE-fixed boards therefore centre at ~ -21 ppm (57F4 -21.8,
+ * F9BC -21.2). Budget: centre -21, HSE crystal tolerance +/-20, LSE
+ * spread/tolerance ~+/-7, temperature a few - so +/-25.0 left healthy
+ * boards only ~3 ppm of margin; +/-35.0 covers the population while real
+ * faults stay unambiguous far outside (open load-cap joint ~+/-650..1200
+ * ppm, added capacitance/contamination pulls low, dead crystal reads
+ * "not measurable"). Allow ~24 h settle after any crystal-adjacent rework
+ * before trusting a reading (post-solder retrace measured at tens of ppm
+ * on day one). */
+#define TEST_THRESHOLD_LSE_ERROR_HSE_FIXED_PPM_X10 350
+
+/* Deployed-fleet limit (DEV-866): boards BELOW the HSE-cap-fix SR revisions
+ * (see hseCapFixRevs in hal_FactoryTest.c) run in the thousands with the
+ * stock 6.8 pF HSE caps, whose under-loaded reference (+40..+55 ppm fast)
+ * dominates the reading: healthy stock boards measure ~ -18..-68 ppm
+ * (5AA4 -17.7, 2678 -49.8, 4C80 -68.2) while their LSEs are fine - failing
+ * them all against the tight limit tells nobody anything. The looser limit
+ * passes that population (plus cold-temperature headroom) while still
+ * catching real faults, which sit far outside it (open cap joint
+ * ~+/-650..1200 ppm, dead crystal = "not measurable"). */
+#define TEST_THRESHOLD_LSE_ERROR_DEPLOYED_PPM_X10  1000
+
 #define TEST_BT_MODULE_FW                          "v01.04.16.16"
 
 #define GSR_TEST_TOLERANCE_7_PERCENT               0.07
@@ -84,6 +117,10 @@ enum
   S3R_TEST_0024 = (1 << (24 - 1)), //I2C4 - CAT24C16 or GSR rig (S3R GSR+ unit)
   S3R_TEST_0025 = (1 << (25 - 1)), //GSR signal test
   S3R_TEST_0026 = (1 << (26 - 1)), //Microphone
+  /* 27 is skipped: the LED test heading in shipped reports already reads
+   * "LED test (S3R_TEST_0027)" (visual check, no pass/fail bit) - renumbering
+   * it would break comparison against old reports. */
+  S3R_TEST_0028 = (1 << (28 - 1)), //MCU LSE crystal (32.768 kHz) frequency error
 };
 
 typedef struct
@@ -92,7 +129,20 @@ typedef struct
   uint8_t selfTestResult;
 } micTestResult_t;
 
+/* Result codes for measureLseErrorPpmX10() (DEV-866). */
+typedef enum
+{
+  LSE_MEAS_OK = 0,
+  LSE_MEAS_ERR_LSE_NOT_READY, /* LSE oscillator not running */
+  LSE_MEAS_ERR_HSE_NOT_READY, /* 16 MHz HSE reference not running */
+  LSE_MEAS_ERR_TIMEOUT,       /* capture stream never delivered */
+  LSE_MEAS_ERR_GAP,           /* capture gap too long to reconstruct */
+  LSE_MEAS_ERR_RANGE,         /* implausible result (beyond +/-10,000 ppm) */
+  LSE_MEAS_ERR_PARAM,         /* NULL output pointer */
+} lse_meas_result_t;
+
 void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr);
+lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10);
 void print_date_and_time(void);
 void print_shimmer_model(void);
 void print_mcu_details(void);
