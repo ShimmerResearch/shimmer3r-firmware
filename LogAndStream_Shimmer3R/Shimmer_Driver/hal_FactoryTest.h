@@ -45,41 +45,37 @@ given above */
 
 #define TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID -1.0
 
-/* LSE (32.768 kHz) crystal error acceptance in tenths of a ppm (DEV-866):
- * +/-25.0 ppm is what a correctly-loaded CM315D32768HZFT (+/-5 ppm,
- * C_L = 12.5 pF) should achieve against a correctly-loaded HSE reference -
- * crystal tolerance + load-cap/stray spread + the HSE tolerance (which
- * floors this limit; the crystal's own +/-5 ppm is not verifiable
- * on-device). This is a SPEC limit, not a current-population limit, and
- * the measurement is DIFFERENTIAL (ppm_LSE - ppm_HSE): on current boards
- * BOTH crystals are under-loaded (per-pin caps sized ~ C_L instead of
- * ~2 x C_L, so each crystal sees roughly half its specified load). The
- * CM315D with 12 pF caps runs ~+40..+65 ppm fast (DEV-844,
- * rework-validated +49.4 -> -8.4 ppm with 22 pF) and the NX2016SA 16 MHz
- * HSE (variant EXS00A-CS07826, aka "CS07826-16M": C_L = 8 pF, +/-20 ppm
- * at 25 degC) with 6.8 pF caps sees only ~4.9 pF and runs ~+60..+110 ppm
- * fast, so current boards read ~-20..-70 ppm (first hardware:
- * -49.8 / -68.2) and are EXPECTED TO FAIL until BOTH cap sets are
- * corrected (LSE: 22 pF; HSE: ~13 pF = 2 x (8 pF - stray); all 2 %,
- * C0G/NP0). Note the AT-cut HSE pulls ~23 ppm/pF near C_L = 8 pF and its
- * tolerance is +/-20 ppm, so even corrected boards carry a
- * ~+/-25..30 ppm reference uncertainty - revisit this limit against a
- * sample of corrected boards after the respin. Fault
- * signatures sit far outside either way: an open load-cap joint reads
- * ~+/-650..1200 ppm, added capacitance/contamination pulls low, a dead
- * crystal reads "not measurable". */
-#define TEST_THRESHOLD_LSE_ERROR_PPM_X10           250
+/* LSE (32.768 kHz) crystal error acceptance in tenths of a ppm (DEV-866).
+ * The measurement is DIFFERENTIAL (ppm_LSE - ppm_HSE), so the limit budgets
+ * BOTH crystals. Hardware-measured population (2026-08-11, overnight
+ * RTC-vs-host drift runs paired with this test on three boards):
+ *   - LSE with the production 12 pF caps: -7 +/- 2 ppm (near-spec; the
+ *     STM32 pin strays complete the CM315D's load - unlike the Verisense
+ *     nRF52840 fleet, whose identical BOM ran +40..+65 fast; DEV-844).
+ *     22 pF was tried and OVER-loads it: -54 / -113 ppm with a ~60 ppm
+ *     unit-to-unit spread - the LSE caps stay 12 pF on all revisions.
+ *   - HSE (NX2016SA variant EXS00A-CS07826, C_L = 8 pF, +/-20 ppm at
+ *     25 degC) with the ".2"-respin 15 pF caps: +14 +/- 1 ppm measured.
+ * Healthy HSE-fixed boards therefore centre at ~ -21 ppm (57F4 -21.8,
+ * F9BC -21.2). Budget: centre -21, HSE crystal tolerance +/-20, LSE
+ * spread/tolerance ~+/-7, temperature a few - so +/-25.0 left healthy
+ * boards only ~3 ppm of margin; +/-35.0 covers the population while real
+ * faults stay unambiguous far outside (open load-cap joint ~+/-650..1200
+ * ppm, added capacitance/contamination pulls low, dead crystal reads
+ * "not measurable"). Allow ~24 h settle after any crystal-adjacent rework
+ * before trusting a reading (post-solder retrace measured at tens of ppm
+ * on day one). */
+#define TEST_THRESHOLD_LSE_ERROR_HSE_FIXED_PPM_X10 350
 
-/* Deployed-fleet limit (DEV-866): boards BELOW the crystal-cap-fix SR
- * revisions (see lseCapFixRevs in hal_FactoryTest.c) run in the thousands
- * with the known under-loading above - failing them all against the spec
- * limit tells nobody anything. Their looser limit is sized to pass the
- * known loading offset (measured stock: -49.8 / -68.2 ppm) while still
+/* Deployed-fleet limit (DEV-866): boards BELOW the HSE-cap-fix SR revisions
+ * (see hseCapFixRevs in hal_FactoryTest.c) run in the thousands with the
+ * stock 6.8 pF HSE caps, whose under-loaded reference (+40..+55 ppm fast)
+ * dominates the reading: healthy stock boards measure ~ -18..-68 ppm
+ * (5AA4 -17.7, 2678 -49.8, 4C80 -68.2) while their LSEs are fine - failing
+ * them all against the tight limit tells nobody anything. The looser limit
+ * passes that population (plus cold-temperature headroom) while still
  * catching real faults, which sit far outside it (open cap joint
- * ~+/-650..1200 ppm, dead crystal = "not measurable"). PROVISIONAL: both
- * this value and the spec limit's centering should be revisited once the
- * RTC-vs-PC 24 h drift result resolves whether the persistent ~-58 ppm on
- * corrected boards is real LSE error or measurement bias. */
+ * ~+/-650..1200 ppm, dead crystal = "not measurable"). */
 #define TEST_THRESHOLD_LSE_ERROR_DEPLOYED_PPM_X10  1000
 
 #define TEST_BT_MODULE_FW                          "v01.04.16.16"

@@ -425,13 +425,18 @@ void print_shimmer_model(void)
   }
 }
 
-/* DEV-866: SR revisions from which the corrected crystal load caps (22 pF
- * LSE / 15 pF HSE) are fitted in production - the ".2" respin that also adds
+/* DEV-866: SR revisions from which the corrected HSE (16 MHz) load caps
+ * (6.8 -> 15 pF) are fitted in production - the ".2" respin that also adds
  * the BMP581 (see Shimmer_PCBREV_INDEX.xlsx; the ".3" adds the IM68D121
- * microphone on top). Base board IDs are unchanged - only the revision
- * signifies the change. Compared as (major, minor) >= threshold within the
- * same board ID. Deliberately NOT listed: SR48-7-2, the BMP581 development
- * build on the older rev-7 PCB - it predates the production cap change.
+ * microphone on top). The 32k LSE caps stay at 12 pF on ALL revisions:
+ * hardware measurement (2026-08-11, three boards, overnight RTC-vs-host
+ * runs) showed the S3R LSE is near-spec at 12 pF (-7 +/- 2 ppm; the STM32's
+ * pin strays complete the load, unlike the nRF52840 on Verisense) and that
+ * 22 pF OVER-loads it (-54 / -113 ppm on two reworked units). Base board
+ * IDs are unchanged - only the revision signifies the change. Compared as
+ * (major, minor) >= threshold within the same board ID. Deliberately NOT
+ * listed: SR48-7-2, the BMP581 development build on the older rev-7 PCB -
+ * it predates the production cap change.
  * TODO(DEV-866): once log-and-stream-common PR #111 merges, replace this
  * local compare with ShimBrd_isBoardSrNumberGte(). */
 typedef struct
@@ -439,9 +444,9 @@ typedef struct
   uint8_t id;
   uint8_t major;
   uint8_t minor;
-} lse_cap_fix_rev_t;
+} hse_cap_fix_rev_t;
 
-static const lse_cap_fix_rev_t lseCapFixRevs[] = {
+static const hse_cap_fix_rev_t hseCapFixRevs[] = {
   { 31, 11, 2 },
   { 38, 4, 2 },
   { 47, 8, 2 },
@@ -449,27 +454,27 @@ static const lse_cap_fix_rev_t lseCapFixRevs[] = {
   { 49, 4, 2 },
 };
 
-/* True when this board's SR revision says the production crystal-cap fix is
+/* True when this board's SR revision says the production HSE cap fix is
  * fitted. Falls back to 0 (deployed/pre-fix limits) when the daughter card ID
  * is unset or the board ID is not in the table - the looser limit still
  * catches real faults, and an unset ID already fails S3R_TEST_0003, so the
  * report cannot pass silently. NOTE: hand-reworked bench units carry
  * corrected caps under a pre-fix revision and will report against the
  * deployed limit - expected, they are not production boards. */
-static uint8_t lseCapFixFitted(void)
+static uint8_t hseCapFixFitted(void)
 {
   if (!ShimBrd_isDaughterCardIdSet())
   {
     return 0;
   }
   shimmer_expansion_brd *d = ShimBrd_getDaughtCardId();
-  for (uint32_t i = 0; i < sizeof(lseCapFixRevs) / sizeof(lseCapFixRevs[0]); i++)
+  for (uint32_t i = 0; i < sizeof(hseCapFixRevs) / sizeof(hseCapFixRevs[0]); i++)
   {
-    if (d->exp_brd_id == lseCapFixRevs[i].id)
+    if (d->exp_brd_id == hseCapFixRevs[i].id)
     {
-      return (d->exp_brd_major > lseCapFixRevs[i].major)
-          || (d->exp_brd_major == lseCapFixRevs[i].major
-              && d->exp_brd_minor >= lseCapFixRevs[i].minor);
+      return (d->exp_brd_major > hseCapFixRevs[i].major)
+          || (d->exp_brd_major == hseCapFixRevs[i].major
+              && d->exp_brd_minor >= hseCapFixRevs[i].minor);
     }
   }
   return 0;
@@ -561,17 +566,26 @@ void print_mcu_details(void)
   }
 
   /* DEV-866: LSE (32.768 kHz) crystal error vs the 16 MHz HSE crystal. The
-   * result is DIFFERENTIAL (ppm_LSE - ppm_HSE) and on pre-fix boards BOTH
-   * crystals are under-loaded: the CM315D (C_L 12.5 pF) with 12 pF caps runs
-   * ~+40..+65 ppm fast (DEV-844), and the NX2016SA HSE (CS07826: C_L = 8 pF)
-   * with 6.8 pF caps runs ~+60..+110 ppm fast, so the line reads ~-20..-70 ppm
-   * (first hardware: -49.8 / -68.2). The pass limit is therefore picked by SR
-   * revision: boards carrying the production cap fix are held to the spec
-   * limit, the deployed fleet to a looser limit that still catches real
-   * faults (open-cap joints read ~+/-650..1200 ppm). */
-  uint8_t capsFixed = lseCapFixFitted();
-  int32_t lseLimitPpmX10 = capsFixed ? TEST_THRESHOLD_LSE_ERROR_PPM_X10 :
-                                       TEST_THRESHOLD_LSE_ERROR_DEPLOYED_PPM_X10;
+   * result is DIFFERENTIAL (ppm_LSE - ppm_HSE). Measured story (2026-08-11,
+   * RTC-vs-host overnight runs + this test, three boards):
+   *   - LSE with the production 12 pF caps is near-spec, -7 +/- 2 ppm (the
+   *     STM32's pin strays complete the load - the Verisense +40..+65 ppm
+   *     analogy does NOT carry over to the S3R).
+   *   - Stock 6.8 pF HSE caps under-load the CS07826 (C_L = 8 pF): HSE runs
+   *     ~+40..+55 fast, so PRE-FIX boards read ~ -18..-68 here - that spread
+   *     is the reference's, not the LSE's.
+   *   - With the ".2"-respin 15 pF HSE caps the reference centres (+14 +/- 1
+   *     measured), and healthy boards read ~ -21 +/- a few.
+   * The pass limit is picked by SR revision: HSE-fixed boards get the tight
+   * limit (sized so a healthy -21-centred population with HSE tolerance and
+   * temperature never trips it), the pre-fix fleet a looser fault-net. Real
+   * faults sit far outside either (open-cap joints ~+/-650..1200 ppm; dead
+   * crystal = not measurable). NOTE: allow ~24 h settle after any
+   * crystal-adjacent rework before trusting a reading (post-solder retrace
+   * measured at tens of ppm on day one). */
+  uint8_t hseFixed = hseCapFixFitted();
+  int32_t lseLimitPpmX10 = hseFixed ? TEST_THRESHOLD_LSE_ERROR_HSE_FIXED_PPM_X10 :
+                                      TEST_THRESHOLD_LSE_ERROR_DEPLOYED_PPM_X10;
   int32_t lseErrPpmX10 = 0;
   lse_meas_result_t lseMeasResult = measureLseErrorPpmX10(&lseErrPpmX10);
   if (lseMeasResult == LSE_MEAS_OK)
@@ -590,7 +604,7 @@ void print_mcu_details(void)
     sprintf(buffer, " - S3R_TEST_0028 - %s: 32k LSE vs 16M HSE error = %s%ld.%ld ppm (limit +/-%ld.%ld ppm, %s caps rev%s)\r\n",
         testPass ? "PASS" : "FAIL", (lseErrPpmX10 < 0) ? "-" : "+",
         (long) (absPpmX10 / 10), (long) (absPpmX10 % 10), (long) (lseLimitPpmX10 / 10),
-        (long) (lseLimitPpmX10 % 10), capsFixed ? "corrected" : "pre-fix", recNote);
+        (long) (lseLimitPpmX10 % 10), hseFixed ? "HSE-fixed" : "pre-fix", recNote);
   }
   else
   {
@@ -614,12 +628,13 @@ void print_mcu_details(void)
 
   /* Drive level the boot bring-up settled on (informational, no pass/fail):
    * the adaptive escalation deliberately COMPENSATES for wrong load caps, so
-   * only this line can surface them. Expectation: pre-fix (12 pF) boards lock
-   * at LOW and run MEDIUMLOW (+1 margin); corrected (22 pF) boards typically
-   * lock one level higher. A corrected-rev board running at MEDIUMHIGH from a
-   * cold boot, or any "NONE"/LSI-fallback state, warrants a bench look. A
-   * low reading on a warm reset is not meaningful (a still-ringing crystal
-   * only has to sustain, not cold-start). */
+   * only this line can surface them. Expectation: all production boards
+   * (12 pF LSE on every revision) lock at LOW and run MEDIUMLOW (+1 margin) -
+   * hardware-confirmed on stock and HSE-fixed units. MEDIUMHIGH from a cold
+   * boot suggests a marginal / over-loaded / contaminated 32k fit, and any
+   * "NONE"/LSI-fallback state warrants a bench look. A low reading on a warm
+   * reset is not meaningful (a still-ringing crystal only has to sustain,
+   * not cold-start). */
   sprintf(buffer, " - LSE drive applied at boot: %s\r\n", Boot_getLseDriveName());
   ShimFactoryTest_sendReport(buffer);
 
