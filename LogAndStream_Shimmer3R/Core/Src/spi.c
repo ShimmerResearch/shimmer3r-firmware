@@ -36,6 +36,17 @@ SPI_HandleTypeDef *hspiExg;
 #if defined(SHIMMER3R)
 spi1ReadBuf spi1Sens_buf;
 spi2ReadBuf spi2Sens_buf;
+
+/* DEV-818: sample-and-hold caches for the slow, DRDY-gated sensors on SPI.
+ * When a sample tick has no fresh conversion ready (the DRDY gate is not
+ * satisfied) the packet slot would otherwise keep its zero-initialised value
+ * and log a spurious 0. Instead we repeat the last valid reading. The caches
+ * are cleared at the start of each sensing session (SPI_startSensing), so the
+ * first samples - before any conversion exists - are 0, an accepted brief
+ * leading-edge artifact. */
+static uint8_t bmpLastPress[3] = { 0 };
+static uint8_t bmpLastTemp[3] = { 0 };
+static uint8_t lis3mdlLastMag[6] = { 0 };
 spi3ReadBuf spi3Sens_buf;
 
 SPITypeDef spi1Sens;
@@ -871,6 +882,12 @@ void SPI_startSensing()
   float shimmerSamplingFreq = ShimConfig_getShimmerSamplingFreq();
 
   memset((uint8_t *) &spi1Sens_buf, 0, sizeof(spi1ReadBuf));
+
+  /* DEV-818: start each session with cleared sample-and-hold caches so the
+   * leading edge (before the first valid conversion) is 0, then held. */
+  memset(bmpLastPress, 0, sizeof(bmpLastPress));
+  memset(bmpLastTemp, 0, sizeof(bmpLastTemp));
+  memset(lis3mdlLastMag, 0, sizeof(lis3mdlLastMag));
   memset((uint8_t *) &spi2Sens_buf, 0, sizeof(spi2ReadBuf));
   memset((uint8_t *) &spi3Sens_buf, 0, sizeof(spi3ReadBuf));
 
@@ -1225,6 +1242,16 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       halRet = PressureSensor_getDataDma(spi1Sens_buf.bmp390Buf);
       retVal = 1;
     }
+    else
+    {
+      /* DEV-818: no fresh conversion this tick - sample-and-hold the last valid
+       * pressure/temperature instead of leaving the zeroed packet slot (which
+       * would log a spurious 0 kPa / 0 degC, most visibly during the sensor's
+       * ~1s warm-up when its data-ready cadence is below the sampling rate). */
+      uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
+      memcpy(dataBufPtr + sensing.ptr.pressure, bmpLastPress, sizeof(bmpLastPress));
+      memcpy(dataBufPtr + sensing.ptr.temperature, bmpLastTemp, sizeof(bmpLastTemp));
+    }
     break;
   case SPI1_ADS7028_INT_EXP0:
     spiSensingInfo->status = SPI_STAT_ADS7028_INT_EXP0_GET;
@@ -1285,6 +1312,13 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       spiSensingInfo->status = SPI_STAT_LIS3MDL_MAG_GET;
       halRet = lis3mdl_mag_get(spi2Sens_buf.lis3mdlMagBuf);
       retVal = 1;
+    }
+    else
+    {
+      /* DEV-818: no fresh conversion this tick - sample-and-hold the last valid
+       * magnetometer reading instead of leaving the zeroed packet slot. */
+      uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
+      memcpy(dataBufPtr + sensing.ptr.mag2, lis3mdlLastMag, sizeof(lis3mdlLastMag));
     }
     break;
 
@@ -1363,6 +1397,10 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
           &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
           sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
     }
+    /* DEV-818: refresh the sample-and-hold cache from the freshly-read slot so
+     * a subsequent no-DRDY tick repeats this value instead of logging 0. */
+    memcpy(bmpLastPress, dataBufPtr + sensing.ptr.pressure, sizeof(bmpLastPress));
+    memcpy(bmpLastTemp, dataBufPtr + sensing.ptr.temperature, sizeof(bmpLastTemp));
     break;
   case SPI1_ADS7028_INT_EXP0:
   case SPI1_ADS7028_INT_EXP1:
@@ -1467,6 +1505,8 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     lis3mdl_unselectDevice();
     memcpy(dataBufPtr + sensing.ptr.mag2, &spi2Sens_buf.lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis3mdlMagBuf) - SPI_DMA_TXRX_OFFSET);
+    /* DEV-818: refresh the sample-and-hold cache from the freshly-read slot. */
+    memcpy(lis3mdlLastMag, dataBufPtr + sensing.ptr.mag2, sizeof(lis3mdlLastMag));
     break;
   default:
     break;

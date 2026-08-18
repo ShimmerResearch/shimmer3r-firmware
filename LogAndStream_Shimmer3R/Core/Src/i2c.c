@@ -561,12 +561,20 @@ void I2cBatt_configureChannels(void)
 }
 #endif
 
+/* DEV-818: sample-and-hold cache for the DRDY-gated magnetometer, matching the
+ * SPI slow-sensor caches in spi.c. On a tick with no fresh conversion the last
+ * valid reading is repeated instead of logging a zeroed packet slot. */
+static uint8_t lis2mdlLastMag[6] = { 0 };
+
 void I2C_startSensing(void)
 {
   gConfigBytes *configBytes = ShimConfig_getStoredConfig();
   float shimmerSamplingFreq = ShimConfig_getShimmerSamplingFreq();
 
   memset((uint8_t *) &i2cSens_buf, 0, sizeof(i2cReadBufTypeDef));
+
+  /* DEV-818: clear the sample-and-hold cache at the start of each session. */
+  memset(lis2mdlLastMag, 0, sizeof(lis2mdlLastMag));
 
   //if ((0 != i2cSens.sensorLen)
   //    && (HAL_GPIO_ReadPin(SW_I2C1_GPIO_Port, SW_I2C1_Pin) == GPIO_PIN_RESET))
@@ -831,6 +839,13 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
       halRet = lis2mdl_mag_get(i2cSens_buf.lis2mdlMagBuf);
       retVal = 1;
     }
+    else
+    {
+      /* DEV-818: no fresh conversion this tick - sample-and-hold the last valid
+       * magnetometer reading instead of leaving the zeroed packet slot. */
+      uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
+      memcpy(dataBufPtr + sensing.ptr.mag1, lis2mdlLastMag, sizeof(lis2mdlLastMag));
+    }
     break;
 #elif defined(SHIMMER4_SDK)
   case I2C_LSM303DLHC_ACCEL:
@@ -885,6 +900,8 @@ void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
   case I2C_LIS2MDL_MAG:
     memcpy(dataBufPtr + sensing.ptr.mag1, &i2cSens_buf.lis2mdlMagBuf[0],
         sizeof(i2cSens_buf.lis2mdlMagBuf));
+    /* DEV-818: refresh the sample-and-hold cache from the freshly-read slot. */
+    memcpy(lis2mdlLastMag, dataBufPtr + sensing.ptr.mag1, sizeof(lis2mdlLastMag));
     break;
   default:
     break;
