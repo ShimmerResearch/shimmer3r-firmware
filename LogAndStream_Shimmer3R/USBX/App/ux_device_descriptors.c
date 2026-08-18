@@ -21,6 +21,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "ux_device_descriptors.h"
 
+/* USER CODE BEGIN Includes */
+#include "EEPROM/shimmer_eeprom.h"
+/* USER CODE END Includes */
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -222,8 +226,12 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_IDX_MFC_STR;
 
   /* Set the Manufacturer string in string_framework */
+  /* USER CODE BEGIN Manufacturer_String */
+  /* A customer-branded EEPROM record overrides the stock manufacturer string */
   USBD_Desc_GetString(
-      (uint8_t *) USBD_MANUFACTURER_STRING, USBD_string_framework + count, &len);
+      (uint8_t *) (ShimEeprom_isBrandCustomer() ? ShimEeprom_getBrandUsb() : USBD_MANUFACTURER_STRING),
+      USBD_string_framework + count, &len);
+  /* USER CODE END Manufacturer_String */
 
   /* Set the Product language Id and index in USBD_string_framework */
   count += len + 1;
