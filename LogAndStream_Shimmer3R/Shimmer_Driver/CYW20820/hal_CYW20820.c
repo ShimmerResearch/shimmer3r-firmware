@@ -341,7 +341,7 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
   ShimBt_TxCpltCallback();
 }
 
-HAL_StatusTypeDefShimmer BtTransmit(uint8_t *buf, uint16_t len)
+HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
 {
   HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
   return (HAL_StatusTypeDefShimmer) ret_val;
