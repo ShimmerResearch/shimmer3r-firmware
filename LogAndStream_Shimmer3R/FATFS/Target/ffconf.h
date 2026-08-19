@@ -241,9 +241,9 @@
 /  The value 4 is chosen to cover the maximum number of concurrently open
 /  objects during SD file-transfer over BLE:
 /    1 - data log file open for normal logging
-/    1 - file open for BLE transfer (read)
-/    1 - directory object open for directory listing/walk
-/    1 - margin for any incidental open (e.g. config file reads) */
+/    2 - file open for BLE transfer (read)
+/    3 - directory object open for directory listing/walk
+/    4 - margin for any incidental open (e.g. config file reads) */
 
 #define _FS_REENTRANT    0  /* 0:Disable or 1:Enable */
 #define _FS_TIMEOUT      1000 /* Timeout period in unit of time ticks */
