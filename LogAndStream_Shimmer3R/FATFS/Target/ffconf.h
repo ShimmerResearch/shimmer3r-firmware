@@ -236,7 +236,14 @@
 /      should avoid illegal open, remove and rename to the open objects.
 /  >0: Enable file lock function. The value defines how many files/sub-directories
 /      can be opened simultaneously under file lock control. Note that the file
-/      lock control is independent of re-entrancy. */
+/      lock control is independent of re-entrancy.
+/
+/  The value 4 is chosen to cover the maximum number of concurrently open
+/  objects during SD file-transfer over BLE:
+/    1 - data log file open for normal logging
+/    1 - file open for BLE transfer (read)
+/    1 - directory object open for directory listing/walk
+/    1 - margin for any incidental open (e.g. config file reads) */
 
 #define _FS_REENTRANT    0  /* 0:Disable or 1:Enable */
 #define _FS_TIMEOUT      1000 /* Timeout period in unit of time ticks */
