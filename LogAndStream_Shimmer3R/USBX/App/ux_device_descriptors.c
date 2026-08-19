@@ -21,13 +21,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "ux_device_descriptors.h"
 
-/* USER CODE BEGIN Includes */
-#include "EEPROM/shimmer_eeprom.h"
-/* USER CODE END Includes */
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "EEPROM/shimmer_eeprom.h"
 #include "log_and_stream_common.h"
 #include <string.h>
 
