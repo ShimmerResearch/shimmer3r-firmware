@@ -36,11 +36,15 @@
 //#define CONNECTION_TIMEOUT_MS          10000 //10 seconds timeout
 #define CONNECTION_TIMEOUT_S           10 //10 seconds timeout
 
-uint8_t advNameMacIdStartIdx = 11;
-static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
-  '-', 'X', 'X', 'X', 'X', '-', 'B', 'T' };
-static char advNameBle[] = { 18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
-  '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E' };
+/* Advertising names are composed at BT init from the EEPROM brand record
+ * (stock default prefix "Shimmer3R") + "-XXXX" MAC ID suffix + interface
+ * suffix, e.g. "Shimmer3R-1234-BT" / "Shimmer3R-1234-BLE". Buffers hold the
+ * EZ-Serial uint8a_t format (leading length byte, no NUL) but are also kept
+ * NUL-terminated so that &buf[1] can be used as a strstr() needle. */
+#define ADV_NAME_SUFFIX_BT             "-BT"
+#define ADV_NAME_SUFFIX_BLE            "-BLE"
+static char advNameBt[1 + EEPROM_BRAND_BT_CLASSIC_MAX_CHARS + 5 + sizeof(ADV_NAME_SUFFIX_BT)];
+static char advNameBle[1 + EEPROM_BRAND_BLE_MAX_CHARS + 5 + sizeof(ADV_NAME_SUFFIX_BLE)];
 //Legacy pin code for RN42, RN4678 compatibility
 static char pin_code[] = { 4, '1', '2', '3', '4' };
 
@@ -163,6 +167,12 @@ static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
 
 void (*btIsInitialised_cb)(void);
 
+/* Composes a length-prefixed advertising name "<prefix>-XXXX<suffix>" into
+ * buf using the MAC ID bytes from rsp_system_get_bluetooth_address. The
+ * prefix comes from the EEPROM brand record. */
+static void
+buildAdvName(char *buf, const char *prefix, uint8_t prefixMaxChars, const char *suffix);
+
 static char hexdigit2int(uint8_t xd)
 {
   if (xd <= 9)
@@ -194,6 +204,28 @@ static char hexdigit2int(uint8_t xd)
     return 'F';
   }
   return '0';
+}
+
+static void buildAdvName(char *buf, const char *prefix, uint8_t prefixMaxChars, const char *suffix)
+{
+  uint8_t len = 1; /* index 0 holds the length prefix */
+  uint8_t i;
+
+  for (i = 0; i < prefixMaxChars && prefix[i] != '\0'; i++)
+  {
+    buf[len++] = prefix[i];
+  }
+  buf[len++] = '-';
+  buf[len++] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
+  buf[len++] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
+  buf[len++] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
+  buf[len++] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
+  for (i = 0; suffix[i] != '\0'; i++)
+  {
+    buf[len++] = suffix[i];
+  }
+  buf[0] = (char) (len - 1); /* uint8a_t length byte (excludes itself) */
+  buf[len] = '\0';           /* NUL so &buf[1] works as a strstr() needle */
 }
 
 static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator)
@@ -492,23 +524,10 @@ void btInitCommands(void)
   {
     printf("Update local advertising name\r\n");
     incrementBtInitCmdsStep();
-    advNameBt[advNameMacIdStartIdx]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
-    advNameBt[advNameMacIdStartIdx + 1]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
-    advNameBt[advNameMacIdStartIdx + 2]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
-    advNameBt[advNameMacIdStartIdx + 3]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
-
-    advNameBle[advNameMacIdStartIdx]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
-    advNameBle[advNameMacIdStartIdx + 1]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
-    advNameBle[advNameMacIdStartIdx + 2]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
-    advNameBle[advNameMacIdStartIdx + 3]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
+    buildAdvName(advNameBt, ShimEeprom_getBrandBtClassic(),
+        EEPROM_BRAND_BT_CLASSIC_MAX_CHARS, ADV_NAME_SUFFIX_BT);
+    buildAdvName(advNameBle, ShimEeprom_getBrandBle(),
+        EEPROM_BRAND_BLE_MAX_CHARS, ADV_NAME_SUFFIX_BLE);
   }
 
   if (btInitCmdsStep == GET_DEVICE_NAME_BT)
