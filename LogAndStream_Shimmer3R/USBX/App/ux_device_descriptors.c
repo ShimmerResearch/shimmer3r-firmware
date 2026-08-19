@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "EEPROM/shimmer_eeprom.h"
 #include "log_and_stream_common.h"
 #include <string.h>
 
@@ -74,6 +75,8 @@ static uint8_t *pDevFrameWorkDesc_HS = DevFrameWorkDesc_HS;
 /* USER CODE BEGIN PV0 */
 
 static char runtime_product_string[32];
+/* Bounded copy of the EEPROM brand manufacturer string (16 chars + NUL) */
+static char runtime_manufacturer_string[EEPROM_BRAND_USB_MAX_CHARS + 1];
 
 /* USER CODE END PV0 */
 
@@ -222,8 +225,22 @@ uint8_t *USBD_Get_String_Framework(ULONG *Length)
   USBD_string_framework[count++] = USBD_IDX_MFC_STR;
 
   /* Set the Manufacturer string in string_framework */
-  USBD_Desc_GetString(
-      (uint8_t *) USBD_MANUFACTURER_STRING, USBD_string_framework + count, &len);
+  /* USER CODE BEGIN Manufacturer_String */
+  /* A customer-branded EEPROM record overrides the stock manufacturer string.
+   * ShimEeprom_getBrandUsb() already returns a validated, NUL-terminated
+   * string of at most EEPROM_BRAND_USB_MAX_CHARS, but copy through a bounded
+   * local anyway so USBD_Desc_GetString()'s unbounded NUL-walk can never run
+   * past a malformed source, whatever that accessor may do in future. */
+  const char *manufacturerStr = USBD_MANUFACTURER_STRING;
+  if (ShimEeprom_isBrandCustomer())
+  {
+    strncpy(runtime_manufacturer_string, ShimEeprom_getBrandUsb(),
+        sizeof(runtime_manufacturer_string) - 1U);
+    runtime_manufacturer_string[sizeof(runtime_manufacturer_string) - 1U] = '\0';
+    manufacturerStr = runtime_manufacturer_string;
+  }
+  USBD_Desc_GetString((uint8_t *) manufacturerStr, USBD_string_framework + count, &len);
+  /* USER CODE END Manufacturer_String */
 
   /* Set the Product language Id and index in USBD_string_framework */
   count += len + 1;
