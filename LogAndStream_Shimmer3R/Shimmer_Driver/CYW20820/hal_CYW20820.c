@@ -347,6 +347,17 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
   return (HAL_StatusTypeDefShimmer) ret_val;
 }
 
+/* Overrides the weak no-op in shimmer_bt_uart.c. Cancels the DMA transfer
+ * started by BtTransmit() so the TX-complete callback cannot fire afterwards
+ * and advance the ring read index over a buffer that has just been reset. */
+void BtTransmitAbort(void)
+{
+  if (huartBtPtr != NULL)
+  {
+    HAL_UART_AbortTransmit(huartBtPtr);
+  }
+}
+
 void resetEzsPendingResponse(void)
 {
   pending_response = 0;
