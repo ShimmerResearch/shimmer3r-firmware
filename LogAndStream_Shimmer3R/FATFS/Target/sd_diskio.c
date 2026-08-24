@@ -68,7 +68,11 @@
 * transfer data
 */
 /* USER CODE BEGIN enableScratchBuffer */
-/* #define ENABLE_SCRATCH_BUFFER */
+/* The SDMMC IDMA ignores the two least-significant bits of its base address,
+ * so a transfer to/from a non-word-aligned buffer silently lands 1-3 bytes
+ * low. FatFs passes caller buffers straight through here on its whole-sector
+ * fast path, so misaligned callers MUST take the memcpy slow path below. */
+#define ENABLE_SCRATCH_BUFFER
 /* USER CODE END enableScratchBuffer */
 
 /* Private variables ---------------------------------------------------------*/
