@@ -279,6 +279,25 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 #endif
           memcpy(buff, scratch, BLOCKSIZE);
           buff += BLOCKSIZE;
+
+          /* Match the aligned branch: wait for the card to leave the data
+           * state before issuing the next single-block command. The HAL-state
+           * guard inside HAL_SD_SharedRead is not enough - the HAL returns to
+           * READY on transfer complete while the card itself can still be
+           * busy. */
+          timeout = HAL_GetTick();
+          while (BSP_SD_GetCardState() != SD_TRANSFER_OK)
+          {
+            if ((HAL_GetTick() - timeout) >= SD_TIMEOUT)
+            {
+              ret = MSD_ERROR;
+              break;
+            }
+          }
+          if (ret != MSD_OK)
+          {
+            break;
+          }
         }
         else
         {
@@ -397,6 +416,23 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
             break;
           }
 
+          /* Match the aligned branch: WriteStatus only marks the DMA/transfer
+           * complete - the card can still be programming the block. Wait for
+           * it to return to the transfer state before issuing the next
+           * single-block write. */
+          timeout = HAL_GetTick();
+          while (BSP_SD_GetCardState() != SD_TRANSFER_OK)
+          {
+            if ((HAL_GetTick() - timeout) >= SD_TIMEOUT)
+            {
+              ret = MSD_ERROR;
+              break;
+            }
+          }
+          if (ret != MSD_OK)
+          {
+            break;
+          }
         }
         else
         {
