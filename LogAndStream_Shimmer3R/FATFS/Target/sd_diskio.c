@@ -124,7 +124,7 @@ static int SD_CheckStatusWithTimeout(uint32_t timeout)
   /* block until SDIO IP is ready again or a timeout occur */
   while(HAL_GetTick() - timer < timeout)
   {
-    if (BSP_SD_GetCardState() == SD_TRANSFER_OK)
+    if (HAL_SD_SharedGetCardState(OWNER_FATFS) == SD_TRANSFER_OK)
     {
       return 0;
     }
@@ -137,7 +137,7 @@ static DSTATUS SD_CheckStatus(BYTE lun)
 {
   Stat = STA_NOINIT;
 
-  if(BSP_SD_GetCardState() == MSD_OK)
+  if(HAL_SD_SharedGetCardState(OWNER_FATFS) == MSD_OK)
   {
     Stat &= ~STA_NOINIT;
   }
@@ -232,7 +232,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 
         while((HAL_GetTick() - timeout) < SD_TIMEOUT)
         {
-          if (BSP_SD_GetCardState() == SD_TRANSFER_OK)
+          if (HAL_SD_SharedGetCardState(OWNER_FATFS) == SD_TRANSFER_OK)
           {
             res = RES_OK;
 #if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
@@ -286,7 +286,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
            * READY on transfer complete while the card itself can still be
            * busy. */
           timeout = HAL_GetTick();
-          while (BSP_SD_GetCardState() != SD_TRANSFER_OK)
+          while (HAL_SD_SharedGetCardState(OWNER_FATFS) != SD_TRANSFER_OK)
           {
             if ((HAL_GetTick() - timeout) >= SD_TIMEOUT)
             {
@@ -379,7 +379,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 
         while((HAL_GetTick() - timeout) < SD_TIMEOUT)
         {
-          if (BSP_SD_GetCardState() == SD_TRANSFER_OK)
+          if (HAL_SD_SharedGetCardState(OWNER_FATFS) == SD_TRANSFER_OK)
           {
             res = RES_OK;
             break;
@@ -421,7 +421,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
            * it to return to the transfer state before issuing the next
            * single-block write. */
           timeout = HAL_GetTick();
-          while (BSP_SD_GetCardState() != SD_TRANSFER_OK)
+          while (HAL_SD_SharedGetCardState(OWNER_FATFS) != SD_TRANSFER_OK)
           {
             if ((HAL_GetTick() - timeout) >= SD_TIMEOUT)
             {

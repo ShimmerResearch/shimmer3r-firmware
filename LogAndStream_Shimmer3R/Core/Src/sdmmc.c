@@ -21,6 +21,7 @@
 #include "sdmmc.h"
 
 /* USER CODE BEGIN 0 */
+#include "bsp_driver_sd.h"
 #include "gpio.h"
 #include "stdio.h"
 #include "ux_device_msc.h"
@@ -370,6 +371,31 @@ HAL_SD_SharedRead(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t b
   //6. Release for the next requester
   currentSdOwner = OWNER_IDLE;
   return HAL_OK;
+}
+
+/* CMD13 (the card-state query behind BSP_SD_GetCardState) is itself a command
+ * on the shared SD bus: issued while another owner's DMA command is in flight
+ * it can corrupt or hang that transfer. Readiness polls must therefore claim
+ * the same mutex the read/write wrappers use, one status command per call.
+ * Returns SD_TRANSFER_OK / SD_TRANSFER_BUSY; a mutex-wait timeout reports
+ * SD_TRANSFER_BUSY and leaves retry policy to the caller's own timeout loop. */
+uint8_t HAL_SD_SharedGetCardState(sdOwner_t requester)
+{
+  uint32_t startTick = HAL_GetTick();
+  uint32_t timeOut_ms = 1000;
+  uint8_t cardState;
+
+  while (currentSdOwner != OWNER_IDLE || hsd1.State == HAL_SD_STATE_BUSY)
+  {
+    if ((HAL_GetTick() - startTick) > timeOut_ms)
+    {
+      return SD_TRANSFER_BUSY;
+    }
+  }
+  currentSdOwner = requester;
+  cardState = BSP_SD_GetCardState();
+  currentSdOwner = OWNER_IDLE;
+  return cardState;
 }
 
 void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd1)
