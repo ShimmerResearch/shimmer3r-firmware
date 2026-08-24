@@ -27,6 +27,11 @@
 extern STATTypeDef stat;
 volatile sdOwner_t currentSdOwner = OWNER_IDLE;
 volatile uint8_t sdTransferDone = 0;
+/* Set by HAL_SD_ErrorCallback, which releases every wait loop by raising the
+ * SAME completion flags a success raises (deliberate anti-deadlock). Without
+ * this flag an SD/DMA error is indistinguishable from a completed transfer,
+ * so HAL_SD_SharedRead/Write would return HAL_OK over garbage data. */
+volatile uint8_t sdTransferError = 0;
 /* USER CODE END 0 */
 
 SD_HandleTypeDef hsd1;
@@ -276,6 +281,7 @@ HAL_SD_SharedWrite(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t 
   //We "Claim" the card for this requester
   currentSdOwner = requester;
   sdTransferDone = 0;
+  sdTransferError = 0;
   if (currentSdOwner == OWNER_FATFS)
   {
     WriteStatus = 0;
@@ -297,6 +303,13 @@ HAL_SD_SharedWrite(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t 
       currentSdOwner = OWNER_IDLE;
       return HAL_TIMEOUT;
     }
+  }
+  //5. Surface an errored transfer: the error callback sets sdTransferDone
+  //too, so the flag alone cannot be trusted as success
+  if (sdTransferError)
+  {
+    currentSdOwner = OWNER_IDLE;
+    return HAL_ERROR;
   }
   //6. Release for the next requester
   currentSdOwner = OWNER_IDLE;
@@ -323,6 +336,7 @@ HAL_SD_SharedRead(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t b
   //We "Claim" the card for this requester
   currentSdOwner = requester;
   sdTransferDone = 0;
+  sdTransferError = 0;
   if (currentSdOwner == OWNER_FATFS)
   {
     ReadStatus = 0;
@@ -345,6 +359,13 @@ HAL_SD_SharedRead(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t b
       currentSdOwner = OWNER_IDLE;
       return HAL_TIMEOUT;
     }
+  }
+  //5. Surface an errored transfer: the error callback sets sdTransferDone
+  //too, so the flag alone cannot be trusted as success
+  if (sdTransferError)
+  {
+    currentSdOwner = OWNER_IDLE;
+    return HAL_ERROR;
   }
   //6. Release for the next requester
   currentSdOwner = OWNER_IDLE;
@@ -383,13 +404,20 @@ void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd1)
 
 void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd)
 {
+  //Record the failure FIRST, then set the completion flags: waiters check
+  //sdTransferError only after their flag releases them
+  sdTransferError = 1;
   //Set ALL flags to 1 to ensure no thread stays stuck in a while loop
   SD_WRITE_FLAG = 1;
   SD_READ_FLAG = 1;
   WriteStatus = 1;
   ReadStatus = 1;
   sdTransferDone = 1;
-  currentSdOwner = OWNER_IDLE;
+  /* Deliberately NOT releasing currentSdOwner here: the requester releases it
+   * on every exit path of HAL_SD_SharedRead/Write. Releasing from the ISR let
+   * a concurrent claimant take the mutex while the failing requester was
+   * still finishing, after which the requester's own release would clobber
+   * the new owner's claim. */
 }
 
 /* USER CODE END 1 */
