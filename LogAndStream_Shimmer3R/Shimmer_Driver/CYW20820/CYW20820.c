@@ -228,8 +228,8 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
 #if USE_GET_SET_ADV_PARAM
   GET_ADVERTISING_PARAMETERS, SET_ADVERTISING_PARAMETERS,
 #endif
-  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS,
-  SET_SECURITY_PARAMETERS, GET_PIN_CODE, SET_PIN_CODE, START_BLE_ADVERTISING_STAGE1,
+  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS, SET_SECURITY_PARAMETERS,
+  GET_PIN_CODE, SET_PIN_CODE, SET_CYSPP_PACKETIZATION, START_BLE_ADVERTISING_STAGE1,
   START_BLE_ADVERTISING_STAGE2, START_BT_ADVERTISING, FINISH };
 
 static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
@@ -878,6 +878,30 @@ void btInitCommands(void)
     }
   }
 
+  if (btInitCmdsStep == SET_CYSPP_PACKETIZATION)
+  {
+    incrementBtInitCmdsStep();
+    printf("Set CYSPP packetization: immediate\r\n");
+    /* The factory default is Anticipate with a 20-byte target - sized for the
+     * minimum GATT MTU of 23 - so the module ships sensor data as 20-byte
+     * notifications even when the client has negotiated a large MTU (Android
+     * Chrome asks for 517, Windows ~527). At the 7.5 ms connection interval
+     * hosts negotiate, that caps BLE throughput at roughly 5-20 KB/s, which is
+     * exactly the ceiling measured on the bench.
+     *
+     * Immediate mode transmits whatever is buffered each time the stack can
+     * take a packet. During bulk transfer the 2 Mbaud host UART outruns the
+     * radio, so transmissions naturally grow to the negotiated MTU payload (up
+     * to the module's 128-byte UART RX buffer per packet). Small LiteProtocol
+     * responses go out at once rather than being held for an anticipation
+     * window, so command latency improves too. The remaining arguments are
+     * unused in this mode but must be valid: wait 1 ms, length 128, EOP 0x0D
+     * (the factory default). */
+    setExpectedResponse(EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION);
+    ezs_fcmd_p_cyspp_set_packetization(0, 1, 128, 0x0D);
+    return;
+  }
+
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
   {
     incrementBtInitCmdsStep();
@@ -1187,6 +1211,14 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: rsp_system_get_bluetooth_address: Address=");
     printHexMac(packet->payload.rsp_system_get_bluetooth_address.address);
+    printf("\r\n");
+#endif
+    break;
+
+  case EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: rsp_p_cyspp_set_packetization: result=");
+    printHex16(packet->payload.rsp_p_cyspp_set_packetization.result);
     printf("\r\n");
 #endif
     break;
