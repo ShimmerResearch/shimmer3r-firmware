@@ -47,7 +47,16 @@
 #include "stm32u5xx.h"
 
 #include "log_and_stream_externs.h"
+#include <CYW20820/CYW20820.h>
 #include <Comms/shimmer_bt_uart.h>
+
+/* Every "#if TRANSPARANT_MODE" below silently evaluates false if the define
+ * is not visible - which is exactly what happened historically (this file
+ * never included CYW20820.h). Fail the build instead of half-selecting the
+ * data path. */
+#ifndef TRANSPARANT_MODE
+#error "TRANSPARANT_MODE must be visible in hal_CYW20820.c - include CYW20820.h"
+#endif
 
 #define CONSOLE_PRINT_NON_EZ_SERIAL_BYTES 0
 
@@ -397,6 +406,15 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
   ShimBt_TxCpltCallback();
+
+#if TRANSPARANT_MODE
+  /* Transparent mode has no SPP_SEND response to drive the transfer chain
+   * (that is the non-transparent design), so the DMA completion is the
+   * moment to hand the UART the next chunk - the pre-split mainline
+   * behaviour. The common repo cannot see TRANSPARANT_MODE, which is why
+   * this lives here and not in ShimBt_TxCpltCallback(). */
+  ShimBt_triggerNextTransfer();
+#endif
 }
 
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)

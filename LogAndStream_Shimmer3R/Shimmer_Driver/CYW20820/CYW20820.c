@@ -1463,6 +1463,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
 #if TRANSPARANT_MODE
     shimmerStatus.btFirstConnectionEstablished = 1;
+    /* The connected event still arrives in-band - the data bridge engages
+     * after it - so use it for connect detection rather than relying on the
+     * BT_CONNECTION pin, which v1.4.17.17 did not toggle (see the TODO in
+     * gpio.c). Disconnect detection has to come from the pins: once bridged,
+     * the in-band disconnected event is consumed by the data-mode RX demux. */
+    setBtConnectionState(true);
 #else
     BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
     setBtConnectionState(true);

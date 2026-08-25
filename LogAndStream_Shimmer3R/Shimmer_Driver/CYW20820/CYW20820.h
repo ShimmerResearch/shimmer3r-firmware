@@ -26,7 +26,12 @@
 #define FLOW_CONTROL                   1
 
 //TODO this doesn't seem to work on v1.4.16.16 firmware, need to investigate further
-#define TRANSPARANT_MODE               0
+/* BENCH A/B (DEV-573, 2026-08-25): 1 = transparent SPP bridge (SPPM,M=1,
+ * UART<->SPP at line rate, connection state tracked via the BT_CONNECTION /
+ * BT_CYSPP pins because in-band events are unavailable while bridged);
+ * 0 = non-transparent command mode (SPPM,M=3, every chunk one SPP_SEND
+ * round trip, measured lossless 56 KB/s radio-bound). Decide before merge. */
+#define TRANSPARANT_MODE               1
 
 #define ENABLE_BT_RX_DEBUG_PRINTS      0
 #define ENABLE_BT_TX_DEBUG_PRINTS      0
