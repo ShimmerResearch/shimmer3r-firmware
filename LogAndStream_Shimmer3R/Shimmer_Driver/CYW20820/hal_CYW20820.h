@@ -93,6 +93,9 @@ extern void ezsHandlerShimmer(ezs_packet_t *packet) __attribute__((weak));
 #define ENABLE_BT_CMD_RTT_STATS     1
 
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len);
+uint8_t BtTransmitRetryLast(void);
+void BtTransmitAckLast(void);
+uint8_t isBtUartTxBusy(void);
 void resetEzsPendingResponse(void);
 uint8_t isPendingResponseFromBtModule(void);
 void resetBtRxBuff(void);

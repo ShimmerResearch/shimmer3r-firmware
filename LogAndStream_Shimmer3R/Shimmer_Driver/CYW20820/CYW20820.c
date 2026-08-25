@@ -220,6 +220,9 @@ static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref
 };
 #endif
 
+/* Consecutive rejected SPP_SENDs, for rate-limiting the rejection print. */
+static uint16_t sppSendFailStreak = 0;
+
 uint8_t *btInitCmdsSteps;
 volatile uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
 uint8_t btNameTypeBeingRead;
@@ -1500,7 +1503,13 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       resetEzsPendingResponse();
       if (!isBtInitCmdsRunning())
       {
-        ShimBt_triggerNextTransfer();
+        /* The discarded command is most likely an SPP_SEND - retry its
+         * payload from the driver's held copy first; only move on to new
+         * data if there is nothing to retry. */
+        if (!BtTransmitRetryLast())
+        {
+          ShimBt_triggerNextTransfer();
+        }
       }
     }
     break;
@@ -1735,15 +1744,33 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SPP_SEND_COMMAND:
-    /* Unconditional: a rejected SPP_SEND means the module dropped that data
-     * chunk (the TX ring has already released it), so it must never be
-     * silent - e.g. a module FW that caps the per-command payload below
-     * EZS_SPP_SEND_MAX_DATA_BYTES would otherwise look like a dead link. */
     if (packet->payload.rsp_spp_send_command.result != EZS_ERR_SUCCESS)
     {
-      printf("spp_send FAILED: result=");
-      printHex16(packet->payload.rsp_spp_send_command.result);
-      printf("\r\n");
+      /* Normal backpressure: 0x0109 (insufficient resources) means the
+       * module's SPP queue toward the radio is full. Retry the same payload
+       * from the driver's held copy - the retry round trip itself paces us
+       * to the radio's drain rate, and nothing is lost. Print rate-limited:
+       * a saturated bulk transfer rejects continuously by design. */
+      sppSendFailStreak++;
+      if (sppSendFailStreak == 1U || (sppSendFailStreak % 100U) == 0U)
+      {
+        printf("spp_send rejected (streak=%u): result=", sppSendFailStreak);
+        printHex16(packet->payload.rsp_spp_send_command.result);
+        printf("\r\n");
+      }
+      if (BtTransmitRetryLast())
+      {
+        /* Retry in flight: the pending response serializes everything else,
+         * so do not start the next transfer on top of it. */
+        break;
+      }
+      /* Retry budget exhausted (chunk dropped) - fall through so the stream
+       * keeps moving rather than going mute. */
+    }
+    else
+    {
+      sppSendFailStreak = 0;
+      BtTransmitAckLast();
     }
     ShimBt_triggerNextTransfer();
     break;

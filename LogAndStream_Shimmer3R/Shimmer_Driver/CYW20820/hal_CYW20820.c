@@ -52,6 +52,14 @@
 #define CONSOLE_PRINT_NON_EZ_SERIAL_BYTES 0
 
 volatile uint8_t pending_response = 0;
+
+/* Last SPP_SEND payload, kept for module-rejection retries (see
+ * BtTransmitRetryLast). Static rather than stack: BtTransmit() runs in ISR
+ * context and a longuint8a_t is 514 bytes; serialized by the
+ * pending_response / UART-TX-busy guards in BtTransmit(). */
+static longuint8a_t sppSendData;
+static uint16_t sppSendRetryCount = 0;
+#define BT_SPP_SEND_RETRY_LIMIT 200U
 //uint8_t timer_active = 0;
 //volatile uint16_t timeout_ms_elapsed;
 
@@ -409,6 +417,17 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
     return HAL_SHIM_BUSY;
   }
 
+  /* Same hazard from the other side: pending_response can already be cleared
+   * (a module error discards the in-flight command) while the UART is still
+   * clocking that frame out of ezs_tx_packet. Building a new command now
+   * would corrupt the bytes still being transmitted. Callers treat any
+   * non-OK as retry-later; the module's response or error event for the
+   * in-flight frame restarts the chain. */
+  if (isBtUartTxBusy())
+  {
+    return HAL_SHIM_BUSY;
+  }
+
   /* The frame's 8-bit payload length caps one SPP_SEND at
    * EZS_SPP_SEND_MAX_DATA_BYTES of data. An oversized frame is worse than a
    * refused one: the module never answers a corrupt frame, so
@@ -421,12 +440,9 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
     return HAL_SHIM_ERROR;
   }
 
-  /* Static, not stack: serialized by the pending_response check above, and
-   * ezs_cmd_spp_send_command() copies the payload into ezs_tx_packet before
-   * returning. A stack longuint8a_t would also be 515 bytes of ISR stack. */
-  static longuint8a_t sppSendData;
   sppSendData.length = len;
   memcpy(sppSendData.data, buf, len);
+  sppSendRetryCount = 0;
 
   ezs_ret = ezs_cmd_spp_send_command(BT_getConnectionHandle(), &sppSendData);
 
@@ -437,6 +453,55 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
   }
 #endif
   return (HAL_StatusTypeDefShimmer) ret_val;
+}
+
+/* Re-issue the last SPP_SEND payload after the module rejected it - most
+ * commonly EZS_ERR_CORE_INSUFFICIENT_RESOURCES (0x0109) when its SPP TX queue
+ * toward the radio is full. The payload survives in sppSendData (the TX ring
+ * released its copy when the UART transfer completed), so a rejection costs
+ * nothing but the retry round trip - which is also what paces us to the rate
+ * the radio actually drains. Returns 1 if the retry was issued, 0 if the
+ * payload was dropped (retry budget exhausted) or nothing was pending.
+ *
+ * The retry cap bounds a persistent-failure loop (e.g. rejected while the
+ * link is tearing down): at ~3 ms per attempt, 200 tries is ~0.6 s before the
+ * chunk is abandoned and the stream moves on. */
+uint8_t BtTransmitRetryLast(void)
+{
+  if (sppSendData.length == 0)
+  {
+    return 0;
+  }
+
+  if (++sppSendRetryCount > BT_SPP_SEND_RETRY_LIMIT)
+  {
+    SHIMMER_PRINTF("BtTransmit: dropped %u bytes after %u rejected sends\r\n",
+        sppSendData.length, (uint16_t) BT_SPP_SEND_RETRY_LIMIT);
+    sppSendData.length = 0;
+    sppSendRetryCount = 0;
+    return 0;
+  }
+
+  if (isPendingResponseFromBtModule() || isBtUartTxBusy())
+  {
+    return 0;
+  }
+
+  if (ezs_cmd_spp_send_command(BT_getConnectionHandle(), &sppSendData) != EZS_OUTPUT_RESULT_DATA_WRITTEN)
+  {
+    return 0;
+  }
+
+  return 1;
+}
+
+/* The module accepted the last SPP_SEND: invalidate the held payload so no
+ * later recovery path (e.g. a system-error retry for an unrelated command)
+ * can ever re-send it and duplicate data in the stream. */
+void BtTransmitAckLast(void)
+{
+  sppSendData.length = 0;
+  sppSendRetryCount = 0;
 }
 
 /* Overrides the weak no-op in shimmer_bt_uart.c. Cancels the DMA transfer
@@ -458,6 +523,14 @@ void resetEzsPendingResponse(void)
 uint8_t isPendingResponseFromBtModule(void)
 {
   return pending_response;
+}
+
+uint8_t isBtUartTxBusy(void)
+{
+  /* gState carries the TX half of the HAL UART state machine (RxState the
+   * other); BUSY_TX here means an interrupt-driven transmit of ezs_tx_packet
+   * is still clocking out. */
+  return huartBtPtr != 0 && huartBtPtr->gState != HAL_UART_STATE_READY;
 }
 
 void resetBtRxBuff(void)
