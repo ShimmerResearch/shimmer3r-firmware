@@ -141,8 +141,23 @@ static ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters_ref
         .parity = 0,
         .stopbits = 1 };
 
+/* BLE connection interval the module requests after connecting, in 1.25 ms
+ * units. This is a throughput-vs-latency dial, and the bench data says the
+ * minimum is the wrong end of it for our traffic: with the old value of 6
+ * (7.5 ms - which Android honours exactly) BLE topped out around 20 KB/s at
+ * ~150 bytes per connection event, while Windows ignored our request,
+ * renegotiated to 15 ms on its own, and carried ~450 bytes per event for
+ * ~30 KB/s. Longer events amortise the per-event turnaround and let the
+ * central queue more packets. The cost is command-response latency of one
+ * interval per round trip, which is acceptable for bulk transfer.
+ *
+ * Bench sweep values: 6 = 7.5 ms (old default), 12 = 15 ms (what Windows
+ * chooses for itself), 24 = 30 ms, 48 = 60 ms. Supervision timeout is 100
+ * (units of 10 ms = 1 s), which comfortably covers all of these. */
+#define BLE_CONN_INTERVAL_1P25MS 12
+
 static ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters_ref = { .result = 0,
-  .interval = 6, //Minimum = 0x0006 (6 * 1.25 ms = 7.5 ms)
+  .interval = BLE_CONN_INTERVAL_1P25MS,
   .slave_latency = 0,
   .supervision_timeout = 100,
   .scan_interval = 256,
@@ -1433,9 +1448,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_SYSTEM_ERROR:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("CYW20820 System Error\r\n");
-#endif
+    /* Unconditional, with the code: the module reporting an internal error is
+     * never debug chatter, and this event fired right before a
+     * transport-switching wedge on the bench with its payload discarded. */
+    printf("CYW20820 System Error: code=");
+    printHex16(packet->payload.evt_system_error.error);
+    printf("\r\n");
     break;
 
   case EZS_IDX_RSP_SYSTEM_FACTORY_RESET:
