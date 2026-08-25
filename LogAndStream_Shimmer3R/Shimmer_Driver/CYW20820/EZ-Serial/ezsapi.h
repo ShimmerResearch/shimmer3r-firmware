@@ -110,20 +110,14 @@
 #define EZS_WAIT_FOR_EVENT(TIMEOUT) \
   EZSerial_WaitForPacket(EZS_PACKET_TYPE_EVENT, TIMEOUT)
 
-#define EZS_CHECK_FOR_PACKET() EZS_WAIT_FOR_PACKET(0)
+#define EZS_CHECK_FOR_PACKET()                 EZS_WAIT_FOR_PACKET(0)
 
 /* if your application does not require large packets, you can decrease
  * these values to save SRAM on your host platform if needed; many projects
  * do not require anything larger than 64 bytes for any single long/uint8a
  */
-#define EZS_UINT8A_ACTUAL_MAX  (255u)
-#if ENABLE_FIX_10
-/* Sized for bulk SPP_SEND payloads (Fix 10 permits up to 2047-byte command
- * payloads on the wire; this bounds what the packet unions can hold). */
-#define EZS_LONGUINT8A_ACTUAL_MAX (1024u)
-#else
-#define EZS_LONGUINT8A_ACTUAL_MAX (512u)
-#endif
+#define EZS_UINT8A_ACTUAL_MAX                  (255u)
+#define EZS_LONGUINT8A_ACTUAL_MAX              (512u)
 
 /* basic mechanical concepts behind this implementation may be found here:
  * http://stackoverflow.com/questions/4274055

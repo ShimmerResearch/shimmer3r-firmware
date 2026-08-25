@@ -202,7 +202,13 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
 
   if (ret_val != HAL_OK)
   {
+    /* Nothing was sent, so no response is coming: leaving pending_response
+     * set here would block every later command forever, and returning
+     * DATA_WRITTEN would tell the caller the command is in flight when it is
+     * not. Roll back and report the failure so callers retry. */
     SHIMMER_PRINTF("UART transmit problem in appOutput\r\n");
+    pending_response = 0;
+    return EZS_OUTPUT_RESULT_NO_HANDLER;
   }
 
   return EZS_OUTPUT_RESULT_DATA_WRITTEN;

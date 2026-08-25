@@ -1488,6 +1488,21 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf("CYW20820 System Error: code=");
     printHex16(packet->payload.evt_system_error.error);
     printf("\r\n");
+
+    /* A protocol error means the module discarded the in-flight command and
+     * will never answer it. Without this, pending_response stays set and BT
+     * TX is mute for the rest of the power cycle (bench-confirmed 2026-08-25
+     * with an oversized SPP_SEND: 0x0209/0x0207 then silence). Clear it and
+     * restart the data path; the boot stepper is left alone because it drives
+     * its own expected-response flow. */
+    if (isPendingResponseFromBtModule())
+    {
+      resetEzsPendingResponse();
+      if (!isBtInitCmdsRunning())
+      {
+        ShimBt_triggerNextTransfer();
+      }
+    }
     break;
 
   case EZS_IDX_RSP_SYSTEM_FACTORY_RESET:
