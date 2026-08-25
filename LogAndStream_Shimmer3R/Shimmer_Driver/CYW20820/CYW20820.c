@@ -910,7 +910,12 @@ void btInitCommands(void)
      * unused in this mode but must be valid: wait 1 ms, length 128, EOP 0x0D
      * (the factory default). */
     setExpectedResponse(EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION);
-    ezs_fcmd_p_cyspp_set_packetization(0, 1, 128, 0x0D);
+    /* RAM scope, deliberately: this step runs unconditionally in every
+     * first-boot sequence, so a flash-scoped write would burn module
+     * config-flash endurance once per power-up for nothing - the module resets
+     * to factory packetization on reboot and this sequence always runs again
+     * before CYSPP data mode can engage. */
+    ezs_cmd_p_cyspp_set_packetization(0, 1, 128, 0x0D);
     return;
   }
 
