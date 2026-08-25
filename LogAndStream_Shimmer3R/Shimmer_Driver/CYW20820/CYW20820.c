@@ -1260,27 +1260,30 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("RX: rsp_p_cyspp_set_packetization: result=");
-    printHex16(packet->payload.rsp_p_cyspp_set_packetization.result);
-    printf("\r\n");
-#endif
+    if (packet->payload.rsp_p_cyspp_set_packetization.result != EZS_ERR_SUCCESS)
+    {
+      printf("p_cyspp_set_packetization FAILED: result=");
+      printHex16(packet->payload.rsp_p_cyspp_set_packetization.result);
+      printf("\r\n");
+    }
     break;
 
   case EZS_IDX_RSP_GAP_SET_ADV_DATA:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("RX: rsp_gap_set_adv_data: result=");
-    printHex16(packet->payload.rsp_gap_set_adv_data.result);
-    printf("\r\n");
-#endif
+    if (packet->payload.rsp_gap_set_adv_data.result != EZS_ERR_SUCCESS)
+    {
+      printf("gap_set_adv_data FAILED: result=");
+      printHex16(packet->payload.rsp_gap_set_adv_data.result);
+      printf("\r\n");
+    }
     break;
 
   case EZS_IDX_RSP_GAP_SET_SR_DATA:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("RX: rsp_gap_set_sr_data: result=");
-    printHex16(packet->payload.rsp_gap_set_sr_data.result);
-    printf("\r\n");
-#endif
+    if (packet->payload.rsp_gap_set_sr_data.result != EZS_ERR_SUCCESS)
+    {
+      printf("gap_set_sr_data FAILED: result=");
+      printHex16(packet->payload.rsp_gap_set_sr_data.result);
+      printf("\r\n");
+    }
     break;
 
   case EZS_IDX_RSP_GAP_SET_DEVICE_NAME:
@@ -1417,25 +1420,21 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_GAP_START_ADV:
-#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_start_adv.result != EZS_ERR_SUCCESS)
     {
-      printf("RX: rsp_gap_start_adv: Result=");
+      printf("gap_start_adv FAILED: result=");
       printHex16(packet->payload.rsp_gap_start_adv.result);
       printf("\r\n");
     }
-#endif
     break;
 
   case EZS_IDX_RSP_GAP_STOP_ADV:
-#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_stop_adv.result != EZS_ERR_SUCCESS)
     {
-      printf("RX: rsp_gap_stop_adv: Result=");
+      printf("gap_stop_adv FAILED: result=");
       printHex16(packet->payload.rsp_gap_stop_adv.result);
       printf("\r\n");
     }
-#endif
     break;
 
   case EZS_IDX_EVT_SMP_ENCRYPTION_STATUS:
@@ -1610,17 +1609,39 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   case EZS_IDX_RSP_BT_GET_PARAMETERS:
     rsp_bt_get_parameters = packet->payload.rsp_bt_get_parameters;
+    /* One line per BT init, unconditional: these values are echoed back in
+     * both bt_set_parameters calls (stop- and start-advertising), so a bad
+     * read here silently poisons classic discoverability. */
+    printf("BT params: result=");
+    printHex16(rsp_bt_get_parameters.result);
+    printf(", sup_timeout=");
+    printHex16(rsp_bt_get_parameters.link_super_time_out);
+    printf(", disc=");
+    printHex8(rsp_bt_get_parameters.discoverable);
+    printf(", conn=");
+    printHex8(rsp_bt_get_parameters.connectable);
+    printf(", flags=");
+    printHex8(rsp_bt_get_parameters.flags);
+    printf(", scn=");
+    printHex8(rsp_bt_get_parameters.scn);
+    printf(", act_disc=");
+    printHex16(rsp_bt_get_parameters.active_bt_discoverability);
+    printf(", act_conn=");
+    printHex16(rsp_bt_get_parameters.active_bt_connectability);
+    printf("\r\n");
     break;
 
   case EZS_IDX_RSP_BT_SET_PARAMETERS:
-#if ENABLE_BT_RX_DEBUG_PRINTS
+    /* Unconditional: the boot stepper advances on any matching response, so a
+     * rejected bt_set_parameters (e.g. a layout change in a new module FW)
+     * silently leaves the device non-discoverable/non-connectable after the
+     * stop-advertising step. */
     if (packet->payload.rsp_bt_set_parameters.result != EZS_ERR_SUCCESS)
     {
-      printf("RX: rsp_bt_set_parameters: Result=");
+      printf("bt_set_parameters FAILED: result=");
       printHex16(packet->payload.rsp_bt_set_parameters.result);
       printf("\r\n");
     }
-#endif
     break;
 
   case EZS_IDX_RSP_BT_GET_DEVICE_CLASS:
