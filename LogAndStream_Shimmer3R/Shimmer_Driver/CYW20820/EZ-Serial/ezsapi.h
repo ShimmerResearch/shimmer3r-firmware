@@ -90,6 +90,12 @@
 #define ENABLE_FIX_08 1
 /* Support for FW v1.4.17.17 */
 #define ENABLE_FIX_09 1
+/* Encode 11-bit payload lengths on TX: the binary header carries the length
+ * MSBs in the low 3 bits of the type byte (EZSerial_SendPacket and the RX
+ * parser already honour them), but ezs_cmd_va() historically only wrote the
+ * 8-bit length field, silently corrupting any command payload over 255
+ * bytes. Needed for SPP_SEND payloads above 252 bytes. */
+#define ENABLE_FIX_10 1
 //-------------- Shimmer added End -------------------------//
 
 #define EZS_SEND_AND_WAIT(CMD, TIMEOUT) \
@@ -111,7 +117,13 @@
  * do not require anything larger than 64 bytes for any single long/uint8a
  */
 #define EZS_UINT8A_ACTUAL_MAX                  (255u)
+#if ENABLE_FIX_10
+/* Sized for bulk SPP_SEND payloads (Fix 10 permits up to 2047-byte command
+ * payloads on the wire; this bounds what the packet unions can hold). */
+#define EZS_LONGUINT8A_ACTUAL_MAX              (1024u)
+#else
 #define EZS_LONGUINT8A_ACTUAL_MAX              (512u)
+#endif
 
 /* basic mechanical concepts behind this implementation may be found here:
  * http://stackoverflow.com/questions/4274055

@@ -1720,11 +1720,16 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SPP_SEND_COMMAND:
-#if ENABLE_BT_RX_DEBUG_PRINTS
-    printf("RX: rsp_spp_send_command: result=");
-    printHex16(packet->payload.rsp_spp_send_command.result);
-    printf("\r\n");
-#endif
+    /* Unconditional: a rejected SPP_SEND means the module dropped that data
+     * chunk (the TX ring has already released it), so it must never be
+     * silent - e.g. a module FW that caps the per-command payload below
+     * EZS_SPP_SEND_MAX_DATA_BYTES would otherwise look like a dead link. */
+    if (packet->payload.rsp_spp_send_command.result != EZS_ERR_SUCCESS)
+    {
+      printf("spp_send FAILED: result=");
+      printHex16(packet->payload.rsp_spp_send_command.result);
+      printf("\r\n");
+    }
     ShimBt_triggerNextTransfer();
     break;
 
