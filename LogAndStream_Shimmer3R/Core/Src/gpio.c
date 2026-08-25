@@ -308,19 +308,42 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   }
 }
 
+#if TRANSPARANT_MODE
+/* Capped bench-diagnostic counters (DEV-573): enough edges to characterise
+ * the v1.4.18.18 pin behaviour without risking a print flood from EXTI. */
+static uint16_t btConnPinEdgeDiagCount = 0;
+static uint16_t btCysppPinEdgeDiagCount = 0;
+#endif
+
 void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
 {
   switch (GPIO_Pin)
   {
   case BT_CONNECTION_Pin:
 #if TRANSPARANT_MODE
+    /* Bench diagnostic (DEV-573): v1.4.17.17 never toggled this pin after
+     * boot; capped print shows what v1.4.18.18 actually does with it. */
+    if (btConnPinEdgeDiagCount < 20U)
+    {
+      btConnPinEdgeDiagCount++;
+      printf("BT_CONNECTION pin -> %s\r\n", isRising ? "HIGH" : "LOW");
+    }
     setBtConnectionState(!isRising);
 #endif
     break;
   case BT_CYSPP_Pin:
 #if TRANSPARANT_MODE
-    //TODO v1.4.17.17 FW doesn't seem to toggle BT_CONNECTION_Pin after boot
-    //setBtConnectionState(!isRising);
+    if (btCysppPinEdgeDiagCount < 20U)
+    {
+      btCysppPinEdgeDiagCount++;
+      printf("BT_CYSPP pin -> %s\r\n", isRising ? "HIGH" : "LOW");
+    }
+    /* v1.4.18.18 defines this pin as the SPP-mode indicator (low while the
+     * data bridge is engaged, pull high to exit back to command mode), and
+     * v1.4.17.17 never toggled BT_CONNECTION after boot - so treat SPP data
+     * mode as the connection. setBtConnectionState() is idempotent, so this
+     * coexists with the in-band connected event and the BT_CONNECTION pin. */
+    setBtConnectionState(!isRising);
     setBtCysppState(!isRising);
 #endif
     break;

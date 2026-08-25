@@ -1468,6 +1468,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
      * BT_CONNECTION pin, which v1.4.17.17 did not toggle (see the TODO in
      * gpio.c). Disconnect detection has to come from the pins: once bridged,
      * the in-band disconnected event is consumed by the data-mode RX demux. */
+    printf("BT connected (in-band event)\r\n");
     setBtConnectionState(true);
 #else
     BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
