@@ -24,6 +24,9 @@
 #define printHex32(VARIABLE)           printHex((uint8_t *) &VARIABLE, 4, 1, 0)
 #define printHexMac(VARIABLE)          printHex((uint8_t *) &VARIABLE, 6, 1, ':')
 
+/* 1 prints every boot-sequence RX packet plus evt_p_cyspp_status - the trace
+ * that shows whether CYSPP data mode engages on each BLE connection. Bench
+ * diagnosis only; ships as 0. */
 #define ENABLE_BT_INIT_RX_DEBUG_PRINTS 0
 
 /*
@@ -139,8 +142,19 @@ static ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters_ref
         .parity = 0,
         .stopbits = 1 };
 
+/* BLE connection interval the module requests after connecting, in 1.25 ms
+ * units. 6 = 7.5 ms, the minimum, and the bench says leave it there: BLE
+ * throughput turned out to be capped by the host's per-connection-event byte
+ * budget (~500 B/event on Windows - which also ignores this request and
+ * renegotiates 15 ms for itself - and less on Android), so a longer interval
+ * divides the same per-event budget over more time. Kept as a define because
+ * it is the one link parameter this side can request: sweep 6/12/24/48 if a
+ * future host behaves differently. Supervision timeout is 100 (units of
+ * 10 ms = 1 s), which covers all of these. */
+#define BLE_CONN_INTERVAL_1P25MS 6
+
 static ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters_ref = { .result = 0,
-  .interval = 6, //Minimum = 0x0006 (6 * 1.25 ms = 7.5 ms)
+  .interval = BLE_CONN_INTERVAL_1P25MS,
   .slave_latency = 0,
   .supervision_timeout = 100,
   .scan_interval = 256,
@@ -226,8 +240,8 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
 #if USE_GET_SET_ADV_PARAM
   GET_ADVERTISING_PARAMETERS, SET_ADVERTISING_PARAMETERS,
 #endif
-  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS,
-  SET_SECURITY_PARAMETERS, GET_PIN_CODE, SET_PIN_CODE, START_BLE_ADVERTISING_STAGE1,
+  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS, SET_SECURITY_PARAMETERS,
+  GET_PIN_CODE, SET_PIN_CODE, SET_CYSPP_PACKETIZATION, START_BLE_ADVERTISING_STAGE1,
   START_BLE_ADVERTISING_STAGE2, START_BT_ADVERTISING, FINISH };
 
 static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
@@ -876,6 +890,35 @@ void btInitCommands(void)
     }
   }
 
+  if (btInitCmdsStep == SET_CYSPP_PACKETIZATION)
+  {
+    incrementBtInitCmdsStep();
+    printf("Set CYSPP packetization: immediate\r\n");
+    /* The factory default is Anticipate with a 20-byte target - sized for the
+     * minimum GATT MTU of 23 - so the module ships sensor data as 20-byte
+     * notifications even when the client has negotiated a large MTU (Android
+     * Chrome asks for 517, Windows ~527). At the 7.5 ms connection interval
+     * hosts negotiate, that caps BLE throughput at roughly 5-20 KB/s, which is
+     * exactly the ceiling measured on the bench.
+     *
+     * Immediate mode transmits whatever is buffered each time the stack can
+     * take a packet. During bulk transfer the 2 Mbaud host UART outruns the
+     * radio, so transmissions naturally grow to the negotiated MTU payload (up
+     * to the module's 128-byte UART RX buffer per packet). Small LiteProtocol
+     * responses go out at once rather than being held for an anticipation
+     * window, so command latency improves too. The remaining arguments are
+     * unused in this mode but must be valid: wait 1 ms, length 128, EOP 0x0D
+     * (the factory default). */
+    setExpectedResponse(EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION);
+    /* RAM scope, deliberately: this step runs unconditionally in every
+     * first-boot sequence, so a flash-scoped write would burn module
+     * config-flash endurance once per power-up for nothing - the module resets
+     * to factory packetization on reboot and this sequence always runs again
+     * before CYSPP data mode can engage. */
+    ezs_cmd_p_cyspp_set_packetization(0, 1, 128, 0x0D);
+    return;
+  }
+
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
   {
     incrementBtInitCmdsStep();
@@ -1189,6 +1232,14 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     break;
 
+  case EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: rsp_p_cyspp_set_packetization: result=");
+    printHex16(packet->payload.rsp_p_cyspp_set_packetization.result);
+    printf("\r\n");
+#endif
+    break;
+
   case EZS_IDX_RSP_GAP_SET_ADV_DATA:
 #if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     printf("RX: rsp_gap_set_adv_data: result=");
@@ -1399,9 +1450,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_SYSTEM_ERROR:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("CYW20820 System Error\r\n");
-#endif
+    /* Unconditional, with the code: the module reporting an internal error is
+     * never debug chatter, and this event fired right before a
+     * transport-switching wedge on the bench with its payload discarded. */
+    printf("CYW20820 System Error: code=");
+    printHex16(packet->payload.evt_system_error.error);
+    printf("\r\n");
     break;
 
   case EZS_IDX_RSP_SYSTEM_FACTORY_RESET:
@@ -1461,6 +1515,32 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
         packet->payload.evt_bt_connection_failed.reason);
     printf("\r\n");
 #endif
+    break;
+
+  case EZS_IDX_EVT_GATTS_DATA_WRITTEN:
+    /* A GATT write surfaced to the host instead of being consumed by the CYSPP
+     * pipe. Which attribute, and when (connect-time only vs during transfer),
+     * is the discriminating datum for the BLE throughput/wedge investigation -
+     * a bare "unhandled 05/02" print discarded exactly that. */
+    printf("RX: gatts_data_written conn=");
+    printHex8(packet->payload.evt_gatts_data_written.conn_handle);
+    printf(" attr=");
+    printHex16(packet->payload.evt_gatts_data_written.attr_handle);
+    printf(" type=");
+    printHex8(packet->payload.evt_gatts_data_written.type);
+    printf(" len=");
+    printHex16(packet->payload.evt_gatts_data_written.data.length);
+    printf("\r\n");
+    break;
+
+  case EZS_IDX_EVT_SMP_PAIRING_REQUESTED:
+    printf("RX: smp_pairing_requested conn=");
+    printHex8(packet->payload.evt_smp_pairing_requested.conn_handle);
+    printf(" mode=");
+    printHex8(packet->payload.evt_smp_pairing_requested.mode);
+    printf(" bonding=");
+    printHex8(packet->payload.evt_smp_pairing_requested.bonding);
+    printf("\r\n");
     break;
 
   case EZS_IDX_EVT_SMP_PAIRING_RESULT:
