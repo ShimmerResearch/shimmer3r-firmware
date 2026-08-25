@@ -24,7 +24,9 @@
 #define printHex32(VARIABLE)           printHex((uint8_t *) &VARIABLE, 4, 1, 0)
 #define printHexMac(VARIABLE)          printHex((uint8_t *) &VARIABLE, 6, 1, ':')
 
-#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 0
+/* Diagnostic build: 1 so evt_p_cyspp_status is printed - the one trace that
+ * shows whether CYSPP data mode engages on each BLE connection. */
+#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 1
 
 /*
  * Index: {1,2,3,4,5,6,7,8}
@@ -1461,6 +1463,32 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
         packet->payload.evt_bt_connection_failed.reason);
     printf("\r\n");
 #endif
+    break;
+
+  case EZS_IDX_EVT_GATTS_DATA_WRITTEN:
+    /* A GATT write surfaced to the host instead of being consumed by the CYSPP
+     * pipe. Which attribute, and when (connect-time only vs during transfer),
+     * is the discriminating datum for the BLE throughput/wedge investigation -
+     * a bare "unhandled 05/02" print discarded exactly that. */
+    printf("RX: gatts_data_written conn=");
+    printHex8(packet->payload.evt_gatts_data_written.conn_handle);
+    printf(" attr=");
+    printHex16(packet->payload.evt_gatts_data_written.attr_handle);
+    printf(" type=");
+    printHex8(packet->payload.evt_gatts_data_written.type);
+    printf(" len=");
+    printHex16(packet->payload.evt_gatts_data_written.data.length);
+    printf("\r\n");
+    break;
+
+  case EZS_IDX_EVT_SMP_PAIRING_REQUESTED:
+    printf("RX: smp_pairing_requested conn=");
+    printHex8(packet->payload.evt_smp_pairing_requested.conn_handle);
+    printf(" mode=");
+    printHex8(packet->payload.evt_smp_pairing_requested.mode);
+    printf(" bonding=");
+    printHex8(packet->payload.evt_smp_pairing_requested.bonding);
+    printf("\r\n");
     break;
 
   case EZS_IDX_EVT_SMP_PAIRING_RESULT:
