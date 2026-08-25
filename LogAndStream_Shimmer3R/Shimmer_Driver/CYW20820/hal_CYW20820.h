@@ -74,6 +74,19 @@ void setBtBootModeSubsequentBoot(void);
 extern void ezsHandler(ezs_packet_t *packet) __attribute__((weak));
 extern void ezsHandlerShimmer(ezs_packet_t *packet) __attribute__((weak));
 
+/* Largest data payload one EZ-Serial SPP_SEND command can carry: the binary
+ * frame's payload length field is 8-bit (ezs_cmd_va() never sets the 3-bit
+ * MSB extension), so 255 total = 1 conn_handle + 2-byte length prefix + 252
+ * data bytes. Kept in sync with BT_TX_MAX_DMA_CHUNK in shimmer_bt_uart.h via
+ * a static assert in hal_CYW20820.c. */
+#define EZS_SPP_SEND_MAX_DATA_BYTES 252U
+
+/* DEV-573 bench diagnostic: print min/avg/max EZ-Serial command->response
+ * round-trip times, one line per 256 completed commands. During a data-rate
+ * test this is effectively the SPP_SEND RTT - the quantity that caps
+ * non-transparent-mode throughput at chunk_size / RTT. Flip to 0 to silence. */
+#define ENABLE_BT_CMD_RTT_STATS     1
+
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len);
 void resetEzsPendingResponse(void);
 uint8_t isPendingResponseFromBtModule(void);

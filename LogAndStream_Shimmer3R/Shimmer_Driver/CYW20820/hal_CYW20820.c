@@ -83,6 +83,57 @@ uint8_t skippingBytesCount = 0;
 //    timeout_ms_elapsed++;
 //}
 
+_Static_assert(EZS_SPP_SEND_MAX_DATA_BYTES <= EZS_LONGUINT8A_ACTUAL_MAX,
+    "SPP_SEND payload cap must fit longuint8a_t");
+_Static_assert(BT_TX_MAX_DMA_CHUNK <= EZS_SPP_SEND_MAX_DATA_BYTES,
+    "TX ring chunks must fit in one SPP_SEND command");
+
+#if ENABLE_BT_CMD_RTT_STATS
+static uint32_t rttStartCyc, rttMinCyc = UINT32_MAX, rttMaxCyc, rttCount;
+static uint64_t rttSumCyc;
+
+static void btCmdRttStart(void)
+{
+  /* Lazily enable the DWT cycle counter; wrap-safe unsigned deltas give a
+   * ~26 s measurement range at 160 MHz, far beyond any command RTT. */
+  if (!(DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk))
+  {
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+  }
+  rttStartCyc = DWT->CYCCNT;
+}
+
+static void btCmdRttStop(void)
+{
+  uint32_t deltaCyc = DWT->CYCCNT - rttStartCyc;
+
+  if (deltaCyc < rttMinCyc)
+  {
+    rttMinCyc = deltaCyc;
+  }
+  if (deltaCyc > rttMaxCyc)
+  {
+    rttMaxCyc = deltaCyc;
+  }
+  rttSumCyc += deltaCyc;
+  rttCount++;
+
+  if (rttCount >= 256U)
+  {
+    uint32_t cycPerUs = SystemCoreClock / 1000000U;
+    SHIMMER_PRINTF("BT cmd RTT: n=%lu min=%luus avg=%luus max=%luus\r\n",
+        rttCount, rttMinCyc / cycPerUs,
+        (uint32_t) (rttSumCyc / rttCount) / cycPerUs, rttMaxCyc / cycPerUs);
+    rttMinCyc = UINT32_MAX;
+    rttMaxCyc = 0;
+    rttSumCyc = 0;
+    rttCount = 0;
+  }
+}
+#endif /* ENABLE_BT_CMD_RTT_STATS */
+
 void appHandler(ezs_packet_t *packet)
 {
   if (packet->packet_type == EZS_PACKET_TYPE_RESPONSE)
@@ -91,6 +142,9 @@ void appHandler(ezs_packet_t *packet)
     if (pending_response != 0)
     {
       pending_response = 0;
+#if ENABLE_BT_CMD_RTT_STATS
+      btCmdRttStop();
+#endif
     }
   }
 
@@ -119,6 +173,10 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
 
   /* increment pending response counter */
   pending_response = 1;
+
+#if ENABLE_BT_CMD_RTT_STATS
+  btCmdRttStart();
+#endif
 
   /* send data out through UART */
   //UART_SpiUartPutArray((uint8_t *)data, length);
@@ -335,12 +393,36 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
   HAL_StatusTypeDef ret_val = HAL_OK;
   ezs_output_result_t ezs_ret;
 
-  ezs_cmd_spp_send_command_t spp_send_command;
-  spp_send_command.conn_handle = BT_getConnectionHandle();
-  spp_send_command.data.length = len;
-  memcpy(spp_send_command.data.data, buf, len);
-  ezs_ret = ezs_cmd_spp_send_command(
-      spp_send_command.conn_handle, &spp_send_command.data);
+  /* Refuse before building the command: ezs_cmd_va() writes into the global
+   * ezs_tx_packet, so constructing a command while another is outstanding
+   * would corrupt a frame the UART may still be clocking out. appOutput()'s
+   * own pending check happens only after that damage is done. Callers treat
+   * any non-OK as retry-later. */
+  if (isPendingResponseFromBtModule())
+  {
+    return HAL_SHIM_BUSY;
+  }
+
+  /* The frame's 8-bit payload length caps one SPP_SEND at
+   * EZS_SPP_SEND_MAX_DATA_BYTES of data. An oversized frame is worse than a
+   * refused one: the module never answers a corrupt frame, so
+   * pending_response would stay set and mute TX for the rest of the power
+   * cycle. */
+  if (len > EZS_SPP_SEND_MAX_DATA_BYTES)
+  {
+    SHIMMER_PRINTF("BtTransmit: %u > SPP_SEND max %u\r\n", len,
+        (uint16_t) EZS_SPP_SEND_MAX_DATA_BYTES);
+    return HAL_SHIM_ERROR;
+  }
+
+  /* Static, not stack: serialized by the pending_response check above, and
+   * ezs_cmd_spp_send_command() copies the payload into ezs_tx_packet before
+   * returning. A stack longuint8a_t would also be 515 bytes of ISR stack. */
+  static longuint8a_t sppSendData;
+  sppSendData.length = len;
+  memcpy(sppSendData.data, buf, len);
+
+  ezs_ret = ezs_cmd_spp_send_command(BT_getConnectionHandle(), &sppSendData);
 
   if (ezs_ret != EZS_OUTPUT_RESULT_DATA_WRITTEN)
   {
