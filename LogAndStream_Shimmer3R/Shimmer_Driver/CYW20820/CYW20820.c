@@ -656,7 +656,11 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
     printf("Set BLE ADV data\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_SET_ADV_DATA);
-    ezs_fcmd_gap_set_adv_data(&bleAdvData[0]);
+    /* RAM scope, deliberately: this step runs unconditionally in every
+     * first-boot sequence, and the module cannot start advertising before that
+     * sequence finishes, so persistence buys nothing - a flash-scoped write
+     * here would burn module config-flash endurance once per power-up. */
+    ezs_cmd_gap_set_adv_data(&bleAdvData[0]);
     return;
   }
 
@@ -665,7 +669,8 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
     printf("Set BLE scan-response data\r\n");
     setExpectedResponse(EZS_IDX_RSP_GAP_SET_SR_DATA);
-    ezs_fcmd_gap_set_sr_data(&bleSrData[0]);
+    /* RAM scope - same reasoning as the advertisement data above. */
+    ezs_cmd_gap_set_sr_data(&bleSrData[0]);
     return;
   }
 
