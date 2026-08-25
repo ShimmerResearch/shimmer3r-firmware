@@ -24,9 +24,10 @@
 #define printHex32(VARIABLE)           printHex((uint8_t *) &VARIABLE, 4, 1, 0)
 #define printHexMac(VARIABLE)          printHex((uint8_t *) &VARIABLE, 6, 1, ':')
 
-/* Diagnostic build: 1 so evt_p_cyspp_status is printed - the one trace that
- * shows whether CYSPP data mode engages on each BLE connection. */
-#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 1
+/* 1 prints every boot-sequence RX packet plus evt_p_cyspp_status - the trace
+ * that shows whether CYSPP data mode engages on each BLE connection. Bench
+ * diagnosis only; ships as 0. */
+#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 0
 
 /*
  * Index: {1,2,3,4,5,6,7,8}
@@ -142,19 +143,15 @@ static ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters_ref
         .stopbits = 1 };
 
 /* BLE connection interval the module requests after connecting, in 1.25 ms
- * units. This is a throughput-vs-latency dial, and the bench data says the
- * minimum is the wrong end of it for our traffic: with the old value of 6
- * (7.5 ms - which Android honours exactly) BLE topped out around 20 KB/s at
- * ~150 bytes per connection event, while Windows ignored our request,
- * renegotiated to 15 ms on its own, and carried ~450 bytes per event for
- * ~30 KB/s. Longer events amortise the per-event turnaround and let the
- * central queue more packets. The cost is command-response latency of one
- * interval per round trip, which is acceptable for bulk transfer.
- *
- * Bench sweep values: 6 = 7.5 ms (old default), 12 = 15 ms (what Windows
- * chooses for itself), 24 = 30 ms, 48 = 60 ms. Supervision timeout is 100
- * (units of 10 ms = 1 s), which comfortably covers all of these. */
-#define BLE_CONN_INTERVAL_1P25MS 12
+ * units. 6 = 7.5 ms, the minimum, and the bench says leave it there: BLE
+ * throughput turned out to be capped by the host's per-connection-event byte
+ * budget (~500 B/event on Windows - which also ignores this request and
+ * renegotiates 15 ms for itself - and less on Android), so a longer interval
+ * divides the same per-event budget over more time. Kept as a define because
+ * it is the one link parameter this side can request: sweep 6/12/24/48 if a
+ * future host behaves differently. Supervision timeout is 100 (units of
+ * 10 ms = 1 s), which covers all of these. */
+#define BLE_CONN_INTERVAL_1P25MS 6
 
 static ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters_ref = { .result = 0,
   .interval = BLE_CONN_INTERVAL_1P25MS,
