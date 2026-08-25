@@ -227,7 +227,7 @@
 /  _NORTC_MDAY and _NORTC_YEAR have no effect.
 /  These options have no effect at read-only configuration (_FS_READONLY = 1). */
 
-#define _FS_LOCK    2     /* 0:Disable or >=1:Enable */
+#define _FS_LOCK    4     /* 0:Disable or >=1:Enable */
 /* The option _FS_LOCK switches file lock function to control duplicated file open
 /  and illegal operation to open objects. This option must be 0 when _FS_READONLY
 /  is 1.
@@ -236,7 +236,14 @@
 /      should avoid illegal open, remove and rename to the open objects.
 /  >0: Enable file lock function. The value defines how many files/sub-directories
 /      can be opened simultaneously under file lock control. Note that the file
-/      lock control is independent of re-entrancy. */
+/      lock control is independent of re-entrancy.
+/
+/  The value 4 is chosen to cover the maximum number of concurrently open
+/  objects during SD file-transfer over BLE:
+/    1 - data log file open for normal logging
+/    2 - file open for BLE transfer (read)
+/    3 - directory object open for directory listing/walk
+/    4 - margin for any incidental open (e.g. config file reads) */
 
 #define _FS_REENTRANT    0  /* 0:Disable or 1:Enable */
 #define _FS_TIMEOUT      1000 /* Timeout period in unit of time ticks */

@@ -19,26 +19,102 @@
 #include "log_and_stream_includes.h"
 
 /* convenience functions for pretty-printing binary data as zero-padded hexadecimal */
-#define printHex8(VARIABLE)   printHex((uint8_t *) &VARIABLE, 1, 1, 0)
-#define printHex16(VARIABLE)  printHex((uint8_t *) &VARIABLE, 2, 1, 0)
-#define printHex32(VARIABLE)  printHex((uint8_t *) &VARIABLE, 4, 1, 0)
-#define printHexMac(VARIABLE) printHex((uint8_t *) &VARIABLE, 6, 1, ':')
+#define printHex8(VARIABLE)            printHex((uint8_t *) &VARIABLE, 1, 1, 0)
+#define printHex16(VARIABLE)           printHex((uint8_t *) &VARIABLE, 2, 1, 0)
+#define printHex32(VARIABLE)           printHex((uint8_t *) &VARIABLE, 4, 1, 0)
+#define printHexMac(VARIABLE)          printHex((uint8_t *) &VARIABLE, 6, 1, ':')
+
+/* 1 prints every boot-sequence RX packet plus evt_p_cyspp_status - the trace
+ * that shows whether CYSPP data mode engages on each BLE connection. Bench
+ * diagnosis only; ships as 0. */
+#define ENABLE_BT_INIT_RX_DEBUG_PRINTS 0
 
 /*
  * Index: {1,2,3,4,5,6,7,8}
  * BR:    {-2,0,2,4,6,8,10,12},
  * EDR:   {-2,0,2,4,6,8,10,12},
  * BLE:   {-2,0,2,4,6,8,10,10}, */
-#define BT_TX_POWER           8
+#define BT_TX_POWER                    8
 
 //#define CONNECTION_TIMEOUT_MS          10000 //10 seconds timeout
-#define CONNECTION_TIMEOUT_S  10 //10 seconds timeout
+#define CONNECTION_TIMEOUT_S           10 //10 seconds timeout
 
-uint8_t advNameMacIdStartIdx = 11;
-static char advNameBt[] = { 17, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
-  '-', 'X', 'X', 'X', 'X', '-', 'B', 'T' };
-static char advNameBle[] = { 18, 'S', 'h', 'i', 'm', 'm', 'e', 'r', '3', 'R',
-  '-', 'X', 'X', 'X', 'X', '-', 'B', 'L', 'E' };
+/* Advertising names are composed at BT init from the EEPROM brand record
+ * (stock default prefix "Shimmer3R") + "-XXXX" MAC ID suffix + interface
+ * suffix, e.g. "Shimmer3R-1234-BT" / "Shimmer3R-1234-BLE". Buffers hold the
+ * EZ-Serial uint8a_t format (leading length byte, no NUL) but are also kept
+ * NUL-terminated so that &buf[1] can be used as a strstr() needle. */
+#define ADV_NAME_SUFFIX_BT             "-BT"
+#define ADV_NAME_SUFFIX_BLE            "-BLE"
+static char advNameBt[1 + EEPROM_BRAND_BT_CLASSIC_MAX_CHARS + 5 + sizeof(ADV_NAME_SUFFIX_BT)];
+
+static char advNameBle[1 + EEPROM_BRAND_BLE_MAX_CHARS + 5 + sizeof(ADV_NAME_SUFFIX_BLE)];
+
+/* The BLE advertisement's Flags AD value. EZ-Serial's auto-generated
+ * advertisement uses 0x06 (LE General Discoverable | "BR/EDR Not Supported"),
+ * which tells every scanner this device has no classic Bluetooth side. Android
+ * takes that at its word: it bonds a dual-mode sensor over LE only, never runs
+ * classic SDP, never caches the SPP record - and Chrome's Bluetooth-serial
+ * picker, which enumerates from cached SDP records, can then never list the
+ * sensor. Clearing the "BR/EDR Not Supported" bit (0x04) is the standard way a
+ * dual-mode device declares its classic side; bits 3/4 ("Simultaneous LE and
+ * BR/EDR Capable") are deprecated since core spec 5.3 and stay 0. If a handset
+ * turns out to want the legacy declaration, 0x1A is the pre-5.3 idiom. */
+#define BLE_ADV_FLAGS_VALUE 0x02
+
+/* CYSPP service UUID 65333333-a115-11e2-9e9a-0800200ca100, little-endian as it
+ * appears on air. Captured from the module's own auto-generated advertisement
+ * so the user-defined payload below replicates it byte for byte. */
+static const uint8_t CYSPP_SERVICE_UUID_LE[16] = { 0x00, 0xA1, 0x0C, 0x20, 0x00,
+  0x08, 0x9A, 0x9E, 0xE2, 0x11, 0x15, 0xA1, 0x33, 0x33, 0x33, 0x65 };
+
+/* User-defined advertisement + scan-response payloads (uint8a: byte 0 is the
+ * payload length). Content replicates the module's auto-generated packets
+ * exactly - flags, CYSPP service UUID list, Cypress manufacturer data with the
+ * zeroed CYSPP connection key, and the name in the scan response - changing
+ * ONLY the flags value, so the one variable under test is the BR/EDR bit. */
+static uint8_t bleAdvData[1 + 31];
+static uint8_t bleSrData[1 + 31];
+
+/* Fills bleAdvData/bleSrData. Called after buildAdvName() so the scan response
+ * carries the current (possibly re-branded) BLE advertising name. */
+static void buildBleAdvPayloads(void)
+{
+  uint8_t i = 1; /* [0] is the uint8a length prefix */
+  uint8_t nameLen = (uint8_t) advNameBle[0];
+
+  /* Flags */
+  bleAdvData[i++] = 0x02;
+  bleAdvData[i++] = 0x01;
+  bleAdvData[i++] = BLE_ADV_FLAGS_VALUE;
+  /* Complete list of 128-bit service class UUIDs: CYSPP */
+  bleAdvData[i++] = 1 + sizeof(CYSPP_SERVICE_UUID_LE);
+  bleAdvData[i++] = 0x07;
+  memcpy(&bleAdvData[i], CYSPP_SERVICE_UUID_LE, sizeof(CYSPP_SERVICE_UUID_LE));
+  i += sizeof(CYSPP_SERVICE_UUID_LE);
+  /* Manufacturer specific data: Cypress (0x0131) + 4-byte CYSPP connection key
+   * (0 = unset, matching the factory-default advertisement) */
+  bleAdvData[i++] = 0x07;
+  bleAdvData[i++] = 0xFF;
+  bleAdvData[i++] = 0x31;
+  bleAdvData[i++] = 0x01;
+  memset(&bleAdvData[i], 0, 4);
+  i += 4;
+  bleAdvData[0] = i - 1;
+
+  /* Scan response: complete local name. 29 bytes of name is the most that fits
+   * a 31-byte payload; a longer brand name is truncated here only - the full
+   * name is still set via gap_set_device_name. */
+  if (nameLen > 29)
+  {
+    nameLen = 29;
+  }
+  bleSrData[1] = nameLen + 1;
+  bleSrData[2] = 0x09;
+  memcpy(&bleSrData[3], &advNameBle[1], nameLen);
+  bleSrData[0] = nameLen + 2;
+}
+
 //Legacy pin code for RN42, RN4678 compatibility
 static char pin_code[] = { 4, '1', '2', '3', '4' };
 
@@ -66,8 +142,19 @@ static ezs_rsp_system_get_uart_parameters_t rsp_system_get_uart_parameters_ref
         .parity = 0,
         .stopbits = 1 };
 
+/* BLE connection interval the module requests after connecting, in 1.25 ms
+ * units. 6 = 7.5 ms, the minimum, and the bench says leave it there: BLE
+ * throughput turned out to be capped by the host's per-connection-event byte
+ * budget (~500 B/event on Windows - which also ignores this request and
+ * renegotiates 15 ms for itself - and less on Android), so a longer interval
+ * divides the same per-event budget over more time. Kept as a define because
+ * it is the one link parameter this side can request: sweep 6/12/24/48 if a
+ * future host behaves differently. Supervision timeout is 100 (units of
+ * 10 ms = 1 s), which covers all of these. */
+#define BLE_CONN_INTERVAL_1P25MS 6
+
 static ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters_ref = { .result = 0,
-  .interval = 6, //Minimum = 0x0006 (6 * 1.25 ms = 7.5 ms)
+  .interval = BLE_CONN_INTERVAL_1P25MS,
   .slave_latency = 0,
   .supervision_timeout = 100,
   .scan_interval = 256,
@@ -75,15 +162,19 @@ static ezs_rsp_gap_get_conn_parameters_t rsp_gap_get_conn_parameters_ref = { .re
   .scan_timeout = 0 };
 
 static ezs_rsp_gap_get_adv_parameters_t rsp_gap_get_adv_parameters_ref = {
-  .result = 0,              //(Default=)
-  .mode = 2,                //(Default=)
-  .type = 3,                //(Default=)
-  .channels = 7,            //(Default=)
-  .high_interval = 50,      //(Default=48), units of 0.625 ms. 50 = 31.24ms
-  .high_duration = 0,       //(Default=30), 0 = infinite advertising
-  .low_interval = 50,       //(Default=2048), units of 0.625 ms. 50 = 31.24ms
-  .low_duration = 0,        //(Default=60), 0 = infinite advertising
-  .flags = 0,               //(Default=)
+  .result = 0,         //(Default=)
+  .mode = 2,           //(Default=)
+  .type = 3,           //(Default=)
+  .channels = 7,       //(Default=)
+  .high_interval = 50, //(Default=48), units of 0.625 ms. 50 = 31.24ms
+  .high_duration = 0,  //(Default=30), 0 = infinite advertising
+  .low_interval = 50,  //(Default=2048), units of 0.625 ms. 50 = 31.24ms
+  .low_duration = 0,   //(Default=60), 0 = infinite advertising
+  /* Bit 1 (0x02) = use the user-defined advertisement and scan-response data
+   * loaded in the SET_BLE_ADV_DATA / SET_BLE_SR_DATA boot steps. Bit 0 (auto
+   * advertise on boot/disconnect) stays clear - this firmware starts and stops
+   * advertising explicitly. (Factory default = 0.) */
+  .flags = 0x02,
   .direct_addr = { { 0 } }, //(Default=)
   .direct_address_type = 0  //(Default=)
 };
@@ -96,7 +187,10 @@ static ezs_rsp_smp_get_privacy_mode_t rsp_smp_get_privacy_mode_ref = {
  * - 0x4X = BT Classic -> MITM Protection Not Required - Single Profiles/general
  *   bonding. Numeric comparison with automatic accept allowed.
  * - 0xX1 = BLE -> Required - General Bond
- */
+ *
+ * Note: the LE Secure Connections nibble (0x08, i.e. mode 0x49) was
+ * bench-tested and is inert with this module - every LE bond still paired
+ * legacy (SecureConn:F on the host). Do not re-try it as a fix; see DEV-970. */
 static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
     = { .mode = 0x41,
         .bonding = 1,
@@ -131,14 +225,14 @@ volatile uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactory
 uint8_t btNameTypeBeingRead;
 volatile bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
-static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
-  WAIT_FOR_BOOT_STAGE2, ENTER_BINARY_MODE, UPDATE_UART_SETTINGS_STAGE1,
-  UPDATE_UART_SETTINGS_STAGE2, UPDATE_UART_SETTINGS_STAGE3,
-  UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5, PING, GET_BT_PARAMETERS,
-  STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1, STOP_BLE_ADVERTISING_STAGE2,
-  GET_FIRMWARE_VERSION, GET_BT_DEVICE_CLASS, SET_BT_DEVICE_CLASS, GET_BT_MAC_ID,
-  UPDATE_LOCAL_ADVERTISING_NAMES, GET_DEVICE_NAME_BT, SET_DEVICE_NAME_BT,
-  GET_DEVICE_NAME_BLE, SET_DEVICE_NAME_BLE, GET_TX_POWER, SET_TX_POWER,
+static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
+  ENTER_BINARY_MODE, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
+  UPDATE_UART_SETTINGS_STAGE3, UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5,
+  PING, GET_BT_PARAMETERS, STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1,
+  STOP_BLE_ADVERTISING_STAGE2, GET_FIRMWARE_VERSION, GET_BT_DEVICE_CLASS,
+  SET_BT_DEVICE_CLASS, GET_BT_MAC_ID, UPDATE_LOCAL_ADVERTISING_NAMES,
+  GET_DEVICE_NAME_BT, SET_DEVICE_NAME_BT, GET_DEVICE_NAME_BLE, SET_DEVICE_NAME_BLE,
+  SET_BLE_ADV_DATA, SET_BLE_SR_DATA, GET_TX_POWER, SET_TX_POWER,
 #if USE_GET_SET_SYSTEM_SLEEP_PARAM
   GET_SYSTEM_SLEEP_PARAMETERS, SET_SYSTEM_SLEEP_PARAMETERS,
 #endif
@@ -146,8 +240,8 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
 #if USE_GET_SET_ADV_PARAM
   GET_ADVERTISING_PARAMETERS, SET_ADVERTISING_PARAMETERS,
 #endif
-  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS,
-  SET_SECURITY_PARAMETERS, GET_PIN_CODE, SET_PIN_CODE, START_BLE_ADVERTISING_STAGE1,
+  GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS, SET_SECURITY_PARAMETERS,
+  GET_PIN_CODE, SET_PIN_CODE, SET_CYSPP_PACKETIZATION, START_BLE_ADVERTISING_STAGE1,
   START_BLE_ADVERTISING_STAGE2, START_BT_ADVERTISING, FINISH };
 
 static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
@@ -161,6 +255,12 @@ static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
   FR_WAIT_FOR_REBOOT_AFTER_FR, FR_UPDATE_UART, FR_PING, FR_RESET_BT_MAC_ID, FINISH };
 
 void (*btIsInitialised_cb)(void);
+
+/* Composes a length-prefixed advertising name "<prefix>-XXXX<suffix>" into
+ * buf using the MAC ID bytes from rsp_system_get_bluetooth_address. The
+ * prefix comes from the EEPROM brand record. */
+static void
+buildAdvName(char *buf, const char *prefix, uint8_t prefixMaxChars, const char *suffix);
 
 static char hexdigit2int(uint8_t xd)
 {
@@ -193,6 +293,28 @@ static char hexdigit2int(uint8_t xd)
     return 'F';
   }
   return '0';
+}
+
+static void buildAdvName(char *buf, const char *prefix, uint8_t prefixMaxChars, const char *suffix)
+{
+  uint8_t len = 1; /* index 0 holds the length prefix */
+  uint8_t i;
+
+  for (i = 0; i < prefixMaxChars && prefix[i] != '\0'; i++)
+  {
+    buf[len++] = prefix[i];
+  }
+  buf[len++] = '-';
+  buf[len++] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
+  buf[len++] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
+  buf[len++] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
+  buf[len++] = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
+  for (i = 0; suffix[i] != '\0'; i++)
+  {
+    buf[len++] = suffix[i];
+  }
+  buf[0] = (char) (len - 1); /* uint8a_t length byte (excludes itself) */
+  buf[len] = '\0';           /* NUL so &buf[1] works as a strstr() needle */
 }
 
 static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separator)
@@ -511,23 +633,11 @@ void btInitCommands(void)
   {
     printf("Update local advertising name\r\n");
     incrementBtInitCmdsStep();
-    advNameBt[advNameMacIdStartIdx]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
-    advNameBt[advNameMacIdStartIdx + 1]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
-    advNameBt[advNameMacIdStartIdx + 2]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
-    advNameBt[advNameMacIdStartIdx + 3]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
-
-    advNameBle[advNameMacIdStartIdx]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1] >> 4) & 0x0F);
-    advNameBle[advNameMacIdStartIdx + 1]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[1]) & 0x0F);
-    advNameBle[advNameMacIdStartIdx + 2]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0] >> 4) & 0x0F);
-    advNameBle[advNameMacIdStartIdx + 3]
-        = hexdigit2int((rsp_system_get_bluetooth_address.address.addr[0]) & 0x0F);
+    buildAdvName(advNameBt, ShimEeprom_getBrandBtClassic(),
+        EEPROM_BRAND_BT_CLASSIC_MAX_CHARS, ADV_NAME_SUFFIX_BT);
+    buildAdvName(advNameBle, ShimEeprom_getBrandBle(),
+        EEPROM_BRAND_BLE_MAX_CHARS, ADV_NAME_SUFFIX_BLE);
+    buildBleAdvPayloads();
   }
 
   if (btInitCmdsStep == GET_DEVICE_NAME_BT)
@@ -573,6 +683,29 @@ void btInitCommands(void)
       ezs_fcmd_gap_set_device_name(DEVICE_TYPE_BLE, &advNameBle[0]);
       return;
     }
+  }
+
+  if (btInitCmdsStep == SET_BLE_ADV_DATA)
+  {
+    incrementBtInitCmdsStep();
+    printf("Set BLE ADV data\r\n");
+    setExpectedResponse(EZS_IDX_RSP_GAP_SET_ADV_DATA);
+    /* RAM scope, deliberately: this step runs unconditionally in every
+     * first-boot sequence, and the module cannot start advertising before that
+     * sequence finishes, so persistence buys nothing - a flash-scoped write
+     * here would burn module config-flash endurance once per power-up. */
+    ezs_cmd_gap_set_adv_data(&bleAdvData[0]);
+    return;
+  }
+
+  if (btInitCmdsStep == SET_BLE_SR_DATA)
+  {
+    incrementBtInitCmdsStep();
+    printf("Set BLE scan-response data\r\n");
+    setExpectedResponse(EZS_IDX_RSP_GAP_SET_SR_DATA);
+    /* RAM scope - same reasoning as the advertisement data above. */
+    ezs_cmd_gap_set_sr_data(&bleSrData[0]);
+    return;
   }
 
   if (btInitCmdsStep == GET_TX_POWER)
@@ -775,6 +908,35 @@ void btInitCommands(void)
       ezs_fcmd_smp_set_pin_code(&pin_code[0]);
       return;
     }
+  }
+
+  if (btInitCmdsStep == SET_CYSPP_PACKETIZATION)
+  {
+    incrementBtInitCmdsStep();
+    printf("Set CYSPP packetization: immediate\r\n");
+    /* The factory default is Anticipate with a 20-byte target - sized for the
+     * minimum GATT MTU of 23 - so the module ships sensor data as 20-byte
+     * notifications even when the client has negotiated a large MTU (Android
+     * Chrome asks for 517, Windows ~527). At the 7.5 ms connection interval
+     * hosts negotiate, that caps BLE throughput at roughly 5-20 KB/s, which is
+     * exactly the ceiling measured on the bench.
+     *
+     * Immediate mode transmits whatever is buffered each time the stack can
+     * take a packet. During bulk transfer the 2 Mbaud host UART outruns the
+     * radio, so transmissions naturally grow to the negotiated MTU payload (up
+     * to the module's 128-byte UART RX buffer per packet). Small LiteProtocol
+     * responses go out at once rather than being held for an anticipation
+     * window, so command latency improves too. The remaining arguments are
+     * unused in this mode but must be valid: wait 1 ms, length 128, EOP 0x0D
+     * (the factory default). */
+    setExpectedResponse(EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION);
+    /* RAM scope, deliberately: this step runs unconditionally in every
+     * first-boot sequence, so a flash-scoped write would burn module
+     * config-flash endurance once per power-up for nothing - the module resets
+     * to factory packetization on reboot and this sequence always runs again
+     * before CYSPP data mode can engage. */
+    ezs_cmd_p_cyspp_set_packetization(0, 1, 128, 0x0D);
+    return;
   }
 
   if (btInitCmdsStep == START_BLE_ADVERTISING_STAGE1)
@@ -1097,6 +1259,30 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     break;
 
+  case EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: rsp_p_cyspp_set_packetization: result=");
+    printHex16(packet->payload.rsp_p_cyspp_set_packetization.result);
+    printf("\r\n");
+#endif
+    break;
+
+  case EZS_IDX_RSP_GAP_SET_ADV_DATA:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: rsp_gap_set_adv_data: result=");
+    printHex16(packet->payload.rsp_gap_set_adv_data.result);
+    printf("\r\n");
+#endif
+    break;
+
+  case EZS_IDX_RSP_GAP_SET_SR_DATA:
+#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    printf("RX: rsp_gap_set_sr_data: result=");
+    printHex16(packet->payload.rsp_gap_set_sr_data.result);
+    printf("\r\n");
+#endif
+    break;
+
   case EZS_IDX_RSP_GAP_SET_DEVICE_NAME:
 #if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_set_device_name.result != EZS_ERR_SUCCESS)
@@ -1297,9 +1483,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_SYSTEM_ERROR:
-#if ENABLE_BT_RX_DEBUG_PRINTS
-    printf("CYW20820 System Error\r\n");
-#endif
+    /* Unconditional, with the code: the module reporting an internal error is
+     * never debug chatter, and this event fired right before a
+     * transport-switching wedge on the bench with its payload discarded. */
+    printf("CYW20820 System Error: code=");
+    printHex16(packet->payload.evt_system_error.error);
+    printf("\r\n");
     break;
 
   case EZS_IDX_RSP_SYSTEM_FACTORY_RESET:
@@ -1359,6 +1548,32 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
         packet->payload.evt_bt_connection_failed.reason);
     printf("\r\n");
 #endif
+    break;
+
+  case EZS_IDX_EVT_GATTS_DATA_WRITTEN:
+    /* A GATT write surfaced to the host instead of being consumed by the CYSPP
+     * pipe. Which attribute, and when (connect-time only vs during transfer),
+     * is the discriminating datum for the BLE throughput/wedge investigation -
+     * a bare "unhandled 05/02" print discarded exactly that. */
+    printf("RX: gatts_data_written conn=");
+    printHex8(packet->payload.evt_gatts_data_written.conn_handle);
+    printf(" attr=");
+    printHex16(packet->payload.evt_gatts_data_written.attr_handle);
+    printf(" type=");
+    printHex8(packet->payload.evt_gatts_data_written.type);
+    printf(" len=");
+    printHex16(packet->payload.evt_gatts_data_written.data.length);
+    printf("\r\n");
+    break;
+
+  case EZS_IDX_EVT_SMP_PAIRING_REQUESTED:
+    printf("RX: smp_pairing_requested conn=");
+    printHex8(packet->payload.evt_smp_pairing_requested.conn_handle);
+    printf(" mode=");
+    printHex8(packet->payload.evt_smp_pairing_requested.mode);
+    printf(" bonding=");
+    printHex8(packet->payload.evt_smp_pairing_requested.bonding);
+    printf("\r\n");
     break;
 
   case EZS_IDX_EVT_SMP_PAIRING_RESULT:

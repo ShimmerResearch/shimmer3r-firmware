@@ -15,7 +15,11 @@
 
 /* TODO decide if needed and remove it and associated code if not. Seems to be
  * needed or else BLE won't advertise just using ezs_cmd_gap_start_adv. */
-#define USE_GET_SET_ADV_PARAM          0
+/* Enabled so the boot sequence runs gap_set_adv_parameters: its flags bit 1 is
+ * what makes the module use the user-defined advertisement/scan-response data
+ * set below (guide 002-37528, gap_set_adv_data: "the data here remains unused"
+ * without it). */
+#define USE_GET_SET_ADV_PARAM          1
 #define USE_GET_SET_SYSTEM_SLEEP_PARAM 0
 
 #define BAUD_TO_USE                    2000000L
@@ -59,6 +63,8 @@ enum BT_SET_COMMAND_STAGES
   SET_DEVICE_NAME_BT,
   GET_DEVICE_NAME_BLE,
   SET_DEVICE_NAME_BLE,
+  SET_BLE_ADV_DATA,
+  SET_BLE_SR_DATA,
   GET_TX_POWER,
   SET_TX_POWER,
 #if USE_GET_SET_SYSTEM_SLEEP_PARAM
@@ -77,6 +83,7 @@ enum BT_SET_COMMAND_STAGES
   SET_SECURITY_PARAMETERS,
   GET_PIN_CODE,
   SET_PIN_CODE,
+  SET_CYSPP_PACKETIZATION,
   START_BLE_ADVERTISING_STAGE1,
   START_BLE_ADVERTISING_STAGE2,
   START_BT_ADVERTISING,

@@ -55,7 +55,20 @@ extern "C"
   /* Exported functions prototypes ---------------------------------------------*/
   void Error_Handler(void);
 
-/* USER CODE BEGIN EFP */
+  /* USER CODE BEGIN EFP */
+
+  /* DEV-866: true when the boot LSE bring-up exhausted every recovery step
+   * (drive escalation, backup-domain reset + re-escalation) and the RTC was
+   * started from the LSI instead so the device still boots. Timekeeping is
+   * degraded (LSI is a ~32 kHz RC, +/-5%, and the RTC prescalers/SSR math are
+   * left at their 32768 Hz values) - the unit needs its 32k crystal looked at. */
+  uint8_t Boot_rtcIsOnLsiFallback(void);
+
+  /* DEV-866: human-readable LSE drive level the boot bring-up settled on (the
+   * +1-margin level actually running), e.g. "MEDIUMLOW"; "not run" before
+   * SystemClock_Config, "NONE ..." variants on the failure rungs. For status /
+   * factory-test reporting. */
+  const char *Boot_getLseDriveName(void);
 
 /* USER CODE END EFP */
 

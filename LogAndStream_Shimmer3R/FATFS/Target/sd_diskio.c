@@ -68,7 +68,11 @@
 * transfer data
 */
 /* USER CODE BEGIN enableScratchBuffer */
-/* #define ENABLE_SCRATCH_BUFFER */
+/* The SDMMC IDMA ignores the two least-significant bits of its base address,
+ * so a transfer to/from a non-word-aligned buffer silently lands 1-3 bytes
+ * low. FatFs passes caller buffers straight through here on its whole-sector
+ * fast path, so misaligned callers MUST take the memcpy slow path below. */
+#define ENABLE_SCRATCH_BUFFER
 /* USER CODE END enableScratchBuffer */
 
 /* Private variables ---------------------------------------------------------*/
@@ -120,7 +124,7 @@ static int SD_CheckStatusWithTimeout(uint32_t timeout)
   /* block until SDIO IP is ready again or a timeout occur */
   while(HAL_GetTick() - timer < timeout)
   {
-    if (BSP_SD_GetCardState() == SD_TRANSFER_OK)
+    if (HAL_SD_SharedGetCardState(OWNER_FATFS) == SD_TRANSFER_OK)
     {
       return 0;
     }
@@ -133,7 +137,7 @@ static DSTATUS SD_CheckStatus(BYTE lun)
 {
   Stat = STA_NOINIT;
 
-  if(BSP_SD_GetCardState() == MSD_OK)
+  if(HAL_SD_SharedGetCardState(OWNER_FATFS) == MSD_OK)
   {
     Stat &= ~STA_NOINIT;
   }
@@ -228,7 +232,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 
         while((HAL_GetTick() - timeout) < SD_TIMEOUT)
         {
-          if (BSP_SD_GetCardState() == SD_TRANSFER_OK)
+          if (HAL_SD_SharedGetCardState(OWNER_FATFS) == SD_TRANSFER_OK)
           {
             res = RES_OK;
 #if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
@@ -275,6 +279,25 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 #endif
           memcpy(buff, scratch, BLOCKSIZE);
           buff += BLOCKSIZE;
+
+          /* Match the aligned branch: wait for the card to leave the data
+           * state before issuing the next single-block command. The HAL-state
+           * guard inside HAL_SD_SharedRead is not enough - the HAL returns to
+           * READY on transfer complete while the card itself can still be
+           * busy. */
+          timeout = HAL_GetTick();
+          while (HAL_SD_SharedGetCardState(OWNER_FATFS) != SD_TRANSFER_OK)
+          {
+            if ((HAL_GetTick() - timeout) >= SD_TIMEOUT)
+            {
+              ret = MSD_ERROR;
+              break;
+            }
+          }
+          if (ret != MSD_OK)
+          {
+            break;
+          }
         }
         else
         {
@@ -356,7 +379,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 
         while((HAL_GetTick() - timeout) < SD_TIMEOUT)
         {
-          if (BSP_SD_GetCardState() == SD_TRANSFER_OK)
+          if (HAL_SD_SharedGetCardState(OWNER_FATFS) == SD_TRANSFER_OK)
           {
             res = RES_OK;
             break;
@@ -393,6 +416,23 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
             break;
           }
 
+          /* Match the aligned branch: WriteStatus only marks the DMA/transfer
+           * complete - the card can still be programming the block. Wait for
+           * it to return to the transfer state before issuing the next
+           * single-block write. */
+          timeout = HAL_GetTick();
+          while (HAL_SD_SharedGetCardState(OWNER_FATFS) != SD_TRANSFER_OK)
+          {
+            if ((HAL_GetTick() - timeout) >= SD_TIMEOUT)
+            {
+              ret = MSD_ERROR;
+              break;
+            }
+          }
+          if (ret != MSD_OK)
+          {
+            break;
+          }
         }
         else
         {

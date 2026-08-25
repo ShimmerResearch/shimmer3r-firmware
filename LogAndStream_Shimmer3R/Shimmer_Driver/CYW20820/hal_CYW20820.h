@@ -74,7 +74,7 @@ void setBtBootModeSubsequentBoot(void);
 extern void ezsHandler(ezs_packet_t *packet) __attribute__((weak));
 extern void ezsHandlerShimmer(ezs_packet_t *packet) __attribute__((weak));
 
-HAL_StatusTypeDefShimmer BtTransmit(uint8_t *buf, uint8_t len);
+HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len);
 void resetEzsPendingResponse(void);
 uint8_t isPendingResponseFromBtModule(void);
 void resetBtRxBuff(void);

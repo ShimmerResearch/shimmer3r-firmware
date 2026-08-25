@@ -59,6 +59,7 @@ extern "C"
   HAL_SD_SharedRead(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t blocks);
   HAL_StatusTypeDef
   HAL_SD_SharedWrite(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t blocks);
+  uint8_t HAL_SD_SharedGetCardState(sdOwner_t requester);
 
   /* USER CODE END Prototypes */
 

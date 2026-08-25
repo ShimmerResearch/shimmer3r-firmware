@@ -193,7 +193,13 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef *rtcHandle)
     /** Initializes the peripherals clock
      */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-    PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+    /* DEV-866: when the boot LSE recovery ladder exhausted every step, run
+     * the RTC from the LSI so the device boots and can report the fault
+     * rather than hanging. Prescalers/SSR math stay at 32768 Hz (see
+     * DEV866_BringUpLse in main.c) - time runs ~2.4% slow +/- LSI tolerance,
+     * which is acceptable for a flagged limp-home mode. */
+    PeriphClkInit.RTCClockSelection
+        = Boot_rtcIsOnLsiFallback() ? RCC_RTCCLKSOURCE_LSI : RCC_RTCCLKSOURCE_LSE;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
       Error_Handler();

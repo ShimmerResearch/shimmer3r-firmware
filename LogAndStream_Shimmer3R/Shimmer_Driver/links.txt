@@ -1,5 +1,8 @@
 BMP-390
 https://github.com/boschsensortec/BMP3_SensorAPI
 
+BMP-581
+https://github.com/boschsensortec/BMP5_SensorAPI
+
 STMicroelectronics
 https://github.com/STMicroelectronics/STMems_Standard_C_drivers/tree/master

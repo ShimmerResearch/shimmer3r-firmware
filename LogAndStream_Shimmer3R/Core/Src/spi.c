@@ -36,6 +36,17 @@ SPI_HandleTypeDef *hspiExg;
 #if defined(SHIMMER3R)
 spi1ReadBuf spi1Sens_buf;
 spi2ReadBuf spi2Sens_buf;
+
+/* DEV-818: sample-and-hold caches for the slow, DRDY-gated sensors on SPI.
+ * When a sample tick has no fresh conversion ready (the DRDY gate is not
+ * satisfied) the packet slot would otherwise keep its zero-initialised value
+ * and log a spurious 0. Instead we repeat the last valid reading. The caches
+ * are cleared at the start of each sensing session (SPI_startSensing), so the
+ * first samples - before any conversion exists - are 0, an accepted brief
+ * leading-edge artifact. */
+static uint8_t bmpLastPress[3] = { 0 };
+static uint8_t bmpLastTemp[3] = { 0 };
+static uint8_t lis3mdlLastMag[6] = { 0 };
 spi3ReadBuf spi3Sens_buf;
 
 SPITypeDef spi1Sens;
@@ -71,7 +82,7 @@ void MX_SPI1_Init(void)
 
   lsm6dsv_unselectDevice();
   adxl371_unselectDevice();
-  bmp3_unselectDevice();
+  PressureSensor_unselectDevice();
 
   if (isAds7028Present())
   {
@@ -131,7 +142,7 @@ void MX_SPI1_Init(void)
   HAL_Delay(BOOT_TIME);
 
   lsm6dsv_driver_init();
-  bmp3_driver_init();
+  PressureSensor_init();
   adxl371_driver_init();
 
   /* USER CODE END SPI1_Init 2 */
@@ -649,7 +660,7 @@ void SPI1_DeInit(void)
 
   lsm6dsv_selectDevice();
   adxl371_selectDevice();
-  bmp3_selectDevice();
+  PressureSensor_selectDevice();
 
   if (isAds7028Present())
   {
@@ -743,7 +754,7 @@ void SPI_configureChannels()
     sensing.ptr.pressure = sensing.dataLen;
     sensing.dataLen += 3;
 #endif
-    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_BMP390_PRESSURE_TEMP;
+    spi1Sens.sensorList[spi1Sens.sensorLen++] = SPI1_PRESSURE_TEMP;
   }
 
   if (configBytes->chEnAltAccel)
@@ -871,6 +882,12 @@ void SPI_startSensing()
   float shimmerSamplingFreq = ShimConfig_getShimmerSamplingFreq();
 
   memset((uint8_t *) &spi1Sens_buf, 0, sizeof(spi1ReadBuf));
+
+  /* DEV-818: start each session with cleared sample-and-hold caches so the
+   * leading edge (before the first valid conversion) is 0, then held. */
+  memset(bmpLastPress, 0, sizeof(bmpLastPress));
+  memset(bmpLastTemp, 0, sizeof(bmpLastTemp));
+  memset(lis3mdlLastMag, 0, sizeof(lis3mdlLastMag));
   memset((uint8_t *) &spi2Sens_buf, 0, sizeof(spi2ReadBuf));
   memset((uint8_t *) &spi3Sens_buf, 0, sizeof(spi3ReadBuf));
 
@@ -896,8 +913,18 @@ void SPI_startSensing()
 
   if (configBytes->chEnPressureAndTemperature)
   {
-    int8_t rslt = bmp3_configure(shimmerSamplingFreq,
+    int8_t rslt = PressureSensor_configure(shimmerSamplingFreq,
         ShimConfig_configBytePressureOversamplingRatioGet());
+    if (rslt != 0)
+    {
+      /* A failed configure would otherwise stream meaningless data with no
+       * indication. A transient comms/NVM issue (e.g. the BMP581's NVM not
+       * ready straight after power-up) is recoverable, so retry once via a
+       * full re-init; a hard failure will simply fail again here. */
+      PressureSensor_init();
+      PressureSensor_configure(shimmerSamplingFreq,
+          ShimConfig_configBytePressureOversamplingRatioGet());
+    }
   }
 
   if (configBytes->chEnAltAccel)
@@ -1205,12 +1232,25 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       retVal = 1;
     }
     break;
-  case SPI1_BMP390_PRESSURE_TEMP:
-    if (!bmp3_is_drdy_int_enabled() || BMP390_INT)
+  case SPI1_PRESSURE_TEMP:
+    /* Read once the DRDY interrupt pin has asserted, or every cycle when the
+     * DRDY interrupt isn't in use - mirroring the original BMP390 path. The
+     * BMP390 and BMP581 share the same interrupt line. */
+    if (!PressureSensor_isDrdyIntEnabled() || BMP390_INT)
     {
-      spiSensingInfo->status = SPI_STAT_BMP390_PRESSURE_TEMPERATURE_GET;
-      halRet = bmp3_pressure_temperature_get(spi1Sens_buf.bmp390Buf);
+      spiSensingInfo->status = SPI_STAT_PRESSURE_TEMPERATURE_GET;
+      halRet = PressureSensor_getDataDma(spi1Sens_buf.bmp390Buf);
       retVal = 1;
+    }
+    else
+    {
+      /* DEV-818: no fresh conversion this tick - sample-and-hold the last valid
+       * pressure/temperature instead of leaving the zeroed packet slot (which
+       * would log a spurious 0 kPa / 0 degC, most visibly during the sensor's
+       * ~1s warm-up when its data-ready cadence is below the sampling rate). */
+      uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
+      memcpy(dataBufPtr + sensing.ptr.pressure, bmpLastPress, sizeof(bmpLastPress));
+      memcpy(dataBufPtr + sensing.ptr.temperature, bmpLastTemp, sizeof(bmpLastTemp));
     }
     break;
   case SPI1_ADS7028_INT_EXP0:
@@ -1273,6 +1313,13 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       halRet = lis3mdl_mag_get(spi2Sens_buf.lis3mdlMagBuf);
       retVal = 1;
     }
+    else
+    {
+      /* DEV-818: no fresh conversion this tick - sample-and-hold the last valid
+       * magnetometer reading instead of leaving the zeroed packet slot. */
+      uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
+      memcpy(dataBufPtr + sensing.ptr.mag2, lis3mdlLastMag, sizeof(lis3mdlLastMag));
+    }
     break;
 
   default:
@@ -1319,16 +1366,41 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     memcpy(dataBufPtr + sensing.ptr.accel3, &spi1Sens_buf.adxl371Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
     break;
-  case SPI1_BMP390_PRESSURE_TEMP:
-    if (bmp3_is_drdy_int_enabled())
+  case SPI1_PRESSURE_TEMP:
+    /* Raise CS to complete the DMA data-burst transaction BEFORE the status
+     * read below. platform_read_raw_data_dma() leaves CS asserted and the
+     * status read's own select is edge-less on an already-low pin, so the
+     * chip would otherwise treat the status read as a continuation of the
+     * data burst (address auto-increment, MOSI ignored) - INT_STATUS would
+     * never actually be read and the latched DRDY pin would never clear. */
+    PressureSensor_unselectDevice();
+    if (PressureSensor_isDrdyIntEnabled())
     {
       /* Read chip status registers to reset interrupt pin */
-      bmp3_read_sensor_status();
+      PressureSensor_clearDrdyInt();
     }
-    bmp3_unselectDevice();
-    memcpy(dataBufPtr + sensing.ptr.pressure,
-        &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
-        sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
+    if (isBmp581InUse())
+    {
+      /* The BMP581 bursts temperature (0x1D-0x1F) followed by pressure
+       * (0x20-0x22) whereas the BMP390 bursts pressure then temperature, so
+       * the two blocks are swapped here to keep the data packet layout the
+       * same for both sensors. The BMP581 also inserts no dummy byte after
+       * the register address. */
+      memcpy(dataBufPtr + sensing.ptr.pressure,
+          &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 3], 3);
+      memcpy(dataBufPtr + sensing.ptr.temperature,
+          &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET], 3);
+    }
+    else
+    {
+      memcpy(dataBufPtr + sensing.ptr.pressure,
+          &spi1Sens_buf.bmp390Buf[SPI_DMA_TXRX_OFFSET + 1],
+          sizeof(spi1Sens_buf.bmp390Buf) - SPI_DMA_TXRX_OFFSET - 1);
+    }
+    /* DEV-818: refresh the sample-and-hold cache from the freshly-read slot so
+     * a subsequent no-DRDY tick repeats this value instead of logging 0. */
+    memcpy(bmpLastPress, dataBufPtr + sensing.ptr.pressure, sizeof(bmpLastPress));
+    memcpy(bmpLastTemp, dataBufPtr + sensing.ptr.temperature, sizeof(bmpLastTemp));
     break;
   case SPI1_ADS7028_INT_EXP0:
   case SPI1_ADS7028_INT_EXP1:
@@ -1433,6 +1505,8 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     lis3mdl_unselectDevice();
     memcpy(dataBufPtr + sensing.ptr.mag2, &spi2Sens_buf.lis3mdlMagBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis3mdlMagBuf) - SPI_DMA_TXRX_OFFSET);
+    /* DEV-818: refresh the sample-and-hold cache from the freshly-read slot. */
+    memcpy(lis3mdlLastMag, dataBufPtr + sensing.ptr.mag2, sizeof(lis3mdlLastMag));
     break;
   default:
     break;
@@ -1628,10 +1702,11 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
 }
 #endif
 
-void bmp3_readCalibrationDataOnBoot(void)
+void PressureSensor_initOnBoot(void)
 {
-  /* Initialise SPI1 simply so that the pressure sensors calibration can be read
-   *  on boot. It is de-initialised straight after. */
+  /* Initialise SPI1 simply so that the fitted pressure sensor variant can be
+   * detected (BMP390 vs BMP581) and, for the BMP390, its calibration data can
+   * be read on boot. It is de-initialised straight after. */
   Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
   MX_SPI1_Init();
   SPI1_DeInit();

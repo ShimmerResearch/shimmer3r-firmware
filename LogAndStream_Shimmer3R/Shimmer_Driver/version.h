@@ -4,8 +4,8 @@
 
 #define FW_VERSION_MAJOR  1 //16-bit
 #define FW_VERSION_MINOR  1 //8-bit
-#define FW_VERSION_PATCH  4 //8-bit
-#define FW_VERSION_STRING "v1.01.004"
+#define FW_VERSION_PATCH  12 //8-bit
+#define FW_VERSION_STRING "v1.01.012"
 
 #include <stdint.h>
 
@@ -16,7 +16,9 @@ typedef struct
   uint8_t patch;
 } firmware_version_t;
 
-__attribute__((section(".version"), used)) static const firmware_version_t fw_version_struct
-    = { .major = FW_VERSION_MAJOR, .minor = FW_VERSION_MINOR, .patch = FW_VERSION_PATCH };
+/* The definition lives in each firmware's main.c so this header can be included
+ * by multiple translation units without emitting a duplicate object into the
+ * .version linker section. */
+extern const firmware_version_t fw_version_struct;
 
 #endif //VERSION_H

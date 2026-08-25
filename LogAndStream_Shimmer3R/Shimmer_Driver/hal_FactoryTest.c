@@ -8,6 +8,7 @@
 #include "hal_FactoryTest.h"
 
 #include <inttypes.h>
+#include <string.h>
 
 #include "i2c.h"
 #include "spi.h"
@@ -30,6 +31,309 @@ uint32_t gsrResistance[sizeof(testGsrResistances)];
 static float gsrFactoryTest_getPassToleranceForTestResistor(uint32_t testResistor);
 static uint32_t gsrFactoryTest_getRefResistorForTestResistor(uint32_t testResistor);
 
+/* ---- LSE crystal error self-measurement (DEV-866) ----
+ *
+ * Measures the 32.768 kHz LSE crystal against the 16 MHz HSE crystal.
+ * SYSCLK on the S3R is MSI (an RC oscillator), so a timer cannot simply
+ * count "crystal-accurate" ticks the way the equivalent Verisense/nRF52840
+ * test (DEV-844) does. Instead TIM16 input-captures LSE and TIM17
+ * input-captures HSE/32 - both via their TISEL internal inputs - while both
+ * timers free-run from the same MSI-derived kernel clock. The unknown MSI
+ * frequency appears identically in both capture streams and cancels exactly
+ * in the ratio, leaving f_LSE measured against the HSE crystal: absolute
+ * accuracy = HSE tolerance, resolution ~0.1 ppm over the ~1 s windows.
+ * Hardware capture latches every timestamp, so CPU/IRQ latency does not
+ * affect the result (the same property the PPI gate gives the nRF version).
+ * Positive result = LSE fast = the RTC gains time. */
+
+#define LSE_MEAS_LSE_CAPTURES      32769U /* 32768 LSE periods   ~= 1 s window */
+#define LSE_MEAS_HSE_CAPTURES      62501U /* 62500 x 8/500 kHz   ~= 1 s window */
+#define LSE_MEAS_TIMEOUT_MS        2500U  /* per attempt; windows are ~1 s */
+#define LSE_MEAS_MAX_ATTEMPTS      3U     /* unreconstructable-gap retries */
+/* Longest service gap the edge-grid reconstruction below will bridge, in
+ * capture intervals. Needs the nominal interval known only to ~2 % (we have
+ * ~0.3 %: MSI trim + integer rounding), and 20 intervals stays far below the
+ * 16-bit counter wrap. 20 intervals = ~320 us (HSE chan) / ~610 us (LSE
+ * chan) of tolerated continuous interrupt masking. */
+#define LSE_MEAS_MAX_GAP_INTERVALS 20U
+
+typedef struct
+{
+  TIM_TypeDef *tim;
+  uint64_t firstCap;
+  uint64_t lastCap;
+  uint32_t edgeCount; /* edges since firstCap, incl. reconstructed ones */
+  uint32_t edgeTarget;
+  uint32_t tNom;      /* nominal kernel ticks per capture interval */
+  uint32_t recovered; /* edges reconstructed across oversized gaps */
+  uint32_t wraps;
+  uint8_t invalid; /* gap too large to reconstruct - retry */
+} lse_meas_chan_t;
+
+/* ISR-owned capture state.
+ *
+ * Bench round 1: a polled loop cannot meet the 16 us TIM17 capture spacing -
+ * the USB OTG / UART interrupts carrying the test report steal longer bursts
+ * (overcapture every attempt). Round 2: even ISRs at NVIC preempt priority 0
+ * still overcaptured, because the comms stacks (shimmer_bt_uart, USBX
+ * transfer_request, Infomem) guard their state with __disable_irq() critical
+ * sections, and PRIMASK outranks every NVIC priority.
+ *
+ * The measurement is therefore made starvation-immune instead: both sources
+ * are strictly crystal-periodic, so when service arrives late the latched
+ * capture still sits exactly on the edge grid, and the number of edges the
+ * gap spans is round(gap / tNom) - exact while the gap stays within
+ * LSE_MEAS_MAX_GAP_INTERVALS. An overwritten capture (CC1OF) is thus plain
+ * arithmetic, not an error; only a gap too long to attribute unambiguously
+ * invalidates the attempt. Capture values are hardware-latched, so none of
+ * this biases the result. ISRs stay at priority 0 to keep gaps rare. */
+static volatile lse_meas_chan_t lseMeasLseChan;
+static volatile lse_meas_chan_t lseMeasHseChan;
+
+static void lseMeasChanIrq(volatile lse_meas_chan_t *ch)
+{
+  TIM_TypeDef *tim = ch->tim;
+
+  if (tim == NULL)
+  {
+    return; /* spurious - measurement not armed */
+  }
+
+  if (tim->SR & TIM_SR_CC1IF)
+  {
+    /* An overwritten capture only means this service spans >1 edge; the
+     * grid reconstruction below recovers the true count. */
+    if (tim->SR & TIM_SR_CC1OF)
+    {
+      tim->SR = ~TIM_SR_CC1OF;
+    }
+    uint32_t ccr = tim->CCR1; /* read clears CC1IF */
+    uint32_t wraps = ch->wraps;
+    /* If an unserviced update event is pending and the captured count is in
+     * the lower half, the capture happened after the counter wrapped. */
+    if ((tim->SR & TIM_SR_UIF) && ccr < 0x8000U)
+    {
+      wraps++;
+    }
+    uint64_t t = ((uint64_t) wraps << 16) + ccr;
+    if (ch->edgeCount == 0U)
+    {
+      ch->firstCap = t;
+      ch->edgeCount = 1U;
+    }
+    else
+    {
+      uint32_t gap = (uint32_t) (t - ch->lastCap);
+      uint32_t k = (gap + (ch->tNom / 2U)) / ch->tNom;
+      if (k == 0U)
+      {
+        k = 1U; /* sub-interval jitter guard; cannot happen for real edges */
+      }
+      if (k > LSE_MEAS_MAX_GAP_INTERVALS)
+      {
+        /* Starved longer than the reconstruction can bridge (or the counter
+         * wrapped unseen) - this attempt's counts are untrustworthy. */
+        ch->invalid = 1U;
+        tim->CR1 = 0U;
+        tim->DIER = 0U;
+      }
+      else
+      {
+        ch->edgeCount += k;
+        ch->recovered += k - 1U;
+      }
+    }
+    ch->lastCap = t;
+    if (ch->edgeCount >= ch->edgeTarget)
+    {
+      tim->CR1 = 0U; /* window complete - freeze the channel */
+      tim->DIER = 0U;
+    }
+  }
+  if (tim->SR & TIM_SR_UIF)
+  {
+    tim->SR = ~TIM_SR_UIF; /* rc_w0: writing 0 clears only UIF */
+    ch->wraps++;
+  }
+}
+
+void TIM16_IRQHandler(void)
+{
+  lseMeasChanIrq(&lseMeasLseChan);
+}
+
+void TIM17_IRQHandler(void)
+{
+  lseMeasChanIrq(&lseMeasHseChan);
+}
+
+static void lseMeasChanInit(volatile lse_meas_chan_t *ch,
+    TIM_TypeDef *tim,
+    uint32_t tisel,
+    uint32_t ic1psc,
+    uint32_t edgeTarget,
+    uint32_t tNom)
+{
+  ch->tim = NULL; /* keep the ISR out while (re)initialising */
+  ch->firstCap = 0U;
+  ch->lastCap = 0U;
+  ch->edgeCount = 0U;
+  ch->edgeTarget = edgeTarget;
+  ch->tNom = tNom;
+  ch->recovered = 0U;
+  ch->wraps = 0U;
+  ch->invalid = 0U;
+
+  tim->CR1 = 0U;
+  tim->DIER = 0U;
+  tim->PSC = 0U;
+  tim->ARR = 0xFFFFU;
+  tim->EGR = TIM_EGR_UG; /* latch PSC/ARR */
+  tim->TISEL = tisel;
+  /* CC1 <- TI1, optional input prescaler (HSE/32 is captured /8 so the ISR
+   * only runs once per 16 us on that channel) */
+  tim->CCMR1 = TIM_CCMR1_CC1S_0 | ic1psc;
+  tim->CCER = TIM_CCER_CC1E; /* capture rising edges */
+  tim->SR = 0U;              /* clear stale flags (incl. UG's UIF) */
+
+  ch->tim = tim;
+  tim->DIER = TIM_DIER_CC1IE | TIM_DIER_UIE;
+  tim->CR1 = TIM_CR1_CEN;
+}
+
+lse_meas_result_t measureLseErrorPpmX10(int32_t *lseErrorPpmX10)
+{
+  lse_meas_result_t result = LSE_MEAS_OK;
+
+  if (lseErrorPpmX10 == NULL)
+  {
+    return LSE_MEAS_ERR_PARAM;
+  }
+  *lseErrorPpmX10 = 0;
+
+  if (!(RCC->BDCR & RCC_BDCR_LSERDY))
+  {
+    return LSE_MEAS_ERR_LSE_NOT_READY;
+  }
+  if (!(RCC->CR & RCC_CR_HSERDY))
+  {
+    return LSE_MEAS_ERR_HSE_NOT_READY;
+  }
+
+  __HAL_RCC_TIM16_CLK_ENABLE();
+  __HAL_RCC_TIM17_CLK_ENABLE();
+
+  /* HSE/32 as a TIM16/17 TI1 source is additionally gated by HSE32EN in the
+   * capturing timer's option register (RM0456 / HAL_TIMEx_EnableHSE32) -
+   * without it TIM17 sees no edges and the measurement times out. (The
+   * cross-timer Cut1.x workaround in the HAL applies to U575/585 only.) */
+  SET_BIT(TIM17->OR1, TIM_OR1_HSE32EN);
+
+  /* Preempt priority 0: see the note above lseMeasLseChan. */
+  HAL_NVIC_SetPriority(TIM16_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(TIM17_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(TIM16_IRQn);
+  HAL_NVIC_EnableIRQ(TIM17_IRQn);
+
+  /* Nominal kernel ticks per capture interval, from the live core clock:
+   * LSE captures every 32768th of a second, HSE-chan captures every
+   * (32 x 8)/16 MHz = 1/62500 s. Only ~2 % accuracy is needed for the
+   * edge-grid reconstruction; SystemCoreClock is well within that. */
+  uint32_t tNomLse = SystemCoreClock / 32768U;
+  uint32_t tNomHse = SystemCoreClock / 62500U;
+
+  for (uint8_t attempt = 0U; attempt < LSE_MEAS_MAX_ATTEMPTS; attempt++)
+  {
+    lseMeasChanInit(&lseMeasLseChan, TIM16, TIM_TIM16_TI1_LSE, TIM_ICPSC_DIV1,
+        LSE_MEAS_LSE_CAPTURES, tNomLse);
+    lseMeasChanInit(&lseMeasHseChan, TIM17, TIM_TIM17_TI1_HSE_DIV32,
+        TIM_ICPSC_DIV8, LSE_MEAS_HSE_CAPTURES, tNomHse);
+
+    result = LSE_MEAS_OK;
+    uint32_t startMs = HAL_GetTick();
+    while (lseMeasLseChan.edgeCount < lseMeasLseChan.edgeTarget
+        || lseMeasHseChan.edgeCount < lseMeasHseChan.edgeTarget)
+    {
+      if (lseMeasLseChan.invalid || lseMeasHseChan.invalid)
+      {
+        result = LSE_MEAS_ERR_GAP;
+        break;
+      }
+      if ((HAL_GetTick() - startMs) > LSE_MEAS_TIMEOUT_MS)
+      {
+        result = LSE_MEAS_ERR_TIMEOUT;
+        break;
+      }
+    }
+
+    if (result != LSE_MEAS_ERR_GAP)
+    {
+      break; /* success or a non-retryable error */
+    }
+  }
+
+  HAL_NVIC_DisableIRQ(TIM16_IRQn);
+  HAL_NVIC_DisableIRQ(TIM17_IRQn);
+  TIM16->CR1 = 0U;
+  TIM17->CR1 = 0U;
+  TIM16->DIER = 0U;
+  TIM17->DIER = 0U;
+  TIM16->CCER = 0U;
+  TIM17->CCER = 0U;
+  CLEAR_BIT(TIM17->OR1, TIM_OR1_HSE32EN);
+  __HAL_RCC_TIM16_CLK_DISABLE();
+  __HAL_RCC_TIM17_CLK_DISABLE();
+  lseMeasLseChan.tim = NULL;
+  lseMeasHseChan.tim = NULL;
+
+  if (result != LSE_MEAS_OK)
+  {
+    return result;
+  }
+
+  /* R = (lseIntervals/lseTicks) / (hseIntervals/hseTicks) = f_LSE/f_hsecap
+   * where f_hsecap = (16 MHz / 32) / 8 = 62.5 kHz nominally, so
+   * R_nominal = 32768 / 62500 = 8192 / 15625 exactly. The kernel-clock
+   * frequency cancels in the ratio. */
+  uint64_t lseTicks = lseMeasLseChan.lastCap - lseMeasLseChan.firstCap;
+  uint64_t hseTicks = lseMeasHseChan.lastCap - lseMeasHseChan.firstCap;
+  uint64_t lseIntervals = (uint64_t) lseMeasLseChan.edgeCount - 1U;
+  uint64_t hseIntervals = (uint64_t) lseMeasHseChan.edgeCount - 1U;
+  if (lseTicks == 0U || hseTicks == 0U)
+  {
+    return LSE_MEAS_ERR_TIMEOUT;
+  }
+
+  /* Wrap-loss cross-check: both windows are nominally 1.0000 s and start
+   * together, so their kernel-tick spans agree within a few thousand ticks.
+   * A UIF wrap silently lost to >1.37 ms of interrupt masking would skew one
+   * span by 65536 ticks - flag anything past half a wrap. */
+  {
+    int64_t spanDiff = (int64_t) lseTicks - (int64_t) hseTicks;
+    if ((spanDiff > 32768) || (spanDiff < -32768))
+    {
+      return LSE_MEAS_ERR_GAP;
+    }
+  }
+
+  int64_t num = (int64_t) (lseIntervals * hseTicks) * 15625;
+  int64_t den = (int64_t) (hseIntervals * lseTicks) * 8192;
+  int64_t delta = num - den; /* positive = LSE fast = RTC gains time */
+
+  /* Beyond +/-1 % the capture streams are bogus, and the ppm conversion
+   * below would risk overflow. */
+  if ((delta > (den / 100)) || (delta < -(den / 100)))
+  {
+    return LSE_MEAS_ERR_RANGE;
+  }
+
+  /* ppm x10 = delta/den * 1e7; divide den first so everything stays within
+   * int64 (den/1e6 keeps ~10 significant digits - error << 0.1 ppm). */
+  *lseErrorPpmX10 = (int32_t) ((delta * 10) / (den / 1000000));
+
+  return LSE_MEAS_OK;
+}
+
 void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr)
 {
   buffer = bufPtr;
@@ -39,7 +343,7 @@ void hal_run_factory_test(factory_test_t factoryTestToRun, char *bufPtr)
     print_date_and_time();
     ShimFactoryTest_sendReport("\r\n");
 
-    sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f\xC2\xB0 C\r\n",
+    sprintf(buffer, "INFO: Temperature pass range set to %.0f-%.0f degC\r\n",
         TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER, TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
     ShimFactoryTest_sendReport(buffer);
     ShimFactoryTest_sendReport("\r\n");
@@ -121,6 +425,61 @@ void print_shimmer_model(void)
   }
 }
 
+/* DEV-866: SR revisions from which the corrected HSE (16 MHz) load caps
+ * (6.8 -> 15 pF) are fitted in production - the ".2" respin that also adds
+ * the BMP581 (see Shimmer_PCBREV_INDEX.xlsx; the ".3" adds the IM68D121
+ * microphone on top). The 32k LSE caps stay at 12 pF on ALL revisions:
+ * hardware measurement (2026-08-11, three boards, overnight RTC-vs-host
+ * runs) showed the S3R LSE is near-spec at 12 pF (-7 +/- 2 ppm; the STM32's
+ * pin strays complete the load, unlike the nRF52840 on Verisense) and that
+ * 22 pF OVER-loads it (-54 / -113 ppm on two reworked units). Base board
+ * IDs are unchanged - only the revision signifies the change. Compared as
+ * (major, minor) >= threshold within the same board ID. Deliberately NOT
+ * listed: SR48-7-2, the BMP581 development build on the older rev-7 PCB -
+ * it predates the production cap change.
+ * TODO(DEV-866): once log-and-stream-common PR #111 merges, replace this
+ * local compare with ShimBrd_isBoardSrNumberGte(). */
+typedef struct
+{
+  uint8_t id;
+  uint8_t major;
+  uint8_t minor;
+} hse_cap_fix_rev_t;
+
+static const hse_cap_fix_rev_t hseCapFixRevs[] = {
+  { 31, 11, 2 },
+  { 38, 4, 2 },
+  { 47, 8, 2 },
+  { 48, 8, 2 },
+  { 49, 4, 2 },
+};
+
+/* True when this board's SR revision says the production HSE cap fix is
+ * fitted. Falls back to 0 (deployed/pre-fix limits) when the daughter card ID
+ * is unset or the board ID is not in the table - the looser limit still
+ * catches real faults, and an unset ID already fails S3R_TEST_0003, so the
+ * report cannot pass silently. NOTE: hand-reworked bench units carry
+ * corrected caps under a pre-fix revision and will report against the
+ * deployed limit - expected, they are not production boards. */
+static uint8_t hseCapFixFitted(void)
+{
+  if (!ShimBrd_isDaughterCardIdSet())
+  {
+    return 0;
+  }
+  shimmer_expansion_brd *d = ShimBrd_getDaughtCardId();
+  for (uint32_t i = 0; i < sizeof(hseCapFixRevs) / sizeof(hseCapFixRevs[0]); i++)
+  {
+    if (d->exp_brd_id == hseCapFixRevs[i].id)
+    {
+      return (d->exp_brd_major > hseCapFixRevs[i].major)
+          || (d->exp_brd_major == hseCapFixRevs[i].major
+              && d->exp_brd_minor >= hseCapFixRevs[i].minor);
+    }
+  }
+  return 0;
+}
+
 void print_mcu_details(void)
 {
   ShimFactoryTest_sendReport("MCU:\r\n");
@@ -198,13 +557,86 @@ void print_mcu_details(void)
 
   testPass = (adcDebugInfo.temperature > TEST_THRESHOLD_MV_MCU_TEMPERATURE_LOWER
       && adcDebugInfo.temperature < TEST_THRESHOLD_MV_MCU_TEMPERATURE_UPPER);
-  sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld\xC2\xB0 C\r\n",
+  sprintf(buffer, " - S3R_TEST_0010 - %s: Temperature = %ld degC\r\n",
       testPass ? "PASS" : "FAIL", adcDebugInfo.temperature);
   ShimFactoryTest_sendReport(buffer);
   if (!testPass)
   {
     shimmerStatus.testResult |= S3R_TEST_0010;
   }
+
+  /* DEV-866: LSE (32.768 kHz) crystal error vs the 16 MHz HSE crystal. The
+   * result is DIFFERENTIAL (ppm_LSE - ppm_HSE). Measured story (2026-08-11,
+   * RTC-vs-host overnight runs + this test, three boards):
+   *   - LSE with the production 12 pF caps is near-spec, -7 +/- 2 ppm (the
+   *     STM32's pin strays complete the load - the Verisense +40..+65 ppm
+   *     analogy does NOT carry over to the S3R).
+   *   - Stock 6.8 pF HSE caps under-load the CS07826 (C_L = 8 pF): HSE runs
+   *     ~+40..+55 fast, so PRE-FIX boards read ~ -18..-68 here - that spread
+   *     is the reference's, not the LSE's.
+   *   - With the ".2"-respin 15 pF HSE caps the reference centres (+14 +/- 1
+   *     measured), and healthy boards read ~ -21 +/- a few.
+   * The pass limit is picked by SR revision: HSE-fixed boards get the tight
+   * limit (sized so a healthy -21-centred population with HSE tolerance and
+   * temperature never trips it), the pre-fix fleet a looser fault-net. Real
+   * faults sit far outside either (open-cap joints ~+/-650..1200 ppm; dead
+   * crystal = not measurable). NOTE: allow ~24 h settle after any
+   * crystal-adjacent rework before trusting a reading (post-solder retrace
+   * measured at tens of ppm on day one). */
+  uint8_t hseFixed = hseCapFixFitted();
+  int32_t lseLimitPpmX10 = hseFixed ? TEST_THRESHOLD_LSE_ERROR_HSE_FIXED_PPM_X10 :
+                                      TEST_THRESHOLD_LSE_ERROR_DEPLOYED_PPM_X10;
+  int32_t lseErrPpmX10 = 0;
+  lse_meas_result_t lseMeasResult = measureLseErrorPpmX10(&lseErrPpmX10);
+  if (lseMeasResult == LSE_MEAS_OK)
+  {
+    int32_t absPpmX10 = (lseErrPpmX10 < 0) ? -lseErrPpmX10 : lseErrPpmX10;
+    testPass = (absPpmX10 <= lseLimitPpmX10);
+    /* Reconstructed-edge note (only when the ISR bridged capture gaps):
+     * lets repeatability questions separate measurement artefacts from real
+     * crystal/temperature movement. */
+    char recNote[24] = "";
+    if ((lseMeasLseChan.recovered != 0U) || (lseMeasHseChan.recovered != 0U))
+    {
+      sprintf(recNote, ", rec L%lu H%lu", (unsigned long) lseMeasLseChan.recovered,
+          (unsigned long) lseMeasHseChan.recovered);
+    }
+    sprintf(buffer, " - S3R_TEST_0028 - %s: 32k LSE vs 16M HSE error = %s%ld.%ld ppm (limit +/-%ld.%ld ppm, %s caps rev%s)\r\n",
+        testPass ? "PASS" : "FAIL", (lseErrPpmX10 < 0) ? "-" : "+",
+        (long) (absPpmX10 / 10), (long) (absPpmX10 % 10), (long) (lseLimitPpmX10 / 10),
+        (long) (lseLimitPpmX10 % 10), hseFixed ? "HSE-fixed" : "pre-fix", recNote);
+  }
+  else
+  {
+    static const char *lseMeasErrStr[] = { "OK", "LSE not ready", "HSE not ready",
+      "timeout", "capture gap", "result out of range", "bad parameter" };
+    testPass = 0;
+    /* Capture progress (per channel, captures seen / target) pinpoints which
+     * stream stalled or lost captures - key field-debug detail. */
+    sprintf(buffer, " - S3R_TEST_0028 - FAIL: 32k LSE vs 16M HSE error not measurable (%s, L %lu/%u H %lu/%u)\r\n",
+        (lseMeasResult < (sizeof(lseMeasErrStr) / sizeof(lseMeasErrStr[0]))) ?
+            lseMeasErrStr[lseMeasResult] :
+            "unknown",
+        (unsigned long) lseMeasLseChan.edgeCount, LSE_MEAS_LSE_CAPTURES,
+        (unsigned long) lseMeasHseChan.edgeCount, LSE_MEAS_HSE_CAPTURES);
+  }
+  ShimFactoryTest_sendReport(buffer);
+  if (!testPass)
+  {
+    shimmerStatus.testResult |= S3R_TEST_0028;
+  }
+
+  /* Drive level the boot bring-up settled on (informational, no pass/fail):
+   * the adaptive escalation deliberately COMPENSATES for wrong load caps, so
+   * only this line can surface them. Expectation: all production boards
+   * (12 pF LSE on every revision) lock at LOW and run MEDIUMLOW (+1 margin) -
+   * hardware-confirmed on stock and HSE-fixed units. MEDIUMHIGH from a cold
+   * boot suggests a marginal / over-loaded / contaminated 32k fit, and any
+   * "NONE"/LSI-fallback state warrants a bench look. A low reading on a warm
+   * reset is not meaningful (a still-ringing crystal only has to sustain,
+   * not cold-start). */
+  sprintf(buffer, " - LSE drive applied at boot: %s\r\n", Boot_getLseDriveName());
+  ShimFactoryTest_sendReport(buffer);
 
   ShimFactoryTest_sendReport(" - I/O status:\r\n");
   sprintf(buffer, "    - Docked: %s\r\n", shimmerStatus.docked ? "Yes" : "No");
@@ -629,12 +1061,19 @@ void SPI_test(void)
   print_chip_test_result("S3R_TEST_0016", "LSM6DSV", self_test_result, tempCal);
 
   tempCal = TEST_THRESHOLD_DEG_IMU_TEMPERATURE_INVALID;
-  self_test_result = bmp3_self_test();
+
+  /* BMP390 and BMP581 share the same self-test flow; only the driver call,
+   * sensor name and API-error offset differ - dispatch on the fitted part via
+   * the PressureSensor_* layer rather than duplicating the whole pathway. */
+  const char *presName = isBmp581InUse() ? "BMP581" : "BMP390";
+  self_test_result = PressureSensor_selfTest();
+
   if (self_test_result == SELF_TEST_PASS)
   {
     //Self test passed, now check temperature is reasonable
-    struct bmp3_data *bmp3_data = (struct bmp3_data *) get_bmp3_selftest_data();
-    tempCal = bmp3_data->temperature;
+    tempCal = isBmp581InUse() ?
+        (float_t) get_bmp5_selftest_data()->temperature :
+        (float_t) ((struct bmp3_data *) get_bmp3_selftest_data())->temperature;
 
     if (tempCal <= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_LOWER
         || tempCal >= TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER)
@@ -643,20 +1082,28 @@ void SPI_test(void)
     }
   }
 
-  /* If it's a Shimmer self-test result (i.e., <SELF_TEST_FAIL_COUNT), it will
-   *  be printed out like all other sensors using "print_chip_test_result".
-   *  Else, if it's specific to the BMP3 API, it is printed using
-   *  bmp3_check_rslt (subtracting the previously added offset from first so
-   *  that the function can recognise it) */
+  /* If it's a Shimmer self-test result (i.e., <SELF_TEST_FAIL_COUNT), it is
+   * printed out like all other sensors using "print_chip_test_result". Else,
+   * if it's specific to the BMP API, it is printed using the sensor's
+   * *_check_rslt (subtracting the previously added offset first so the function
+   * can recognise it). */
   if (self_test_result < SELF_TEST_FAIL_COUNT)
   {
-    print_chip_test_result("S3R_TEST_0017", "BMP390", self_test_result, tempCal);
+    print_chip_test_result("S3R_TEST_0017", presName, self_test_result, tempCal);
   }
   else
   {
-    ShimFactoryTest_sendReport(" - S3R_TEST_0017 - FAIL: BMP390 - ");
+    sprintf(buffer, " - S3R_TEST_0017 - FAIL: %s - ", presName);
+    ShimFactoryTest_sendReport(buffer);
 
-    bmp3_check_rslt("BMP390", ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
+    if (isBmp581InUse())
+    {
+      bmp5_check_rslt(presName, ((int8_t) self_test_result) - BMP581_API_ERROR_OFFSET, buffer);
+    }
+    else
+    {
+      bmp3_check_rslt(presName, ((int8_t) self_test_result) - BMP390_API_ERROR_OFFSET, buffer);
+    }
     ShimFactoryTest_sendReport(buffer);
   }
   if (self_test_result != SELF_TEST_PASS)
@@ -773,7 +1220,10 @@ uint8_t is_temperature_outside_of_range(float_t temperature)
       || temperature > TEST_THRESHOLD_DEG_IMU_TEMPERATURE_UPPER);
 }
 
-void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_test_result, float_t tempCal)
+void print_chip_test_result(const char *testId,
+    const char *chipId,
+    self_test_result_t self_test_result,
+    float_t tempCal)
 {
   char *selfTestResultStr;
   char *selfTestDetailsStr;
@@ -813,7 +1263,7 @@ void print_chip_test_result(char *testId, char *chipId, self_test_result_t self_
   }
   else
   {
-    sprintf(buffer, " - %s - %s: %s%s (%.2f\xC2\xB0 C)\r\n", testId,
+    sprintf(buffer, " - %s - %s: %s%s (%.2f degC)\r\n", testId,
         selfTestResultStr, chipId, selfTestDetailsStr, tempCal);
   }
   ShimFactoryTest_sendReport(buffer);

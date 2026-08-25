@@ -22,6 +22,7 @@
 #include "ux_device_msc.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp_driver_sd.h"
 #include "dcache.h"
 #include "hal_Board.h"
 #include "sdmmc.h"
@@ -81,7 +82,9 @@ static UINT USBD_STORAGE_WaitCardReady(uint32_t timeout_ms)
   }
 
   uint32_t start_tick = HAL_GetTick();
-  while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER)
+  /* Ownership-guarded CMD13: polling the raw HAL here could collide with a
+   * FatFs owner's in-flight DMA on the shared bus */
+  while (HAL_SD_SharedGetCardState(OWNER_USB) != SD_TRANSFER_OK)
   {
     if ((HAL_GetTick() - start_tick) > timeout_ms)
     {
