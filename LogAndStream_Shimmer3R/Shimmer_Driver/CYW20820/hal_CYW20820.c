@@ -344,9 +344,18 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     //       && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
     //       && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
     //{
-    else if (shimmerStatus.btFirstConnectionEstablished)
+    else if (shimmerStatus.btConnected)
     {
-      //Parse as Shimmer packet
+      /* Parse as Shimmer packet. Gated on the LIVE connection state, not the
+       * sticky btFirstConnectionEstablished flag: with the sticky flag, every
+       * byte after the first-ever connection went to the Shimmer parser for
+       * the rest of the power cycle, so the in-band connected event of the
+       * SECOND connection was eaten and the link never came back up (bench
+       * 2026-08-25, connect/disconnect twice). Between connections
+       * btConnected is 0, so module events parse as EZ-Serial again; the
+       * in-band disconnected event is still consumed here (btConnected is
+       * only cleared by the BT_CONNECTION pin edge), which is fine - the pin
+       * is the disconnect path in transparent mode. */
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
       SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif

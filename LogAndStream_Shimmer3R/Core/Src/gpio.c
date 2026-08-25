@@ -328,7 +328,10 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
       btConnPinEdgeDiagCount++;
       printf("BT_CONNECTION pin -> %s\r\n", isRising ? "HIGH" : "LOW");
     }
-    setBtConnectionState(!isRising);
+    /* Active-HIGH on v1.4.18.18: pin observed going HIGH exactly at
+     * connection (bench 2026-08-25) - the old inverted mapping dated from
+     * the v1.4.17.17 build where this pin never moved at all. */
+    setBtConnectionState(isRising);
 #endif
     break;
   case BT_CYSPP_Pin:
@@ -338,12 +341,12 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
       btCysppPinEdgeDiagCount++;
       printf("BT_CYSPP pin -> %s\r\n", isRising ? "HIGH" : "LOW");
     }
-    /* v1.4.18.18 defines this pin as the SPP-mode indicator (low while the
-     * data bridge is engaged, pull high to exit back to command mode), and
-     * v1.4.17.17 never toggled BT_CONNECTION after boot - so treat SPP data
-     * mode as the connection. setBtConnectionState() is idempotent, so this
-     * coexists with the in-band connected event and the BT_CONNECTION pin. */
-    setBtConnectionState(!isRising);
+    /* SPP-data-mode indicator only. Deliberately NOT coupled to
+     * setBtConnectionState(): the pin was observed flapping mid-connection on
+     * v1.4.18.18 (bench 2026-08-25), and each false HIGH would read as a
+     * disconnect and clear the TX buffers. Connection state comes from the
+     * BT_CONNECTION pin (active-high, works on v18) and the in-band
+     * connected event. */
     setBtCysppState(!isRising);
 #endif
     break;
@@ -731,7 +734,14 @@ void initBtPins(void)
 
   GPIO_InitStruct.Pin = BT_CYSPP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  /* Pull-down, deliberately: module FW v1.4.18.18 samples this pin and exits
+   * SPP data mode when it reads high. Left floating, the pin picked up
+   * enough noise to bounce the module out of the data bridge mid-transfer
+   * (bench 2026-08-25: LOW/HIGH/LOW flapping while connected, throughput
+   * collapsed to 0.4 KB/s). The weak pull loses harmlessly whenever the
+   * module actively drives the pin as a mode indicator, and holds the module
+   * in data mode when it does not. */
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(BT_CYSPP_GPIO_Port, &GPIO_InitStruct);
 
   GPIO_InitStruct.Pin = BT_RST_Pin | BT_LP_MODE_Pin;
