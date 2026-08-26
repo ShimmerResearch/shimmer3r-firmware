@@ -20,7 +20,13 @@
  * set below (guide 002-37528, gap_set_adv_data: "the data here remains unused"
  * without it). */
 #define USE_GET_SET_ADV_PARAM          1
-#define USE_GET_SET_SYSTEM_SLEEP_PARAM 0
+/* Enabled for the DEV-573 sniff/power experiments (2026-08-25): the module
+ * boots at sleep level 1 and these steps force level 0 (sleep disabled,
+ * flash-scoped, write guarded by a read-compare so it costs one flash write
+ * ever). Transparent-mode throughput shows a sniff/power-nap signature
+ * (~250 B per ~0.6 s) despite SBTP F=1, so module power management is the
+ * prime suspect. */
+#define USE_GET_SET_SYSTEM_SLEEP_PARAM 1
 
 #define BAUD_TO_USE                    2000000L
 #define FLOW_CONTROL                   1
@@ -42,7 +48,7 @@
  * Ezurio guidance on how GA3 transparent mode + the CYSPP pin are intended
  * to be driven, since v16-style behaviour (bridge stays up for the life of
  * the connection, 100 KB/s) does not happen on GA3. */
-#define TRANSPARANT_MODE               0
+#define TRANSPARANT_MODE               1
 
 #define ENABLE_BT_RX_DEBUG_PRINTS      0
 #define ENABLE_BT_TX_DEBUG_PRINTS      0

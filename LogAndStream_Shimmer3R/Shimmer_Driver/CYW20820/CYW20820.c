@@ -213,7 +213,10 @@ static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
 
 #if USE_GET_SET_SYSTEM_SLEEP_PARAM
 static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref = {
-  .level = 1, //Default=1
+  /* 0 = sleep disabled (module factory default is 1). Part of the DEV-573
+   * transparent-throughput experiments - see USE_GET_SET_SYSTEM_SLEEP_PARAM
+   * in CYW20820.h. */
+  .level = 0,
 #if ENABLE_FIX_08
   .hid_off_sleep_time = 0 //Default=0
 #endif
@@ -991,10 +994,29 @@ void btInitCommands(void)
 
       rsp_bt_get_parameters.discoverable = BT_DISC_MODE_GENERAL_DISCOVERABLE;
       rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
-      ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
-          rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable, flags,
-          rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
-          rsp_bt_get_parameters.active_bt_connectability);
+      if (rsp_bt_get_parameters.flags != flags)
+      {
+        /* Persist the sniff-disable flag in the module's NV config (flash
+         * scope), guarded by the read-back above so it costs one flash write
+         * ever, not one per boot. A RAM-scoped flag demonstrably keeps
+         * non-transparent mode sniff-free (56 KB/s), but transparent-mode
+         * throughput shows a sniff signature (~250 B per ~0.6 s anchor) -
+         * this tests whether the module reloads link policy from NV when the
+         * SPP data bridge engages. The GBTP "BT params:" boot print shows
+         * flags=01 once this has stuck. */
+        printf("Persisting sniff-disable flag to module flash\r\n");
+        ezs_fcmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
+            rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
+            flags, rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
+            rsp_bt_get_parameters.active_bt_connectability);
+      }
+      else
+      {
+        ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
+            rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
+            flags, rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
+            rsp_bt_get_parameters.active_bt_connectability);
+      }
       return;
     }
     else
@@ -1719,7 +1741,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_SET_SLEEP_PARAMETERS:
-    /* Response is ignored */
+    if (packet->payload.rsp_system_set_sleep_parameters.result != EZS_ERR_SUCCESS)
+    {
+      printf("set_sleep_parameters FAILED: result=");
+      printHex16(packet->payload.rsp_system_set_sleep_parameters.result);
+      printf("\r\n");
+    }
     break;
 
   case EZS_IDX_EVT_SPP_DATA_RECEIVED:
