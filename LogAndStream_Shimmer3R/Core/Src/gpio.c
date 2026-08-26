@@ -26,6 +26,7 @@
 #include "Boards/shimmer_boards.h"
 #include "Button/shimmer_button.h"
 #include "CYW20820/CYW20820.h"
+#include "Comms/shimmer_bt_uart.h"
 #include "TaskList/shimmer_taskList.h"
 #include "app_usbx_device.h"
 #include "log_and_stream_externs.h"
@@ -328,10 +329,12 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
       btConnPinEdgeDiagCount++;
       printf("BT_CONNECTION pin -> %s\r\n", isRising ? "HIGH" : "LOW");
     }
-    /* Active-HIGH on v1.4.18.18: pin observed going HIGH exactly at
-     * connection (bench 2026-08-25) - the old inverted mapping dated from
-     * the v1.4.17.17 build where this pin never moved at all. */
-    setBtConnectionState(isRising);
+    /* Diagnostic only: bench (2026-08-25, v1.4.18.18) showed the pin latching
+     * HIGH at the first connection and never dropping across disconnect/
+     * reconnect cycles, so it cannot drive connection state in either
+     * polarity. Connection tracking comes from the in-band connected/
+     * disconnected events, which parse reliably now that the RX demux
+     * follows the CYSPP pin. */
 #endif
     break;
   case BT_CYSPP_Pin:
@@ -341,13 +344,18 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
       btCysppPinEdgeDiagCount++;
       printf("BT_CYSPP pin -> %s\r\n", isRising ? "HIGH" : "LOW");
     }
-    /* SPP-data-mode indicator only. Deliberately NOT coupled to
-     * setBtConnectionState(): the pin was observed flapping mid-connection on
-     * v1.4.18.18 (bench 2026-08-25), and each false HIGH would read as a
-     * disconnect and clear the TX buffers. Connection state comes from the
-     * BT_CONNECTION pin (active-high, works on v18) and the in-band
-     * connected event. */
+    /* SPP-data-mode tracker: low = bridged payload, high = command-mode
+     * window (the module hops out to deliver EZ-Serial events and back).
+     * Deliberately NOT coupled to setBtConnectionState() - a command-mode
+     * window mid-connection is not a disconnect. Drives the RX demux and the
+     * TX gate in hal_CYW20820.c. */
     setBtCysppState(!isRising);
+    if (!isRising)
+    {
+      /* Data mode (re-)engaged: drain anything the TX gate held back while
+       * the module was in a command-mode window. */
+      ShimBt_triggerNextTransfer();
+    }
 #endif
     break;
   case DOCK_DETECT_Pin:

@@ -344,18 +344,18 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     //       && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
     //       && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
     //{
-    else if (shimmerStatus.btConnected)
+    else if (getBtCysppState())
     {
-      /* Parse as Shimmer packet. Gated on the LIVE connection state, not the
-       * sticky btFirstConnectionEstablished flag: with the sticky flag, every
-       * byte after the first-ever connection went to the Shimmer parser for
-       * the rest of the power cycle, so the in-band connected event of the
-       * SECOND connection was eaten and the link never came back up (bench
-       * 2026-08-25, connect/disconnect twice). Between connections
-       * btConnected is 0, so module events parse as EZ-Serial again; the
-       * in-band disconnected event is still consumed here (btConnected is
-       * only cleared by the BT_CONNECTION pin edge), which is fine - the pin
-       * is the disconnect path in transparent mode. */
+      /* Parse as Shimmer packet, gated on the LIVE data-mode state from the
+       * CYSPP pin. Bench (2026-08-25, v1.4.18.18): the module actively hops
+       * between SPP data mode (pin LOW - UART bytes are bridged payload) and
+       * command mode (pin HIGH - UART bytes are EZ-Serial frames, e.g. the
+       * connection/pairing/disconnect events it exits data mode to deliver),
+       * even while a connection is up. The pin is therefore the demux
+       * signal, and neither connection state (earlier attempt: the in-band
+       * connected event got eaten the moment the gate opened) nor a sticky
+       * first-connection flag (eats every event after the first connection
+       * of a power cycle) can stand in for it. */
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
       SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
@@ -429,6 +429,14 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
 {
 #if TRANSPARANT_MODE
+  /* Raw bytes are only payload while the module is bridging (CYSPP pin low).
+   * In a command-mode window they would hit the module's EZ-Serial parser as
+   * garbage commands. Refuse instead; the ring keeps the data and the CYSPP
+   * falling-edge EXTI kicks the drain when data mode (re-)engages. */
+  if (!getBtCysppState())
+  {
+    return HAL_SHIM_BUSY;
+  }
   HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
 #else
   HAL_StatusTypeDef ret_val = HAL_OK;
