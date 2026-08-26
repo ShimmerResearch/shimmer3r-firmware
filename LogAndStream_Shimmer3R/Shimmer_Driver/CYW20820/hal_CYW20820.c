@@ -47,11 +47,28 @@
 #include "stm32u5xx.h"
 
 #include "log_and_stream_externs.h"
+#include <CYW20820/CYW20820.h>
 #include <Comms/shimmer_bt_uart.h>
+
+/* Every "#if TRANSPARANT_MODE" below silently evaluates false if the define
+ * is not visible - which is exactly what happened historically (this file
+ * never included CYW20820.h). Fail the build instead of half-selecting the
+ * data path. */
+#ifndef TRANSPARANT_MODE
+#error "TRANSPARANT_MODE must be visible in hal_CYW20820.c - include CYW20820.h"
+#endif
 
 #define CONSOLE_PRINT_NON_EZ_SERIAL_BYTES 0
 
 volatile uint8_t pending_response = 0;
+
+/* Last SPP_SEND payload, kept for module-rejection retries (see
+ * BtTransmitRetryLast). Static rather than stack: BtTransmit() runs in ISR
+ * context and a longuint8a_t is 514 bytes; serialized by the
+ * pending_response / UART-TX-busy guards in BtTransmit(). */
+static longuint8a_t sppSendData;
+static uint16_t sppSendRetryCount = 0;
+#define BT_SPP_SEND_RETRY_LIMIT 200U
 //uint8_t timer_active = 0;
 //volatile uint16_t timeout_ms_elapsed;
 
@@ -70,6 +87,8 @@ volatile uint8_t btBootMsgLineCount = 0;
 
 volatile uint16_t btRxWaitByteCount = 0;
 
+uint8_t skippingBytesCount = 0;
+
 /*******************************************************************************
  * Interrupt Handler Name: TimerInterruptHandler
  ****************************************************************************//**
@@ -81,6 +100,57 @@ volatile uint16_t btRxWaitByteCount = 0;
 //    timeout_ms_elapsed++;
 //}
 
+_Static_assert(EZS_SPP_SEND_MAX_DATA_BYTES <= EZS_LONGUINT8A_ACTUAL_MAX,
+    "SPP_SEND payload cap must fit longuint8a_t");
+_Static_assert(BT_TX_MAX_DMA_CHUNK <= EZS_SPP_SEND_MAX_DATA_BYTES,
+    "TX ring chunks must fit in one SPP_SEND command");
+
+#if ENABLE_BT_CMD_RTT_STATS
+static uint32_t rttStartCyc, rttMinCyc = UINT32_MAX, rttMaxCyc, rttCount;
+static uint64_t rttSumCyc;
+
+static void btCmdRttStart(void)
+{
+  /* Lazily enable the DWT cycle counter; wrap-safe unsigned deltas give a
+   * ~26 s measurement range at 160 MHz, far beyond any command RTT. */
+  if (!(DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk))
+  {
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+  }
+  rttStartCyc = DWT->CYCCNT;
+}
+
+static void btCmdRttStop(void)
+{
+  uint32_t deltaCyc = DWT->CYCCNT - rttStartCyc;
+
+  if (deltaCyc < rttMinCyc)
+  {
+    rttMinCyc = deltaCyc;
+  }
+  if (deltaCyc > rttMaxCyc)
+  {
+    rttMaxCyc = deltaCyc;
+  }
+  rttSumCyc += deltaCyc;
+  rttCount++;
+
+  if (rttCount >= 256U)
+  {
+    uint32_t cycPerUs = SystemCoreClock / 1000000U;
+    SHIMMER_PRINTF("BT cmd RTT: n=%lu min=%luus avg=%luus max=%luus\r\n",
+        rttCount, rttMinCyc / cycPerUs,
+        (uint32_t) (rttSumCyc / rttCount) / cycPerUs, rttMaxCyc / cycPerUs);
+    rttMinCyc = UINT32_MAX;
+    rttMaxCyc = 0;
+    rttSumCyc = 0;
+    rttCount = 0;
+  }
+}
+#endif /* ENABLE_BT_CMD_RTT_STATS */
+
 void appHandler(ezs_packet_t *packet)
 {
   if (packet->packet_type == EZS_PACKET_TYPE_RESPONSE)
@@ -89,6 +159,9 @@ void appHandler(ezs_packet_t *packet)
     if (pending_response != 0)
     {
       pending_response = 0;
+#if ENABLE_BT_CMD_RTT_STATS
+      btCmdRttStop();
+#endif
     }
   }
 
@@ -118,17 +191,41 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
   /* increment pending response counter */
   pending_response = 1;
 
+#if ENABLE_BT_CMD_RTT_STATS
+  btCmdRttStart();
+#endif
+
   /* send data out through UART */
   //UART_SpiUartPutArray((uint8_t *)data, length);
   HAL_StatusTypeDef ret_val;
 
-  //ret_val = HAL_UART_Transmit_DMA(huart, (uint8_t *)data, length);
+#if ENABLE_BT_TX_DEBUG_PRINTS
+  printf("TX data=");
+  for (uint16_t i = 0; i < length; i++)
+  {
+    printf("%c",
+        ((data[i] >> 4) & 0xF) < 10 ? ('0' + ((data[i] >> 4) & 0xF)) :
+                                      ('A' - 10 + ((data[i] >> 4) & 0xF)));
+    printf("%c",
+        (data[i] & 0xF) < 10 ? ('0' + (data[i] & 0xF)) : ('A' - 10 + (data[i] & 0xF)));
+    printf(" ");
+  }
+  printf("\r\n");
+#endif
+
+  //ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *)data, length);
   //ret_val = HAL_UART_Transmit(huart, (uint8_t *)data, length, 1500*HAL_GetTickFreq());
   ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
 
   if (ret_val != HAL_OK)
   {
-    SHIMMER_PRINTF("DMA problem in appOutput\r\n");
+    /* Nothing was sent, so no response is coming: leaving pending_response
+     * set here would block every later command forever, and returning
+     * DATA_WRITTEN would tell the caller the command is in flight when it is
+     * not. Roll back and report the failure so callers retry. */
+    SHIMMER_PRINTF("UART transmit problem in appOutput\r\n");
+    pending_response = 0;
+    return EZS_OUTPUT_RESULT_NO_HANDLER;
   }
 
   return EZS_OUTPUT_RESULT_DATA_WRITTEN;
@@ -208,44 +305,6 @@ void setBtUartInstance(UART_HandleTypeDef *huartToUse)
 
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 {
-  //SHIMMER_PRINTF("byte received\r\n");
-  //SHIMMER_PRINTF("%c", rxBuf[0]);
-
-  //if start byte is CYW header byte or if in middle of waiting for full CYW
-  //response if(!waitingForArgs
-  //    && (ezs_rx_packet_length != 0 || (b & EZS_BINARY_SOF_MASK) != 0)) {
-  //
-  //  ezs_input_result_t result = EZSerial_Parse(b);
-  //  if(result == EZS_INPUT_RESULT_IN_PROGRESS
-  //      || result == EZS_INPUT_RESULT_PACKET_COMPLETE) {
-  //
-  //  }
-  //} else {
-  //  //Assume Shimmer command
-  //}
-
-  //ezs_packet_t *result = ezs_parseSingleByte(rxBuf[0]);
-  //if(result!=0){
-  //  ezsHandlerShimmer(result);
-  //}
-  //HAL_StatusTypeDef status = setDmaRx(1);
-
-  //for (uint8_t i = 0; i < expectedByteCount; i++)
-  //{
-  //  ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
-  //  if (result != 0)
-  //  {
-  //    ezsHandlerShimmer(result);
-  //  }
-  //}
-  //
-  //uint16_t count = getEzsRemainingByteCount();
-  //if (count == 0)
-  //{
-  //  count = 1;
-  //}
-  //HAL_StatusTypeDef status = setDmaRx(count);
-
   uint16_t count = 1;
 
   uint8_t i = 0;
@@ -268,23 +327,44 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       }
       i += 1;
     }
-    /* If were waiting for the rest of a Shimmer packet or the the EZ Serial
-     * parse is ideal and the header byte is a Shimmer packet header byte,
-     * parse as Shimmer packet */
-    else if (ShimBt_isWaitingForArgs()
-        || (getEzsPacketLength() == 0 && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
-            && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
-            && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
+    else if (skippingBytesCount > 0)
     {
-      //Parse as Shimmer packet
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
       SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+#endif
+      skippingBytesCount--;
+      i += 1;
+    }
+#if TRANSPARANT_MODE
+    ///* If were waiting for the rest of a Shimmer packet or the the EZ Serial
+    //* parse is ideal and the header byte is a Shimmer packet header byte,
+    //* parse as Shimmer packet */
+    //else if (ShimBt_isWaitingForArgs()
+    //   || (getEzsPacketLength() == 0 && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
+    //       && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
+    //       && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
+    //{
+    else if (getBtCysppState())
+    {
+      /* Parse as Shimmer packet, gated on the LIVE data-mode state from the
+       * CYSPP pin. Bench (2026-08-25, v1.4.18.18): the module actively hops
+       * between SPP data mode (pin LOW - UART bytes are bridged payload) and
+       * command mode (pin HIGH - UART bytes are EZ-Serial frames, e.g. the
+       * connection/pairing/disconnect events it exits data mode to deliver),
+       * even while a connection is up. The pin is therefore the demux
+       * signal, and neither connection state (earlier attempt: the in-band
+       * connected event got eaten the moment the gate opened) nor a sticky
+       * first-connection flag (eats every event after the first connection
+       * of a power cycle) can stand in for it. */
+#if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
+      SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
       count = btRxWaitByteCount;
       ShimBt_dmaConversionDone(&rxBuf[i]);
       i += count;
       count = btRxWaitByteCount;
     }
+#endif
     else
     {
       ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
@@ -300,14 +380,10 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
         if (result == EZS_INPUT_RESULT_IN_PROGRESS)
         {
-          //if (getEzsPacketLength() != 0)
-          //{
-          //  count = getEzsRemainingByteCount();
-          //}
           count = getEzsRemainingByteCount();
         }
 
-        //TODO get working
+        //TODO get working if needed (doesn't seem necessary currently)
         else if (result == EZS_INPUT_RESULT_BUFFER_OVERFLOW || result == EZS_INPUT_RESULT_UNHANDLED_PACKET
             || result == EZS_INPUT_RESULT_INVALID_CHECKSUM)
         {
@@ -316,7 +392,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
           if (getEzsPacketLength() == 0)
           {
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
-            SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
+            SHIMMER_PRINTF("S3=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
           }
         }
@@ -339,12 +415,128 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
   ShimBt_TxCpltCallback();
+
+#if TRANSPARANT_MODE
+  /* Transparent mode has no SPP_SEND response to drive the transfer chain
+   * (that is the non-transparent design), so the DMA completion is the
+   * moment to hand the UART the next chunk - the pre-split mainline
+   * behaviour. The common repo cannot see TRANSPARANT_MODE, which is why
+   * this lives here and not in ShimBt_TxCpltCallback(). */
+  ShimBt_triggerNextTransfer();
+#endif
 }
 
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
 {
+#if TRANSPARANT_MODE
+  /* Raw bytes are only payload while the module is bridging (CYSPP pin low).
+   * In a command-mode window they would hit the module's EZ-Serial parser as
+   * garbage commands. Refuse instead; the ring keeps the data and the CYSPP
+   * falling-edge EXTI kicks the drain when data mode (re-)engages. */
+  if (!getBtCysppState())
+  {
+    return HAL_SHIM_BUSY;
+  }
   HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
+#else
+  HAL_StatusTypeDef ret_val = HAL_OK;
+  ezs_output_result_t ezs_ret;
+
+  /* Refuse before building the command: ezs_cmd_va() writes into the global
+   * ezs_tx_packet, so constructing a command while another is outstanding
+   * would corrupt a frame the UART may still be clocking out. appOutput()'s
+   * own pending check happens only after that damage is done. Callers treat
+   * any non-OK as retry-later. */
+  if (isPendingResponseFromBtModule())
+  {
+    return HAL_SHIM_BUSY;
+  }
+
+  /* Same hazard from the other side: pending_response can already be cleared
+   * (a module error discards the in-flight command) while the UART is still
+   * clocking that frame out of ezs_tx_packet. Building a new command now
+   * would corrupt the bytes still being transmitted. Callers treat any
+   * non-OK as retry-later; the module's response or error event for the
+   * in-flight frame restarts the chain. */
+  if (isBtUartTxBusy())
+  {
+    return HAL_SHIM_BUSY;
+  }
+
+  /* The frame's 8-bit payload length caps one SPP_SEND at
+   * EZS_SPP_SEND_MAX_DATA_BYTES of data. An oversized frame is worse than a
+   * refused one: the module never answers a corrupt frame, so
+   * pending_response would stay set and mute TX for the rest of the power
+   * cycle. */
+  if (len > EZS_SPP_SEND_MAX_DATA_BYTES)
+  {
+    SHIMMER_PRINTF("BtTransmit: %u > SPP_SEND max %u\r\n", len,
+        (uint16_t) EZS_SPP_SEND_MAX_DATA_BYTES);
+    return HAL_SHIM_ERROR;
+  }
+
+  sppSendData.length = len;
+  memcpy(sppSendData.data, buf, len);
+  sppSendRetryCount = 0;
+
+  ezs_ret = ezs_cmd_spp_send_command(BT_getConnectionHandle(), &sppSendData);
+
+  if (ezs_ret != EZS_OUTPUT_RESULT_DATA_WRITTEN)
+  {
+    SHIMMER_PRINTF("BtTransmit EZS fault=%d\r\n", ezs_ret);
+    ret_val = HAL_ERROR;
+  }
+#endif
   return (HAL_StatusTypeDefShimmer) ret_val;
+}
+
+/* Re-issue the last SPP_SEND payload after the module rejected it - most
+ * commonly EZS_ERR_CORE_INSUFFICIENT_RESOURCES (0x0109) when its SPP TX queue
+ * toward the radio is full. The payload survives in sppSendData (the TX ring
+ * released its copy when the UART transfer completed), so a rejection costs
+ * nothing but the retry round trip - which is also what paces us to the rate
+ * the radio actually drains. Returns 1 if the retry was issued, 0 if the
+ * payload was dropped (retry budget exhausted) or nothing was pending.
+ *
+ * The retry cap bounds a persistent-failure loop (e.g. rejected while the
+ * link is tearing down): at ~3 ms per attempt, 200 tries is ~0.6 s before the
+ * chunk is abandoned and the stream moves on. */
+uint8_t BtTransmitRetryLast(void)
+{
+  if (sppSendData.length == 0)
+  {
+    return 0;
+  }
+
+  if (++sppSendRetryCount > BT_SPP_SEND_RETRY_LIMIT)
+  {
+    SHIMMER_PRINTF("BtTransmit: dropped %u bytes after %u rejected sends\r\n",
+        sppSendData.length, (uint16_t) BT_SPP_SEND_RETRY_LIMIT);
+    sppSendData.length = 0;
+    sppSendRetryCount = 0;
+    return 0;
+  }
+
+  if (isPendingResponseFromBtModule() || isBtUartTxBusy())
+  {
+    return 0;
+  }
+
+  if (ezs_cmd_spp_send_command(BT_getConnectionHandle(), &sppSendData) != EZS_OUTPUT_RESULT_DATA_WRITTEN)
+  {
+    return 0;
+  }
+
+  return 1;
+}
+
+/* The module accepted the last SPP_SEND: invalidate the held payload so no
+ * later recovery path (e.g. a system-error retry for an unrelated command)
+ * can ever re-send it and duplicate data in the stream. */
+void BtTransmitAckLast(void)
+{
+  sppSendData.length = 0;
+  sppSendRetryCount = 0;
 }
 
 /* Overrides the weak no-op in shimmer_bt_uart.c. Cancels the DMA transfer
@@ -363,6 +555,19 @@ void resetEzsPendingResponse(void)
   pending_response = 0;
 }
 
+uint8_t isPendingResponseFromBtModule(void)
+{
+  return pending_response;
+}
+
+uint8_t isBtUartTxBusy(void)
+{
+  /* gState carries the TX half of the HAL UART state machine (RxState the
+   * other); BUSY_TX here means an interrupt-driven transmit of ezs_tx_packet
+   * is still clocking out. */
+  return huartBtPtr != 0 && huartBtPtr->gState != HAL_UART_STATE_READY;
+}
+
 void resetBtRxBuff(void)
 {
   memset(rxBuf, 0, sizeof(rxBuf));
@@ -379,6 +584,11 @@ void setWaitingForBtBoot(uint8_t state)
   }
 }
 
+void setSkippingBytesCount(uint8_t count)
+{
+  skippingBytesCount = count;
+}
+
 char *getBtBootMsgPtr(void)
 {
   return &btBootMsg[0];
@@ -387,4 +597,9 @@ char *getBtBootMsgPtr(void)
 void setDmaWaitingForResponse(uint16_t count)
 {
   btRxWaitByteCount = count;
+}
+
+uint16_t getDmaWaitingForResponse(void)
+{
+  return btRxWaitByteCount;
 }

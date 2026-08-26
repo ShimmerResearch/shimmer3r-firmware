@@ -745,6 +745,14 @@ void BtStartDone(void)
 
 void setBtConnectionState(bool state)
 {
+  /* Idempotent: connection state can now arrive from several sources (the
+   * in-band connected event and the BT_CONNECTION / BT_CYSPP pin EXTIs), and
+   * ShimBt_handleBtRfCommStateChange() is not safe to re-run for a state
+   * that has not changed - the disconnect path clears TX buffers. */
+  if (shimmerStatus.btConnected == state)
+  {
+    return;
+  }
   shimmerStatus.btConnected = state;
   //HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
 

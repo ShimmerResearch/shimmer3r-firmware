@@ -269,7 +269,11 @@ const uint8_t ezs_tbl_cmd[] = {
   0x0E, 0x0C, 0x04, 0x01, T_U32, /* 139 | . , SBTDC (bt_set_device_class) */
   0x0E, 0x0D, 0x00, 0x00,        /* 140 | . , GBTDC (bt_get_device_class) */
   0x13, 0x03, 0x00, 0x00,        /* 141 | . , .SPPGC (spp_get_config) */
-  //-------------- Fix 06 End -------------------------//
+//-------------- Fix 06 End -------------------------//
+
+#if ENABLE_FIX_09
+  0x13, 0x01, 0x03, 0x02, T_U8, T_LU8A, /* 144 | SPPS (spp_send_command) */
+#endif
 };
 
 /*******************************************************************************
@@ -634,6 +638,9 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...)
   uint8_t *payload = (uint8_t *) &ezs_tx_packet.payload;
   uint8_t i;
   uint16_t size;
+#if ENABLE_FIX_10
+  uint16_t payload_length;
+#endif
   uint32_t value;
   uint8_t *pointer;
   va_list argv;
@@ -657,7 +664,14 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...)
   packet->cmd_entry = (ezs_tbl_cmd_entry_t *) search;
   packet->header.group = *search++;
   packet->header.id = *search++;
+#if ENABLE_FIX_10
+  /* Fix 10: accumulate the payload length in 16 bits; header.length (8-bit)
+   * plus the 3 length-MSB bits in the type byte are written after the
+   * argument loop. */
+  payload_length = (*search++) & ~EZS_TBL_ENTRY_COMMAND_VARLENGTH_MASK;
+#else
   packet->header.length = (*search++) & ~EZS_TBL_ENTRY_COMMAND_VARLENGTH_MASK;
+#endif
   packet->header.type = EZS_BINARY_TYPE_CMDRSP;
 
   /* apply flash memory scope if requested */
@@ -727,7 +741,11 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...)
         size += pointer[0];
 
         /* adjust payload length in header */
+#if ENABLE_FIX_10
+        payload_length += pointer[0];
+#else
         packet->header.length += pointer[0];
+#endif
       }
       else if (size == 2)
       {
@@ -735,7 +753,11 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...)
         size += pointer[0] + (pointer[1] << 8);
 
         /* adjust payload length in header */
+#if ENABLE_FIX_10
+        payload_length += pointer[0] + (pointer[1] << 8);
+#else
         packet->header.length += pointer[0] + (pointer[1] << 8);
+#endif
       }
       else if (size == 6)
       {
@@ -752,6 +774,19 @@ ezs_output_result_t ezs_cmd_va(uint16_t index, uint8_t memory, ...)
     payload += size;
   }
   va_end(argv);
+
+#if ENABLE_FIX_10
+  /* Fix 10: write the 8-bit length field and fold the three MSBs into the
+   * type byte, exactly as EZSerial_SendPacket and the RX parser decode it.
+   * Lengths above the 11-bit ceiling cannot be represented - refuse rather
+   * than send a corrupt frame the module will never answer. */
+  if (payload_length > EZS_BINARY_MAX_POSSIBLE_PAYLOAD_LENGTH)
+  {
+    return EZS_OUTPUT_RESULT_UNRECOGNIZED_COMMAND;
+  }
+  packet->header.length = (uint8_t) (payload_length & 0xFF);
+  packet->header.type |= (uint8_t) ((payload_length >> 8) & EZS_BINARY_LENGTH_MSB_MASK);
+#endif
 
   return EZSerial_SendPacket(&ezs_tx_packet);
 }

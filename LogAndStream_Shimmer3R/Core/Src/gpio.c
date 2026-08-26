@@ -25,6 +25,8 @@
 
 #include "Boards/shimmer_boards.h"
 #include "Button/shimmer_button.h"
+#include "CYW20820/CYW20820.h"
+#include "Comms/shimmer_bt_uart.h"
 #include "TaskList/shimmer_taskList.h"
 #include "app_usbx_device.h"
 #include "log_and_stream_externs.h"
@@ -307,15 +309,54 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   }
 }
 
+#if TRANSPARANT_MODE
+/* Capped bench-diagnostic counters (DEV-573): enough edges to characterise
+ * the v1.4.18.18 pin behaviour without risking a print flood from EXTI. */
+static uint16_t btConnPinEdgeDiagCount = 0;
+static uint16_t btCysppPinEdgeDiagCount = 0;
+#endif
+
 void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
 {
   switch (GPIO_Pin)
   {
   case BT_CONNECTION_Pin:
-    //setBtConnectionState(isRising);
+#if TRANSPARANT_MODE
+    /* Bench diagnostic (DEV-573): v1.4.17.17 never toggled this pin after
+     * boot; capped print shows what v1.4.18.18 actually does with it. */
+    if (btConnPinEdgeDiagCount < 20U)
+    {
+      btConnPinEdgeDiagCount++;
+      printf("BT_CONNECTION pin -> %s\r\n", isRising ? "HIGH" : "LOW");
+    }
+    /* Diagnostic only: bench (2026-08-25, v1.4.18.18) showed the pin latching
+     * HIGH at the first connection and never dropping across disconnect/
+     * reconnect cycles, so it cannot drive connection state in either
+     * polarity. Connection tracking comes from the in-band connected/
+     * disconnected events, which parse reliably now that the RX demux
+     * follows the CYSPP pin. */
+#endif
     break;
   case BT_CYSPP_Pin:
-    //setBtCysppState(isRising);
+#if TRANSPARANT_MODE
+    if (btCysppPinEdgeDiagCount < 20U)
+    {
+      btCysppPinEdgeDiagCount++;
+      printf("BT_CYSPP pin -> %s\r\n", isRising ? "HIGH" : "LOW");
+    }
+    /* SPP-data-mode tracker: low = bridged payload, high = command-mode
+     * window (the module hops out to deliver EZ-Serial events and back).
+     * Deliberately NOT coupled to setBtConnectionState() - a command-mode
+     * window mid-connection is not a disconnect. Drives the RX demux and the
+     * TX gate in hal_CYW20820.c. */
+    setBtCysppState(!isRising);
+    if (!isRising)
+    {
+      /* Data mode (re-)engaged: drain anything the TX gate held back while
+       * the module was in a command-mode window. */
+      ShimBt_triggerNextTransfer();
+    }
+#endif
     break;
   case DOCK_DETECT_Pin:
     /* Defer to unified debounced handler via TASK_USB_SETUP */
@@ -700,7 +741,16 @@ void initBtPins(void)
   HAL_GPIO_Init(BT_CP_ROLE_GPIO_Port, &GPIO_InitStruct);
 
   GPIO_InitStruct.Pin = BT_CYSPP_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  /* MUST stay floating (no MCU pull): per the EZ-Serial guide
+   * (CS-GUIDE-EZ-SERIAL-VELA-IF820, "CYSPP configuration and pin
+   * relationship"), the module only PULLS this pin to indicate its state and
+   * an external LOW is read as the host ASSERTING CYSPP - "active regardless
+   * of firmware configuration ... API communication is always suppressed
+   * while the CYSPP pin is asserted". A bench experiment with GPIO_PULLDOWN
+   * (2026-08-25) therefore half-asserted CYSPP from our side; the guide says
+   * the pin must remain electrically floating or driven HIGH when CYSPP
+   * operation is not wanted. */
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BT_CYSPP_GPIO_Port, &GPIO_InitStruct);
 

@@ -88,6 +88,14 @@
 //TODO move other Shimmer fixes here also
 /*Support hid_off_sleep_time in set/get sleep parameters.*/
 #define ENABLE_FIX_08 1
+/* Support for FW v1.4.17.17 */
+#define ENABLE_FIX_09 1
+/* Encode 11-bit payload lengths on TX: the binary header carries the length
+ * MSBs in the low 3 bits of the type byte (EZSerial_SendPacket and the RX
+ * parser already honour them), but ezs_cmd_va() historically only wrote the
+ * 8-bit length field, silently corrupting any command payload over 255
+ * bytes. Needed for SPP_SEND payloads above 252 bytes. */
+#define ENABLE_FIX_10 1
 //-------------- Shimmer added End -------------------------//
 
 #define EZS_SEND_AND_WAIT(CMD, TIMEOUT) \
@@ -351,6 +359,10 @@
 #define EZS_EVT_COUNT                     EZS_IDX_EVT_MAX
 
 //-------------- Fix 06 End -------------------------//
+
+#if ENABLE_FIX_09
+#define EZS_IDX_RSP_SPP_SEND_COMMAND EZS_IDX_CMD_SPP_SEND_COMMAND
+#endif
 
 /*******************************************************************************
  * Error enumeration list for EZ-Serial manager.
@@ -724,7 +736,12 @@ typedef enum ezs_idx_cmd_t
   EZS_IDX_CMD_BT_SET_DEVICE_CLASS,   /* = 141 */
   EZS_IDX_CMD_BT_GET_DEVICE_CLASS,   /* = 142 */
   EZS_IDX_CMD_SPP_GET_CONFIG,        /* = 143 */
-  //-------------- Fix 06 End -------------------------//
+
+//-------------- Fix 06 End -------------------------//
+
+#if ENABLE_FIX_09
+  EZS_IDX_CMD_SPP_SEND_COMMAND, /* = 144 */
+#endif
 
   EZS_IDX_CMD_MAX
 } ezs_idx_cmd_t;
@@ -2372,11 +2389,20 @@ __PACKDEF(ezs_evt_bt_disconnected_t, {
 });
 
 __PACKDEF(ezs_evt_spp_data_received_t, {
-  uint16_t conn_handle;
+  uint8_t conn_handle;
   longuint8a_t data;
 });
 
 //-------------- Fix 06 End -------------------------//
+
+#if ENABLE_FIX_09
+__PACKDEF(ezs_cmd_spp_send_command_t, {
+  uint8_t conn_handle;
+  longuint8a_t data;
+});
+
+__PACKDEF(ezs_rsp_spp_send_command_t, { uint16_t result; });
+#endif
 
 /*******************************************************************************
  * Structure representing a single entry in the command definition table.
@@ -2755,6 +2781,11 @@ typedef union
   ezs_evt_bt_disconnected_t evt_bt_disconnected;
   ezs_evt_spp_data_received_t evt_spp_data_received;
   //-------------- Fix 06 End -------------------------//
+
+#if ENABLE_FIX_09
+  ezs_cmd_spp_send_command_t cmd_spp_send_command;
+  ezs_rsp_spp_send_command_t rsp_spp_send_command;
+#endif
 
 } ezs_packet_payload_t;
 
@@ -3328,6 +3359,11 @@ databits, parity, stopbits) \ ezs_cmd_va(EZS_IDX_CMD_SYSTEM_SET_UART_PARAMETERS,
   ezs_cmd_va(EZS_IDX_CMD_BT_GET_DEVICE_CLASS, 0)
 #define ezs_cmd_spp_get_config() ezs_cmd_va(EZS_IDX_CMD_SPP_GET_CONFIG, 0)
 //-------------- Fix 06 End -------------------------//
+
+#if ENABLE_FIX_09
+#define ezs_cmd_spp_send_command(conn_handle, data) \
+  ezs_cmd_va(EZS_IDX_CMD_SPP_SEND_COMMAND, 0, conn_handle, data)
+#endif
 
 /**************************** Shimmer Start ***********************************/
 

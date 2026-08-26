@@ -20,10 +20,38 @@
  * set below (guide 002-37528, gap_set_adv_data: "the data here remains unused"
  * without it). */
 #define USE_GET_SET_ADV_PARAM          1
-#define USE_GET_SET_SYSTEM_SLEEP_PARAM 0
+/* Enabled for the DEV-573 sniff/power experiments (2026-08-25): the module
+ * boots at sleep level 1 and these steps force level 0 (sleep disabled,
+ * flash-scoped, write guarded by a read-compare so it costs one flash write
+ * ever). Transparent-mode throughput shows a sniff/power-nap signature
+ * (~250 B per ~0.6 s) despite SBTP F=1, so module power management is the
+ * prime suspect. */
+#define USE_GET_SET_SYSTEM_SLEEP_PARAM 1
 
 #define BAUD_TO_USE                    2000000L
 #define FLOW_CONTROL                   1
+
+//TODO this doesn't seem to work on v1.4.16.16 firmware, need to investigate further
+/* 0 = non-transparent command mode (SPPM,M=3): every chunk is one SPP_SEND
+ * command/response round trip - measured lossless 56 KB/s, radio-bound, on
+ * v1.4.18.18 (bench 2026-08-25). THE SHIPPING DEFAULT.
+ *
+ * 1 = transparent SPP bridge (SPPM,M=1). Bench-tested on v1.4.18.18 and
+ * PARKED: the module exits SPP data mode almost immediately after engaging
+ * it (BT_CYSPP low then high within moments of a connection, never
+ * re-entering) and the link degrades to ~0.4 KB/s with module-side 0x0207
+ * command timeouts. Host->MCU still works throughout via EVT_SPP_DATA
+ * events. The demux/TX-gating infrastructure for this mode (RX routed by the
+ * CYSPP pin, raw TX refused during command-mode windows, connection state
+ * from in-band events - BT_CONNECTION latches high and is diagnostic-only)
+ * is in place and correct as far as it could be verified; what is missing is
+ * Ezurio guidance on how GA3 transparent mode + the CYSPP pin are intended
+ * to be driven, since v16-style behaviour (bridge stays up for the life of
+ * the connection, 100 KB/s) does not happen on GA3. */
+#define TRANSPARANT_MODE               1
+
+#define ENABLE_BT_RX_DEBUG_PRINTS      0
+#define ENABLE_BT_TX_DEBUG_PRINTS      0
 
 #if SUPPORT_SR48_6_0
 #define BAUD_TO_USE_SR48_6_0 115200L
@@ -36,6 +64,7 @@ enum BT_SET_COMMAND_STAGES
   IDLE,
   WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2,
+  ENTER_BINARY_MODE,
   UPDATE_UART_SETTINGS_STAGE1,
   UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3,
@@ -113,6 +142,7 @@ void setBtCysppState(bool state);
 bool getBtCysppState(void);
 uint8_t *BT_getCyw20820MacAddressPtr(void);
 void BT_generateCyw20820FirmwareVersionStr(char *str);
+uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch);
 void setBtConnectionState(bool state);
 //connect to a specific device that was previously discovered
 uint8_t BT_connect(uint8_t *addr);
@@ -121,5 +151,7 @@ uint8_t BT_disconnect(void);
 void BT_cancelConnection(void);
 void BT_connectionFailed(uint8_t conn_handle, uint16_t reason);
 void BT_startDone_cb(void (*callback)(void));
+void BT_setConnectionHandle(uint8_t conn_handle);
+uint8_t BT_getConnectionHandle(void);
 
 #endif /* SRC_CYW20820_H_ */
