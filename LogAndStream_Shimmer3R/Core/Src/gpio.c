@@ -742,14 +742,16 @@ void initBtPins(void)
 
   GPIO_InitStruct.Pin = BT_CYSPP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  /* Pull-down, deliberately: module FW v1.4.18.18 samples this pin and exits
-   * SPP data mode when it reads high. Left floating, the pin picked up
-   * enough noise to bounce the module out of the data bridge mid-transfer
-   * (bench 2026-08-25: LOW/HIGH/LOW flapping while connected, throughput
-   * collapsed to 0.4 KB/s). The weak pull loses harmlessly whenever the
-   * module actively drives the pin as a mode indicator, and holds the module
-   * in data mode when it does not. */
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  /* MUST stay floating (no MCU pull): per the EZ-Serial guide
+   * (CS-GUIDE-EZ-SERIAL-VELA-IF820, "CYSPP configuration and pin
+   * relationship"), the module only PULLS this pin to indicate its state and
+   * an external LOW is read as the host ASSERTING CYSPP - "active regardless
+   * of firmware configuration ... API communication is always suppressed
+   * while the CYSPP pin is asserted". A bench experiment with GPIO_PULLDOWN
+   * (2026-08-25) therefore half-asserted CYSPP from our side; the guide says
+   * the pin must remain electrically floating or driven HIGH when CYSPP
+   * operation is not wanted. */
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BT_CYSPP_GPIO_Port, &GPIO_InitStruct);
 
   GPIO_InitStruct.Pin = BT_RST_Pin | BT_LP_MODE_Pin;

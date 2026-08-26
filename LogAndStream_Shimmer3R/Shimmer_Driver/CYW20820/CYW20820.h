@@ -26,12 +26,23 @@
 #define FLOW_CONTROL                   1
 
 //TODO this doesn't seem to work on v1.4.16.16 firmware, need to investigate further
-/* BENCH A/B (DEV-573, 2026-08-25): 1 = transparent SPP bridge (SPPM,M=1,
- * UART<->SPP at line rate, connection state tracked via the BT_CONNECTION /
- * BT_CYSPP pins because in-band events are unavailable while bridged);
- * 0 = non-transparent command mode (SPPM,M=3, every chunk one SPP_SEND
- * round trip, measured lossless 56 KB/s radio-bound). Decide before merge. */
-#define TRANSPARANT_MODE               1
+/* 0 = non-transparent command mode (SPPM,M=3): every chunk is one SPP_SEND
+ * command/response round trip - measured lossless 56 KB/s, radio-bound, on
+ * v1.4.18.18 (bench 2026-08-25). THE SHIPPING DEFAULT.
+ *
+ * 1 = transparent SPP bridge (SPPM,M=1). Bench-tested on v1.4.18.18 and
+ * PARKED: the module exits SPP data mode almost immediately after engaging
+ * it (BT_CYSPP low then high within moments of a connection, never
+ * re-entering) and the link degrades to ~0.4 KB/s with module-side 0x0207
+ * command timeouts. Host->MCU still works throughout via EVT_SPP_DATA
+ * events. The demux/TX-gating infrastructure for this mode (RX routed by the
+ * CYSPP pin, raw TX refused during command-mode windows, connection state
+ * from in-band events - BT_CONNECTION latches high and is diagnostic-only)
+ * is in place and correct as far as it could be verified; what is missing is
+ * Ezurio guidance on how GA3 transparent mode + the CYSPP pin are intended
+ * to be driven, since v16-style behaviour (bridge stays up for the life of
+ * the connection, 100 KB/s) does not happen on GA3. */
+#define TRANSPARANT_MODE               0
 
 #define ENABLE_BT_RX_DEBUG_PRINTS      0
 #define ENABLE_BT_TX_DEBUG_PRINTS      0
