@@ -50,14 +50,6 @@
 #include <CYW20820/CYW20820.h>
 #include <Comms/shimmer_bt_uart.h>
 
-/* Every "#if TRANSPARANT_MODE" below silently evaluates false if the define
- * is not visible - which is exactly what happened historically (this file
- * never included CYW20820.h). Fail the build instead of half-selecting the
- * data path. */
-#ifndef TRANSPARANT_MODE
-#error "TRANSPARANT_MODE must be visible in hal_CYW20820.c - include CYW20820.h"
-#endif
-
 #define CONSOLE_PRINT_NON_EZ_SERIAL_BYTES 0
 
 volatile uint8_t pending_response = 0;
@@ -335,16 +327,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       skippingBytesCount--;
       i += 1;
     }
-#if TRANSPARANT_MODE
-    ///* If were waiting for the rest of a Shimmer packet or the the EZ Serial
-    //* parse is ideal and the header byte is a Shimmer packet header byte,
-    //* parse as Shimmer packet */
-    //else if (ShimBt_isWaitingForArgs()
-    //   || (getEzsPacketLength() == 0 && rxBuf[i] != EZS_BINARY_TYPE_CMDRSP
-    //       && rxBuf[i] != (EZS_BINARY_TYPE_CMDRSP | EZS_COMMAND_SCOPE_FLASH)
-    //       && rxBuf[i] != EZS_BINARY_TYPE_EVENT))
-    //{
-    else if (getBtCysppState())
+    else if (BT_isTransparentMode() && getBtCysppState())
     {
       /* Parse as Shimmer packet, gated on the LIVE data-mode state from the
        * CYSPP pin. Bench (2026-08-25, v1.4.18.18): the module actively hops
@@ -364,7 +347,6 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       i += count;
       count = btRxWaitByteCount;
     }
-#endif
     else
     {
       ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
@@ -416,29 +398,34 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
   ShimBt_TxCpltCallback();
 
-#if TRANSPARANT_MODE
-  /* Transparent mode has no SPP_SEND response to drive the transfer chain
-   * (that is the non-transparent design), so the DMA completion is the
-   * moment to hand the UART the next chunk - the pre-split mainline
-   * behaviour. The common repo cannot see TRANSPARANT_MODE, which is why
-   * this lives here and not in ShimBt_TxCpltCallback(). */
-  ShimBt_triggerNextTransfer();
-#endif
+  if (BT_isTransparentMode())
+  {
+    /* Transparent mode has no SPP_SEND response to drive the transfer chain
+     * (that is the non-transparent design), so the DMA completion is the
+     * moment to hand the UART the next chunk - the pre-split mainline
+     * behaviour. The common repo cannot see the data-path decision, which is
+     * why this lives here and not in ShimBt_TxCpltCallback(). */
+    ShimBt_triggerNextTransfer();
+  }
 }
 
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
 {
-#if TRANSPARANT_MODE
-  /* Raw bytes are only payload while the module is bridging (CYSPP pin low).
-   * In a command-mode window they would hit the module's EZ-Serial parser as
-   * garbage commands. Refuse instead; the ring keeps the data and the CYSPP
-   * falling-edge EXTI kicks the drain when data mode (re-)engages. */
-  if (!getBtCysppState())
+  if (BT_isTransparentMode())
   {
-    return HAL_SHIM_BUSY;
+    /* Raw bytes are only payload while the module is bridging (CYSPP pin
+     * low). In a command-mode window they would hit the module's EZ-Serial
+     * parser as garbage commands. Refuse instead; the ring keeps the data and
+     * the CYSPP falling-edge EXTI kicks the drain when data mode
+     * (re-)engages. */
+    if (!getBtCysppState())
+    {
+      return HAL_SHIM_BUSY;
+    }
+    return (HAL_StatusTypeDefShimmer) HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
   }
-  HAL_StatusTypeDef ret_val = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
-#else
+
+  /* SPP_SEND framing (modules v1.4.17+) */
   HAL_StatusTypeDef ret_val = HAL_OK;
   ezs_output_result_t ezs_ret;
 
@@ -486,7 +473,6 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
     SHIMMER_PRINTF("BtTransmit EZS fault=%d\r\n", ezs_ret);
     ret_val = HAL_ERROR;
   }
-#endif
   return (HAL_StatusTypeDefShimmer) ret_val;
 }
 

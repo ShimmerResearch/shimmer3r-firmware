@@ -20,38 +20,40 @@
  * set below (guide 002-37528, gap_set_adv_data: "the data here remains unused"
  * without it). */
 #define USE_GET_SET_ADV_PARAM          1
-/* Enabled for the DEV-573 sniff/power experiments (2026-08-25): the module
- * boots at sleep level 1 and these steps force level 0 (sleep disabled,
- * flash-scoped, write guarded by a read-compare so it costs one flash write
- * ever). Transparent-mode throughput shows a sniff/power-nap signature
- * (~250 B per ~0.6 s) despite SBTP F=1, so module power management is the
- * prime suspect. */
+/* Kept enabled with the reference at the factory default (level 1): the step
+ * only writes when the module disagrees, so on a stock module it is a single
+ * read per boot. It also self-heals any module whose sleep level was changed
+ * by the DEV-573 bench experiments (level 0 was flash-persisted on a bench
+ * unit, 2026-08-25) back to the default on its next boot. */
 #define USE_GET_SET_SYSTEM_SLEEP_PARAM 1
 
 #define BAUD_TO_USE                    2000000L
 #define FLOW_CONTROL                   1
 
-//TODO this doesn't seem to work on v1.4.16.16 firmware, need to investigate further
-/* 0 = non-transparent command mode (SPPM,M=3): every chunk is one SPP_SEND
- * command/response round trip - measured lossless 56 KB/s, radio-bound, on
- * v1.4.18.18 (bench 2026-08-25). THE SHIPPING DEFAULT.
+/* The classic-SPP data path is selected AT RUNTIME from the module firmware
+ * version (parsed from the boot banner, confirmed by GET_FIRMWARE_VERSION),
+ * because one firmware image serves fielded units on v1.4.16.16 modules and
+ * new production on v1.4.18.18+. See BT_isTransparentMode() and the policy
+ * in BT_selectDataPath():
  *
- * 1 = transparent SPP bridge (SPPM,M=1). Bench-tested on v1.4.18.18 and
- * PARKED: the module exits SPP data mode almost immediately after engaging
- * it (BT_CYSPP low then high within moments of a connection, never
- * re-entering) and the link degrades to ~0.4 KB/s with module-side 0x0207
- * command timeouts. Host->MCU still works throughout via EVT_SPP_DATA
- * events. The demux/TX-gating infrastructure for this mode (RX routed by the
- * CYSPP pin, raw TX refused during command-mode windows, connection state
- * from in-band events - BT_CONNECTION latches high and is diagnostic-only)
- * is in place and correct as far as it could be verified; what is missing is
- * Ezurio guidance on how GA3 transparent mode + the CYSPP pin are intended
- * to be driven, since v16-style behaviour (bridge stays up for the life of
- * the connection, 100 KB/s) does not happen on GA3. */
-#define TRANSPARANT_MODE               0
+ * - Modules below v1.4.17: TRANSPARENT bridge, exactly as production
+ *   v1.01.012 runs them - no SPPM step (their default is auto-parse +
+ *   transparent), raw UART <-> SPP, ~100 KB/s to a Windows host. SPP_SEND
+ *   does not exist on these modules.
+ * - Modules v1.4.17+: NON-TRANSPARENT (SPPM,M=3, SPP_SEND commands),
+ *   measured lossless 55 KB/s. Their transparent bridge on v1.4.18.18 frames
+ *   every UART byte as its own RFCOMM frame (HCI-verified, ~0.4 KB/s to a
+ *   Windows host; raised with Ezurio/Infineon) - once a fixed module release
+ *   exists, add it to the policy so those modules go transparent again.
+ *
+ * TRANSPARANT_MODE used to be a compile-time switch here; it is gone, and
+ * any surviving reference is a bug. */
+#ifdef TRANSPARANT_MODE
+#error "TRANSPARANT_MODE is a runtime decision now - use BT_isTransparentMode()"
+#endif
 
-#define ENABLE_BT_RX_DEBUG_PRINTS      0
-#define ENABLE_BT_TX_DEBUG_PRINTS      0
+#define ENABLE_BT_RX_DEBUG_PRINTS 0
+#define ENABLE_BT_TX_DEBUG_PRINTS 0
 
 #if SUPPORT_SR48_6_0
 #define BAUD_TO_USE_SR48_6_0 115200L
@@ -140,6 +142,10 @@ bool isBtInitCmdsRunning(void);
 bool isBtFactoryResetCmdsRunning(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
+/* 1 = raw UART<->SPP bridge (legacy modules), 0 = SPP_SEND command framing.
+ * Valid once the module boot banner has been parsed (WAIT_FOR_BOOT_STAGE2);
+ * defaults to transparent, the legacy-safe choice, until then. */
+uint8_t BT_isTransparentMode(void);
 uint8_t *BT_getCyw20820MacAddressPtr(void);
 void BT_generateCyw20820FirmwareVersionStr(char *str);
 uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch);

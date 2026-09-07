@@ -12,6 +12,7 @@
 #include <CYW20820/CYW20820.h>
 #include <CYW20820/EZ-Serial/ezsapi.h>
 #include <CYW20820/hal_CYW20820.h>
+#include <stdlib.h>
 
 #include "main.h"
 #include "usart.h"
@@ -213,10 +214,7 @@ static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
 
 #if USE_GET_SET_SYSTEM_SLEEP_PARAM
 static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref = {
-  /* 0 = sleep disabled (module factory default is 1). Part of the DEV-573
-   * transparent-throughput experiments - see USE_GET_SET_SYSTEM_SLEEP_PARAM
-   * in CYW20820.h. */
-  .level = 0,
+  .level = 1, //Factory default; see USE_GET_SET_SYSTEM_SLEEP_PARAM in CYW20820.h
 #if ENABLE_FIX_08
   .hid_off_sleep_time = 0 //Default=0
 #endif
@@ -225,6 +223,51 @@ static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref
 
 /* Consecutive rejected SPP_SENDs, for rate-limiting the rejection print. */
 static uint16_t sppSendFailStreak = 0;
+
+/* Classic-SPP data path, decided per boot from the module firmware version.
+ * Transparent until proven otherwise: an unparseable banner leaves a v1.4.17+
+ * module slow (~0.4 KB/s) but functional, whereas the reverse would send
+ * SPP_SEND commands a legacy module does not understand and mute it. */
+static uint8_t btTransparentMode = 1;
+
+uint8_t BT_isTransparentMode(void)
+{
+  return btTransparentMode;
+}
+
+/* The boot banner carries the application version as "E=" + 8 hex digits
+ * (e.g. E=01041212 = v1.4.18.18), the same 32-bit value GET_FIRMWARE_VERSION
+ * returns, so both paths feed BT_isFirmwareVersionAtLeast(). Parsing it here
+ * makes the data path known BEFORE the parse-mode step - on every boot list,
+ * including the subsequent-boot one that never queries the version. */
+static void BT_parseFwVersionFromBootBanner(const char *msg)
+{
+  const char *e = strstr(msg, "BOOT,");
+  e = e ? strstr(e, "E=") : 0;
+  if (e)
+  {
+    char *end = 0;
+    unsigned long app = strtoul(e + 2, &end, 16);
+    if (end == e + 10)
+    {
+      rsp_system_query_firmware_version.app = (uint32_t) app;
+      return;
+    }
+  }
+  printf("BT: module FW version not found in boot banner - assuming legacy "
+         "module\r\n");
+}
+
+/* THE POLICY. v1.4.17 introduced SPP_SEND; on v1.4.18.18 the transparent
+ * bridge frames one UART byte per RFCOMM frame against a Windows host
+ * (HCI-verified), so those modules use SPP_SEND framing. Legacy modules keep
+ * the transparent bridge production has always run them in (~100 KB/s).
+ * When a module release with the transparent-mode fix exists, exclude it
+ * here so it goes transparent again. */
+static void BT_selectDataPath(void)
+{
+  btTransparentMode = BT_isFirmwareVersionAtLeast(1, 4, 17) ? 0 : 1;
+}
 
 uint8_t *btInitCmdsSteps;
 volatile uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
@@ -412,25 +455,37 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
     setWaitingForBtBoot(0);
     printf("Boot Msgs=\r\n%s", getBtBootMsgPtr());
+
+    BT_parseFwVersionFromBootBanner(getBtBootMsgPtr());
+    BT_selectDataPath();
+    printf("BT data path: %s (module app version %08lX)\r\n",
+        btTransparentMode ? "transparent bridge" : "SPP_SEND framing",
+        (unsigned long) rsp_system_query_firmware_version.app);
   }
 
   if (btInitCmdsStep == ENTER_BINARY_MODE)
   {
     incrementBtInitCmdsStep();
-    printf("Enter Binary Mode\r\n");
-    setExpectedResponse(EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE);
+    if (btTransparentMode)
+    {
+      /* Legacy module (< v1.4.17): auto-parse is on and transparent is its
+       * default, so binary commands work without an SPPM step - the exact
+       * sequence production v1.01.012 has always run on v1.4.16.16. Sending
+       * the text SPPM here was never shown to work on those modules. */
+      printf("Enter Binary Mode: not needed on legacy module\r\n");
+    }
+    else
+    {
+      printf("Enter Binary Mode (SPPM,M=3)\r\n");
+      setExpectedResponse(EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE);
 
-    //Skip the "SPPM,M=x\r\n" response as EZ-Serial can't parse it
-    setSkippingBytesCount(10);
+      //Skip the "SPPM,M=x\r\n" response as EZ-Serial can't parse it
+      setSkippingBytesCount(10);
 
-#if TRANSPARANT_MODE
-    /* Enable binary mode */
-    appOutput(10, (uint8_t *) "SPPM,M=1\r\n");
-#else
-    /* Enable binary and non-transparent mode */
-    appOutput(10, (uint8_t *) "SPPM,M=3\r\n");
-#endif
-    return;
+      /* Binary mode + non-transparent SPP (SPP_SEND framing) */
+      appOutput(10, (uint8_t *) "SPPM,M=3\r\n");
+      return;
+    }
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)
@@ -1165,8 +1220,20 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION:
+  {
     /* Store the firmware version */
+    uint8_t wasTransparent = btTransparentMode;
     rsp_system_query_firmware_version = packet->payload.rsp_system_query_firmware_version;
+    BT_selectDataPath();
+    if (btTransparentMode != wasTransparent)
+    {
+      /* The parse mode already sent at ENTER_BINARY_MODE was chosen from the
+       * banner; a disagreement here means the banner parse was wrong. Loud,
+       * because the data path is now inconsistent until the next boot. */
+      printf("BT: WARNING boot-banner version disagreed with "
+             "GET_FIRMWARE_VERSION\r\n");
+    }
+  }
 #if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: rsp_system_query_firmware_version: app=");
     printHex32(packet->payload.rsp_system_query_firmware_version.app);
@@ -1490,20 +1557,24 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf("\r\n");
 #endif
 
-#if TRANSPARANT_MODE
-    shimmerStatus.btFirstConnectionEstablished = 1;
-    /* The connected event still arrives in-band - the data bridge engages
-     * after it - so use it for connect detection rather than relying on the
-     * BT_CONNECTION pin, which v1.4.17.17 did not toggle (see the TODO in
-     * gpio.c). Disconnect detection has to come from the pins: once bridged,
-     * the in-band disconnected event is consumed by the data-mode RX demux. */
-    printf("BT connected (in-band event)\r\n");
-    setBtConnectionState(true);
-#else
-    BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
-    setBtConnectionState(true);
-    setBtCysppState(true);
-#endif
+    if (btTransparentMode)
+    {
+      shimmerStatus.btFirstConnectionEstablished = 1;
+      /* The connected event still arrives in-band - the data bridge engages
+       * after it - so use it for connect detection rather than relying on the
+       * BT_CONNECTION pin, which v1.4.17.17 did not toggle (see gpio.c).
+       * Disconnect detection comes from the in-band event too: the module
+       * returns to command mode when the link drops and the RX demux follows
+       * the CYSPP pin. */
+      printf("BT connected (in-band event)\r\n");
+      setBtConnectionState(true);
+    }
+    else
+    {
+      BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
+      setBtConnectionState(true);
+      setBtCysppState(true);
+    }
     break;
 
   case EZS_IDX_EVT_BT_DISCONNECTED:
