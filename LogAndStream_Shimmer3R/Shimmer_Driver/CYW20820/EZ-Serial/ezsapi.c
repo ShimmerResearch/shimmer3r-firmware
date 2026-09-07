@@ -326,7 +326,13 @@ const uint8_t ezs_tbl_evt[] = {
   0x0E, 0x05, 0x0B, /*  42, /BTCS (bt_connection_status) */
   0x0E, 0x06, 0x03, /*  43, /BTCF (bt_connection_failed) */
   0x0E, 0x07, 0x03, /*  44, /BTDIS (bt_disconnected) */
-  0x13, 0x01, 0x04, /*  45, .SPPD (SPP_data_received) */
+  /* Fixed-payload size is 3 with Fix 06's uint8_t conn_handle (1) plus the
+   * longuint8a_t length prefix (2); it was 4 when the handle was uint16_t.
+   * Cosmetic: this third byte is never read - the event table is searched on
+   * group/id only, evt_entry is assigned and never consulted, and payload
+   * length comes from the wire header in EZSerial_Parse(). Corrected anyway so
+   * the table matches the struct. */
+  0x13, 0x01, 0x03, /*  45, .SPPD (SPP_data_received) */
   //-------------- Fix 06 End -------------------------//
 };
 
