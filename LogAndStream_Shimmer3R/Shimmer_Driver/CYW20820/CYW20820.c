@@ -1901,7 +1901,11 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     {
       count = getDmaWaitingForResponse();
       ShimBt_dmaConversionDone(&packet->payload.evt_spp_data_received.data.data[i]);
-      i += count;
+      /* Never advance by zero - see the matching guard in
+       * btUartDmaRxCpltCallback(). A 0 expected-byte count would spin here
+       * forever in the EZ-Serial event handler, which runs from the UART RX
+       * interrupt. */
+      i += (count > 0U) ? count : 1U;
     }
     break;
 
@@ -2043,7 +2047,8 @@ uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch)
   uint8_t fw_major = (uint8_t) (rsp_system_query_firmware_version.app >> 24);
   uint8_t fw_minor = (uint8_t) (rsp_system_query_firmware_version.app >> 16);
   uint8_t fw_patch = (uint8_t) (rsp_system_query_firmware_version.app >> 8);
-  uint8_t fw_build = (uint8_t) (rsp_system_query_firmware_version.app >> 0);
+  /* The 4th component (build, bits 7:0) is not part of the comparison: every
+   * module release we gate on differs by major/minor/patch. */
 
   if (fw_major > major)
   {

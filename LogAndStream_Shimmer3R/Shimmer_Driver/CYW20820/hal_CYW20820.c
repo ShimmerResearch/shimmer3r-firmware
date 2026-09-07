@@ -360,7 +360,13 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 #endif
       count = btRxWaitByteCount;
       ShimBt_dmaConversionDone(&rxBuf[i]);
-      i += count;
+      /* Never advance by zero. btRxWaitByteCount starts at 0 and is only set
+       * once the Shimmer parser is waiting for a known number of bytes, and
+       * some of the values it is set from are computed lengths - so a 0 here
+       * is not provably impossible, and it would spin this loop forever
+       * inside the UART RX-complete interrupt. Consuming one byte keeps the
+       * loop bounded by expectedByteCount. */
+      i += (count > 0U) ? count : 1U;
       count = btRxWaitByteCount;
     }
     else
