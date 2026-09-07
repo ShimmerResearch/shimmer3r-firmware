@@ -856,8 +856,15 @@ void bt_module_test(void)
     sprintf(buffer, " - %s\r\n", ShimBt_getBtVerStrPtr());
     ShimFactoryTest_sendReport(buffer);
 
+    /* Read the version from the source string, not from buffer[]: this sprintf
+     * overwrites buffer while the test reads it, which only worked because
+     * arguments happen to be evaluated first. */
+    const char *btVerStr = ShimBt_getBtVerStrPtr();
+    uint8_t btVerAccepted = (strstr(btVerStr, TEST_BT_MODULE_FW) != NULL)
+        || (strstr(btVerStr, TEST_BT_MODULE_FW_LEGACY) != NULL);
+
     sprintf(buffer, " - S3R_TEST_0014 - %s BT firmware version\r\n",
-        strstr(buffer, TEST_BT_MODULE_FW) != NULL ? "PASS: Correct" : "FAIL: Incorrect");
+        btVerAccepted ? "PASS: Correct" : "FAIL: Incorrect");
     ShimFactoryTest_sendReport(buffer);
   }
   else

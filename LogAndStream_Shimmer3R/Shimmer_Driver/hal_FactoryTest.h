@@ -78,6 +78,15 @@ given above */
  * ~+/-650..1200 ppm, dead crystal = "not measurable"). */
 #define TEST_THRESHOLD_LSE_ERROR_DEPLOYED_PPM_X10  1000
 
+/* Accepted BT module firmware versions, matched against the version string
+ * BT_generateCyw20820FirmwareVersionStr() builds ("CYW20820 app=vXX.XX.XX.XX,
+ * ..."). BOTH are shipping: one MCU image supports v1.4.16.16 (fielded units,
+ * whose module firmware is not field-upgradeable) and v1.4.18.18 (current
+ * production), choosing its BT data path from the version at boot. A single
+ * expected version would fail the whole population on one side or the other.
+ * Add new entries here - and to the || chain in BT_test() - as Ezurio
+ * releases module firmware we qualify. */
+#define TEST_BT_MODULE_FW_LEGACY                   "v01.04.16.16"
 #define TEST_BT_MODULE_FW                          "v01.04.18.18"
 
 #define GSR_TEST_TOLERANCE_7_PERCENT               0.07
