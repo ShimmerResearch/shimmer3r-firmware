@@ -319,15 +319,24 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
   switch (GPIO_Pin)
   {
   case BT_CONNECTION_Pin:
-    /* Diagnostic only: bench (2026-08-25, v1.4.18.18) showed the pin latching
-     * HIGH at the first connection and never dropping across disconnect/
-     * reconnect cycles, so it cannot drive connection state in either
-     * polarity. Connection tracking comes from the in-band connected/
-     * disconnected events. Capped print (DEV-573) to characterise the pin. */
     if (btConnPinEdgeDiagCount < 20U)
     {
       btConnPinEdgeDiagCount++;
       printf("BT_CONNECTION pin -> %s\r\n", isRising ? "HIGH" : "LOW");
+    }
+    if (BT_isTransparentMode())
+    {
+      /* Legacy modules (transparent policy): the pin is ACTIVE-LOW and tracks
+       * both BLE and classic connections (bench 2026-09-07, v1.4.16.16), and
+       * it is the only reliable DISCONNECT signal there - the in-band
+       * disconnected event arrives while the RX demux may still be in raw
+       * data mode and is consumed as payload, which left btConnected set and
+       * the blue LED on after a disconnect. On v1.4.18.18 the pin latches
+       * HIGH after the first connection, but those modules run SPP_SEND
+       * framing where the in-band events always parse, so it is ignored
+       * there. setBtConnectionState() is idempotent, so this coexists with
+       * the in-band connected event. */
+      setBtConnectionState(!isRising);
     }
     break;
   case BT_CYSPP_Pin:
