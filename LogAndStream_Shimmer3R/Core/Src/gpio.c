@@ -345,28 +345,36 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
       btCysppPinEdgeDiagCount++;
       printf("BT_CYSPP pin -> %s\r\n", isRising ? "HIGH" : "LOW");
     }
-    /* Data-bridge tracker: low = the module is bridging (classic transparent
-     * SPP or a BLE CYSPP pipe), high = command mode. Deliberately NOT coupled
-     * to setBtConnectionState() - a command-mode window mid-connection is not
-     * a disconnect. Drives the RX demux and BtTransmit() in hal_CYW20820.c.
+    /* Data-bridge tracker, but ONLY authoritative under the transparent
+     * (legacy-module) policy. There the pin is the sole signal for the raw
+     * UART<->SPP bridge: low = bridging, high = a command-mode window (not a
+     * disconnect, so it is deliberately not coupled to
+     * setBtConnectionState()). It drives the RX demux and BtTransmit().
      *
-     * Rising edge (bridge ended) is honoured on every module: it is how a BLE
-     * CYSPP pipe ending is detected while the demux is still raw. Falling
-     * edge (bridge started) is honoured only under the transparent classic
-     * policy: on SPP_SEND modules a BLE bridge is announced by the in-band
-     * CYSPP status event instead, and the pin's behaviour around a
-     * non-transparent classic connection has not been characterised - a
-     * spurious low there would flip the demux to raw and break the link. */
-    if (isRising)
+     * On SPP_SEND-framing modules (v1.4.17+) the pin must NOT touch the CYSPP
+     * state. A BLE CYSPP pipe there is bracketed by the in-band
+     * EVT_P_CYSPP_STATUS event (engage) and EVT_GAP_DISCONNECTED (end), which
+     * are authoritative; the pin still toggles during the pipe (data vs
+     * command-mode windows), and honouring its rising edge here knocked the
+     * demux out of raw mid-session, so device->host transmits briefly fell to
+     * the SPP_SEND path and were rejected (bench 2026-09-07, v1.4.18.18 BLE:
+     * bursts of "spp_send rejected 0502/0109", one dropped byte, and a
+     * follow-on classic calibration ACK timeout). A classic connection on
+     * these modules never enters CYSPP data mode, so the state stays false
+     * and framing stays SPP_SEND regardless of pin activity. */
+    if (BT_isTransparentMode())
     {
-      setBtCysppState(false);
-    }
-    else if (BT_isTransparentMode())
-    {
-      setBtCysppState(true);
-      /* Data mode (re-)engaged: drain anything the TX gate held back while
-       * the module was in a command-mode window. */
-      ShimBt_triggerNextTransfer();
+      if (isRising)
+      {
+        setBtCysppState(false);
+      }
+      else
+      {
+        setBtCysppState(true);
+        /* Data mode (re-)engaged: drain anything the TX gate held back while
+         * the module was in a command-mode window. */
+        ShimBt_triggerNextTransfer();
+      }
     }
     break;
   case DOCK_DETECT_Pin:
