@@ -491,14 +491,22 @@ void btInitCommands(void)
     }
     else
     {
-      printf("Enter Binary Mode (SPPM,M=3)\r\n");
+      /* Binary mode + non-transparent SPP (SPP_SEND framing). The command is
+       * text, sent before the module is in binary mode. Its length drives
+       * both the transmit and the count of echoed bytes to skip, so take both
+       * from the literal rather than repeating a magic 10 - a mismatch would
+       * either leave unparseable bytes in the RX stream or skip into the
+       * following packet. */
+      static const char sppmSetBinaryNonTransparent[] = "SPPM,M=3\r\n";
+      const uint16_t sppmLen = (uint16_t) (sizeof(sppmSetBinaryNonTransparent) - 1U);
+
+      printf("Enter Binary Mode (%.*s)\r\n", (int) (sppmLen - 2), sppmSetBinaryNonTransparent);
       setExpectedResponse(EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE);
 
-      //Skip the "SPPM,M=x\r\n" response as EZ-Serial can't parse it
-      setSkippingBytesCount(10);
+      /* Skip the echoed command - EZ-Serial cannot parse it */
+      setSkippingBytesCount((uint8_t) sppmLen);
 
-      /* Binary mode + non-transparent SPP (SPP_SEND framing) */
-      appOutput(10, (uint8_t *) "SPPM,M=3\r\n");
+      appOutput(sppmLen, (const uint8_t *) sppmSetBinaryNonTransparent);
       return;
     }
   }

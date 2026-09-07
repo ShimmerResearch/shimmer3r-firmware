@@ -442,8 +442,17 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
    * classic SPP link to send on). */
   if (getBtCysppState())
   {
-    btLastTxWasRaw = 1;
-    return (HAL_StatusTypeDefShimmer) HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
+    HAL_StatusTypeDef rawRet = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
+    if (rawRet == HAL_OK)
+    {
+      /* Only claim a raw transfer once one is genuinely in flight. Setting
+       * this before the call left it stale on HAL_BUSY, and because
+       * appOutput() sends SPP_SEND frames with HAL_UART_Transmit_IT the TX
+       * completion of a later SPP_SEND lands in the same callback - which
+       * would then have driven the raw transfer chain spuriously. */
+      btLastTxWasRaw = 1;
+    }
+    return (HAL_StatusTypeDefShimmer) rawRet;
   }
 
   if (BT_isTransparentMode() || BT_isBleSessionActive())
@@ -459,7 +468,6 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
   }
 
   /* SPP_SEND framing (modules v1.4.17+, classic SPP, no bridge active) */
-  btLastTxWasRaw = 0;
   HAL_StatusTypeDef ret_val = HAL_OK;
   ezs_output_result_t ezs_ret;
 
@@ -495,6 +503,14 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
         (uint16_t) EZS_SPP_SEND_MAX_DATA_BYTES);
     return HAL_SHIM_ERROR;
   }
+
+  /* Safe to reclassify the transfer chain only here, past the guards above:
+   * isBtUartTxBusy() has confirmed the UART TX state is READY, so no raw DMA
+   * from a just-ended data pipe can still be in flight. Clearing this any
+   * earlier (it used to be set at the top of this branch) meant a raw
+   * transfer completing during the transition would find the flag already 0
+   * and never advance the raw chain, stalling the pipe. */
+  btLastTxWasRaw = 0;
 
   sppSendData.length = len;
   memcpy(sppSendData.data, buf, len);
