@@ -48,7 +48,7 @@
  * Ezurio guidance on how GA3 transparent mode + the CYSPP pin are intended
  * to be driven, since v16-style behaviour (bridge stays up for the life of
  * the connection, 100 KB/s) does not happen on GA3. */
-#define TRANSPARANT_MODE               1
+#define TRANSPARANT_MODE               0
 
 #define ENABLE_BT_RX_DEBUG_PRINTS      0
 #define ENABLE_BT_TX_DEBUG_PRINTS      0

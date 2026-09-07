@@ -919,7 +919,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == SET_CYSPP_PACKETIZATION)
   {
     incrementBtInitCmdsStep();
-    printf("Set CYSPP packetization: anticipate 128B/2ms\r\n");
+    printf("Set CYSPP packetization: immediate\r\n");
     /* The factory default is Anticipate with a 20-byte target - sized for the
      * minimum GATT MTU of 23 - so the module ships sensor data as 20-byte
      * notifications even when the client has negotiated a large MTU (Android
@@ -927,26 +927,28 @@ void btInitCommands(void)
      * hosts negotiate, that caps BLE throughput at roughly 5-20 KB/s, which is
      * exactly the ceiling measured on the bench.
      *
-     * Mode 1 (Anticipate) with the 128-byte maximum and a 2 ms window: bulk
-     * data coalesces into 128-byte packets - the module's per-packet maximum,
-     * and the same best case Immediate mode reached - while a lone
-     * LiteProtocol response is released after at most 2 ms.
+     * Immediate mode transmits whatever is buffered each time the stack can
+     * take a packet. During bulk transfer the 2 Mbaud host UART outruns the
+     * radio, so transmissions naturally grow to the negotiated MTU payload (up
+     * to the module's 128-byte UART RX buffer per packet). Small LiteProtocol
+     * responses go out at once rather than being held for an anticipation
+     * window, so command latency improves too. The remaining arguments are
+     * unused in this mode but must be valid: wait 1 ms, length 128, EOP 0x0D
+     * (the factory default).
      *
-     * NOT Immediate mode (0), which this step used previously: on module FW
-     * v1.4.18.18 the classic-SPP transparent bridge evidently shares this
-     * packetizer, and Immediate mode framed EVERY UART BYTE as its own RFCOMM
-     * frame. Windows HCI capture 2026-09-07: RFCOMM PN negotiated N1 = 1011
-     * bytes, yet 3716 of 3735 module->host UIH frames carried exactly 1 byte,
-     * throttled by the credit round trip to ~0.4 KB/s. Sniff was ruled out in
-     * the same capture (Windows' sniff requests were refused by the module,
-     * status 0x1A). */
+     * This setting does NOT govern the classic-SPP transparent bridge: on
+     * module FW v1.4.18.18 a Windows HCI capture (2026-09-07) showed the
+     * module framing every UART byte as its own RFCOMM frame in transparent
+     * mode (3716 of 3735 module->host frames = 1 byte, N1 negotiated 1011),
+     * and switching this step to Anticipate/128 B/2 ms changed nothing -
+     * a module-side issue raised with Ezurio. */
     setExpectedResponse(EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION);
     /* RAM scope, deliberately: this step runs unconditionally in every
      * first-boot sequence, so a flash-scoped write would burn module
      * config-flash endurance once per power-up for nothing - the module resets
      * to factory packetization on reboot and this sequence always runs again
      * before data mode can engage. */
-    ezs_cmd_p_cyspp_set_packetization(1, 2, 128, 0x0D);
+    ezs_cmd_p_cyspp_set_packetization(0, 1, 128, 0x0D);
     return;
   }
 
