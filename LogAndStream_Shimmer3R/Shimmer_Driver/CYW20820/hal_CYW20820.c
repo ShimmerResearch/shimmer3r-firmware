@@ -59,11 +59,13 @@ volatile uint8_t pending_response = 0;
  * context and a longuint8a_t is 514 bytes; serialized by the
  * pending_response / UART-TX-busy guards in BtTransmit(). */
 static longuint8a_t sppSendData;
-static uint16_t sppSendRetryCount = 0;
+static volatile uint16_t sppSendRetryCount = 0;
 /* What BtTransmit() last handed to the UART: 1 = raw bridged bytes (chain the
  * next chunk from the TX-complete callback), 0 = an SPP_SEND command (the
- * module's response drives the chain instead). */
-static uint8_t btLastTxWasRaw = 0;
+ * module's response drives the chain instead). volatile: BtTransmit() runs
+ * from both main and interrupt context, and this is read in the TX-complete
+ * callback. */
+static volatile uint8_t btLastTxWasRaw = 0;
 /* Retry budget for a rejected SPP_SEND. Deliberately SHORT: a retrying payload
  * serialises the whole TX chain behind it, so the budget must stay well under
  * the host's per-command timeout (~2 s). At ~1.4 ms per 0x0502
@@ -91,7 +93,9 @@ volatile uint8_t btBootMsgLineCount = 0;
 
 volatile uint16_t btRxWaitByteCount = 0;
 
-uint8_t skippingBytesCount = 0;
+/* volatile: written by setSkippingBytesCount() from the boot sequence and
+ * decremented inside the UART RX-complete callback. */
+volatile uint8_t skippingBytesCount = 0;
 
 /*******************************************************************************
  * Interrupt Handler Name: TimerInterruptHandler

@@ -228,13 +228,17 @@ static uint16_t sppSendFailStreak = 0;
  * Transparent until proven otherwise: an unparseable banner leaves a v1.4.17+
  * module slow (~0.4 KB/s) but functional, whereas the reverse would send
  * SPP_SEND commands a legacy module does not understand and mute it. */
-static uint8_t btTransparentMode = 1;
+/* volatile: set from the boot sequence (main context) and read from the UART
+ * RX/TX interrupt paths. */
+static volatile uint8_t btTransparentMode = 1;
 
 /* 1 between EVT_GAP_CONNECTED and EVT_GAP_DISCONNECTED, i.e. while the active
  * transport is BLE. Distinguishes "the raw CYSPP pipe is paused, hold the
  * data" from "this is a classic link, use SPP_SEND framing" - the two cases
  * look identical from the CYSPP data-mode state alone. */
-static uint8_t btBleSessionActive = 0;
+/* volatile: set from the EZ-Serial event handler (interrupt context) and read
+ * from BtTransmit() and the pin EXTI handlers. */
+static volatile uint8_t btBleSessionActive = 0;
 
 uint8_t BT_isTransparentMode(void)
 {
@@ -1609,7 +1613,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
        * bench). */
       setBtCysppState(false);
       btBleSessionActive = 0;
-      BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
+      /* evt_bt_connected, not evt_gap_connected: this is the classic (BR/EDR)
+       * event. Both payloads happen to start with a uint8_t conn_handle, so
+       * the union read gave the right value, but nothing guarantees that -
+       * a field added ahead of conn_handle in either struct would silently
+       * hand SPP_SEND the wrong target. */
+      BT_setConnectionHandle(packet->payload.evt_bt_connected.conn_handle);
       setBtConnectionState(true);
     }
     break;

@@ -84,7 +84,7 @@ given above */
  * whose module firmware is not field-upgradeable) and v1.4.18.18 (current
  * production), choosing its BT data path from the version at boot. A single
  * expected version would fail the whole population on one side or the other.
- * Add new entries here - and to the || chain in BT_test() - as Ezurio
+ * Add new entries here - and to the || chain in bt_module_test() - as Ezurio
  * releases module firmware we qualify. */
 #define TEST_BT_MODULE_FW_LEGACY                   "v01.04.16.16"
 #define TEST_BT_MODULE_FW                          "v01.04.18.18"
