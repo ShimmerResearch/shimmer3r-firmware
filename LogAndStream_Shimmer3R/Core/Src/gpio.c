@@ -25,6 +25,8 @@
 
 #include "Boards/shimmer_boards.h"
 #include "Button/shimmer_button.h"
+#include "CYW20820/CYW20820.h"
+#include "Comms/shimmer_bt_uart.h"
 #include "TaskList/shimmer_taskList.h"
 #include "app_usbx_device.h"
 #include "log_and_stream_externs.h"
@@ -307,15 +309,82 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   }
 }
 
+#if ENABLE_BT_PIN_DEBUG_PRINTS
+/* Capped diagnostic counters: enough edges to characterise the module pin
+ * behaviour without risking a print flood from EXTI. */
+static uint16_t btConnPinEdgeDiagCount = 0;
+static uint16_t btCysppPinEdgeDiagCount = 0;
+#endif
+
 void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
 {
   switch (GPIO_Pin)
   {
   case BT_CONNECTION_Pin:
-    //setBtConnectionState(isRising);
+#if ENABLE_BT_PIN_DEBUG_PRINTS
+    if (btConnPinEdgeDiagCount < 20U)
+    {
+      btConnPinEdgeDiagCount++;
+      printf("BT_CONNECTION pin -> %s\r\n", isRising ? "HIGH" : "LOW");
+    }
+#endif
+    if (BT_isTransparentMode())
+    {
+      /* Legacy modules (transparent policy): the pin is ACTIVE-LOW and tracks
+       * both BLE and classic connections (bench 2026-09-07, v1.4.16.16), and
+       * it is the only reliable DISCONNECT signal there - the in-band
+       * disconnected event arrives while the RX demux may still be in raw
+       * data mode and is consumed as payload, which left btConnected set and
+       * the blue LED on after a disconnect. On v1.4.18.18 the pin latches
+       * HIGH after the first connection, but those modules run SPP_SEND
+       * framing where the in-band events always parse, so it is ignored
+       * there. setBtConnectionState() is idempotent, so this coexists with
+       * the in-band connected event. */
+      setBtConnectionState(!isRising);
+    }
     break;
   case BT_CYSPP_Pin:
-    //setBtCysppState(isRising);
+#if ENABLE_BT_PIN_DEBUG_PRINTS
+    if (btCysppPinEdgeDiagCount < 20U)
+    {
+      btCysppPinEdgeDiagCount++;
+      printf("BT_CYSPP pin -> %s\r\n", isRising ? "HIGH" : "LOW");
+    }
+#endif
+    /* Data-bridge tracker, but ONLY authoritative under the transparent
+     * (legacy-module) policy. There the pin is the sole signal for the raw
+     * UART<->SPP bridge: low = bridging, high = a command-mode window (not a
+     * disconnect, so it is deliberately not coupled to
+     * setBtConnectionState()). It drives the RX demux and BtTransmit().
+     *
+     * The RISING edge is honoured on every module version. It means the
+     * module has left data mode - momentarily, to deliver an event, or for
+     * good at disconnect - so anything it sends now is an EZ-Serial frame and
+     * the RX demux must stop treating bytes as bridged payload. Without this
+     * on SPP_SEND modules the CYSPP state could only ever be cleared by
+     * EVT_GAP_DISCONNECTED, which is itself delivered in command mode and so
+     * was consumed as payload: the disconnect went unnoticed, its cleanup
+     * (including stopping the data-rate test) never ran, and the blue LED
+     * kept blinking as if streaming (bench 2026-09-07, v1.4.18.18 BLE).
+     * Transmits are safe across a spurious clear because BtTransmit() holds
+     * data during a BLE session rather than falling back to SPP_SEND framing.
+     *
+     * The FALLING edge (data mode engaged) stays transparent-policy-only. On
+     * SPP_SEND modules the in-band EVT_P_CYSPP_STATUS event is the proven
+     * signal for a pipe starting, and the pin's behaviour around a
+     * non-transparent CLASSIC connection is uncharacterised - a spurious low
+     * there would route EZ-Serial frames to the Shimmer parser. */
+    if (isRising)
+    {
+      setBtCysppState(false);
+    }
+    else if (BT_isTransparentMode())
+    {
+      setBtCysppState(true);
+      /* Data mode (re-)engaged: drain anything the TX gate held back while
+       * the module was in a command-mode window. */
+      ShimBt_triggerNextTransfer();
+    }
     break;
   case DOCK_DETECT_Pin:
     /* Defer to unified debounced handler via TASK_USB_SETUP */
@@ -700,7 +769,16 @@ void initBtPins(void)
   HAL_GPIO_Init(BT_CP_ROLE_GPIO_Port, &GPIO_InitStruct);
 
   GPIO_InitStruct.Pin = BT_CYSPP_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  /* MUST stay floating (no MCU pull): per the EZ-Serial guide
+   * (CS-GUIDE-EZ-SERIAL-VELA-IF820, "CYSPP configuration and pin
+   * relationship"), the module only PULLS this pin to indicate its state and
+   * an external LOW is read as the host ASSERTING CYSPP - "active regardless
+   * of firmware configuration ... API communication is always suppressed
+   * while the CYSPP pin is asserted". A bench experiment with GPIO_PULLDOWN
+   * (2026-08-25) therefore half-asserted CYSPP from our side; the guide says
+   * the pin must remain electrically floating or driven HIGH when CYSPP
+   * operation is not wanted. */
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BT_CYSPP_GPIO_Port, &GPIO_InitStruct);
 

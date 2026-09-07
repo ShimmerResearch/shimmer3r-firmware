@@ -12,6 +12,7 @@
 #include <CYW20820/CYW20820.h>
 #include <CYW20820/EZ-Serial/ezsapi.h>
 #include <CYW20820/hal_CYW20820.h>
+#include <stdlib.h>
 
 #include "main.h"
 #include "usart.h"
@@ -213,20 +214,83 @@ static ezs_rsp_smp_get_security_parameters_t rsp_smp_get_security_parameters_ref
 
 #if USE_GET_SET_SYSTEM_SLEEP_PARAM
 static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref = {
-  .level = 1, //Default=1
+  .level = 1, //Factory default; see USE_GET_SET_SYSTEM_SLEEP_PARAM in CYW20820.h
 #if ENABLE_FIX_08
   .hid_off_sleep_time = 0 //Default=0
 #endif
 };
 #endif
 
+/* Consecutive rejected SPP_SENDs, for rate-limiting the rejection print. */
+static uint16_t sppSendFailStreak = 0;
+
+/* Classic-SPP data path, decided per boot from the module firmware version.
+ * Transparent until proven otherwise: an unparseable banner leaves a v1.4.17+
+ * module slow (~0.4 KB/s) but functional, whereas the reverse would send
+ * SPP_SEND commands a legacy module does not understand and mute it. */
+/* volatile: set from the boot sequence (main context) and read from the UART
+ * RX/TX interrupt paths. */
+static volatile uint8_t btTransparentMode = 1;
+
+/* 1 between EVT_GAP_CONNECTED and EVT_GAP_DISCONNECTED, i.e. while the active
+ * transport is BLE. Distinguishes "the raw CYSPP pipe is paused, hold the
+ * data" from "this is a classic link, use SPP_SEND framing" - the two cases
+ * look identical from the CYSPP data-mode state alone. */
+/* volatile: set from the EZ-Serial event handler (interrupt context) and read
+ * from BtTransmit() and the pin EXTI handlers. */
+static volatile uint8_t btBleSessionActive = 0;
+
+uint8_t BT_isTransparentMode(void)
+{
+  return btTransparentMode;
+}
+
+uint8_t BT_isBleSessionActive(void)
+{
+  return btBleSessionActive;
+}
+
+/* The boot banner carries the application version as "E=" + 8 hex digits
+ * (e.g. E=01041212 = v1.4.18.18), the same 32-bit value GET_FIRMWARE_VERSION
+ * returns, so both paths feed BT_isFirmwareVersionAtLeast(). Parsing it here
+ * makes the data path known BEFORE the parse-mode step - on every boot list,
+ * including the subsequent-boot one that never queries the version. */
+static void BT_parseFwVersionFromBootBanner(const char *msg)
+{
+  const char *e = strstr(msg, "BOOT,");
+  e = e ? strstr(e, "E=") : 0;
+  if (e)
+  {
+    char *end = 0;
+    unsigned long app = strtoul(e + 2, &end, 16);
+    if (end == e + 10)
+    {
+      rsp_system_query_firmware_version.app = (uint32_t) app;
+      return;
+    }
+  }
+  printf("BT: module FW version not found in boot banner - assuming legacy "
+         "module\r\n");
+}
+
+/* THE POLICY. v1.4.17 introduced SPP_SEND; on v1.4.18.18 the transparent
+ * bridge frames one UART byte per RFCOMM frame against a Windows host
+ * (HCI-verified), so those modules use SPP_SEND framing. Legacy modules keep
+ * the transparent bridge production has always run them in (~100 KB/s).
+ * When a module release with the transparent-mode fix exists, exclude it
+ * here so it goes transparent again. */
+static void BT_selectDataPath(void)
+{
+  btTransparentMode = BT_isFirmwareVersionAtLeast(1, 4, 17) ? 0 : 1;
+}
+
 uint8_t *btInitCmdsSteps;
 volatile uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
 uint8_t btNameTypeBeingRead;
 volatile bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
-static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
-  WAIT_FOR_BOOT_STAGE2, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
+static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
+  ENTER_BINARY_MODE, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3, UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5,
   PING, GET_BT_PARAMETERS, STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1,
   STOP_BLE_ADVERTISING_STAGE2, GET_FIRMWARE_VERSION, GET_BT_DEVICE_CLASS,
@@ -246,13 +310,13 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1,
 
 static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2, /* PING,*/
-  GET_SECURITY_PARAMETERS,
+  ENTER_BINARY_MODE, GET_SECURITY_PARAMETERS,
   SET_SECURITY_PARAMETERS, //Any command to get module into binary command mode. Added set, get security parameters here to get SD sync working
   FINISH };
 
 static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
-  WAIT_FOR_BOOT_STAGE2, GET_BT_MAC_ID, FACTORY_RESET, FR_WAIT_FOR_REBOOT_AFTER_FR,
-  FR_UPDATE_UART, FR_PING, FR_RESET_BT_MAC_ID, FINISH };
+  WAIT_FOR_BOOT_STAGE2, ENTER_BINARY_MODE, GET_BT_MAC_ID, FACTORY_RESET,
+  FR_WAIT_FOR_REBOOT_AFTER_FR, FR_UPDATE_UART, FR_PING, FR_RESET_BT_MAC_ID, FINISH };
 
 void (*btIsInitialised_cb)(void);
 
@@ -404,7 +468,61 @@ void btInitCommands(void)
   if (btInitCmdsStep == WAIT_FOR_BOOT_STAGE2)
   {
     incrementBtInitCmdsStep();
+    setWaitingForBtBoot(0);
     printf("Boot Msgs=\r\n%s", getBtBootMsgPtr());
+
+    BT_parseFwVersionFromBootBanner(getBtBootMsgPtr());
+    BT_selectDataPath();
+    printf("BT data path: %s (module app version %08lX)\r\n",
+        btTransparentMode ? "transparent bridge" : "SPP_SEND framing",
+        (unsigned long) rsp_system_query_firmware_version.app);
+  }
+
+  if (btInitCmdsStep == ENTER_BINARY_MODE)
+  {
+    incrementBtInitCmdsStep();
+    if (btTransparentMode)
+    {
+      /* Legacy module (< v1.4.17): auto-parse is on and transparent is its
+       * default, so binary commands work without an SPPM step - the exact
+       * sequence production v1.01.012 has always run on v1.4.16.16. Sending
+       * the text SPPM here was never shown to work on those modules. */
+      printf("Enter Binary Mode: not needed on legacy module\r\n");
+    }
+    else
+    {
+      /* Binary mode + non-transparent SPP (SPP_SEND framing). The command is
+       * text, sent before the module is in binary mode. Its length drives
+       * both the transmit and the count of echoed bytes to skip, so take both
+       * from the literal rather than repeating a magic 10 - a mismatch would
+       * either leave unparseable bytes in the RX stream or skip into the
+       * following packet. */
+      static const char sppmSetBinaryNonTransparent[] = "SPPM,M=3\r\n";
+      const uint16_t sppmLen = (uint16_t) (sizeof(sppmSetBinaryNonTransparent) - 1U);
+
+      printf("Enter Binary Mode (%.*s)\r\n", (int) (sppmLen - 2), sppmSetBinaryNonTransparent);
+
+      /* Arm the RX skip and the expected response only once the command is
+       * actually on its way. appOutput() can refuse - a response is still
+       * pending, or HAL_UART_Transmit_IT failed - and arming first meant a
+       * refusal left skippingBytesCount swallowing the next bytes of real RX
+       * traffic and expectedResponseIdx waiting on a response that would
+       * never arrive, which stalls a boot sequence that has no timeout. */
+      if (appOutput(sppmLen, (const uint8_t *) sppmSetBinaryNonTransparent) == EZS_OUTPUT_RESULT_DATA_WRITTEN)
+      {
+        setExpectedResponse(EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE);
+        /* Skip the echoed command - EZ-Serial cannot parse it */
+        setSkippingBytesCount((uint8_t) sppmLen);
+        return;
+      }
+
+      /* Nothing was sent, so nothing will answer. Fall through to the next
+       * boot step rather than waiting on a phantom response: the module is
+       * still in its power-on parse mode, so the binary commands that follow
+       * will fail visibly instead of the sequence hanging silently. */
+      printf("Enter Binary Mode: SPPM send REFUSED - module left in "
+             "power-on parse mode\r\n");
+    }
   }
 
   if (btInitCmdsStep == UPDATE_UART_SETTINGS_STAGE1)
@@ -908,13 +1026,20 @@ void btInitCommands(void)
      * responses go out at once rather than being held for an anticipation
      * window, so command latency improves too. The remaining arguments are
      * unused in this mode but must be valid: wait 1 ms, length 128, EOP 0x0D
-     * (the factory default). */
+     * (the factory default).
+     *
+     * This setting does NOT govern the classic-SPP transparent bridge: on
+     * module FW v1.4.18.18 a Windows HCI capture (2026-09-07) showed the
+     * module framing every UART byte as its own RFCOMM frame in transparent
+     * mode (3716 of 3735 module->host frames = 1 byte, N1 negotiated 1011),
+     * and switching this step to Anticipate/128 B/2 ms changed nothing -
+     * a module-side issue raised with Ezurio. */
     setExpectedResponse(EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION);
     /* RAM scope, deliberately: this step runs unconditionally in every
      * first-boot sequence, so a flash-scoped write would burn module
      * config-flash endurance once per power-up for nothing - the module resets
      * to factory packetization on reboot and this sequence always runs again
-     * before CYSPP data mode can engage. */
+     * before data mode can engage. */
     ezs_cmd_p_cyspp_set_packetization(0, 1, 128, 0x0D);
     return;
   }
@@ -961,13 +1086,36 @@ void btInitCommands(void)
       printf("Start BT Advertising\r\n");
       setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
 
+      /* From firmware v1.4.17 onwards there is a new flag to control whether to
+       * allow the device enter sniff mode. Set this flag to 1 to disable sniff
+       * mode */
+      uint8_t flags = BT_isFirmwareVersionAtLeast(1, 4, 17) ? 1 : 0;
+
       rsp_bt_get_parameters.discoverable = BT_DISC_MODE_GENERAL_DISCOVERABLE;
       rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
-      ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
-          rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
-          rsp_bt_get_parameters.flags, rsp_bt_get_parameters.scn,
-          rsp_bt_get_parameters.active_bt_discoverability,
-          rsp_bt_get_parameters.active_bt_connectability);
+      if (rsp_bt_get_parameters.flags != flags)
+      {
+        /* Persist the sniff-disable flag in the module's NV config (flash
+         * scope), guarded by the read-back above so it costs one flash write
+         * ever, not one per boot. A RAM-scoped flag demonstrably keeps
+         * non-transparent mode sniff-free (56 KB/s), but transparent-mode
+         * throughput shows a sniff signature (~250 B per ~0.6 s anchor) -
+         * this tests whether the module reloads link policy from NV when the
+         * SPP data bridge engages. The GBTP "BT params:" boot print shows
+         * flags=01 once this has stuck. */
+        printf("Persisting sniff-disable flag to module flash\r\n");
+        ezs_fcmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
+            rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
+            flags, rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
+            rsp_bt_get_parameters.active_bt_connectability);
+      }
+      else
+      {
+        ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
+            rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
+            flags, rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
+            rsp_bt_get_parameters.active_bt_connectability);
+      }
       return;
     }
     else
@@ -1094,7 +1242,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
   switch (packet->tbl_index)
   {
   case EZS_IDX_RSP_SYSTEM_PING:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_system_ping.result != EZS_ERR_SUCCESS)
     {
       printf("RX: rsp_system_ping: result=");
@@ -1109,9 +1257,21 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_QUERY_FIRMWARE_VERSION:
+  {
     /* Store the firmware version */
+    uint8_t wasTransparent = btTransparentMode;
     rsp_system_query_firmware_version = packet->payload.rsp_system_query_firmware_version;
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    BT_selectDataPath();
+    if (btTransparentMode != wasTransparent)
+    {
+      /* The parse mode already sent at ENTER_BINARY_MODE was chosen from the
+       * banner; a disagreement here means the banner parse was wrong. Loud,
+       * because the data path is now inconsistent until the next boot. */
+      printf("BT: WARNING boot-banner version disagreed with "
+             "GET_FIRMWARE_VERSION\r\n");
+    }
+  }
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: rsp_system_query_firmware_version: app=");
     printHex32(packet->payload.rsp_system_query_firmware_version.app);
     printf(", stack=");
@@ -1132,7 +1292,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_REBOOT:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_system_reboot.result != EZS_ERR_SUCCESS)
     {
       printf("RX: rsp_system_reboot: result=");
@@ -1143,7 +1303,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_SYSTEM_BOOT:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_system_boot: app=");
     printHex32(packet->payload.evt_system_boot.app);
     printf(", stack=");
@@ -1161,7 +1321,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_GAP_ADV_STATE_CHANGED:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_gap_adv_state_changed: state=");
     printHex8(packet->payload.evt_gap_adv_state_changed.state);
     printf(", reason=");
@@ -1171,7 +1331,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_GAP_SCAN_STATE_CHANGED:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_gap_scan_state_changed: state=");
     printHex8(packet->payload.evt_gap_scan_state_changed.state);
     printf(", reason=");
@@ -1181,7 +1341,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_GAP_CONNECTED:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_gap_connected: conn_handle=");
     printHex8(packet->payload.evt_gap_connected.conn_handle);
     printf(", address=");
@@ -1198,26 +1358,45 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printHex8(packet->payload.evt_gap_connected.bond);
     printf("\r\n");
 #endif
+    shimmerStatus.btFirstConnectionEstablished = 1;
+    btBleSessionActive = 1;
+    BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
     setBtConnectionState(true);
     break;
 
   case EZS_IDX_EVT_GAP_DISCONNECTED:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_gap_disconnected: conn_handle=");
     printHex8(packet->payload.evt_gap_disconnected.conn_handle);
     printf(", reason=");
     printHex16(packet->payload.evt_gap_disconnected.reason);
     printf("\r\n");
 #endif
+    BT_setConnectionHandle(0xFF);
+    btBleSessionActive = 0;
+    /* A BLE disconnect ends any CYSPP data pipe. The in-band CYSPP status
+     * event that would also say so arrives while the demux may still be in
+     * raw mode, so do not rely on it alone. */
+    setBtCysppState(false);
     setBtConnectionState(false);
     break;
 
   case EZS_IDX_EVT_P_CYSPP_STATUS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_p_cyspp_status: status=");
     printHex8(packet->payload.evt_p_cyspp_status.status);
     printf("\r\n");
 #endif
+    /* Authoritative raw-pipe signal on EVERY module version: a BLE CYSPP data
+     * pipe is a raw UART bridge even on SPP_SEND-framing modules, because
+     * SPPM bit 1 governs classic SPP only. Host->device bytes then arrive raw
+     * and MUST reach the Shimmer command parser, and device->host replies must
+     * go out as raw DMA.
+     *
+     * Gating this to the transparent policy (bench 2026-09-07) made the state
+     * permanently false on v1.4.18.18, so incoming BLE bytes went to the
+     * EZ-Serial parser instead: the device never saw a command, answered
+     * nothing, and every host command timed out with no TX attempt at all. */
     setBtCysppState(packet->payload.evt_p_cyspp_status.status);
     break;
 
@@ -1225,7 +1404,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
   case EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS:
     /* Store the Bluetooth address */
     rsp_system_get_bluetooth_address = packet->payload.rsp_system_get_bluetooth_address;
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: rsp_system_get_bluetooth_address: Address=");
     printHexMac(packet->payload.rsp_system_get_bluetooth_address.address);
     printf("\r\n");
@@ -1233,31 +1412,34 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_P_CYSPP_SET_PACKETIZATION:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("RX: rsp_p_cyspp_set_packetization: result=");
-    printHex16(packet->payload.rsp_p_cyspp_set_packetization.result);
-    printf("\r\n");
-#endif
+    if (packet->payload.rsp_p_cyspp_set_packetization.result != EZS_ERR_SUCCESS)
+    {
+      printf("p_cyspp_set_packetization FAILED: result=");
+      printHex16(packet->payload.rsp_p_cyspp_set_packetization.result);
+      printf("\r\n");
+    }
     break;
 
   case EZS_IDX_RSP_GAP_SET_ADV_DATA:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("RX: rsp_gap_set_adv_data: result=");
-    printHex16(packet->payload.rsp_gap_set_adv_data.result);
-    printf("\r\n");
-#endif
+    if (packet->payload.rsp_gap_set_adv_data.result != EZS_ERR_SUCCESS)
+    {
+      printf("gap_set_adv_data FAILED: result=");
+      printHex16(packet->payload.rsp_gap_set_adv_data.result);
+      printf("\r\n");
+    }
     break;
 
   case EZS_IDX_RSP_GAP_SET_SR_DATA:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-    printf("RX: rsp_gap_set_sr_data: result=");
-    printHex16(packet->payload.rsp_gap_set_sr_data.result);
-    printf("\r\n");
-#endif
+    if (packet->payload.rsp_gap_set_sr_data.result != EZS_ERR_SUCCESS)
+    {
+      printf("gap_set_sr_data FAILED: result=");
+      printHex16(packet->payload.rsp_gap_set_sr_data.result);
+      printf("\r\n");
+    }
     break;
 
   case EZS_IDX_RSP_GAP_SET_DEVICE_NAME:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_set_device_name.result != EZS_ERR_SUCCESS)
     {
       printf("RX: rsp_gap_set_device_name: Result=");
@@ -1277,7 +1459,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       rsp_gap_get_device_name_bt = packet->payload.rsp_gap_get_device_name;
     }
 
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
 //printf("RX: rsp_gap_get_device_name: name=");
 //printHexMac(packet->payload.rsp_gap_get_device_name.name);
 #endif
@@ -1288,7 +1470,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_SET_TX_POWER:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_system_set_tx_power.result != EZS_ERR_SUCCESS)
     {
       printf("RX: rsp_system_set_tx_power: Result=");
@@ -1299,21 +1481,21 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_GET_UART_PARAMETERS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
-//printf("RX: rsp_gap_set_device_appearance: Result=");
-//printHex16(packet->payload.rsp_gap_set_device_appearance.result);
-//printf("\r\n");
+#if ENABLE_BT_RX_DEBUG_PRINTS
+    printf("RX: rsp_system_get_uart_parameters: Result=");
+    printHex16(packet->payload.rsp_system_get_uart_parameters.result);
+    printf("\r\n");
 #endif
     break;
 
   case EZS_IDX_RSP_GAP_GET_CONN_PARAMETERS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
 //printf("\r\n");
 #endif
     break;
 
   case EZS_IDX_RSP_GAP_SET_CONN_PARAMETERS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_set_conn_parameters.result != EZS_ERR_SUCCESS)
     {
       printf("RX: rsp_gap_set_conn_parameters: Result=");
@@ -1324,7 +1506,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_SET_UART_PARAMETERS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_set_device_appearance.result != EZS_ERR_SUCCESS)
     {
       printf("RX: rsp_gap_set_device_appearance: Result=");
@@ -1335,7 +1517,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_GAP_SET_DEVICE_APPEARANCE:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: rsp_gap_set_device_appearance: Result=");
     printHex16(packet->payload.rsp_gap_set_device_appearance.result);
     printf("\r\n");
@@ -1343,7 +1525,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SMP_GET_SECURITY_PARAMETERS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: rsp_smp_get_security_parameters: Result=");
     printHex16(packet->payload.rsp_smp_get_security_parameters.result);
     printf("\r\n");
@@ -1351,14 +1533,14 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SMP_SET_SECURITY_PARAMETERS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: rsp_smp_set_security_parameters: Result=");
     printHex16(packet->payload.rsp_smp_set_security_parameters.result);
     printf("\r\n");
 #endif
     break;
   case EZS_IDX_RSP_GAP_SET_ADV_PARAMETERS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_set_adv_parameters.result != EZS_ERR_SUCCESS)
     {
       printf("RX: rsp_gap_set_adv_parameters: Result=");
@@ -1369,14 +1551,14 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_GAP_GET_ADV_PARAMETERS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
 //printHex16(packet->payload.rsp_gap_get_adv_parameters.result);
 //printf("\r\n");
 #endif
     break;
 
   case EZS_IDX_EVT_GAP_CONNECTION_UPDATED:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_gap_connection_updated: conn_handle=");
     printHex8(packet->payload.evt_gap_connection_updated.conn_handle);
     printf(", interval=");
@@ -1390,29 +1572,25 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_GAP_START_ADV:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_start_adv.result != EZS_ERR_SUCCESS)
     {
-      printf("RX: rsp_gap_start_adv: Result=");
+      printf("gap_start_adv FAILED: result=");
       printHex16(packet->payload.rsp_gap_start_adv.result);
       printf("\r\n");
     }
-#endif
     break;
 
   case EZS_IDX_RSP_GAP_STOP_ADV:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_gap_stop_adv.result != EZS_ERR_SUCCESS)
     {
-      printf("RX: rsp_gap_stop_adv: Result=");
+      printf("gap_stop_adv FAILED: result=");
       printHex16(packet->payload.rsp_gap_stop_adv.result);
       printf("\r\n");
     }
-#endif
     break;
 
   case EZS_IDX_EVT_SMP_ENCRYPTION_STATUS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
 //printf("RX: evt_smp_encryption_status: conn_handle=");
 //printHex8(packet->payload.evt_smp_encryption_status.conn_handle);
 //printf(", status=");
@@ -1422,7 +1600,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_BT_CONNECTED:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_bt_connected: conn_handle=");
     printHex8(packet->payload.evt_bt_connected.conn_handle);
     printf(", Address=");
@@ -1432,12 +1610,43 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf("\r\n");
 #endif
 
-    setBtConnectionState(true);
-    setBtCysppState(true);
+    if (btTransparentMode)
+    {
+      shimmerStatus.btFirstConnectionEstablished = 1;
+      /* The connected event still arrives in-band - the data bridge engages
+       * after it - so use it for connect detection rather than relying on the
+       * BT_CONNECTION pin, which v1.4.17.17 did not toggle (see gpio.c).
+       * Disconnect detection comes from the in-band event too: the module
+       * returns to command mode when the link drops and the RX demux follows
+       * the CYSPP pin. */
+      printf("BT connected (in-band event)\r\n");
+      setBtConnectionState(true);
+    }
+    else
+    {
+      /* Non-transparent classic SPP: data arrives as SPP data events and
+       * leaves as SPP_SEND commands - there is no raw bridge here, so the
+       * CYSPP (data-mode) state must be false or the RX demux and
+       * BtTransmit() would treat EZ-Serial frames as bridged payload.
+       * Cleared explicitly rather than assumed: a preceding BLE session on
+       * the same power cycle sets it, and if its teardown event were missed
+       * the stale 'true' would break this classic session (a candidate for
+       * the first-classic-connect-after-BLE calibration timeout seen on the
+       * bench). */
+      setBtCysppState(false);
+      btBleSessionActive = 0;
+      /* evt_bt_connected, not evt_gap_connected: this is the classic (BR/EDR)
+       * event. Both payloads happen to start with a uint8_t conn_handle, so
+       * the union read gave the right value, but nothing guarantees that -
+       * a field added ahead of conn_handle in either struct would silently
+       * hand SPP_SEND the wrong target. */
+      BT_setConnectionHandle(packet->payload.evt_bt_connected.conn_handle);
+      setBtConnectionState(true);
+    }
     break;
 
   case EZS_IDX_EVT_BT_DISCONNECTED:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_bt_disconnected: conn_handle=");
     printHex8(packet->payload.evt_bt_disconnected.conn_handle);
     printf(", Reason=");
@@ -1445,6 +1654,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf("\r\n");
 #endif
 
+    BT_setConnectionHandle(0xFF);
     setBtCysppState(false);
     setBtConnectionState(false);
     break;
@@ -1456,22 +1666,43 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf("CYW20820 System Error: code=");
     printHex16(packet->payload.evt_system_error.error);
     printf("\r\n");
+
+    /* A protocol error means the module discarded the in-flight command and
+     * will never answer it. Without this, pending_response stays set and BT
+     * TX is mute for the rest of the power cycle (bench-confirmed 2026-08-25
+     * with an oversized SPP_SEND: 0x0209/0x0207 then silence). Clear it and
+     * restart the data path; the boot stepper is left alone because it drives
+     * its own expected-response flow. */
+    if (isPendingResponseFromBtModule())
+    {
+      resetEzsPendingResponse();
+      if (!isBtInitCmdsRunning())
+      {
+        /* The discarded command is most likely an SPP_SEND - retry its
+         * payload from the driver's held copy first; only move on to new
+         * data if there is nothing to retry. */
+        if (!BtTransmitRetryLast())
+        {
+          ShimBt_triggerNextTransfer();
+        }
+      }
+    }
     break;
 
   case EZS_IDX_RSP_SYSTEM_FACTORY_RESET:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("ACK factory reset\r\n");
 #endif
     break;
 
   case EZS_IDX_EVT_SYSTEM_FACTORY_RESET_COMPLETE:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("Factory reset complete\r\n");
 #endif
     break;
 
   case EZS_IDX_RSP_SYSTEM_STORE_CONFIG:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("Store config complete\r\n");
     printHex16(packet->payload.rsp_system_store_config.result);
 #endif
@@ -1481,7 +1712,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_BT_CONNECT:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: idx_rsp_bt_connected: conn_handle=");
     printHex8(packet->payload.rsp_bt_connect.conn_handle);
     printf(", Result=");
@@ -1491,16 +1722,16 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_BT_CANCEL_CONNECTION:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
 #endif
     break;
   case EZS_IDX_RSP_BT_DISCONNECT:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
 #endif
     break;
 
   case EZS_IDX_RSP_GAP_CONNECT:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: idx_rsp_gap_connect: conn_handle=");
     printHex8(packet->payload.rsp_gap_connect.conn_handle);
     printf(", Result=");
@@ -1510,7 +1741,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_BT_CONNECTION_FAILED:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     BT_connectionFailed(packet->payload.evt_bt_connection_failed.conn_handle,
         packet->payload.evt_bt_connection_failed.reason);
     printf("\r\n");
@@ -1519,9 +1750,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   case EZS_IDX_EVT_GATTS_DATA_WRITTEN:
     /* A GATT write surfaced to the host instead of being consumed by the CYSPP
-     * pipe. Which attribute, and when (connect-time only vs during transfer),
-     * is the discriminating datum for the BLE throughput/wedge investigation -
-     * a bare "unhandled 05/02" print discarded exactly that. */
+     * pipe - in practice the client enabling the CYSPP characteristics at
+     * connect time. Which attribute, and when (connect-time only vs during a
+     * transfer), was the discriminating datum for the BLE investigation, so
+     * the detail is kept behind the pin/GATT debug flag rather than reduced to
+     * a bare "unhandled 05/02". */
+#if ENABLE_BT_PIN_DEBUG_PRINTS
     printf("RX: gatts_data_written conn=");
     printHex8(packet->payload.evt_gatts_data_written.conn_handle);
     printf(" attr=");
@@ -1531,6 +1765,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf(" len=");
     printHex16(packet->payload.evt_gatts_data_written.data.length);
     printf("\r\n");
+#endif
     break;
 
   case EZS_IDX_EVT_SMP_PAIRING_REQUESTED:
@@ -1544,7 +1779,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_EVT_SMP_PAIRING_RESULT:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: evt_smp_pairing_result: conn_handle=");
     printHex8(packet->payload.evt_smp_pairing_result.conn_handle);
     printf(", Reason=");
@@ -1554,7 +1789,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SMP_GET_PIN_CODE:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: rsp_smp_get_pin_code: pin_code=");
     printf("%.*s", (int) packet->payload.rsp_smp_get_pin_code.pin_code.length,
         packet->payload.rsp_smp_get_pin_code.pin_code.data);
@@ -1565,7 +1800,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SMP_SET_PIN_CODE:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_smp_set_pin_code.result != EZS_ERR_SUCCESS)
     {
       printf("RX: rsp_smp_set_pin_code: Result=");
@@ -1577,24 +1812,47 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   case EZS_IDX_RSP_BT_GET_PARAMETERS:
     rsp_bt_get_parameters = packet->payload.rsp_bt_get_parameters;
+    /* One line per BT init, unconditional: these values are echoed back in
+     * both bt_set_parameters calls (stop- and start-advertising), so a bad
+     * read here silently poisons classic discoverability. */
+    printf("BT params: result=");
+    printHex16(rsp_bt_get_parameters.result);
+    printf(", sup_timeout=");
+    printHex16(rsp_bt_get_parameters.link_super_time_out);
+    printf(", disc=");
+    printHex8(rsp_bt_get_parameters.discoverable);
+    printf(", conn=");
+    printHex8(rsp_bt_get_parameters.connectable);
+    printf(", flags=");
+    printHex8(rsp_bt_get_parameters.flags);
+    printf(", scn=");
+    printHex8(rsp_bt_get_parameters.scn);
+    printf(", act_disc=");
+    printHex16(rsp_bt_get_parameters.active_bt_discoverability);
+    printf(", act_conn=");
+    printHex16(rsp_bt_get_parameters.active_bt_connectability);
+    printf("\r\n");
     break;
 
   case EZS_IDX_RSP_BT_SET_PARAMETERS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+    /* Unconditional: the boot stepper advances on any matching response, so a
+     * rejected bt_set_parameters (e.g. a layout change in a new module FW)
+     * silently leaves the device non-discoverable/non-connectable after the
+     * stop-advertising step. */
     if (packet->payload.rsp_bt_set_parameters.result != EZS_ERR_SUCCESS)
     {
-      printf("RX: rsp_bt_set_parameters: Result=");
+      printf("bt_set_parameters FAILED: result=");
       printHex16(packet->payload.rsp_bt_set_parameters.result);
       printf("\r\n");
     }
-#endif
     break;
 
   case EZS_IDX_RSP_BT_GET_DEVICE_CLASS:
+    /* Response is ignored */
     break;
 
   case EZS_IDX_RSP_BT_SET_DEVICE_CLASS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     if (packet->payload.rsp_bt_set_device_class.result != EZS_ERR_SUCCESS)
     {
       printf("RX: rsp_bt_set_device_class: Result=");
@@ -1605,7 +1863,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     break;
 
   case EZS_IDX_RSP_SYSTEM_GET_SLEEP_PARAMETERS:
-#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: rsp_system_get_sleep_parameters: level=");
     printHex8(packet->payload.rsp_system_get_sleep_parameters.level);
 #if ENABLE_FIX_08
@@ -1616,19 +1874,125 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     break;
 
+  /* EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE is #defined to the same index, and
+   * what arrives here is the RESPONSE - payload is ezs_rsp_..._t (a result
+   * code), not the command's mode byte. Reading .mode showed the low half of
+   * the result and hid failures. Reported unconditionally: this step is what
+   * puts an SPP_SEND-framing module into binary/non-transparent mode, so a
+   * failure here invalidates the whole classic-SPP data path. */
+  case EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE:
+    if (packet->payload.rsp_protocol_set_parse_mode.result != EZS_ERR_SUCCESS)
+    {
+      printf("protocol_set_parse_mode FAILED: result=");
+      printHex16(packet->payload.rsp_protocol_set_parse_mode.result);
+      printf("\r\n");
+    }
+    break;
+
+  case EZS_IDX_CMD_PROTOCOL_GET_PARSE_MODE:
+#if ENABLE_BT_RX_DEBUG_PRINTS
+    printf("RX: cmd_protocol_get_parse_mode: mode=");
+    printHex8(packet->payload.rsp_protocol_get_parse_mode.mode);
+    printf("\r\n");
+#endif
+    break;
+
   case EZS_IDX_RSP_SYSTEM_SET_SLEEP_PARAMETERS:
+    if (packet->payload.rsp_system_set_sleep_parameters.result != EZS_ERR_SUCCESS)
+    {
+      printf("set_sleep_parameters FAILED: result=");
+      printHex16(packet->payload.rsp_system_set_sleep_parameters.result);
+      printf("\r\n");
+    }
+    break;
+
+  case EZS_IDX_EVT_SPP_DATA_RECEIVED:
+#if ENABLE_BT_RX_DEBUG_PRINTS
+    printf("RX: evt_spp_data_received: conn_handle=");
+    printHex8(packet->payload.evt_spp_data_received.conn_handle);
+    printf(", length=%d", packet->payload.evt_spp_data_received.data.length);
+    printf(", data=[");
+    for (uint16_t i = 0; i < packet->payload.evt_spp_data_received.data.length; i++)
+    {
+      printHex8(packet->payload.evt_spp_data_received.data.data[i]);
+      if (i < packet->payload.evt_spp_data_received.data.length - 1)
+      {
+        printf(" ");
+      }
+    }
+    printf("]\r\n");
+#endif
+    BT_setConnectionHandle(packet->payload.evt_spp_data_received.conn_handle);
+
+    uint16_t count = 1;
+    uint16_t i = 0;
+    while (i < packet->payload.evt_spp_data_received.data.length)
+    {
+      count = getDmaWaitingForResponse();
+      ShimBt_dmaConversionDone(&packet->payload.evt_spp_data_received.data.data[i]);
+      /* Never advance by zero - see the matching guard in
+       * btUartDmaRxCpltCallback(). A 0 expected-byte count would spin here
+       * forever in the EZ-Serial event handler, which runs from the UART RX
+       * interrupt. */
+      i += (count > 0U) ? count : 1U;
+    }
+    break;
+
+  case EZS_IDX_RSP_SPP_SEND_COMMAND:
+    if (packet->payload.rsp_spp_send_command.result != EZS_ERR_SUCCESS)
+    {
+      /* Retry the same payload from the driver's held copy - the retry round
+       * trip itself paces us to the radio's drain rate, and nothing is lost.
+       *
+       * 0x0109 (insufficient resources) is the module's SPP queue toward the
+       * radio being full: normal flow control on any saturated transfer, and
+       * every occurrence recovers on the first retry, so it is logged only
+       * under the RX debug flag. Anything else means the module refused the
+       * send for a reason worth seeing (e.g. 0x0502 CONNECTION_REQUIRED when
+       * no data channel is up yet), so it prints rate-limited. */
+      sppSendFailStreak++;
+      if (packet->payload.rsp_spp_send_command.result != EZS_ERR_CORE_INSUFFICIENT_RESOURCES)
+      {
+        if (sppSendFailStreak == 1U || (sppSendFailStreak % 100U) == 0U)
+        {
+          printf("spp_send rejected (streak=%u): result=", sppSendFailStreak);
+          printHex16(packet->payload.rsp_spp_send_command.result);
+          printf("\r\n");
+        }
+      }
+#if ENABLE_BT_RX_DEBUG_PRINTS
+      else if (sppSendFailStreak == 1U || (sppSendFailStreak % 100U) == 0U)
+      {
+        printf("spp_send backpressure (streak=%u)\r\n", sppSendFailStreak);
+      }
+#endif
+      if (BtTransmitRetryLast())
+      {
+        /* Retry in flight: the pending response serializes everything else,
+         * so do not start the next transfer on top of it. */
+        break;
+      }
+      /* Retry budget exhausted (chunk dropped) - fall through so the stream
+       * keeps moving rather than going mute. */
+    }
+    else
+    {
+      sppSendFailStreak = 0;
+      BtTransmitAckLast();
+    }
+    ShimBt_triggerNextTransfer();
     break;
 
     /* -------- Shimmer added end -------- */
 
   default:
-    //#if ENABLE_BT_INIT_RX_DEBUG_PRINTS
+#if ENABLE_BT_RX_DEBUG_PRINTS
     printf("RX: unhandled packet: ");
     printHex8(packet->header.group);
     printf("/");
     printHex8(packet->header.id);
     printf("\r\n");
-    //#endif
+#endif
     break;
   }
 
@@ -1705,6 +2069,35 @@ void BT_generateCyw20820FirmwareVersionStr(char *str)
       (uint16_t) rsp_system_query_firmware_version.stack,
       rsp_system_query_firmware_version.protocol,
       rsp_system_query_firmware_version.hardware);
+}
+
+uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch)
+{
+  uint8_t fw_major = (uint8_t) (rsp_system_query_firmware_version.app >> 24);
+  uint8_t fw_minor = (uint8_t) (rsp_system_query_firmware_version.app >> 16);
+  uint8_t fw_patch = (uint8_t) (rsp_system_query_firmware_version.app >> 8);
+  /* The 4th component (build, bits 7:0) is not part of the comparison: every
+   * module release we gate on differs by major/minor/patch. */
+
+  if (fw_major > major)
+  {
+    return 1;
+  }
+  else if (fw_major == major)
+  {
+    if (fw_minor > minor)
+    {
+      return 1;
+    }
+    else if (fw_minor == minor)
+    {
+      if (fw_patch >= patch)
+      {
+        return 1;
+      }
+    }
+  }
+  return 0;
 }
 
 //TODO placeholder for now, implement this later
@@ -1834,4 +2227,14 @@ void BT_connectionFailed(uint8_t conn_handle, uint16_t reason)
 void BT_startDone_cb(void (*callback)(void))
 {
   btIsInitialised_cb = callback;
+}
+
+void BT_setConnectionHandle(uint8_t conn_handle)
+{
+  active_conn_handle = conn_handle;
+}
+
+uint8_t BT_getConnectionHandle(void)
+{
+  return active_conn_handle;
 }

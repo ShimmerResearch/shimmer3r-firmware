@@ -20,10 +20,46 @@
  * set below (guide 002-37528, gap_set_adv_data: "the data here remains unused"
  * without it). */
 #define USE_GET_SET_ADV_PARAM          1
-#define USE_GET_SET_SYSTEM_SLEEP_PARAM 0
+/* Kept enabled with the reference at the factory default (level 1): the step
+ * only writes when the module disagrees, so on a stock module it is a single
+ * read per boot. It also self-heals any module whose sleep level was changed
+ * by the DEV-573 bench experiments (level 0 was flash-persisted on a bench
+ * unit, 2026-08-25) back to the default on its next boot. */
+#define USE_GET_SET_SYSTEM_SLEEP_PARAM 1
 
 #define BAUD_TO_USE                    2000000L
 #define FLOW_CONTROL                   1
+
+/* The classic-SPP data path is selected AT RUNTIME from the module firmware
+ * version (parsed from the boot banner, confirmed by GET_FIRMWARE_VERSION),
+ * because one firmware image serves fielded units on v1.4.16.16 modules and
+ * new production on v1.4.18.18+. See BT_isTransparentMode() and the policy
+ * in BT_selectDataPath():
+ *
+ * - Modules below v1.4.17: TRANSPARENT bridge, exactly as production
+ *   v1.01.012 runs them - no SPPM step (their default is auto-parse +
+ *   transparent), raw UART <-> SPP, ~100 KB/s to a Windows host. SPP_SEND
+ *   does not exist on these modules.
+ * - Modules v1.4.17+: NON-TRANSPARENT (SPPM,M=3, SPP_SEND commands),
+ *   measured lossless 55 KB/s. Their transparent bridge on v1.4.18.18 frames
+ *   every UART byte as its own RFCOMM frame (HCI-verified, ~0.4 KB/s to a
+ *   Windows host; raised with Ezurio/Infineon) - once a fixed module release
+ *   exists, add it to the policy so those modules go transparent again.
+ *
+ * TRANSPARANT_MODE used to be a compile-time switch here; it is gone, and
+ * any surviving reference is a bug. */
+#ifdef TRANSPARANT_MODE
+#error "TRANSPARANT_MODE is a runtime decision now - use BT_isTransparentMode()"
+#endif
+
+#define ENABLE_BT_RX_DEBUG_PRINTS  0
+#define ENABLE_BT_TX_DEBUG_PRINTS  0
+/* Module-behaviour characterisation prints: BT_CONNECTION / BT_CYSPP pin edges
+ * (capped per boot) and GATT writes that surface to the host instead of being
+ * consumed by the CYSPP pipe. These mapped out how each module firmware drives
+ * the pins and the data pipe; keep them off in normal builds and turn them on
+ * when a new module firmware needs the same treatment. */
+#define ENABLE_BT_PIN_DEBUG_PRINTS 0
 
 #if SUPPORT_SR48_6_0
 #define BAUD_TO_USE_SR48_6_0 115200L
@@ -36,6 +72,7 @@ enum BT_SET_COMMAND_STAGES
   IDLE,
   WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2,
+  ENTER_BINARY_MODE,
   UPDATE_UART_SETTINGS_STAGE1,
   UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3,
@@ -111,8 +148,17 @@ bool isBtInitCmdsRunning(void);
 bool isBtFactoryResetCmdsRunning(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
+/* 1 = raw UART<->SPP bridge (legacy modules), 0 = SPP_SEND command framing.
+ * Valid once the module boot banner has been parsed (WAIT_FOR_BOOT_STAGE2);
+ * defaults to transparent, the legacy-safe choice, until then. */
+uint8_t BT_isTransparentMode(void);
+/* 1 while a BLE (GAP) connection is up. A BLE session's data pipe is raw on
+ * every module version, so transmits must WAIT for the pipe rather than fall
+ * back to SPP_SEND framing when it is momentarily paused. */
+uint8_t BT_isBleSessionActive(void);
 uint8_t *BT_getCyw20820MacAddressPtr(void);
 void BT_generateCyw20820FirmwareVersionStr(char *str);
+uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch);
 void setBtConnectionState(bool state);
 //connect to a specific device that was previously discovered
 uint8_t BT_connect(uint8_t *addr);
@@ -121,5 +167,7 @@ uint8_t BT_disconnect(void);
 void BT_cancelConnection(void);
 void BT_connectionFailed(uint8_t conn_handle, uint16_t reason);
 void BT_startDone_cb(void (*callback)(void));
+void BT_setConnectionHandle(uint8_t conn_handle);
+uint8_t BT_getConnectionHandle(void);
 
 #endif /* SRC_CYW20820_H_ */

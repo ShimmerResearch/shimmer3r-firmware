@@ -80,6 +80,13 @@ volatile uint32_t time_start, time_end, time_diff;
  * the core clock is configured, so its SWV/ITM output goes out at the wrong SWO
  * baud and is dropped by the host - hence a second, reliable print later. */
 static const char *gLseDriveName = "not run";
+/* Companion detail for the same deferred report: the lowest drive level that
+ * proved stable, the LSEDRV bits actually applied, and any recovery-path note.
+ * Nothing in the LSE bring-up prints directly any more - anything it printed
+ * reached the host as a stray fragment ("=1)") ahead of the first real line. */
+static const char *gLseStableName = "n/a";
+static uint32_t gLseDrvBits = 0U;
+static const char *gLseBootNote = 0;
 #define BLOCK_START_ADDR 0 /* Block start address      */
 #define NUM_OF_BLOCKS    5 /* Total number of blocks   */
 #define BUFFER_WORDS_SIZE \
@@ -141,7 +148,13 @@ void Init()
    * here rather than in Lse_bringUp() because that runs before the core
    * clock is configured (SWV output there is dropped); by Init() the clock is
    * up and SWV is reliable. */
-  SHIMMER_PRINTF("LSE drive strength = %s\r\n", gLseDriveName);
+  SHIMMER_PRINTF(
+      "LSE drive strength = %s (stable at %s, +1 margin, LSEDRV=%lu)\r\n",
+      gLseDriveName, gLseStableName, (unsigned long) gLseDrvBits);
+  if (gLseBootNote != 0)
+  {
+    SHIMMER_PRINTF("LSE boot note: %s\r\n", gLseBootNote);
+  }
 
   shimmerStatus.booting = 1; /* led flag, in initialisation period */
 
@@ -433,17 +446,17 @@ static uint32_t Lse_walkDriveLadder(void)
         (void) Lse_tryDriveLevel(levels[runIdx]);
       }
       gLseDriveName = names[runIdx];
-      SHIMMER_PRINTF("LSE stable at %s, running at %s (+1 margin, "
-                     "LSEDRV=%lu)\r\n",
-          names[i], names[runIdx],
-          (unsigned long) ((levels[runIdx] & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos));
+      /* Reported from Init(), not here: this runs before SystemClock_Config()
+       * and SWV output at this point leaves at the wrong SWO bit rate. */
+      gLseStableName = names[i];
+      gLseDrvBits = (levels[runIdx] & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos;
       return levels[runIdx];
     }
   }
 
   gLseDriveName = "NONE (LSE not stable at any drive)";
-  SHIMMER_PRINTF("LSE did NOT reach LSESYSRDY at any drive level - "
-                 "check 32k XTAL / rework\r\n");
+  gLseBootNote = "LSE did not reach LSESYSRDY at any drive level - check 32k "
+                 "XTAL / rework";
   return 0xFFFFFFFFU;
 }
 
@@ -494,8 +507,8 @@ static uint32_t Lse_bringUp(void)
     return level;
   }
 
-  SHIMMER_PRINTF("Forcing backup-domain reset (clears latched LSE "
-                 "state; RTC time already lost) and retrying\r\n");
+  gLseBootNote = "backup-domain reset forced (latched LSE state cleared; RTC "
+                 "time lost) and ladder retried";
   __HAL_RCC_BACKUPRESET_FORCE();
   __HAL_RCC_BACKUPRESET_RELEASE();
   level = Lse_walkDriveLadder();
@@ -510,8 +523,8 @@ static uint32_t Lse_bringUp(void)
   gRtcOnLsiFallback = 1U;
   gLseDriveName
       = "NONE - RTC on LSI fallback (32k XTAL dead, timekeeping degraded)";
-  SHIMMER_PRINTF("LSE unrecoverable, booting with RTC on LSI - unit "
-                 "needs 32k XTAL service\r\n");
+  gLseBootNote = "LSE unrecoverable after backup-domain reset, booting with "
+                 "RTC on LSI - unit needs 32k XTAL service";
   return 0xFFFFFFFFU;
 }
 
@@ -745,6 +758,14 @@ void BtStartDone(void)
 
 void setBtConnectionState(bool state)
 {
+  /* Idempotent: connection state can now arrive from several sources (the
+   * in-band connected event and the BT_CONNECTION / BT_CYSPP pin EXTIs), and
+   * ShimBt_handleBtRfCommStateChange() is not safe to re-run for a state
+   * that has not changed - the disconnect path clears TX buffers. */
+  if (shimmerStatus.btConnected == state)
+  {
+    return;
+  }
   shimmerStatus.btConnected = state;
   //HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, state? GPIO_PIN_SET:GPIO_PIN_RESET);
 
