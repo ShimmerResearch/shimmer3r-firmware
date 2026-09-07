@@ -1895,18 +1895,31 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
   case EZS_IDX_RSP_SPP_SEND_COMMAND:
     if (packet->payload.rsp_spp_send_command.result != EZS_ERR_SUCCESS)
     {
-      /* Normal backpressure: 0x0109 (insufficient resources) means the
-       * module's SPP queue toward the radio is full. Retry the same payload
-       * from the driver's held copy - the retry round trip itself paces us
-       * to the radio's drain rate, and nothing is lost. Print rate-limited:
-       * a saturated bulk transfer rejects continuously by design. */
+      /* Retry the same payload from the driver's held copy - the retry round
+       * trip itself paces us to the radio's drain rate, and nothing is lost.
+       *
+       * 0x0109 (insufficient resources) is the module's SPP queue toward the
+       * radio being full: normal flow control on any saturated transfer, and
+       * every occurrence recovers on the first retry, so it is logged only
+       * under the RX debug flag. Anything else means the module refused the
+       * send for a reason worth seeing (e.g. 0x0502 CONNECTION_REQUIRED when
+       * no data channel is up yet), so it prints rate-limited. */
       sppSendFailStreak++;
-      if (sppSendFailStreak == 1U || (sppSendFailStreak % 100U) == 0U)
+      if (packet->payload.rsp_spp_send_command.result != EZS_ERR_CORE_INSUFFICIENT_RESOURCES)
       {
-        printf("spp_send rejected (streak=%u): result=", sppSendFailStreak);
-        printHex16(packet->payload.rsp_spp_send_command.result);
-        printf("\r\n");
+        if (sppSendFailStreak == 1U || (sppSendFailStreak % 100U) == 0U)
+        {
+          printf("spp_send rejected (streak=%u): result=", sppSendFailStreak);
+          printHex16(packet->payload.rsp_spp_send_command.result);
+          printf("\r\n");
+        }
       }
+#if ENABLE_BT_RX_DEBUG_PRINTS
+      else if (sppSendFailStreak == 1U || (sppSendFailStreak % 100U) == 0U)
+      {
+        printf("spp_send backpressure (streak=%u)\r\n", sppSendFailStreak);
+      }
+#endif
       if (BtTransmitRetryLast())
       {
         /* Retry in flight: the pending response serializes everything else,
