@@ -64,7 +64,13 @@ static uint16_t sppSendRetryCount = 0;
  * next chunk from the TX-complete callback), 0 = an SPP_SEND command (the
  * module's response drives the chain instead). */
 static uint8_t btLastTxWasRaw = 0;
-#define BT_SPP_SEND_RETRY_LIMIT 200U
+/* Retry budget for a rejected SPP_SEND. Must outlast the BLE connect window:
+ * between the GATT connection and the CYSPP data channel engaging (~0.5 s on
+ * the bench, v1.4.18.18) the module answers 0x0502 CONNECTION_REQUIRED to every
+ * send, at ~1.4 ms per attempt - 200 attempts (~0.3 s) dropped the first
+ * response of the session. 1500 attempts is ~2 s at that RTT and ~4.5 s under
+ * 0x0109 backpressure, still a bounded stop for a genuinely dead link. */
+#define BT_SPP_SEND_RETRY_LIMIT 1500U
 //uint8_t timer_active = 0;
 //volatile uint16_t timeout_ms_elapsed;
 
@@ -416,11 +422,14 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
 {
-  /* A data bridge is engaged - classic transparent SPP on a legacy module, or
-   * a BLE CYSPP data pipe on ANY module (CYSPP data mode is a raw bridge
-   * regardless of the SPPM setting, which only governs classic SPP). Raw DMA
-   * is the only correct transmit here; an SPP_SEND command would be injected
-   * into the pipe as garbage. */
+  /* A raw data bridge is engaged. This only ever happens under the
+   * transparent (legacy-module) policy: classic SPP bridged raw, or a BLE
+   * CYSPP data pipe, both tracked by the CYSPP pin. On SPP_SEND-framing
+   * modules (v1.4.17+, SPPM,M=3) NEITHER transport is raw - the module
+   * header-frames classic SPP and BLE CYSPP alike and routes SPP_SEND by
+   * connection handle (bench 2026-09-07: BLE data left as SPP_SEND with the
+   * usual 0x0109 backpressure and arrived as ATT indications at 32 KB/s), so
+   * the CYSPP state is never allowed to go true there. */
   if (getBtCysppState())
   {
     btLastTxWasRaw = 1;

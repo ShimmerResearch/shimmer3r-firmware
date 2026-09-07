@@ -1348,7 +1348,14 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printHex8(packet->payload.evt_p_cyspp_status.status);
     printf("\r\n");
 #endif
-    setBtCysppState(packet->payload.evt_p_cyspp_status.status);
+    /* Only the transparent (legacy-module) policy has a raw CYSPP data pipe
+     * to track. On SPP_SEND-framing modules BLE data is header-framed like
+     * classic SPP (routed by connection handle), so letting this event flip
+     * the state true would send raw bytes into the module's command parser. */
+    if (BT_isTransparentMode())
+    {
+      setBtCysppState(packet->payload.evt_p_cyspp_status.status);
+    }
     break;
 
   /* -------- Shimmer added start -------- */
