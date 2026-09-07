@@ -52,8 +52,14 @@
 #error "TRANSPARANT_MODE is a runtime decision now - use BT_isTransparentMode()"
 #endif
 
-#define ENABLE_BT_RX_DEBUG_PRINTS 0
-#define ENABLE_BT_TX_DEBUG_PRINTS 0
+#define ENABLE_BT_RX_DEBUG_PRINTS  0
+#define ENABLE_BT_TX_DEBUG_PRINTS  0
+/* Module-behaviour characterisation prints: BT_CONNECTION / BT_CYSPP pin edges
+ * (capped per boot) and GATT writes that surface to the host instead of being
+ * consumed by the CYSPP pipe. These mapped out how each module firmware drives
+ * the pins and the data pipe; keep them off in normal builds and turn them on
+ * when a new module firmware needs the same treatment. */
+#define ENABLE_BT_PIN_DEBUG_PRINTS 0
 
 #if SUPPORT_SR48_6_0
 #define BAUD_TO_USE_SR48_6_0 115200L

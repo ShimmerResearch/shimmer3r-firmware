@@ -86,11 +86,12 @@ extern void ezsHandlerShimmer(ezs_packet_t *packet) __attribute__((weak));
  * hal_CYW20820.c. */
 #define EZS_SPP_SEND_MAX_DATA_BYTES 252U
 
-/* DEV-573 bench diagnostic: print min/avg/max EZ-Serial command->response
- * round-trip times, one line per 256 completed commands. During a data-rate
- * test this is effectively the SPP_SEND RTT - the quantity that caps
- * non-transparent-mode throughput at chunk_size / RTT. Flip to 0 to silence. */
-#define ENABLE_BT_CMD_RTT_STATS     1
+/* Bench diagnostic: print min/avg/max EZ-Serial command->response round-trip
+ * times, one line per 256 completed commands. During a data-rate test this is
+ * effectively the SPP_SEND RTT - the quantity that caps SPP_SEND-framing
+ * throughput at chunk_size / RTT (measured 3.1 ms avg / 252 B = 55 KB/s on
+ * v1.4.18.18). Off by default; flip to 1 when investigating throughput. */
+#define ENABLE_BT_CMD_RTT_STATS     0
 
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len);
 uint8_t BtTransmitRetryLast(void);

@@ -309,21 +309,25 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
   }
 }
 
-/* Capped bench-diagnostic counters (DEV-573): enough edges to characterise
- * the module pin behaviour without risking a print flood from EXTI. */
+#if ENABLE_BT_PIN_DEBUG_PRINTS
+/* Capped diagnostic counters: enough edges to characterise the module pin
+ * behaviour without risking a print flood from EXTI. */
 static uint16_t btConnPinEdgeDiagCount = 0;
 static uint16_t btCysppPinEdgeDiagCount = 0;
+#endif
 
 void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
 {
   switch (GPIO_Pin)
   {
   case BT_CONNECTION_Pin:
+#if ENABLE_BT_PIN_DEBUG_PRINTS
     if (btConnPinEdgeDiagCount < 20U)
     {
       btConnPinEdgeDiagCount++;
       printf("BT_CONNECTION pin -> %s\r\n", isRising ? "HIGH" : "LOW");
     }
+#endif
     if (BT_isTransparentMode())
     {
       /* Legacy modules (transparent policy): the pin is ACTIVE-LOW and tracks
@@ -340,11 +344,13 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     }
     break;
   case BT_CYSPP_Pin:
+#if ENABLE_BT_PIN_DEBUG_PRINTS
     if (btCysppPinEdgeDiagCount < 20U)
     {
       btCysppPinEdgeDiagCount++;
       printf("BT_CYSPP pin -> %s\r\n", isRising ? "HIGH" : "LOW");
     }
+#endif
     /* Data-bridge tracker, but ONLY authoritative under the transparent
      * (legacy-module) policy. There the pin is the sole signal for the raw
      * UART<->SPP bridge: low = bridging, high = a command-mode window (not a

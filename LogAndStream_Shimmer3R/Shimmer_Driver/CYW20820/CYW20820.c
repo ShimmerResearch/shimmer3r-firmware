@@ -1719,9 +1719,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 
   case EZS_IDX_EVT_GATTS_DATA_WRITTEN:
     /* A GATT write surfaced to the host instead of being consumed by the CYSPP
-     * pipe. Which attribute, and when (connect-time only vs during transfer),
-     * is the discriminating datum for the BLE throughput/wedge investigation -
-     * a bare "unhandled 05/02" print discarded exactly that. */
+     * pipe - in practice the client enabling the CYSPP characteristics at
+     * connect time. Which attribute, and when (connect-time only vs during a
+     * transfer), was the discriminating datum for the BLE investigation, so
+     * the detail is kept behind the pin/GATT debug flag rather than reduced to
+     * a bare "unhandled 05/02". */
+#if ENABLE_BT_PIN_DEBUG_PRINTS
     printf("RX: gatts_data_written conn=");
     printHex8(packet->payload.evt_gatts_data_written.conn_handle);
     printf(" attr=");
@@ -1731,6 +1734,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf(" len=");
     printHex16(packet->payload.evt_gatts_data_written.data.length);
     printf("\r\n");
+#endif
     break;
 
   case EZS_IDX_EVT_SMP_PAIRING_REQUESTED:
