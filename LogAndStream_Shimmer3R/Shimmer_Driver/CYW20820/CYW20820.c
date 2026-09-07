@@ -501,13 +501,27 @@ void btInitCommands(void)
       const uint16_t sppmLen = (uint16_t) (sizeof(sppmSetBinaryNonTransparent) - 1U);
 
       printf("Enter Binary Mode (%.*s)\r\n", (int) (sppmLen - 2), sppmSetBinaryNonTransparent);
-      setExpectedResponse(EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE);
 
-      /* Skip the echoed command - EZ-Serial cannot parse it */
-      setSkippingBytesCount((uint8_t) sppmLen);
+      /* Arm the RX skip and the expected response only once the command is
+       * actually on its way. appOutput() can refuse - a response is still
+       * pending, or HAL_UART_Transmit_IT failed - and arming first meant a
+       * refusal left skippingBytesCount swallowing the next bytes of real RX
+       * traffic and expectedResponseIdx waiting on a response that would
+       * never arrive, which stalls a boot sequence that has no timeout. */
+      if (appOutput(sppmLen, (const uint8_t *) sppmSetBinaryNonTransparent) == EZS_OUTPUT_RESULT_DATA_WRITTEN)
+      {
+        setExpectedResponse(EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE);
+        /* Skip the echoed command - EZ-Serial cannot parse it */
+        setSkippingBytesCount((uint8_t) sppmLen);
+        return;
+      }
 
-      appOutput(sppmLen, (const uint8_t *) sppmSetBinaryNonTransparent);
-      return;
+      /* Nothing was sent, so nothing will answer. Fall through to the next
+       * boot step rather than waiting on a phantom response: the module is
+       * still in its power-on parse mode, so the binary commands that follow
+       * will fail visibly instead of the sequence hanging silently. */
+      printf("Enter Binary Mode: SPPM send REFUSED - module left in "
+             "power-on parse mode\r\n");
     }
   }
 
@@ -1860,12 +1874,19 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
 #endif
     break;
 
-  case EZS_IDX_CMD_PROTOCOL_SET_PARSE_MODE:
-#if ENABLE_BT_RX_DEBUG_PRINTS
-    printf("RX: cmd_protocol_set_parse_mode: mode=");
-    printHex8(packet->payload.cmd_protocol_set_parse_mode.mode);
-    printf("\r\n");
-#endif
+  /* EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE is #defined to the same index, and
+   * what arrives here is the RESPONSE - payload is ezs_rsp_..._t (a result
+   * code), not the command's mode byte. Reading .mode showed the low half of
+   * the result and hid failures. Reported unconditionally: this step is what
+   * puts an SPP_SEND-framing module into binary/non-transparent mode, so a
+   * failure here invalidates the whole classic-SPP data path. */
+  case EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE:
+    if (packet->payload.rsp_protocol_set_parse_mode.result != EZS_ERR_SUCCESS)
+    {
+      printf("protocol_set_parse_mode FAILED: result=");
+      printHex16(packet->payload.rsp_protocol_set_parse_mode.result);
+      printf("\r\n");
+    }
     break;
 
   case EZS_IDX_CMD_PROTOCOL_GET_PARSE_MODE:
