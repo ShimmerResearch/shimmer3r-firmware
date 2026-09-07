@@ -351,30 +351,33 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
      * disconnect, so it is deliberately not coupled to
      * setBtConnectionState()). It drives the RX demux and BtTransmit().
      *
-     * On SPP_SEND-framing modules (v1.4.17+) the pin must NOT touch the CYSPP
-     * state, even though those modules do have a raw BLE CYSPP pipe. There
-     * the pipe is bracketed by the in-band EVT_P_CYSPP_STATUS event and
-     * EVT_GAP_DISCONNECTED, which are authoritative; the pin also toggles
-     * during the pipe (data vs command-mode windows), and honouring its
-     * rising edge here knocked the state out of raw mid-session, so
-     * device->host transmits briefly fell to the SPP_SEND path and were
-     * rejected (bench 2026-09-07, v1.4.18.18 BLE: bursts of "spp_send
-     * rejected" 0x0502/0x0109 plus a dropped byte). A classic connection on
-     * those modules clears the state explicitly, so pin activity around one
-     * cannot flip framing either. */
-    if (BT_isTransparentMode())
+     * The RISING edge is honoured on every module version. It means the
+     * module has left data mode - momentarily, to deliver an event, or for
+     * good at disconnect - so anything it sends now is an EZ-Serial frame and
+     * the RX demux must stop treating bytes as bridged payload. Without this
+     * on SPP_SEND modules the CYSPP state could only ever be cleared by
+     * EVT_GAP_DISCONNECTED, which is itself delivered in command mode and so
+     * was consumed as payload: the disconnect went unnoticed, its cleanup
+     * (including stopping the data-rate test) never ran, and the blue LED
+     * kept blinking as if streaming (bench 2026-09-07, v1.4.18.18 BLE).
+     * Transmits are safe across a spurious clear because BtTransmit() holds
+     * data during a BLE session rather than falling back to SPP_SEND framing.
+     *
+     * The FALLING edge (data mode engaged) stays transparent-policy-only. On
+     * SPP_SEND modules the in-band EVT_P_CYSPP_STATUS event is the proven
+     * signal for a pipe starting, and the pin's behaviour around a
+     * non-transparent CLASSIC connection is uncharacterised - a spurious low
+     * there would route EZ-Serial frames to the Shimmer parser. */
+    if (isRising)
     {
-      if (isRising)
-      {
-        setBtCysppState(false);
-      }
-      else
-      {
-        setBtCysppState(true);
-        /* Data mode (re-)engaged: drain anything the TX gate held back while
-         * the module was in a command-mode window. */
-        ShimBt_triggerNextTransfer();
-      }
+      setBtCysppState(false);
+    }
+    else if (BT_isTransparentMode())
+    {
+      setBtCysppState(true);
+      /* Data mode (re-)engaged: drain anything the TX gate held back while
+       * the module was in a command-mode window. */
+      ShimBt_triggerNextTransfer();
     }
     break;
   case DOCK_DETECT_Pin:

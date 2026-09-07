@@ -436,12 +436,15 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
     return (HAL_StatusTypeDefShimmer) HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
   }
 
-  if (BT_isTransparentMode())
+  if (BT_isTransparentMode() || BT_isBleSessionActive())
   {
-    /* Transparent policy but no bridge yet (or a command-mode window): raw
-     * bytes would hit the module's EZ-Serial parser as garbage commands.
-     * Refuse; the ring keeps the data and the CYSPP falling-edge EXTI kicks
-     * the drain when data mode (re-)engages. */
+    /* The transport is a raw pipe but it is not carrying data right now - no
+     * bridge yet, or a command-mode window mid-session. Neither framing works
+     * here: raw bytes would hit the module's EZ-Serial parser as garbage
+     * commands, and an SPP_SEND would be rejected outright on a BLE session
+     * (0x0502 CONNECTION_REQUIRED - there is no classic SPP link), which is
+     * what produced the rejection bursts on the bench. Hold instead; the ring
+     * keeps the data and the pipe resuming kicks the drain. */
     return HAL_SHIM_BUSY;
   }
 

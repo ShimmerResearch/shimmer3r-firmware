@@ -230,9 +230,20 @@ static uint16_t sppSendFailStreak = 0;
  * SPP_SEND commands a legacy module does not understand and mute it. */
 static uint8_t btTransparentMode = 1;
 
+/* 1 between EVT_GAP_CONNECTED and EVT_GAP_DISCONNECTED, i.e. while the active
+ * transport is BLE. Distinguishes "the raw CYSPP pipe is paused, hold the
+ * data" from "this is a classic link, use SPP_SEND framing" - the two cases
+ * look identical from the CYSPP data-mode state alone. */
+static uint8_t btBleSessionActive = 0;
+
 uint8_t BT_isTransparentMode(void)
 {
   return btTransparentMode;
+}
+
+uint8_t BT_isBleSessionActive(void)
+{
+  return btBleSessionActive;
 }
 
 /* The boot banner carries the application version as "E=" + 8 hex digits
@@ -1322,6 +1333,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf("\r\n");
 #endif
     shimmerStatus.btFirstConnectionEstablished = 1;
+    btBleSessionActive = 1;
     BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
     setBtConnectionState(true);
     break;
@@ -1335,6 +1347,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf("\r\n");
 #endif
     BT_setConnectionHandle(0xFF);
+    btBleSessionActive = 0;
     /* A BLE disconnect ends any CYSPP data pipe. The in-band CYSPP status
      * event that would also say so arrives while the demux may still be in
      * raw mode, so do not rely on it alone. */
@@ -1595,6 +1608,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
        * the first-classic-connect-after-BLE calibration timeout seen on the
        * bench). */
       setBtCysppState(false);
+      btBleSessionActive = 0;
       BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
       setBtConnectionState(true);
     }

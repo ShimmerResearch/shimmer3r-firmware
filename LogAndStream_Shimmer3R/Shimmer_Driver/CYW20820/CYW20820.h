@@ -146,6 +146,10 @@ bool getBtCysppState(void);
  * Valid once the module boot banner has been parsed (WAIT_FOR_BOOT_STAGE2);
  * defaults to transparent, the legacy-safe choice, until then. */
 uint8_t BT_isTransparentMode(void);
+/* 1 while a BLE (GAP) connection is up. A BLE session's data pipe is raw on
+ * every module version, so transmits must WAIT for the pipe rather than fall
+ * back to SPP_SEND framing when it is momentarily paused. */
+uint8_t BT_isBleSessionActive(void);
 uint8_t *BT_getCyw20820MacAddressPtr(void);
 void BT_generateCyw20820FirmwareVersionStr(char *str);
 uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch);
