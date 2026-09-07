@@ -352,12 +352,16 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
      * setBtConnectionState()). It drives the RX demux and BtTransmit().
      *
      * On SPP_SEND-framing modules (v1.4.17+) the pin must NOT touch the CYSPP
-     * state: there is no raw bridge on those modules at all. In SPPM,M=3 the
-     * module header-frames BLE CYSPP data exactly like classic SPP and routes
-     * SPP_SEND by connection handle (bench 2026-09-07, v1.4.18.18: BLE data
-     * left as SPP_SEND and arrived as ATT indications at 32 KB/s), so the
-     * CYSPP state stays false for the life of the device and framing stays
-     * SPP_SEND on both transports, whatever the pin does. */
+     * state, even though those modules do have a raw BLE CYSPP pipe. There
+     * the pipe is bracketed by the in-band EVT_P_CYSPP_STATUS event and
+     * EVT_GAP_DISCONNECTED, which are authoritative; the pin also toggles
+     * during the pipe (data vs command-mode windows), and honouring its
+     * rising edge here knocked the state out of raw mid-session, so
+     * device->host transmits briefly fell to the SPP_SEND path and were
+     * rejected (bench 2026-09-07, v1.4.18.18 BLE: bursts of "spp_send
+     * rejected" 0x0502/0x0109 plus a dropped byte). A classic connection on
+     * those modules clears the state explicitly, so pin activity around one
+     * cannot flip framing either. */
     if (BT_isTransparentMode())
     {
       if (isRising)

@@ -1348,14 +1348,17 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printHex8(packet->payload.evt_p_cyspp_status.status);
     printf("\r\n");
 #endif
-    /* Only the transparent (legacy-module) policy has a raw CYSPP data pipe
-     * to track. On SPP_SEND-framing modules BLE data is header-framed like
-     * classic SPP (routed by connection handle), so letting this event flip
-     * the state true would send raw bytes into the module's command parser. */
-    if (BT_isTransparentMode())
-    {
-      setBtCysppState(packet->payload.evt_p_cyspp_status.status);
-    }
+    /* Authoritative raw-pipe signal on EVERY module version: a BLE CYSPP data
+     * pipe is a raw UART bridge even on SPP_SEND-framing modules, because
+     * SPPM bit 1 governs classic SPP only. Host->device bytes then arrive raw
+     * and MUST reach the Shimmer command parser, and device->host replies must
+     * go out as raw DMA.
+     *
+     * Gating this to the transparent policy (bench 2026-09-07) made the state
+     * permanently false on v1.4.18.18, so incoming BLE bytes went to the
+     * EZ-Serial parser instead: the device never saw a command, answered
+     * nothing, and every host command timed out with no TX attempt at all. */
+    setBtCysppState(packet->payload.evt_p_cyspp_status.status);
     break;
 
   /* -------- Shimmer added start -------- */
@@ -1583,9 +1586,15 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     else
     {
       /* Non-transparent classic SPP: data arrives as SPP data events and
-       * leaves as SPP_SEND commands - there is no raw bridge, so the CYSPP
-       * (data-mode) state must stay false or the RX demux and BtTransmit()
-       * would treat EZ-Serial frames as bridged payload. */
+       * leaves as SPP_SEND commands - there is no raw bridge here, so the
+       * CYSPP (data-mode) state must be false or the RX demux and
+       * BtTransmit() would treat EZ-Serial frames as bridged payload.
+       * Cleared explicitly rather than assumed: a preceding BLE session on
+       * the same power cycle sets it, and if its teardown event were missed
+       * the stale 'true' would break this classic session (a candidate for
+       * the first-classic-connect-after-BLE calibration timeout seen on the
+       * bench). */
+      setBtCysppState(false);
       BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
       setBtConnectionState(true);
     }

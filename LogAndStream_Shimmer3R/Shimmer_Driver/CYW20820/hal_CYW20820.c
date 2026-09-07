@@ -424,14 +424,12 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
 {
-  /* A raw data bridge is engaged. This only ever happens under the
-   * transparent (legacy-module) policy: classic SPP bridged raw, or a BLE
-   * CYSPP data pipe, both tracked by the CYSPP pin. On SPP_SEND-framing
-   * modules (v1.4.17+, SPPM,M=3) NEITHER transport is raw - the module
-   * header-frames classic SPP and BLE CYSPP alike and routes SPP_SEND by
-   * connection handle (bench 2026-09-07: BLE data left as SPP_SEND with the
-   * usual 0x0109 backpressure and arrived as ATT indications at 32 KB/s), so
-   * the CYSPP state is never allowed to go true there. */
+  /* A raw data bridge is engaged: a BLE CYSPP data pipe (any module version -
+   * SPPM bit 1 governs classic SPP only), or classic transparent SPP on a
+   * legacy module. Raw DMA is the only correct transmit here; an SPP_SEND
+   * command would be injected into the pipe as garbage, and on a BLE pipe the
+   * module rejects it outright (0x0502 CONNECTION_REQUIRED - there is no
+   * classic SPP link to send on). */
   if (getBtCysppState())
   {
     btLastTxWasRaw = 1;
