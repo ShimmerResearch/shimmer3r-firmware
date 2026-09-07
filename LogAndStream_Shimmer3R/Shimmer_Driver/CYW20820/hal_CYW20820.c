@@ -64,13 +64,15 @@ static uint16_t sppSendRetryCount = 0;
  * next chunk from the TX-complete callback), 0 = an SPP_SEND command (the
  * module's response drives the chain instead). */
 static uint8_t btLastTxWasRaw = 0;
-/* Retry budget for a rejected SPP_SEND. Must outlast the BLE connect window:
- * between the GATT connection and the CYSPP data channel engaging (~0.5 s on
- * the bench, v1.4.18.18) the module answers 0x0502 CONNECTION_REQUIRED to every
- * send, at ~1.4 ms per attempt - 200 attempts (~0.3 s) dropped the first
- * response of the session. 1500 attempts is ~2 s at that RTT and ~4.5 s under
- * 0x0109 backpressure, still a bounded stop for a genuinely dead link. */
-#define BT_SPP_SEND_RETRY_LIMIT 1500U
+/* Retry budget for a rejected SPP_SEND. Deliberately SHORT: a retrying payload
+ * serialises the whole TX chain behind it, so the budget must stay well under
+ * the host's per-command timeout (~2 s). At ~1.4 ms per 0x0502
+ * CONNECTION_REQUIRED attempt, 200 is ~0.3 s. Raising it to 1500 (~2.1 s,
+ * bench 2026-09-07) turned a one-response stutter at BLE connect into every
+ * command timing out for the whole session. The remaining cost of the short
+ * budget is that a response sent in the ~0.5 s between a GATT connection and
+ * the CYSPP data channel engaging can be dropped; the host re-issues. */
+#define BT_SPP_SEND_RETRY_LIMIT 200U
 //uint8_t timer_active = 0;
 //volatile uint16_t timeout_ms_elapsed;
 
