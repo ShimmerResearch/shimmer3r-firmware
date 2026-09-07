@@ -866,6 +866,15 @@ void bt_module_test(void)
     sprintf(buffer, " - S3R_TEST_0014 - %s BT firmware version\r\n",
         btVerAccepted ? "PASS: Correct" : "FAIL: Incorrect");
     ShimFactoryTest_sendReport(buffer);
+
+    if (!btVerAccepted)
+    {
+      /* Flag it in the machine-readable result too, the same as the
+       * "BT hasn't initialised" branch below. Previously an unexpected module
+       * firmware version printed FAIL in the report while testResult still
+       * said the unit passed. */
+      shimmerStatus.testResult |= S3R_TEST_0014;
+    }
   }
   else
   {
