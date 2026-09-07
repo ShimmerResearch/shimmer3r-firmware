@@ -1335,6 +1335,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printf("\r\n");
 #endif
     BT_setConnectionHandle(0xFF);
+    /* A BLE disconnect ends any CYSPP data pipe. The in-band CYSPP status
+     * event that would also say so arrives while the demux may still be in
+     * raw mode, so do not rely on it alone. */
+    setBtCysppState(false);
     setBtConnectionState(false);
     break;
 
@@ -1571,9 +1575,12 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     }
     else
     {
+      /* Non-transparent classic SPP: data arrives as SPP data events and
+       * leaves as SPP_SEND commands - there is no raw bridge, so the CYSPP
+       * (data-mode) state must stay false or the RX demux and BtTransmit()
+       * would treat EZ-Serial frames as bridged payload. */
       BT_setConnectionHandle(packet->payload.evt_gap_connected.conn_handle);
       setBtConnectionState(true);
-      setBtCysppState(true);
     }
     break;
 

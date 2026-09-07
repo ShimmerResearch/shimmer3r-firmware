@@ -319,43 +319,45 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
   switch (GPIO_Pin)
   {
   case BT_CONNECTION_Pin:
-    if (BT_isTransparentMode())
+    /* Diagnostic only: bench (2026-08-25, v1.4.18.18) showed the pin latching
+     * HIGH at the first connection and never dropping across disconnect/
+     * reconnect cycles, so it cannot drive connection state in either
+     * polarity. Connection tracking comes from the in-band connected/
+     * disconnected events. Capped print (DEV-573) to characterise the pin. */
+    if (btConnPinEdgeDiagCount < 20U)
     {
-      /* Bench diagnostic (DEV-573): v1.4.17.17 never toggled this pin after
-       * boot; capped print shows what v1.4.18.18 actually does with it. */
-      if (btConnPinEdgeDiagCount < 20U)
-      {
-        btConnPinEdgeDiagCount++;
-        printf("BT_CONNECTION pin -> %s\r\n", isRising ? "HIGH" : "LOW");
-      }
-      /* Diagnostic only: bench (2026-08-25, v1.4.18.18) showed the pin latching
-       * HIGH at the first connection and never dropping across disconnect/
-       * reconnect cycles, so it cannot drive connection state in either
-       * polarity. Connection tracking comes from the in-band connected/
-       * disconnected events, which parse reliably now that the RX demux
-       * follows the CYSPP pin. */
+      btConnPinEdgeDiagCount++;
+      printf("BT_CONNECTION pin -> %s\r\n", isRising ? "HIGH" : "LOW");
     }
     break;
   case BT_CYSPP_Pin:
-    if (BT_isTransparentMode())
+    if (btCysppPinEdgeDiagCount < 20U)
     {
-      if (btCysppPinEdgeDiagCount < 20U)
-      {
-        btCysppPinEdgeDiagCount++;
-        printf("BT_CYSPP pin -> %s\r\n", isRising ? "HIGH" : "LOW");
-      }
-      /* SPP-data-mode tracker: low = bridged payload, high = command-mode
-       * window (the module hops out to deliver EZ-Serial events and back).
-       * Deliberately NOT coupled to setBtConnectionState() - a command-mode
-       * window mid-connection is not a disconnect. Drives the RX demux and the
-       * TX gate in hal_CYW20820.c. */
-      setBtCysppState(!isRising);
-      if (!isRising)
-      {
-        /* Data mode (re-)engaged: drain anything the TX gate held back while
-         * the module was in a command-mode window. */
-        ShimBt_triggerNextTransfer();
-      }
+      btCysppPinEdgeDiagCount++;
+      printf("BT_CYSPP pin -> %s\r\n", isRising ? "HIGH" : "LOW");
+    }
+    /* Data-bridge tracker: low = the module is bridging (classic transparent
+     * SPP or a BLE CYSPP pipe), high = command mode. Deliberately NOT coupled
+     * to setBtConnectionState() - a command-mode window mid-connection is not
+     * a disconnect. Drives the RX demux and BtTransmit() in hal_CYW20820.c.
+     *
+     * Rising edge (bridge ended) is honoured on every module: it is how a BLE
+     * CYSPP pipe ending is detected while the demux is still raw. Falling
+     * edge (bridge started) is honoured only under the transparent classic
+     * policy: on SPP_SEND modules a BLE bridge is announced by the in-band
+     * CYSPP status event instead, and the pin's behaviour around a
+     * non-transparent classic connection has not been characterised - a
+     * spurious low there would flip the demux to raw and break the link. */
+    if (isRising)
+    {
+      setBtCysppState(false);
+    }
+    else if (BT_isTransparentMode())
+    {
+      setBtCysppState(true);
+      /* Data mode (re-)engaged: drain anything the TX gate held back while
+       * the module was in a command-mode window. */
+      ShimBt_triggerNextTransfer();
     }
     break;
   case DOCK_DETECT_Pin:

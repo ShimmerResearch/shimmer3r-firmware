@@ -60,6 +60,10 @@ volatile uint8_t pending_response = 0;
  * pending_response / UART-TX-busy guards in BtTransmit(). */
 static longuint8a_t sppSendData;
 static uint16_t sppSendRetryCount = 0;
+/* What BtTransmit() last handed to the UART: 1 = raw bridged bytes (chain the
+ * next chunk from the TX-complete callback), 0 = an SPP_SEND command (the
+ * module's response drives the chain instead). */
+static uint8_t btLastTxWasRaw = 0;
 #define BT_SPP_SEND_RETRY_LIMIT 200U
 //uint8_t timer_active = 0;
 //volatile uint16_t timeout_ms_elapsed;
@@ -327,7 +331,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       skippingBytesCount--;
       i += 1;
     }
-    else if (BT_isTransparentMode() && getBtCysppState())
+    else if (getBtCysppState())
     {
       /* Parse as Shimmer packet, gated on the LIVE data-mode state from the
        * CYSPP pin. Bench (2026-08-25, v1.4.18.18): the module actively hops
@@ -398,34 +402,42 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
   ShimBt_TxCpltCallback();
 
-  if (BT_isTransparentMode())
+  if (btLastTxWasRaw)
   {
-    /* Transparent mode has no SPP_SEND response to drive the transfer chain
-     * (that is the non-transparent design), so the DMA completion is the
-     * moment to hand the UART the next chunk - the pre-split mainline
-     * behaviour. The common repo cannot see the data-path decision, which is
-     * why this lives here and not in ShimBt_TxCpltCallback(). */
+    /* A raw bridged transfer has no SPP_SEND response to drive the transfer
+     * chain, so the DMA completion is the moment to hand the UART the next
+     * chunk - the pre-split mainline behaviour. Keyed on what was actually
+     * sent, not on the classic-SPP policy: a BLE CYSPP data pipe is raw on
+     * every module version. The common repo cannot see any of this, which is
+     * why it lives here and not in ShimBt_TxCpltCallback(). */
     ShimBt_triggerNextTransfer();
   }
 }
 
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
 {
-  if (BT_isTransparentMode())
+  /* A data bridge is engaged - classic transparent SPP on a legacy module, or
+   * a BLE CYSPP data pipe on ANY module (CYSPP data mode is a raw bridge
+   * regardless of the SPPM setting, which only governs classic SPP). Raw DMA
+   * is the only correct transmit here; an SPP_SEND command would be injected
+   * into the pipe as garbage. */
+  if (getBtCysppState())
   {
-    /* Raw bytes are only payload while the module is bridging (CYSPP pin
-     * low). In a command-mode window they would hit the module's EZ-Serial
-     * parser as garbage commands. Refuse instead; the ring keeps the data and
-     * the CYSPP falling-edge EXTI kicks the drain when data mode
-     * (re-)engages. */
-    if (!getBtCysppState())
-    {
-      return HAL_SHIM_BUSY;
-    }
+    btLastTxWasRaw = 1;
     return (HAL_StatusTypeDefShimmer) HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
   }
 
-  /* SPP_SEND framing (modules v1.4.17+) */
+  if (BT_isTransparentMode())
+  {
+    /* Transparent policy but no bridge yet (or a command-mode window): raw
+     * bytes would hit the module's EZ-Serial parser as garbage commands.
+     * Refuse; the ring keeps the data and the CYSPP falling-edge EXTI kicks
+     * the drain when data mode (re-)engages. */
+    return HAL_SHIM_BUSY;
+  }
+
+  /* SPP_SEND framing (modules v1.4.17+, classic SPP, no bridge active) */
+  btLastTxWasRaw = 0;
   HAL_StatusTypeDef ret_val = HAL_OK;
   ezs_output_result_t ezs_ret;
 
