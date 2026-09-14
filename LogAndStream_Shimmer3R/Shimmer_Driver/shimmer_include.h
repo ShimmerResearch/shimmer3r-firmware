@@ -60,7 +60,6 @@
 #include "EXG/exg.h"
 #include "GSRTestRig/gsrTestRig.h"
 #include "hal_Board.h"
-#include "hal_CRC.h"
 #include "hal_FactoryTest.h"
 #include "hal_Infomem.h"
 #include "hal_bootloader.h"
@@ -83,7 +82,6 @@
 #include "usart.h"
 #include "usb_otg.h"
 //#include "wwdg.h"
-#include "crc.h"
 #include "gpio.h"
 #include "mdf.h"
 
