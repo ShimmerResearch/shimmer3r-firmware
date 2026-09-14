@@ -16,6 +16,46 @@ Platform-specific behaviour belongs behind the abstraction declared in
 **STM32CubeIDE 1.15.1** (`C:\ST\STM32CubeIDE_1.15.1`). The workspace binds this project by absolute
 path, so don't relocate the repo.
 
+## CubeMX code generation — it deletes hand-written code
+`LogAndStream_Shimmer3R_UBGA132_SMPS.ioc` is the peripheral model, and **Generate Code** is the only
+sane way to add or remove a peripheral: it renumbers the `Mcu.IPn` / `Mcu.Pinn` arrays, which are
+dense manifests where a hand-edited gap silently truncates the list. Never hand-edit those.
+
+But generation rewrites everything outside `USER CODE` blocks, and this project keeps a lot of
+hand-written code in CubeMX-owned regions. A single CRC deactivation (DEV-1003) also deleted 165
+lines from `main.c` and changed seven other files. Nothing warns you.
+
+**Always generate on a branch, then read the whole diff before committing.** Not `git diff --stat` —
+the real diff. Restore what you did not ask for.
+
+Files known to carry hand-written code that generation removes (DEV-1017):
+
+| File | What lives there |
+|---|---|
+| `Core/Src/main.c` | DEV-866 LSE drive ladder — `Lse_tryDriveLevel/walkDriveLadder/bringUp` |
+| `Core/Src/rtc.c` | DEV-866 LSI limp-home — without it a board with a dead LSE hangs at boot |
+| `Core/Src/sdmmc.c` | The deliberate no-`Error_Handler()` path for hot-swap failures |
+| `Core/Src/usb_otg.c`, `Core/Inc/usb_otg.h` | `USB_getPcdSpeed()`, NVIC priority |
+| `USBX/App/app_usbx_device.c` | 32-byte D-cache line alignment of the USBX byte pool |
+| `USBX/App/ux_user.h` | `UX_SLAVE_REQUEST_DATA_MAX_LENGTH` 64 KB — the main MSC throughput knob |
+| `USBX/App/ux_device_descriptors.c` | EEPROM brand string for the USB manufacturer descriptor |
+| `USBX/App/ux_device_msc.c` | Block-size defines |
+
+Three more things that show up in the diff and are **not** yours to keep:
+
+- **`main.c` gaining `MX_USBX_Device_Init();`.** It is already called from `usb_otg.c`; taking the
+  generated one initialises USBX twice. The `.ioc` says to generate it, `main.c` has never had it —
+  genuine drift, not a correction.
+- **Hundreds of files under `Drivers/` and `Middlewares/`.** Line-ending churn, zero content change.
+  `git checkout --` them.
+- **Most `MX_*_Init()` absent from `main.c` is correct.** 18 of 28 entries in `functionlistsort`
+  carry *Do Not Generate Function Call*, because those peripherals are initialised lazily. The
+  mismatch is by design; don't "fix" it.
+
+Afterwards, `Release/` and `Debug/` hold stale generated `subdir.mk`, `objects.list` and `makefile`
+referencing files you removed — rebuild in the IDE rather than from the command line, which
+regenerates them. (They also hardcode absolute paths, so they go stale if the repo moves.)
+
 ## Release
 CI only — `build-release-firmware.yml` via **workflow_dispatch** (major/minor/patch, Release/Debug).
 Version bumping is delegated to the shared submodule: `log-and-stream-common/scripts/increment_version.sh`,
