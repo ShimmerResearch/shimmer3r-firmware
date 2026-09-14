@@ -28,6 +28,21 @@ lines from `main.c` and changed seven other files. Nothing warns you.
 **Always generate on a branch, then read the whole diff before committing.** Not `git diff --stat` —
 the real diff. Restore what you did not ask for.
 
+`scripts/check_cubemx_guards.sh` catches the known cases and runs in CI on every push, so a
+regeneration that eats one of them fails the build instead of shipping. It is a backstop, not a
+substitute for reading the diff — it only knows about damage that has already happened once. **If you
+add hand-written code to a CubeMX-owned region, add a guard for it in the same commit.**
+
+Note this is a checker rather than a fix, and deliberately so. Most of the at-risk code cannot be
+moved into a `USER CODE` block, because it is not code sitting *beside* generated lines — it *is* a
+generated line, edited in place: `rtc.c` changes the `RTCClockSelection` assignment CubeMX emits,
+`sdmmc.c` replaces the `Error_Handler()` call inside a generated `if`, `app_usbx_device.c` changes an
+argument to `ux_system_initialize()`. A `USER CODE` block cannot protect a statement that has to
+differ from the one the template produces. Inventing a marker pair does not work either — an
+invented `/* USER CODE BEGIN Manufacturer_String */` in `ux_device_descriptors.c` was discarded
+wholesale, while the real `String_Framework1` block beside it survived. **CubeMX only preserves
+blocks its own template defines.**
+
 Files known to carry hand-written code that generation removes (DEV-1017):
 
 | File | What lives there |
