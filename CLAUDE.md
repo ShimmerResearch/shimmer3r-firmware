@@ -23,7 +23,7 @@ dense manifests where a hand-edited gap silently truncates the list. Never hand-
 
 But generation rewrites everything outside `USER CODE` blocks, and this project keeps a lot of
 hand-written code in CubeMX-owned regions. A single CRC deactivation (DEV-1003) also deleted 165
-lines from `main.c` and changed seven other files. Nothing warns you.
+lines from `main.c` and changed ten other files. Nothing warns you.
 
 **Always generate on a branch, then read the whole diff before committing.** Not `git diff --stat` —
 the real diff. Restore what you did not ask for.
@@ -53,6 +53,8 @@ Files known to carry hand-written code that generation removes (DEV-1017):
 | `Core/Src/usb_otg.c`, `Core/Inc/usb_otg.h` | `USB_getPcdSpeed()`, NVIC priority |
 | `USBX/App/app_usbx_device.c` | 32-byte D-cache line alignment of the USBX byte pool |
 | `USBX/App/ux_user.h` | `UX_SLAVE_REQUEST_DATA_MAX_LENGTH` 64 KB — the main MSC throughput knob |
+| `USBX/App/app_usbx_device.h` | `UX_DEVICE_APP_MEM_POOL_SIZE` 640 KB — regeneration **adds a stock 128 KB duplicate beside it** rather than deleting it |
+| `USBX/App/ux_device_descriptors.h` | CDC interrupt-IN `bInterval` — the fix for Mac xHCI USB-C dropping the MSC interface |
 | `USBX/App/ux_device_descriptors.c` | EEPROM brand string for the USB manufacturer descriptor |
 | `USBX/App/ux_device_msc.c` | Block-size defines |
 
@@ -63,7 +65,7 @@ Three more things that show up in the diff and are **not** yours to keep:
   genuine drift, not a correction.
 - **Hundreds of files under `Drivers/` and `Middlewares/`.** Line-ending churn, zero content change.
   `git checkout --` them.
-- **Most `MX_*_Init()` absent from `main.c` is correct.** 18 of 28 entries in `functionlistsort`
+- **Most `MX_*_Init()` absent from `main.c` is correct.** 15 of 28 entries in `functionlistsort`
   carry *Do Not Generate Function Call*, because those peripherals are initialised lazily. The
   mismatch is by design; don't "fix" it.
 
