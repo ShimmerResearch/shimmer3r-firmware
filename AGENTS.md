@@ -33,35 +33,15 @@ regeneration that eats one of them fails the build instead of shipping. It is a 
 substitute for reading the diff — it only knows about damage that has already happened once. **If you
 add hand-written code to a CubeMX-owned region, add a guard for it in the same commit.**
 
-**In this instance CubeMX was not at fault — placement was.** Checked location by location against a real
-regeneration: of the eleven pieces of hand-written code it touched, **nine sat outside any `USER CODE`
-block**, and one was wrapped in an invented `/* USER CODE BEGIN Manufacturer_String */` that the
-template does not define. The only two inside genuine blocks — `EC` in `app_usbx_device.h`, `PD` in
-`ux_device_msc.c` — both **survived**. CubeMX preserves what is correctly placed, and only blocks its
-own template defines.
+Placement decides this. Code inside a `USER CODE` block that CubeMX's own template defines is
+normally preserved; code outside one is not, and an invented marker pair is no help either — CubeMX
+keeps only the blocks it knows about. **Normally, not always:** regeneration has been seen to
+overwrite user sections, so a block lowers the risk rather than removing it, and the guard stays even
+on code that sits in one.
 
-That is one regeneration, though, not a guarantee: **regeneration has been seen to overwrite user
-sections in some files**, so a `USER CODE` block makes loss much less likely rather than impossible.
-Correct placement and the guard are both worth having, and the guard stays on code that has been
-moved. With that said, three of these were losing code for no better reason than sitting in the
-wrong place, and are moved into the right block rather than left to the guard:
-
-- **`main.c`'s LSE ladder** — 165 lines, the single biggest loss, sitting in plain CubeMX territory
-  between `SystemClock_Config`'s doc comment and its body. `USER CODE BEGIN PD` / `PFP` / `0` exist
-  for exactly this and are already in use elsewhere in the file.
-- **`app_usbx_device.h`** — the override inside `EC` is fine. The problem is that the *generated*
-  defines above it were deleted by hand, so regeneration restores them and the 640 KB value wins only
-  by appearing later in the file. Restore the generated pair; keep the override.
-- **`ux_device_msc.c`** — `#define BUFFER_WORDS_SIZE   /* USER CODE END PD */` is a malformed block
-  terminator. CubeMX has already silently repaired it once.
-
-The rest genuinely cannot move, and that is what the guard is for. `rtc.c`, `sdmmc.c`, `usb_otg.c`,
-both `app_usbx_device.c` cases and `ux_device_descriptors.h` each **edit a generated statement in
-place** — no `USER CODE` block can protect a line that has to differ from the one the template emits.
-`ux_user.h` is a stock ST config header meant to be edited directly and has no block to move into.
-`ux_device_descriptors.c` could plausibly fold into `String_Framework1`, which already overwrites the
-product string that way, but the `count`/`len` bookkeeping makes that a real change rather than a
-move.
+Where the entries below could simply be moved into a block, they have been (DEV-1017). The rest edit
+a *generated statement in place* — an assignment, a call argument, a declaration — which no block can
+protect, and that is exactly what the guard is for.
 
 Files known to carry hand-written code that generation removes (DEV-1017):
 

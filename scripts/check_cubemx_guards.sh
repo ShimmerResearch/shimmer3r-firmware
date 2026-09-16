@@ -18,8 +18,9 @@
 #
 # Loss is not always deletion. Regenerating app_usbx_device.h left the 640 KB
 # pool define in place and ADDED the stock 128 KB one beside it - a redefinition
-# where whichever comes last wins. Hence require_once, which fails on two
-# definitions as well as on none.
+# where whichever comes last wins. That is why the pool-size check accepts either
+# a single define or an explicit #undef before the override, and fails only on a
+# duplicate with nothing neutralising it.
 #
 # Adding an entry: pick the shortest string unique to the hand-written version,
 # not to the generated one, so the check fails when generation wins. Prefer an
@@ -48,12 +49,19 @@ require_re() { # file, extended regex, what it protects
   else report LOST "$1" "$3" "$1 has no line matching: $2"; fail=1; fi
 }
 
-require_once() { # file, extended regex, what it protects - exactly one match
-  [ -f "$1" ] || { report "MISSING FILE" "$1" "$3" "$1"; fail=1; return; }
-  n=$(grep -cE -- "$2" "$1")
-  if [ "$n" -eq 1 ]; then report ok "$1" "$3"
-  elif [ "$n" -eq 0 ]; then report LOST "$1" "$3" "$1 has no line matching: $2"; fail=1
-  else report DUPLICATED "$1" "$3" "$1 has $n lines matching: $2 (regeneration added the stock one)"; fail=1; fi
+require_pool_override() { # the 640 KB pool must be in effect, however it is expressed
+  [ -f "$1" ] || { report "MISSING FILE" "$1" "$2" "$1"; fail=1; return; }
+  n=$(grep -cE '^#define UX_DEVICE_APP_MEM_POOL_SIZE[[:space:]]' "$1")
+  if grep -qF "#undef UX_DEVICE_APP_MEM_POOL_SIZE" "$1"; then
+    report ok "$1" "$2"            # the #undef neutralises any generated define above it
+  elif [ "$n" -eq 1 ]; then
+    report ok "$1" "$2"            # a lone define, nothing to collide with
+  elif [ "$n" -eq 0 ]; then
+    report LOST "$1" "$2" "$1 defines no pool size at all"; fail=1
+  else
+    report DUPLICATED "$1" "$2" "$1 has $n pool-size defines and no #undef - the winner depends on file order"
+    fail=1
+  fi
 }
 
 forbid() { # file, fixed string, why it must not be there
@@ -69,8 +77,8 @@ require      "$B/Core/Src/usb_otg.c" "Init.speed = USB_getPcdSpeed"  "PCD speed 
 require      "$B/USBX/App/app_usbx_device.c" "ALIGN_32BYTES"         "32-byte D-cache line alignment of the USBX pool"
 require      "$B/USBX/App/app_usbx_device.c" "UX_DEVICE_APP_MEM_POOL_SIZE, UX_NULL" \
                                                                      "correct pool size passed to ux_system_initialize()"
-require_once "$B/USBX/App/app_usbx_device.h" '^#define UX_DEVICE_APP_MEM_POOL_SIZE[[:space:]]' \
-                                                                     "one pool-size define (regen adds a stock 128 KB one)"
+require_pool_override "$B/USBX/App/app_usbx_device.h" \
+                                                                     "640 KB pool override survives regeneration"
 require      "$B/USBX/App/app_usbx_device.h" "640U"                  "640 KB pool (else UX_MEMORY_INSUFFICIENT at 64 KB MSC)"
 require      "$B/USBX/App/ux_device_descriptors.c" "ShimEeprom_getBrandUsbManufacturer" \
                                                                      "EEPROM brand string in the USB descriptor"
