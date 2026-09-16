@@ -16,6 +16,63 @@ Platform-specific behaviour belongs behind the abstraction declared in
 **STM32CubeIDE 1.15.1** (`C:\ST\STM32CubeIDE_1.15.1`). The workspace binds this project by absolute
 path, so don't relocate the repo.
 
+## CubeMX code generation — it deletes hand-written code
+`LogAndStream_Shimmer3R_UBGA132_SMPS.ioc` is the peripheral model, and **Generate Code** is the only
+sane way to add or remove a peripheral: it renumbers the `Mcu.IPn` / `Mcu.Pinn` arrays, which are
+dense manifests where a hand-edited gap silently truncates the list. Never hand-edit those.
+
+But generation rewrites everything outside `USER CODE` blocks, and this project keeps a lot of
+hand-written code in CubeMX-owned regions. A single CRC deactivation (DEV-1003) also deleted 165
+lines from `main.c` and changed ten other files. Nothing warns you.
+
+**Always generate on a branch, then read the whole diff before committing.** Not `git diff --stat` —
+the real diff. Restore what you did not ask for.
+
+`scripts/check_cubemx_guards.sh` catches the known cases and runs in CI on every push, so a
+regeneration that eats one of them fails the build instead of shipping. It is a backstop, not a
+substitute for reading the diff — it only knows about damage that has already happened once. **If you
+add hand-written code to a CubeMX-owned region, add a guard for it in the same commit.**
+
+Placement decides this. Code inside a `USER CODE` block that CubeMX's own template defines is
+normally preserved; code outside one is not, and an invented marker pair is no help either — CubeMX
+keeps only the blocks it knows about. **Normally, not always:** regeneration has been seen to
+overwrite user sections, so a block lowers the risk rather than removing it, and the guard stays even
+on code that sits in one.
+
+Where the entries below could simply be moved into a block, they have been (DEV-1017). The rest edit
+a *generated statement in place* — an assignment, a call argument, a declaration — which no block can
+protect, and that is exactly what the guard is for.
+
+Files known to carry hand-written code that generation removes (DEV-1017):
+
+| File | What lives there |
+|---|---|
+| `Core/Src/main.c` | DEV-866 LSE drive ladder — `Lse_tryDriveLevel/walkDriveLadder/bringUp`. **Was misplaced; moved into `USER CODE BEGIN 0`** |
+| `Core/Src/rtc.c` | DEV-866 LSI limp-home — without it a board with a dead LSE hangs at boot |
+| `Core/Src/sdmmc.c` | The deliberate no-`Error_Handler()` path for hot-swap failures |
+| `Core/Src/usb_otg.c`, `Core/Inc/usb_otg.h` | `USB_getPcdSpeed()`, NVIC priority |
+| `USBX/App/app_usbx_device.c` | 32-byte D-cache line alignment of the USBX byte pool |
+| `USBX/App/ux_user.h` | `UX_SLAVE_REQUEST_DATA_MAX_LENGTH` 64 KB — the main MSC throughput knob |
+| `USBX/App/app_usbx_device.h` | `UX_DEVICE_APP_MEM_POOL_SIZE` 640 KB. Correctly inside `EC` and preserved; the *generated* defines were deleted, so regeneration re-adds them as a 128 KB duplicate. **Generated pair restored; override now `#undef`s first** |
+| `USBX/App/ux_device_descriptors.h` | CDC interrupt-IN `bInterval` — the fix for Mac xHCI USB-C dropping the MSC interface |
+| `USBX/App/ux_device_descriptors.c` | EEPROM brand string for the USB manufacturer descriptor |
+| `USBX/App/ux_device_msc.c` | Block-size defines, inside `PD` and preserved. **Malformed terminator fixed** |
+
+Three more things that show up in the diff and are **not** yours to keep:
+
+- **`main.c` gaining `MX_USBX_Device_Init();`.** It is already called from `usb_otg.c`; taking the
+  generated one initialises USBX twice. The `.ioc` says to generate it, `main.c` has never had it —
+  genuine drift, not a correction.
+- **Hundreds of files under `Drivers/` and `Middlewares/`.** Line-ending churn, zero content change.
+  `git checkout --` them.
+- **Most `MX_*_Init()` absent from `main.c` is correct.** 15 of 28 entries in `functionlistsort`
+  carry *Do Not Generate Function Call*, because those peripherals are initialised lazily. The
+  mismatch is by design; don't "fix" it.
+
+Afterwards, `Release/` and `Debug/` hold stale generated `subdir.mk`, `objects.list` and `makefile`
+referencing files you removed — rebuild in the IDE rather than from the command line, which
+regenerates them. (They also hardcode absolute paths, so they go stale if the repo moves.)
+
 ## Release
 CI only — `build-release-firmware.yml` via **workflow_dispatch** (major/minor/patch, Release/Debug).
 Version bumping is delegated to the shared submodule: `log-and-stream-common/scripts/increment_version.sh`,

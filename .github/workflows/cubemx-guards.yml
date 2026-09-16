@@ -1,0 +1,15 @@
+name: cubemx-guards
+
+# Fails if a CubeMX regeneration has deleted hand-written code, or re-added
+# generated code that was deliberately removed. See DEV-1017 and the CubeMX
+# section of AGENTS.md. Pure grep - no toolchain, no hardware, a second or two.
+
+on: [push, pull_request]
+
+jobs:
+  guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check hand-written code survived
+        run: ./scripts/check_cubemx_guards.sh
