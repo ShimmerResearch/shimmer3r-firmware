@@ -654,6 +654,18 @@ void I2C_startSensing(void)
 
 void I2C_pollSensors(void)
 {
+  /* Clear the per-gather completion flags before any bus can set one, the same
+   * way SPI_pollSensors does. Left uncleared they stay equal to
+   * expectedI2cBusCbFlags once a gather has completed, so from the next gather
+   * on the first bus callback would satisfy the test on its own and complete
+   * the packet before the other buses had written their channels.
+   *
+   * No effect while only I2C1 carries sensors, which is every board today:
+   * nothing populates i2c3Sens or i2c4Sens, so there is only ever one flag to
+   * wait for. This is here so that adding the second bus is not a data
+   * corruption bug. */
+  currentI2cBusCbFlags = 0;
+
   if (i2c1Sens.sensorLen > 0)
   {
     I2cSensing(&i2c1Sens, I2C_FIRST_SENSOR);
