@@ -33,13 +33,18 @@ regeneration that eats one of them fails the build instead of shipping. It is a 
 substitute for reading the diff — it only knows about damage that has already happened once. **If you
 add hand-written code to a CubeMX-owned region, add a guard for it in the same commit.**
 
-**CubeMX is not the problem — placement is.** Checked location by location against a real
+**In this instance CubeMX was not at fault — placement was.** Checked location by location against a real
 regeneration: of the eleven pieces of hand-written code it touched, **nine sat outside any `USER CODE`
 block**, and one was wrapped in an invented `/* USER CODE BEGIN Manufacturer_String */` that the
 template does not define. The only two inside genuine blocks — `EC` in `app_usbx_device.h`, `PD` in
 `ux_device_msc.c` — both **survived**. CubeMX preserves what is correctly placed, and only blocks its
-own template defines. So the guard is a backstop for bad placement, not a workaround for a broken
-tool, and three of these should be moved rather than guarded:
+own template defines.
+
+That is one regeneration, though, not a guarantee: **regeneration has been seen to overwrite user
+sections in some files**, so a `USER CODE` block makes loss much less likely rather than impossible.
+Correct placement and the guard are both worth having, and the guard stays on code that has been
+moved. With that said, three of these were losing code for no better reason than sitting in the
+wrong place, and are moved into the right block rather than left to the guard:
 
 - **`main.c`'s LSE ladder** — 165 lines, the single biggest loss, sitting in plain CubeMX territory
   between `SystemClock_Config`'s doc comment and its body. `USER CODE BEGIN PD` / `PFP` / `0` exist
@@ -62,16 +67,16 @@ Files known to carry hand-written code that generation removes (DEV-1017):
 
 | File | What lives there |
 |---|---|
-| `Core/Src/main.c` | DEV-866 LSE drive ladder — `Lse_tryDriveLevel/walkDriveLadder/bringUp`. **Misplaced — move it** |
+| `Core/Src/main.c` | DEV-866 LSE drive ladder — `Lse_tryDriveLevel/walkDriveLadder/bringUp`. **Was misplaced; moved into `USER CODE BEGIN 0`** |
 | `Core/Src/rtc.c` | DEV-866 LSI limp-home — without it a board with a dead LSE hangs at boot |
 | `Core/Src/sdmmc.c` | The deliberate no-`Error_Handler()` path for hot-swap failures |
 | `Core/Src/usb_otg.c`, `Core/Inc/usb_otg.h` | `USB_getPcdSpeed()`, NVIC priority |
 | `USBX/App/app_usbx_device.c` | 32-byte D-cache line alignment of the USBX byte pool |
 | `USBX/App/ux_user.h` | `UX_SLAVE_REQUEST_DATA_MAX_LENGTH` 64 KB — the main MSC throughput knob |
-| `USBX/App/app_usbx_device.h` | `UX_DEVICE_APP_MEM_POOL_SIZE` 640 KB. Correctly inside `EC` and preserved; the *generated* defines were deleted, so regeneration re-adds them as a 128 KB duplicate. **Restore those** |
+| `USBX/App/app_usbx_device.h` | `UX_DEVICE_APP_MEM_POOL_SIZE` 640 KB. Correctly inside `EC` and preserved; the *generated* defines were deleted, so regeneration re-adds them as a 128 KB duplicate. **Generated pair restored; override now `#undef`s first** |
 | `USBX/App/ux_device_descriptors.h` | CDC interrupt-IN `bInterval` — the fix for Mac xHCI USB-C dropping the MSC interface |
 | `USBX/App/ux_device_descriptors.c` | EEPROM brand string for the USB manufacturer descriptor |
-| `USBX/App/ux_device_msc.c` | Block-size defines, inside `PD` and preserved. **The `USER CODE END PD` terminator is malformed — fix it** |
+| `USBX/App/ux_device_msc.c` | Block-size defines, inside `PD` and preserved. **Malformed terminator fixed** |
 
 Three more things that show up in the diff and are **not** yours to keep:
 
