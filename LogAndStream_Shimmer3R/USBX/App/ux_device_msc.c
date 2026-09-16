@@ -35,9 +35,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define BLOCK_START_ADDR  0 /* Block start address      */
-#define NUM_OF_BLOCKS     5 /* Total number of blocks   */
-#define BUFFER_WORDS_SIZE   /* USER CODE END PD */
+#define BLOCK_START_ADDR 0 /* Block start address      */
+#define NUM_OF_BLOCKS    5 /* Total number of blocks   */
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/

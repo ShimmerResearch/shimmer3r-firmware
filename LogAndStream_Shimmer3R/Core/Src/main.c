@@ -266,114 +266,6 @@ void Init()
   LogAndStream_setBootStage(BOOT_STAGE_END);
 }
 
-/* USER CODE END 0 */
-
-/**
- * @brief  The application entry point.
- * @retval int
- */
-int main(void)
-{
-
-  /* USER CODE BEGIN 1 */
-
-  uint32_t i = 0;
-  while (i++ < 1000000)
-    ;
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the System Power */
-  SystemPower_Config();
-
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_GPDMA1_Init();
-  MX_ICACHE_Init();
-  MX_RNG_Init();
-  MX_RTC_Init();
-  MX_TIM2_Init();
-  MX_TIM3_Init();
-  MX_TIM6_Init();
-  MX_TIM7_Init();
-  MX_DCACHE1_Init();
-  /* USER CODE BEGIN 2 */
-
-  //MX_IWDG_Init();
-
-#if !IS_CONNECTED_EEPROM
-  setMockExpansionBrdDetails();
-#endif
-
-  Init();
-
-  /* Check nBOOT0 option byte is configured correctly */
-  checknBoot0OptionByte();
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-    /* Let USBX progress enumeration/state machine */
-    if (USBX_IsInitialised())
-    {
-      ux_device_stack_tasks_run();
-
-      /* CDC TX: poll the write task whenever the CDC ACM instance is
-       * valid and the device is configured, even if the host has
-       * closed the COM port (!IsPortOpen). This still allows the
-       * internal stall watchdog to abort transfers that were queued
-       * while the port was open and then got stranded when the host
-       * stopped polling / closed the port, without risking a NULL
-       * dereference if the device disconnects or deactivates while a
-       * TX is in flight. Gating only on IsPortOpen() (as the old code
-       * did) meant a stale in-flight transfer could wedge tx_active=1
-       * forever until the next port open, at which point every new
-       * USBX_CDC_ACM_Transmit() would return usbx_busy. */
-      if (USBX_CDC_ACM_IsPortConfigured())
-      {
-        cdc_acm_write_task();
-
-        /* CDC RX: only touch once the host has opened the port (DTR
-         * asserted). Before that, arming a bulk-OUT receive is wasted
-         * work. */
-        if (USBX_CDC_ACM_IsPortOpen())
-        {
-          cdc_acm_read_task();
-        }
-      }
-    }
-
-    ShimTask_manage();
-  }
-  /* USER CODE END 3 */
-}
-
-/**
- * @brief System Clock Configuration
- * @retval None
- */
 #define LSE_STOP_TIMEOUT_MS  100U
 #define LSE_START_TIMEOUT_MS 1500U
 
@@ -528,6 +420,114 @@ static uint32_t Lse_bringUp(void)
   return 0xFFFFFFFFU;
 }
 
+/* USER CODE END 0 */
+
+/**
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void)
+{
+
+  /* USER CODE BEGIN 1 */
+
+  uint32_t i = 0;
+  while (i++ < 1000000)
+    ;
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the System Power */
+  SystemPower_Config();
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_GPDMA1_Init();
+  MX_ICACHE_Init();
+  MX_RNG_Init();
+  MX_RTC_Init();
+  MX_TIM2_Init();
+  MX_TIM3_Init();
+  MX_TIM6_Init();
+  MX_TIM7_Init();
+  MX_DCACHE1_Init();
+  /* USER CODE BEGIN 2 */
+
+  //MX_IWDG_Init();
+
+#if !IS_CONNECTED_EEPROM
+  setMockExpansionBrdDetails();
+#endif
+
+  Init();
+
+  /* Check nBOOT0 option byte is configured correctly */
+  checknBoot0OptionByte();
+
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+    /* Let USBX progress enumeration/state machine */
+    if (USBX_IsInitialised())
+    {
+      ux_device_stack_tasks_run();
+
+      /* CDC TX: poll the write task whenever the CDC ACM instance is
+       * valid and the device is configured, even if the host has
+       * closed the COM port (!IsPortOpen). This still allows the
+       * internal stall watchdog to abort transfers that were queued
+       * while the port was open and then got stranded when the host
+       * stopped polling / closed the port, without risking a NULL
+       * dereference if the device disconnects or deactivates while a
+       * TX is in flight. Gating only on IsPortOpen() (as the old code
+       * did) meant a stale in-flight transfer could wedge tx_active=1
+       * forever until the next port open, at which point every new
+       * USBX_CDC_ACM_Transmit() would return usbx_busy. */
+      if (USBX_CDC_ACM_IsPortConfigured())
+      {
+        cdc_acm_write_task();
+
+        /* CDC RX: only touch once the host has opened the port (DTR
+         * asserted). Before that, arming a bulk-OUT receive is wasted
+         * work. */
+        if (USBX_CDC_ACM_IsPortOpen())
+        {
+          cdc_acm_read_task();
+        }
+      }
+    }
+
+    ShimTask_manage();
+  }
+  /* USER CODE END 3 */
+}
+
+/**
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
