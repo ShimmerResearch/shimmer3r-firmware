@@ -6,7 +6,7 @@
 	url = https://github.com/STMicroelectronics/lis3mdl-pid/
 [submodule "LogAndStream_Shimmer3R/Shimmer_Driver/BMP3/BMP3_SensorAPI"]
 	path = LogAndStream_Shimmer3R/Shimmer_Driver/BMP3/BMP3_SensorAPI
-	url = https://github.com/ShimmerEngineering/BMP3_SensorAPI
+	url = https://github.com/ShimmerResearch/BMP3_SensorAPI
 [submodule "LogAndStream_Shimmer3R/Shimmer_Driver/LIS2MDL/lis2mdl-pid"]
 	path = LogAndStream_Shimmer3R/Shimmer_Driver/LIS2MDL/lis2mdl-pid
 	url = https://github.com/STMicroelectronics/lis2mdl-pid/
