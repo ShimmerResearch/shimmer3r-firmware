@@ -91,7 +91,8 @@ make -C LogAndStream_Shimmer3R/log-and-stream-common/Test/host                  
 `-DSHIMMER3R` *and* `-DSHIMMER3`, which is the cheapest guard against a submodule change that builds
 for one platform and not the other. Nothing in it covers CubeMX, USBX or FileX.
 
-The full release procedure — gates, bench matrix, sign-off list — is
+The full release procedure — gates, the radio bring-up matrix, per-model functional
+tests, sign-off list — is
 `log-and-stream-common/docs/SHIMMER3_TEST_PROCEDURE.md`. §3.3 is the CubeMX checklist.
 
 ## Formatting
