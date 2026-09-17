@@ -79,10 +79,27 @@ Version bumping is delegated to the shared submodule: `log-and-stream-common/scr
 writing `LogAndStream_Shimmer3R/build/version.txt`. Tags are `LogAndStream_Shimmer3R_v*`;
 the matching Jira version prefix is `L&S_S3R_v`.
 
+## Testing
+The shared submodule carries a host test suite that needs no STM32 toolchain and no device:
+
+```
+make -C LogAndStream_Shimmer3R/log-and-stream-common/Test/host platform-check   # compile for BOTH MCUs
+make -C LogAndStream_Shimmer3R/log-and-stream-common/Test/host                  # build and run, ~10 s
+```
+
+`platform-check` is the one that matters most from here: it compiles the shared modules for
+`-DSHIMMER3R` *and* `-DSHIMMER3`, which is the cheapest guard against a submodule change that builds
+for one platform and not the other. Nothing in it covers CubeMX, USBX or FileX.
+
+The full release procedure — gates, bench matrix, sign-off list — is
+`log-and-stream-common/docs/SHIMMER3_TEST_PROCEDURE.md`. §3.3 is the CubeMX checklist.
+
 ## Formatting
-`clang-format-check.yml` gates pushes. The IDE profile is `STM32CubeIDE_Format_Profile.xml` at the repo root.
-Unlike verisense-firmware, this one **checks** rather than reformatting in place — a badly formatted
-push fails CI instead of being silently fixed.
+`clang-format-check.yml` runs on every push with `inplace: True` and commits the reformatted result
+back, so a badly formatted push is fixed on your branch rather than rejected. Fetch before tagging a
+release, or the tag may miss the formatting commit. CI pins clang-format 17; a different local
+version can produce a different result. The IDE profile is `STM32CubeIDE_Format_Profile.xml` at the
+repo root.
 
 ## Do not edit
 Vendor sensor libraries under `LogAndStream_Shimmer3R/Shimmer_Driver/*/` that are submodules
