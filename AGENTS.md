@@ -65,9 +65,10 @@ Three more things that show up in the diff and are **not** yours to keep:
   genuine drift, not a correction.
 - **Hundreds of files under `Drivers/` and `Middlewares/`.** Line-ending churn, zero content change.
   `git checkout --` them.
-- **Most `MX_*_Init()` absent from `main.c` is correct.** 15 of 28 entries in `functionlistsort`
-  carry *Do Not Generate Function Call*, because those peripherals are initialised lazily. The
-  mismatch is by design; don't "fix" it.
+- **Most `MX_*_Init()` absent from `main.c` is correct.** 15 of the 29 entries in `functionlistsort`
+  carry *Do Not Generate Function Call* — the third field of each `N-MX_Foo_Init-PERIPH-<flag>-HAL-…`
+  entry — because those peripherals are initialised lazily. All 15 are genuinely absent from `main.c`.
+  The mismatch is by design; don't "fix" it.
 
 Afterwards, `Release/` and `Debug/` hold stale generated `subdir.mk`, `objects.list` and `makefile`
 referencing files you removed — rebuild in the IDE rather than from the command line, which
@@ -97,10 +98,17 @@ tests, sign-off list — is
 
 ## Formatting
 `clang-format-check.yml` runs on every push with `inplace: True` and commits the reformatted result
-back, so a badly formatted push is fixed on your branch rather than rejected. Fetch before tagging a
-release, or the tag may miss the formatting commit. CI pins clang-format 17; a different local
-version can produce a different result. The IDE profile is `STM32CubeIDE_Format_Profile.xml` at the
-repo root.
+back, so a badly formatted push is fixed on your branch rather than rejected. **Pull before your next
+push, and fetch before tagging a release**, or the tag misses the formatting commit. That commit also
+gets no CI run of its own — GitHub does not trigger workflows for `GITHUB_TOKEN` pushes.
+
+Run `Extras/clang-format-all-win64/LogAndStream-Shimmer3R.bat` before pushing and the commit never
+appears. Its exclusion list matches the workflow's, so local and CI format the same set of files.
+
+CI pins clang-format **17**, the bundled `clang-format.exe` is **18.1.8**, and the two currently agree
+on this codebase — the difference is not a live problem, but keep them in mind before blaming churn
+on it. The IDE profile is `STM32CubeIDE_Format_Profile.xml` at the repo root; `.clang-format` lives in
+`LogAndStream_Shimmer3R/`, not at the repo root.
 
 ## Do not edit
 Vendor sensor libraries under `LogAndStream_Shimmer3R/Shimmer_Driver/*/` that are submodules
