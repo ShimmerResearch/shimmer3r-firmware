@@ -112,9 +112,14 @@ The installer also configures the `log-and-stream-common` submodule, because com
 are its commits and need their own hook configuration.
 
 `Extras/clang-format-all-win64/LogAndStream-Shimmer3R.bat` still formats the whole project in one go.
-Its exclusion list matches both the workflow's and the hook's — the hook's is the `EXCLUDE_RE` at the
-top of `.githooks/pre-commit`, and it covers `Drivers/`, `Middlewares/`, `FATFS/` and every vendor
-`-pid/` submodule. **If you change one of the three, change the other two in the same commit.**
+
+**The exclusion list lives in `.clang-format-exclude` at the repository root, and only there.** The
+workflow, the hook and the `.bat` all read it — the first two through
+`scripts/clang-format-exclude.sh`, which is also the only place the list is interpreted. It covers
+`Drivers/`, `Middlewares/`, `FATFS/`, every vendor `-pid/` submodule and the Bosch, Infineon and
+Analog Devices drivers, which is what stops any of the three reformatting the code the
+**Do not edit** section above tells you to leave alone. Add a vendor directory there and all three
+follow; there is nothing to keep in step.
 
 CI pins clang-format **17**, the bundled `clang-format.exe` is **18.1.8**, and the two currently agree
 on this codebase — the difference is not a live problem, but keep them in mind before blaming churn
