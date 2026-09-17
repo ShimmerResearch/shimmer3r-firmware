@@ -102,8 +102,19 @@ back, so a badly formatted push is fixed on your branch rather than rejected. **
 push, and fetch before tagging a release**, or the tag misses the formatting commit. That commit also
 gets no CI run of its own — GitHub does not trigger workflows for `GITHUB_TOKEN` pushes.
 
-Run `Extras/clang-format-all-win64/LogAndStream-Shimmer3R.bat` before pushing and the commit never
-appears. Its exclusion list matches the workflow's, so local and CI format the same set of files.
+**Run `.githooks\install.bat` (or `.githooks/install.sh`) once per clone and the bot commit never
+appears.** The `pre-commit` hook clang-formats the `.c`/`.h` files staged for the commit and re-stages
+them. Nothing needs installing: Git for Windows supplies the shell, and
+`Extras/clang-format-all-win64/clang-format.exe` is already in the clone. It never blocks a commit,
+and `git commit --no-verify` bypasses it — see `.githooks/README.md`.
+
+The installer also configures the `log-and-stream-common` submodule, because commits made inside it
+are its commits and need their own hook configuration.
+
+`Extras/clang-format-all-win64/LogAndStream-Shimmer3R.bat` still formats the whole project in one go.
+Its exclusion list matches both the workflow's and the hook's — the hook's is the `EXCLUDE_RE` at the
+top of `.githooks/pre-commit`, and it covers `Drivers/`, `Middlewares/`, `FATFS/` and every vendor
+`-pid/` submodule. **If you change one of the three, change the other two in the same commit.**
 
 CI pins clang-format **17**, the bundled `clang-format.exe` is **18.1.8**, and the two currently agree
 on this codebase — the difference is not a live problem, but keep them in mind before blaming churn
