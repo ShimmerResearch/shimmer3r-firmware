@@ -130,16 +130,23 @@ Releases are created automatically by the **LogAndStream S3R Build & Release** G
 
 ## Code style
 
-The project uses **clang-format** for consistent C code formatting.  
+The project uses **clang-format 18.1.8** for consistent C code formatting.  
 The style profile is defined in `LogAndStream_Shimmer3R/.clang-format` and `STM32CubeIDE_Format_Profile.xml`.
+
+To format each commit as you make it, run once per clone (see `.githooks/README.md`):
+
+```batch
+.githooks\install.bat
+```
 
 To format all files locally (Windows):
 
 ```batch
-Extras\clang-format-all-win64\clang-format-all.bat
+Extras\clang-format-all-win64\LogAndStream-Shimmer3R.bat
 ```
 
-A `clang-format` check runs automatically on every pull request via GitHub Actions.
+A GitHub Actions workflow formats every push and commits the result back, catching anything
+committed without the hook.
 
 ---
 
