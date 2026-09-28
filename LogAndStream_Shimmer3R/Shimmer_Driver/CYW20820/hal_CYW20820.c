@@ -577,10 +577,21 @@ void BtTransmitAckLast(void)
 
 /* Overrides the weak no-op in shimmer_bt_uart.c. Cancels the DMA transfer
  * started by BtTransmit() so the TX-complete callback cannot fire afterwards
- * and advance the ring read index over a buffer that has just been reset. */
+ * and advance the ring read index over a buffer that has just been reset.
+ *
+ * Only on an initialised UART. BtStop() runs btDeinit() - HAL_UART_Abort()
+ * then HAL_UART_DeInit() - before ShimBt_stopCommon() clears the TX ring and
+ * calls this, and HAL_UART_AbortTransmit() ends by setting gState to READY
+ * unconditionally. On a de-initialised handle that READY is stale: the next
+ * HAL_UART_Init() runs MspInit (USART3 clock, pins, DMA channels, IRQ) only
+ * when gState is RESET, so it skipped it and the BT UART stayed dead for
+ * every later BtStart(). The boot baud ladder always retries on a module
+ * still at its factory 115200 baud, so on a never-configured module BT never
+ * came up (MAC 0000, DEV-962). Skipping loses nothing: the HAL_UART_Abort()
+ * in btDeinit() has already stopped any transfer in flight. */
 void BtTransmitAbort(void)
 {
-  if (huartBtPtr != NULL)
+  if (huartBtPtr != NULL && huartBtPtr->gState != HAL_UART_STATE_RESET)
   {
     HAL_UART_AbortTransmit(huartBtPtr);
   }
