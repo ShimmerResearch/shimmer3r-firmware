@@ -87,9 +87,15 @@ uint8_t rxBuf[512];
 volatile uint16_t expectedByteCount;
 
 volatile uint8_t waitingForBtBoot = 0;
-char btBootMsg[160] = { 0 }; //Measured to be 150 chars with v1.4.12.12
-volatile uint8_t btBootMsgIndex = 0;
+/* The two boot lines (BOOT banner + ASC event). Measured 150 chars on
+ * v1.4.12.12, 154 on v1.4.18.18 and 163 on a v1.4.18.18 test image, which
+ * overflowed the previous 160-byte buffer: the index that follows it in RAM
+ * was overwritten and the captured banner came out garbled. Sized with
+ * headroom, and a longer banner is now truncated rather than overflowed. */
+char btBootMsg[256] = { 0 };
+volatile uint16_t btBootMsgIndex = 0;
 volatile uint8_t btBootMsgLineCount = 0;
+volatile uint8_t btBootMsgPrevByte = 0;
 
 volatile uint16_t btRxWaitByteCount = 0;
 
@@ -287,6 +293,14 @@ ezs_input_result_t appInput(uint8_t *inByte, uint16_t timeout)
 
 HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length)
 {
+  /* rxBuf bounds every receive. The length can come from an inbound EZ-Serial
+   * header, whose 11-bit length field allows packets of up to 2052 bytes -
+   * far past the end of rxBuf. The EZ-Serial parser takes one byte at a time,
+   * so a longer packet simply arrives over several receives. */
+  if (length > sizeof(rxBuf))
+  {
+    length = sizeof(rxBuf);
+  }
   expectedByteCount = length;
   //HAL_StatusTypeDef status = HAL_UART_AbortReceive(huart);
 
@@ -315,15 +329,25 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 {
   uint16_t count = 1;
 
-  uint8_t i = 0;
+  /* Same width as expectedByteCount: a uint8_t index wrapped at 256 and never
+   * reached a longer count, spinning forever inside this interrupt. */
+  uint16_t i = 0;
   while (i < expectedByteCount)
   {
     if (waitingForBtBoot)
     {
-      btBootMsg[btBootMsgIndex++] = rxBuf[i];
+      uint8_t bootByte = rxBuf[i];
+      /* Keep the last byte as the NUL terminator. Line ends are detected from
+       * the byte stream rather than the buffer, so a banner too long to store
+       * still completes the boot step instead of leaving it waiting. */
+      if (btBootMsgIndex < (sizeof(btBootMsg) - 1U))
+      {
+        btBootMsg[btBootMsgIndex++] = (char) bootByte;
+      }
       //SHIMMER_PRINTF("S0=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
-      if (btBootMsgIndex > 0 && btBootMsg[btBootMsgIndex - 2] == 0x0D
-          && btBootMsg[btBootMsgIndex - 1] == 0x0A)
+      uint8_t lineEnded = (btBootMsgPrevByte == 0x0D && bootByte == 0x0A);
+      btBootMsgPrevByte = bootByte;
+      if (lineEnded)
       {
         btBootMsgLineCount++;
         if (btBootMsgLineCount == 2)
@@ -628,6 +652,7 @@ void setWaitingForBtBoot(uint8_t state)
     memset(&btBootMsg[0], 0, sizeof(btBootMsg));
     btBootMsgIndex = 0;
     btBootMsgLineCount = 0;
+    btBootMsgPrevByte = 0;
   }
 }
 

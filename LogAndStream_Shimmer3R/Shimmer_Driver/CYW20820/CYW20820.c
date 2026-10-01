@@ -481,7 +481,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == ENTER_BINARY_MODE)
   {
     incrementBtInitCmdsStep();
-    if (btTransparentMode)
+    if (btTransparentMode && !BT_isFirmwareVersionAtLeast(1, 4, 17))
     {
       /* Legacy module (< v1.4.17): auto-parse is on and transparent is its
        * default, so binary commands work without an SPPM step - the exact
@@ -491,16 +491,24 @@ void btInitCommands(void)
     }
     else
     {
-      /* Binary mode + non-transparent SPP (SPP_SEND framing). The command is
-       * text, sent before the module is in binary mode. Its length drives
-       * both the transmit and the count of echoed bytes to skip, so take both
-       * from the literal rather than repeating a magic 10 - a mismatch would
-       * either leave unparseable bytes in the RX stream or skip into the
-       * following packet. */
+      /* Binary mode, with classic SPP either transparent (M=1) or
+       * non-transparent SPP_SEND framing (M=3). v1.4.17+ modules boot in text
+       * mode with no auto-parse, so they need this step on either data path -
+       * skipping it leaves every binary command that follows unanswered.
+       * The command is text, sent before the module is in binary mode. Its
+       * length drives both the transmit and the count of echoed bytes to
+       * skip, so take both from the literal rather than repeating a magic 10 -
+       * a mismatch would either leave unparseable bytes in the RX stream or
+       * skip into the following packet. */
+      static const char sppmSetBinaryTransparent[] = "SPPM,M=1\r\n";
       static const char sppmSetBinaryNonTransparent[] = "SPPM,M=3\r\n";
+      _Static_assert(sizeof(sppmSetBinaryTransparent) == sizeof(sppmSetBinaryNonTransparent),
+          "both SPPM commands must share one length");
+      const char *sppmCmd = btTransparentMode ? sppmSetBinaryTransparent :
+                                                sppmSetBinaryNonTransparent;
       const uint16_t sppmLen = (uint16_t) (sizeof(sppmSetBinaryNonTransparent) - 1U);
 
-      printf("Enter Binary Mode (%.*s)\r\n", (int) (sppmLen - 2), sppmSetBinaryNonTransparent);
+      printf("Enter Binary Mode (%.*s)\r\n", (int) (sppmLen - 2), sppmCmd);
 
       /* Arm the RX skip and the expected response only once the command is
        * actually on its way. appOutput() can refuse - a response is still
@@ -508,7 +516,7 @@ void btInitCommands(void)
        * refusal left skippingBytesCount swallowing the next bytes of real RX
        * traffic and expectedResponseIdx waiting on a response that would
        * never arrive, which stalls a boot sequence that has no timeout. */
-      if (appOutput(sppmLen, (const uint8_t *) sppmSetBinaryNonTransparent) == EZS_OUTPUT_RESULT_DATA_WRITTEN)
+      if (appOutput(sppmLen, (const uint8_t *) sppmCmd) == EZS_OUTPUT_RESULT_DATA_WRITTEN)
       {
         setExpectedResponse(EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE);
         /* Skip the echoed command - EZ-Serial cannot parse it */
