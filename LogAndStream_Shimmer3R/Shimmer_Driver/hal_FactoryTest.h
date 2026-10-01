@@ -29,17 +29,18 @@ given above */
 #define TEST_THRESHOLD_MV_VCORE_LOWER              900
 #define TEST_THRESHOLD_MV_VCORE_UPPER              1800
 
-/* 1.8V regulator, +/-5% (DEV-1113). The reading comes through the MCU's
- * internal /4 VBAT bridge, which getherMcuDebugInfo() in hal_adc.c rates at
- * +/-5% - about +/-90 mV here, before the regulator's own tolerance. The
- * earlier +/-50 mV band (1750-1850, the 1.9V band's width moved down) was
- * tighter than that and failed healthy boards: one read 1856 mV straight off
- * charge, with VRef at 2997 mV, then settled below 1850 mV once charging
- * stopped. The faults this test exists to catch sit hundreds of mV outside
- * +/-5%: regulator missing or open (~0 V), wrong part fitted or VBAT tied to
- * another rail (~3.0 V or battery voltage). */
+/* 1.8V backup regulator (ADP1713, fed from PV_BAT), DEV-1113. The band is
+ * asymmetric because healthy boards drift upward only. One board read 1776 mV
+ * unplugged at 25 degC and 1924 mV after 24 h on USB at 36 degC, with the
+ * battery at ~4150 mV and VRef within 0.5% both times. The regulator's only
+ * load is the VBAT pin, which draws almost nothing while VDD is up, so its
+ * output can rise but not fall. The /4 VBAT bridge adds up to +/-5% (rated in
+ * getherMcuDebugInfo(), hal_adc.c). The earlier 1750-1850 band failed healthy
+ * boards. These limits still catch the faults this test exists for: regulator
+ * missing or open (~0 V), VBAT tied to the 3.0V rail (~3000 mV), or regulator
+ * shorted through to the battery (~4.2 V). */
 #define TEST_THRESHOLD_MV_VBATT_PIN_LOWER          1710
-#define TEST_THRESHOLD_MV_VBATT_PIN_UPPER          1890
+#define TEST_THRESHOLD_MV_VBATT_PIN_UPPER          2200
 /* 1.9V regulator */
 #define TEST_THRESHOLD_MV_VBATT_PIN_LOWER_SR48_6_0 1850
 #define TEST_THRESHOLD_MV_VBATT_PIN_UPPER_SR48_6_0 1950
