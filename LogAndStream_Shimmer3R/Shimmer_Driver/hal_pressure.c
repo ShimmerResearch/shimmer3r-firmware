@@ -16,13 +16,17 @@
 
 static uint8_t bmp581InUse = 0;
 static uint8_t pressureSensorDetected = 0;
+static uint8_t identifiedByChipId = 0;
 
-/* Determine whether a BMP390 or a BMP581 is fitted. The SR number indicates
- * which sensor should be present (DEV-818) and the chip ID is read as a
- * secondary check (BMP581 = 0x50 @ reg 0x01, BMP390 = 0x60 @ reg 0x00).
- * Trusting the chip that responds keeps the firmware robust during the
- * BMP390->BMP581 supply transition. Must only be called while the sensing
- * rail is powered and SPI1 is initialised. */
+/* Determine whether a BMP390 or a BMP581 is fitted. The chip ID is read first
+ * (BMP581 = 0x50 @ reg 0x01, BMP390 = 0x60 @ reg 0x00): if exactly one part
+ * answers, that part is used. Trusting the chip that responds keeps the
+ * firmware robust during the BMP390->BMP581 supply transition. Only when that
+ * is inconclusive - neither part answers, or both do - does the SR number
+ * decide which sensor should be present (DEV-818). Which of the two decided is
+ * recorded in the SD header (DEV-1123), because the fallback is what a damaged
+ * or missing sensor looks like. Must only be called while the sensing rail is
+ * powered and SPI1 is initialised. */
 void PressureSensor_detect(void)
 {
   uint8_t bmp581IdOk, bmp390IdOk;
@@ -36,12 +40,14 @@ void PressureSensor_detect(void)
   if (bmp581IdOk != bmp390IdOk)
   {
     bmp581InUse = bmp581IdOk;
+    identifiedByChipId = 1;
   }
   else
   {
     /* Ambiguous or no response - fall back to what the SR number says
      * should be fitted */
     bmp581InUse = ShimBrd_isBmp581PresentPerSrNumber();
+    identifiedByChipId = 0;
   }
   pressureSensorDetected = 1;
 }
@@ -131,4 +137,11 @@ uint8_t isBmp390InUse(void)
 uint8_t isBmp581InUse(void)
 {
   return bmp581InUse;
+}
+
+/* Non-zero when PressureSensor_detect() chose the sensor because exactly one
+ * chip answered its ID check; zero when it fell back to the SR number. */
+uint8_t PressureSensor_wasIdentifiedByChipId(void)
+{
+  return identifiedByChipId;
 }
