@@ -72,6 +72,10 @@ static volatile uint8_t btLastTxWasRaw = 0;
  * across commands sent outside it. BtTransmitAbort() must never cut one of
  * these short. */
 static volatile uint8_t btCmdTxInFlight = 0;
+/* BtTransmitAbort() owns the UART TX: it found no command in flight and is
+ * aborting. appOutput() starts no command until it is clear, so one cannot
+ * begin between that check and the abort and be cut short. */
+static volatile uint8_t btTxAbortInProgress = 0;
 /* Retry budget for a rejected SPP_SEND. Deliberately SHORT: a retrying payload
  * serialises the whole TX chain behind it, so the budget must stay well under
  * the host's per-command timeout (~2 s). At ~1.4 ms per 0x0502
@@ -229,10 +233,25 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
 
   //ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *)data, length);
   //ret_val = HAL_UART_Transmit(huart, (uint8_t *)data, length, 1500*HAL_GetTickFreq());
-  /* Before the transmit starts: a short frame can complete, and its callback
-   * clear the flag, before HAL_UART_Transmit_IT() even returns. */
-  btCmdTxInFlight = 1;
-  ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
+  /* The abort check, the flag and the start are one step: BtTransmitAbort()
+   * can run from a lower-priority interrupt, and this from a higher one. The
+   * flag is set before the transmit starts because a short frame can complete,
+   * and its callback clear the flag, before HAL_UART_Transmit_IT() returns -
+   * with interrupts masked here that callback runs after the restore, so the
+   * order still holds. HAL_UART_Transmit_IT() only arms the TX interrupt; it
+   * does not wait. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  if (btTxAbortInProgress)
+  {
+    ret_val = HAL_BUSY;
+  }
+  else
+  {
+    btCmdTxInFlight = 1;
+    ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
+  }
+  __set_PRIMASK(primask);
 
   if (ret_val != HAL_OK)
   {
@@ -628,12 +647,28 @@ void BtTransmitAbort(void)
     return;
   }
 
-  if (btCmdTxInFlight)
+  /* Check and claim in one step. This can run from the BT_CYSPP EXTI (the
+   * lowest priority), and a higher-priority interrupt could otherwise start a
+   * command between finding none in flight and the abort, which would then cut
+   * that command short. The abort itself runs with interrupts enabled:
+   * HAL_DMA_Abort() polls for the channel suspend against a HAL_GetTick()
+   * timeout, which masked interrupts would freeze. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  uint8_t cmdInFlight = btCmdTxInFlight;
+  if (!cmdInFlight)
+  {
+    btTxAbortInProgress = 1;
+  }
+  __set_PRIMASK(primask);
+
+  if (cmdInFlight)
   {
     return;
   }
 
   HAL_UART_AbortTransmit(huartBtPtr);
+  btTxAbortInProgress = 0;
 }
 
 void resetEzsPendingResponse(void)
