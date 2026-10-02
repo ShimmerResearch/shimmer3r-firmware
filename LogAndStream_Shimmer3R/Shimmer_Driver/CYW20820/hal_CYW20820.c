@@ -597,11 +597,11 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
     return HAL_SHIM_BUSY;
   }
 
-  /* The frame's 8-bit payload length caps one SPP_SEND at
-   * EZS_SPP_SEND_MAX_DATA_BYTES of data. An oversized frame is worse than a
-   * refused one: the module never answers a corrupt frame, so
-   * pending_response would stay set and mute TX for the rest of the power
-   * cycle. */
+  /* The module's command-length limit caps one SPP_SEND at
+   * EZS_SPP_SEND_MAX_DATA_BYTES of data (see hal_CYW20820.h). An oversized
+   * frame is worse than a refused one: the module rejects every such frame
+   * with EVT_SYSTEM_ERROR 0x0209, so the chunk is retried to the limit and
+   * then dropped - the data is lost rather than late. */
   if (len > EZS_SPP_SEND_MAX_DATA_BYTES)
   {
     SHIMMER_PRINTF("BtTransmit: %u > SPP_SEND max %u\r\n", len,
