@@ -358,6 +358,9 @@ ezs_input_result_t (*EZSerial_HardwareInput)(uint8_t *inByte, uint16_t timeout);
 
 /**************************** Shimmer Start ***********************************/
 ezs_input_result_t lastEzsByteParseResult;
+/* Bytes of an overflowed frame still to come after the byte that overflowed
+ * it. See ezs_parseSingleByte(). */
+uint16_t ezsOverflowRemainingByteCount;
 
 /**************************** Shimmer End ***********************************/
 
@@ -804,9 +807,25 @@ ezs_packet_t *ezs_parseSingleByte(uint8_t b)
   ////TODO don't hard code type
   //ezs_packet_type_t type = EZS_PACKET_TYPE_RESPONSE;
 
+  /* Captured before the parser can reset itself on an overflow */
+  uint16_t lengthBefore = ezs_rx_packet_length;
+
   /* byte read, send it to parser */
   ezs_input_result_t result = EZSerial_Parse(b);
   lastEzsByteParseResult = result;
+
+  /* A frame longer than ezs_packet_t (a variable field over
+   * EZS_LONGUINT8A_ACTUAL_MAX) overflows it: the parser resets and drops this
+   * byte, but the rest of the frame is still coming, and parsed as frames of
+   * its own it can swallow the real ones after it. The header gave the
+   * frame's full length, so report how much of it remains for the caller to
+   * discard. */
+  ezsOverflowRemainingByteCount = 0;
+  if (result == EZS_INPUT_RESULT_BUFFER_OVERFLOW
+      && ezs_rx_packet_length_expected > (uint16_t) (lengthBefore + 1U))
+  {
+    ezsOverflowRemainingByteCount = ezs_rx_packet_length_expected - lengthBefore - 1U;
+  }
 
   ///* check for completion and type */
   //if (result == EZS_INPUT_RESULT_PACKET_COMPLETE &&
@@ -854,6 +873,13 @@ uint16_t getEzsPacketLength(void)
 ezs_input_result_t getLastEzsByteParseResult(void)
 {
   return lastEzsByteParseResult;
+}
+
+/* After an EZS_INPUT_RESULT_BUFFER_OVERFLOW, how many more bytes belong to the
+ * overflowed frame. 0 after any other result. */
+uint16_t getEzsOverflowRemainingByteCount(void)
+{
+  return ezsOverflowRemainingByteCount;
 }
 
 /**************************** Shimmer End *************************************/

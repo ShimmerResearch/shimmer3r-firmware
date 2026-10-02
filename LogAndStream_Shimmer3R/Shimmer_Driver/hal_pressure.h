@@ -4,8 +4,9 @@
  * Thin dispatch layer between the BMP390 (BMP3 API) and BMP581 (BMP5 API)
  * pressure sensor HALs. The BMP581 is a pin-compatible replacement for the
  * BMP390 fitted to up-rev'd Shimmer3R boards (DEV-95/DEV-818). Which sensor
- * is fitted is determined at boot from the SR number, confirmed by reading
- * the chip ID.
+ * is fitted is determined at boot by reading the chip ID, falling back to the
+ * SR number only when that is inconclusive; which of the two decided is
+ * recorded in the SD header (DEV-1123).
  *
  *  Created on: Jul 7, 2026
  *      Author: SuhasVarna
@@ -31,5 +32,6 @@ uint8_t PressureSensor_selfTest(void);
 
 uint8_t isBmp390InUse(void);
 uint8_t isBmp581InUse(void);
+uint8_t PressureSensor_wasIdentifiedByChipId(void);
 
 #endif /* HAL_PRESSURE_H_ */

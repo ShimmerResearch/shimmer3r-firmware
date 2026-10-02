@@ -60,12 +60,18 @@ volatile uint8_t pending_response = 0;
  * pending_response / UART-TX-busy guards in BtTransmit(). */
 static longuint8a_t sppSendData;
 static volatile uint16_t sppSendRetryCount = 0;
-/* What BtTransmit() last handed to the UART: 1 = raw bridged bytes (chain the
- * next chunk from the TX-complete callback), 0 = an SPP_SEND command (the
- * module's response drives the chain instead). volatile: BtTransmit() runs
- * from both main and interrupt context, and this is read in the TX-complete
- * callback. */
-static volatile uint8_t btLastTxWasRaw = 0;
+/* An EZ-Serial command frame is clocking out of the UART: set just before
+ * appOutput() starts it, cleared on TX completion. Anything else on this UART
+ * is a raw bridged transfer from BtTransmit(), so this one flag also tells the
+ * TX-complete callback what just finished - a command (the module's response
+ * drives the chain) or raw bytes (the callback drives it). BtTransmitAbort()
+ * must never cut a command short. volatile: set in main or interrupt
+ * context, read in the TX-complete callback. */
+static volatile uint8_t btCmdTxInFlight = 0;
+/* BtTransmitAbort() owns the UART TX: it found no command in flight and is
+ * aborting. appOutput() starts no command until it is clear, so one cannot
+ * begin between that check and the abort and be cut short. */
+static volatile uint8_t btTxAbortInProgress = 0;
 /* Retry budget for a rejected SPP_SEND. Deliberately SHORT: a retrying payload
  * serialises the whole TX chain behind it, so the budget must stay well under
  * the host's per-command timeout (~2 s). At ~1.4 ms per 0x0502
@@ -87,15 +93,27 @@ uint8_t rxBuf[512];
 volatile uint16_t expectedByteCount;
 
 volatile uint8_t waitingForBtBoot = 0;
-char btBootMsg[160] = { 0 }; //Measured to be 150 chars with v1.4.12.12
-volatile uint8_t btBootMsgIndex = 0;
+/* The two boot lines (BOOT banner + ASC event). Measured 150 chars on
+ * v1.4.12.12, 154 on v1.4.18.18 and 163 on a v1.4.18.18 test image, which
+ * overflowed the previous 160-byte buffer: the index that follows it in RAM
+ * was overwritten and the captured banner came out garbled. Sized with
+ * headroom, and a longer banner is now truncated rather than overflowed. */
+char btBootMsg[256] = { 0 };
+volatile uint16_t btBootMsgIndex = 0;
 volatile uint8_t btBootMsgLineCount = 0;
+volatile uint8_t btBootMsgPrevByte = 0;
 
 volatile uint16_t btRxWaitByteCount = 0;
 
 /* volatile: written by setSkippingBytesCount() from the boot sequence and
  * decremented inside the UART RX-complete callback. */
 volatile uint8_t skippingBytesCount = 0;
+
+/* The rest of an EZ-Serial frame too long for the parser, being discarded so
+ * its bytes are not parsed as frames of their own. Separate from
+ * skippingBytesCount, whose 8 bits suit the boot-time echoes it skips: this
+ * can be up to ~1.5 KB. Only touched inside the UART RX-complete callback. */
+static uint16_t ezsOverflowDrainCount = 0;
 
 /*******************************************************************************
  * Interrupt Handler Name: TimerInterruptHandler
@@ -223,14 +241,46 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
 
   //ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *)data, length);
   //ret_val = HAL_UART_Transmit(huart, (uint8_t *)data, length, 1500*HAL_GetTickFreq());
-  ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
+  /* The checks, the flag and the start are one step: BtTransmitAbort() and
+   * BtTransmit() can run from interrupts of either priority relative to this.
+   * - A raw bridged transfer still running means HAL_UART_Transmit_IT() would
+   *   refuse anyway. Refusing here, before the flag is set, also stops that
+   *   transfer's completion - if it landed in between - being taken for this
+   *   command's by the TX-complete callback, which would drop the raw chain.
+   * - While BtTransmitAbort() holds the UART, a command started now would be
+   *   cut short by it.
+   * The flag is set before the transmit starts because a short frame can
+   * complete, and its callback clear the flag, before HAL_UART_Transmit_IT()
+   * returns - with interrupts masked here that callback runs after the
+   * restore, so the order still holds. HAL_UART_Transmit_IT() only arms the
+   * TX interrupt; it does not wait. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  if (btTxAbortInProgress || isBtUartTxBusy())
+  {
+    ret_val = HAL_BUSY;
+  }
+  else
+  {
+    btCmdTxInFlight = 1;
+    ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
+    if (ret_val != HAL_OK)
+    {
+      /* Still masked: once interrupts are back a raw transfer could start
+       * and complete, and a flag left set would have it taken for a
+       * command's completion */
+      btCmdTxInFlight = 0;
+    }
+  }
+  __set_PRIMASK(primask);
 
   if (ret_val != HAL_OK)
   {
     /* Nothing was sent, so no response is coming: leaving pending_response
      * set here would block every later command forever, and returning
      * DATA_WRITTEN would tell the caller the command is in flight when it is
-     * not. Roll back and report the failure so callers retry. */
+     * not. Roll back and report the failure so callers retry. btCmdTxInFlight
+     * is already clear: never set, or cleared above while still masked. */
     SHIMMER_PRINTF("UART transmit problem in appOutput\r\n");
     pending_response = 0;
     return EZS_OUTPUT_RESULT_NO_HANDLER;
@@ -287,6 +337,18 @@ ezs_input_result_t appInput(uint8_t *inByte, uint16_t timeout)
 
 HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length)
 {
+  /* rxBuf bounds every receive. The length can come from an inbound EZ-Serial
+   * header, whose 11-bit length field allows packets of up to 2052 bytes -
+   * far past the end of rxBuf. The EZ-Serial parser takes one byte at a time,
+   * so a longer packet arrives over several receives. Arriving is not the
+   * same as parsing: the parser holds the whole packet in an ezs_packet_t,
+   * whose largest variable field is EZS_LONGUINT8A_ACTUAL_MAX (512) bytes, and
+   * resets on anything longer. btUartDmaRxCpltCallback() then discards the
+   * rest of that packet, so the stream stays in step. */
+  if (length > sizeof(rxBuf))
+  {
+    length = sizeof(rxBuf);
+  }
   expectedByteCount = length;
   //HAL_StatusTypeDef status = HAL_UART_AbortReceive(huart);
 
@@ -315,15 +377,25 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 {
   uint16_t count = 1;
 
-  uint8_t i = 0;
+  /* Same width as expectedByteCount: a uint8_t index wrapped at 256 and never
+   * reached a longer count, spinning forever inside this interrupt. */
+  uint16_t i = 0;
   while (i < expectedByteCount)
   {
     if (waitingForBtBoot)
     {
-      btBootMsg[btBootMsgIndex++] = rxBuf[i];
+      uint8_t bootByte = rxBuf[i];
+      /* Keep the last byte as the NUL terminator. Line ends are detected from
+       * the byte stream rather than the buffer, so a banner too long to store
+       * still completes the boot step instead of leaving it waiting. */
+      if (btBootMsgIndex < (sizeof(btBootMsg) - 1U))
+      {
+        btBootMsg[btBootMsgIndex++] = (char) bootByte;
+      }
       //SHIMMER_PRINTF("S0=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
-      if (btBootMsgIndex > 0 && btBootMsg[btBootMsgIndex - 2] == 0x0D
-          && btBootMsg[btBootMsgIndex - 1] == 0x0A)
+      uint8_t lineEnded = (btBootMsgPrevByte == 0x0D && bootByte == 0x0A);
+      btBootMsgPrevByte = bootByte;
+      if (lineEnded)
       {
         btBootMsgLineCount++;
         if (btBootMsgLineCount == 2)
@@ -341,6 +413,14 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       SHIMMER_PRINTF("S1=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
       skippingBytesCount--;
+      i += 1;
+    }
+    else if (ezsOverflowDrainCount > 0)
+    {
+      ezsOverflowDrainCount--;
+      /* Receive exactly the rest of the frame, then the next frame's first
+       * byte, so no later receive waits on bytes that are not coming */
+      count = (ezsOverflowDrainCount > 0U) ? ezsOverflowDrainCount : 1U;
       i += 1;
     }
     else if (BT_isRawPipeEngagedNow())
@@ -401,6 +481,17 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
             SHIMMER_PRINTF("S3=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
           }
+
+          if (result == EZS_INPUT_RESULT_BUFFER_OVERFLOW)
+          {
+            /* The frame outgrew ezs_packet_t and the parser reset partway
+             * through it. Discard the rest rather than parse it as frames. */
+            ezsOverflowDrainCount = getEzsOverflowRemainingByteCount();
+            count = (ezsOverflowDrainCount > 0U) ? ezsOverflowDrainCount : 1U;
+            SHIMMER_PRINTF("BT RX: EZ-Serial frame too long for the parser, "
+                           "discarding %u bytes\r\n",
+                ezsOverflowDrainCount);
+          }
         }
       }
       i += 1;
@@ -420,9 +511,19 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
+  /* Decide from what just completed. This used to read btLastTxWasRaw, which
+   * BtTransmit() could only set after HAL_UART_Transmit_DMA() returned - and a
+   * 1-byte raw transfer (the ACK that starts a data-rate test) can complete
+   * before then, so the callback saw the previous transfer's value. After a
+   * classic SPP_SEND session that was 0: the raw chain was never advanced and
+   * BLE went silent, with btTxInProgress stuck at 1 and nothing in flight
+   * (bench, SWD-confirmed). appOutput() marks a command before starting it, so
+   * this cannot lag the way the old flag did. */
+  uint8_t completedCmd = btCmdTxInFlight;
+  btCmdTxInFlight = 0;
   ShimBt_TxCpltCallback();
 
-  if (btLastTxWasRaw)
+  if (!completedCmd)
   {
     /* A raw bridged transfer has no SPP_SEND response to drive the transfer
      * chain, so the DMA completion is the moment to hand the UART the next
@@ -444,16 +545,20 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
    * classic SPP link to send on). */
   if (getBtCysppState())
   {
-    HAL_StatusTypeDef rawRet = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
-    if (rawRet == HAL_OK)
+    /* One step with appOutput()'s check-and-start: HAL_UART_Transmit_DMA()'s
+     * own READY test and BUSY_TX claim are two steps, so an interrupt calling
+     * appOutput() between them would start a command on the same UART. Held
+     * off while BtTransmitAbort() owns the UART, whose abort would otherwise
+     * leave gState READY over a transfer started mid-abort. The DMA start
+     * only programs the channel; it does not wait. */
+    HAL_StatusTypeDef rawRet = HAL_BUSY;
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    if (!btTxAbortInProgress)
     {
-      /* Only claim a raw transfer once one is genuinely in flight. Setting
-       * this before the call left it stale on HAL_BUSY, and because
-       * appOutput() sends SPP_SEND frames with HAL_UART_Transmit_IT the TX
-       * completion of a later SPP_SEND lands in the same callback - which
-       * would then have driven the raw transfer chain spuriously. */
-      btLastTxWasRaw = 1;
+      rawRet = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
     }
+    __set_PRIMASK(primask);
     return (HAL_StatusTypeDefShimmer) rawRet;
   }
 
@@ -494,25 +599,17 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
     return HAL_SHIM_BUSY;
   }
 
-  /* The frame's 8-bit payload length caps one SPP_SEND at
-   * EZS_SPP_SEND_MAX_DATA_BYTES of data. An oversized frame is worse than a
-   * refused one: the module never answers a corrupt frame, so
-   * pending_response would stay set and mute TX for the rest of the power
-   * cycle. */
+  /* The module's command-length limit caps one SPP_SEND at
+   * EZS_SPP_SEND_MAX_DATA_BYTES of data (see hal_CYW20820.h). An oversized
+   * frame is worse than a refused one: the module rejects every such frame
+   * with EVT_SYSTEM_ERROR 0x0209, so the chunk is retried to the limit and
+   * then dropped - the data is lost rather than late. */
   if (len > EZS_SPP_SEND_MAX_DATA_BYTES)
   {
     SHIMMER_PRINTF("BtTransmit: %u > SPP_SEND max %u\r\n", len,
         (uint16_t) EZS_SPP_SEND_MAX_DATA_BYTES);
     return HAL_SHIM_ERROR;
   }
-
-  /* Safe to reclassify the transfer chain only here, past the guards above:
-   * isBtUartTxBusy() has confirmed the UART TX state is READY, so no raw DMA
-   * from a just-ended data pipe can still be in flight. Clearing this any
-   * earlier (it used to be set at the top of this branch) meant a raw
-   * transfer completing during the transition would find the flag already 0
-   * and never advance the raw chain, stalling the pipe. */
-  btLastTxWasRaw = 0;
 
   sppSendData.length = len;
   memcpy(sppSendData.data, buf, len);
@@ -577,9 +674,24 @@ void BtTransmitAckLast(void)
   sppSendRetryCount = 0;
 }
 
-/* Overrides the weak no-op in shimmer_bt_uart.c. Cancels the DMA transfer
- * started by BtTransmit() so the TX-complete callback cannot fire afterwards
- * and advance the ring read index over a buffer that has just been reset.
+/* Overrides the weak no-op in shimmer_bt_uart.c, which calls it from
+ * ShimBt_clearBtTxBuf() so that no stale data goes out after the clear and the
+ * TX-complete callback cannot advance the read index over the reset ring.
+ *
+ * An EZ-Serial command frame is never cut short. The module holds a partial
+ * command until its own timeout, then raises EVT_SYSTEM_ERROR 0x0207 and
+ * discards it. Aborting SPP_SEND frames that way cost that timeout on every
+ * data-rate test stop (bench-confirmed, one 0x0207 per stop), and the
+ * system-error recovery then re-sent the held payload anyway. So the frame
+ * is left to finish, and the held SPP_SEND payload is dropped instead - which
+ * is what actually keeps stale data from being re-sent: a busy (0x0109) or
+ * failed response to the frame in flight finds nothing to retry and moves
+ * the chain on. Finishing is safe for the ring: the frame lives in
+ * ezs_tx_packet, not the ring, and on this path TX completion only advances
+ * rdIdx by numBytesBeingRead, which the caller zeroes before the reset.
+ *
+ * A raw bridged DMA transfer is still aborted: the module only forwards those
+ * bytes, so cutting one just means fewer stale bytes.
  *
  * Only on an initialised UART. BtStop() runs btDeinit() - HAL_UART_Abort()
  * then HAL_UART_DeInit() - before ShimBt_stopCommon() clears the TX ring and
@@ -593,10 +705,39 @@ void BtTransmitAckLast(void)
  * in btDeinit() has already stopped any transfer in flight. */
 void BtTransmitAbort(void)
 {
-  if (huartBtPtr != NULL && huartBtPtr->gState != HAL_UART_STATE_RESET)
+  sppSendData.length = 0;
+  sppSendRetryCount = 0;
+
+  if (huartBtPtr == NULL || huartBtPtr->gState == HAL_UART_STATE_RESET)
   {
-    HAL_UART_AbortTransmit(huartBtPtr);
+    /* De-initialised: btDeinit()'s HAL_UART_Abort() ended any transfer
+     * without a completion callback, so nothing is in flight */
+    btCmdTxInFlight = 0;
+    return;
   }
+
+  /* Check and claim in one step. This can run from the BT_CYSPP EXTI (the
+   * lowest priority), and a higher-priority interrupt could otherwise start a
+   * command between finding none in flight and the abort, which would then cut
+   * that command short. The abort itself runs with interrupts enabled:
+   * HAL_DMA_Abort() polls for the channel suspend against a HAL_GetTick()
+   * timeout, which masked interrupts would freeze. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  uint8_t cmdInFlight = btCmdTxInFlight;
+  if (!cmdInFlight)
+  {
+    btTxAbortInProgress = 1;
+  }
+  __set_PRIMASK(primask);
+
+  if (cmdInFlight)
+  {
+    return;
+  }
+
+  HAL_UART_AbortTransmit(huartBtPtr);
+  btTxAbortInProgress = 0;
 }
 
 void resetEzsPendingResponse(void)
@@ -630,6 +771,7 @@ void setWaitingForBtBoot(uint8_t state)
     memset(&btBootMsg[0], 0, sizeof(btBootMsg));
     btBootMsgIndex = 0;
     btBootMsgLineCount = 0;
+    btBootMsgPrevByte = 0;
   }
 }
 
