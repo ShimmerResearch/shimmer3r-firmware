@@ -2063,10 +2063,12 @@ bool getBtCysppState(void)
  * (gap_disconnected, adv_state_changed). The cached state is cleared only by
  * the pin's EXTI handler, and the BT UART RX interrupt can preempt that, so the
  * demux saw a stale 'true' and fed those event bytes to the Shimmer command
- * parser, which executed whatever they happened to spell: SET_WR_ACCEL_RANGE
- * on the bench, and START_STREAMING (a stream nobody asked for, after the BLE
- * link had closed) from Shimmer Capture Web. Bench capture, 2026-10-02: the
- * EXTI handler's own print was cut in half by the parser's input bytes.
+ * parser, which executed whatever they happened to spell. Bench capture,
+ * 2026-10-02 (diagnostic build): the EXTI handler's own print was cut in half
+ * by the parser's input bytes, and SET_WR_ACCEL_RANGE ran, sent by nobody.
+ * Separately, Shimmer Capture Web left a sensor streaming after its BLE link
+ * closed with no START_STREAMING from the host; this race is the likely cause,
+ * but that case was not reproduced.
  * Reading the pin closes the window. The cached state still gates it, because
  * the pin alone does not say whether a data pipe was ever opened. */
 bool BT_isRawPipeEngagedNow(void)
