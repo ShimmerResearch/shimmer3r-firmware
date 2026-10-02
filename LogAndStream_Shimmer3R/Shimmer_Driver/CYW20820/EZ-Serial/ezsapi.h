@@ -3380,6 +3380,7 @@ ezs_packet_t *ezs_parseSingleByte(uint8_t b);
 uint16_t getEzsRemainingByteCount(void);
 uint16_t getEzsPacketLength(void);
 ezs_input_result_t getLastEzsByteParseResult(void);
+uint16_t getEzsOverflowRemainingByteCount(void);
 
 /**************************** Shimmer End *************************************/
 
