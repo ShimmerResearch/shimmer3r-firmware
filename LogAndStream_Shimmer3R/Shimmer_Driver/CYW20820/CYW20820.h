@@ -41,10 +41,12 @@
  *   transparent), raw UART <-> SPP, ~100 KB/s to a Windows host. SPP_SEND
  *   does not exist on these modules.
  * - Modules v1.4.17+: NON-TRANSPARENT (SPPM,M=3, SPP_SEND commands),
- *   measured lossless 55 KB/s. Their transparent bridge on v1.4.18.18 frames
- *   every UART byte as its own RFCOMM frame (HCI-verified, ~0.4 KB/s to a
- *   Windows host; raised with Ezurio/Infineon) - once a fixed module release
- *   exists, add it to the policy so those modules go transparent again.
+ *   measured lossless 55 KB/s with the old 252-byte cap and ~64 KB/s with
+ *   300 (see EZS_SPP_SEND_MAX_DATA_BYTES). Their transparent bridge on
+ *   v1.4.18.18 frames every UART byte as its own RFCOMM frame (HCI-verified,
+ *   ~0.4 KB/s to a Windows host; raised with Ezurio/Infineon) - once a fixed
+ *   module release exists, add it to the policy so those modules go
+ *   transparent again.
  *
  * TRANSPARANT_MODE used to be a compile-time switch here; it is gone, and
  * any surviving reference is a bug. */

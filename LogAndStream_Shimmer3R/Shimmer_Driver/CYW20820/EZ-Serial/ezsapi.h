@@ -96,14 +96,13 @@
  * 8-bit length field, silently corrupting any command payload over 255
  * bytes.
  *
- * To be clear about what this does and does not buy: no command we send today
- * exceeds 255 bytes. Module FW v1.4.18.18 only honours the 8-bit inbound
- * length field itself (bench-verified - a 1020-byte SPP_SEND was misparsed),
- * so SPP_SEND payloads stay capped at EZS_SPP_SEND_MAX_DATA_BYTES (252) in
- * hal_CYW20820.h and >252 B SPP_SEND is NOT supported on current modules.
- * The value here is the encoder being correct per the wire format, plus the
- * over-length refusal in ezs_cmd_va(), which turns "silently emit a corrupt
- * frame the module will never answer" into a caller-visible error. */
+ * This is what lets SPP_SEND carry more than 252 data bytes: module FW
+ * v1.4.18.18 does honour the MSBs on inbound commands, accepting 258- and
+ * 303-byte payloads (bench-verified 2026-10-01/02). Its limit is a separate,
+ * smaller command-length limit, which caps SPP_SEND at
+ * EZS_SPP_SEND_MAX_DATA_BYTES (300) in hal_CYW20820.h. The over-length
+ * refusal in ezs_cmd_va() still turns "silently emit a frame that cannot be
+ * encoded" into a caller-visible error. */
 #define ENABLE_FIX_10 1
 //-------------- Shimmer added End -------------------------//
 

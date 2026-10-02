@@ -74,23 +74,36 @@ void setBtBootModeSubsequentBoot(void);
 extern void ezsHandler(ezs_packet_t *packet) __attribute__((weak));
 extern void ezsHandlerShimmer(ezs_packet_t *packet) __attribute__((weak));
 
-/* Largest data payload one EZ-Serial SPP_SEND command carries. Although the
- * wire format encodes 11-bit payload lengths (Fix 10) and the module's own
- * events use them, IF820 FW v1.4.18.18 does NOT honour the length-MSB bits
- * for inbound commands: a 1020-byte SPP_SEND was bench-tested 2026-08-25 and
- * the module consumed 255 bytes, then raised EVT_SYSTEM_ERROR 0x0209
- * (invalid checksum) twice and 0x0207 (command timeout) as it misparsed the
- * remainder. Commands are therefore capped at a 255-byte payload: 1
- * conn_handle + 2-byte length prefix + 252 data bytes. Kept in sync with
- * BT_TX_MAX_DMA_CHUNK in shimmer_bt_uart.h via a static assert in
+/* Largest data payload one EZ-Serial SPP_SEND command carries: exactly the
+ * module's own limit, measured on IF820 FW v1.4.18.18 (release image; a
+ * vendor test image agrees) on 2026-10-01/02 with the cap swept from 255 to
+ * 400 bytes, byte by byte from 300 to 305:
+ *
+ *   data bytes   on the wire   result
+ *   255, 300     263, 308      every frame accepted, stream intact
+ *   301 and up   309 and up    every frame rejected with EVT_SYSTEM_ERROR
+ *                              0x0209 (invalid checksum), nothing sent
+ *
+ * The module does honour the 11-bit length field (Fix 10): the 258- and
+ * 303-byte payloads above need the type-byte MSBs. A 1020-byte SPP_SEND that
+ * failed the same way on 2026-08-25 was misread as the MSBs being ignored,
+ * which is why this was once 252. Over-length frames are reported as a bad
+ * checksum, not 0x020A (invalid command length), so a cap set even slightly
+ * too high silently stops all data.
+ *
+ * Verified on v1.4.18.18 only. BT_selectDataPath() also sends v1.4.17
+ * modules down this path, and their limit has not been measured. Kept in sync
+ * with BT_TX_MAX_DMA_CHUNK in shimmer_bt_uart.h via a static assert in
  * hal_CYW20820.c. */
-#define EZS_SPP_SEND_MAX_DATA_BYTES 252U
+#define EZS_SPP_SEND_MAX_DATA_BYTES 300U
 
 /* Bench diagnostic: print min/avg/max EZ-Serial command->response round-trip
  * times, one line per 256 completed commands. During a data-rate test this is
  * effectively the SPP_SEND RTT - the quantity that caps SPP_SEND-framing
- * throughput at chunk_size / RTT (measured 3.1 ms avg / 252 B = 55 KB/s on
- * v1.4.18.18). Off by default; flip to 1 when investigating throughput. */
+ * throughput at chunk_size / RTT. Measured on v1.4.18.18: 3.1 ms avg at 255 B
+ * and 3.5 ms at 300 B - roughly 1.1 ms fixed plus 8 us per byte - giving
+ * ~58 KB/s and ~64 KB/s with the module's busy retries. Off by default; flip
+ * to 1 when investigating throughput. */
 #define ENABLE_BT_CMD_RTT_STATS     0
 
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len);
