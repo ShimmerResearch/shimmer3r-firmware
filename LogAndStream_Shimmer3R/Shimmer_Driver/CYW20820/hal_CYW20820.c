@@ -343,14 +343,16 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       skippingBytesCount--;
       i += 1;
     }
-    else if (getBtCysppState())
+    else if (BT_isRawPipeEngagedNow())
     {
       /* Parse as Shimmer packet, gated on the LIVE data-mode state from the
-       * CYSPP pin. Bench (2026-08-25, v1.4.18.18): the module actively hops
-       * between SPP data mode (pin LOW - UART bytes are bridged payload) and
-       * command mode (pin HIGH - UART bytes are EZ-Serial frames, e.g. the
-       * connection/pairing/disconnect events it exits data mode to deliver),
-       * even while a connection is up. The pin is therefore the demux
+       * CYSPP pin - read from the pin itself here, not only the cached state
+       * its EXTI handler keeps, which this interrupt can preempt (see
+       * BT_isRawPipeEngagedNow). Bench (2026-08-25, v1.4.18.18): the module
+       * actively hops between SPP data mode (pin LOW - UART bytes are bridged
+       * payload) and command mode (pin HIGH - UART bytes are EZ-Serial frames,
+       * e.g. the connection/pairing/disconnect events it exits data mode to
+       * deliver), even while a connection is up. The pin is therefore the demux
        * signal, and neither connection state (earlier attempt: the in-band
        * connected event got eaten the moment the gate opened) nor a sticky
        * first-connection flag (eats every event after the first connection
