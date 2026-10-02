@@ -103,6 +103,12 @@ volatile uint16_t btRxWaitByteCount = 0;
  * decremented inside the UART RX-complete callback. */
 volatile uint8_t skippingBytesCount = 0;
 
+/* The rest of an EZ-Serial frame too long for the parser, being discarded so
+ * its bytes are not parsed as frames of their own. Separate from
+ * skippingBytesCount, whose 8 bits suit the boot-time echoes it skips: this
+ * can be up to ~1.5 KB. Only touched inside the UART RX-complete callback. */
+static uint16_t ezsOverflowDrainCount = 0;
+
 /*******************************************************************************
  * Interrupt Handler Name: TimerInterruptHandler
  ****************************************************************************//**
@@ -296,7 +302,11 @@ HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length)
   /* rxBuf bounds every receive. The length can come from an inbound EZ-Serial
    * header, whose 11-bit length field allows packets of up to 2052 bytes -
    * far past the end of rxBuf. The EZ-Serial parser takes one byte at a time,
-   * so a longer packet simply arrives over several receives. */
+   * so a longer packet arrives over several receives. Arriving is not the
+   * same as parsing: the parser holds the whole packet in an ezs_packet_t,
+   * whose largest variable field is EZS_LONGUINT8A_ACTUAL_MAX (512) bytes, and
+   * resets on anything longer. btUartDmaRxCpltCallback() then discards the
+   * rest of that packet, so the stream stays in step. */
   if (length > sizeof(rxBuf))
   {
     length = sizeof(rxBuf);
@@ -367,6 +377,14 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       skippingBytesCount--;
       i += 1;
     }
+    else if (ezsOverflowDrainCount > 0)
+    {
+      ezsOverflowDrainCount--;
+      /* Receive exactly the rest of the frame, then the next frame's first
+       * byte, so no later receive waits on bytes that are not coming */
+      count = (ezsOverflowDrainCount > 0U) ? ezsOverflowDrainCount : 1U;
+      i += 1;
+    }
     else if (getBtCysppState())
     {
       /* Parse as Shimmer packet, gated on the LIVE data-mode state from the
@@ -422,6 +440,17 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
             SHIMMER_PRINTF("S3=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
+          }
+
+          if (result == EZS_INPUT_RESULT_BUFFER_OVERFLOW)
+          {
+            /* The frame outgrew ezs_packet_t and the parser reset partway
+             * through it. Discard the rest rather than parse it as frames. */
+            ezsOverflowDrainCount = getEzsOverflowRemainingByteCount();
+            count = (ezsOverflowDrainCount > 0U) ? ezsOverflowDrainCount : 1U;
+            SHIMMER_PRINTF("BT RX: EZ-Serial frame too long for the parser, "
+                           "discarding %u bytes\r\n",
+                ezsOverflowDrainCount);
           }
         }
       }
