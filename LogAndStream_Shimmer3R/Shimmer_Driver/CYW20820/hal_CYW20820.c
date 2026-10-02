@@ -252,6 +252,13 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
   {
     btCmdTxInFlight = 1;
     ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
+    if (ret_val != HAL_OK)
+    {
+      /* Still masked: once interrupts are back a raw transfer could start
+       * and complete, and a flag left set would have it taken for a
+       * command's completion */
+      btCmdTxInFlight = 0;
+    }
   }
   __set_PRIMASK(primask);
 
@@ -260,9 +267,9 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
     /* Nothing was sent, so no response is coming: leaving pending_response
      * set here would block every later command forever, and returning
      * DATA_WRITTEN would tell the caller the command is in flight when it is
-     * not. Roll back and report the failure so callers retry. */
+     * not. Roll back and report the failure so callers retry. btCmdTxInFlight
+     * is already clear: never set, or cleared above while still masked. */
     SHIMMER_PRINTF("UART transmit problem in appOutput\r\n");
-    btCmdTxInFlight = 0;
     pending_response = 0;
     return EZS_OUTPUT_RESULT_NO_HANDLER;
   }
@@ -483,7 +490,21 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
    * classic SPP link to send on). */
   if (getBtCysppState())
   {
-    return (HAL_StatusTypeDefShimmer) HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
+    /* One step with appOutput()'s check-and-start: HAL_UART_Transmit_DMA()'s
+     * own READY test and BUSY_TX claim are two steps, so an interrupt calling
+     * appOutput() between them would start a command on the same UART. Held
+     * off while BtTransmitAbort() owns the UART, whose abort would otherwise
+     * leave gState READY over a transfer started mid-abort. The DMA start
+     * only programs the channel; it does not wait. */
+    HAL_StatusTypeDef rawRet = HAL_BUSY;
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    if (!btTxAbortInProgress)
+    {
+      rawRet = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
+    }
+    __set_PRIMASK(primask);
+    return (HAL_StatusTypeDefShimmer) rawRet;
   }
 
   if (BT_isTransparentMode() || BT_isBleSessionActive())
