@@ -66,6 +66,12 @@ static volatile uint16_t sppSendRetryCount = 0;
  * from both main and interrupt context, and this is read in the TX-complete
  * callback. */
 static volatile uint8_t btLastTxWasRaw = 0;
+/* An EZ-Serial command frame is still clocking out of the UART: set just
+ * before appOutput() starts it, cleared on TX completion. Tracked separately
+ * from btLastTxWasRaw, which only BtTransmit() maintains and so goes stale
+ * across commands sent outside it. BtTransmitAbort() must never cut one of
+ * these short. */
+static volatile uint8_t btCmdTxInFlight = 0;
 /* Retry budget for a rejected SPP_SEND. Deliberately SHORT: a retrying payload
  * serialises the whole TX chain behind it, so the budget must stay well under
  * the host's per-command timeout (~2 s). At ~1.4 ms per 0x0502
@@ -223,6 +229,9 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
 
   //ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *)data, length);
   //ret_val = HAL_UART_Transmit(huart, (uint8_t *)data, length, 1500*HAL_GetTickFreq());
+  /* Before the transmit starts: a short frame can complete, and its callback
+   * clear the flag, before HAL_UART_Transmit_IT() even returns. */
+  btCmdTxInFlight = 1;
   ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
 
   if (ret_val != HAL_OK)
@@ -232,6 +241,7 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
      * DATA_WRITTEN would tell the caller the command is in flight when it is
      * not. Roll back and report the failure so callers retry. */
     SHIMMER_PRINTF("UART transmit problem in appOutput\r\n");
+    btCmdTxInFlight = 0;
     pending_response = 0;
     return EZS_OUTPUT_RESULT_NO_HANDLER;
   }
@@ -418,6 +428,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
+  btCmdTxInFlight = 0;
   ShimBt_TxCpltCallback();
 
   if (btLastTxWasRaw)
@@ -575,9 +586,24 @@ void BtTransmitAckLast(void)
   sppSendRetryCount = 0;
 }
 
-/* Overrides the weak no-op in shimmer_bt_uart.c. Cancels the DMA transfer
- * started by BtTransmit() so the TX-complete callback cannot fire afterwards
- * and advance the ring read index over a buffer that has just been reset.
+/* Overrides the weak no-op in shimmer_bt_uart.c, which calls it from
+ * ShimBt_clearBtTxBuf() so that no stale data goes out after the clear and the
+ * TX-complete callback cannot advance the read index over the reset ring.
+ *
+ * An EZ-Serial command frame is never cut short. The module holds a partial
+ * command until its own timeout, then raises EVT_SYSTEM_ERROR 0x0207 and
+ * discards it. Aborting SPP_SEND frames that way cost that timeout on every
+ * data-rate test stop (bench-confirmed, one 0x0207 per stop), and the
+ * system-error recovery then re-sent the held payload anyway. So the frame
+ * is left to finish, and the held SPP_SEND payload is dropped instead - which
+ * is what actually keeps stale data from being re-sent: a busy (0x0109) or
+ * failed response to the frame in flight finds nothing to retry and moves
+ * the chain on. Finishing is safe for the ring: the frame lives in
+ * ezs_tx_packet, not the ring, and on this path TX completion only advances
+ * rdIdx by numBytesBeingRead, which the caller zeroes before the reset.
+ *
+ * A raw bridged DMA transfer is still aborted: the module only forwards those
+ * bytes, so cutting one just means fewer stale bytes.
  *
  * Only on an initialised UART. BtStop() runs btDeinit() - HAL_UART_Abort()
  * then HAL_UART_DeInit() - before ShimBt_stopCommon() clears the TX ring and
@@ -591,10 +617,23 @@ void BtTransmitAckLast(void)
  * in btDeinit() has already stopped any transfer in flight. */
 void BtTransmitAbort(void)
 {
-  if (huartBtPtr != NULL && huartBtPtr->gState != HAL_UART_STATE_RESET)
+  sppSendData.length = 0;
+  sppSendRetryCount = 0;
+
+  if (huartBtPtr == NULL || huartBtPtr->gState == HAL_UART_STATE_RESET)
   {
-    HAL_UART_AbortTransmit(huartBtPtr);
+    /* De-initialised: btDeinit()'s HAL_UART_Abort() ended any transfer
+     * without a completion callback, so nothing is in flight */
+    btCmdTxInFlight = 0;
+    return;
   }
+
+  if (btCmdTxInFlight)
+  {
+    return;
+  }
+
+  HAL_UART_AbortTransmit(huartBtPtr);
 }
 
 void resetEzsPendingResponse(void)
