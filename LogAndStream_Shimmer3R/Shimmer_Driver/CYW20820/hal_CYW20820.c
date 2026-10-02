@@ -60,17 +60,13 @@ volatile uint8_t pending_response = 0;
  * pending_response / UART-TX-busy guards in BtTransmit(). */
 static longuint8a_t sppSendData;
 static volatile uint16_t sppSendRetryCount = 0;
-/* What BtTransmit() last handed to the UART: 1 = raw bridged bytes (chain the
- * next chunk from the TX-complete callback), 0 = an SPP_SEND command (the
- * module's response drives the chain instead). volatile: BtTransmit() runs
- * from both main and interrupt context, and this is read in the TX-complete
- * callback. */
-static volatile uint8_t btLastTxWasRaw = 0;
-/* An EZ-Serial command frame is still clocking out of the UART: set just
- * before appOutput() starts it, cleared on TX completion. Tracked separately
- * from btLastTxWasRaw, which only BtTransmit() maintains and so goes stale
- * across commands sent outside it. BtTransmitAbort() must never cut one of
- * these short. */
+/* An EZ-Serial command frame is clocking out of the UART: set just before
+ * appOutput() starts it, cleared on TX completion. Anything else on this UART
+ * is a raw bridged transfer from BtTransmit(), so this one flag also tells the
+ * TX-complete callback what just finished - a command (the module's response
+ * drives the chain) or raw bytes (the callback drives it). BtTransmitAbort()
+ * must never cut a command short. volatile: set in main or interrupt
+ * context, read in the TX-complete callback. */
 static volatile uint8_t btCmdTxInFlight = 0;
 /* BtTransmitAbort() owns the UART TX: it found no command in flight and is
  * aborting. appOutput() starts no command until it is clear, so one cannot
@@ -233,16 +229,22 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
 
   //ret_val = HAL_UART_Transmit_DMA(huartBtPtr, (uint8_t *)data, length);
   //ret_val = HAL_UART_Transmit(huart, (uint8_t *)data, length, 1500*HAL_GetTickFreq());
-  /* The abort check, the flag and the start are one step: BtTransmitAbort()
-   * can run from a lower-priority interrupt, and this from a higher one. The
-   * flag is set before the transmit starts because a short frame can complete,
-   * and its callback clear the flag, before HAL_UART_Transmit_IT() returns -
-   * with interrupts masked here that callback runs after the restore, so the
-   * order still holds. HAL_UART_Transmit_IT() only arms the TX interrupt; it
-   * does not wait. */
+  /* The checks, the flag and the start are one step: BtTransmitAbort() and
+   * BtTransmit() can run from interrupts of either priority relative to this.
+   * - A raw bridged transfer still running means HAL_UART_Transmit_IT() would
+   *   refuse anyway. Refusing here, before the flag is set, also stops that
+   *   transfer's completion - if it landed in between - being taken for this
+   *   command's by the TX-complete callback, which would drop the raw chain.
+   * - While BtTransmitAbort() holds the UART, a command started now would be
+   *   cut short by it.
+   * The flag is set before the transmit starts because a short frame can
+   * complete, and its callback clear the flag, before HAL_UART_Transmit_IT()
+   * returns - with interrupts masked here that callback runs after the
+   * restore, so the order still holds. HAL_UART_Transmit_IT() only arms the
+   * TX interrupt; it does not wait. */
   uint32_t primask = __get_PRIMASK();
   __disable_irq();
-  if (btTxAbortInProgress)
+  if (btTxAbortInProgress || isBtUartTxBusy())
   {
     ret_val = HAL_BUSY;
   }
@@ -250,6 +252,13 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
   {
     btCmdTxInFlight = 1;
     ret_val = HAL_UART_Transmit_IT(huartBtPtr, (uint8_t *) data, length);
+    if (ret_val != HAL_OK)
+    {
+      /* Still masked: once interrupts are back a raw transfer could start
+       * and complete, and a flag left set would have it taken for a
+       * command's completion */
+      btCmdTxInFlight = 0;
+    }
   }
   __set_PRIMASK(primask);
 
@@ -258,9 +267,9 @@ ezs_output_result_t appOutput(uint16_t length, const uint8_t *data)
     /* Nothing was sent, so no response is coming: leaving pending_response
      * set here would block every later command forever, and returning
      * DATA_WRITTEN would tell the caller the command is in flight when it is
-     * not. Roll back and report the failure so callers retry. */
+     * not. Roll back and report the failure so callers retry. btCmdTxInFlight
+     * is already clear: never set, or cleared above while still masked. */
     SHIMMER_PRINTF("UART transmit problem in appOutput\r\n");
-    btCmdTxInFlight = 0;
     pending_response = 0;
     return EZS_OUTPUT_RESULT_NO_HANDLER;
   }
@@ -447,10 +456,19 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 
 void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 {
+  /* Decide from what just completed. This used to read btLastTxWasRaw, which
+   * BtTransmit() could only set after HAL_UART_Transmit_DMA() returned - and a
+   * 1-byte raw transfer (the ACK that starts a data-rate test) can complete
+   * before then, so the callback saw the previous transfer's value. After a
+   * classic SPP_SEND session that was 0: the raw chain was never advanced and
+   * BLE went silent, with btTxInProgress stuck at 1 and nothing in flight
+   * (bench, SWD-confirmed). appOutput() marks a command before starting it, so
+   * this cannot lag the way the old flag did. */
+  uint8_t completedCmd = btCmdTxInFlight;
   btCmdTxInFlight = 0;
   ShimBt_TxCpltCallback();
 
-  if (btLastTxWasRaw)
+  if (!completedCmd)
   {
     /* A raw bridged transfer has no SPP_SEND response to drive the transfer
      * chain, so the DMA completion is the moment to hand the UART the next
@@ -472,16 +490,20 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
    * classic SPP link to send on). */
   if (getBtCysppState())
   {
-    HAL_StatusTypeDef rawRet = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
-    if (rawRet == HAL_OK)
+    /* One step with appOutput()'s check-and-start: HAL_UART_Transmit_DMA()'s
+     * own READY test and BUSY_TX claim are two steps, so an interrupt calling
+     * appOutput() between them would start a command on the same UART. Held
+     * off while BtTransmitAbort() owns the UART, whose abort would otherwise
+     * leave gState READY over a transfer started mid-abort. The DMA start
+     * only programs the channel; it does not wait. */
+    HAL_StatusTypeDef rawRet = HAL_BUSY;
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    if (!btTxAbortInProgress)
     {
-      /* Only claim a raw transfer once one is genuinely in flight. Setting
-       * this before the call left it stale on HAL_BUSY, and because
-       * appOutput() sends SPP_SEND frames with HAL_UART_Transmit_IT the TX
-       * completion of a later SPP_SEND lands in the same callback - which
-       * would then have driven the raw transfer chain spuriously. */
-      btLastTxWasRaw = 1;
+      rawRet = HAL_UART_Transmit_DMA(huartBtPtr, buf, len);
     }
+    __set_PRIMASK(primask);
     return (HAL_StatusTypeDefShimmer) rawRet;
   }
 
@@ -533,14 +555,6 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
         (uint16_t) EZS_SPP_SEND_MAX_DATA_BYTES);
     return HAL_SHIM_ERROR;
   }
-
-  /* Safe to reclassify the transfer chain only here, past the guards above:
-   * isBtUartTxBusy() has confirmed the UART TX state is READY, so no raw DMA
-   * from a just-ended data pipe can still be in flight. Clearing this any
-   * earlier (it used to be set at the top of this branch) meant a raw
-   * transfer completing during the transition would find the flag already 0
-   * and never advance the raw chain, stalling the pipe. */
-  btLastTxWasRaw = 0;
 
   sppSendData.length = len;
   memcpy(sppSendData.data, buf, len);
