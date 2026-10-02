@@ -91,9 +91,13 @@ extern void ezsHandlerShimmer(ezs_packet_t *packet) __attribute__((weak));
  * checksum, not 0x020A (invalid command length), so a cap set even slightly
  * too high silently stops all data.
  *
- * Verified on v1.4.18.18 only. BT_selectDataPath() also sends v1.4.17
- * modules down this path, and their limit has not been measured. Kept in sync
- * with BT_TX_MAX_DMA_CHUNK in shimmer_bt_uart.h via a static assert in
+ * Verified on v1.4.18.18 only. BT_selectDataPath() would also send a v1.4.17
+ * module down this path, at a limit never measured, but no product carries
+ * one: the module arrives from the supplier on v1.4.12.12 and is updated to
+ * v1.4.16.16 in production, and both take the transparent bridge, which never
+ * sends SPP_SEND. v1.4.17.17 exists only as a bench image. Re-measure before
+ * any other SPP_SEND-path release goes into production. Kept in sync with
+ * BT_TX_MAX_DMA_CHUNK in shimmer_bt_uart.h via a static assert in
  * hal_CYW20820.c. */
 #define EZS_SPP_SEND_MAX_DATA_BYTES 300U
 
