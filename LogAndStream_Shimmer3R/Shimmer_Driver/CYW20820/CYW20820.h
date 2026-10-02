@@ -150,6 +150,7 @@ bool isBtInitCmdsRunning(void);
 bool isBtFactoryResetCmdsRunning(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
+bool BT_isRawPipeEngagedNow(void);
 /* 1 = raw UART<->SPP bridge (legacy modules), 0 = SPP_SEND command framing.
  * Valid once the module boot banner has been parsed (WAIT_FOR_BOOT_STAGE2);
  * defaults to transparent, the legacy-safe choice, until then. */

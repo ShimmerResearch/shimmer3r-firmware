@@ -2062,6 +2062,29 @@ bool getBtCysppState(void)
   return btCysppState;
 }
 
+/* The raw data pipe is engaged at this instant: the cached state says so AND
+ * the module's CYSPP pin is still LOW. For the RX demux, which must not trust
+ * the cached state alone.
+ *
+ * The pin goes HIGH the moment the module leaves data mode - for good at a BLE
+ * disconnect - and the module then sends its EZ-Serial events
+ * (gap_disconnected, adv_state_changed). The cached state is cleared only by
+ * the pin's EXTI handler, and the BT UART RX interrupt can preempt that, so the
+ * demux saw a stale 'true' and fed those event bytes to the Shimmer command
+ * parser, which executed whatever they happened to spell. Bench capture,
+ * 2026-10-02 (diagnostic build): the EXTI handler's own print was cut in half
+ * by the parser's input bytes, and SET_WR_ACCEL_RANGE ran, sent by nobody.
+ * Separately, Shimmer Capture Web left a sensor streaming after its BLE link
+ * closed with no START_STREAMING from the host; this race is the likely cause,
+ * but that case was not reproduced.
+ * Reading the pin closes the window. The cached state still gates it, because
+ * the pin alone does not say whether a data pipe was ever opened. */
+bool BT_isRawPipeEngagedNow(void)
+{
+  return btCysppState
+      && (HAL_GPIO_ReadPin(BT_CYSPP_GPIO_Port, BT_CYSPP_Pin) == GPIO_PIN_RESET);
+}
+
 uint8_t *BT_getCyw20820MacAddressPtr(void)
 {
   return &rsp_system_get_bluetooth_address.address.addr[0];
