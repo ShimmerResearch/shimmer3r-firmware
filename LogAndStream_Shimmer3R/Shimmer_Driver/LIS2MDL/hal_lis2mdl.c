@@ -149,6 +149,9 @@ static bool isDrdyIntEnabled = false;
  * and checked again. Reported by the factory test for diagnosis. */
 static uint8_t drdyRecheckCount = 0;
 
+/* Why the last DRDY pin test failed, for the factory report. */
+static const char *drdyFailReason = NULL;
+
 /* Extern variables ----------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
@@ -251,6 +254,7 @@ self_test_result_t lis2mdl_self_test(void)
 
   lis2mdl_driver_init();
   drdyRecheckCount = 0;
+  drdyFailReason = NULL;
 #if !defined(SHIMMER3R)
   /* Initialize platform specific hardware */
   platform_init();
@@ -365,10 +369,23 @@ self_test_result_t lis2mdl_self_test(void)
   return self_test_result;
 }
 
+/* Sets the MCU pull on the DRDY input. Only the pull bits change, so the pin
+ * keeps its CubeMX mode and EXTI configuration. */
+static void lis2mdl_set_drdy_pull(uint32_t pull)
+{
+  uint32_t shift = POSITION_VAL(LIS2MDL_DRDY_Pin) * 2U;
+  MODIFY_REG(LIS2MDL_DRDY_GPIO_Port->PUPDR, GPIO_PUPDR_PUPD0 << shift, pull << shift);
+}
+
 /* Checks the DRDY/INT pin follows the data-ready state: it must rise while a
  * conversion is pending and fall once the outputs are read. At 100 Hz a new
  * conversion can land just after the read and legitimately re-assert the pin;
- * STATUS_REG tells that apart from a pin stuck high, and the check is retried. */
+ * STATUS_REG tells that apart from a pin stuck high, and the check is retried.
+ *
+ * The pin is configured without a pull, so an open joint or trace would float
+ * and read randomly. A pull-down is applied for the duration of the test: the
+ * LIS2MDL drives the pin push-pull, so a healthy part overrides it, and an open
+ * pin now fails the same way every time instead of intermittently. */
 self_test_result_t lis2mdl_drdy_test(void)
 {
   int16_t data_raw[3];
@@ -378,24 +395,40 @@ self_test_result_t lis2mdl_drdy_test(void)
   self_test_result_t result = SELF_TEST_FAIL_DRDY_ISSUE;
 
   drdyRecheckCount = 0;
+  drdyFailReason = NULL;
 
   /* Set DRDY pin */
   if (lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 1) != 0)
   {
     return SELF_TEST_FAIL_CHIP_DETECTION;
   }
+  lis2mdl_set_drdy_pull(GPIO_PULLDOWN);
 
   for (attempt = 0; attempt < DRDY_TEST_ATTEMPTS; attempt++)
   {
-    /* Running continuously, a conversion is pending within 10 ms. A pin that
-     * never rises is stuck low or open. */
+    /* Running continuously, a conversion is pending within 10 ms */
     tickStart = HAL_GetTick();
     while (!LIS2MDL_DRDY && ((HAL_GetTick() - tickStart) < DRDY_TEST_RISE_TIMEOUT_MS))
     {
     }
     if (!LIS2MDL_DRDY)
     {
-      result = SELF_TEST_FAIL_DRDY_ISSUE;
+      /* STATUS_REG says whether the fault is the pin or the sensor */
+      if (lis2mdl_mag_data_ready_get(&lis2mdl_obj.Ctx, &drdy) != 0)
+      {
+        result = SELF_TEST_FAIL_CHIP_DETECTION;
+      }
+      else if (drdy)
+      {
+        result = SELF_TEST_FAIL_DRDY_ISSUE;
+        drdyFailReason
+            = "pin never rose although data was ready (stuck low or open)";
+      }
+      else
+      {
+        result = SELF_TEST_FAIL_SIGNAL_ISSUE;
+        drdyFailReason = "no conversion completed (sensor not sampling)";
+      }
       break;
     }
 
@@ -420,15 +453,18 @@ self_test_result_t lis2mdl_drdy_test(void)
     }
     if (!drdy)
     {
-      /* No new data, yet the pin is high: stuck high */
+      /* No new data, yet the pin is high */
       result = SELF_TEST_FAIL_DRDY_ISSUE;
+      drdyFailReason
+          = "pin stayed high after the read with no new data (stuck high)";
       break;
     }
     drdyRecheckCount++;
   }
 
-  /* Return the pin to its default. A failed write must not mask an earlier,
-   * more specific result. */
+  /* Return the pin and the sensor to their defaults. A failed write must not
+   * mask an earlier, more specific result. */
+  lis2mdl_set_drdy_pull(GPIO_NOPULL);
   if (lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0) != 0 && result == SELF_TEST_PASS)
   {
     result = SELF_TEST_FAIL_CHIP_DETECTION;
@@ -440,6 +476,11 @@ self_test_result_t lis2mdl_drdy_test(void)
 uint8_t lis2mdl_get_drdy_recheck_count(void)
 {
   return drdyRecheckCount;
+}
+
+const char *lis2mdl_get_drdy_fail_reason(void)
+{
+  return drdyFailReason;
 }
 
 void lis2mdl_configure(float shimmerSamplingFreq, lis2mdl_odr_t rate)

@@ -946,6 +946,11 @@ void I2C_test(void)
         lis2mdl_get_drdy_recheck_count());
     ShimFactoryTest_sendReport(buffer);
   }
+  if (lis2mdl_get_drdy_fail_reason() != NULL)
+  {
+    sprintf(buffer, " - LIS2MDL DRDY test: %s\r\n", lis2mdl_get_drdy_fail_reason());
+    ShimFactoryTest_sendReport(buffer);
+  }
 
   uint8_t eeprom_result = eepromTest();
   sprintf(buffer, " - S3R_TEST_0023 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
