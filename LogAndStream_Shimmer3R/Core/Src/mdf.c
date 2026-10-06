@@ -99,6 +99,9 @@ void MX_ADF1_Init(void)
   /* USER CODE BEGIN ADF1_Init 2 */
   AdfFilterConfig0.SnapshotFormat = MDF_SNAPSHOT_23BITS;
   AdfFilterConfig0.DecimationRatio = 64;
+  /* Sinc5 gain is D^5, so D=64 is ~43 dB hotter than the original D=24.
+   * Scale back by 14 x ~3 dB so a typical mic offset no longer saturates. */
+  AdfFilterConfig0.Gain = -8;
   //DMA & Linkedlist config
   micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
   micDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);
