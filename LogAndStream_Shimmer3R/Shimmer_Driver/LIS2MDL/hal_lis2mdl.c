@@ -246,6 +246,7 @@ self_test_result_t lis2mdl_self_test(void)
   float test_val;
   uint8_t whoamI = 0;
   uint8_t i;
+  int32_t ret;
   self_test_result_t self_test_result = SELF_TEST_PASS;
 
   lis2mdl_driver_init();
@@ -273,14 +274,30 @@ self_test_result_t lis2mdl_self_test(void)
     return SELF_TEST_FAIL_CHIP_DETECTION;
   }
 
+  /* A failed configuration write would otherwise surface later as a polling
+   * timeout, i.e. a signal or DRDY failure, so check every one. */
   /* Set restore magnetic condition policy */
-  lis2mdl_set_rst_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_SET_SENS_ODR_DIV_63);
+  ret = lis2mdl_set_rst_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_SET_SENS_ODR_DIV_63);
   /* Set power mode */
-  lis2mdl_power_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_HIGH_RESOLUTION);
+  if (ret == 0)
+  {
+    ret = lis2mdl_power_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_HIGH_RESOLUTION);
+  }
   /* Set Output Data Rate */
-  lis2mdl_data_rate_set(&lis2mdl_obj.Ctx, LIS2MDL_ODR_100Hz);
+  if (ret == 0)
+  {
+    ret = lis2mdl_data_rate_set(&lis2mdl_obj.Ctx, LIS2MDL_ODR_100Hz);
+  }
   /* Set Operating mode */
-  lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_CONTINUOUS_MODE);
+  if (ret == 0)
+  {
+    ret = lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_CONTINUOUS_MODE);
+  }
+  if (ret != 0)
+  {
+    lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_POWER_DOWN);
+    return SELF_TEST_FAIL_CHIP_DETECTION;
+  }
   /* Wait stable output */
   platform_delay(WAIT_TIME_01);
 
@@ -305,13 +322,24 @@ self_test_result_t lis2mdl_self_test(void)
   }
   if (self_test_result == SELF_TEST_PASS)
   {
-    /* Enable Self Test */
-    lis2mdl_self_test_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE);
-    /* Wait stable output */
-    platform_delay(WAIT_TIME_02);
-    self_test_result = lis2mdl_average_mg(val_st_on);
+    /* Enable Self Test. If this write is lost the on/off difference is ~0 and
+     * would read as a signal failure. */
+    if (lis2mdl_self_test_set(&lis2mdl_obj.Ctx, PROPERTY_ENABLE) != 0)
+    {
+      self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
+    }
+    else
+    {
+      /* Wait stable output */
+      platform_delay(WAIT_TIME_02);
+      self_test_result = lis2mdl_average_mg(val_st_on);
+    }
     /* Disable Self Test */
-    lis2mdl_self_test_set(&lis2mdl_obj.Ctx, PROPERTY_DISABLE);
+    if (lis2mdl_self_test_set(&lis2mdl_obj.Ctx, PROPERTY_DISABLE) != 0
+        && self_test_result == SELF_TEST_PASS)
+    {
+      self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
+    }
   }
 
   /* Check self test limit on the mG difference */
@@ -327,8 +355,13 @@ self_test_result_t lis2mdl_self_test(void)
     }
   }
 
-  /* Disable sensor. */
-  lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_POWER_DOWN);
+  /* Disable sensor. A part that cannot be powered down is left running, so
+   * that is a failure too, but it must not mask an earlier, more specific one. */
+  if (lis2mdl_operating_mode_set(&lis2mdl_obj.Ctx, LIS2MDL_POWER_DOWN) != 0
+      && self_test_result == SELF_TEST_PASS)
+  {
+    self_test_result = SELF_TEST_FAIL_CHIP_DETECTION;
+  }
   return self_test_result;
 }
 
@@ -394,7 +427,12 @@ self_test_result_t lis2mdl_drdy_test(void)
     drdyRecheckCount++;
   }
 
-  lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0);
+  /* Return the pin to its default. A failed write must not mask an earlier,
+   * more specific result. */
+  if (lis2mdl_drdy_on_pin_set(&lis2mdl_obj.Ctx, 0) != 0 && result == SELF_TEST_PASS)
+  {
+    result = SELF_TEST_FAIL_CHIP_DETECTION;
+  }
 
   return result;
 }
