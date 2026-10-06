@@ -12,14 +12,16 @@
 
 void lis2mdl_driver_init(void);
 self_test_result_t lis2mdl_self_test(void);
-uint8_t lis2mdl_drdy_test(void);
+self_test_result_t lis2mdl_drdy_test(void);
+uint8_t lis2mdl_get_drdy_recheck_count(void);
+const char *lis2mdl_get_drdy_fail_reason(void);
 void lis2mdl_configure(float shimmerSamplingFreq, lis2mdl_odr_t rate);
 HAL_StatusTypeDef lis2mdl_mag_get(uint8_t *buf);
 bool lis2mdl_is_drdy_int_enabled(void);
 bool lis2mdl_is_shimmer_freq_higher(float shimmerSamplingFreq, lis2mdl_odr_t rate);
 float lis2mdl_get_sensor_freq_from_rate(lis2mdl_odr_t rate);
 
-void lis2mdl_set_default_config(void);
+int32_t lis2mdl_set_default_config(void);
 void lis2mdl_sleep(void);
 int32_t lis2mdl_temperature_get(float_t *tempCal);
 
