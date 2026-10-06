@@ -937,6 +937,15 @@ void I2C_test(void)
     shimmerStatus.testResult |= S3R_TEST_0022;
   }
   print_chip_test_result("S3R_TEST_0022", "LIS2MDL", self_test_result, tempCal);
+  if (lis2mdl_get_drdy_recheck_count() > 0)
+  {
+    /* A conversion landed right after the DRDY test's read and re-asserted
+     * the pin. Correct behaviour, but worth seeing on a unit that used to
+     * fail here with a DRDY issue. */
+    sprintf(buffer, " - LIS2MDL DRDY pin re-checked %u time(s): new sample during check\r\n",
+        lis2mdl_get_drdy_recheck_count());
+    ShimFactoryTest_sendReport(buffer);
+  }
 
   uint8_t eeprom_result = eepromTest();
   sprintf(buffer, " - S3R_TEST_0023 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
