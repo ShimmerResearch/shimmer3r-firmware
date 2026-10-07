@@ -72,6 +72,8 @@ forbid() { # file, fixed string, why it must not be there
 echo "Hand-written code that CubeMX regeneration is known to delete:"
 require      "$B/Core/Src/main.c"    "LSE_START_TIMEOUT_MS"          "DEV-866 LSE drive ladder"
 require      "$B/Core/Src/rtc.c"     "Boot_rtcIsOnLsiFallback"       "DEV-866 LSI limp-home (else a dead LSE hangs boot)"
+require      "$B/Core/Src/rtc.c"     "RTC_shiftToTicks(data->ticks)" "DEV-1161 sub-second time-set (SSR is read-only)"
+require      "$B/Core/Src/rtc.c"     "HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG) == RTC_STATUS_TIME_OK"                                                                      "DEV-1161 time-set marker (else a power loss reads as set)"
 require      "$B/Core/Src/sdmmc.c"   "hsd1.Instance = NULL"          "hot-swap tolerance, no Error_Handler() on SD init"
 require      "$B/Core/Src/usb_otg.c" "Init.speed = USB_getPcdSpeed"  "PCD speed selection"
 require      "$B/USBX/App/app_usbx_device.c" "ALIGN_32BYTES"         "32-byte D-cache line alignment of the USBX pool"
