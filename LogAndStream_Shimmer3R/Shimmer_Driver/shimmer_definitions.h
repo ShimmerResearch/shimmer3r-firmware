@@ -18,12 +18,10 @@
 #define FW_IDENTIFIER 12
 #endif
 
-#define SUPPORT_SR48_6_0    1
-#define IS_CONNECTED_EEPROM 1
+#define SUPPORT_SR48_6_0      1
+#define IS_CONNECTED_EEPROM   1
 
-#define USE_DEFAULT_SENSOR  0
-#define RTC_FAST \
-  0 //need to increase rtc alarm interrupt priority before enabling this option
+#define USE_DEFAULT_SENSOR    0
 #define FULL_TEST_MODE        0
 #define USE_FREERTOS          0
 #define SENS_CLK_RTC0TIM1     0

@@ -25,6 +25,7 @@
 
 #include <Boards/shimmer_boards.h>
 #include <LEDs/shimmer_leds.h>
+#include <Platform/platform_api.h>
 #include <hal_Board.h>
 #include <log_and_stream_common.h>
 
@@ -272,7 +273,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *tim_baseHandle)
     __HAL_RCC_TIM6_CLK_ENABLE();
 
     /* TIM6 interrupt Init */
-    HAL_NVIC_SetPriority(TIM6_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(TIM6_IRQn, 10, 0);
     HAL_NVIC_EnableIRQ(TIM6_IRQn);
     /* USER CODE BEGIN TIM6_MspInit 1 */
 
@@ -441,6 +442,56 @@ static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
   petWatchdog();
 
   LogAndStream_blinkTimerCommon();
+}
+
+/* LED phase lock (log-and-stream-common LEDs/). TIM6 counts at 800 Hz
+ * (48 MHz / 60000) and reloads after 80 counts, so its counter is the time
+ * since the last blink tick in 1.25 ms steps: 40.96 RTC ticks per count. */
+#define TIM6_RTC_TICKS_PER_COUNT_X100 4096
+
+uint16_t platform_ledTickElapsedRtcTicks(void)
+{
+  return (uint16_t) ((__HAL_TIM_GET_COUNTER(&htim6) * TIM6_RTC_TICKS_PER_COUNT_X100) / 100U);
+}
+
+/* Moves the next blink tick later (positive) or earlier (negative) by
+ * stepping the counter back or forward. A shift larger than the period allows
+ * is clipped, and the next second's sync finishes the job.
+ *
+ * Masking interrupts does not stop TIM6, so the counter could wrap between the
+ * read and the write, and the stale value would then undo the reload. The
+ * read-to-write window is a few CPU cycles against 1.25 ms per count, so a
+ * wrap inside it needs the counter to be on its last count when read. That
+ * case is skipped; the next second's sync applies the shift instead. */
+void platform_ledTickShift(int16_t rtcTicks)
+{
+  int32_t counts = ((int32_t) rtcTicks * 100) / TIM6_RTC_TICKS_PER_COUNT_X100;
+  int32_t arr = (int32_t) __HAL_TIM_GET_AUTORELOAD(&htim6);
+  int32_t now, cnt;
+  uint32_t primask;
+
+  if (counts == 0)
+  {
+    return;
+  }
+
+  primask = __get_PRIMASK();
+  __disable_irq();
+  now = (int32_t) __HAL_TIM_GET_COUNTER(&htim6);
+  if (now < arr)
+  {
+    cnt = now - counts;
+    if (cnt < 0)
+    {
+      cnt = 0;
+    }
+    else if (cnt > arr)
+    {
+      cnt = arr;
+    }
+    __HAL_TIM_SET_COUNTER(&htim6, (uint32_t) cnt);
+  }
+  __set_PRIMASK(primask);
 }
 
 void delay_us(uint16_t us)

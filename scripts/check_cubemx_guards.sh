@@ -94,6 +94,10 @@ require      "$B/USBX/App/ux_device_descriptors.h" "USBD_CDCACM_EPINCMD_FS_BINTE
 require      "$B/USBX/App/ux_device_descriptors.h" "USBD_CDCACM_EPINCMD_HS_BINTERVAL 0x09U" \
                                                                      "CDC int-IN bInterval HS (Mac xHCI MSC-drop fix)"
 require      "$B/Core/Src/mdf.c"     "AdfFilterConfig0.Gain = -8"    "DEV-1154 mic gain headroom (+6 saturates at D=64)"
+require      "$B/Core/Src/rtc.c"     "dr = READ_REG(RTC->DR)"        "DEV-338 register-level RTC_get64 (every sample stamp)"
+require      "$B/Core/Src/tim.c"     "platform_ledTickShift"         "DEV-338 LED blink phase-lock hooks"
+require      "$B/Core/Src/tim.c"     "HAL_NVIC_SetPriority(TIM6_IRQn, 10, 0)" \
+                                                                     "DEV-338 blink timer below the sample interrupt"
 require_re   "$B/USBX/App/ux_user.h" '^#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH[[:space:]]' \
                                                                      "active 64 KB MSC transfer define (stock is commented out)"
 

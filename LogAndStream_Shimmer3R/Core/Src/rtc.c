@@ -36,10 +36,6 @@ uint32_t SHIM_RTC_Status = RTC_STATUS_ZERO;
 
 volatile time_t nextAlarms[RTC_NUM_ALARMS] = { RTC_ALARM_CONTEXT_NONE };
 
-#if RTC_FAST
-volatile uint64_t rtc64_reg;
-#endif /* RTC_FAST */
-
 /* USER CODE END 0 */
 
 RTC_HandleTypeDef hrtc;
@@ -49,10 +45,6 @@ void MX_RTC_Init(void)
 {
 
   /* USER CODE BEGIN RTC_Init 0 */
-
-#if RTC_FAST
-  SHIM_RTC_t data;
-#endif /* RTC_FAST */
 
   ShimRtc_setRwcConfigTime(0);
 
@@ -173,11 +165,6 @@ void MX_RTC_Init(void)
   }
   ///* Clear source Reset Flag */
   //__HAL_RCC_CLEAR_RESET_FLAGS();
-
-#if RTC_FAST
-  ShimRtc_getDateTime(&data);
-  rtc64_reg = data.ticks & 0xffffffffffff8000;
-#endif /* RTC_FAST */
 
   RTC_wakeUpOff();
 
@@ -483,46 +470,50 @@ void RTC_setTimeFromTicks(uint64_t ticks)
   SHIM_RTC_t data;
   ShimRtc_ticks2Rtc(&data, ticks);
   RTC_setDateTime(&data);
-#if RTC_FAST
-  rtc64_reg = data.ticks & 0xffffffffffff8000;
-#endif
   ShimRtc_setRwcConfigTime(ticks);
 }
 
+/* The clock in 32768 Hz ticks since 1970, read straight from the calendar
+ * registers. Gives exactly what RTC_getDateTime() gives - same fields, same
+ * ShimRtc_rtc2Unix(), same tick formula - without two HAL calls per read. The
+ * sample timer stamps every sample with this, from its interrupt.
+ *
+ * Reading SSR freezes the TR and DR shadow registers until DR is read
+ * (BYPSHAD = 0, the default), so the three reads are one consistent snapshot
+ * as long as nothing else reads the RTC between them. Interrupts are masked for
+ * those three reads only: the HAL path left that window open, and an
+ * interrupt reading the clock inside it could pair one second's time with the
+ * next second's date. */
 uint64_t RTC_get64(void)
 {
-#if RTC_FAST
-  uint64_t t1, t2;
-  t1 = rtc64_reg + 0x8000 - (uint32_t) (hrtc.Instance->SSR);
-  do
-  {
-    t2 = t1;
-    t1 = rtc64_reg + 0x8000 - (uint32_t) (hrtc.Instance->SSR);
-  } while (t1 != t2);
-  return t1;
-#else
   SHIM_RTC_t data;
-  RTC_getDateTime(&data);
-  return data.ticks;
-#endif
+  uint32_t ssr, tr, dr, primask;
+
+  primask = __get_PRIMASK();
+  __disable_irq();
+  ssr = READ_REG(RTC->SSR);
+  tr = READ_REG(RTC->TR);
+  dr = READ_REG(RTC->DR);
+  __set_PRIMASK(primask);
+
+  data.seconds = RTC_Bcd2ToByte((uint8_t) ((tr & (RTC_TR_ST | RTC_TR_SU)) >> RTC_TR_SU_Pos));
+  data.minutes = RTC_Bcd2ToByte(
+      (uint8_t) ((tr & (RTC_TR_MNT | RTC_TR_MNU)) >> RTC_TR_MNU_Pos));
+  data.hours = RTC_Bcd2ToByte((uint8_t) ((tr & (RTC_TR_HT | RTC_TR_HU)) >> RTC_TR_HU_Pos));
+  data.date = RTC_Bcd2ToByte((uint8_t) ((dr & (RTC_DR_DT | RTC_DR_DU)) >> RTC_DR_DU_Pos));
+  data.month = RTC_Bcd2ToByte((uint8_t) ((dr & (RTC_DR_MT | RTC_DR_MU)) >> RTC_DR_MU_Pos));
+  data.year = RTC_Bcd2ToByte((uint8_t) ((dr & (RTC_DR_YT | RTC_DR_YU)) >> RTC_DR_YU_Pos));
+
+  /* SS[14:0] only: after a time-set shift SS[15] is set until SS[14:0] wraps,
+   * and the RTC increments TR at that wrap, so SS[15] is not part of the
+   * sub-second count (DEV-1162, which applies the same mask in
+   * RTC_getDateTime). */
+  return ((uint64_t) ShimRtc_rtc2Unix(&data) * 32768) + 32768 - (ssr & 0x7FFFU);
 }
 
 uint32_t RTC_get32(void)
 {
-#if RTC_FAST
-  uint64_t t1, t2;
-  t1 = rtc64_reg + 0x8000 - (uint32_t) (hrtc.Instance->SSR);
-  do
-  {
-    t2 = t1;
-    t1 = rtc64_reg + 0x8000 - (uint32_t) (hrtc.Instance->SSR);
-  } while (t1 != t2);
-  return t1;
-#else
-  SHIM_RTC_t data;
-  RTC_getDateTime(&data);
-  return data.ticks;
-#endif
+  return (uint32_t) RTC_get64();
 }
 
 void RTC_wakeUpOff(void)
