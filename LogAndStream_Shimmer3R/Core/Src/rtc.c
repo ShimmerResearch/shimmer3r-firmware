@@ -246,6 +246,37 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef *rtcHandle)
 
 /* USER CODE BEGIN 1 */
 
+/* DEV-1162: keep the RTC interrupt off while task code owns hrtc's HAL lock.
+ *
+ * Every HAL RTC write takes that lock. The RTC interrupt (Alarm A, and the
+ * wake-up timer that drives sampling) can pre-empt task code holding it, and
+ * the alarm callback then calls HAL_RTC_SetAlarm_IT, which returns HAL_BUSY.
+ * It cannot wait: the task that would release the lock cannot run until the
+ * interrupt returns. The callback used to call Error_Handler() at that point,
+ * freezing the device with interrupts masked.
+ *
+ * So task-context writes disable RTC_IRQn while they hold the lock. An alarm
+ * or sample raised meanwhile stays pending and runs as soon as they finish -
+ * well under a millisecond after a clock set. A nested hold keeps the outer
+ * state, and a hold taken inside the RTC interrupt itself is harmless. */
+static uint32_t RTC_irqHold(void)
+{
+  uint32_t wasEnabled = NVIC_GetEnableIRQ(RTC_IRQn);
+
+  NVIC_DisableIRQ(RTC_IRQn);
+  __DSB();
+  __ISB();
+  return wasEnabled;
+}
+
+static void RTC_irqRelease(uint32_t wasEnabled)
+{
+  if (wasEnabled)
+  {
+    NVIC_EnableIRQ(RTC_IRQn);
+  }
+}
+
 /* DEV-1161: move the running clock onto the sub-second part of a time-set.
  *
  * RTC_SSR is read-only on the STM32U5 (RM0456 RTC_SSR; the SVD agrees), so the
@@ -279,9 +310,15 @@ static void RTC_shiftToTicks(uint64_t ticks)
    * interrupt reading the RTC between HAL_RTC_GetTime and HAL_RTC_GetDate
    * unlocks the shadow registers, and across midnight that pairs one day's
    * time with the next day's date. Shifting on it would be wrong by up to a
-   * second, so leave the clock on the whole second instead. */
+   * second, so leave the clock on the whole second instead.
+   *
+   * SS[15] is taken from the read-back, never from a fresh read of RTC_SSR
+   * (DEV-1162). With BYPSHAD = 0, reading SSR locks the TR/DR shadow
+   * registers until DR is read. A bare SSR read here left them locked, so RSF
+   * never set and HAL_RTCEx_SetSynchroShift's HAL_RTC_WaitForSynchro ran to
+   * its 1 s timeout while holding the RTC HAL lock. */
   if (delta == 0 || delta > (int64_t) RTC_SHIFTR_SUBFS
-      || -delta > (int64_t) RTC_SHIFTR_SUBFS || (hrtc.Instance->SSR & 0x8000U) != 0U)
+      || -delta > (int64_t) RTC_SHIFTR_SUBFS || (now.subseconds & 0x8000U) != 0U)
   {
     return;
   }
@@ -353,6 +390,8 @@ uint8_t RTC_setDateTime(SHIM_RTC_t *data)
   // MX_RTC_Init();
   //}
 
+  uint32_t irqHeld = RTC_irqHold();
+
   sTime.Hours = data->hours;
   sTime.Minutes = data->minutes;
   sTime.Seconds = data->seconds;
@@ -385,6 +424,8 @@ uint8_t RTC_setDateTime(SHIM_RTC_t *data)
   /* Write backup registers */
   SHIM_RTC_Status = RTC_STATUS_TIME_OK;
   HAL_RTCEx_BKUPWrite(&hrtc, RTC_STATUS_REG, RTC_STATUS_TIME_OK);
+
+  RTC_irqRelease(irqHeld);
 
   /* Return OK */
   return 0;
@@ -478,7 +519,9 @@ uint32_t RTC_get32(void)
 
 void RTC_wakeUpOff(void)
 {
+  uint32_t irqHeld = RTC_irqHold();
   HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+  RTC_irqRelease(irqHeld);
   //if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 15, RTC_WAKEUPCLOCK_RTCCLK_DIV2) != HAL_OK)
   //{
   //   Error_Handler();
@@ -488,12 +531,15 @@ void RTC_wakeUpOff(void)
 void RTC_wakeUpSet(uint16_t period)
 {
   uint16_t prescalar;
+  uint32_t irqHeld;
 
-  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
   if (period > 32768)
   {
     Error_Handler();
   }
+
+  irqHeld = RTC_irqHold();
+  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
 
   prescalar = period / 2 - 1;
 
@@ -511,6 +557,7 @@ void RTC_wakeUpSet(uint16_t period)
   {
     Error_Handler();
   }
+  RTC_irqRelease(irqHeld);
 }
 
 void RTC_wakeUpSetSlow(void)
@@ -671,7 +718,19 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
     ret = HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN);
     if (ret != HAL_OK)
     {
-      Error_Handler();
+      if (__get_IPSR() != 0U)
+      {
+        /* DEV-1162: in the RTC interrupt the lock's owner cannot run until we
+         * return, so neither a retry nor Error_Handler() can help - the latter
+         * froze the device with interrupts masked. TASK_BATT_READ re-arms Alarm
+         * A from task context (RTC_setAlarmBattRead), and every alarm still in
+         * nextAlarms[] is kept, so nothing is lost but one extra battery read. */
+        ShimTask_set(TASK_BATT_READ);
+      }
+      else
+      {
+        Error_Handler();
+      }
     }
   }
 }
@@ -680,6 +739,7 @@ void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
 {
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
+  uint32_t irqHeld = RTC_irqHold();
 
   if (secondsFromNow == 0)
   {
@@ -704,6 +764,7 @@ void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
     nextAlarms[context] = future_time; //Store the future time for this alarm
   }
   RTC_setNextRtcAlarmA(&hrtc); //Set up the next alarm
+  RTC_irqRelease(irqHeld);
 }
 
 void RTC_setupAndStartSdSyncAlarm(void)
@@ -745,10 +806,12 @@ void RTC_setupAndStartSdSyncAlarm(void)
   sAlarm.AlarmDateWeekDay = 1; //ignored due to mask
   sAlarm.Alarm = RTC_ALARM_B;
 
+  uint32_t irqHeld = RTC_irqHold();
   if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
   }
+  RTC_irqRelease(irqHeld);
 }
 
 void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
