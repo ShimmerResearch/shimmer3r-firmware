@@ -266,6 +266,8 @@ static void RTC_shiftToTicks(uint64_t ticks)
 {
   SHIM_RTC_t now;
   int64_t delta;
+  HAL_StatusTypeDef status;
+  uint32_t tickstart;
 
   /* Read back with RTC_getDateTime (the HAL path) so the result does not
    * depend on how RTC_get64 is implemented. */
@@ -285,11 +287,27 @@ static void RTC_shiftToTicks(uint64_t ticks)
   }
   if (delta > 0)
   {
-    HAL_RTCEx_SetSynchroShift(&hrtc, RTC_SHIFTADD1S_SET, (uint32_t) (32768 - delta));
+    status = HAL_RTCEx_SetSynchroShift(
+        &hrtc, RTC_SHIFTADD1S_SET, (uint32_t) (32768 - delta));
   }
   else
   {
-    HAL_RTCEx_SetSynchroShift(&hrtc, RTC_SHIFTADD1S_RESET, (uint32_t) (-delta));
+    status = HAL_RTCEx_SetSynchroShift(&hrtc, RTC_SHIFTADD1S_RESET, (uint32_t) (-delta));
+  }
+
+  /* The HAL waits for a pending shift before writing SHIFTR, but not for the
+   * new one to finish, and HAL_RTC_GetTime's sub-second value is only valid
+   * once SHPF has cleared. Wait here so a GET_RWC straight after the set reads
+   * the shifted clock. It takes a few RTCCLK cycles; the timeout only bounds a
+   * fault. If the shift fails the clock stays on the whole second - still a
+   * set clock, as accurate as before DEV-1161 - so the caller's time-set
+   * marker stands either way. */
+  if (status == HAL_OK)
+  {
+    tickstart = HAL_GetTick();
+    while (READ_BIT(RTC->ICSR, RTC_ICSR_SHPF) != 0U && (HAL_GetTick() - tickstart) <= RTC_TIMEOUT_VALUE)
+    {
+    }
   }
 }
 
