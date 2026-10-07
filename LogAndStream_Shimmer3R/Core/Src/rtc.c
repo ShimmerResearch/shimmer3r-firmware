@@ -267,31 +267,28 @@ static void RTC_shiftToTicks(uint64_t ticks)
   SHIM_RTC_t now;
   int64_t delta;
 
-  /* Read through RTC_getDateTime, not RTC_get64, so this does not depend on
-   * the RTC_FAST shadow, which the caller updates only afterwards. */
+  /* Read back with RTC_getDateTime (the HAL path) so the result does not
+   * depend on how RTC_get64 is implemented. */
   RTC_getDateTime(&now);
   delta = (int64_t) (ticks - now.ticks);
 
-  if (delta == 0 || (hrtc.Instance->SSR & 0x8000U) != 0U)
+  /* The clock was just set to the target's whole second, so a true delta lies
+   * strictly inside one second. Anything else is a torn read-back - an
+   * interrupt reading the RTC between HAL_RTC_GetTime and HAL_RTC_GetDate
+   * unlocks the shadow registers, and across midnight that pairs one day's
+   * time with the next day's date. Shifting on it would be wrong by up to a
+   * second, so leave the clock on the whole second instead. */
+  if (delta == 0 || delta > (int64_t) RTC_SHIFTR_SUBFS
+      || -delta > (int64_t) RTC_SHIFTR_SUBFS || (hrtc.Instance->SSR & 0x8000U) != 0U)
   {
     return;
   }
   if (delta > 0)
   {
-    /* Never more than 32767: the clock was set to the target's whole second. */
-    if (delta > (int64_t) RTC_SHIFTR_SUBFS)
-    {
-      delta = RTC_SHIFTR_SUBFS;
-    }
     HAL_RTCEx_SetSynchroShift(&hrtc, RTC_SHIFTADD1S_SET, (uint32_t) (32768 - delta));
   }
   else
   {
-    /* Only the few ticks spent setting the clock, but bounded all the same. */
-    if (-delta > (int64_t) RTC_SHIFTR_SUBFS)
-    {
-      delta = -(int64_t) RTC_SHIFTR_SUBFS;
-    }
     HAL_RTCEx_SetSynchroShift(&hrtc, RTC_SHIFTADD1S_RESET, (uint32_t) (-delta));
   }
 }
