@@ -74,6 +74,11 @@ require      "$B/Core/Src/main.c"    "LSE_START_TIMEOUT_MS"          "DEV-866 LS
 require      "$B/Core/Src/rtc.c"     "Boot_rtcIsOnLsiFallback"       "DEV-866 LSI limp-home (else a dead LSE hangs boot)"
 require      "$B/Core/Src/rtc.c"     "RTC_shiftToTicks(data->ticks)" "DEV-1161 sub-second time-set (SSR is read-only)"
 require      "$B/Core/Src/rtc.c"     "HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG) == RTC_STATUS_TIME_OK"                                                                      "DEV-1161 time-set marker (else a power loss reads as set)"
+require      "$B/Core/Src/rtc.c"     "(now.subseconds & 0x8000U)"    "DEV-1162 no bare SSR read (it locked the shadow regs for 1 s)"
+require      "$B/Core/Src/rtc.c"     "RTC_irqHold()"                 "DEV-1162 RTC IRQ held off around task-context RTC writes"
+require      "$B/Core/Src/rtc.c"     "(data->subseconds & 0x7FFFU)"  "DEV-1162 ticks from SS[14:0] (SS[15] after a shift is not sub-seconds)"
+require      "$B/Core/Src/rtc.c"     "RTC_SHIFTADD1S_RESET, (uint32_t) (32768 - delta)" \
+                                                                     "DEV-1162 advance-only shift (ADD1S left clocks 1 s fast)"
 require      "$B/Core/Src/sdmmc.c"   "hsd1.Instance = NULL"          "hot-swap tolerance, no Error_Handler() on SD init"
 require      "$B/Core/Src/usb_otg.c" "Init.speed = USB_getPcdSpeed"  "PCD speed selection"
 require      "$B/USBX/App/app_usbx_device.c" "ALIGN_32BYTES"         "32-byte D-cache line alignment of the USBX pool"
@@ -93,8 +98,10 @@ require_re   "$B/USBX/App/ux_user.h" '^#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH[
                                                                      "active 64 KB MSC transfer define (stock is commented out)"
 
 echo
-echo "Generated code that must NOT come back:"
+echo "Code that must NOT come back:"
 forbid       "$B/Core/Src/main.c"    "MX_USBX_Device_Init"           "duplicate init - usb_otg.c already calls it"
+forbid       "$B/Core/Src/rtc.c"     "hrtc.Instance->SSR & 0x8000U"  "DEV-1162 bare SSR read locks the shadow regs (1 s RTC HAL lock)"
+forbid       "$B/Core/Src/rtc.c"     "RTC_SHIFTADD1S_SET"            "DEV-1162 ADD1S shift leaves the clock 1 s fast with PREDIV_S = 0x7FFF"
 
 echo
 if [ "$fail" -ne 0 ]; then
