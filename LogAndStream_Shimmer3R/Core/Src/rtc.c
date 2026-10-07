@@ -730,9 +730,16 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
       {
         /* DEV-1162: in the RTC interrupt the lock's owner cannot run until we
          * return, so neither a retry nor Error_Handler() can help - the latter
-         * froze the device with interrupts masked. TASK_BATT_READ re-arms Alarm
-         * A from task context (RTC_setAlarmBattRead), and every alarm still in
-         * nextAlarms[] is kept, so nothing is lost but one extra battery read. */
+         * froze the device with interrupts masked. Nothing is lost by
+         * deferring:
+         * - HAL_RTC_AlarmAEventCallback has already queued every due context's
+         *   task (stop sensing, jump to bootloader, battery read) before
+         *   clearing that context's nextAlarms[] entry.
+         * - The contexts not yet due are untouched in nextAlarms[].
+         * TASK_BATT_READ re-arms Alarm A from task context, through
+         * RTC_setAlarmBattRead -> RTC_setAlarmAFromNow -> RTC_setNextRtcAlarmA,
+         * which picks the soonest of them. The only cost is one extra battery
+         * read. */
         ShimTask_set(TASK_BATT_READ);
       }
       else
