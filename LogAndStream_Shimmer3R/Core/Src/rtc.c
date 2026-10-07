@@ -283,16 +283,26 @@ static void RTC_irqRelease(uint32_t wasEnabled)
  * fraction cannot be written directly - the old `SSR = ...` store did nothing
  * and every set was truncated to the whole second. Leaving init mode restarts
  * the calendar at the top of the second, so instead read back what the clock
- * now says and shift it by the difference with RTC_SHIFTR (RM0456 "RTC
- * synchronization"):
- *   delay   by SUBFS / (PREDIV_S + 1) s           (ADD1S = 0)
- *   advance by 1 - SUBFS / (PREDIV_S + 1) s       (ADD1S = 1)
- * PREDIV_S + 1 = 32768 here, so one SUBFS step is one tick.
+ * now says and advance it by the difference with RTC_SHIFTR.
+ *
+ * DEV-1162: what a shift actually does here is not what RM0456 describes.
+ * With PREDIV_S = 0x7FFF the synchronous prescaler is SS[14:0]. A shift adds
+ * SUBFS to SS, setting SS[15], and when SS[14:0] next wraps the RTC counts
+ * that as a second: TR increments and SS[15] clears. Traced on the bench
+ * (TR/SSR sampled every 50 ms after a shift). So SUBFS does not delay the
+ * clock by SUBFS ticks - it advances it by 32768 - SUBFS ticks, and ADD1S adds
+ * a whole second more. DEV-1161 used ADD1S with SUBFS = 32768 - delta, which
+ * therefore left every set clock exactly one second fast. Here:
+ *   advance by delta ticks:  ADD1S = 0, SUBFS = 32768 - delta  (0 < delta <
+ * 32768) A delay cannot be expressed; it is never needed beyond a few ticks,
+ * because the clock restarts at the top of the target's second and the
+ * read-back follows within microseconds. RTC_getDateTime() reads SS[14:0] only,
+ * which keeps the time continuous while SS[15] is set.
  *
  * RM0456 constraints: no shift may be pending (SHPF = 0, HAL waits for it),
  * REFCKON must be 0 (HAL refuses otherwise; it is never set here), and SS[15]
- * must be 0 so the addition cannot overflow - always true straight after
- * SetTime, because SSR then holds PREDIV_S = 0x7FFF at most. */
+ * must be 0 - always true straight after SetTime, because SSR then holds
+ * PREDIV_S = 0x7FFF at most. */
 static void RTC_shiftToTicks(uint64_t ticks)
 {
   SHIM_RTC_t now;
@@ -317,20 +327,14 @@ static void RTC_shiftToTicks(uint64_t ticks)
    * registers until DR is read. A bare SSR read here left them locked, so RSF
    * never set and HAL_RTCEx_SetSynchroShift's HAL_RTC_WaitForSynchro ran to
    * its 1 s timeout while holding the RTC HAL lock. */
-  if (delta == 0 || delta > (int64_t) RTC_SHIFTR_SUBFS
-      || -delta > (int64_t) RTC_SHIFTR_SUBFS || (now.subseconds & 0x8000U) != 0U)
+  if (delta <= 0 || delta > (int64_t) RTC_SHIFTR_SUBFS || (now.subseconds & 0x8000U) != 0U)
   {
+    /* delta <= 0: the target is within the few ticks the set took, so the
+     * clock is already as close as a shift could make it */
     return;
   }
-  if (delta > 0)
-  {
-    status = HAL_RTCEx_SetSynchroShift(
-        &hrtc, RTC_SHIFTADD1S_SET, (uint32_t) (32768 - delta));
-  }
-  else
-  {
-    status = HAL_RTCEx_SetSynchroShift(&hrtc, RTC_SHIFTADD1S_RESET, (uint32_t) (-delta));
-  }
+  status = HAL_RTCEx_SetSynchroShift(
+      &hrtc, RTC_SHIFTADD1S_RESET, (uint32_t) (32768 - delta));
 
   /* The HAL waits for a pending shift before writing SHIFTR, but not for the
    * new one to finish, and HAL_RTC_GetTime's sub-second value is only valid
@@ -460,7 +464,11 @@ void RTC_getDateTime(SHIM_RTC_t *data)
   unix = ShimRtc_rtc2Unix(data);
   data->unix = unix;
 
-  data->ticks = ((uint64_t) data->unix * 32768) + 32768 - data->subseconds;
+  /* SS[14:0] only (DEV-1162). After a shift SS[15] is set until SS[14:0]
+   * wraps, and the RTC then increments TR at that wrap, so SS[15] is not part
+   * of the sub-second count: including it reads the clock one second slow
+   * until the wrap. data->subseconds keeps the raw value. */
+  data->ticks = ((uint64_t) data->unix * 32768) + 32768 - (data->subseconds & 0x7FFFU);
 }
 
 void RTC_setTimeFromTicksPtr(uint8_t *ticksPtr)

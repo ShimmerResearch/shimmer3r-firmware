@@ -76,6 +76,9 @@ require      "$B/Core/Src/rtc.c"     "RTC_shiftToTicks(data->ticks)" "DEV-1161 s
 require      "$B/Core/Src/rtc.c"     "HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG) == RTC_STATUS_TIME_OK"                                                                      "DEV-1161 time-set marker (else a power loss reads as set)"
 require      "$B/Core/Src/rtc.c"     "(now.subseconds & 0x8000U)"    "DEV-1162 no bare SSR read (it locked the shadow regs for 1 s)"
 require      "$B/Core/Src/rtc.c"     "RTC_irqHold()"                 "DEV-1162 RTC IRQ held off around task-context RTC writes"
+require      "$B/Core/Src/rtc.c"     "(data->subseconds & 0x7FFFU)"  "DEV-1162 ticks from SS[14:0] (SS[15] after a shift is not sub-seconds)"
+require      "$B/Core/Src/rtc.c"     "RTC_SHIFTADD1S_RESET, (uint32_t) (32768 - delta)" \
+                                                                     "DEV-1162 advance-only shift (ADD1S left clocks 1 s fast)"
 require      "$B/Core/Src/sdmmc.c"   "hsd1.Instance = NULL"          "hot-swap tolerance, no Error_Handler() on SD init"
 require      "$B/Core/Src/usb_otg.c" "Init.speed = USB_getPcdSpeed"  "PCD speed selection"
 require      "$B/USBX/App/app_usbx_device.c" "ALIGN_32BYTES"         "32-byte D-cache line alignment of the USBX pool"
