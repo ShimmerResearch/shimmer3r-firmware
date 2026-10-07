@@ -110,7 +110,7 @@ void MX_RTC_Init(void)
     sDate.WeekDay = RTC_WEEKDAY_MONDAY;
     sDate.Month = RTC_MONTH_JANUARY;
     sDate.Date = 0x1;
-    sDate.Year = 0x70;
+    sDate.Year = 0x0;
 
     if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
     {
@@ -140,6 +140,10 @@ void MX_RTC_Init(void)
       Error_Handler();
     }
     /* USER CODE BEGIN RTC_Init 2 */
+    /* DEV-1161: the backup domain was reset, so the calendar above (2000-01-01)
+     * is not real time. Clear the time-set marker explicitly rather than
+     * relying on the reset having zeroed it - RTC_isRwcTimeSet() reads it. */
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_STATUS_REG, RTC_STATUS_ZERO);
     /* Writes a data in a RTC Backup data Register0 */
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x32F2);
   }
@@ -229,6 +233,71 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef *rtcHandle)
 
 /* USER CODE BEGIN 1 */
 
+/* DEV-1161: move the running clock onto the sub-second part of a time-set.
+ *
+ * RTC_SSR is read-only on the STM32U5 (RM0456 RTC_SSR; the SVD agrees), so the
+ * fraction cannot be written directly - the old `SSR = ...` store did nothing
+ * and every set was truncated to the whole second. Leaving init mode restarts
+ * the calendar at the top of the second, so instead read back what the clock
+ * now says and shift it by the difference with RTC_SHIFTR (RM0456 "RTC
+ * synchronization"):
+ *   delay   by SUBFS / (PREDIV_S + 1) s           (ADD1S = 0)
+ *   advance by 1 - SUBFS / (PREDIV_S + 1) s       (ADD1S = 1)
+ * PREDIV_S + 1 = 32768 here, so one SUBFS step is one tick.
+ *
+ * RM0456 constraints: no shift may be pending (SHPF = 0, HAL waits for it),
+ * REFCKON must be 0 (HAL refuses otherwise; it is never set here), and SS[15]
+ * must be 0 so the addition cannot overflow - always true straight after
+ * SetTime, because SSR then holds PREDIV_S = 0x7FFF at most. */
+static void RTC_shiftToTicks(uint64_t ticks)
+{
+  SHIM_RTC_t now;
+  int64_t delta;
+  HAL_StatusTypeDef status;
+  uint32_t tickstart;
+
+  /* Read back with RTC_getDateTime (the HAL path) so the result does not
+   * depend on how RTC_get64 is implemented. */
+  RTC_getDateTime(&now);
+  delta = (int64_t) (ticks - now.ticks);
+
+  /* The clock was just set to the target's whole second, so a true delta lies
+   * strictly inside one second. Anything else is a torn read-back - an
+   * interrupt reading the RTC between HAL_RTC_GetTime and HAL_RTC_GetDate
+   * unlocks the shadow registers, and across midnight that pairs one day's
+   * time with the next day's date. Shifting on it would be wrong by up to a
+   * second, so leave the clock on the whole second instead. */
+  if (delta == 0 || delta > (int64_t) RTC_SHIFTR_SUBFS
+      || -delta > (int64_t) RTC_SHIFTR_SUBFS || (hrtc.Instance->SSR & 0x8000U) != 0U)
+  {
+    return;
+  }
+  if (delta > 0)
+  {
+    status = HAL_RTCEx_SetSynchroShift(
+        &hrtc, RTC_SHIFTADD1S_SET, (uint32_t) (32768 - delta));
+  }
+  else
+  {
+    status = HAL_RTCEx_SetSynchroShift(&hrtc, RTC_SHIFTADD1S_RESET, (uint32_t) (-delta));
+  }
+
+  /* The HAL waits for a pending shift before writing SHIFTR, but not for the
+   * new one to finish, and HAL_RTC_GetTime's sub-second value is only valid
+   * once SHPF has cleared. Wait here so a GET_RWC straight after the set reads
+   * the shifted clock. It takes a few RTCCLK cycles; the timeout only bounds a
+   * fault. If the shift fails the clock stays on the whole second - still a
+   * set clock, as accurate as before DEV-1161 - so the caller's time-set
+   * marker stands either way. */
+  if (status == HAL_OK)
+  {
+    tickstart = HAL_GetTick();
+    while (READ_BIT(RTC->ICSR, RTC_ICSR_SHPF) != 0U && (HAL_GetTick() - tickstart) <= RTC_TIMEOUT_VALUE)
+    {
+    }
+  }
+}
+
 uint8_t RTC_setDateTime(SHIM_RTC_t *data)
 {
   uint32_t format = RTC_FORMAT_BIN;
@@ -284,7 +353,7 @@ uint8_t RTC_setDateTime(SHIM_RTC_t *data)
   sDate.Year = data->year;
   HAL_RTC_SetDate(&hrtc, &sDate, format);
 
-  hrtc.Instance->SSR = 32768 - (data->ticks % 32768);
+  RTC_shiftToTicks(data->ticks);
   ///**Enable the Alarm A
   //*/
   //sAlarm.AlarmTime.Hours = 0x0;
@@ -691,9 +760,14 @@ void RTC_stopSdSyncAlarm(void)
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRB); //disable Alarm trigger
 }
 
+/* DEV-1161: "a host has set this clock since the backup domain last lost
+ * power", from the marker RTC_setDateTime() writes. A backup-domain reset
+ * clears it along with the calendar (and MX_RTC_Init clears it explicitly), so
+ * no date threshold is needed. The old test compared ticks with a millisecond
+ * constant (DEV-998) and passed for the 2070 power-loss default regardless. */
 uint8_t RTC_isRwcTimeSet(void)
 {
-  return RTC_get64() > 1735689600000; //1735689600000 is the timestamp for 2025-01-01T00:00:00Z
+  return HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG) == RTC_STATUS_TIME_OK;
 }
 
 /* USER CODE END 1 */
