@@ -456,11 +456,18 @@ uint16_t platform_ledTickElapsedRtcTicks(void)
 
 /* Moves the next blink tick later (positive) or earlier (negative) by
  * stepping the counter back or forward. A shift larger than the period allows
- * is clipped, and the next second's sync finishes the job. */
+ * is clipped, and the next second's sync finishes the job.
+ *
+ * Masking interrupts does not stop TIM6, so the counter could wrap between the
+ * read and the write, and the stale value would then undo the reload. The
+ * read-to-write window is a few CPU cycles against 1.25 ms per count, so a
+ * wrap inside it needs the counter to be on its last count when read. That
+ * case is skipped; the next second's sync applies the shift instead. */
 void platform_ledTickShift(int16_t rtcTicks)
 {
   int32_t counts = ((int32_t) rtcTicks * 100) / TIM6_RTC_TICKS_PER_COUNT_X100;
-  int32_t cnt;
+  int32_t arr = (int32_t) __HAL_TIM_GET_AUTORELOAD(&htim6);
+  int32_t now, cnt;
   uint32_t primask;
 
   if (counts == 0)
@@ -470,16 +477,20 @@ void platform_ledTickShift(int16_t rtcTicks)
 
   primask = __get_PRIMASK();
   __disable_irq();
-  cnt = (int32_t) __HAL_TIM_GET_COUNTER(&htim6) - counts;
-  if (cnt < 0)
+  now = (int32_t) __HAL_TIM_GET_COUNTER(&htim6);
+  if (now < arr)
   {
-    cnt = 0;
+    cnt = now - counts;
+    if (cnt < 0)
+    {
+      cnt = 0;
+    }
+    else if (cnt > arr)
+    {
+      cnt = arr;
+    }
+    __HAL_TIM_SET_COUNTER(&htim6, (uint32_t) cnt);
   }
-  else if (cnt > (int32_t) __HAL_TIM_GET_AUTORELOAD(&htim6))
-  {
-    cnt = (int32_t) __HAL_TIM_GET_AUTORELOAD(&htim6);
-  }
-  __HAL_TIM_SET_COUNTER(&htim6, (uint32_t) cnt);
   __set_PRIMASK(primask);
 }
 
