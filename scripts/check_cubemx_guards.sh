@@ -98,8 +98,10 @@ require_re   "$B/USBX/App/ux_user.h" '^#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH[
                                                                      "active 64 KB MSC transfer define (stock is commented out)"
 
 echo
-echo "Generated code that must NOT come back:"
+echo "Code that must NOT come back:"
 forbid       "$B/Core/Src/main.c"    "MX_USBX_Device_Init"           "duplicate init - usb_otg.c already calls it"
+forbid       "$B/Core/Src/rtc.c"     "hrtc.Instance->SSR & 0x8000U"  "DEV-1162 bare SSR read locks the shadow regs (1 s RTC HAL lock)"
+forbid       "$B/Core/Src/rtc.c"     "RTC_SHIFTADD1S_SET"            "DEV-1162 ADD1S shift leaves the clock 1 s fast with PREDIV_S = 0x7FFF"
 
 echo
 if [ "$fail" -ne 0 ]; then
