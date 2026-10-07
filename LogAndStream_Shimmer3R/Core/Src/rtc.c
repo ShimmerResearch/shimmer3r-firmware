@@ -455,7 +455,11 @@ uint64_t RTC_get64(void)
   data.month = RTC_Bcd2ToByte((uint8_t) ((dr & (RTC_DR_MT | RTC_DR_MU)) >> RTC_DR_MU_Pos));
   data.year = RTC_Bcd2ToByte((uint8_t) ((dr & (RTC_DR_YT | RTC_DR_YU)) >> RTC_DR_YU_Pos));
 
-  return ((uint64_t) ShimRtc_rtc2Unix(&data) * 32768) + 32768 - ssr;
+  /* SS[14:0] only: after a time-set shift SS[15] is set until SS[14:0] wraps,
+   * and the RTC increments TR at that wrap, so SS[15] is not part of the
+   * sub-second count (DEV-1162, which applies the same mask in
+   * RTC_getDateTime). */
+  return ((uint64_t) ShimRtc_rtc2Unix(&data) * 32768) + 32768 - (ssr & 0x7FFFU);
 }
 
 uint32_t RTC_get32(void)
