@@ -106,7 +106,7 @@
 						<entry excluding="BMP180|BMP280_driver|SR7|LSM303DLHC|MPU9250|STC3100|RN42|BMP3/BMP3_SensorAPI/examples|BMP5/BMP5_SensorAPI/examples" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Shimmer_Driver"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="USBX/App"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="USBX/Target"/>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="log-and-stream-common"/>
+						<entry excluding=".claude" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="log-and-stream-common"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -208,7 +208,7 @@
 						<entry excluding="BMP3/BMP3_SensorAPI/examples|BMP5/BMP5_SensorAPI/examples|MPU9250|LSM303DLHC|BMP280_driver|BMP180|STC3100|RN42|SR7" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Shimmer_Driver"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="USBX/App"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="USBX/Target"/>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="log-and-stream-common"/>
+						<entry excluding=".claude" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="log-and-stream-common"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
