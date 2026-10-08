@@ -1094,10 +1094,17 @@ void btInitCommands(void)
       printf("Start BT Advertising\r\n");
       setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
 
-      /* From firmware v1.4.17 onwards there is a new flag to control whether to
-       * allow the device enter sniff mode. Set this flag to 1 to disable sniff
-       * mode */
-      uint8_t flags = BT_isFirmwareVersionAtLeast(1, 4, 17) ? 1 : 0;
+      /* SBTP flags, from module firmware v1.4.17:
+       * - F=1 disables sniff mode (v1.4.17 and later).
+       * - F=2 makes the module accept incoming BR/EDR connections as slave
+       *   instead of requesting the master role. No public release has it yet:
+       *   it is in Infineon's test_254 image (IFX-261005-2321966) and expected
+       *   in a later release, possibly v1.4.19.19. Without it every link puts
+       *   the PC in a piconet of its own as slave, and an Intel AX201 then
+       *   refuses a 4th link (DEV-742).
+       * Images without F=2, v1.4.18.18 included, accept and store the bit but
+       * ignore it (bench, 2026-10-08), so it is safe to send ahead of support. */
+      uint8_t flags = BT_isFirmwareVersionAtLeast(1, 4, 17) ? (1 | 2) : 0;
 
       rsp_bt_get_parameters.discoverable = BT_DISC_MODE_GENERAL_DISCOVERABLE;
       rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
