@@ -262,6 +262,10 @@ uint8_t BT_isBleSessionActive(void)
  * until the MCU boots. Rebooting the MCU re-reads the version and
  * re-provisions the module, so the sensor recovers on its own.
  *
+ * Three signs reach here: the binary boot event, the ASCII boot banner (both
+ * when the module comes back on the same baud), and a UART framing error (when
+ * it comes back on another - see btUartErrorCallback()).
+ *
  * Boots the MCU causes itself are not unexpected: power-up, the init
  * sequence's own resets and baud retries, BT switched back on for SD sync, and
  * the factory-reset sequence all run with btInitCmdsRunning or
@@ -272,9 +276,17 @@ uint8_t BT_isBleSessionActive(void)
  * truncated; the module then stays unusable until the sensor restarts, which
  * is no worse than before. Called from the BT UART receive interrupt, the same
  * context the disconnected-event path already resets from. */
+/* Set while the MCU itself is taking the module down. btDeinit() cuts the
+ * module's power before it de-initialises the UART, and the RX line falling in
+ * between reads as a framing error - which must not be taken for a module that
+ * restarted on its own. Cleared when the module is next started, from which
+ * point btInitCmdsRunning covers the start-up. */
+static volatile uint8_t btModuleStopping = 0;
+
 void BT_handleUnexpectedModuleBoot(const char *how)
 {
-  if (!shimmerStatus.btIsInitialised || isBtInitCmdsRunning() || isBtFactoryResetCmdsRunning())
+  if (!shimmerStatus.btIsInitialised || btModuleStopping
+      || isBtInitCmdsRunning() || isBtFactoryResetCmdsRunning())
   {
     return;
   }
@@ -454,6 +466,7 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
 
 void btInit(void)
 {
+  btModuleStopping = 0;
   btInitCmdsStepIdx = 0;
   btInitCmdsStep = WAIT_FOR_BOOT_STAGE1;
 
@@ -487,6 +500,7 @@ void btInit(void)
 
 void btDeinit(void)
 {
+  btModuleStopping = 1;
   setBtPower(0);
   btUart_deint();
   deinitBtPins();

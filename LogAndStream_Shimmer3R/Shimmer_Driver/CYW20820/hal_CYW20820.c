@@ -364,12 +364,30 @@ HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length)
   return status;
 }
 
+/* A framing error on the module UART after initialisation means the module
+ * came back from a restart on a different baud - an OTA image carries its own
+ * UART defaults - so its boot banner arrives as garbage that
+ * BT_watchForBootBanner() can never match (bench, 15BC, 2026-10-11: FE and ORE
+ * set, MCU silent). In DMA mode the HAL treats any receive error as blocking:
+ * it aborts the reception and calls this, so without it the BT receive path
+ * stays dead until the next power cycle. Same handling as a recognised boot -
+ * BT_handleUnexpectedModuleBoot() ignores it during the MCU's own start-up,
+ * whose baud probing produces framing errors legitimately, and while sensing. */
+static void btUartErrorCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->ErrorCode & HAL_UART_ERROR_FE)
+  {
+    BT_handleUnexpectedModuleBoot("UART framing error - module baud changed");
+  }
+}
+
 void setBtUartInstance(UART_HandleTypeDef *huartToUse)
 {
   huartBtPtr = huartToUse;
 
   HAL_UART_RegisterCallback(huartBtPtr, HAL_UART_RX_COMPLETE_CB_ID, btUartDmaRxCpltCallback);
   HAL_UART_RegisterCallback(huartBtPtr, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
+  HAL_UART_RegisterCallback(huartBtPtr, HAL_UART_ERROR_CB_ID, btUartErrorCallback);
   //HAL_DMA_RegisterCallback(huart->, HAL_DMA_XFER_CPLT_CB_ID, btUartDmaRxCpltCallback);
 }
 
