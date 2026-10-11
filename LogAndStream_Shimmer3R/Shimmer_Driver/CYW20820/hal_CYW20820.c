@@ -92,7 +92,14 @@ uint8_t bt_txBuf[512];
 uint8_t rxBuf[512];
 volatile uint16_t expectedByteCount;
 
-volatile uint8_t waitingForBtBoot = 0;
+/* Text capture into btBootMsg: BT_TEXT_CAPTURE_BOOT ends after the two boot
+ * lines, BT_TEXT_CAPTURE_REPLY after the first line starting '@' (the @R/@E
+ * reply to a text command, whether or not the module echoed the command). */
+#define BT_TEXT_CAPTURE_OFF   0U
+#define BT_TEXT_CAPTURE_BOOT  1U
+#define BT_TEXT_CAPTURE_REPLY 2U
+volatile uint8_t waitingForBtBoot = BT_TEXT_CAPTURE_OFF;
+volatile uint16_t btBootMsgLineStart = 0;
 /* The two boot lines (BOOT banner + ASC event). Measured 150 chars on
  * v1.4.12.12, 154 on v1.4.18.18 and 163 on a v1.4.18.18 test image, which
  * overflowed the previous 160-byte buffer: the index that follows it in RAM
@@ -398,8 +405,22 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       if (lineEnded)
       {
         btBootMsgLineCount++;
-        if (btBootMsgLineCount == 2)
+        /* A full buffer also ends a reply capture: the boot sequence has no
+         * timeout, so a reply that can never be recognised must not hang it. */
+        uint8_t captureDone = (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY) ?
+            (btBootMsg[btBootMsgLineStart] == '@'
+                || btBootMsgIndex >= (sizeof(btBootMsg) - 1U)) :
+            (btBootMsgLineCount == 2);
+        btBootMsgLineStart = btBootMsgIndex;
+        if (captureDone)
         {
+          if (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY)
+          {
+            /* The text reply answers the command appOutput() marked as
+             * pending; the binary parser that normally clears it never sees
+             * a text reply. */
+            pending_response = 0;
+          }
           setWaitingForBtBoot(0);
           //TODO fix architecture and function calling
           progressToNextBtInCmd();
@@ -763,16 +784,31 @@ void resetBtRxBuff(void)
   memset(rxBuf, 0, sizeof(rxBuf));
 }
 
+static void startBtTextCapture(uint8_t mode)
+{
+  memset(&btBootMsg[0], 0, sizeof(btBootMsg));
+  btBootMsgIndex = 0;
+  btBootMsgLineStart = 0;
+  btBootMsgLineCount = 0;
+  btBootMsgPrevByte = 0;
+  waitingForBtBoot = mode;
+}
+
 void setWaitingForBtBoot(uint8_t state)
 {
-  waitingForBtBoot = state;
   if (state)
   {
-    memset(&btBootMsg[0], 0, sizeof(btBootMsg));
-    btBootMsgIndex = 0;
-    btBootMsgLineCount = 0;
-    btBootMsgPrevByte = 0;
+    startBtTextCapture(BT_TEXT_CAPTURE_BOOT);
   }
+  else
+  {
+    waitingForBtBoot = BT_TEXT_CAPTURE_OFF;
+  }
+}
+
+void setWaitingForBtTextReply(void)
+{
+  startBtTextCapture(BT_TEXT_CAPTURE_REPLY);
 }
 
 void setSkippingBytesCount(uint8_t count)

@@ -290,6 +290,7 @@ uint8_t btNameTypeBeingRead;
 volatile bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
 static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
+  SPP_MTU_READ, SPP_MTU_WRITE, SPP_MTU_STORE, SPP_MTU_VERIFY, SPP_MTU_DONE,
   ENTER_BINARY_MODE, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3, UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5,
   PING, GET_BT_PARAMETERS, STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1,
@@ -453,6 +454,188 @@ void btDeinit(void)
   deinitBtPins();
 }
 
+/* SPP MTU repair (DEV-1173).
+ *
+ * v1.4.18.18 added a check on a stored SPP MTU (UINT16, default 990) before
+ * each classic SPP send. An OTA from v1.4.16.16 or earlier keeps the module's
+ * stored config, where that field is 0, so the module then sends one UART byte
+ * per RFCOMM frame: under 1 KB/s in transparent mode, and SPP_SEND framing
+ * slows too. /RFAC fixes it but changes the Bluetooth address and clears
+ * bonds. Infineon (IFX-260908-2289766) gave a RAM write of the field followed
+ * by /SCFG instead.
+ *
+ * The RAM address is internal to the module firmware and can move between
+ * builds, so the repair only runs on builds whose boot banner is listed below
+ * (all three share one config layout; its base address, 0x0021391A, is
+ * referenced throughout each image). The steps are text commands, run while
+ * the module is still in its power-on text mode, so /SCFG stores only the
+ * module's own boot config plus the repaired field - nothing this firmware
+ * later sets in RAM. A valid MTU is left alone, so the flash write happens
+ * once per module. Revisit when Infineon releases firmware that migrates the
+ * field itself. */
+static const char *const sppMtuRepairBuilds[] = {
+  "V1.4.18.18 Nov 16 2025 11:37:32",          /* public release */
+  "V1.4.18.18 test_254 Oct  8 2026 09:43:03", /* Infineon test images */
+  "V1.4.18.18 test_255 Sep 29 2026 08:04:20",
+};
+static const char sppMtuReadCmd[] = "/RUD,M=8,O=00213C18,L=04\r\n";
+/* Bytes 27 DE 03 00: 0x27 is the field before the MTU (also a v1.4.18.18
+ * default), then MTU 0x03DE. The value Infineon gave. */
+static const char sppMtuWriteCmd[] = "/WUD,M=8,O=00213C18,D=0003DE27\r\n";
+static const char sppMtuStoreCmd[] = "/SCFG\r\n";
+static bool sppMtuVerifyPending;
+
+static bool sppMtuSend(const char *cmd, uint16_t len)
+{
+  /* Arm the capture first: the reply can start before appOutput() returns */
+  setWaitingForBtTextReply();
+  if (appOutput(len, (const uint8_t *) cmd) == EZS_OUTPUT_RESULT_DATA_WRITTEN)
+  {
+    return true;
+  }
+  setWaitingForBtBoot(0);
+  printf("SPP MTU: send refused\r\n");
+  return false;
+}
+
+/* Reads the MTU from a "/RUD,0000,D=<4 bytes as hex>" reply. */
+static bool sppMtuParse(const char *reply, uint16_t *mtu)
+{
+  const char *d = strstr(reply, "/RUD,0000,D=");
+  if (d == NULL)
+  {
+    return false;
+  }
+  d += strlen("/RUD,0000,D=");
+  uint8_t b[4];
+  for (uint8_t i = 0; i < 4; i++)
+  {
+    char hex[3] = { d[2 * i], d[2 * i + 1], 0 };
+    char *end;
+    b[i] = (uint8_t) strtoul(hex, &end, 16);
+    if (end != &hex[2])
+    {
+      return false;
+    }
+  }
+  *mtu = (uint16_t) (b[1] | (b[2] << 8));
+  return true;
+}
+
+static void sppMtuSkipRest(void)
+{
+  while (btInitCmdsStep != SPP_MTU_DONE)
+  {
+    incrementBtInitCmdsStep();
+  }
+}
+
+/* One SPP MTU repair step. Each step first checks the reply to the previous
+ * command (left in the boot-message buffer), then sends the next one. Returns
+ * true while waiting on a reply, false once the sequence is over and the boot
+ * should carry on. */
+static bool btSppMtuRepairStep(void)
+{
+  const char *reply = getBtBootMsgPtr();
+  uint16_t mtu;
+
+  switch (btInitCmdsStep)
+  {
+  case SPP_MTU_READ:
+  {
+    bool known = false;
+    for (uint8_t i = 0;
+         i < sizeof(sppMtuRepairBuilds) / sizeof(sppMtuRepairBuilds[0]); i++)
+    {
+      known = known || (strstr(reply, sppMtuRepairBuilds[i]) != NULL);
+    }
+    sppMtuVerifyPending = false;
+    if (!known)
+    {
+      sppMtuSkipRest();
+      break;
+    }
+    incrementBtInitCmdsStep();
+    if (sppMtuSend(sppMtuReadCmd, sizeof(sppMtuReadCmd) - 1U))
+    {
+      return true;
+    }
+    sppMtuSkipRest();
+    break;
+  }
+
+  case SPP_MTU_WRITE:
+    if (!sppMtuParse(reply, &mtu))
+    {
+      printf("SPP MTU: unreadable (%s)\r\n", reply);
+      sppMtuSkipRest();
+      break;
+    }
+    if (mtu != 0U)
+    {
+      printf("SPP MTU: %u, ok\r\n", mtu);
+      sppMtuSkipRest();
+      break;
+    }
+    printf("SPP MTU: 0 (stale config after OTA), repairing\r\n");
+    incrementBtInitCmdsStep();
+    if (sppMtuSend(sppMtuWriteCmd, sizeof(sppMtuWriteCmd) - 1U))
+    {
+      return true;
+    }
+    sppMtuSkipRest();
+    break;
+
+  case SPP_MTU_STORE:
+    if (strstr(reply, "/WUD,0000") == NULL)
+    {
+      printf("SPP MTU: write failed (%s)\r\n", reply);
+      sppMtuSkipRest();
+      break;
+    }
+    incrementBtInitCmdsStep();
+    if (sppMtuSend(sppMtuStoreCmd, sizeof(sppMtuStoreCmd) - 1U))
+    {
+      return true;
+    }
+    sppMtuSkipRest();
+    break;
+
+  case SPP_MTU_VERIFY:
+    if (strstr(reply, "/SCFG,0000") == NULL)
+    {
+      printf("SPP MTU: store failed (%s)\r\n", reply);
+    }
+    incrementBtInitCmdsStep();
+    if (sppMtuSend(sppMtuReadCmd, sizeof(sppMtuReadCmd) - 1U))
+    {
+      sppMtuVerifyPending = true;
+      return true;
+    }
+    sppMtuSkipRest();
+    break;
+
+  default:
+    break;
+  }
+
+  /* SPP_MTU_DONE */
+  if (sppMtuVerifyPending)
+  {
+    sppMtuVerifyPending = false;
+    if (sppMtuParse(reply, &mtu))
+    {
+      printf("SPP MTU: repaired, now %u\r\n", mtu);
+    }
+    else
+    {
+      printf("SPP MTU: verify unreadable (%s)\r\n", reply);
+    }
+  }
+  incrementBtInitCmdsStep();
+  return false;
+}
+
 //TODO set appropriate values for setDmaRx() calls
 void btInitCommands(void)
 {
@@ -476,6 +659,14 @@ void btInitCommands(void)
     printf("BT data path: %s (module app version %08lX)\r\n",
         btTransparentMode ? "transparent bridge" : "SPP_SEND framing",
         (unsigned long) rsp_system_query_firmware_version.app);
+  }
+
+  if (btInitCmdsStep >= SPP_MTU_READ && btInitCmdsStep <= SPP_MTU_DONE)
+  {
+    if (btSppMtuRepairStep())
+    {
+      return;
+    }
   }
 
   if (btInitCmdsStep == ENTER_BINARY_MODE)
