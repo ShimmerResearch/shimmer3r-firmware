@@ -101,7 +101,7 @@ static void SystemPower_Config(void);
 void Init(void);
 void InitialiseBt(void);
 void InitialiseBtAfterBoot(void);
-void btFactoryResetViaFw(void);
+bool btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(void);
 void BtStartDone(void);
 void setBtConnectionState(bool state);
@@ -639,8 +639,21 @@ void InitialiseBtAfterBoot(void)
   BtStart();
 }
 
-void btFactoryResetViaFw(void)
+/* Factory resets the CYW20820 (/RFAC) while keeping its Bluetooth MAC.
+ *
+ * The MAC is saved to the EEPROM backup record before the reset and restored
+ * from there afterwards, then read back from the module to confirm it. If the
+ * module reports no valid MAC and none is saved, or the EEPROM backup cannot
+ * be verified, the module is not reset. If a reset is interrupted, calling
+ * this again restores the saved MAC rather than the post-reset one.
+ *
+ * Returns true only if the reset completed and the MAC was confirmed. Either
+ * way, the module is left with its factory configuration at 115200 baud, so
+ * the caller must run InitialiseBt() next to reconfigure it. */
+bool btFactoryResetViaFw(void)
 {
+  bool success;
+
   SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
 
   setBtBootModeFactoryReset();
@@ -650,7 +663,10 @@ void btFactoryResetViaFw(void)
   //Abort transfer operations to release UART for subsequent requests.
   HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
 
-  SHIMMER_PRINTF("BT factory reset end\r\n");
+  success = isBtIsFactoryResetted() && BT_isFactoryResetMacRestored();
+  SHIMMER_PRINTF("BT factory reset end: %s\r\n",
+      success ? "OK" : (isBtIsFactoryResetted() ? "MAC not confirmed" : "not completed"));
+  return success;
 }
 
 void btCommWithDiffBaudRates(void)
@@ -696,6 +712,10 @@ void btCommWithDiffBaudRates(void)
         HAL_Delay(3000);
         incrementBtInitCmdsStep();
         btInitCommands();
+      }
+      else if (isBtFactoryResetEepromStepPending())
+      {
+        BT_runFactoryResetEepromStep();
       }
 
       if (!(resetCntCurrent--))
