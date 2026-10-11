@@ -60,11 +60,12 @@
  * without the MCU being told on the SPP_SEND path.
  * BT_handleUnexpectedModuleBoot() covers it - a module boot after
  * initialisation reboots the MCU, which re-reads the version, picks the data
- * path and re-provisions the module. It fires only once the module is back,
- * which matters: a host must NOT arm reboot-on-disconnect for an update,
- * because on the transparent path the MCU sees the post-VERIFY drop at once and
- * its reboot cuts the module's power while it is still switching images,
- * leaving it on the old image (bench, 15BC, SWO-logged, 2026-10-11).
+ * path and re-provisions the module. The reboot is deliberately delayed until
+ * 10 s after the module's last sign of restarting: rebooting at once cuts the
+ * module's power while it is still switching images and leaves it on the old
+ * one. For the same reason a host must NOT arm reboot-on-disconnect for an
+ * update - on the transparent path the MCU sees the post-VERIFY drop at once
+ * (bench, 15BC, SWO-logged, 2026-10-11).
  *
  * TRANSPARANT_MODE used to be a compile-time switch here; it is gone, and
  * any surviving reference is a bug. */
