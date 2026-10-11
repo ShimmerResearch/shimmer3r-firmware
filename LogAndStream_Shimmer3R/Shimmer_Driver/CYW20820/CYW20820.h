@@ -57,11 +57,14 @@
  * version it carries is the version fielded units end up on: the policy above
  * must be right for it BEFORE that image is published there. The MCU reads
  * the module version only at boot, and after an OTA the module resets itself
- * without the MCU being told: on this path no disconnected event arrives, so
- * the host's reboot-on-disconnect never fires (bench, 2026-10-11).
- * BT_handleUnexpectedModuleBoot() covers it instead - a module boot after
+ * without the MCU being told on the SPP_SEND path.
+ * BT_handleUnexpectedModuleBoot() covers it - a module boot after
  * initialisation reboots the MCU, which re-reads the version, picks the data
- * path and re-provisions the module.
+ * path and re-provisions the module. It fires only once the module is back,
+ * which matters: a host must NOT arm reboot-on-disconnect for an update,
+ * because on the transparent path the MCU sees the post-VERIFY drop at once and
+ * its reboot cuts the module's power while it is still switching images,
+ * leaving it on the old image (bench, 15BC, SWO-logged, 2026-10-11).
  *
  * TRANSPARANT_MODE used to be a compile-time switch here; it is gone, and
  * any surviving reference is a bug. */
