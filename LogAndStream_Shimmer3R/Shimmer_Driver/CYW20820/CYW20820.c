@@ -15,6 +15,7 @@
 #include <stdlib.h>
 
 #include "main.h"
+#include "rtc.h"
 #include "usart.h"
 
 #include "log_and_stream_includes.h"
@@ -255,27 +256,31 @@ uint8_t BT_isBleSessionActive(void)
  * after a good VERIFY the module resets onto the new image by itself. Nothing
  * else tells the MCU - on the SPP_SEND path (v1.4.17+) a disconnect is only
  * ever learnt from the module's in-band disconnected event, which a module
- * that resets never sends, so btConnected stays set and an armed
- * reboot-on-disconnect never fires (bench, 2026-10-11). Meanwhile the module
- * may be running a different version, which decides the data path, and may
- * have come back on its image's default settings, which nothing re-applies
- * until the MCU boots. Rebooting the MCU re-reads the version and
+ * that resets never sends, and the module may come back running a different
+ * version (which decides the data path) on different UART settings (which
+ * nothing re-applies). Rebooting the MCU re-reads the version and
  * re-provisions the module, so the sensor recovers on its own.
  *
  * Three signs reach here: the binary boot event, the ASCII boot banner (both
  * when the module comes back on the same baud), and a UART framing error (when
  * it comes back on another - see btUartErrorCallback()).
  *
+ * The reboot is DELAYED, never immediate. The first sign can come while the
+ * module is still switching images - its TX line glitches as it resets, which
+ * reads as a framing error - and the MCU's start-up powers the module off and
+ * on, which interrupts the switch and leaves it on the OLD image (bench, 15BC,
+ * SWO-logged, 2026-10-11: rebooted at once, the module's next banner still
+ * showed the old version). Each sign re-arms an RTC alarm, so the MCU reboots
+ * BT_MODULE_RESTART_SETTLE_S after the last one.
+ *
  * Boots the MCU causes itself are not unexpected: power-up, the init
  * sequence's own resets and baud retries, BT switched back on for SD sync, and
  * the factory-reset sequence all run with btInitCmdsRunning or
  * btFactoryResetCmdsRunning set, and their banner is consumed by the
- * waitingForBtBoot capture rather than reaching this.
- *
- * Skipped while sensing, like reboot-on-disconnect, so a recording is never
- * truncated; the module then stays unusable until the sensor restarts, which
- * is no worse than before. Called from the BT UART receive interrupt, the same
- * context the disconnected-event path already resets from. */
+ * waitingForBtBoot capture rather than reaching this. Called from interrupt
+ * context (BT UART receive / error). */
+#define BT_MODULE_RESTART_SETTLE_S 10U
+
 /* Set while the MCU itself is taking the module down. btDeinit() cuts the
  * module's power before it de-initialises the UART, and the RX line falling in
  * between reads as a framing error - which must not be taken for a module that
@@ -290,7 +295,17 @@ void BT_handleUnexpectedModuleBoot(const char *how)
   {
     return;
   }
-  printf("BT module restarted unexpectedly (%s)\r\n", how);
+  printf("BT module restarted unexpectedly (%s) - MCU reboot in %us\r\n", how,
+      (unsigned) BT_MODULE_RESTART_SETTLE_S);
+  RTC_setAlarmRebootAfterBtModuleRestart(BT_MODULE_RESTART_SETTLE_S);
+}
+
+/* The RTC alarm armed above has fired: the module has had time to finish
+ * switching images. Skipped while sensing, like reboot-on-disconnect, so a
+ * recording is never truncated; the module then stays unusable until the
+ * sensor restarts, which is no worse than before. */
+void BT_rebootAfterModuleRestart(void)
+{
   if (shimmerStatus.sensing)
   {
     printf("BT module restart: sensing, so not rebooting - the module stays "

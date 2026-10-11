@@ -24,6 +24,7 @@
 
 #include "shimmer_definitions.h"
 #include "time.h"
+#include <CYW20820/CYW20820.h>
 #include <TaskList/shimmer_taskList.h>
 #include <log_and_stream_externs.h>
 
@@ -613,6 +614,9 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
       case RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER:
         ShimTask_set(TASK_JUMP_TO_BOOT_LOADER);
         break;
+      case RTC_ALARM_CONTEXT_REBOOT_AFTER_BT_MODULE_RESTART:
+        BT_rebootAfterModuleRestart();
+        break;
       default:
         //No action or error log
         break;
@@ -642,6 +646,11 @@ void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow)
 {
   //Set the alarm to stop logging after a specified number of minutes
   RTC_setAlarmAFromNow(minutesFromNow * 60, RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING);
+}
+
+void RTC_setAlarmRebootAfterBtModuleRestart(uint8_t secondsFromNow)
+{
+  RTC_setAlarmAFromNow(secondsFromNow, RTC_ALARM_CONTEXT_REBOOT_AFTER_BT_MODULE_RESTART);
 }
 
 void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow)

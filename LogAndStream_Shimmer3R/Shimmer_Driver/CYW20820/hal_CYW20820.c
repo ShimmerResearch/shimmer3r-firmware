@@ -395,9 +395,13 @@ void setBtUartInstance(UART_HandleTypeDef *huartToUse)
  * when it restarts in text mode ("@E,xxxx,BOOT,E=..."), which the binary
  * parser cannot recognise. Matching the fixed text "BOOT,E=" byte by byte
  * needs no buffer, and binary EZ-Serial frames do not carry that printable
- * sequence. Fed only from the parser branch: during the MCU's own module
- * start-up the banner goes to the waitingForBtBoot capture instead, and a raw
- * data pipe carries Shimmer payload, not module output. */
+ * sequence. Fed from both the parser and the raw-pipe branches: a module that
+ * resets with the data pipe engaged prints its banner while the receive path
+ * is still routing bytes to the Shimmer parser (the CYSPP pin is read live),
+ * so watching the parser branch alone missed it until host traffic arrived
+ * (bench, 2026-10-11). Shimmer host commands are binary and never carry the
+ * text. During the MCU's own module start-up the banner goes to the
+ * waitingForBtBoot capture instead, and never reaches this. */
 static void BT_watchForBootBanner(uint8_t byte)
 {
   static const char pattern[] = "BOOT,E=";
@@ -470,6 +474,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     }
     else if (BT_isRawPipeEngagedNow())
     {
+      BT_watchForBootBanner(rxBuf[i]);
       /* Parse as Shimmer packet, gated on the LIVE data-mode state from the
        * CYSPP pin - read from the pin itself here, not only the cached state
        * its EXTI handler keeps, which this interrupt can preempt (see
