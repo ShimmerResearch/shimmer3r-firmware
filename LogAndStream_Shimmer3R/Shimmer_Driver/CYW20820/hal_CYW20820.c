@@ -373,6 +373,33 @@ void setBtUartInstance(UART_HandleTypeDef *huartToUse)
   //HAL_DMA_RegisterCallback(huart->, HAL_DMA_XFER_CPLT_CB_ID, btUartDmaRxCpltCallback);
 }
 
+/* Watch the EZ-Serial byte stream for the ASCII boot banner a module prints
+ * when it restarts in text mode ("@E,xxxx,BOOT,E=..."), which the binary
+ * parser cannot recognise. Matching the fixed text "BOOT,E=" byte by byte
+ * needs no buffer, and binary EZ-Serial frames do not carry that printable
+ * sequence. Fed only from the parser branch: during the MCU's own module
+ * start-up the banner goes to the waitingForBtBoot capture instead, and a raw
+ * data pipe carries Shimmer payload, not module output. */
+static void BT_watchForBootBanner(uint8_t byte)
+{
+  static const char pattern[] = "BOOT,E=";
+  static uint8_t matched = 0;
+
+  if (byte == (uint8_t) pattern[matched])
+  {
+    matched++;
+    if (matched == sizeof(pattern) - 1U)
+    {
+      matched = 0;
+      BT_handleUnexpectedModuleBoot("text boot banner");
+    }
+  }
+  else
+  {
+    matched = (byte == (uint8_t) pattern[0]) ? 1U : 0U;
+  }
+}
+
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 {
   uint16_t count = 1;
@@ -453,6 +480,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     }
     else
     {
+      BT_watchForBootBanner(rxBuf[i]);
       ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
       if (result != 0)
       {

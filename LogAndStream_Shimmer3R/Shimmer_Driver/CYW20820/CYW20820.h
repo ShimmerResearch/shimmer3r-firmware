@@ -56,14 +56,12 @@
  * Extras/WsOtaUpgrade. The web app offers exactly one image, so whatever
  * version it carries is the version fielded units end up on: the policy above
  * must be right for it BEFORE that image is published there. The MCU reads
- * the module version only at boot, so the host arms reboot-on-disconnect
- * before the update, intending the module's post-update reset to drop the
- * link (BT_CONNECTION / BT_CYSPP) and the MCU to reboot onto the right data
- * path. That reboot matters for more than the version string: the OTA
- * images also carry the module's configuration, so the module may come back
- * on factory UART settings (115200) that only the MCU's boot-time
- * provisioning recovers. Not yet observed on hardware - confirm both before
- * relying on it.
+ * the module version only at boot, and after an OTA the module resets itself
+ * without the MCU being told: on this path no disconnected event arrives, so
+ * the host's reboot-on-disconnect never fires (bench, 2026-10-11).
+ * BT_handleUnexpectedModuleBoot() covers it instead - a module boot after
+ * initialisation reboots the MCU, which re-reads the version, picks the data
+ * path and re-provisions the module.
  *
  * TRANSPARANT_MODE used to be a compile-time switch here; it is gone, and
  * any surviving reference is a bug. */
@@ -164,6 +162,7 @@ void progressToNextBtInCmd(void);
 void setExpectedResponse(uint16_t idx);
 bool isBtIsFactoryResetted(void);
 bool isBtInitCmdsRunning(void);
+void BT_handleUnexpectedModuleBoot(const char *how);
 bool isBtFactoryResetCmdsRunning(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);

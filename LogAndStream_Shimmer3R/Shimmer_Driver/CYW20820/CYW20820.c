@@ -250,6 +250,45 @@ uint8_t BT_isBleSessionActive(void)
   return btBleSessionActive;
 }
 
+/* The module restarted while this MCU was running and had finished setting it
+ * up (DEV-1164). The usual cause is a host updating the module over BLE OTA:
+ * after a good VERIFY the module resets onto the new image by itself. Nothing
+ * else tells the MCU - on the SPP_SEND path (v1.4.17+) a disconnect is only
+ * ever learnt from the module's in-band disconnected event, which a module
+ * that resets never sends, so btConnected stays set and an armed
+ * reboot-on-disconnect never fires (bench, 2026-10-11). Meanwhile the module
+ * may be running a different version, which decides the data path, and may
+ * have come back on its image's default settings, which nothing re-applies
+ * until the MCU boots. Rebooting the MCU re-reads the version and
+ * re-provisions the module, so the sensor recovers on its own.
+ *
+ * Boots the MCU causes itself are not unexpected: power-up, the init
+ * sequence's own resets and baud retries, BT switched back on for SD sync, and
+ * the factory-reset sequence all run with btInitCmdsRunning or
+ * btFactoryResetCmdsRunning set, and their banner is consumed by the
+ * waitingForBtBoot capture rather than reaching this.
+ *
+ * Skipped while sensing, like reboot-on-disconnect, so a recording is never
+ * truncated; the module then stays unusable until the sensor restarts, which
+ * is no worse than before. Called from the BT UART receive interrupt, the same
+ * context the disconnected-event path already resets from. */
+void BT_handleUnexpectedModuleBoot(const char *how)
+{
+  if (!shimmerStatus.btIsInitialised || isBtInitCmdsRunning() || isBtFactoryResetCmdsRunning())
+  {
+    return;
+  }
+  printf("BT module restarted unexpectedly (%s)\r\n", how);
+  if (shimmerStatus.sensing)
+  {
+    printf("BT module restart: sensing, so not rebooting - the module stays "
+           "unusable until the sensor restarts\r\n");
+    return;
+  }
+  printf("BT module restart: rebooting the MCU to re-provision it\r\n");
+  platform_reset();
+}
+
 /* The boot banner carries the application version as "E=" + 8 hex digits
  * (e.g. E=01041212 = v1.4.18.18), the same 32-bit value GET_FIRMWARE_VERSION
  * returns, so both paths feed BT_isFirmwareVersionAtLeast(). Parsing it here
@@ -1326,6 +1365,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printHexMac(packet->payload.evt_system_boot.address);
     printf("\r\n");
 #endif
+    /* Only reached when the module boots in binary mode. A module that boots
+     * in text mode announces itself with an ASCII banner instead, which the
+     * receive path watches for separately (BT_watchForBootBanner). */
+    BT_handleUnexpectedModuleBoot("binary boot event");
     break;
 
   case EZS_IDX_EVT_GAP_ADV_STATE_CHANGED:
