@@ -287,10 +287,9 @@ static void BT_parseFwVersionFromBootBanner(const char *msg)
  * keep the bridge working; exclude any that regress here. */
 static void BT_selectDataPath(void)
 {
-  btTransparentMode = (BT_isFirmwareVersionAtLeast(1, 4, 17)
-                          && !BT_isFirmwareVersionAtLeast(1, 4, 18)) ?
-      0 :
-      1;
+  bool isV1_4_17 = BT_isFirmwareVersionAtLeast(1, 4, 17)
+      && !BT_isFirmwareVersionAtLeast(1, 4, 18);
+  btTransparentMode = isV1_4_17 ? 0 : 1;
 }
 
 uint8_t *btInitCmdsSteps;
