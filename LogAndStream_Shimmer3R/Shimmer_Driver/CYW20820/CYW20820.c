@@ -331,6 +331,9 @@ static void btBumpModuleEpoch(void)
   uint32_t primask = __get_PRIMASK();
   __disable_irq();
   btModuleEpoch++;
+  /* A sign recorded before this deliberate stop/start belongs to the module
+   * being stopped; it must not arm a reboot under the new epoch. */
+  btModuleRestartSeen = 0;
   __set_PRIMASK(primask);
 }
 
@@ -338,13 +341,18 @@ void BT_serviceModuleRestart(void)
 {
   /* Claim the sign and snapshot what goes with it in one step: a sign the
    * interrupt raises after this still sets the flag again, and re-arms the
-   * alarm on the next pass, so the reboot always follows the LAST sign. */
+   * alarm on the next pass, so the reboot always follows the LAST sign. The
+   * epoch is recorded only when a sign is claimed - recording it on every
+   * pass would re-validate an alarm a deliberate stop/start has superseded. */
   uint32_t primask = __get_PRIMASK();
   __disable_irq();
   uint8_t seen = btModuleRestartSeen;
   const char *how = btModuleRestartHow;
-  btModuleRestartSeen = 0;
-  btModuleRestartEpoch = btModuleEpoch;
+  if (seen)
+  {
+    btModuleRestartSeen = 0;
+    btModuleRestartEpoch = btModuleEpoch;
+  }
   __set_PRIMASK(primask);
 
   if (!seen)
