@@ -48,6 +48,25 @@
  *   OTA leaves at 0, which the boot sequence now repairs (DEV-1173). With a
  *   valid MTU the bridge beats SPP_SEND framing and avoids its two-frame lag.
  *
+ * Fielded modules change version without an MCU update. This MCU cannot
+ * reflash the module: it is wired to the module's PUART, and the HCI UART
+ * that serial download needs reaches only test pads. A customer updates the
+ * module over BLE OTA from the host instead - Shimmer Capture Web, through
+ * shimmer-web-sdk's runIf820OtaUpdate (DEV-1164), the same protocol as
+ * Extras/WsOtaUpgrade. The web app offers exactly one image, so whatever
+ * version it carries is the version fielded units end up on: the policy above
+ * must be right for it BEFORE that image is published there. The MCU reads
+ * the module version only at boot, and after an OTA the module resets itself
+ * without the MCU being told on the SPP_SEND path.
+ * BT_handleUnexpectedModuleBoot() covers it - a module boot after
+ * initialisation reboots the MCU, which re-reads the version, picks the data
+ * path and re-provisions the module. The reboot is deliberately delayed until
+ * 10 s after the module's last sign of restarting: rebooting at once cuts the
+ * module's power while it is still switching images and leaves it on the old
+ * one. For the same reason a host must NOT arm reboot-on-disconnect for an
+ * update - on the transparent path the MCU sees the post-VERIFY drop at once
+ * (bench, 15BC, SWO-logged, 2026-10-11).
+ *
  * TRANSPARANT_MODE used to be a compile-time switch here; it is gone, and
  * any surviving reference is a bug. */
 #ifdef TRANSPARANT_MODE
@@ -154,6 +173,9 @@ void progressToNextBtInCmd(void);
 void setExpectedResponse(uint16_t idx);
 bool isBtIsFactoryResetted(void);
 bool isBtInitCmdsRunning(void);
+void BT_handleUnexpectedModuleBoot(const char *how);
+void BT_rebootAfterModuleRestart(void);
+void BT_serviceModuleRestart(void);
 bool isBtFactoryResetCmdsRunning(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
