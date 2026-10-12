@@ -519,6 +519,10 @@ int main(void)
       }
     }
 
+    /* DEV-1164: arm the delayed MCU reboot after a BT module restart, in task
+     * context (the BT UART interrupt only records it). */
+    BT_serviceModuleRestart();
+
     ShimTask_manage();
   }
   /* USER CODE END 3 */

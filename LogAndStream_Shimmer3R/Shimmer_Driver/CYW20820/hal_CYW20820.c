@@ -474,7 +474,6 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     }
     else if (BT_isRawPipeEngagedNow())
     {
-      BT_watchForBootBanner(rxBuf[i]);
       /* Parse as Shimmer packet, gated on the LIVE data-mode state from the
        * CYSPP pin - read from the pin itself here, not only the cached state
        * its EXTI handler keeps, which this interrupt can preempt (see
@@ -491,6 +490,16 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
       count = btRxWaitByteCount;
+      /* Watch every byte this step consumes, not just the first: the Shimmer
+       * parser takes `count` bytes at once, and a banner starting inside them
+       * would otherwise pass unchecked. */
+      {
+        uint16_t span = (count > 0U) ? count : 1U;
+        for (uint16_t k = 0; k < span && (uint16_t) (i + k) < expectedByteCount; k++)
+        {
+          BT_watchForBootBanner(rxBuf[i + k]);
+        }
+      }
       ShimBt_dmaConversionDone(&rxBuf[i]);
       /* Never advance by zero. btRxWaitByteCount starts at 0 and is only set
        * once the Shimmer parser is waiting for a known number of bytes, and

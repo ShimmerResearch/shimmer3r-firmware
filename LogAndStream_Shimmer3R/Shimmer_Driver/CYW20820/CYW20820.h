@@ -168,6 +168,7 @@ bool isBtIsFactoryResetted(void);
 bool isBtInitCmdsRunning(void);
 void BT_handleUnexpectedModuleBoot(const char *how);
 void BT_rebootAfterModuleRestart(void);
+void BT_serviceModuleRestart(void);
 bool isBtFactoryResetCmdsRunning(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);

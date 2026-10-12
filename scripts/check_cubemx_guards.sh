@@ -71,6 +71,7 @@ forbid() { # file, fixed string, why it must not be there
 
 echo "Hand-written code that CubeMX regeneration is known to delete:"
 require      "$B/Core/Src/main.c"    "LSE_START_TIMEOUT_MS"          "DEV-866 LSE drive ladder"
+require      "$B/Core/Src/main.c"    "BT_serviceModuleRestart();"    "DEV-1164 arms the post-OTA MCU reboot in task context"
 require      "$B/Core/Src/rtc.c"     "Boot_rtcIsOnLsiFallback"       "DEV-866 LSI limp-home (else a dead LSE hangs boot)"
 require      "$B/Core/Src/rtc.c"     "RTC_shiftToTicks(data->ticks)" "DEV-1161 sub-second time-set (SSR is read-only)"
 require      "$B/Core/Src/rtc.c"     "HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG) == RTC_STATUS_TIME_OK"                                                                      "DEV-1161 time-set marker (else a power loss reads as set)"

@@ -273,6 +273,19 @@ uint8_t BT_isBleSessionActive(void)
  * showed the old version). Each sign re-arms an RTC alarm, so the MCU reboots
  * BT_MODULE_RESTART_SETTLE_S after the last one.
  *
+ * The signs arrive in the BT UART interrupt, which must not touch the RTC: the
+ * RTC HAL lock can be held by task-context code that this interrupt preempts,
+ * and HAL_RTC_SetAlarm_IT() would then fail with HAL_BUSY, leaving the alarm
+ * unprogrammed. So the interrupt only records the sign and wakes the main
+ * loop; BT_serviceModuleRestart(), called from the main loop, arms the alarm
+ * in task context like every other RTC write.
+ *
+ * A deliberate stop or start of the module supersedes a pending recovery:
+ * btInit() and btDeinit() bump btModuleEpoch, and an alarm armed under an
+ * older epoch does nothing when it fires. (Cancelling the alarm there instead
+ * would mean touching the RTC from btDeinit(), which SD sync can reach from
+ * the RTC alarm-B interrupt.)
+ *
  * Boots the MCU causes itself are not unexpected: power-up, the init
  * sequence's own resets and baud retries, BT switched back on for SD sync, and
  * the factory-reset sequence all run with btInitCmdsRunning or
@@ -288,6 +301,14 @@ uint8_t BT_isBleSessionActive(void)
  * point btInitCmdsRunning covers the start-up. */
 static volatile uint8_t btModuleStopping = 0;
 
+/* Bumped on every deliberate start and stop of the module. */
+static volatile uint32_t btModuleEpoch = 0;
+/* Set by the interrupt when it sees a sign, cleared once the alarm is armed. */
+static volatile uint8_t btModuleRestartSeen = 0;
+static const char *volatile btModuleRestartHow = "";
+/* The epoch the pending reboot alarm was armed under. */
+static volatile uint32_t btModuleRestartEpoch = 0;
+
 void BT_handleUnexpectedModuleBoot(const char *how)
 {
   if (!shimmerStatus.btIsInitialised || btModuleStopping
@@ -295,8 +316,23 @@ void BT_handleUnexpectedModuleBoot(const char *how)
   {
     return;
   }
-  printf("BT module restarted unexpectedly (%s) - MCU reboot in %us\r\n", how,
-      (unsigned) BT_MODULE_RESTART_SETTLE_S);
+  btModuleRestartHow = how;
+  btModuleRestartSeen = 1;
+  /* Wake the main loop, which may be in sleep-on-exit, so that
+   * BT_serviceModuleRestart() runs. */
+  HAL_PWR_DisableSleepOnExit();
+}
+
+void BT_serviceModuleRestart(void)
+{
+  if (!btModuleRestartSeen)
+  {
+    return;
+  }
+  btModuleRestartSeen = 0;
+  btModuleRestartEpoch = btModuleEpoch;
+  printf("BT module restarted unexpectedly (%s) - MCU reboot in %us\r\n",
+      btModuleRestartHow, (unsigned) BT_MODULE_RESTART_SETTLE_S);
   RTC_setAlarmRebootAfterBtModuleRestart(BT_MODULE_RESTART_SETTLE_S);
 }
 
@@ -306,6 +342,12 @@ void BT_handleUnexpectedModuleBoot(const char *how)
  * sensor restarts, which is no worse than before. */
 void BT_rebootAfterModuleRestart(void)
 {
+  if (btModuleRestartEpoch != btModuleEpoch)
+  {
+    /* The module has been deliberately stopped or restarted since this was
+     * armed, which superseded the recovery. */
+    return;
+  }
   if (shimmerStatus.sensing)
   {
     printf("BT module restart: sensing, so not rebooting - the module stays "
@@ -482,6 +524,7 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
 void btInit(void)
 {
   btModuleStopping = 0;
+  btModuleEpoch++;
   btInitCmdsStepIdx = 0;
   btInitCmdsStep = WAIT_FOR_BOOT_STAGE1;
 
@@ -516,6 +559,7 @@ void btInit(void)
 void btDeinit(void)
 {
   btModuleStopping = 1;
+  btModuleEpoch++;
   setBtPower(0);
   btUart_deint();
   deinitBtPins();
