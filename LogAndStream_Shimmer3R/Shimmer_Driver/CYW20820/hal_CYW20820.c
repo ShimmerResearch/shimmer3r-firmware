@@ -402,9 +402,14 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       //SHIMMER_PRINTF("S0=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
       uint8_t lineEnded = (btBootMsgPrevByte == 0x0D && bootByte == 0x0A);
       btBootMsgPrevByte = bootByte;
-      /* A full buffer ends a reply capture on any byte, line ending or not:
-       * the boot sequence has no timeout, so a reply that can never be
-       * recognised must not hang it. */
+      /* A full buffer ends a reply capture on any byte, line ending or not,
+       * so a reply that can never be recognised does not hold the sequence.
+       * A reply that never arrives at all is caught one level up, like an
+       * unanswered binary command: first-boot init runs under
+       * btCommWithDiffBaudRates(), which stops and restarts Bluetooth after
+       * 5 s per attempt (the restart re-arms boot capture at
+       * WAIT_FOR_BOOT_STAGE1) and reports BOOT_STAGE_BLUETOOTH_FAILURE after
+       * four retries. */
       uint8_t replyBufferFull = (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY)
           && (btBootMsgIndex >= (sizeof(btBootMsg) - 1U));
       if (lineEnded || replyBufferFull)

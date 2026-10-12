@@ -508,7 +508,8 @@ static bool sppMtuSend(const char *cmd, uint16_t len)
 
 /* Reads the MTU from a /RUD reply. The module's text replies start the line
  * with "@R,<length>," and keep the command's own slash, e.g. (bench, v1.4.18.18
- * test_254):
+ * test_254; the /RUD is from a module at its own default MTU, 0x03F3 = 1011 -
+ * after the repair it reads D=27DE0300, MTU 990):
  *   @R,0015,/RUD,0000,D=27F30300
  *   @R,000A,/WUD,0000
  *   @R,000B,/SCFG,0000
