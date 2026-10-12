@@ -225,9 +225,9 @@ static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref
 static uint16_t sppSendFailStreak = 0;
 
 /* Classic-SPP data path, decided per boot from the module firmware version.
- * Transparent until proven otherwise: an unparseable banner leaves a v1.4.17+
- * module slow (~0.4 KB/s) but functional, whereas the reverse would send
- * SPP_SEND commands a legacy module does not understand and mute it. */
+ * Transparent until proven otherwise: an unparseable banner leaves a v1.4.17.x
+ * module slow but functional, whereas the reverse would send SPP_SEND commands
+ * a module below v1.4.17 does not understand and mute it. */
 /* volatile: set from the boot sequence (main context) and read from the UART
  * RX/TX interrupt paths. */
 static volatile uint8_t btTransparentMode = 1;
@@ -273,15 +273,23 @@ static void BT_parseFwVersionFromBootBanner(const char *msg)
          "module\r\n");
 }
 
-/* THE POLICY. v1.4.17 introduced SPP_SEND; on v1.4.18.18 the transparent
- * bridge frames one UART byte per RFCOMM frame against a Windows host
- * (HCI-verified), so those modules use SPP_SEND framing. Legacy modules keep
- * the transparent bridge production has always run them in (~100 KB/s).
- * When a module release with the transparent-mode fix exists, exclude it
- * here so it goes transparent again. */
+/* THE POLICY. Transparent bridge everywhere except v1.4.17.x, a bench-only
+ * module release that never ships, which keeps SPP_SEND framing.
+ *
+ * v1.4.18.x went to SPP_SEND because its transparent bridge sent one UART byte
+ * per RFCOMM frame (~0.4 KB/s). That turned out to be the SPP MTU an OTA
+ * leaves at 0 (DEV-1173, repaired at boot by the SPP_MTU_* steps), not the
+ * bridge. With a valid MTU, the transparent bridge runs at about 76 KB/s on the
+ * v1.4.18.18 release and about 160-170 KB/s on Infineon's test_254/test_255,
+ * against about 70-75 KB/s for SPP_SEND framing on all of them. SPP_SEND
+ * framing on v1.4.18.x also holds back the last two frames of a burst, so a
+ * command's reply after a stream arrives late. Later releases are assumed to
+ * keep the bridge working; exclude any that regress here. */
 static void BT_selectDataPath(void)
 {
-  btTransparentMode = BT_isFirmwareVersionAtLeast(1, 4, 17) ? 0 : 1;
+  bool isV1_4_17 = BT_isFirmwareVersionAtLeast(1, 4, 17)
+      && !BT_isFirmwareVersionAtLeast(1, 4, 18);
+  btTransparentMode = isV1_4_17 ? 0 : 1;
 }
 
 uint8_t *btInitCmdsSteps;

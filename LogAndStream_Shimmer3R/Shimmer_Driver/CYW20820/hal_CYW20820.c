@@ -572,11 +572,11 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
 {
   /* A raw data bridge is engaged: a BLE CYSPP data pipe (any module version -
-   * SPPM bit 1 governs classic SPP only), or classic transparent SPP on a
-   * legacy module. Raw DMA is the only correct transmit here; an SPP_SEND
-   * command would be injected into the pipe as garbage, and on a BLE pipe the
-   * module rejects it outright (0x0502 CONNECTION_REQUIRED - there is no
-   * classic SPP link to send on). */
+   * SPPM bit 1 governs classic SPP only), or classic transparent SPP (modules
+   * below v1.4.17, and v1.4.18.x+). Raw DMA is the only correct transmit here;
+   * an SPP_SEND command would be injected into the pipe as garbage, and on a
+   * BLE pipe the module rejects it outright (0x0502 CONNECTION_REQUIRED - there
+   * is no classic SPP link to send on). */
   if (getBtCysppState())
   {
     /* One step with appOutput()'s check-and-start: HAL_UART_Transmit_DMA()'s
@@ -608,7 +608,7 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
     return HAL_SHIM_BUSY;
   }
 
-  /* SPP_SEND framing (modules v1.4.17+, classic SPP, no bridge active) */
+  /* SPP_SEND framing (v1.4.17.x modules only, classic SPP, no bridge active) */
   HAL_StatusTypeDef ret_val = HAL_OK;
   ezs_output_result_t ezs_ret;
 

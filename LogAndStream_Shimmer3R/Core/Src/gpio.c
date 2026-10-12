@@ -330,16 +330,18 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
 #endif
     if (BT_isTransparentMode())
     {
-      /* Legacy modules (transparent policy): the pin is ACTIVE-LOW and tracks
-       * both BLE and classic connections (bench 2026-09-07, v1.4.16.16), and
-       * it is the only reliable DISCONNECT signal there - the in-band
-       * disconnected event arrives while the RX demux may still be in raw
-       * data mode and is consumed as payload, which left btConnected set and
-       * the blue LED on after a disconnect. On v1.4.18.18 the pin latches
-       * HIGH after the first connection, but those modules run SPP_SEND
-       * framing where the in-band events always parse, so it is ignored
-       * there. setBtConnectionState() is idempotent, so this coexists with
-       * the in-band connected event. */
+      /* Transparent policy (modules below v1.4.17, and v1.4.18.x+): the pin
+       * is ACTIVE-LOW and tracks both BLE and classic connections (bench
+       * 2026-09-07 v1.4.16.16; 2026-10-11/12 v1.4.18.18 release and test_254
+       * with a valid SPP MTU), and it is the only reliable DISCONNECT signal
+       * there - the in-band disconnected event arrives while the RX demux may
+       * still be in raw data mode and is consumed as payload, which left
+       * btConnected set and the blue LED on after a disconnect. An earlier
+       * v1.4.18.18 observation of the pin latching HIGH was on a module with
+       * the stale MTU (DEV-1173). Under SPP_SEND framing (v1.4.17.x) the
+       * in-band events always parse, so the pin is ignored there.
+       * setBtConnectionState() is idempotent, so this coexists with the
+       * in-band connected event. */
       setBtConnectionState(!isRising);
     }
     break;
@@ -352,10 +354,10 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     }
 #endif
     /* Data-bridge tracker, but ONLY authoritative under the transparent
-     * (legacy-module) policy. There the pin is the sole signal for the raw
-     * UART<->SPP bridge: low = bridging, high = a command-mode window (not a
-     * disconnect, so it is deliberately not coupled to
-     * setBtConnectionState()). It drives the RX demux and BtTransmit().
+     * policy (modules below v1.4.17, and v1.4.18.x+). There the pin is the sole
+     * signal for the raw UART<->SPP bridge: low = bridging, high = a
+     * command-mode window (not a disconnect, so it is deliberately not coupled
+     * to setBtConnectionState()). It drives the RX demux and BtTransmit().
      *
      * The RISING edge is honoured on every module version. It means the
      * module has left data mode - momentarily, to deliver an event, or for
