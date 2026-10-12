@@ -225,9 +225,9 @@ static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref
 static uint16_t sppSendFailStreak = 0;
 
 /* Classic-SPP data path, decided per boot from the module firmware version.
- * Transparent until proven otherwise: an unparseable banner leaves a v1.4.17+
- * module slow (~0.4 KB/s) but functional, whereas the reverse would send
- * SPP_SEND commands a legacy module does not understand and mute it. */
+ * Transparent until proven otherwise: an unparseable banner leaves a v1.4.17.x
+ * module slow but functional, whereas the reverse would send SPP_SEND commands
+ * a module below v1.4.17 does not understand and mute it. */
 /* volatile: set from the boot sequence (main context) and read from the UART
  * RX/TX interrupt paths. */
 static volatile uint8_t btTransparentMode = 1;
