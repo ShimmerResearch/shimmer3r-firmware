@@ -498,7 +498,14 @@ static bool sppMtuSend(const char *cmd, uint16_t len)
   return false;
 }
 
-/* Reads the MTU from a "/RUD,0000,D=<4 bytes as hex>" reply. */
+/* Reads the MTU from a /RUD reply. The module's text replies start the line
+ * with "@R,<length>," and keep the command's own slash, e.g. (bench, v1.4.18.18
+ * test_254):
+ *   @R,0015,/RUD,0000,D=27F30300
+ *   @R,000A,/WUD,0000
+ *   @R,000B,/SCFG,0000
+ * so matching "/RUD,0000,D=", "/WUD,0000" and "/SCFG,0000" finds the command
+ * and its 0000 (success) result. */
 static bool sppMtuParse(const char *reply, uint16_t *mtu)
 {
   const char *d = strstr(reply, "/RUD,0000,D=");
