@@ -1110,15 +1110,11 @@ void btInitCommands(void)
       rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
       if (rsp_bt_get_parameters.flags != flags)
       {
-        /* Persist the sniff-disable flag in the module's NV config (flash
-         * scope), guarded by the read-back above so it costs one flash write
-         * ever, not one per boot. A RAM-scoped flag demonstrably keeps
-         * non-transparent mode sniff-free (56 KB/s), but transparent-mode
-         * throughput shows a sniff signature (~250 B per ~0.6 s anchor) -
-         * this tests whether the module reloads link policy from NV when the
-         * SPP data bridge engages. The GBTP "BT params:" boot print shows
-         * flags=01 once this has stuck. */
-        printf("Persisting sniff-disable flag to module flash\r\n");
+        /* Persist the SBTP flags (F=1 sniff disable, F=2 slave role) in the
+         * module's NV config (flash scope), guarded by the read-back above so
+         * it costs one flash write per change, not one per boot. The GBTP
+         * "BT params:" boot print shows flags=03 once this has stuck. */
+        printf("Persisting SBTP flags %02X to module flash\r\n", flags);
         ezs_fcmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
             rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
             flags, rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
