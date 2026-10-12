@@ -311,13 +311,22 @@ static volatile uint32_t btModuleRestartEpoch = 0;
 
 void BT_handleUnexpectedModuleBoot(const char *how)
 {
+  /* The guard and the flag are set in one interrupt-masked step: the BT UART
+   * interrupt runs below the RTC alarm's priority, so without this an alarm-B
+   * btDeinit() could stop the module (and bump the epoch, clearing the flag)
+   * between the checks and the set, leaving a stale sign that a later
+   * btInit() would service under the new epoch. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
   if (!shimmerStatus.btIsInitialised || btModuleStopping
       || isBtInitCmdsRunning() || isBtFactoryResetCmdsRunning())
   {
+    __set_PRIMASK(primask);
     return;
   }
   btModuleRestartHow = how;
   btModuleRestartSeen = 1;
+  __set_PRIMASK(primask);
   /* Wake the main loop, which may be in sleep-on-exit, so that
    * BT_serviceModuleRestart() runs. */
   HAL_PWR_DisableSleepOnExit();
