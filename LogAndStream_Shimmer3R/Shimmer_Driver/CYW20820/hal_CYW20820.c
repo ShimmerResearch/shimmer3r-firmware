@@ -364,13 +364,82 @@ HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length)
   return status;
 }
 
+/* A framing error on the module UART after initialisation means the module
+ * came back from a restart on a different baud - an OTA image carries its own
+ * UART defaults - so its boot banner arrives as garbage that
+ * BT_watchForBootBanner() can never match (bench, 15BC, 2026-10-11: FE and ORE
+ * set, MCU silent). In DMA mode the HAL treats any receive error as blocking:
+ * it aborts the reception and calls this, so without it the BT receive path
+ * stays dead until the next power cycle. Same handling as a recognised boot -
+ * BT_handleUnexpectedModuleBoot() ignores it during the MCU's own start-up,
+ * whose baud probing produces framing errors legitimately, and while sensing. */
+static void btUartErrorCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->ErrorCode & HAL_UART_ERROR_FE)
+  {
+    BT_handleUnexpectedModuleBoot("UART framing error - module baud changed");
+  }
+}
+
 void setBtUartInstance(UART_HandleTypeDef *huartToUse)
 {
   huartBtPtr = huartToUse;
 
   HAL_UART_RegisterCallback(huartBtPtr, HAL_UART_RX_COMPLETE_CB_ID, btUartDmaRxCpltCallback);
   HAL_UART_RegisterCallback(huartBtPtr, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
+  HAL_UART_RegisterCallback(huartBtPtr, HAL_UART_ERROR_CB_ID, btUartErrorCallback);
   //HAL_DMA_RegisterCallback(huart->, HAL_DMA_XFER_CPLT_CB_ID, btUartDmaRxCpltCallback);
+}
+
+/* Watch the EZ-Serial byte stream for the ASCII boot banner a module prints
+ * when it restarts in text mode, which the binary parser cannot recognise:
+ *
+ *   @E,0083,BOOT,E=01041212,S=03010000,...
+ *
+ * The whole fixed-format head is matched - "@E," then four hex digits, then
+ * ",BOOT,E=" then eight hex digits, then "," - not just the word BOOT. These
+ * bytes also pass through here inside binary frames and as Shimmer payload:
+ * SPP data events carry whatever a host sent, and the raw pipe carries host
+ * commands. A false match costs an MCU reboot (never while sensing), so the
+ * match is made as specific as the banner allows: 24 bytes in a fixed layout,
+ * twelve of them constrained to hex digits. A host would have to send that
+ * exact text deliberately.
+ *
+ * Fed from both the parser and the raw-pipe branches: a module that resets
+ * with the data pipe engaged prints its banner while the receive path is
+ * still routing bytes to the Shimmer parser (the CYSPP pin is read live), so
+ * watching the parser branch alone missed it until host traffic arrived
+ * (bench, 2026-10-11). During the MCU's own module start-up the banner goes to
+ * the waitingForBtBoot capture instead, and never reaches this. */
+static uint8_t BT_bannerByteMatches(char want, uint8_t byte)
+{
+  if (want == 'h')
+  {
+    return (byte >= '0' && byte <= '9') || (byte >= 'A' && byte <= 'F')
+        || (byte >= 'a' && byte <= 'f');
+  }
+  return byte == (uint8_t) want;
+}
+
+static void BT_watchForBootBanner(uint8_t byte)
+{
+  /* 'h' is any hex digit; everything else must match exactly. */
+  static const char pattern[] = "@E,hhhh,BOOT,E=hhhhhhhh,";
+  static uint8_t matched = 0;
+
+  if (BT_bannerByteMatches(pattern[matched], byte))
+  {
+    matched++;
+    if (matched == sizeof(pattern) - 1U)
+    {
+      matched = 0;
+      BT_handleUnexpectedModuleBoot("text boot banner");
+    }
+  }
+  else
+  {
+    matched = (byte == (uint8_t) '@') ? 1U : 0U;
+  }
 }
 
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
@@ -441,6 +510,16 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
       count = btRxWaitByteCount;
+      /* Watch every byte this step consumes, not just the first: the Shimmer
+       * parser takes `count` bytes at once, and a banner starting inside them
+       * would otherwise pass unchecked. */
+      {
+        uint16_t span = (count > 0U) ? count : 1U;
+        for (uint16_t k = 0; k < span && (uint16_t) (i + k) < expectedByteCount; k++)
+        {
+          BT_watchForBootBanner(rxBuf[i + k]);
+        }
+      }
       ShimBt_dmaConversionDone(&rxBuf[i]);
       /* Never advance by zero. btRxWaitByteCount starts at 0 and is only set
        * once the Shimmer parser is waiting for a known number of bytes, and
@@ -453,6 +532,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     }
     else
     {
+      BT_watchForBootBanner(rxBuf[i]);
       ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
       if (result != 0)
       {

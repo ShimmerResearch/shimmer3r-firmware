@@ -15,6 +15,7 @@
 #include <stdlib.h>
 
 #include "main.h"
+#include "rtc.h"
 #include "usart.h"
 
 #include "log_and_stream_includes.h"
@@ -250,6 +251,150 @@ uint8_t BT_isBleSessionActive(void)
   return btBleSessionActive;
 }
 
+/* The module restarted while this MCU was running and had finished setting it
+ * up (DEV-1164). The usual cause is a host updating the module over BLE OTA:
+ * after a good VERIFY the module resets onto the new image by itself. Nothing
+ * else tells the MCU - on the SPP_SEND path (v1.4.17+) a disconnect is only
+ * ever learnt from the module's in-band disconnected event, which a module
+ * that resets never sends, and the module may come back running a different
+ * version (which decides the data path) on different UART settings (which
+ * nothing re-applies). Rebooting the MCU re-reads the version and
+ * re-provisions the module, so the sensor recovers on its own.
+ *
+ * Three signs reach here: the binary boot event, the ASCII boot banner (both
+ * when the module comes back on the same baud), and a UART framing error (when
+ * it comes back on another - see btUartErrorCallback()).
+ *
+ * The reboot is DELAYED, never immediate. The first sign can come while the
+ * module is still switching images - its TX line glitches as it resets, which
+ * reads as a framing error - and the MCU's start-up powers the module off and
+ * on, which interrupts the switch and leaves it on the OLD image (bench, 15BC,
+ * SWO-logged, 2026-10-11: rebooted at once, the module's next banner still
+ * showed the old version). Each sign re-arms an RTC alarm, so the MCU reboots
+ * BT_MODULE_RESTART_SETTLE_S after the last one.
+ *
+ * The signs arrive in the BT UART interrupt, which must not touch the RTC: the
+ * RTC HAL lock can be held by task-context code that this interrupt preempts,
+ * and HAL_RTC_SetAlarm_IT() would then fail with HAL_BUSY, leaving the alarm
+ * unprogrammed. So the interrupt only records the sign and wakes the main
+ * loop; BT_serviceModuleRestart(), called from the main loop, arms the alarm
+ * in task context like every other RTC write.
+ *
+ * A deliberate stop or start of the module supersedes a pending recovery:
+ * btInit() and btDeinit() bump btModuleEpoch, and an alarm armed under an
+ * older epoch does nothing when it fires. (Cancelling the alarm there instead
+ * would mean touching the RTC from btDeinit(), which SD sync can reach from
+ * the RTC alarm-B interrupt.)
+ *
+ * Boots the MCU causes itself are not unexpected: power-up, the init
+ * sequence's own resets and baud retries, BT switched back on for SD sync, and
+ * the factory-reset sequence all run with btInitCmdsRunning or
+ * btFactoryResetCmdsRunning set, and their banner is consumed by the
+ * waitingForBtBoot capture rather than reaching this. Called from interrupt
+ * context (BT UART receive / error). */
+#define BT_MODULE_RESTART_SETTLE_S 10U
+
+/* Set while the MCU itself is taking the module down. btDeinit() cuts the
+ * module's power before it de-initialises the UART, and the RX line falling in
+ * between reads as a framing error - which must not be taken for a module that
+ * restarted on its own. Cleared when the module is next started, from which
+ * point btInitCmdsRunning covers the start-up. */
+static volatile uint8_t btModuleStopping = 0;
+
+/* Bumped on every deliberate start and stop of the module. */
+static volatile uint32_t btModuleEpoch = 0;
+/* Set by the interrupt when it sees a sign, cleared once the alarm is armed. */
+static volatile uint8_t btModuleRestartSeen = 0;
+static const char *volatile btModuleRestartHow = "";
+/* The epoch the pending reboot alarm was armed under. */
+static volatile uint32_t btModuleRestartEpoch = 0;
+
+void BT_handleUnexpectedModuleBoot(const char *how)
+{
+  /* The guard and the flag are set in one interrupt-masked step: the BT UART
+   * interrupt runs below the RTC alarm's priority, so without this an alarm-B
+   * btDeinit() could stop the module (and bump the epoch, clearing the flag)
+   * between the checks and the set, leaving a stale sign that a later
+   * btInit() would service under the new epoch. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  if (!shimmerStatus.btIsInitialised || btModuleStopping
+      || isBtInitCmdsRunning() || isBtFactoryResetCmdsRunning())
+  {
+    __set_PRIMASK(primask);
+    return;
+  }
+  btModuleRestartHow = how;
+  btModuleRestartSeen = 1;
+  __set_PRIMASK(primask);
+  /* Wake the main loop, which may be in sleep-on-exit, so that
+   * BT_serviceModuleRestart() runs. */
+  HAL_PWR_DisableSleepOnExit();
+}
+
+/* btModuleEpoch is bumped from task context and from btDeinit(), which SD
+ * sync can reach from the RTC alarm-B interrupt, so the read-modify-write is
+ * done with interrupts held off. */
+static void btBumpModuleEpoch(void)
+{
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  btModuleEpoch++;
+  /* A sign recorded before this deliberate stop/start belongs to the module
+   * being stopped; it must not arm a reboot under the new epoch. */
+  btModuleRestartSeen = 0;
+  __set_PRIMASK(primask);
+}
+
+void BT_serviceModuleRestart(void)
+{
+  /* Claim the sign and snapshot what goes with it in one step: a sign the
+   * interrupt raises after this still sets the flag again, and re-arms the
+   * alarm on the next pass, so the reboot always follows the LAST sign. The
+   * epoch is recorded only when a sign is claimed - recording it on every
+   * pass would re-validate an alarm a deliberate stop/start has superseded. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  uint8_t seen = btModuleRestartSeen;
+  const char *how = btModuleRestartHow;
+  if (seen)
+  {
+    btModuleRestartSeen = 0;
+    btModuleRestartEpoch = btModuleEpoch;
+  }
+  __set_PRIMASK(primask);
+
+  if (!seen)
+  {
+    return;
+  }
+  printf("BT module restarted unexpectedly (%s) - MCU reboot in %us\r\n", how,
+      (unsigned) BT_MODULE_RESTART_SETTLE_S);
+  RTC_setAlarmRebootAfterBtModuleRestart(BT_MODULE_RESTART_SETTLE_S);
+}
+
+/* The RTC alarm armed above has fired: the module has had time to finish
+ * switching images. Skipped while sensing, like reboot-on-disconnect, so a
+ * recording is never truncated; the module then stays unusable until the
+ * sensor restarts, which is no worse than before. */
+void BT_rebootAfterModuleRestart(void)
+{
+  if (btModuleRestartEpoch != btModuleEpoch)
+  {
+    /* The module has been deliberately stopped or restarted since this was
+     * armed, which superseded the recovery. */
+    return;
+  }
+  if (shimmerStatus.sensing)
+  {
+    printf("BT module restart: sensing, so not rebooting - the module stays "
+           "unusable until the sensor restarts\r\n");
+    return;
+  }
+  printf("BT module restart: rebooting the MCU to re-provision it\r\n");
+  platform_reset();
+}
+
 /* The boot banner carries the application version as "E=" + 8 hex digits
  * (e.g. E=01041212 = v1.4.18.18), the same 32-bit value GET_FIRMWARE_VERSION
  * returns, so both paths feed BT_isFirmwareVersionAtLeast(). Parsing it here
@@ -415,6 +560,8 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
 
 void btInit(void)
 {
+  btModuleStopping = 0;
+  btBumpModuleEpoch();
   btInitCmdsStepIdx = 0;
   btInitCmdsStep = WAIT_FOR_BOOT_STAGE1;
 
@@ -448,6 +595,8 @@ void btInit(void)
 
 void btDeinit(void)
 {
+  btModuleStopping = 1;
+  btBumpModuleEpoch();
   setBtPower(0);
   btUart_deint();
   deinitBtPins();
@@ -1329,6 +1478,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printHexMac(packet->payload.evt_system_boot.address);
     printf("\r\n");
 #endif
+    /* Only reached when the module boots in binary mode. A module that boots
+     * in text mode announces itself with an ASCII banner instead, which the
+     * receive path watches for separately (BT_watchForBootBanner). */
+    BT_handleUnexpectedModuleBoot("binary boot event");
     break;
 
   case EZS_IDX_EVT_GAP_ADV_STATE_CHANGED:

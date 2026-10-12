@@ -54,6 +54,9 @@ extern "C"
     //RTC_ALARM_CONTEXT_BT_SYNC,
     RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING,
     RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER,
+    /* DEV-1164: reboot once the BT module has settled after restarting on its
+     * own (an OTA update) - see BT_handleUnexpectedModuleBoot(). */
+    RTC_ALARM_CONTEXT_REBOOT_AFTER_BT_MODULE_RESTART,
     RTC_NUM_ALARMS
   } RTC_AlarmB_Context_t;
 
@@ -79,6 +82,7 @@ extern "C"
   void RTC_setAlarmBattReadAfterDockUnDock(void);
   void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow);
   void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow);
+  void RTC_setAlarmRebootAfterBtModuleRestart(uint8_t secondsFromNow);
 
   void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc);
   void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context);
