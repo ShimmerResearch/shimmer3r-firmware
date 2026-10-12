@@ -507,6 +507,12 @@ static bool sppMtuParse(const char *reply, uint16_t *mtu)
     return false;
   }
   d += strlen("/RUD,0000,D=");
+  /* The capture is NUL-terminated but may be truncated: a prefix near the end
+   * of the buffer must not lead the reads below past it */
+  if (strnlen(d, 8) < 8)
+  {
+    return false;
+  }
   uint8_t b[4];
   for (uint8_t i = 0; i < 4; i++)
   {
