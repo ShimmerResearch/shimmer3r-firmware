@@ -483,7 +483,7 @@ static const char sppMtuReadCmd[] = "/RUD,M=8,O=00213C18,L=04\r\n";
  * default), then MTU 0x03DE. The value Infineon gave. */
 static const char sppMtuWriteCmd[] = "/WUD,M=8,O=00213C18,D=0003DE27\r\n";
 static const char sppMtuStoreCmd[] = "/SCFG\r\n";
-static bool sppMtuVerifyPending;
+static bool sppMtuVerifyPending, sppMtuStored;
 
 static bool sppMtuSend(const char *cmd, uint16_t len)
 {
@@ -564,6 +564,7 @@ static bool btSppMtuRepairStep(void)
       known = known || (strstr(reply, sppMtuRepairBuilds[i]) != NULL);
     }
     sppMtuVerifyPending = false;
+    sppMtuStored = false;
     if (!known)
     {
       sppMtuSkipRest();
@@ -616,7 +617,10 @@ static bool btSppMtuRepairStep(void)
     break;
 
   case SPP_MTU_VERIFY:
-    if (strstr(reply, "/SCFG,0000") == NULL)
+    /* Verify the RAM value either way, but remember whether it reached
+     * flash: a failed /SCFG leaves this boot fixed and the next one stale. */
+    sppMtuStored = (strstr(reply, "/SCFG,0000") != NULL);
+    if (!sppMtuStored)
     {
       printf("SPP MTU: store failed (%s)\r\n", reply);
     }
@@ -639,7 +643,20 @@ static bool btSppMtuRepairStep(void)
     sppMtuVerifyPending = false;
     if (sppMtuParse(reply, &mtu))
     {
-      printf("SPP MTU: repaired, now %u\r\n", mtu);
+      if (mtu == 0U)
+      {
+        printf("SPP MTU: repair did not take, still 0\r\n");
+      }
+      else if (sppMtuStored)
+      {
+        printf("SPP MTU: repaired, now %u\r\n", mtu);
+      }
+      else
+      {
+        printf("SPP MTU: %u in RAM only - not stored, will repair again "
+               "next boot\r\n",
+            mtu);
+      }
     }
     else
     {

@@ -431,8 +431,14 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
           {
             /* The text reply answers the command appOutput() marked as
              * pending; the binary parser that normally clears it never sees
-             * a text reply. */
-            pending_response = 0;
+             * a text reply. As in appHandler(), stop the RTT sample too. */
+            if (pending_response != 0)
+            {
+              pending_response = 0;
+#if ENABLE_BT_CMD_RTT_STATS
+              btCmdRttStop();
+#endif
+            }
           }
           setWaitingForBtBoot(0);
           //TODO fix architecture and function calling
