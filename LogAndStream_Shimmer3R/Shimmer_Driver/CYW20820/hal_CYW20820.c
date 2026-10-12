@@ -402,15 +402,23 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       //SHIMMER_PRINTF("S0=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
       uint8_t lineEnded = (btBootMsgPrevByte == 0x0D && bootByte == 0x0A);
       btBootMsgPrevByte = bootByte;
-      if (lineEnded)
+      /* A full buffer ends a reply capture on any byte, line ending or not:
+       * the boot sequence has no timeout, so a reply that can never be
+       * recognised must not hang it. */
+      uint8_t replyBufferFull = (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY)
+          && (btBootMsgIndex >= (sizeof(btBootMsg) - 1U));
+      if (lineEnded || replyBufferFull)
       {
-        btBootMsgLineCount++;
-        /* A full buffer also ends a reply capture: the boot sequence has no
-         * timeout, so a reply that can never be recognised must not hang it. */
-        uint8_t captureDone = (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY) ?
-            (btBootMsg[btBootMsgLineStart] == '@'
-                || btBootMsgIndex >= (sizeof(btBootMsg) - 1U)) :
-            (btBootMsgLineCount == 2);
+        uint8_t captureDone;
+        if (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY)
+        {
+          captureDone = replyBufferFull || (btBootMsg[btBootMsgLineStart] == '@');
+        }
+        else
+        {
+          btBootMsgLineCount++;
+          captureDone = (btBootMsgLineCount == 2);
+        }
         btBootMsgLineStart = btBootMsgIndex;
         if (captureDone)
         {
