@@ -323,16 +323,36 @@ void BT_handleUnexpectedModuleBoot(const char *how)
   HAL_PWR_DisableSleepOnExit();
 }
 
+/* btModuleEpoch is bumped from task context and from btDeinit(), which SD
+ * sync can reach from the RTC alarm-B interrupt, so the read-modify-write is
+ * done with interrupts held off. */
+static void btBumpModuleEpoch(void)
+{
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  btModuleEpoch++;
+  __set_PRIMASK(primask);
+}
+
 void BT_serviceModuleRestart(void)
 {
-  if (!btModuleRestartSeen)
+  /* Claim the sign and snapshot what goes with it in one step: a sign the
+   * interrupt raises after this still sets the flag again, and re-arms the
+   * alarm on the next pass, so the reboot always follows the LAST sign. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  uint8_t seen = btModuleRestartSeen;
+  const char *how = btModuleRestartHow;
+  btModuleRestartSeen = 0;
+  btModuleRestartEpoch = btModuleEpoch;
+  __set_PRIMASK(primask);
+
+  if (!seen)
   {
     return;
   }
-  btModuleRestartSeen = 0;
-  btModuleRestartEpoch = btModuleEpoch;
-  printf("BT module restarted unexpectedly (%s) - MCU reboot in %us\r\n",
-      btModuleRestartHow, (unsigned) BT_MODULE_RESTART_SETTLE_S);
+  printf("BT module restarted unexpectedly (%s) - MCU reboot in %us\r\n", how,
+      (unsigned) BT_MODULE_RESTART_SETTLE_S);
   RTC_setAlarmRebootAfterBtModuleRestart(BT_MODULE_RESTART_SETTLE_S);
 }
 
@@ -524,7 +544,7 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
 void btInit(void)
 {
   btModuleStopping = 0;
-  btModuleEpoch++;
+  btBumpModuleEpoch();
   btInitCmdsStepIdx = 0;
   btInitCmdsStep = WAIT_FOR_BOOT_STAGE1;
 
@@ -559,7 +579,7 @@ void btInit(void)
 void btDeinit(void)
 {
   btModuleStopping = 1;
-  btModuleEpoch++;
+  btBumpModuleEpoch();
   setBtPower(0);
   btUart_deint();
   deinitBtPins();

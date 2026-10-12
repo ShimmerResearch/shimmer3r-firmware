@@ -392,22 +392,42 @@ void setBtUartInstance(UART_HandleTypeDef *huartToUse)
 }
 
 /* Watch the EZ-Serial byte stream for the ASCII boot banner a module prints
- * when it restarts in text mode ("@E,xxxx,BOOT,E=..."), which the binary
- * parser cannot recognise. Matching the fixed text "BOOT,E=" byte by byte
- * needs no buffer, and binary EZ-Serial frames do not carry that printable
- * sequence. Fed from both the parser and the raw-pipe branches: a module that
- * resets with the data pipe engaged prints its banner while the receive path
- * is still routing bytes to the Shimmer parser (the CYSPP pin is read live),
- * so watching the parser branch alone missed it until host traffic arrived
- * (bench, 2026-10-11). Shimmer host commands are binary and never carry the
- * text. During the MCU's own module start-up the banner goes to the
- * waitingForBtBoot capture instead, and never reaches this. */
+ * when it restarts in text mode, which the binary parser cannot recognise:
+ *
+ *   @E,0083,BOOT,E=01041212,S=03010000,...
+ *
+ * The whole fixed-format head is matched - "@E," then four hex digits, then
+ * ",BOOT,E=" then eight hex digits, then "," - not just the word BOOT. These
+ * bytes also pass through here inside binary frames and as Shimmer payload:
+ * SPP data events carry whatever a host sent, and the raw pipe carries host
+ * commands. A false match costs an MCU reboot (never while sensing), so the
+ * match is made as specific as the banner allows: 24 bytes in a fixed layout,
+ * twelve of them constrained to hex digits. A host would have to send that
+ * exact text deliberately.
+ *
+ * Fed from both the parser and the raw-pipe branches: a module that resets
+ * with the data pipe engaged prints its banner while the receive path is
+ * still routing bytes to the Shimmer parser (the CYSPP pin is read live), so
+ * watching the parser branch alone missed it until host traffic arrived
+ * (bench, 2026-10-11). During the MCU's own module start-up the banner goes to
+ * the waitingForBtBoot capture instead, and never reaches this. */
+static uint8_t BT_bannerByteMatches(char want, uint8_t byte)
+{
+  if (want == 'h')
+  {
+    return (byte >= '0' && byte <= '9') || (byte >= 'A' && byte <= 'F')
+        || (byte >= 'a' && byte <= 'f');
+  }
+  return byte == (uint8_t) want;
+}
+
 static void BT_watchForBootBanner(uint8_t byte)
 {
-  static const char pattern[] = "BOOT,E=";
+  /* 'h' is any hex digit; everything else must match exactly. */
+  static const char pattern[] = "@E,hhhh,BOOT,E=hhhhhhhh,";
   static uint8_t matched = 0;
 
-  if (byte == (uint8_t) pattern[matched])
+  if (BT_bannerByteMatches(pattern[matched], byte))
   {
     matched++;
     if (matched == sizeof(pattern) - 1U)
@@ -418,7 +438,7 @@ static void BT_watchForBootBanner(uint8_t byte)
   }
   else
   {
-    matched = (byte == (uint8_t) pattern[0]) ? 1U : 0U;
+    matched = (byte == (uint8_t) '@') ? 1U : 0U;
   }
 }
 
