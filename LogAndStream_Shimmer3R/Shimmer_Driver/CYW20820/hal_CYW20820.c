@@ -532,7 +532,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       count = (ezsOverflowDrainCount > 0U) ? ezsOverflowDrainCount : 1U;
       i += 1;
     }
-    else if (BT_isRawPipeEngagedNow())
+    else if (BT_isRawPipeEngagedNow() && (getEzsPacketLength() == 0U))
     {
       /* Parse as Shimmer packet, gated on the LIVE data-mode state from the
        * CYSPP pin - read from the pin itself here, not only the cached state
@@ -545,7 +545,18 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
        * signal, and neither connection state (earlier attempt: the in-band
        * connected event got eaten the moment the gate opened) nor a sticky
        * first-connection flag (eats every event after the first connection
-       * of a power cycle) can stand in for it. */
+       * of a power cycle) can stand in for it.
+       *
+       * But the pin only decides where a FRAME goes, never a byte in the
+       * middle of one: an EZ-Serial frame that started in command mode is
+       * finished by the EZ-Serial parser even if the pin drops partway. Bench
+       * (2026-10-15, module v1.4.16.16, host opening the classic port with
+       * DTR/RTS raised): the module entered data mode while its bt_connected
+       * event was still on the wire. The header byte went to the EZ-Serial
+       * parser, the rest - the host's Bluetooth address - to the Shimmer
+       * parser, which executed whatever it spelled: a host address with
+       * ...4C 01 ran SET_GYRO_SAMPLING_RATE(1) and ACKed it; other hosts got
+       * a NACK (DEV-1179). */
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
       SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
