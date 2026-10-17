@@ -85,9 +85,17 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p reports
-          # gh exits non-zero when nothing matches; zero reports is the gate's
-          # call to make, with a clearer message, not a download error.
-          gh release download "$TAG" -p 'hil-report*.json' -D reports || true
+          # Zero reports is the gate's call to make, with a clearer message, so
+          # it is not an error here. gh exits non-zero both when nothing matches
+          # and when the API fails, so list the assets first and let a real
+          # failure stop the job instead of reaching the gate as "no reports".
+          attached=$(gh release view "$TAG" --json assets \
+            -q '[.assets[].name | select(startswith("hil-report") and endswith(".json"))] | length')
+          if [ "$attached" -gt 0 ]; then
+            gh release download "$TAG" -p 'hil-report*.json' -D reports
+          else
+            echo "No hil-report*.json attached to $TAG."
+          fi
           ls -l reports
 
       - name: Release gate
