@@ -129,6 +129,20 @@ jobs:
             echo "::error::No $TAG release in $SUBMODULE_REPO. build-release-firmware.yml makes one with every candidate; create it there as a pre-release on the $TAG tag, then re-run this workflow."
             exit 1
           fi
+          # And it must be this candidate's: its tag on the commit this
+          # candidate pins. A stale or unrelated release under the same name is
+          # refused. One already public is accepted, as a re-run after a later
+          # step failed finds it so.
+          ref=$(gh api "repos/$SUBMODULE_REPO/git/ref/tags/$TAG")
+          sha=$(jq -r .object.sha <<<"$ref")
+          if [ "$(jq -r .object.type <<<"$ref")" = "tag" ]; then
+            sha=$(gh api "repos/$SUBMODULE_REPO/git/tags/$sha" -q .object.sha)
+          fi
+          pinned=$(git -C "$PROJECT_DIR/$SUBMODULE_FOLDER" rev-parse HEAD)
+          if [ "$sha" != "$pinned" ]; then
+            echo "::error::$SUBMODULE_REPO's $TAG is on ${sha:0:12}, but this candidate pins ${pinned:0:12}: not this candidate's release."
+            exit 1
+          fi
           gh release edit "$TAG" -R "$SUBMODULE_REPO" --prerelease=false
 
       - name: Mark Jira version as released

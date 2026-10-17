@@ -46,6 +46,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # A candidate is a version bump committed to a branch, then tagged. Run
+      # from a tag or any other ref there is no branch to commit the bump to,
+      # so the tag would name a commit still carrying the old version.txt,
+      # which promote-release.yml refuses. A dry run commits nothing, so it may.
+      - name: Refuse a ref that is not a branch
+        if: ${{ github.ref_type != 'branch' && !inputs.dry_run }}
+        run: |
+          echo "::error::Run this from a branch: ${{ github.ref }} is not one, so the version bump could not be committed before tagging."
+          exit 1
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
