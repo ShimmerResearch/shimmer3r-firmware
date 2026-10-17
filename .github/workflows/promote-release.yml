@@ -35,6 +35,7 @@ env:
   JIRA_VERSION_PREFIX: 'L&S_S3R_v'   # note the quotes due to &
   SUBMODULE_FOLDER: log-and-stream-common
   SUBMODULE_REPO: ShimmerResearch/log-and-stream-common
+  SHIPPING_CONFIG: Release   # the only build configuration that may be promoted
   TAG: ${{ inputs.tag }}
 
 jobs:
@@ -76,6 +77,21 @@ jobs:
           built=$(cat "$PROJECT_DIR/build/version.txt")
           if [ "$built" != "$VERSION" ]; then
             echo "::error::the tag says v$VERSION but version.txt at that commit says v$built"
+            exit 1
+          fi
+          # build-release-firmware.yml records what it built in build-info.json.
+          # Only the shipping configuration, built from this commit, is promoted:
+          # it also offers the other configuration, for builds nobody ships.
+          gh release download "$TAG" -p build-info.json -D candidate \
+            || { echo "::error::$TAG has no build-info.json, so what it was built from is unknown."; exit 1; }
+          mode=$(jq -r .build_mode candidate/build-info.json)
+          if [ "$mode" != "$SHIPPING_CONFIG" ]; then
+            echo "::error::$TAG was built from the $mode configuration; only $SHIPPING_CONFIG ships."
+            exit 1
+          fi
+          info_commit=$(jq -r .commit candidate/build-info.json)
+          if [ "$info_commit" != "$(git rev-parse HEAD)" ]; then
+            echo "::error::build-info.json names commit $info_commit, but $TAG is on $(git rev-parse HEAD)."
             exit 1
           fi
 
