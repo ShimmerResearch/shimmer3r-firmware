@@ -69,8 +69,11 @@ shimmer3r-firmware/
 ├── Extras/
 │   └── WsOtaUpgrade/        # Wireless (BLE) OTA firmware upgrade tool
 └── .github/workflows/
-    ├── build-release-firmware.yml   # CI: build + GitHub Release + Jira link
-    └── clang-format-check.yml       # CI: code style check
+    ├── build-check.yml              # CI: Release build + shared host tests, every PR
+    ├── build-release-firmware.yml   # release candidate: build, tag, pre-release, Jira version
+    ├── clang-format-check.yml       # CI: code style check
+    ├── cubemx-guards.yml            # CI: hand-written code in CubeMX regions survives
+    └── promote-release.yml          # release gate: tested candidate -> public release
 ```
 
 ---
