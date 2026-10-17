@@ -113,11 +113,15 @@ jobs:
           GH_TOKEN: ${{ secrets.SUBMODULE_PUSH_TOKEN }}
         run: |
           set -euo pipefail
-          if gh release view "$TAG" -R "$SUBMODULE_REPO" >/dev/null 2>&1; then
-            gh release edit "$TAG" -R "$SUBMODULE_REPO" --prerelease=false
-          else
-            echo "No $TAG release in $SUBMODULE_REPO; nothing to publish there."
+          # build-release-firmware.yml tags log-and-stream-common and makes this
+          # release there with every candidate. A missing one means that build
+          # did not finish, or the release was deleted: stop here, before Jira
+          # or this platform's release change, so the two never disagree.
+          if ! gh release view "$TAG" -R "$SUBMODULE_REPO" >/dev/null 2>&1; then
+            echo "::error::No $TAG release in $SUBMODULE_REPO. build-release-firmware.yml makes one with every candidate; create it there as a pre-release on the $TAG tag, then re-run this workflow."
+            exit 1
           fi
+          gh release edit "$TAG" -R "$SUBMODULE_REPO" --prerelease=false
 
       - name: Mark Jira version as released
         env:
