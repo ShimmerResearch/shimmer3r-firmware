@@ -214,13 +214,17 @@ jobs:
 
           ISSUE_KEYS=$(git log --format='%s%n%b' $RANGE | grep -Eo '[A-Z][A-Z0-9]+-[0-9]+' | sort -u || true)
 
-          PROJECT_JSON=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+          # -f: an HTTP error must stop here, not read as "no such version".
+          PROJECT_JSON=$(curl -fsS -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
             -H 'Accept: application/json' "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY")
           PROJECT_ID=$(echo "$PROJECT_JSON" | jq -r '.id // empty')
           [ -z "$PROJECT_ID" ] && echo "Failed to resolve project id" && echo "$PROJECT_JSON" && exit 1
 
-          VERSIONS_JSON=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+          VERSIONS_JSON=$(curl -fsS -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
             -H 'Accept: application/json' "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY/versions")
+          # Unpaginated: every version, as an array. Anything else is an error.
+          echo "$VERSIONS_JSON" | jq -e 'type == "array"' >/dev/null \
+            || { echo "Unexpected Jira versions response"; echo "$VERSIONS_JSON"; exit 1; }
 
           # Normalize to an array, then pick the first matching version id (if any)
           EXISTING_VERSION_ID=$(echo "$VERSIONS_JSON" | jq -r --arg NAME "$JIRA_VERSION" '
@@ -330,13 +334,17 @@ jobs:
 
           ISSUE_KEYS=$(git log --format='%s%n%b' $RANGE | grep -Eo '[A-Z][A-Z0-9]+-[0-9]+' | sort -u || true)
 
-          PROJECT_JSON=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+          # -f: an HTTP error must stop here, not read as "no such version".
+          PROJECT_JSON=$(curl -fsS -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
             -H 'Accept: application/json' "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY")
           PROJECT_ID=$(echo "$PROJECT_JSON" | jq -r '.id // empty')
           [ -z "$PROJECT_ID" ] && echo "Failed to resolve project id" && echo "$PROJECT_JSON" && exit 1
 
-          VERSIONS_JSON=$(curl -s -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
+          VERSIONS_JSON=$(curl -fsS -u "$JIRA_USER_EMAIL:$JIRA_API_TOKEN" \
             -H 'Accept: application/json' "$JIRA_BASE_URL/rest/api/3/project/$JIRA_PROJECT_KEY/versions")
+          # Unpaginated: every version, as an array. Anything else is an error.
+          echo "$VERSIONS_JSON" | jq -e 'type == "array"' >/dev/null \
+            || { echo "Unexpected Jira versions response"; echo "$VERSIONS_JSON"; exit 1; }
 
           # Normalize to an array, then pick the first matching version id (if any)
           EXISTING_VERSION_ID=$(echo "$VERSIONS_JSON" | jq -r --arg NAME "$JIRA_VERSION" '
