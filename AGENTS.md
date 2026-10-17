@@ -76,6 +76,7 @@ regenerates them. (They also hardcode absolute paths, so they go stale if the re
 
 ## Release
 CI only — `build-release-firmware.yml` via **workflow_dispatch** (major/minor/patch, Release/Debug).
+It publishes a **pre-release candidate**, run from a branch (`dry_run` only builds). `promote-release.yml`, given the tag, makes it public once the release gate passes (`Test/hil/hil_gate.py` over the attached `hil-report*.json`), and only a `Release` build.
 Version bumping is delegated to the shared submodule: `log-and-stream-common/scripts/increment_version.sh`,
 writing `LogAndStream_Shimmer3R/build/version.txt`. Tags are `LogAndStream_Shimmer3R_v*`;
 the matching Jira version prefix is `L&S_S3R_v`.
