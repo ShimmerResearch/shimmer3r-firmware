@@ -1,0 +1,77 @@
+# Build check: does this commit build, and do the shared-library host tests
+# pass? Runs on every pull request and every push to main, so a change that
+# breaks the firmware build fails here, in review, instead of in the release
+# workflow after a version has been bumped and tagged.
+#
+# Builds the configuration that ships (Release on Shimmer3R) with the same
+# action and version the release workflow uses, so "green here" means the
+# release build will compile too.
+#
+# WHAT THIS DOES NOT COVER: the other platform. log-and-stream-common is also a
+# submodule of shimmer3-firmware; a pointer bump here is checked against the
+# MSP430 build only by that repository's own build check, on its own pull
+# request. The host tests' platform-check is the cheap guard in between.
+
+name: build-check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-check-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROJECT_DIR: LogAndStream_Shimmer3R
+  BUILD_CONFIG: Release
+  SUBMODULE_FOLDER: log-and-stream-common
+
+jobs:
+  host-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Host tests (log-and-stream-common at the pinned commit)
+        run: make -C "$PROJECT_DIR/$SUBMODULE_FOLDER/Test/host" platform-check test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build firmware (${{ env.BUILD_CONFIG }})
+        uses: xanderhendriks/action-build-stm32cubeide@v15.0
+        with:
+          project-path: .
+          project-target: '${{ env.PROJECT_DIR }}/${{ env.BUILD_CONFIG }}'
+
+      - name: Check the image was produced
+        run: |
+          set -euo pipefail
+          HEX="$PROJECT_DIR/$BUILD_CONFIG/$PROJECT_DIR.hex"
+          [ -f "$HEX" ] || { echo "::error::$HEX was not produced"; exit 1; }
+          ls -l "$HEX"
+          {
+            echo "### Shimmer3R $BUILD_CONFIG build"
+            echo ""
+            echo "| Image | Bytes | SHA-256 |"
+            echo "|---|---|---|"
+            echo "| \`$(basename "$HEX")\` | $(stat -c%s "$HEX") | \`$(sha256sum "$HEX" | cut -d' ' -f1)\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload image
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-hex-${{ github.sha }}
+          path: ${{ env.PROJECT_DIR }}/${{ env.BUILD_CONFIG }}/${{ env.PROJECT_DIR }}.hex
+          retention-days: 14

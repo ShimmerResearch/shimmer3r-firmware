@@ -69,8 +69,11 @@ shimmer3r-firmware/
 ├── Extras/
 │   └── WsOtaUpgrade/        # Wireless (BLE) OTA firmware upgrade tool
 └── .github/workflows/
-    ├── build-release-firmware.yml   # CI: build + GitHub Release + Jira link
-    └── clang-format-check.yml       # CI: code style check
+    ├── build-check.yml              # CI: Release build + shared host tests, every PR
+    ├── build-release-firmware.yml   # release candidate: build, tag, pre-release, Jira version
+    ├── clang-format-check.yml       # CI: code style check
+    ├── cubemx-guards.yml            # CI: hand-written code in CubeMX regions survives
+    └── promote-release.yml          # release gate: tested candidate -> public release
 ```
 
 ---
@@ -118,13 +121,33 @@ STM32_Programmer_CLI -c port=SWD -w LogAndStream_Shimmer3R/Debug/LogAndStream_Sh
 The version is stored in `LogAndStream_Shimmer3R/build/version.txt` and reflected in `LogAndStream_Shimmer3R/Shimmer_Driver/version.h`.
 The current version follows the `vMAJOR.MINOR.PATCH` scheme (e.g. `v1.00.058`).
 
-Releases are created automatically by the **LogAndStream S3R Build & Release** GitHub Actions workflow, which:
+A release takes two GitHub Actions workflows, each run by hand, with testing in
+between. The procedure is in `log-and-stream-common`'s
+`docs/SHIMMER3_RELEASE_AND_VERSIONING.md` §7 and `docs/SHIMMER3_TEST_PROCEDURE.md` §10.
 
-1. Increments the chosen version component.
-2. Builds the firmware with STM32CubeIDE.
-3. Publishes a GitHub Release with the `.hex` artifact.
-4. Tags both this repository and the `log-and-stream-common` submodule.
-5. Links the release to the corresponding Jira version.
+1. **LogAndStream_Shimmer3R Build & Release** (`build-release-firmware.yml`), run
+   from a branch:
+   - increments the chosen version component and runs the shared library's host
+     tests;
+   - builds the Release configuration with STM32CubeIDE;
+   - commits the version bump, and tags this repository and the
+     `log-and-stream-common` submodule;
+   - publishes a release **candidate**: a GitHub pre-release with the `.hex` and
+     `build-info.json`, which customers are not offered;
+   - creates the Jira version, unreleased.
+
+   With `dry_run` it only builds, and uploads the image as a workflow artifact.
+2. The candidate is tested. Each test session attaches a `hil-report*.json` to the
+   pre-release: `Test/hil/hil_signoff.py` for a manual sign-off, or
+   `Test/hil/run_rc.py` on a bench (both in `log-and-stream-common`).
+3. **Promote release candidate** (`promote-release.yml`), given the tag, runs the
+   release gate over those reports. If every required item is covered on that
+   commit and nothing fails, it:
+   - makes the `log-and-stream-common` release public;
+   - marks the Jira version released;
+   - makes this release public, with the gate's summary added to its notes.
+
+   Otherwise nothing changes, and the job summary says why.
 
 ---
 
