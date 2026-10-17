@@ -44,6 +44,12 @@ env:
   # and the first step refuses anything but the two configurations.
   BUILD_MODE: ${{ inputs.build_mode }}
 
+# One release build at a time: two concurrent runs would read the same
+# version.txt and bump, tag and publish the same version.
+concurrency:
+  group: build-release-firmware
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
