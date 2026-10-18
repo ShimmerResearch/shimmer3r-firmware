@@ -30,13 +30,10 @@ struct adxl371_dev adxl371;
  */
 static int32_t
 platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8_t len);
-static void tx_com(uint8_t *tx_buffer, uint16_t len);
 static void platform_delay(uint32_t ms);
 
 void adxl371_driver_init(void)
 {
-  struct adxl371_init_param init_param;
-
   //adxl371_init((struct adxl371_dev **)&adxl371, init_param);
 
   adxl371.comm_type = SPI;
@@ -64,7 +61,6 @@ self_test_result_t adxl371_self_test(void)
   uint8_t self_test_reg = 0;
   uint16_t first_set_avg = 0;
   uint16_t second_set_avg = 0;
-  int32_t ret;
   uint8_t i;
   self_test_result_t self_test_result = SELF_TEST_PASS;
 
@@ -77,12 +73,12 @@ self_test_result_t adxl371_self_test(void)
   /*1. Ensure that the low-pass activity filter is enabled. */
   /* Low-pass filter enabled by default. High-pass gets automatically disabled
    * for self-test operation */
-  ret = adxl371_reset(&adxl371);
+  adxl371_reset(&adxl371);
 
   /*2. Place the device in measurement mode. */
-  ret = adxl371_set_odr(&adxl371, ADXL371_ODR_320HZ);
-  ret = adxl371_set_bandwidth(&adxl371, ADXL371_BW_640HZ);
-  ret = adxl371_set_op_mode(&adxl371, ADXL371_FULL_BW_MEASUREMENT);
+  adxl371_set_odr(&adxl371, ADXL371_ODR_320HZ);
+  adxl371_set_bandwidth(&adxl371, ADXL371_BW_640HZ);
+  adxl371_set_op_mode(&adxl371, ADXL371_FULL_BW_MEASUREMENT);
 
   /*3. Wait until the filter settling time passes. */
   /*462.5ms according to datasheet if FILTER_SETTLE = 0 */
@@ -91,18 +87,18 @@ self_test_result_t adxl371_self_test(void)
   /*4. Start the self test by setting the ST bit in the SELF_TEST register
    * (Register 0x40). */
   //platform_write(&adxl371, ADXL371_SELF_TEST, ADXL371_ST);
-  ret = adxl371_write_mask(&adxl371, ADXL371_SELF_TEST,
-      ADXL371_SELF_TEST_START_MSK, ADXL371_SELF_TEST_START(1));
+  adxl371_write_mask(&adxl371, ADXL371_SELF_TEST, ADXL371_SELF_TEST_START_MSK,
+      ADXL371_SELF_TEST_START(1));
 
   /*5. Read the acceleration data from the z-axis (Register 0x0C and Register
    * 0x0D) and store the data until the self test completes (ST_DONE goes high). */
 
   while (1)
   {
-    ret = adxl371_get_accel_data(&adxl371, &accel_data);
+    adxl371_get_accel_data(&adxl371, &accel_data);
     self_test_data[self_test_index++] = accel_data.z;
 
-    ret = adxl371_spi_reg_read(&adxl371, ADXL371_SELF_TEST, &self_test_reg);
+    adxl371_spi_reg_read(&adxl371, ADXL371_SELF_TEST, &self_test_reg);
     if (self_test_reg & ADXL371_ST_DONE)
     {
       break;
@@ -131,7 +127,7 @@ self_test_result_t adxl371_self_test(void)
   self_test_result = diff > 5 ? SELF_TEST_PASS : SELF_TEST_FAIL_SIGNAL_ISSUE;
 
   //adxl371_reset(&adxl371);
-  ret = adxl371_set_op_mode(&adxl371, ADXL371_STANDBY);
+  adxl371_set_op_mode(&adxl371, ADXL371_STANDBY);
 
   return self_test_result;
 }
@@ -272,18 +268,6 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
     adxl371_unselectDevice();
   }
   return ret;
-}
-
-/*
- * @brief  Send buffer to console (platform dependent)
- *
- * @param  tx_buffer     buffer to transmit
- * @param  len           number of byte to send
- *
- */
-static void tx_com(uint8_t *tx_buffer, uint16_t len)
-{
-  SHIMMER_PRINTF((char *) tx_buffer, len);
 }
 
 /*

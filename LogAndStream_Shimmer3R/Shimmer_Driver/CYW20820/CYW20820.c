@@ -595,7 +595,7 @@ void btInit(void)
   //TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
   HAL_Delay(10);
   /* Setting DMA waiting for first char from BT module */
-  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+  setBtRxDmaWaitingForResponse(1);
   /* Allow BT module to boot */
   Board_BT_RST_N(1);
 
@@ -1534,7 +1534,7 @@ void btInitCommands(void)
     printf("Update UART to factory default\r\n");
     //TODO resolve reference
     BtUart_update(115200, 0);
-    HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+    setBtRxDmaWaitingForResponse(1);
   }
 
   if (btInitCmdsStep == FR_PING)
@@ -2521,7 +2521,6 @@ uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch)
 uint8_t BT_connect(uint8_t *addr)
 {
   ezs_cmd_bt_connect_t bt_conn;
-  clock_t start_time = clock();
   uint8_t addrReverse[6];
 
   /*//TODO how to distinguish between Master and slave
@@ -2589,7 +2588,6 @@ uint8_t BT_connect(uint8_t *addr)
 uint8_t BT_disconnect(void)
 {
   ezs_cmd_bt_disconnect_t bt_disc;
-  uint8_t status;
   bt_disc.conn_handle = active_conn_handle; //this detects an active connection
   if (bt_disc.conn_handle == 0xFF)
   {
@@ -2598,18 +2596,17 @@ uint8_t BT_disconnect(void)
   else
   {
     setExpectedResponse(EZS_IDX_CMD_BT_DISCONNECT);
-    status = ezs_cmd_bt_disconnect(bt_disc.conn_handle); //status for debug to check if correct status code was achieved
+    ezs_cmd_bt_disconnect(bt_disc.conn_handle);
   }
   return 0;
 }
 
 void BT_cancelConnection(void)
 {
-  uint8_t status;
   //expects a response of 11 bytes
   uint8_t response[11];
   setExpectedResponse(EZS_IDX_CMD_BT_CANCEL_CONNECTION);
-  status = ezs_cmd_bt_cancel_connection();
+  ezs_cmd_bt_cancel_connection();
   printf("Received response from BT cancel connection:\n");
   for (int i = 0; i < 11; i++)
   {
