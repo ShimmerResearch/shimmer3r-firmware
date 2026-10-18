@@ -463,8 +463,8 @@ void BtUart_update(uint32_t baudRate, uint32_t hwFlowCtrl)
 
 void btUart_deint(void)
 {
-  HAL_StatusTypeDef status = HAL_UART_Abort(huartBt);
-  status = HAL_UART_DeInit(huartBt);
+  HAL_UART_Abort(huartBt);
+  HAL_UART_DeInit(huartBt);
 }
 
 uint8_t BtUart_isInitialised(void)

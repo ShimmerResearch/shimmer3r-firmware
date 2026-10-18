@@ -636,7 +636,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     {
       count = 1;
     }
-    HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(count);
+    setBtRxDmaWaitingForResponse(count);
   }
 }
 

@@ -693,14 +693,14 @@ void I2C_stopSensing(void)
 
 void I2cSens_stopSensing(void)
 {
-  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
-
 #if defined(SHIMMER3R)
 //if (configBytes->chEnMag)
 //{
 //  lis2mdl_sleep();
 //}
 #elif defined(SHIMMER4_SDK)
+  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
+
   if (configBytes->chEnGyro || configBytes->chEnAltAccel || configBytes->chEnAltMag)
   {
     MPU9250_wake(0);

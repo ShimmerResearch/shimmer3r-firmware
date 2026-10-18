@@ -652,7 +652,7 @@ void btFactoryResetViaFw(void)
   btCommWithDiffBaudRates();
 
   //Abort transfer operations to release UART for subsequent requests.
-  HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
+  HAL_UART_Abort(&huart3);
 
   SHIMMER_PRINTF("BT factory reset end\r\n");
 }

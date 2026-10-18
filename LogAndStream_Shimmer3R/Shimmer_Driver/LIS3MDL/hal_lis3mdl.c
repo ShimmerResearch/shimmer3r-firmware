@@ -154,7 +154,6 @@ static LIS3MDL_Object_t lis3mdl_obj;
  */
 static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
 static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
-static void tx_com(uint8_t *tx_buffer, uint16_t len);
 static void platform_delay(uint32_t ms);
 #if defined(SHIMMER3R)
 static int32_t
@@ -187,7 +186,6 @@ void lis3mdl_unselectDevice(void)
 
 self_test_result_t lis3mdl_self_test(void)
 {
-  uint8_t tx_buffer[1000];
   int16_t data_raw[3];
   float val_st_off[3];
   float val_st_on[3];
@@ -465,8 +463,6 @@ void lis3mdl_restore_default_config(void)
 
 void lis3mdl_spi_three_wire_set(void)
 {
-  int32_t ret;
-
   lis3mdl_ctrl_reg3_t ctrl_reg3;
   ctrl_reg3.not_used_02 = 0; //Default = 0
   ctrl_reg3.lp = 0;          //Default = 0
@@ -474,7 +470,7 @@ void lis3mdl_spi_three_wire_set(void)
   ctrl_reg3.sim = LIS3MDL_SPI_3_WIRE;
   ctrl_reg3.md = 3; //Default = 3
 
-  ret = lis3mdl_write_reg(&lis3mdl_obj.Ctx, LIS3MDL_CTRL_REG3, (uint8_t *) &ctrl_reg3, 1);
+  lis3mdl_write_reg(&lis3mdl_obj.Ctx, LIS3MDL_CTRL_REG3, (uint8_t *) &ctrl_reg3, 1);
 }
 
 int32_t lis3mdl_temperature_get(float_t *tempCal)
@@ -586,26 +582,6 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
     lis3mdl_unselectDevice();
   }
   return ret;
-}
-
-/*
- * @brief  Send buffer to console (platform dependent)
- *
- * @param  tx_buffer     buffer to transmit
- * @param  len           number of byte to send
- *
- */
-static void tx_com(uint8_t *tx_buffer, uint16_t len) //@suppress("Unused static function")
-{
-#if defined(NUCLEO_F411RE)
-  HAL_UART_Transmit(&huart2, tx_buffer, len, 1000);
-#elif defined(STEVAL_MKI109V3)
-  CDC_Transmit_FS(tx_buffer, len);
-#elif defined(SPC584B_DIS)
-  sd_lld_write(&SD2, tx_buffer, len);
-#elif defined(SHIMMER3R)
-  SHIMMER_PRINTF((char *) tx_buffer, len);
-#endif
 }
 
 /*

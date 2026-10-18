@@ -166,7 +166,6 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, ui
 static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
 static int32_t
 platform_read_raw_data_dma(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
-static void tx_com(uint8_t *tx_buffer, uint16_t len);
 static void platform_delay(uint32_t ms);
 #if !defined(SHIMMER3R)
 static void platform_init(void);
@@ -676,26 +675,6 @@ static int32_t platform_read_raw_data_dma(void *handle, uint8_t reg, uint8_t *bu
   HAL_StatusTypeDef ret;
   ret = HAL_I2C_Mem_Read_DMA(handle, LIS2MDL_I2C_ADD, reg, I2C_MEMADD_SIZE_8BIT, bufp, len);
   return ret;
-}
-
-/*
- * @brief  Send buffer to console (platform dependent)
- *
- * @param  tx_buffer     buffer to transmit
- * @param  len           number of byte to send
- *
- */
-static void tx_com(uint8_t *tx_buffer, uint16_t len)
-{
-#if defined(NUCLEO_F411RE)
-  HAL_UART_Transmit(&huart2, tx_buffer, len, 1000);
-#elif defined(STEVAL_MKI109V3)
-  CDC_Transmit_FS(tx_buffer, len);
-#elif defined(SPC584B_DIS)
-  sd_lld_write(&SD2, tx_buffer, len);
-#elif defined(SHIMMER3R)
-  SHIMMER_PRINTF((char *) tx_buffer, len);
-#endif
 }
 
 /*
