@@ -573,6 +573,19 @@ void I2cBatt_configureChannels(void)
  * valid reading is repeated instead of logging a zeroed packet slot. */
 static uint8_t lis2mdlLastMag[6] = { 0 };
 
+/* DEV-1229: copy the held reading into the packet being built, as one step.
+ * The cache is written by I2C1_MemRxCpltCallback() at priority 0, and this
+ * runs from the RTC interrupt or a task, below it: a completion landing midway
+ * through the six bytes would hand the packet axes from two readings. */
+static void lis2mdlHoldLastMag(void)
+{
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  memcpy(ShimSens_getDataBuffAtWrIdx() + sensing.ptr.mag1, lis2mdlLastMag,
+      sizeof(lis2mdlLastMag));
+  __set_PRIMASK(primask);
+}
+
 void I2C_startSensing(void)
 {
   gConfigBytes *configBytes = ShimConfig_getStoredConfig();
@@ -882,8 +895,7 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
     {
       /* DEV-818: no fresh conversion this tick - sample-and-hold the last valid
        * magnetometer reading instead of leaving the zeroed packet slot. */
-      uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
-      memcpy(dataBufPtr + sensing.ptr.mag1, lis2mdlLastMag, sizeof(lis2mdlLastMag));
+      lis2mdlHoldLastMag();
     }
     break;
 #elif defined(SHIMMER4_SDK)
@@ -926,8 +938,7 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
      * packet's mag slot zeroed (DEV-1229). */
     if (i2cSensingInfo->sensorList[i2cSensingInfo->sensorCnt] == I2C_LIS2MDL_MAG)
     {
-      memcpy(ShimSens_getDataBuffAtWrIdx() + sensing.ptr.mag1, lis2mdlLastMag,
-          sizeof(lis2mdlLastMag));
+      lis2mdlHoldLastMag();
     }
 #endif
   }
