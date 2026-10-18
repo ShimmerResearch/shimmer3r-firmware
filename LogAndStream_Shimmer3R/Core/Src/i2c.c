@@ -430,6 +430,15 @@ void I2cSens_configureChannels(void)
   gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
 #if defined(SHIMMER3R)
+  /* DEV-1229: the bus state is rebuilt in one step. A read from the previous
+   * session can still complete here, and I2C1_MemRxCpltCallback() (priority
+   * 0) would otherwise run on a half-cleared i2c1Sens - status not yet idle, a
+   * sensor list part-built - and take a step on it. Masked, the completion
+   * runs only after the rebuild, finds the bus idle and is dropped. Nothing
+   * below waits or calls the HAL: it is memory writes only. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+
   memset((uint8_t *) &i2c1Sens, 0, sizeof(i2c1Sens));
   memset((uint8_t *) &i2c3Sens, 0, sizeof(i2c3Sens));
   memset((uint8_t *) &i2c4Sens, 0, sizeof(i2c4Sens));
@@ -540,6 +549,8 @@ void I2cSens_configureChannels(void)
   {
     expectedI2cBusCbFlags |= I2C4_BUS_FLAG;
   }
+
+  __set_PRIMASK(primask);
 #endif
 }
 
