@@ -72,6 +72,7 @@ jobs:
       - name: Upload image
         uses: actions/upload-artifact@v4
         with:
+          overwrite: true  # a re-run uploads under the same name
           name: firmware-hex-${{ github.sha }}
           path: ${{ env.PROJECT_DIR }}/${{ env.BUILD_CONFIG }}/${{ env.PROJECT_DIR }}.hex
           retention-days: 14

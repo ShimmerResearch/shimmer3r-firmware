@@ -96,10 +96,17 @@ jobs:
         run: make -C "${{ env.PROJECT_DIR }}/${{ env.SUBMODULE_FOLDER }}/Test/host" platform-check test
 
       - name: Increment version
+        env:
+          INCREMENT: ${{ inputs.increment || 'patch' }}
         run: |
           set -euo pipefail
+          # The input reaches the shell only as a variable, and only these three.
+          case "$INCREMENT" in
+            major|minor|patch) ;;
+            *) echo "::error::increment must be major, minor or patch"; exit 1 ;;
+          esac
           chmod +x ../log-and-stream-common/scripts/increment_version.sh
-          ../log-and-stream-common/scripts/increment_version.sh ${{ github.event.inputs.increment || 'patch' }}
+          ../log-and-stream-common/scripts/increment_version.sh "$INCREMENT"
         working-directory: ${{ env.PROJECT_DIR }}/build
 
       - name: Save version for next steps
@@ -143,6 +150,7 @@ jobs:
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
+          overwrite: true  # a re-run uploads under the same name
           name: firmware-hex
           path: build/*.hex
 
