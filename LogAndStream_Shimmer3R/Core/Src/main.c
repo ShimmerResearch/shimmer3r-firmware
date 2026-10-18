@@ -811,12 +811,18 @@ void HAL_Delay(uint32_t Delay)
 }
 #endif
 
+/* ShimTask_NORM_manage() calls this with interrupts masked, having found no
+ * task (DEV-1222). WFI still wakes on an interrupt that becomes pending while
+ * masked, and that handler runs once they are unmasked, so a task queued after
+ * the check is never slept through. Unmasking before the WFI would reopen that
+ * window. */
 void platform_sleepWhenNoTask(void)
 {
   if (USBX_IsInitialised())
   {
     /* idle: sleep until next IRQ (SOF, UART RX, HAL_GetTick SysTick, etc.) */
     __WFI();
+    __enable_irq();
   }
   else
   {
@@ -824,7 +830,13 @@ void platform_sleepWhenNoTask(void)
      * HAL_PWR_DisableSleepOnExit() in ShimTask_set() */
     HAL_PWR_EnableSleepOnExit();
 
-    Power_SleepUntilInterrupt();
+    /* Power_SleepUntilInterrupt() with the unmask before the tick resumes:
+     * the waking handler runs at the unmask, and sleep-on-exit sends the core
+     * back to sleep, tick still suspended, unless that handler queued a task */
+    HAL_SuspendTick();
+    HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+    __enable_irq();
+    HAL_ResumeTick();
   }
 }
 
