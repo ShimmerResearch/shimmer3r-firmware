@@ -78,6 +78,8 @@ require      "$B/Core/Src/rtc.c"     "HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG) 
 require      "$B/Core/Src/rtc.c"     "(now.subseconds & 0x8000U)"    "DEV-1162 no bare SSR read (it locked the shadow regs for 1 s)"
 require      "$B/Core/Src/rtc.c"     "RTC_irqHold()"                 "DEV-1162 RTC IRQ held off around task-context RTC writes"
 require      "$B/Core/Src/rtc.c"     "case RTC_ALARM_CONTEXT_REBOOT_AFTER_BT_MODULE_RESTART:" "DEV-1164 delayed MCU reboot after a BT module OTA restart"
+require      "$B/Core/Src/i2c.c"     "i2cStaleCompletions++"         "DEV-1229 a late I2C completion is dropped, not taken as a step"
+require      "$B/Core/Src/i2c.c"     "i2cSequenceErrors++"           "DEV-1229 no ISR-context trap past the end of the sensor list"
 require      "$B/Core/Inc/rtc.h"     "RTC_ALARM_CONTEXT_REBOOT_AFTER_BT_MODULE_RESTART,"     "DEV-1164 alarm context for the delayed reboot"
 require      "$B/Core/Src/rtc.c"     "(data->subseconds & 0x7FFFU)"  "DEV-1162 ticks from SS[14:0] (SS[15] after a shift is not sub-seconds)"
 require      "$B/Core/Src/rtc.c"     "RTC_SHIFTADD1S_RESET, (uint32_t) (32768 - delta)" \
