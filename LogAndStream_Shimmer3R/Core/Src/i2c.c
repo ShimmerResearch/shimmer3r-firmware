@@ -857,8 +857,25 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
   case I2C_LIS2MDL_MAG:
     if (!lis2mdl_is_drdy_int_enabled() || LIS2MDL_DRDY)
     {
+      /* DEV-1229: marking the read in progress and starting it are one step.
+       * A gather can start here from the RTC interrupt or a task, below the
+       * I2C1 and its DMA interrupts (both priority 0). If the previous read's
+       * completion ran between the two, it would see this read's status, be
+       * taken as this read's data, and complete the gather - which the
+       * HAL_BUSY return below would then complete a second time. Masked, the
+       * completion runs only once status says what really happened: IDLE if
+       * the start was refused (so it is dropped), MAG_GET if this read is the
+       * one on the bus. HAL_I2C_Mem_Read_DMA() only starts the transfer or
+       * refuses it; it waits on nothing. */
+      uint32_t primask = __get_PRIMASK();
+      __disable_irq();
       i2cSensingInfo->status = I2C_STAT_LIS2MDL_MAG_GET;
       halRet = lis2mdl_mag_get(i2cSens_buf.lis2mdlMagBuf);
+      if (halRet != HAL_OK)
+      {
+        i2cSensingInfo->status = I2C_STAT_IDLE;
+      }
+      __set_PRIMASK(primask);
       retVal = 1;
     }
     else
