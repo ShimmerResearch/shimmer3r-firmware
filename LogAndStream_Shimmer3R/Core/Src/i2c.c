@@ -36,6 +36,13 @@ I2CTypeDef i2cBatt;
 
 volatile uint8_t expectedI2cBusCbFlags = 0, currentI2cBusCbFlags = 0;
 
+/* DEV-1229: I2C completions that arrived for no transfer in progress, and
+ * sensing steps found past the end of the sensor list. Both were once fatal (a
+ * trap in ISR context that hung the unit); now each is counted and dropped.
+ * Never cleared - read them over SWD after a bench run. */
+volatile uint32_t i2cStaleCompletions = 0;
+volatile uint32_t i2cSequenceErrors = 0;
+
 I2C_HandleTypeDef *hi2cMainBus;
 #if defined(SHIMMER4_SDK)
 I2C_HandleTypeDef *hi2cBattery;
@@ -803,12 +810,15 @@ void I2cSensing(I2CTypeDef *i2cSensingInfo, I2C_SENSING_TYPE start)
   }
   else
   {
-    //TODO handle this differently
-    while (1)
-    {
-      Board_ledToggle(LED_ALL);
-      HAL_Delay(100);
-    }
+    /* Past the end of the list: a step for a gather that is already over,
+     * such as a transfer completing after the sensor list it belonged to was
+     * rebuilt. This used to trap here - LEDs toggled, HAL_Delay() in ISR
+     * context, where SysTick (the same priority) never advances, so the unit
+     * hung for good (DEV-1229). Its gather has already completed; drop the
+     * step and leave the bus ready for the next one. */
+    i2cSequenceErrors++;
+    i2cSensingInfo->status = I2C_STAT_IDLE;
+    i2cSensingInfo->sensorCnt = 0;
   }
 }
 
@@ -892,7 +902,17 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
     //printf("I2C DMA Error: %d, Stage: %d\n", halRet, i2cSensingInfo->status);
 
     retVal = 0;
-    i2cSensingInfo->status = SPI_STAT_IDLE;
+    i2cSensingInfo->status = I2C_STAT_IDLE;
+#if defined(SHIMMER3R)
+    /* HAL_BUSY here means the previous read is still in flight. Hold the last
+     * reading, as for no fresh conversion (DEV-818), rather than leave this
+     * packet's mag slot zeroed (DEV-1229). */
+    if (i2cSensingInfo->sensorList[i2cSensingInfo->sensorCnt] == I2C_LIS2MDL_MAG)
+    {
+      memcpy(ShimSens_getDataBuffAtWrIdx() + sensing.ptr.mag1, lis2mdlLastMag,
+          sizeof(lis2mdlLastMag));
+    }
+#endif
   }
 
   return retVal;
@@ -906,6 +926,18 @@ bool areI2cChannelsEnabled(void)
 
 void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
+  /* DEV-1229: only a read this driver is waiting for may complete a step. A
+   * read that outlived its gather - the next gather found the bus busy and
+   * moved on, or sensing restarted and rebuilt the sensor list - lands with
+   * the bus idle. Taking it as a step would complete the current gather before
+   * its data is in, or step past the end of a list it is not in (which hung the
+   * unit). Its data belongs to no packet now, so it is dropped. */
+  if (i2c1Sens.status == I2C_STAT_IDLE)
+  {
+    i2cStaleCompletions++;
+    return;
+  }
+
   uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   switch (i2c1Sens.sensorList[i2c1Sens.sensorCnt])
   {
