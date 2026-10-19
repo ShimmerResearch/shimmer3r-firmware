@@ -103,6 +103,7 @@ require      "$B/Core/Src/rtc.c"     "dr = READ_REG(RTC->DR)"        "DEV-338 re
 require      "$B/Core/Src/tim.c"     "platform_ledTickShift"         "DEV-338 LED blink phase-lock hooks"
 require      "$B/Core/Src/tim.c"     "HAL_NVIC_SetPriority(TIM6_IRQn, 10, 0)" \
                                                                      "DEV-338 blink timer below the sample interrupt"
+require      "$B/Core/Src/main.c"    "PWR_SLEEPENTRY_WFI"            "DEV-1222 masked idle sleep (else the weak hook spins, never sleeps)"
 require_re   "$B/USBX/App/ux_user.h" '^#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH[[:space:]]' \
                                                                      "active 64 KB MSC transfer define (stock is commented out)"
 
