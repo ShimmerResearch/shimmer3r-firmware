@@ -64,10 +64,10 @@ extern "C"
    * left at their 32768 Hz values) - the unit needs its 32k crystal looked at. */
   uint8_t Boot_rtcIsOnLsiFallback(void);
 
-  /* DEV-866: human-readable LSE drive level the boot bring-up settled on (the
-   * +1-margin level actually running), e.g. "MEDIUMLOW"; "not run" before
-   * SystemClock_Config, "NONE ..." variants on the failure rungs. For status /
-   * factory-test reporting. */
+  /* DEV-866: human-readable LSE drive level the boot bring-up settled on:
+   * "MEDIUMHIGH", or "HIGH" when MEDIUMHIGH did not start the crystal
+   * (DEV-1257); "not run" before SystemClock_Config, "NONE ..." variants on
+   * the failure rungs. For status / factory-test reporting. */
   const char *Boot_getLseDriveName(void);
 
 /* USER CODE END EFP */
