@@ -47,7 +47,7 @@ Files known to carry hand-written code that generation removes (DEV-1017):
 
 | File | What lives there |
 |---|---|
-| `Core/Src/main.c` | DEV-866 LSE drive ladder — `Lse_tryDriveLevel/walkDriveLadder/bringUp`. **Was misplaced; moved into `USER CODE BEGIN 0`** |
+| `Core/Src/main.c` | DEV-866/DEV-1257 LSE start and recovery (fixed MEDIUMHIGH start, backup-domain reset, LSI fallback) — `Lse_tryDriveLevel/startAtMediumHigh/bringUp`. **Was misplaced; moved into `USER CODE BEGIN 0`** |
 | `Core/Src/rtc.c` | DEV-866 LSI limp-home — without it a board with a dead LSE hangs at boot |
 | `Core/Src/sdmmc.c` | The deliberate no-`Error_Handler()` path for hot-swap failures |
 | `Core/Src/usb_otg.c`, `Core/Inc/usb_otg.h` | `USB_getPcdSpeed()`, NVIC priority |
