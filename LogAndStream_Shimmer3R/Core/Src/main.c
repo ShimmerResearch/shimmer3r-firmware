@@ -75,8 +75,8 @@ __attribute__((section(".version"), used)) const firmware_version_t fw_version_s
 
 volatile uint32_t time_start, time_end, time_diff;
 
-/* DEV-866: LSE drive strength chosen by Lse_bringUp() at boot, stashed so
- * it can be printed from Init(). The print inside the escalation runs before
+/* DEV-866: LSE drive strength applied by Lse_bringUp() at boot, stashed so
+ * it can be printed from Init(). A print inside the bring-up runs before
  * the core clock is configured, so its SWV/ITM output goes out at the wrong SWO
  * baud and is dropped by the host - hence a second, reliable print later. */
 static const char *gLseDriveName = "not run";
@@ -143,7 +143,7 @@ void Init()
 {
   LogAndStream_init();
 
-  /* DEV-866: report the LSE drive strength the boot escalation settled on. Done
+  /* DEV-866: report the LSE drive strength the boot bring-up applied. Done
    * here rather than in Lse_bringUp() because that runs before the core
    * clock is configured (SWV output there is dropped); by Init() the clock is
    * up and SWV is reliable. */
