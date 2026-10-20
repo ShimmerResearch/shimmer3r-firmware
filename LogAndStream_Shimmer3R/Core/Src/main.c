@@ -298,47 +298,42 @@ static bool Lse_tryDriveLevel(uint32_t drive)
   return false;
 }
 
-/* DEV-1257: bring up the 32.768 kHz LSE at MEDIUMHIGH, escalating to HIGH
- * only if MEDIUMHIGH does not reach LSESYSRDY (a cold or marginal crystal).
+/* DEV-1257: start the 32.768 kHz LSE at MEDIUMHIGH - one fixed drive, no
+ * per-board search.
  *
- * Why the floor is MEDIUMHIGH: reaching LSESYSRDY proves the crystal starts,
- * not that it has the gain margin to keep every cycle. Against the CM315D
- * (ESR 70 kohm max, C0 0.95 pF, C_L 12.5 pF), AN2867 Rev 24 section 3.4
- * (Gm_critmax > gm_crit, the 5x margin already inside ST's Gm_critmax) with
- * DS13543 Table 73 gives MEDIUMLOW 0.35 of the required margin, MEDIUMHIGH
- * 0.79 and HIGH 1.26 - MEDIUMLOW fails on any load. The DEV-866 ladder (lowest
- * that starts, +1) left 12 pF boards on MEDIUMLOW, and on 15BC the RTC then
- * lost cycles: -379 ppm idle and 15-18 ms at every SD-logging start (the card's
- * current draw), both gone at MEDIUMHIGH and HIGH. The cost is +140 nA typ.
- * A warm reset (crystal still ringing) also let LOW "pass" the old start test.
+ * Why MEDIUMHIGH: reaching LSESYSRDY proves the crystal starts, not that it has
+ * the gain margin to keep every cycle. Against the CM315D (ESR 70 kohm max, C0
+ * 0.95 pF, C_L 12.5 pF), AN2867 Rev 24 section 3.4 (Gm_critmax > gm_crit, the
+ * 5x margin already inside ST's Gm_critmax) with DS13543 Table 73 gives
+ * MEDIUMLOW 0.35 of the required margin and MEDIUMHIGH 0.79 - MEDIUMLOW fails
+ * on any load. The DEV-866 ladder (lowest that starts, +1) left 12 pF boards
+ * on MEDIUMLOW. Stock boards kept every cycle there, but 15BC (an over-loaded
+ * rework) lost them: -379 ppm idle and 15-18 ms at every SD-logging start,
+ * both gone at MEDIUMHIGH. The cost is +140 nA typ and a few ppm of pull. A
+ * warm reset (crystal still ringing) also let LOW "pass" the old start test.
  *
- * HIGH stays an escalation rung, not the default: its drive level against the
- * CM315D's 1 uW maximum has not been measured, but a crystal that will not
- * start at MEDIUMHIGH is better on HIGH than on the LSI fallback (~2.4% slow).
+ * No escalation to HIGH, deliberately: a crystal that will not start at
+ * MEDIUMHIGH is a faulty fit (wrong caps, bad rework, contamination), and it
+ * must fall through to the LSI fallback so the factory test fails it, rather
+ * than boot on the crystal at HIGH and pass. HIGH's drive level against the
+ * CM315D's 1 uW maximum has not been measured either.
  *
- * Returns the RCC_LSEDRIVE_* level actually applied, or 0xFFFFFFFF if no level
- * reached LSESYSRDY. */
-static uint32_t Lse_walkDriveLadder(void)
+ * Returns RCC_LSEDRIVE_MEDIUMHIGH, or 0xFFFFFFFF if the LSE did not reach
+ * LSESYSRDY. */
+static uint32_t Lse_startAtMediumHigh(void)
 {
-  static const uint32_t levels[] = { RCC_LSEDRIVE_MEDIUMHIGH, RCC_LSEDRIVE_HIGH };
-  static const char *const names[] = { "MEDIUMHIGH", "HIGH" };
-  const uint32_t nLevels = (uint32_t) (sizeof(levels) / sizeof(levels[0]));
-
-  for (uint32_t i = 0U; i < nLevels; i++)
+  if (Lse_tryDriveLevel(RCC_LSEDRIVE_MEDIUMHIGH))
   {
-    if (Lse_tryDriveLevel(levels[i]))
-    {
-      /* Reported from Init(), not here: this runs before SystemClock_Config()
-       * and SWV output at this point leaves at the wrong SWO bit rate. */
-      gLseDriveName = names[i];
-      gLseDrvBits = (levels[i] & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos;
-      return levels[i];
-    }
+    /* Reported from Init(), not here: this runs before SystemClock_Config()
+     * and SWV output at this point leaves at the wrong SWO bit rate. */
+    gLseDriveName = "MEDIUMHIGH";
+    gLseDrvBits = (RCC_LSEDRIVE_MEDIUMHIGH & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos;
+    return RCC_LSEDRIVE_MEDIUMHIGH;
   }
 
-  gLseDriveName = "NONE (LSE not stable at any drive)";
-  gLseBootNote = "LSE did not reach LSESYSRDY at any drive level - check 32k "
-                 "XTAL / rework";
+  gLseDriveName = "NONE (LSE not stable at MEDIUMHIGH)";
+  gLseBootNote = "LSE did not reach LSESYSRDY at MEDIUMHIGH - check 32k XTAL / "
+                 "load caps / rework";
   return 0xFFFFFFFFU;
 }
 
@@ -359,23 +354,24 @@ const char *Boot_getLseDriveName(void)
 /* DEV-866: full LSE bring-up ladder. Each rung only runs if the one before it
  * failed, so a healthy board pays nothing beyond the normal LSE start wait:
  *
- * 1. Drive escalation MEDIUMHIGH -> HIGH (Lse_walkDriveLadder above) -
- *    recovers a marginal / heavily-loaded / cold crystal and, because each
- *    attempt toggles LSEON (required anyway: LSEDRV is write-locked while
- *    LSEON = 1), also recovers the battery-death case where a brown-out left
- *    LSEON = 1 latched in the backup domain with the crystal stopped and the
- *    drive write-locked.
- * 2. Backup-domain reset + one re-escalation - clears a poisoned RCC->BDCR
- *    that even rung 1 cannot untangle. This does in firmware exactly what
- *    removing all power does on the bench (the previous "fix" was a debugger
- *    session, whose recovery was really the power removal it included). The
- *    stored RTC time is the only cost, and it was already lost the moment the
- *    crystal stopped - which is the only way to reach this rung.
- * 3. LSI fallback - if the crystal is genuinely dead (broken part / rework
- *    fault), flag it and let SystemClock_Config/HAL_RTC_MspInit start the RTC
- *    from the LSI so the device still boots, connects and can report the
- *    fault (factory test prints 'FAIL ... LSE not ready') instead of hanging
- *    forever in Error_Handler. Timekeeping is degraded: LSI is a ~32 kHz RC
+ * 1. Start at MEDIUMHIGH (Lse_startAtMediumHigh above). Because the attempt
+ *    toggles LSEON (required anyway: LSEDRV is write-locked while LSEON = 1),
+ *    it also recovers the battery-death case where a brown-out left LSEON = 1
+ *    latched in the backup domain with the crystal stopped and the drive
+ *    write-locked.
+ * 2. Backup-domain reset + one more MEDIUMHIGH start - clears a poisoned
+ *    RCC->BDCR that even rung 1 cannot untangle. This does in firmware exactly
+ *    what removing all power does on the bench (the previous "fix" was a
+ *    debugger session, whose recovery was really the power removal it
+ *    included). The stored RTC time is the only cost: already lost if the
+ *    crystal had stopped, and a crystal that will not start at MEDIUMHIGH is a
+ *    fault that needs the factory test's attention anyway.
+ * 3. LSI fallback - if the crystal is dead or will not start at MEDIUMHIGH
+ *    (broken part, wrong caps, rework fault), flag it and let
+ *    SystemClock_Config/HAL_RTC_MspInit start the RTC from the LSI so the
+ *    device still boots, connects and can report the fault (factory test
+ *    prints 'FAIL ... LSE not ready') instead of hanging forever in
+ *    Error_Handler. Timekeeping is degraded: LSI is a ~32 kHz RC
  *    (+/-5%) and the RTC prescalers + SSR tick math are deliberately left at
  *    their 32768 Hz values so every consumer stays self-consistent (rtc.c
  *    hardcodes the 0x8000 SSR wrap and ticks*32768 conversions) - the clock
@@ -384,17 +380,17 @@ const char *Boot_getLseDriveName(void)
  * Returns the RCC_LSEDRIVE_* level applied, or 0xFFFFFFFF when on rung 3. */
 static uint32_t Lse_bringUp(void)
 {
-  uint32_t level = Lse_walkDriveLadder();
+  uint32_t level = Lse_startAtMediumHigh();
   if (level != 0xFFFFFFFFU)
   {
     return level;
   }
 
   gLseBootNote = "backup-domain reset forced (latched LSE state cleared; RTC "
-                 "time lost) and ladder retried";
+                 "time lost) and MEDIUMHIGH start retried";
   __HAL_RCC_BACKUPRESET_FORCE();
   __HAL_RCC_BACKUPRESET_RELEASE();
-  level = Lse_walkDriveLadder();
+  level = Lse_startAtMediumHigh();
   if (level != 0xFFFFFFFFU)
   {
     return level;
@@ -539,8 +535,8 @@ void SystemClock_Config(void)
    */
   HAL_PWR_EnableBkUpAccess();
 
-  /* DEV-866/DEV-1257: bring up the LSE at MEDIUMHIGH, or HIGH if MEDIUMHIGH
-   * does not reach LSESYSRDY (genuinely stable, not a false LSERDY). The
+  /* DEV-866/DEV-1257: bring up the LSE at MEDIUMHIGH, judged by LSESYSRDY
+   * (genuinely stable, not a false LSERDY). The
    * normal path does NOT touch the backup domain, so RTC time is preserved.
    * If the full recovery ladder fails (see Lse_bringUp), the boot continues
    * with the RTC on the LSI instead of hanging: LSE_OFF below keeps

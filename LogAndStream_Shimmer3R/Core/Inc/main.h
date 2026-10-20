@@ -65,9 +65,9 @@ extern "C"
   uint8_t Boot_rtcIsOnLsiFallback(void);
 
   /* DEV-866: human-readable LSE drive level the boot bring-up settled on:
-   * "MEDIUMHIGH", or "HIGH" when MEDIUMHIGH did not start the crystal
-   * (DEV-1257); "not run" before SystemClock_Config, "NONE ..." variants on
-   * the failure rungs. For status / factory-test reporting. */
+   * "MEDIUMHIGH" (the only drive used, DEV-1257); "not run" before
+   * SystemClock_Config, "NONE ..." variants on the failure rungs. For status /
+   * factory-test reporting. */
   const char *Boot_getLseDriveName(void);
 
 /* USER CODE END EFP */
