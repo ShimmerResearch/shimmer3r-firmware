@@ -668,12 +668,15 @@ int32_t adxl371_get_accel_data(struct adxl371_dev *dev, struct adxl371_xyz_accel
 int32_t adxl371_init(struct adxl371_dev **device, struct adxl371_init_param init_param)
 {
   struct adxl371_dev *dev;
-  uint8_t dev_id, part_id, rev_id;
+  uint8_t dev_id, part_id;
   int32_t ret;
 
   dev = (struct adxl371_dev *) no_os_malloc(sizeof(*dev));
   if (!dev)
+  {
+    ret = -1;
     goto error;
+  }
 
   dev->comm_type = init_param.comm_type;
   //if (dev->comm_type == SPI) {

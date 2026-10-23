@@ -137,7 +137,6 @@ typedef union
 static axis3bit16_t data_raw_acceleration[SELF_TEST_SAMPLES];
 static float acceleration_mg[SELF_TEST_SAMPLES][3];
 static uint8_t whoamI, rst;
-static uint8_t tx_buffer[1000];
 
 static LIS2DW12_Object_t lis2dw12_obj;
 
@@ -154,7 +153,6 @@ static bool isDrdyIntEnabled = false;
  */
 static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
 static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
-static void tx_com(uint8_t *tx_buffer, uint16_t len);
 static void platform_delay(uint32_t ms);
 #if defined(SHIMMER3R)
 static int32_t
@@ -601,26 +599,6 @@ platform_read_raw_data_dma(void *handle, uint8_t *txBufp, uint8_t *rxBufp, uint8
 }
 
 /*
- * @brief  Write generic device register (platform dependent)
- *
- * @param  tx_buffer     buffer to transmit
- * @param  len           number of byte to send
- *
- */
-static void tx_com(uint8_t *tx_buffer, uint16_t len)
-{
-#if defined(NUCLEO_F411RE)
-  HAL_UART_Transmit(&huart2, tx_buffer, len, 1000);
-#elif defined(STEVAL_MKI109V3)
-  CDC_Transmit_FS(tx_buffer, len);
-#elif defined(SPC584B_DIS)
-  sd_lld_write(&SD2, tx_buffer, len);
-#elif defined(SHIMMER3R)
-  SHIMMER_PRINTF((char *) tx_buffer, len);
-#endif
-}
-
-/*
  * @brief  platform specific delay (platform dependent)
  *
  * @param  ms        delay in ms
@@ -635,6 +613,7 @@ static void platform_delay(uint32_t ms)
 #endif
 }
 
+#if !defined(SHIMMER3R)
 /*
  * @brief  platform specific initialization (platform dependent)
  */
@@ -648,3 +627,4 @@ static void platform_init(void)
   HAL_Delay(1000);
 #endif
 }
+#endif

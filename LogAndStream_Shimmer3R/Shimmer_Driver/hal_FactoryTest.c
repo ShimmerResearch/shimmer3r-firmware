@@ -627,14 +627,9 @@ void print_mcu_details(void)
   }
 
   /* Drive level the boot bring-up settled on (informational, no pass/fail):
-   * the adaptive escalation deliberately COMPENSATES for wrong load caps, so
-   * only this line can surface them. Expectation: all production boards
-   * (12 pF LSE on every revision) lock at LOW and run MEDIUMLOW (+1 margin) -
-   * hardware-confirmed on stock and HSE-fixed units. MEDIUMHIGH from a cold
-   * boot suggests a marginal / over-loaded / contaminated 32k fit, and any
-   * "NONE"/LSI-fallback state warrants a bench look. A low reading on a warm
-   * reset is not meaningful (a still-ringing crystal only has to sustain,
-   * not cold-start). */
+   * every board runs MEDIUMHIGH (DEV-1257). A crystal that does not start
+   * there - a marginal / over-loaded / contaminated 32k fit - falls through to
+   * the LSI fallback and reads "NONE ...", which warrants a bench look. */
   sprintf(buffer, " - LSE drive applied at boot: %s\r\n", Boot_getLseDriveName());
   ShimFactoryTest_sendReport(buffer);
 

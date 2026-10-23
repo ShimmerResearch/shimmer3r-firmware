@@ -1196,7 +1196,6 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 {
   uint8_t retVal = 0;
   HAL_StatusTypeDef halRet = 0xFF;
-  gConfigBytes *configBytes = ShimConfig_getStoredConfig();
 
   switch (spiSensingInfo->sensorList[spiSensingInfo->sensorCnt])
   {

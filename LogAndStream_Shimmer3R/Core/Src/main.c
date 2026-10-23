@@ -75,16 +75,15 @@ __attribute__((section(".version"), used)) const firmware_version_t fw_version_s
 
 volatile uint32_t time_start, time_end, time_diff;
 
-/* DEV-866: LSE drive strength chosen by Lse_bringUp() at boot, stashed so
- * it can be printed from Init(). The print inside the escalation runs before
+/* DEV-866: LSE drive strength applied by Lse_bringUp() at boot, stashed so
+ * it can be printed from Init(). A print inside the bring-up runs before
  * the core clock is configured, so its SWV/ITM output goes out at the wrong SWO
  * baud and is dropped by the host - hence a second, reliable print later. */
 static const char *gLseDriveName = "not run";
-/* Companion detail for the same deferred report: the lowest drive level that
- * proved stable, the LSEDRV bits actually applied, and any recovery-path note.
- * Nothing in the LSE bring-up prints directly any more - anything it printed
- * reached the host as a stray fragment ("=1)") ahead of the first real line. */
-static const char *gLseStableName = "n/a";
+/* Companion detail for the same deferred report: the LSEDRV bits actually
+ * applied, and any recovery-path note. Nothing in the LSE bring-up prints
+ * directly any more - anything it printed reached the host as a stray fragment
+ * ("=1)") ahead of the first real line. */
 static uint32_t gLseDrvBits = 0U;
 static const char *gLseBootNote = 0;
 #define BLOCK_START_ADDR 0 /* Block start address      */
@@ -144,13 +143,12 @@ void Init()
 {
   LogAndStream_init();
 
-  /* DEV-866: report the LSE drive strength the boot escalation settled on. Done
+  /* DEV-866: report the LSE drive strength the boot bring-up applied. Done
    * here rather than in Lse_bringUp() because that runs before the core
    * clock is configured (SWV output there is dropped); by Init() the clock is
    * up and SWV is reliable. */
-  SHIMMER_PRINTF(
-      "LSE drive strength = %s (stable at %s, +1 margin, LSEDRV=%lu)\r\n",
-      gLseDriveName, gLseStableName, (unsigned long) gLseDrvBits);
+  SHIMMER_PRINTF("LSE drive strength = %s (LSEDRV=%lu)\r\n", gLseDriveName,
+      (unsigned long) gLseDrvBits);
   if (gLseBootNote != 0)
   {
     SHIMMER_PRINTF("LSE boot note: %s\r\n", gLseBootNote);
@@ -300,55 +298,42 @@ static bool Lse_tryDriveLevel(uint32_t drive)
   return false;
 }
 
-/* DEV-866: bring up the 32.768 kHz LSE with a per-board minimum + margin.
- * The reworked crystals' effective load - and the drive needed to start - vary
- * board to board (hand-rework cap tolerance, PCB stray, ESR), so we escalate
- * LOW -> MEDIUMLOW -> MEDIUMHIGH to find the LOWEST level that reaches
- * LSESYSRDY, then run ONE LEVEL ABOVE that (capped at MEDIUMHIGH - per DEV-866
- * 5f372ce7, HIGH may exceed the CM315D's 0.5 uW max drive level). The +1 gives
- * temperature headroom: a 32 kHz fork's ESR rises at temperature extremes, so
- * it can need more drive mid-session than at boot, and the drive is fixed until
- * the next boot - the margin covers that swing without over-driving to the max.
+/* DEV-1257: start the 32.768 kHz LSE at MEDIUMHIGH - one fixed drive, no
+ * per-board search.
  *
- * Caveat: the found minimum is only as trustworthy as the boot's start
- * condition. A warm reset (crystal still ringing) lets a low level "pass"
- * because it only has to sustain, not cold-start - so on a warm reset the
- * baseline can read low and the +1 margin is measured from there. It is fully
- * correct on a genuine cold boot; on warm resets the margin still adds a level
- * of headroom over whatever sustained.
+ * Why MEDIUMHIGH: reaching LSESYSRDY proves the crystal starts, not that it has
+ * the gain margin to keep every cycle. Against the CM315D (ESR 70 kohm max, C0
+ * 0.95 pF, C_L 12.5 pF), AN2867 Rev 24 section 3.4 (Gm_critmax > gm_crit, the
+ * 5x margin already inside ST's Gm_critmax) with DS13543 Table 73 gives
+ * MEDIUMLOW 0.35 of the required margin and MEDIUMHIGH 0.79 - MEDIUMLOW fails
+ * on any load. The DEV-866 ladder (lowest that starts, +1) left 12 pF boards
+ * on MEDIUMLOW. Stock boards kept every cycle there, but 15BC (an over-loaded
+ * rework) lost them: -379 ppm idle and 15-18 ms at every SD-logging start,
+ * both gone at MEDIUMHIGH. The cost is +140 nA typ and a few ppm of pull. A
+ * warm reset (crystal still ringing) also let LOW "pass" the old start test.
  *
- * Returns the RCC_LSEDRIVE_* level actually applied, or 0xFFFFFFFF if no level
- * reached LSESYSRDY. */
-static uint32_t Lse_walkDriveLadder(void)
+ * No escalation to HIGH, deliberately: a crystal that will not start at
+ * MEDIUMHIGH is a faulty fit (wrong caps, bad rework, contamination), and it
+ * must fall through to the LSI fallback so the factory test fails it, rather
+ * than boot on the crystal at HIGH and pass. HIGH's drive level against the
+ * CM315D's 1 uW maximum has not been measured either.
+ *
+ * Returns RCC_LSEDRIVE_MEDIUMHIGH, or 0xFFFFFFFF if the LSE did not reach
+ * LSESYSRDY. */
+static uint32_t Lse_startAtMediumHigh(void)
 {
-  static const uint32_t levels[]
-      = { RCC_LSEDRIVE_LOW, RCC_LSEDRIVE_MEDIUMLOW, RCC_LSEDRIVE_MEDIUMHIGH };
-  static const char *const names[] = { "LOW", "MEDIUMLOW", "MEDIUMHIGH" };
-  const uint32_t nLevels = (uint32_t) (sizeof(levels) / sizeof(levels[0]));
-
-  for (uint32_t i = 0U; i < nLevels; i++)
+  if (Lse_tryDriveLevel(RCC_LSEDRIVE_MEDIUMHIGH))
   {
-    if (Lse_tryDriveLevel(levels[i]))
-    {
-      /* This level is stable -> just run the next one up for margin (capped at
-       * MEDIUMHIGH), applied blindly: a higher drive works if a lower one did. */
-      uint32_t runIdx = ((i + 1U) < nLevels) ? (i + 1U) : i;
-      if (runIdx != i)
-      {
-        (void) Lse_tryDriveLevel(levels[runIdx]);
-      }
-      gLseDriveName = names[runIdx];
-      /* Reported from Init(), not here: this runs before SystemClock_Config()
-       * and SWV output at this point leaves at the wrong SWO bit rate. */
-      gLseStableName = names[i];
-      gLseDrvBits = (levels[runIdx] & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos;
-      return levels[runIdx];
-    }
+    /* Reported from Init(), not here: this runs before SystemClock_Config()
+     * and SWV output at this point leaves at the wrong SWO bit rate. */
+    gLseDriveName = "MEDIUMHIGH";
+    gLseDrvBits = (RCC_LSEDRIVE_MEDIUMHIGH & RCC_BDCR_LSEDRV) >> RCC_BDCR_LSEDRV_Pos;
+    return RCC_LSEDRIVE_MEDIUMHIGH;
   }
 
-  gLseDriveName = "NONE (LSE not stable at any drive)";
-  gLseBootNote = "LSE did not reach LSESYSRDY at any drive level - check 32k "
-                 "XTAL / rework";
+  gLseDriveName = "NONE (LSE not stable at MEDIUMHIGH)";
+  gLseBootNote = "LSE did not reach LSESYSRDY at MEDIUMHIGH - check 32k XTAL / "
+                 "load caps / rework";
   return 0xFFFFFFFFU;
 }
 
@@ -369,22 +354,24 @@ const char *Boot_getLseDriveName(void)
 /* DEV-866: full LSE bring-up ladder. Each rung only runs if the one before it
  * failed, so a healthy board pays nothing beyond the normal LSE start wait:
  *
- * 1. Adaptive drive escalation (Lse_walkDriveLadder above) - recovers a
- *    marginal / heavily-loaded crystal and, because each attempt toggles LSEON
- *    (required anyway: LSEDRV is write-locked while LSEON = 1), also recovers
- *    the battery-death case where a brown-out left LSEON = 1 latched in the
- *    backup domain with the crystal stopped and the drive write-locked.
- * 2. Backup-domain reset + one re-escalation - clears a poisoned RCC->BDCR
- *    that even rung 1 cannot untangle. This does in firmware exactly what
- *    removing all power does on the bench (the previous "fix" was a debugger
- *    session, whose recovery was really the power removal it included). The
- *    stored RTC time is the only cost, and it was already lost the moment the
- *    crystal stopped - which is the only way to reach this rung.
- * 3. LSI fallback - if the crystal is genuinely dead (broken part / rework
- *    fault), flag it and let SystemClock_Config/HAL_RTC_MspInit start the RTC
- *    from the LSI so the device still boots, connects and can report the
- *    fault (factory test prints 'FAIL ... LSE not ready') instead of hanging
- *    forever in Error_Handler. Timekeeping is degraded: LSI is a ~32 kHz RC
+ * 1. Start at MEDIUMHIGH (Lse_startAtMediumHigh above). Because the attempt
+ *    toggles LSEON (required anyway: LSEDRV is write-locked while LSEON = 1),
+ *    it also recovers the battery-death case where a brown-out left LSEON = 1
+ *    latched in the backup domain with the crystal stopped and the drive
+ *    write-locked.
+ * 2. Backup-domain reset + one more MEDIUMHIGH start - clears a poisoned
+ *    RCC->BDCR that even rung 1 cannot untangle. This does in firmware exactly
+ *    what removing all power does on the bench (the previous "fix" was a
+ *    debugger session, whose recovery was really the power removal it
+ *    included). The stored RTC time is the only cost: already lost if the
+ *    crystal had stopped, and a crystal that will not start at MEDIUMHIGH is a
+ *    fault that needs the factory test's attention anyway.
+ * 3. LSI fallback - if the crystal is dead or will not start at MEDIUMHIGH
+ *    (broken part, wrong caps, rework fault), flag it and let
+ *    SystemClock_Config/HAL_RTC_MspInit start the RTC from the LSI so the
+ *    device still boots, connects and can report the fault (factory test
+ *    prints 'FAIL ... LSE not ready') instead of hanging forever in
+ *    Error_Handler. Timekeeping is degraded: LSI is a ~32 kHz RC
  *    (+/-5%) and the RTC prescalers + SSR tick math are deliberately left at
  *    their 32768 Hz values so every consumer stays self-consistent (rtc.c
  *    hardcodes the 0x8000 SSR wrap and ticks*32768 conversions) - the clock
@@ -393,17 +380,17 @@ const char *Boot_getLseDriveName(void)
  * Returns the RCC_LSEDRIVE_* level applied, or 0xFFFFFFFF when on rung 3. */
 static uint32_t Lse_bringUp(void)
 {
-  uint32_t level = Lse_walkDriveLadder();
+  uint32_t level = Lse_startAtMediumHigh();
   if (level != 0xFFFFFFFFU)
   {
     return level;
   }
 
   gLseBootNote = "backup-domain reset forced (latched LSE state cleared; RTC "
-                 "time lost) and ladder retried";
+                 "time lost) and MEDIUMHIGH start retried";
   __HAL_RCC_BACKUPRESET_FORCE();
   __HAL_RCC_BACKUPRESET_RELEASE();
-  level = Lse_walkDriveLadder();
+  level = Lse_startAtMediumHigh();
   if (level != 0xFFFFFFFFU)
   {
     return level;
@@ -519,6 +506,10 @@ int main(void)
       }
     }
 
+    /* DEV-1164: arm the delayed MCU reboot after a BT module restart, in task
+     * context (the BT UART interrupt only records it). */
+    BT_serviceModuleRestart();
+
     ShimTask_manage();
   }
   /* USER CODE END 3 */
@@ -544,14 +535,13 @@ void SystemClock_Config(void)
    */
   HAL_PWR_EnableBkUpAccess();
 
-  /* DEV-866: bring up the LSE - escalate LOW -> MEDIUMLOW -> MEDIUMHIGH to the
-   * lowest level that reaches LSESYSRDY (genuinely stable, not a false LSERDY),
-   * then run ONE LEVEL ABOVE it for temperature margin (capped at MEDIUMHIGH).
-   * Per-board adaptive; the normal path does NOT touch the backup domain, so
-   * RTC time is preserved. If the full recovery ladder fails (see
-   * Lse_bringUp), the boot continues with the RTC on the LSI instead of
-   * hanging: LSE_OFF below keeps HAL_RCC_OscConfig() from waiting on the dead
-   * crystal, and HAL_RTC_MspInit (rtc.c) selects the matching RTC source. */
+  /* DEV-866/DEV-1257: bring up the LSE at MEDIUMHIGH, judged by LSESYSRDY
+   * (genuinely stable, not a false LSERDY). The
+   * normal path does NOT touch the backup domain, so RTC time is preserved.
+   * If the full recovery ladder fails (see Lse_bringUp), the boot continues
+   * with the RTC on the LSI instead of hanging: LSE_OFF below keeps
+   * HAL_RCC_OscConfig() from waiting on the dead crystal, and HAL_RTC_MspInit
+   * (rtc.c) selects the matching RTC source. */
   (void) Lse_bringUp();
 
   /** Initializes the CPU, AHB and APB buses clocks
@@ -661,7 +651,7 @@ bool btFactoryResetViaFw(void)
   btCommWithDiffBaudRates();
 
   //Abort transfer operations to release UART for subsequent requests.
-  HAL_StatusTypeDef status = HAL_UART_Abort(&huart3);
+  HAL_UART_Abort(&huart3);
 
   success = isBtIsFactoryResetted() && BT_isFactoryResetMacRestored();
   SHIMMER_PRINTF("BT factory reset end: %s\r\n",
@@ -827,12 +817,18 @@ void HAL_Delay(uint32_t Delay)
 }
 #endif
 
+/* ShimTask_NORM_manage() calls this with interrupts masked, having found no
+ * task (DEV-1222). WFI still wakes on an interrupt that becomes pending while
+ * masked, and that handler runs once they are unmasked, so a task queued after
+ * the check is never slept through. Unmasking before the WFI would reopen that
+ * window. */
 void platform_sleepWhenNoTask(void)
 {
   if (USBX_IsInitialised())
   {
     /* idle: sleep until next IRQ (SOF, UART RX, HAL_GetTick SysTick, etc.) */
     __WFI();
+    __enable_irq();
   }
   else
   {
@@ -840,7 +836,13 @@ void platform_sleepWhenNoTask(void)
      * HAL_PWR_DisableSleepOnExit() in ShimTask_set() */
     HAL_PWR_EnableSleepOnExit();
 
-    Power_SleepUntilInterrupt();
+    /* Power_SleepUntilInterrupt() with the unmask before the tick resumes:
+     * the waking handler runs at the unmask, and sleep-on-exit sends the core
+     * back to sleep, tick still suspended, unless that handler queued a task */
+    HAL_SuspendTick();
+    HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+    __enable_irq();
+    HAL_ResumeTick();
   }
 }
 

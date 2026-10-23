@@ -92,7 +92,14 @@ uint8_t bt_txBuf[512];
 uint8_t rxBuf[512];
 volatile uint16_t expectedByteCount;
 
-volatile uint8_t waitingForBtBoot = 0;
+/* Text capture into btBootMsg: BT_TEXT_CAPTURE_BOOT ends after the two boot
+ * lines, BT_TEXT_CAPTURE_REPLY after the first line starting '@' (the @R/@E
+ * reply to a text command, whether or not the module echoed the command). */
+#define BT_TEXT_CAPTURE_OFF   0U
+#define BT_TEXT_CAPTURE_BOOT  1U
+#define BT_TEXT_CAPTURE_REPLY 2U
+volatile uint8_t waitingForBtBoot = BT_TEXT_CAPTURE_OFF;
+volatile uint16_t btBootMsgLineStart = 0;
 /* The two boot lines (BOOT banner + ASC event). Measured 150 chars on
  * v1.4.12.12, 154 on v1.4.18.18 and 163 on a v1.4.18.18 test image, which
  * overflowed the previous 160-byte buffer: the index that follows it in RAM
@@ -364,13 +371,82 @@ HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length)
   return status;
 }
 
+/* A framing error on the module UART after initialisation means the module
+ * came back from a restart on a different baud - an OTA image carries its own
+ * UART defaults - so its boot banner arrives as garbage that
+ * BT_watchForBootBanner() can never match (bench, 15BC, 2026-10-11: FE and ORE
+ * set, MCU silent). In DMA mode the HAL treats any receive error as blocking:
+ * it aborts the reception and calls this, so without it the BT receive path
+ * stays dead until the next power cycle. Same handling as a recognised boot -
+ * BT_handleUnexpectedModuleBoot() ignores it during the MCU's own start-up,
+ * whose baud probing produces framing errors legitimately, and while sensing. */
+static void btUartErrorCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->ErrorCode & HAL_UART_ERROR_FE)
+  {
+    BT_handleUnexpectedModuleBoot("UART framing error - module baud changed");
+  }
+}
+
 void setBtUartInstance(UART_HandleTypeDef *huartToUse)
 {
   huartBtPtr = huartToUse;
 
   HAL_UART_RegisterCallback(huartBtPtr, HAL_UART_RX_COMPLETE_CB_ID, btUartDmaRxCpltCallback);
   HAL_UART_RegisterCallback(huartBtPtr, HAL_UART_TX_COMPLETE_CB_ID, btUartTxCpltCallback);
+  HAL_UART_RegisterCallback(huartBtPtr, HAL_UART_ERROR_CB_ID, btUartErrorCallback);
   //HAL_DMA_RegisterCallback(huart->, HAL_DMA_XFER_CPLT_CB_ID, btUartDmaRxCpltCallback);
+}
+
+/* Watch the EZ-Serial byte stream for the ASCII boot banner a module prints
+ * when it restarts in text mode, which the binary parser cannot recognise:
+ *
+ *   @E,0083,BOOT,E=01041212,S=03010000,...
+ *
+ * The whole fixed-format head is matched - "@E," then four hex digits, then
+ * ",BOOT,E=" then eight hex digits, then "," - not just the word BOOT. These
+ * bytes also pass through here inside binary frames and as Shimmer payload:
+ * SPP data events carry whatever a host sent, and the raw pipe carries host
+ * commands. A false match costs an MCU reboot (never while sensing), so the
+ * match is made as specific as the banner allows: 24 bytes in a fixed layout,
+ * twelve of them constrained to hex digits. A host would have to send that
+ * exact text deliberately.
+ *
+ * Fed from both the parser and the raw-pipe branches: a module that resets
+ * with the data pipe engaged prints its banner while the receive path is
+ * still routing bytes to the Shimmer parser (the CYSPP pin is read live), so
+ * watching the parser branch alone missed it until host traffic arrived
+ * (bench, 2026-10-11). During the MCU's own module start-up the banner goes to
+ * the waitingForBtBoot capture instead, and never reaches this. */
+static uint8_t BT_bannerByteMatches(char want, uint8_t byte)
+{
+  if (want == 'h')
+  {
+    return (byte >= '0' && byte <= '9') || (byte >= 'A' && byte <= 'F')
+        || (byte >= 'a' && byte <= 'f');
+  }
+  return byte == (uint8_t) want;
+}
+
+static void BT_watchForBootBanner(uint8_t byte)
+{
+  /* 'h' is any hex digit; everything else must match exactly. */
+  static const char pattern[] = "@E,hhhh,BOOT,E=hhhhhhhh,";
+  static uint8_t matched = 0;
+
+  if (BT_bannerByteMatches(pattern[matched], byte))
+  {
+    matched++;
+    if (matched == sizeof(pattern) - 1U)
+    {
+      matched = 0;
+      BT_handleUnexpectedModuleBoot("text boot banner");
+    }
+  }
+  else
+  {
+    matched = (byte == (uint8_t) '@') ? 1U : 0U;
+  }
 }
 
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
@@ -395,11 +471,44 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       //SHIMMER_PRINTF("S0=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
       uint8_t lineEnded = (btBootMsgPrevByte == 0x0D && bootByte == 0x0A);
       btBootMsgPrevByte = bootByte;
-      if (lineEnded)
+      /* A full buffer ends a reply capture on any byte, line ending or not,
+       * so a reply that can never be recognised does not hold the sequence.
+       * A reply that never arrives at all is caught one level up, like an
+       * unanswered binary command: first-boot init runs under
+       * btCommWithDiffBaudRates(), which stops and restarts Bluetooth after
+       * 5 s per attempt (the restart re-arms boot capture at
+       * WAIT_FOR_BOOT_STAGE1) and reports BOOT_STAGE_BLUETOOTH_FAILURE after
+       * four retries. */
+      uint8_t replyBufferFull = (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY)
+          && (btBootMsgIndex >= (sizeof(btBootMsg) - 1U));
+      if (lineEnded || replyBufferFull)
       {
-        btBootMsgLineCount++;
-        if (btBootMsgLineCount == 2)
+        uint8_t captureDone;
+        if (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY)
         {
+          captureDone = replyBufferFull || (btBootMsg[btBootMsgLineStart] == '@');
+        }
+        else
+        {
+          btBootMsgLineCount++;
+          captureDone = (btBootMsgLineCount == 2);
+        }
+        btBootMsgLineStart = btBootMsgIndex;
+        if (captureDone)
+        {
+          if (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY)
+          {
+            /* The text reply answers the command appOutput() marked as
+             * pending; the binary parser that normally clears it never sees
+             * a text reply. As in appHandler(), stop the RTT sample too. */
+            if (pending_response != 0)
+            {
+              pending_response = 0;
+#if ENABLE_BT_CMD_RTT_STATS
+              btCmdRttStop();
+#endif
+            }
+          }
           setWaitingForBtBoot(0);
           //TODO fix architecture and function calling
           progressToNextBtInCmd();
@@ -423,7 +532,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       count = (ezsOverflowDrainCount > 0U) ? ezsOverflowDrainCount : 1U;
       i += 1;
     }
-    else if (BT_isRawPipeEngagedNow())
+    else if (BT_isRawPipeEngagedNow() && (getEzsPacketLength() == 0U))
     {
       /* Parse as Shimmer packet, gated on the LIVE data-mode state from the
        * CYSPP pin - read from the pin itself here, not only the cached state
@@ -436,11 +545,32 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
        * signal, and neither connection state (earlier attempt: the in-band
        * connected event got eaten the moment the gate opened) nor a sticky
        * first-connection flag (eats every event after the first connection
-       * of a power cycle) can stand in for it. */
+       * of a power cycle) can stand in for it.
+       *
+       * But the pin only decides where a FRAME goes, never a byte in the
+       * middle of one: an EZ-Serial frame that started in command mode is
+       * finished by the EZ-Serial parser even if the pin drops partway. Bench
+       * (2026-10-15, module v1.4.16.16, host opening the classic port with
+       * DTR/RTS raised): the module entered data mode while its bt_connected
+       * event was still on the wire. The header byte went to the EZ-Serial
+       * parser, the rest - the host's Bluetooth address - to the Shimmer
+       * parser, which executed whatever it spelled: a host address with
+       * ...4C 01 ran SET_GYRO_SAMPLING_RATE(1) and ACKed it; other hosts got
+       * a NACK (DEV-1179). */
 #if (CONSOLE_PRINT_NON_EZ_SERIAL_BYTES)
       SHIMMER_PRINTF("S2=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
 #endif
       count = btRxWaitByteCount;
+      /* Watch every byte this step consumes, not just the first: the Shimmer
+       * parser takes `count` bytes at once, and a banner starting inside them
+       * would otherwise pass unchecked. */
+      {
+        uint16_t span = (count > 0U) ? count : 1U;
+        for (uint16_t k = 0; k < span && (uint16_t) (i + k) < expectedByteCount; k++)
+        {
+          BT_watchForBootBanner(rxBuf[i + k]);
+        }
+      }
       ShimBt_dmaConversionDone(&rxBuf[i]);
       /* Never advance by zero. btRxWaitByteCount starts at 0 and is only set
        * once the Shimmer parser is waiting for a known number of bytes, and
@@ -453,6 +583,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     }
     else
     {
+      BT_watchForBootBanner(rxBuf[i]);
       ezs_packet_t *result = ezs_parseSingleByte(rxBuf[i]);
       if (result != 0)
       {
@@ -505,7 +636,7 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
     {
       count = 1;
     }
-    HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(count);
+    setBtRxDmaWaitingForResponse(count);
   }
 }
 
@@ -538,11 +669,11 @@ void btUartTxCpltCallback(UART_HandleTypeDef *huart)
 HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
 {
   /* A raw data bridge is engaged: a BLE CYSPP data pipe (any module version -
-   * SPPM bit 1 governs classic SPP only), or classic transparent SPP on a
-   * legacy module. Raw DMA is the only correct transmit here; an SPP_SEND
-   * command would be injected into the pipe as garbage, and on a BLE pipe the
-   * module rejects it outright (0x0502 CONNECTION_REQUIRED - there is no
-   * classic SPP link to send on). */
+   * SPPM bit 1 governs classic SPP only), or classic transparent SPP (modules
+   * below v1.4.17, and v1.4.18.x+). Raw DMA is the only correct transmit here;
+   * an SPP_SEND command would be injected into the pipe as garbage, and on a
+   * BLE pipe the module rejects it outright (0x0502 CONNECTION_REQUIRED - there
+   * is no classic SPP link to send on). */
   if (getBtCysppState())
   {
     /* One step with appOutput()'s check-and-start: HAL_UART_Transmit_DMA()'s
@@ -574,7 +705,7 @@ HAL_StatusTypeDefShimmer BtTransmit(const uint8_t *buf, uint16_t len)
     return HAL_SHIM_BUSY;
   }
 
-  /* SPP_SEND framing (modules v1.4.17+, classic SPP, no bridge active) */
+  /* SPP_SEND framing (v1.4.17.x modules only, classic SPP, no bridge active) */
   HAL_StatusTypeDef ret_val = HAL_OK;
   ezs_output_result_t ezs_ret;
 
@@ -763,16 +894,31 @@ void resetBtRxBuff(void)
   memset(rxBuf, 0, sizeof(rxBuf));
 }
 
+static void startBtTextCapture(uint8_t mode)
+{
+  memset(&btBootMsg[0], 0, sizeof(btBootMsg));
+  btBootMsgIndex = 0;
+  btBootMsgLineStart = 0;
+  btBootMsgLineCount = 0;
+  btBootMsgPrevByte = 0;
+  waitingForBtBoot = mode;
+}
+
 void setWaitingForBtBoot(uint8_t state)
 {
-  waitingForBtBoot = state;
   if (state)
   {
-    memset(&btBootMsg[0], 0, sizeof(btBootMsg));
-    btBootMsgIndex = 0;
-    btBootMsgLineCount = 0;
-    btBootMsgPrevByte = 0;
+    startBtTextCapture(BT_TEXT_CAPTURE_BOOT);
   }
+  else
+  {
+    waitingForBtBoot = BT_TEXT_CAPTURE_OFF;
+  }
+}
+
+void setWaitingForBtTextReply(void)
+{
+  startBtTextCapture(BT_TEXT_CAPTURE_REPLY);
 }
 
 void setSkippingBytesCount(uint8_t count)

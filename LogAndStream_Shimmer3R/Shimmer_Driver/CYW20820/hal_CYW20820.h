@@ -119,6 +119,9 @@ uint8_t isPendingResponseFromBtModule(void);
 void resetBtRxBuff(void);
 
 void setWaitingForBtBoot(uint8_t state);
+/* Captures the reply to a text command into the boot-message buffer, ending at
+ * the first line that starts '@'. Calls progressToNextBtInCmd() when done. */
+void setWaitingForBtTextReply(void);
 void setSkippingBytesCount(uint8_t count);
 char *getBtBootMsgPtr(void);
 

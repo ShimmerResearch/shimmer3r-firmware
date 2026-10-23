@@ -53,7 +53,9 @@ dkms.conf
 
 # Eclipse
 .metadata
-.settings
+**/.settings/*
+# The project's text encoding (UTF-8); without it the IDE warns that none is set
+!LogAndStream_Shimmer3R/.settings/org.eclipse.core.resources.prefs
 [Rr]elease
 [Dd]ebug
 .launch

@@ -62,7 +62,6 @@ void ADS1292_init()
 {
   Board_EXG_RESET_N(1);
   HAL_Delay(1000); //Datasheet states to wait 1s for power-on reset
-  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
   activeBuffer = chip1Buffer1;
   chip1ReadPending = 0;
   chip2ReadPending = 0;
@@ -437,29 +436,25 @@ void ADS1292_readDataComplete(void)
 
 void ADS1292_dataReadFromChip1(uint8_t *buf)
 {
-  HAL_StatusTypeDef ret;
   ADS1292_chip1CsEnable(1);
 #if IS_EXG_DATA_READ_BLOCKING
-  ret = HAL_SPI_TransmitReceive(
-      hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH, 1000);
+  HAL_SPI_TransmitReceive(hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH, 1000);
   ADS1292_chip1CsEnable(0);
   ADS1292_readDataComplete();
 #else
-  ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
+  HAL_SPI_TransmitReceive_DMA(hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
 #endif
 }
 
 void ADS1292_dataReadFromChip2(uint8_t *buf)
 {
-  HAL_StatusTypeDef ret;
   ADS1292_chip2CsEnable(1);
 #if IS_EXG_DATA_READ_BLOCKING
-  ret = HAL_SPI_TransmitReceive(
-      hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH, 1000);
+  HAL_SPI_TransmitReceive(hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH, 1000);
   ADS1292_chip2CsEnable(0);
   ADS1292_readDataComplete();
 #else
-  ret = HAL_SPI_TransmitReceive_DMA(hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
+  HAL_SPI_TransmitReceive_DMA(hspi_exg, dummy_tx_buf, buf, ADS1292_DATA_PACKET_LENGTH);
 #endif
 }
 

@@ -24,6 +24,7 @@
 
 #include "shimmer_definitions.h"
 #include "time.h"
+#include <CYW20820/CYW20820.h>
 #include <TaskList/shimmer_taskList.h>
 #include <log_and_stream_externs.h>
 
@@ -613,6 +614,9 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
       case RTC_ALARM_CONTEXT_REBOOT_TO_BOOTLOADER:
         ShimTask_set(TASK_JUMP_TO_BOOT_LOADER);
         break;
+      case RTC_ALARM_CONTEXT_REBOOT_AFTER_BT_MODULE_RESTART:
+        BT_rebootAfterModuleRestart();
+        break;
       default:
         //No action or error log
         break;
@@ -642,6 +646,11 @@ void RTC_setAlarmAutoStopLogging(uint16_t minutesFromNow)
 {
   //Set the alarm to stop logging after a specified number of minutes
   RTC_setAlarmAFromNow(minutesFromNow * 60, RTC_ALARM_CONTEXT_AUTO_STOP_RECORDING);
+}
+
+void RTC_setAlarmRebootAfterBtModuleRestart(uint8_t secondsFromNow)
+{
+  RTC_setAlarmAFromNow(secondsFromNow, RTC_ALARM_CONTEXT_REBOOT_AFTER_BT_MODULE_RESTART);
 }
 
 void RTC_setAlarmRebootToBootloader(uint8_t secondsFromNow)
@@ -775,7 +784,16 @@ void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
 
 void RTC_setupAndStartSdSyncAlarm(void)
 {
-  RTC_AlarmTypeDef sAlarm;
+  /* DEV-1309: zeroed, as for Alarm A. HAL_RTC_SetAlarm_IT() writes every field,
+   * not just the ones set below: AlarmSubSecondMask to RTC_ALRMBSSR,
+   * AlarmTime.SubSeconds to RTC_ALRBBINR, and FlagAutoClr can set ALRBFCLR.
+   * Left as stack garbage they could ask for a sub-second match that never
+   * comes, so the re-arm in HAL_RTCEx_AlarmBEventCallback() armed an alarm
+   * that never fired: SD sync stopped after its first one-second tick, with no
+   * offsets as centre or node. What the garbage was depended on what last used
+   * that stack, so unrelated changes turned it on and off (v1.01.022's deeper
+   * packet ring did). */
+  RTC_AlarmTypeDef sAlarm = { 0 };
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
 
@@ -808,6 +826,7 @@ void RTC_setupAndStartSdSyncAlarm(void)
   sAlarm.AlarmTime.Seconds = sec;
 
   sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY; //Match Hours, Minutes, Seconds
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL; //No sub-second match
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.AlarmDateWeekDay = 1; //ignored due to mask
   sAlarm.Alarm = RTC_ALARM_B;

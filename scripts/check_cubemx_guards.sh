@@ -70,12 +70,17 @@ forbid() { # file, fixed string, why it must not be there
 }
 
 echo "Hand-written code that CubeMX regeneration is known to delete:"
-require      "$B/Core/Src/main.c"    "LSE_START_TIMEOUT_MS"          "DEV-866 LSE drive ladder"
+require      "$B/Core/Src/main.c"    "LSE_START_TIMEOUT_MS"          "DEV-866 LSE start + recovery"
+require      "$B/Core/Src/main.c"    "BT_serviceModuleRestart();"    "DEV-1164 arms the post-OTA MCU reboot in task context"
 require      "$B/Core/Src/rtc.c"     "Boot_rtcIsOnLsiFallback"       "DEV-866 LSI limp-home (else a dead LSE hangs boot)"
 require      "$B/Core/Src/rtc.c"     "RTC_shiftToTicks(data->ticks)" "DEV-1161 sub-second time-set (SSR is read-only)"
 require      "$B/Core/Src/rtc.c"     "HAL_RTCEx_BKUPRead(&hrtc, RTC_STATUS_REG) == RTC_STATUS_TIME_OK"                                                                      "DEV-1161 time-set marker (else a power loss reads as set)"
 require      "$B/Core/Src/rtc.c"     "(now.subseconds & 0x8000U)"    "DEV-1162 no bare SSR read (it locked the shadow regs for 1 s)"
 require      "$B/Core/Src/rtc.c"     "RTC_irqHold()"                 "DEV-1162 RTC IRQ held off around task-context RTC writes"
+require      "$B/Core/Src/rtc.c"     "case RTC_ALARM_CONTEXT_REBOOT_AFTER_BT_MODULE_RESTART:" "DEV-1164 delayed MCU reboot after a BT module OTA restart"
+require      "$B/Core/Src/i2c.c"     "i2cStaleCompletions++"         "DEV-1229 a late I2C completion is dropped, not taken as a step"
+require      "$B/Core/Src/i2c.c"     "i2cSequenceErrors++"           "DEV-1229 no ISR-context trap past the end of the sensor list"
+require      "$B/Core/Inc/rtc.h"     "RTC_ALARM_CONTEXT_REBOOT_AFTER_BT_MODULE_RESTART,"     "DEV-1164 alarm context for the delayed reboot"
 require      "$B/Core/Src/rtc.c"     "(data->subseconds & 0x7FFFU)"  "DEV-1162 ticks from SS[14:0] (SS[15] after a shift is not sub-seconds)"
 require      "$B/Core/Src/rtc.c"     "RTC_SHIFTADD1S_RESET, (uint32_t) (32768 - delta)" \
                                                                      "DEV-1162 advance-only shift (ADD1S left clocks 1 s fast)"
@@ -98,6 +103,7 @@ require      "$B/Core/Src/rtc.c"     "dr = READ_REG(RTC->DR)"        "DEV-338 re
 require      "$B/Core/Src/tim.c"     "platform_ledTickShift"         "DEV-338 LED blink phase-lock hooks"
 require      "$B/Core/Src/tim.c"     "HAL_NVIC_SetPriority(TIM6_IRQn, 10, 0)" \
                                                                      "DEV-338 blink timer below the sample interrupt"
+require      "$B/Core/Src/main.c"    "PWR_SLEEPENTRY_WFI"            "DEV-1222 masked idle sleep (else the weak hook spins, never sleeps)"
 require_re   "$B/USBX/App/ux_user.h" '^#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH[[:space:]]' \
                                                                      "active 64 KB MSC transfer define (stock is commented out)"
 

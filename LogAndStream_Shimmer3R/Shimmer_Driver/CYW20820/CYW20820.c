@@ -15,6 +15,7 @@
 #include <stdlib.h>
 
 #include "main.h"
+#include "rtc.h"
 #include "usart.h"
 
 #include "log_and_stream_includes.h"
@@ -225,9 +226,9 @@ static ezs_rsp_system_get_sleep_parameters_t rsp_system_get_sleep_parameters_ref
 static uint16_t sppSendFailStreak = 0;
 
 /* Classic-SPP data path, decided per boot from the module firmware version.
- * Transparent until proven otherwise: an unparseable banner leaves a v1.4.17+
- * module slow (~0.4 KB/s) but functional, whereas the reverse would send
- * SPP_SEND commands a legacy module does not understand and mute it. */
+ * Transparent until proven otherwise: an unparseable banner leaves a v1.4.17.x
+ * module slow but functional, whereas the reverse would send SPP_SEND commands
+ * a module below v1.4.17 does not understand and mute it. */
 /* volatile: set from the boot sequence (main context) and read from the UART
  * RX/TX interrupt paths. */
 static volatile uint8_t btTransparentMode = 1;
@@ -248,6 +249,150 @@ uint8_t BT_isTransparentMode(void)
 uint8_t BT_isBleSessionActive(void)
 {
   return btBleSessionActive;
+}
+
+/* The module restarted while this MCU was running and had finished setting it
+ * up (DEV-1164). The usual cause is a host updating the module over BLE OTA:
+ * after a good VERIFY the module resets onto the new image by itself. Nothing
+ * else tells the MCU - on the SPP_SEND path (v1.4.17+) a disconnect is only
+ * ever learnt from the module's in-band disconnected event, which a module
+ * that resets never sends, and the module may come back running a different
+ * version (which decides the data path) on different UART settings (which
+ * nothing re-applies). Rebooting the MCU re-reads the version and
+ * re-provisions the module, so the sensor recovers on its own.
+ *
+ * Three signs reach here: the binary boot event, the ASCII boot banner (both
+ * when the module comes back on the same baud), and a UART framing error (when
+ * it comes back on another - see btUartErrorCallback()).
+ *
+ * The reboot is DELAYED, never immediate. The first sign can come while the
+ * module is still switching images - its TX line glitches as it resets, which
+ * reads as a framing error - and the MCU's start-up powers the module off and
+ * on, which interrupts the switch and leaves it on the OLD image (bench, 15BC,
+ * SWO-logged, 2026-10-11: rebooted at once, the module's next banner still
+ * showed the old version). Each sign re-arms an RTC alarm, so the MCU reboots
+ * BT_MODULE_RESTART_SETTLE_S after the last one.
+ *
+ * The signs arrive in the BT UART interrupt, which must not touch the RTC: the
+ * RTC HAL lock can be held by task-context code that this interrupt preempts,
+ * and HAL_RTC_SetAlarm_IT() would then fail with HAL_BUSY, leaving the alarm
+ * unprogrammed. So the interrupt only records the sign and wakes the main
+ * loop; BT_serviceModuleRestart(), called from the main loop, arms the alarm
+ * in task context like every other RTC write.
+ *
+ * A deliberate stop or start of the module supersedes a pending recovery:
+ * btInit() and btDeinit() bump btModuleEpoch, and an alarm armed under an
+ * older epoch does nothing when it fires. (Cancelling the alarm there instead
+ * would mean touching the RTC from btDeinit(), which SD sync can reach from
+ * the RTC alarm-B interrupt.)
+ *
+ * Boots the MCU causes itself are not unexpected: power-up, the init
+ * sequence's own resets and baud retries, BT switched back on for SD sync, and
+ * the factory-reset sequence all run with btInitCmdsRunning or
+ * btFactoryResetCmdsRunning set, and their banner is consumed by the
+ * waitingForBtBoot capture rather than reaching this. Called from interrupt
+ * context (BT UART receive / error). */
+#define BT_MODULE_RESTART_SETTLE_S 10U
+
+/* Set while the MCU itself is taking the module down. btDeinit() cuts the
+ * module's power before it de-initialises the UART, and the RX line falling in
+ * between reads as a framing error - which must not be taken for a module that
+ * restarted on its own. Cleared when the module is next started, from which
+ * point btInitCmdsRunning covers the start-up. */
+static volatile uint8_t btModuleStopping = 0;
+
+/* Bumped on every deliberate start and stop of the module. */
+static volatile uint32_t btModuleEpoch = 0;
+/* Set by the interrupt when it sees a sign, cleared once the alarm is armed. */
+static volatile uint8_t btModuleRestartSeen = 0;
+static const char *volatile btModuleRestartHow = "";
+/* The epoch the pending reboot alarm was armed under. */
+static volatile uint32_t btModuleRestartEpoch = 0;
+
+void BT_handleUnexpectedModuleBoot(const char *how)
+{
+  /* The guard and the flag are set in one interrupt-masked step: the BT UART
+   * interrupt runs below the RTC alarm's priority, so without this an alarm-B
+   * btDeinit() could stop the module (and bump the epoch, clearing the flag)
+   * between the checks and the set, leaving a stale sign that a later
+   * btInit() would service under the new epoch. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  if (!shimmerStatus.btIsInitialised || btModuleStopping
+      || isBtInitCmdsRunning() || isBtFactoryResetCmdsRunning())
+  {
+    __set_PRIMASK(primask);
+    return;
+  }
+  btModuleRestartHow = how;
+  btModuleRestartSeen = 1;
+  __set_PRIMASK(primask);
+  /* Wake the main loop, which may be in sleep-on-exit, so that
+   * BT_serviceModuleRestart() runs. */
+  HAL_PWR_DisableSleepOnExit();
+}
+
+/* btModuleEpoch is bumped from task context and from btDeinit(), which SD
+ * sync can reach from the RTC alarm-B interrupt, so the read-modify-write is
+ * done with interrupts held off. */
+static void btBumpModuleEpoch(void)
+{
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  btModuleEpoch++;
+  /* A sign recorded before this deliberate stop/start belongs to the module
+   * being stopped; it must not arm a reboot under the new epoch. */
+  btModuleRestartSeen = 0;
+  __set_PRIMASK(primask);
+}
+
+void BT_serviceModuleRestart(void)
+{
+  /* Claim the sign and snapshot what goes with it in one step: a sign the
+   * interrupt raises after this still sets the flag again, and re-arms the
+   * alarm on the next pass, so the reboot always follows the LAST sign. The
+   * epoch is recorded only when a sign is claimed - recording it on every
+   * pass would re-validate an alarm a deliberate stop/start has superseded. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  uint8_t seen = btModuleRestartSeen;
+  const char *how = btModuleRestartHow;
+  if (seen)
+  {
+    btModuleRestartSeen = 0;
+    btModuleRestartEpoch = btModuleEpoch;
+  }
+  __set_PRIMASK(primask);
+
+  if (!seen)
+  {
+    return;
+  }
+  printf("BT module restarted unexpectedly (%s) - MCU reboot in %us\r\n", how,
+      (unsigned) BT_MODULE_RESTART_SETTLE_S);
+  RTC_setAlarmRebootAfterBtModuleRestart(BT_MODULE_RESTART_SETTLE_S);
+}
+
+/* The RTC alarm armed above has fired: the module has had time to finish
+ * switching images. Skipped while sensing, like reboot-on-disconnect, so a
+ * recording is never truncated; the module then stays unusable until the
+ * sensor restarts, which is no worse than before. */
+void BT_rebootAfterModuleRestart(void)
+{
+  if (btModuleRestartEpoch != btModuleEpoch)
+  {
+    /* The module has been deliberately stopped or restarted since this was
+     * armed, which superseded the recovery. */
+    return;
+  }
+  if (shimmerStatus.sensing)
+  {
+    printf("BT module restart: sensing, so not rebooting - the module stays "
+           "unusable until the sensor restarts\r\n");
+    return;
+  }
+  printf("BT module restart: rebooting the MCU to re-provision it\r\n");
+  platform_reset();
 }
 
 /* The boot banner carries the application version as "E=" + 8 hex digits
@@ -273,15 +418,23 @@ static void BT_parseFwVersionFromBootBanner(const char *msg)
          "module\r\n");
 }
 
-/* THE POLICY. v1.4.17 introduced SPP_SEND; on v1.4.18.18 the transparent
- * bridge frames one UART byte per RFCOMM frame against a Windows host
- * (HCI-verified), so those modules use SPP_SEND framing. Legacy modules keep
- * the transparent bridge production has always run them in (~100 KB/s).
- * When a module release with the transparent-mode fix exists, exclude it
- * here so it goes transparent again. */
+/* THE POLICY. Transparent bridge everywhere except v1.4.17.x, a bench-only
+ * module release that never ships, which keeps SPP_SEND framing.
+ *
+ * v1.4.18.x went to SPP_SEND because its transparent bridge sent one UART byte
+ * per RFCOMM frame (~0.4 KB/s). That turned out to be the SPP MTU an OTA
+ * leaves at 0 (DEV-1173, repaired at boot by the SPP_MTU_* steps), not the
+ * bridge. With a valid MTU, the transparent bridge runs at about 76 KB/s on the
+ * v1.4.18.18 release and about 160-170 KB/s on Infineon's test_254/test_255,
+ * against about 70-75 KB/s for SPP_SEND framing on all of them. SPP_SEND
+ * framing on v1.4.18.x also holds back the last two frames of a burst, so a
+ * command's reply after a stream arrives late. Later releases are assumed to
+ * keep the bridge working; exclude any that regress here. */
 static void BT_selectDataPath(void)
 {
-  btTransparentMode = BT_isFirmwareVersionAtLeast(1, 4, 17) ? 0 : 1;
+  bool isV1_4_17 = BT_isFirmwareVersionAtLeast(1, 4, 17)
+      && !BT_isFirmwareVersionAtLeast(1, 4, 18);
+  btTransparentMode = isV1_4_17 ? 0 : 1;
 }
 
 uint8_t *btInitCmdsSteps;
@@ -290,6 +443,7 @@ uint8_t btNameTypeBeingRead;
 volatile bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
 static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
+  SPP_MTU_READ, SPP_MTU_WRITE, SPP_MTU_STORE, SPP_MTU_VERIFY, SPP_MTU_DONE,
   ENTER_BINARY_MODE, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3, UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5,
   PING, GET_BT_PARAMETERS, STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1,
@@ -423,6 +577,8 @@ static void printHex(uint8_t *data, uint8_t bytes, uint8_t reverse, char separat
 
 void btInit(void)
 {
+  btModuleStopping = 0;
+  btBumpModuleEpoch();
   btInitCmdsStepIdx = 0;
   btInitCmdsStep = WAIT_FOR_BOOT_STAGE1;
 
@@ -447,7 +603,7 @@ void btInit(void)
   //TODO Delay found to be needed, unsure why. Arbitrary value of 10ms used.
   HAL_Delay(10);
   /* Setting DMA waiting for first char from BT module */
-  HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+  setBtRxDmaWaitingForResponse(1);
   /* Allow BT module to boot */
   Board_BT_RST_N(1);
 
@@ -456,9 +612,224 @@ void btInit(void)
 
 void btDeinit(void)
 {
+  btModuleStopping = 1;
+  btBumpModuleEpoch();
   setBtPower(0);
   btUart_deint();
   deinitBtPins();
+}
+
+/* SPP MTU repair (DEV-1173).
+ *
+ * v1.4.18.18 added a check on a stored SPP MTU (UINT16, default 990) before
+ * each classic SPP send. An OTA from v1.4.16.16 or earlier keeps the module's
+ * stored config, where that field is 0, so the module then sends one UART byte
+ * per RFCOMM frame: under 1 KB/s in transparent mode, and SPP_SEND framing
+ * slows too. /RFAC fixes it but changes the Bluetooth address and clears
+ * bonds. Infineon (IFX-260908-2289766) gave a RAM write of the field followed
+ * by /SCFG instead.
+ *
+ * The RAM address is internal to the module firmware and can move between
+ * builds, so the repair only runs on builds whose boot banner is listed below
+ * (all three share one config layout; its base address, 0x0021391A, is
+ * referenced throughout each image). The steps are text commands, run while
+ * the module is still in its power-on text mode, so /SCFG stores only the
+ * module's own boot config plus the repaired field - nothing this firmware
+ * later sets in RAM. A valid MTU is left alone, so the flash write happens
+ * once per module. Revisit when Infineon releases firmware that migrates the
+ * field itself. */
+static const char *const sppMtuRepairBuilds[] = {
+  "V1.4.18.18 Nov 16 2025 11:37:32",          /* public release */
+  "V1.4.18.18 test_254 Oct  8 2026 09:43:03", /* Infineon test images */
+  "V1.4.18.18 test_255 Sep 29 2026 08:04:20",
+};
+static const char sppMtuReadCmd[] = "/RUD,M=8,O=00213C18,L=04\r\n";
+/* Bytes 27 DE 03 00: 0x27 is the field before the MTU (also a v1.4.18.18
+ * default), then MTU 0x03DE. The value Infineon gave. */
+static const char sppMtuWriteCmd[] = "/WUD,M=8,O=00213C18,D=0003DE27\r\n";
+static const char sppMtuStoreCmd[] = "/SCFG\r\n";
+static bool sppMtuVerifyPending, sppMtuStored;
+
+static bool sppMtuSend(const char *cmd, uint16_t len)
+{
+  /* Arm the capture first: the reply can start before appOutput() returns */
+  setWaitingForBtTextReply();
+  if (appOutput(len, (const uint8_t *) cmd) == EZS_OUTPUT_RESULT_DATA_WRITTEN)
+  {
+    return true;
+  }
+  setWaitingForBtBoot(0);
+  printf("SPP MTU: send refused\r\n");
+  return false;
+}
+
+/* Reads the MTU from a /RUD reply. The module's text replies start the line
+ * with "@R,<length>," and keep the command's own slash, e.g. (bench, v1.4.18.18
+ * test_254; the /RUD is from a module at its own default MTU, 0x03F3 = 1011 -
+ * after the repair it reads D=27DE0300, MTU 990):
+ *   @R,0015,/RUD,0000,D=27F30300
+ *   @R,000A,/WUD,0000
+ *   @R,000B,/SCFG,0000
+ * so matching "/RUD,0000,D=", "/WUD,0000" and "/SCFG,0000" finds the command
+ * and its 0000 (success) result. */
+static bool sppMtuParse(const char *reply, uint16_t *mtu)
+{
+  const char *d = strstr(reply, "/RUD,0000,D=");
+  if (d == NULL)
+  {
+    return false;
+  }
+  d += strlen("/RUD,0000,D=");
+  /* The capture is NUL-terminated but may be truncated: a prefix near the end
+   * of the buffer must not lead the reads below past it */
+  if (strnlen(d, 8) < 8)
+  {
+    return false;
+  }
+  uint8_t b[4];
+  for (uint8_t i = 0; i < 4; i++)
+  {
+    char hex[3] = { d[2 * i], d[2 * i + 1], 0 };
+    char *end;
+    b[i] = (uint8_t) strtoul(hex, &end, 16);
+    if (end != &hex[2])
+    {
+      return false;
+    }
+  }
+  *mtu = (uint16_t) (b[1] | (b[2] << 8));
+  return true;
+}
+
+static void sppMtuSkipRest(void)
+{
+  while (btInitCmdsStep != SPP_MTU_DONE)
+  {
+    incrementBtInitCmdsStep();
+  }
+}
+
+/* One SPP MTU repair step. Each step first checks the reply to the previous
+ * command (left in the boot-message buffer), then sends the next one. Returns
+ * true while waiting on a reply, false once the sequence is over and the boot
+ * should carry on. */
+static bool btSppMtuRepairStep(void)
+{
+  const char *reply = getBtBootMsgPtr();
+  uint16_t mtu;
+
+  switch (btInitCmdsStep)
+  {
+  case SPP_MTU_READ:
+  {
+    bool known = false;
+    for (uint8_t i = 0;
+         i < sizeof(sppMtuRepairBuilds) / sizeof(sppMtuRepairBuilds[0]); i++)
+    {
+      known = known || (strstr(reply, sppMtuRepairBuilds[i]) != NULL);
+    }
+    sppMtuVerifyPending = false;
+    sppMtuStored = false;
+    if (!known)
+    {
+      sppMtuSkipRest();
+      break;
+    }
+    incrementBtInitCmdsStep();
+    if (sppMtuSend(sppMtuReadCmd, sizeof(sppMtuReadCmd) - 1U))
+    {
+      return true;
+    }
+    sppMtuSkipRest();
+    break;
+  }
+
+  case SPP_MTU_WRITE:
+    if (!sppMtuParse(reply, &mtu))
+    {
+      printf("SPP MTU: unreadable (%s)\r\n", reply);
+      sppMtuSkipRest();
+      break;
+    }
+    if (mtu != 0U)
+    {
+      printf("SPP MTU: %u, ok\r\n", mtu);
+      sppMtuSkipRest();
+      break;
+    }
+    printf("SPP MTU: 0 (stale config after OTA), repairing\r\n");
+    incrementBtInitCmdsStep();
+    if (sppMtuSend(sppMtuWriteCmd, sizeof(sppMtuWriteCmd) - 1U))
+    {
+      return true;
+    }
+    sppMtuSkipRest();
+    break;
+
+  case SPP_MTU_STORE:
+    if (strstr(reply, "/WUD,0000") == NULL)
+    {
+      printf("SPP MTU: write failed (%s)\r\n", reply);
+      sppMtuSkipRest();
+      break;
+    }
+    incrementBtInitCmdsStep();
+    if (sppMtuSend(sppMtuStoreCmd, sizeof(sppMtuStoreCmd) - 1U))
+    {
+      return true;
+    }
+    sppMtuSkipRest();
+    break;
+
+  case SPP_MTU_VERIFY:
+    /* Verify the RAM value either way, but remember whether it reached
+     * flash: a failed /SCFG leaves this boot fixed and the next one stale. */
+    sppMtuStored = (strstr(reply, "/SCFG,0000") != NULL);
+    if (!sppMtuStored)
+    {
+      printf("SPP MTU: store failed (%s)\r\n", reply);
+    }
+    incrementBtInitCmdsStep();
+    if (sppMtuSend(sppMtuReadCmd, sizeof(sppMtuReadCmd) - 1U))
+    {
+      sppMtuVerifyPending = true;
+      return true;
+    }
+    sppMtuSkipRest();
+    break;
+
+  default:
+    break;
+  }
+
+  /* SPP_MTU_DONE */
+  if (sppMtuVerifyPending)
+  {
+    sppMtuVerifyPending = false;
+    if (sppMtuParse(reply, &mtu))
+    {
+      if (mtu == 0U)
+      {
+        printf("SPP MTU: repair did not take, still 0\r\n");
+      }
+      else if (sppMtuStored)
+      {
+        printf("SPP MTU: repaired, now %u\r\n", mtu);
+      }
+      else
+      {
+        printf("SPP MTU: %u in RAM only - not stored, will repair again "
+               "next boot\r\n",
+            mtu);
+      }
+    }
+    else
+    {
+      printf("SPP MTU: verify unreadable (%s)\r\n", reply);
+    }
+  }
+  incrementBtInitCmdsStep();
+  return false;
 }
 
 //TODO set appropriate values for setDmaRx() calls
@@ -484,6 +855,14 @@ void btInitCommands(void)
     printf("BT data path: %s (module app version %08lX)\r\n",
         btTransparentMode ? "transparent bridge" : "SPP_SEND framing",
         (unsigned long) rsp_system_query_firmware_version.app);
+  }
+
+  if (btInitCmdsStep >= SPP_MTU_READ && btInitCmdsStep <= SPP_MTU_DONE)
+  {
+    if (btSppMtuRepairStep())
+    {
+      return;
+    }
   }
 
   if (btInitCmdsStep == ENTER_BINARY_MODE)
@@ -1102,24 +1481,27 @@ void btInitCommands(void)
       printf("Start BT Advertising\r\n");
       setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
 
-      /* From firmware v1.4.17 onwards there is a new flag to control whether to
-       * allow the device enter sniff mode. Set this flag to 1 to disable sniff
-       * mode */
-      uint8_t flags = BT_isFirmwareVersionAtLeast(1, 4, 17) ? 1 : 0;
+      /* SBTP flags, from module firmware v1.4.17:
+       * - F=1 disables sniff mode (v1.4.17 and later).
+       * - F=2 makes the module accept incoming BR/EDR connections as slave
+       *   instead of requesting the master role. No public release has it yet:
+       *   it is in Infineon's test_254 image (IFX-261005-2321966) and expected
+       *   in a later release, possibly v1.4.19.19. Without it every link puts
+       *   the PC in a piconet of its own as slave, and an Intel AX201 then
+       *   refuses a 4th link (DEV-742).
+       * Images without F=2, v1.4.18.18 included, accept and store the bit but
+       * ignore it (bench, 2026-10-08), so it is safe to send ahead of support. */
+      uint8_t flags = BT_isFirmwareVersionAtLeast(1, 4, 17) ? (1 | 2) : 0;
 
       rsp_bt_get_parameters.discoverable = BT_DISC_MODE_GENERAL_DISCOVERABLE;
       rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
       if (rsp_bt_get_parameters.flags != flags)
       {
-        /* Persist the sniff-disable flag in the module's NV config (flash
-         * scope), guarded by the read-back above so it costs one flash write
-         * ever, not one per boot. A RAM-scoped flag demonstrably keeps
-         * non-transparent mode sniff-free (56 KB/s), but transparent-mode
-         * throughput shows a sniff signature (~250 B per ~0.6 s anchor) -
-         * this tests whether the module reloads link policy from NV when the
-         * SPP data bridge engages. The GBTP "BT params:" boot print shows
-         * flags=01 once this has stuck. */
-        printf("Persisting sniff-disable flag to module flash\r\n");
+        /* Persist the SBTP flags (F=1 sniff disable, F=2 slave role) in the
+         * module's NV config (flash scope), guarded by the read-back above so
+         * it costs one flash write per change, not one per boot. The GBTP
+         * "BT params:" boot print shows flags=03 once this has stuck. */
+        printf("Persisting SBTP flags %02X to module flash\r\n", flags);
         ezs_fcmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
             rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
             flags, rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
@@ -1166,7 +1548,7 @@ void btInitCommands(void)
     printf("Update UART to factory default\r\n");
     //TODO resolve reference
     BtUart_update(115200, 0);
-    HAL_StatusTypeDef status = setBtRxDmaWaitingForResponse(1);
+    setBtRxDmaWaitingForResponse(1);
   }
 
   if (btInitCmdsStep == FR_PING)
@@ -1439,6 +1821,10 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printHexMac(packet->payload.evt_system_boot.address);
     printf("\r\n");
 #endif
+    /* Only reached when the module boots in binary mode. A module that boots
+     * in text mode announces itself with an ASCII banner instead, which the
+     * receive path watches for separately (BT_watchForBootBanner). */
+    BT_handleUnexpectedModuleBoot("binary boot event");
     break;
 
   case EZS_IDX_EVT_GAP_ADV_STATE_CHANGED:
@@ -2248,7 +2634,6 @@ uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch)
 uint8_t BT_connect(uint8_t *addr)
 {
   ezs_cmd_bt_connect_t bt_conn;
-  clock_t start_time = clock();
   uint8_t addrReverse[6];
 
   /*//TODO how to distinguish between Master and slave
@@ -2316,7 +2701,6 @@ uint8_t BT_connect(uint8_t *addr)
 uint8_t BT_disconnect(void)
 {
   ezs_cmd_bt_disconnect_t bt_disc;
-  uint8_t status;
   bt_disc.conn_handle = active_conn_handle; //this detects an active connection
   if (bt_disc.conn_handle == 0xFF)
   {
@@ -2325,18 +2709,17 @@ uint8_t BT_disconnect(void)
   else
   {
     setExpectedResponse(EZS_IDX_CMD_BT_DISCONNECT);
-    status = ezs_cmd_bt_disconnect(bt_disc.conn_handle); //status for debug to check if correct status code was achieved
+    ezs_cmd_bt_disconnect(bt_disc.conn_handle);
   }
   return 0;
 }
 
 void BT_cancelConnection(void)
 {
-  uint8_t status;
   //expects a response of 11 bytes
   uint8_t response[11];
   setExpectedResponse(EZS_IDX_CMD_BT_CANCEL_CONNECTION);
-  status = ezs_cmd_bt_cancel_connection();
+  ezs_cmd_bt_cancel_connection();
   printf("Received response from BT cancel connection:\n");
   for (int i = 0; i < 11; i++)
   {
