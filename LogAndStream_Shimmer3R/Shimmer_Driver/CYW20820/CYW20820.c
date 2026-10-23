@@ -484,6 +484,9 @@ static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
  * steps) still restores the original address on the next attempt. */
 static uint8_t btMacToRestore[6];
 static volatile bool btFactoryResetMacRestored;
+extern volatile uint8_t btDiagRxRing[16]; /* FR DIAG */
+extern volatile uint8_t btDiagRxPos;
+extern volatile uint16_t btDiagSbaResult;
 
 void (*btIsInitialised_cb)(void);
 
@@ -1732,6 +1735,46 @@ void BT_abandonFactoryReset(void)
   btFactoryResetCmdsRunning = 0;
 }
 
+/* FR DIAG - test build only, not for merge */
+volatile uint8_t btDiagRxRing[16];
+volatile uint8_t btDiagRxPos;
+volatile uint16_t btDiagSbaResult = 0xFFFFU;
+
+uint8_t BT_diagStep(void)
+{
+  return btInitCmdsStep;
+}
+
+uint8_t BT_diagStepIdx(void)
+{
+  return btInitCmdsStepIdx;
+}
+
+uint8_t BT_diagExpected(void)
+{
+  return (uint8_t) expectedResponseIdx;
+}
+
+uint16_t BT_diagSbaResult(void)
+{
+  return btDiagSbaResult;
+}
+
+/* Oldest first */
+void BT_diagCopyRxRing(uint8_t *out16)
+{
+  uint8_t pos = btDiagRxPos;
+  for (uint8_t i = 0; i < 16U; i++)
+  {
+    out16[i] = btDiagRxRing[(uint8_t) (pos + i) & 15U];
+  }
+}
+
+const uint8_t *BT_diagLastMac(void)
+{
+  return &rsp_system_get_bluetooth_address.address.addr[0];
+}
+
 void setBtBootModeFactoryReset(void)
 {
   btFactoryResetCmdsRunning = 1;
@@ -2408,6 +2451,7 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
   case EZS_IDX_RSP_SYSTEM_SET_BLUETOOTH_ADDRESS:
     /* A rejected restore also shows as a read-back mismatch at
      * FR_CHECK_BT_MAC_ID; this says why */
+    btDiagSbaResult = packet->payload.rsp_system_set_bluetooth_address.result; /* FR DIAG */
     if (packet->payload.rsp_system_set_bluetooth_address.result != EZS_ERR_SUCCESS)
     {
       printf("system_set_bluetooth_address FAILED: result=");
@@ -2533,6 +2577,8 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
   }
 
   //printf("\r\n");
+
+  btDiagRxRing[btDiagRxPos++ & 15U] = (uint8_t) packet->tbl_index; /* FR DIAG */
 
   if (packet->tbl_index == expectedResponseIdx)
   {

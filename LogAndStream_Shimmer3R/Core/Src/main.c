@@ -194,7 +194,7 @@ void Init()
   LogAndStream_setBootStage(BOOT_STAGE_BLUETOOTH);
   ShimBt_btCommsProtocolInit();
   ShimSdSync_init(ShimTask_setInitialiseBluetooth, BtStop);
-  //btFactoryResetViaFw();
+  (void) btFactoryResetViaFw(); /* FR DIAG: reset at every boot */
   InitialiseBt();
   ShimBt_macIdSetFromBytes(BT_getCyw20820MacAddressPtr());
   BT_generateCyw20820FirmwareVersionStr(ShimBt_getBtVerStrPtr());
@@ -640,9 +640,30 @@ void InitialiseBtAfterBoot(void)
  * Returns true only if the reset completed and the MAC was confirmed. Either
  * way, the module is left with its factory configuration at 115200 baud, so
  * the caller must run InitialiseBt() next to reconfigure it. */
+/* FR DIAG - test build only, not for merge. 48 bytes written to host
+ * CARD_MEM offset 1856 (EEPROM 1872-1919) at the end of each reset:
+ *   0 D1   1 timeouts   2-16 per timeout (up to 5): step, step idx, expected
+ *  17 exit step  18 exit idx  19 exit expected  20 resetted  21 MAC restored
+ *  22-23 SBA result (LE, FFFF = no reply)  24-29 last GBA address
+ *  30 first-timeout failCount marker (0)  31 spare
+ *  32-47 last 16 RX packet indexes at the first timeout, oldest first */
+uint8_t BT_diagStep(void);
+uint8_t BT_diagStepIdx(void);
+uint8_t BT_diagExpected(void);
+uint16_t BT_diagSbaResult(void);
+void BT_diagCopyRxRing(uint8_t *out16);
+const uint8_t *BT_diagLastMac(void);
+static uint8_t frDiag[48];
+static bool frDiagActive;
+
 bool btFactoryResetViaFw(void)
 {
   bool success;
+
+  memset(frDiag, 0xEE, sizeof(frDiag));
+  frDiag[0] = 0xD1;
+  frDiag[1] = 0;
+  frDiagActive = true;
 
   SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
 
@@ -657,6 +678,17 @@ bool btFactoryResetViaFw(void)
   {
     BT_abandonFactoryReset();
   }
+
+  frDiag[17] = BT_diagStep();
+  frDiag[18] = BT_diagStepIdx();
+  frDiag[19] = BT_diagExpected();
+  frDiag[20] = isBtIsFactoryResetted();
+  frDiag[21] = BT_isFactoryResetMacRestored();
+  frDiag[22] = (uint8_t) BT_diagSbaResult();
+  frDiag[23] = (uint8_t) (BT_diagSbaResult() >> 8);
+  memcpy(&frDiag[24], BT_diagLastMac(), 6);
+  frDiagActive = false;
+  ShimEeprom_writeDaughterCardMem(1856U, sizeof(frDiag), &frDiag[0]);
 
   success = isBtIsFactoryResetted() && BT_isFactoryResetMacRestored();
   SHIMMER_PRINTF("BT factory reset end: %s\r\n",
@@ -715,6 +747,18 @@ void btCommWithDiffBaudRates(void)
 
       if (!(resetCntCurrent--))
       {
+        if (frDiagActive && failCount < 5U)
+        {
+          frDiag[1]++;
+          frDiag[2 + 3 * failCount] = BT_diagStep();
+          frDiag[3 + 3 * failCount] = BT_diagStepIdx();
+          frDiag[4 + 3 * failCount] = BT_diagExpected();
+          if (failCount == 0U)
+          {
+            frDiag[30] = 0;
+            BT_diagCopyRxRing(&frDiag[32]);
+          }
+        }
         failCount++;
 
         BtStop(1);
