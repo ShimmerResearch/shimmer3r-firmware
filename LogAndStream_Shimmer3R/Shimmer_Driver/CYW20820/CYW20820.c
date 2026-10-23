@@ -471,12 +471,14 @@ static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
 static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2, ENTER_BINARY_MODE, GET_BT_MAC_ID, FR_BACKUP_BT_MAC_ID,
   FACTORY_RESET, FR_WAIT_FOR_REBOOT_AFTER_FR, FR_UPDATE_UART,
-  /* /RFAC reboots the module into its factory parse mode. On v1.4.17+ that is
-   * text with no auto-parse, so every binary command after it - FR_PING, the
-   * MAC restore - went unanswered until the step timeout restarted the whole
-   * sequence, /RFAC included. Enter binary mode again, as a normal boot does. */
-  ENTER_BINARY_MODE, FR_PING, FR_RESET_BT_MAC_ID, FR_VERIFY_BT_MAC_ID,
-  FR_CHECK_BT_MAC_ID, FINISH };
+  /* After /RFAC the module reboots on its factory UART settings (115200) and
+   * in its factory parse mode - on v1.4.17+ text with no auto-parse - and it
+   * takes more than 3 s to do so (bench, 10E0 on v1.4.18.18: the banner's
+   * tail arrived after a 3 s wait). So switch to 115200 straight away, wait
+   * for the boot banner as a normal boot does, and only then enter binary
+   * mode. Commands sent into a module still rebooting are lost. */
+  WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2, ENTER_BINARY_MODE, FR_PING,
+  FR_RESET_BT_MAC_ID, FR_VERIFY_BT_MAC_ID, FR_CHECK_BT_MAC_ID, FINISH };
 
 /* The MAC a factory reset restores. It always comes from the EEPROM backup
  * record, never straight from the module, so a reset that is interrupted
@@ -1554,7 +1556,7 @@ void btInitCommands(void)
     //TODO resolve reference
     BtUart_update(115200, 0);
     setBtRxDmaWaitingForResponse(1);
-    /* The next step, ENTER_BINARY_MODE, is handled earlier in this function
+    /* The next step, WAIT_FOR_BOOT_STAGE1, is handled earlier in this function
      * than this one, so dispatch it from the top rather than falling through */
     btInitCommands();
     return;
