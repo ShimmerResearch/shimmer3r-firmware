@@ -723,8 +723,9 @@ bool btFactoryResetViaFw(void)
 void btCommWithDiffBaudRates(void)
 {
   uint8_t failCount = 0U;
-  //50 * 100ms = 5s per baud rate attempt
-  uint8_t resetCnt = 50U;
+  //50 * 100ms = 5s per baud rate attempt. A factory reset gets 15 s: it waits
+  //out the module's own reboot after /RFAC, which takes several seconds.
+  uint8_t resetCnt = isBtFactoryResetCmdsRunning() ? 150U : 50U;
   uint8_t resetCntCurrent = resetCnt;
   uint32_t baudToTry = BAUD_TO_USE;
 
@@ -758,9 +759,11 @@ void btCommWithDiffBaudRates(void)
       }
       else if (isEzsFactoryRebootDelayPending())
       {
-        //TODO move away from fixed delay now that we're able to parse the boot message
-        /* Experimentally found to be ~ 2.75s. */
-        HAL_Delay(3000);
+        /* Only long enough for the factory-reset-complete event to finish. The
+         * module's reboot is then waited for by its boot banner, at its
+         * factory baud, so the switch to that baud must come before the
+         * banner starts. */
+        HAL_Delay(100);
         incrementBtInitCmdsStep();
         btInitCommands();
       }

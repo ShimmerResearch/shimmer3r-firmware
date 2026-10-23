@@ -407,6 +407,15 @@ static void btUartErrorCallback(UART_HandleTypeDef *huart)
   {
     BT_handleUnexpectedModuleBoot("UART framing error - module baud changed");
   }
+
+  /* The HAL has aborted the reception. During a factory reset the module
+   * reboots onto a different baud, so framing errors are expected there, and
+   * nothing else restarts the reception: without this the sequence goes deaf
+   * until the step timeout (bench, 10E0, 2026-10-24). */
+  if (isBtFactoryResetCmdsRunning() && shimmerStatus.btPowerOn)
+  {
+    setBtRxDmaWaitingForResponse(1);
+  }
 }
 
 void setBtUartInstance(UART_HandleTypeDef *huartToUse)
