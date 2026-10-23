@@ -470,8 +470,13 @@ static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
 
 static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2, ENTER_BINARY_MODE, GET_BT_MAC_ID, FR_BACKUP_BT_MAC_ID,
-  FACTORY_RESET, FR_WAIT_FOR_REBOOT_AFTER_FR, FR_UPDATE_UART, FR_PING,
-  FR_RESET_BT_MAC_ID, FR_VERIFY_BT_MAC_ID, FR_CHECK_BT_MAC_ID, FINISH };
+  FACTORY_RESET, FR_WAIT_FOR_REBOOT_AFTER_FR, FR_UPDATE_UART,
+  /* /RFAC reboots the module into its factory parse mode. On v1.4.17+ that is
+   * text with no auto-parse, so every binary command after it - FR_PING, the
+   * MAC restore - went unanswered until the step timeout restarted the whole
+   * sequence, /RFAC included. Enter binary mode again, as a normal boot does. */
+  ENTER_BINARY_MODE, FR_PING, FR_RESET_BT_MAC_ID, FR_VERIFY_BT_MAC_ID,
+  FR_CHECK_BT_MAC_ID, FINISH };
 
 /* The MAC a factory reset restores. It always comes from the EEPROM backup
  * record, never straight from the module, so a reset that is interrupted
@@ -1549,6 +1554,10 @@ void btInitCommands(void)
     //TODO resolve reference
     BtUart_update(115200, 0);
     setBtRxDmaWaitingForResponse(1);
+    /* The next step, ENTER_BINARY_MODE, is handled earlier in this function
+     * than this one, so dispatch it from the top rather than falling through */
+    btInitCommands();
+    return;
   }
 
   if (btInitCmdsStep == FR_PING)
@@ -2387,6 +2396,17 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
    * the result and hid failures. Reported unconditionally: this step is what
    * puts an SPP_SEND-framing module into binary/non-transparent mode, so a
    * failure here invalidates the whole classic-SPP data path. */
+  case EZS_IDX_RSP_SYSTEM_SET_BLUETOOTH_ADDRESS:
+    /* A rejected restore also shows as a read-back mismatch at
+     * FR_CHECK_BT_MAC_ID; this says why */
+    if (packet->payload.rsp_system_set_bluetooth_address.result != EZS_ERR_SUCCESS)
+    {
+      printf("system_set_bluetooth_address FAILED: result=");
+      printHex16(packet->payload.rsp_system_set_bluetooth_address.result);
+      printf("\r\n");
+    }
+    break;
+
   case EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE:
     if (packet->payload.rsp_protocol_set_parse_mode.result != EZS_ERR_SUCCESS)
     {
