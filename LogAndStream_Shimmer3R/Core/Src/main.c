@@ -822,6 +822,14 @@ void btCommWithDiffBaudRates(void)
       }
     }
   }
+
+  if (!frDiagActive && !isBtFactoryResetCmdsRunning()) /* FR DIAG: normal init outcome */
+  {
+    uint8_t initDiag[8] = { 0xD3, failCount, (uint8_t) shimmerStatus.btIsInitialised,
+      (uint8_t) huart3.RxState, (uint8_t) baudToTry, (uint8_t) (baudToTry >> 8),
+      (uint8_t) (baudToTry >> 16), (uint8_t) (baudToTry >> 24) };
+    ShimEeprom_writeDaughterCardMem(1776U, sizeof(initDiag), &initDiag[0]);
+  }
 }
 
 void BtStartDone(void)

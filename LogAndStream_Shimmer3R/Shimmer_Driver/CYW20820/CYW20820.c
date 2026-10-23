@@ -1555,7 +1555,7 @@ void btInitCommands(void)
     incrementBtInitCmdsStep();
     printf("Update UART to factory default\r\n");
     //TODO resolve reference
-    BtUart_update(115200, 0);
+    BtUart_update(115200, FLOW_CONTROL); /* FR DIAG 3: flow control on at 115200 */
     setBtRxDmaWaitingForResponse(1);
     /* The next step, ENTER_BINARY_MODE, is handled earlier in this function
      * than this one, so dispatch it from the top rather than falling through */
