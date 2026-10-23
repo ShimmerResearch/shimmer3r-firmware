@@ -380,8 +380,29 @@ HAL_StatusTypeDef setBtRxDmaWaitingForResponse(uint16_t length)
  * stays dead until the next power cycle. Same handling as a recognised boot -
  * BT_handleUnexpectedModuleBoot() ignores it during the MCU's own start-up,
  * whose baud probing produces framing errors legitimately, and while sensing. */
+volatile uint8_t btDiagErrCount; /* FR DIAG */
+volatile uint32_t btDiagLastErr;
+
+uint8_t BT_diagErrCount(void)
+{
+  return btDiagErrCount;
+}
+
+uint8_t BT_diagLastErr(void)
+{
+  return (uint8_t) btDiagLastErr;
+}
+
 static void btUartErrorCallback(UART_HandleTypeDef *huart)
 {
+  btDiagErrCount++;
+  btDiagLastErr = huart->ErrorCode;
+  /* FR DIAG 4: the HAL has aborted the DMA reception. During a factory reset
+   * nothing else restarts it, so re-arm it here or the sequence goes deaf. */
+  if (isBtFactoryResetCmdsRunning() && shimmerStatus.btPowerOn)
+  {
+    setBtRxDmaWaitingForResponse(1);
+  }
   if (huart->ErrorCode & HAL_UART_ERROR_FE)
   {
     BT_handleUnexpectedModuleBoot("UART framing error - module baud changed");

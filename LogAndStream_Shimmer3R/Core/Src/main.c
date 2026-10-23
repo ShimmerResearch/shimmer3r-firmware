@@ -662,6 +662,14 @@ static uint8_t frDiag[48];
  *  56-57 UART ErrorCode (LE) at the first timeout  58 RxState at first
  *  59 RxState at last  60-63 raw RX byte count (LE) at the first timeout */
 static uint8_t frDiag2[64];
+/* Third block, 64 bytes at host CARD_MEM offset 1712 (EEPROM 1728-1791):
+ *  0-39 per timeout (up to 5), 8 bytes: raw RX count (LE16), UART error
+ *       callbacks, last ErrorCode, RxState, boot-msg index, line count, skip
+ *  40-63 first 24 bytes of the text capture buffer at the end of the reset */
+static uint8_t frDiag3[64];
+uint8_t BT_diagErrCount(void);
+uint8_t BT_diagLastErr(void);
+char *getBtBootMsgPtr(void);
 void BT_diagCopyRawRing(uint8_t *out, uint8_t n);
 uint32_t BT_diagRawCount(void);
 void BT_diagCaptureState(uint8_t *out4);
@@ -673,6 +681,7 @@ bool btFactoryResetViaFw(void)
 
   memset(frDiag, 0xEE, sizeof(frDiag));
   memset(frDiag2, 0xEE, sizeof(frDiag2));
+  memset(frDiag3, 0xEE, sizeof(frDiag3));
   frDiag[0] = 0xD1;
   frDiag[1] = 0;
   frDiagActive = true;
@@ -702,6 +711,8 @@ bool btFactoryResetViaFw(void)
   frDiagActive = false;
   ShimEeprom_writeDaughterCardMem(1856U, sizeof(frDiag), &frDiag[0]);
   ShimEeprom_writeDaughterCardMem(1792U, sizeof(frDiag2), &frDiag2[0]);
+  memcpy(&frDiag3[40], getBtBootMsgPtr(), 24);
+  ShimEeprom_writeDaughterCardMem(1712U, sizeof(frDiag3), &frDiag3[0]);
 
   success = isBtIsFactoryResetted() && BT_isFactoryResetMacRestored();
   SHIMMER_PRINTF("BT factory reset end: %s\r\n",
@@ -763,6 +774,20 @@ void btCommWithDiffBaudRates(void)
         if (frDiagActive && failCount < 5U)
         {
           frDiag[1]++;
+          {
+            uint8_t *t = &frDiag3[8 * failCount];
+            uint32_t rc = BT_diagRawCount();
+            uint8_t cs[4];
+            BT_diagCaptureState(&cs[0]);
+            t[0] = (uint8_t) rc;
+            t[1] = (uint8_t) (rc >> 8);
+            t[2] = BT_diagErrCount();
+            t[3] = BT_diagLastErr();
+            t[4] = (uint8_t) huart3.RxState;
+            t[5] = cs[0];
+            t[6] = cs[1];
+            t[7] = cs[3];
+          }
           frDiag[2 + 3 * failCount] = BT_diagStep();
           frDiag[3 + 3 * failCount] = BT_diagStepIdx();
           frDiag[4 + 3 * failCount] = BT_diagExpected();
