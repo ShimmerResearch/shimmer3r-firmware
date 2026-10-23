@@ -654,6 +654,17 @@ uint16_t BT_diagSbaResult(void);
 void BT_diagCopyRxRing(uint8_t *out16);
 const uint8_t *BT_diagLastMac(void);
 static uint8_t frDiag[48];
+/* Second block, 64 bytes at host CARD_MEM offset 1792 (EEPROM 1808-1871):
+ *   0-31 last 32 raw RX bytes at the first timeout
+ *  32-47 last 16 raw RX bytes at the last timeout
+ *  48-51 capture state at the first timeout: boot-msg index, line count,
+ *        capture mode, skip count;  52-55 the same at the last timeout
+ *  56-57 UART ErrorCode (LE) at the first timeout  58 RxState at first
+ *  59 RxState at last  60-63 raw RX byte count (LE) at the first timeout */
+static uint8_t frDiag2[64];
+void BT_diagCopyRawRing(uint8_t *out, uint8_t n);
+uint32_t BT_diagRawCount(void);
+void BT_diagCaptureState(uint8_t *out4);
 static bool frDiagActive;
 
 bool btFactoryResetViaFw(void)
@@ -661,6 +672,7 @@ bool btFactoryResetViaFw(void)
   bool success;
 
   memset(frDiag, 0xEE, sizeof(frDiag));
+  memset(frDiag2, 0xEE, sizeof(frDiag2));
   frDiag[0] = 0xD1;
   frDiag[1] = 0;
   frDiagActive = true;
@@ -689,6 +701,7 @@ bool btFactoryResetViaFw(void)
   memcpy(&frDiag[24], BT_diagLastMac(), 6);
   frDiagActive = false;
   ShimEeprom_writeDaughterCardMem(1856U, sizeof(frDiag), &frDiag[0]);
+  ShimEeprom_writeDaughterCardMem(1792U, sizeof(frDiag2), &frDiag2[0]);
 
   success = isBtIsFactoryResetted() && BT_isFactoryResetMacRestored();
   SHIMMER_PRINTF("BT factory reset end: %s\r\n",
@@ -755,9 +768,19 @@ void btCommWithDiffBaudRates(void)
           frDiag[4 + 3 * failCount] = BT_diagExpected();
           if (failCount == 0U)
           {
+            uint32_t n = BT_diagRawCount();
             frDiag[30] = 0;
             BT_diagCopyRxRing(&frDiag[32]);
+            BT_diagCopyRawRing(&frDiag2[0], 32U);
+            BT_diagCaptureState(&frDiag2[48]);
+            frDiag2[56] = (uint8_t) huart3.ErrorCode;
+            frDiag2[57] = (uint8_t) (huart3.ErrorCode >> 8);
+            frDiag2[58] = (uint8_t) huart3.RxState;
+            memcpy(&frDiag2[60], &n, 4);
           }
+          BT_diagCopyRawRing(&frDiag2[32], 16U);
+          BT_diagCaptureState(&frDiag2[52]);
+          frDiag2[59] = (uint8_t) huart3.RxState;
         }
         failCount++;
 

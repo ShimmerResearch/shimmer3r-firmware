@@ -449,8 +449,41 @@ static void BT_watchForBootBanner(uint8_t byte)
   }
 }
 
+/* FR DIAG - test build only: every received byte, and capture state */
+volatile uint8_t btDiagRawRing[32];
+volatile uint8_t btDiagRawPos;
+volatile uint32_t btDiagRawCount;
+
+void BT_diagCopyRawRing(uint8_t *out, uint8_t n)
+{
+  uint8_t pos = btDiagRawPos;
+  for (uint8_t i = 0; i < n; i++)
+  {
+    out[i] = btDiagRawRing[(uint8_t) (pos + 32U - n + i) & 31U];
+  }
+}
+
+uint32_t BT_diagRawCount(void)
+{
+  return btDiagRawCount;
+}
+
+void BT_diagCaptureState(uint8_t *out4)
+{
+  out4[0] = (uint8_t) btBootMsgIndex;
+  out4[1] = btBootMsgLineCount;
+  out4[2] = waitingForBtBoot;
+  out4[3] = skippingBytesCount;
+}
+
 void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
 {
+  for (uint16_t d = 0; d < expectedByteCount; d++) /* FR DIAG */
+  {
+    btDiagRawRing[btDiagRawPos++ & 31U] = rxBuf[d];
+    btDiagRawCount++;
+  }
+
   uint16_t count = 1;
 
   /* Same width as expectedByteCount: a uint8_t index wrapped at 256 and never
