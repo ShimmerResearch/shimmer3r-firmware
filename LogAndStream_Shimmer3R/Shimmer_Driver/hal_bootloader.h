@@ -9,5 +9,6 @@
 #define HAL_BOOTLOADER_H_
 
 void JumpToBootloader(void);
+void Bootloader_resetStateLeftByJump(void);
 
 #endif /* HAL_BOOTLOADER_H_ */

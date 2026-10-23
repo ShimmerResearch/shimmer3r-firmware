@@ -103,6 +103,8 @@
 #include "stm32u5xx.h"
 #include <math.h>
 
+#include "hal_bootloader.h"
+
 /**
  * @}
  */
@@ -196,6 +198,10 @@ const uint32_t MSIRangeTable[16] = { 48000000U, 24000000U, 16000000U, 12000000U,
 
 void SystemInit(void)
 {
+  /* DEV-1316: ST's bootloader starts the application by a jump, not a reset.
+   * Undo what it leaves live before anything here can take an interrupt. */
+  Bootloader_resetStateLeftByJump();
+
 /* FPU settings ------------------------------------------------------------*/
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
   SCB->CPACR |= ((3UL << 20U) | (3UL << 22U)); /* set CP10 and CP11 Full Access */
