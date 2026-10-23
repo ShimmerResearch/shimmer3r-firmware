@@ -187,6 +187,7 @@ bool isBtFactoryResetCmdsRunning(void);
 uint8_t isBtFactoryResetEepromStepPending(void);
 void BT_runFactoryResetEepromStep(void);
 bool BT_isFactoryResetMacRestored(void);
+void BT_abandonFactoryReset(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
 bool BT_isRawPipeEngagedNow(void);

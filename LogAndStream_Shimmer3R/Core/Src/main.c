@@ -653,6 +653,11 @@ bool btFactoryResetViaFw(void)
   //Abort transfer operations to release UART for subsequent requests.
   HAL_UART_Abort(&huart3);
 
+  if (!isBtIsFactoryResetted())
+  {
+    BT_abandonFactoryReset();
+  }
+
   success = isBtIsFactoryResetted() && BT_isFactoryResetMacRestored();
   SHIMMER_PRINTF("BT factory reset end: %s\r\n",
       success ? "OK" : (isBtIsFactoryResetted() ? "MAC not confirmed" : "not completed"));

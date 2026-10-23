@@ -1723,6 +1723,15 @@ bool BT_isFactoryResetMacRestored(void)
   return btFactoryResetMacRestored;
 }
 
+/* Ends a factory reset that gave up (every baud rate timed out). Left set, the
+ * flag sends the next init's FINISH down the factory-reset branch, so the
+ * init callback never runs, and it keeps the unexpected-restart guard
+ * disabled for the rest of the session. */
+void BT_abandonFactoryReset(void)
+{
+  btFactoryResetCmdsRunning = 0;
+}
+
 void setBtBootModeFactoryReset(void)
 {
   btFactoryResetCmdsRunning = 1;
