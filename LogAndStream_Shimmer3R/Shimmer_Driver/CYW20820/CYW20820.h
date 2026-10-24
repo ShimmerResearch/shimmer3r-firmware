@@ -150,6 +150,13 @@ enum BT_SET_COMMAND_STAGES
   FR_UPDATE_UART,
   FR_PING,
   FR_RESET_BT_MAC_ID,
+  /* EEPROM steps of the factory reset. They wait for main context
+   * (BT_runFactoryResetEepromStep) because the step machine otherwise
+   * advances from the UART RX interrupt, where an I2C EEPROM access with its
+   * HAL_Delay write-cycle wait must not run. */
+  FR_BACKUP_BT_MAC_ID,
+  FR_VERIFY_BT_MAC_ID,
+  FR_CHECK_BT_MAC_ID,
   FINISH
 };
 
@@ -177,6 +184,10 @@ void BT_handleUnexpectedModuleBoot(const char *how);
 void BT_rebootAfterModuleRestart(void);
 void BT_serviceModuleRestart(void);
 bool isBtFactoryResetCmdsRunning(void);
+uint8_t isBtFactoryResetEepromStepPending(void);
+void BT_runFactoryResetEepromStep(void);
+bool BT_isFactoryResetMacRestored(void);
+void BT_abandonFactoryReset(void);
 void setBtCysppState(bool state);
 bool getBtCysppState(void);
 bool BT_isRawPipeEngagedNow(void);

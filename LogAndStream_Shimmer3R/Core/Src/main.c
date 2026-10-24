@@ -100,7 +100,7 @@ static void SystemPower_Config(void);
 void Init(void);
 void InitialiseBt(void);
 void InitialiseBtAfterBoot(void);
-void btFactoryResetViaFw(void);
+bool btFactoryResetViaFw(void);
 void btCommWithDiffBaudRates(void);
 void BtStartDone(void);
 void setBtConnectionState(bool state);
@@ -629,8 +629,21 @@ void InitialiseBtAfterBoot(void)
   BtStart();
 }
 
-void btFactoryResetViaFw(void)
+/* Factory resets the CYW20820 (/RFAC) while keeping its Bluetooth MAC.
+ *
+ * The MAC is saved to the EEPROM backup record before the reset and restored
+ * from there afterwards, then read back from the module to confirm it. If the
+ * module reports no valid MAC and none is saved, or the EEPROM backup cannot
+ * be verified, the module is not reset. If a reset is interrupted, calling
+ * this again restores the saved MAC rather than the post-reset one.
+ *
+ * Returns true only if the reset completed and the MAC was confirmed. Either
+ * way, the module is left with its factory configuration at 115200 baud, so
+ * the caller must run InitialiseBt() next to reconfigure it. */
+bool btFactoryResetViaFw(void)
 {
+  bool success;
+
   SHIMMER_PRINTF("\r\nBT factory reset start\r\n");
 
   setBtBootModeFactoryReset();
@@ -640,14 +653,23 @@ void btFactoryResetViaFw(void)
   //Abort transfer operations to release UART for subsequent requests.
   HAL_UART_Abort(&huart3);
 
-  SHIMMER_PRINTF("BT factory reset end\r\n");
+  if (!isBtIsFactoryResetted())
+  {
+    BT_abandonFactoryReset();
+  }
+
+  success = isBtIsFactoryResetted() && BT_isFactoryResetMacRestored();
+  SHIMMER_PRINTF("BT factory reset end: %s\r\n",
+      success ? "OK" : (isBtIsFactoryResetted() ? "MAC not confirmed" : "not completed"));
+  return success;
 }
 
 void btCommWithDiffBaudRates(void)
 {
   uint8_t failCount = 0U;
-  //50 * 100ms = 5s per baud rate attempt
-  uint8_t resetCnt = 50U;
+  //50 * 100ms = 5s per baud rate attempt. A factory reset gets 15 s: it waits
+  //out the module's own reboot after /RFAC, which takes several seconds.
+  uint8_t resetCnt = isBtFactoryResetCmdsRunning() ? 150U : 50U;
   uint8_t resetCntCurrent = resetCnt;
   uint32_t baudToTry = BAUD_TO_USE;
 
@@ -681,11 +703,17 @@ void btCommWithDiffBaudRates(void)
       }
       else if (isEzsFactoryRebootDelayPending())
       {
-        //TODO move away from fixed delay now that we're able to parse the boot message
-        /* Experimentally found to be ~ 2.75s. */
-        HAL_Delay(3000);
+        /* Only long enough for the factory-reset-complete event to finish. The
+         * module's reboot is then waited for by its boot banner, at its
+         * factory baud, so the switch to that baud must come before the
+         * banner starts. */
+        HAL_Delay(100);
         incrementBtInitCmdsStep();
         btInitCommands();
+      }
+      else if (isBtFactoryResetEepromStepPending())
+      {
+        BT_runFactoryResetEepromStep();
       }
 
       if (!(resetCntCurrent--))

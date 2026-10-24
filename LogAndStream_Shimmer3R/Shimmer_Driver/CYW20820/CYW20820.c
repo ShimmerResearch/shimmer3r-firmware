@@ -469,8 +469,23 @@ static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
   FINISH };
 
 static uint8_t btBootStagesFactoryReset[] = { WAIT_FOR_BOOT_STAGE1,
-  WAIT_FOR_BOOT_STAGE2, ENTER_BINARY_MODE, GET_BT_MAC_ID, FACTORY_RESET,
-  FR_WAIT_FOR_REBOOT_AFTER_FR, FR_UPDATE_UART, FR_PING, FR_RESET_BT_MAC_ID, FINISH };
+  WAIT_FOR_BOOT_STAGE2, ENTER_BINARY_MODE, GET_BT_MAC_ID, FR_BACKUP_BT_MAC_ID,
+  FACTORY_RESET, FR_WAIT_FOR_REBOOT_AFTER_FR, FR_UPDATE_UART,
+  /* After /RFAC the module reboots on its factory UART settings (115200) and
+   * in its factory parse mode - on v1.4.17+ text with no auto-parse - and it
+   * takes more than 3 s to do so (bench, 10E0 on v1.4.18.18: the banner's
+   * tail arrived after a 3 s wait). So switch to 115200 straight away, wait
+   * for the boot banner as a normal boot does, and only then enter binary
+   * mode. Commands sent into a module still rebooting are lost. */
+  WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2, ENTER_BINARY_MODE, FR_PING,
+  FR_RESET_BT_MAC_ID, FR_VERIFY_BT_MAC_ID, FR_CHECK_BT_MAC_ID, FINISH };
+
+/* The MAC a factory reset restores. It always comes from the EEPROM backup
+ * record, never straight from the module, so a reset that is interrupted
+ * after /RFAC (power loss, watchdog, a baud-rate retry that restarts the
+ * steps) still restores the original address on the next attempt. */
+static uint8_t btMacToRestore[6];
+static volatile bool btFactoryResetMacRestored;
 
 void (*btIsInitialised_cb)(void);
 
@@ -1514,6 +1529,12 @@ void btInitCommands(void)
     }
   }
 
+  if (btInitCmdsStep == FR_BACKUP_BT_MAC_ID || btInitCmdsStep == FR_CHECK_BT_MAC_ID)
+  {
+    /* EEPROM steps - run from main context by BT_runFactoryResetEepromStep() */
+    return;
+  }
+
   if (btInitCmdsStep == FACTORY_RESET)
   {
     incrementBtInitCmdsStep();
@@ -1535,6 +1556,10 @@ void btInitCommands(void)
     //TODO resolve reference
     BtUart_update(115200, 0);
     setBtRxDmaWaitingForResponse(1);
+    /* The next step, WAIT_FOR_BOOT_STAGE1, is handled earlier in this function
+     * than this one, so dispatch it from the top rather than falling through */
+    btInitCommands();
+    return;
   }
 
   if (btInitCmdsStep == FR_PING)
@@ -1550,15 +1575,23 @@ void btInitCommands(void)
   {
     incrementBtInitCmdsStep();
     printf("Reset BT Address\r\n");
-    setExpectedResponse(EZS_IDX_CMD_SYSTEM_SET_BLUETOOTH_ADDRESS);
+    setExpectedResponse(EZS_IDX_RSP_SYSTEM_SET_BLUETOOTH_ADDRESS);
 
     //TODO EZ-Serial user guide states that setting to 0 will restore original
     //MAC ID but I haven't been able to get this working macaddr_t addr; memset(addr.addr,
     //0, sizeof(addr.addr)); ezs_fcmd_system_set_bluetooth_address(&addr);
 
-    ezs_fcmd_system_set_bluetooth_address(
-        &rsp_system_get_bluetooth_address.address.addr);
+    ezs_fcmd_system_set_bluetooth_address(&btMacToRestore);
 
+    return;
+  }
+
+  if (btInitCmdsStep == FR_VERIFY_BT_MAC_ID)
+  {
+    incrementBtInitCmdsStep();
+    printf("Read back BT address\r\n");
+    setExpectedResponse(EZS_IDX_RSP_SYSTEM_GET_BLUETOOTH_ADDRESS);
+    ezs_cmd_system_get_bluetooth_address();
     return;
   }
 
@@ -1602,12 +1635,112 @@ void incrementBtInitCmdsStep(void)
   }
 }
 
+uint8_t isBtFactoryResetEepromStepPending(void)
+{
+  return btFactoryResetCmdsRunning
+      && (btInitCmdsStep == FR_BACKUP_BT_MAC_ID || btInitCmdsStep == FR_CHECK_BT_MAC_ID);
+}
+
+/* Picks the MAC the factory reset will restore and makes sure it is in the
+ * EEPROM backup before /RFAC is sent. Returns 0 if there is no MAC that can
+ * be restored, in which case the module must not be reset. */
+static uint8_t BT_backupMacBeforeFactoryReset(void)
+{
+  uint8_t *moduleMac = &rsp_system_get_bluetooth_address.address.addr[0];
+  uint8_t savedMac[6];
+  uint8_t savedState;
+
+  if (ShimEeprom_readBtMacBackup(&savedMac[0], &savedState) && savedState == BT_MAC_BACKUP_FR_PENDING)
+  {
+    /* An earlier reset never confirmed its restore, so the module may already
+     * be on its post-reset address. The saved MAC is the original - keep it. */
+    printf("BT MAC: restore pending from an earlier reset, keeping saved "
+           "address\r\n");
+    memcpy(&btMacToRestore[0], &savedMac[0], sizeof(btMacToRestore));
+    return 1;
+  }
+
+  if (!ShimEeprom_isBtMacValid(moduleMac))
+  {
+    printf("BT MAC: module address invalid and none saved - factory reset "
+           "refused\r\n");
+    return 0;
+  }
+
+  if (!ShimEeprom_writeBtMacBackup(moduleMac, BT_MAC_BACKUP_FR_PENDING))
+  {
+    printf("BT MAC: EEPROM backup failed - factory reset refused\r\n");
+    return 0;
+  }
+
+  printf("BT MAC: saved to EEPROM\r\n");
+  memcpy(&btMacToRestore[0], moduleMac, sizeof(btMacToRestore));
+  return 1;
+}
+
+void BT_runFactoryResetEepromStep(void)
+{
+  if (btInitCmdsStep == FR_BACKUP_BT_MAC_ID)
+  {
+    if (!BT_backupMacBeforeFactoryReset())
+    {
+      /* Ends the sequence before /RFAC; btIsFactoryResetted stays false */
+      btFactoryResetCmdsRunning = 0;
+      return;
+    }
+  }
+  else if (btInitCmdsStep == FR_CHECK_BT_MAC_ID)
+  {
+    if (memcmp(&rsp_system_get_bluetooth_address.address.addr[0],
+            &btMacToRestore[0], sizeof(btMacToRestore))
+        != 0)
+    {
+      /* Backup stays FR_PENDING, so running the reset again restores it */
+      printf("BT MAC: read-back does not match saved address\r\n");
+    }
+    else if (!ShimEeprom_writeBtMacBackup(&btMacToRestore[0], BT_MAC_BACKUP_IDLE))
+    {
+      /* The module is right; only the EEPROM state is stale. A later reset
+       * would keep the saved MAC, which is the same address, so no harm. */
+      printf("BT MAC: restored, but EEPROM state not cleared\r\n");
+      btFactoryResetMacRestored = true;
+    }
+    else
+    {
+      printf("BT MAC: restored\r\n");
+      btFactoryResetMacRestored = true;
+    }
+  }
+  else
+  {
+    return;
+  }
+
+  incrementBtInitCmdsStep();
+  btInitCommands();
+}
+
+bool BT_isFactoryResetMacRestored(void)
+{
+  return btFactoryResetMacRestored;
+}
+
+/* Ends a factory reset that gave up (every baud rate timed out). Left set, the
+ * flag sends the next init's FINISH down the factory-reset branch, so the
+ * init callback never runs, and it keeps the unexpected-restart guard
+ * disabled for the rest of the session. */
+void BT_abandonFactoryReset(void)
+{
+  btFactoryResetCmdsRunning = 0;
+}
+
 void setBtBootModeFactoryReset(void)
 {
   btFactoryResetCmdsRunning = 1;
   setBtInitCmdsSteps(&btBootStagesFactoryReset[0]);
 
   btIsFactoryResetted = false;
+  btFactoryResetMacRestored = false;
 }
 
 void setBtBootModeFirstBoot(void)
@@ -2274,6 +2407,17 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
    * the result and hid failures. Reported unconditionally: this step is what
    * puts an SPP_SEND-framing module into binary/non-transparent mode, so a
    * failure here invalidates the whole classic-SPP data path. */
+  case EZS_IDX_RSP_SYSTEM_SET_BLUETOOTH_ADDRESS:
+    /* A rejected restore also shows as a read-back mismatch at
+     * FR_CHECK_BT_MAC_ID; this says why */
+    if (packet->payload.rsp_system_set_bluetooth_address.result != EZS_ERR_SUCCESS)
+    {
+      printf("system_set_bluetooth_address FAILED: result=");
+      printHex16(packet->payload.rsp_system_set_bluetooth_address.result);
+      printf("\r\n");
+    }
+    break;
+
   case EZS_IDX_RSP_PROTOCOL_SET_PARSE_MODE:
     if (packet->payload.rsp_protocol_set_parse_mode.result != EZS_ERR_SUCCESS)
     {
