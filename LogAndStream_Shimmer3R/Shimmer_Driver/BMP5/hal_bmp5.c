@@ -313,6 +313,14 @@ int8_t bmp5_drdy_test(void)
   return res;
 }
 
+/* Puts the BMP581 into deep standby, its lowest-power mode: ODR_CONFIG (37h)
+ * PWR_MODE = standby with DEEP_DIS clear (BMP581 datasheet, ODR_CONFIG and
+ * power modes). Any later bmp5_configure() brings it back through standby. */
+int8_t bmp5_power_down(void)
+{
+  return bmp5_set_power_mode(BMP5_POWERMODE_DEEP_STANDBY, &bmp5);
+}
+
 int8_t bmp5_configure(float shimmerSamplingFreq, uint8_t overSamplingRatio)
 {
   int8_t rslt;

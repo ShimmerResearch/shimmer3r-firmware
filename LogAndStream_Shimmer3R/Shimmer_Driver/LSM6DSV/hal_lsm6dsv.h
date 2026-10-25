@@ -28,7 +28,7 @@ bool lsm6dsv_is_drdy_int_enabled(void);
 bool lsm6dsv_is_shimmer_freq_higher(float shimmerSamplingFreq, lsm6dsv_data_rate_t rate);
 float lsm6dsv_get_sensor_freq_from_rate(lsm6dsv_data_rate_t rate);
 
-void lsm6dsv_restore_default_config(void);
+int32_t lsm6dsv_restore_default_config(void);
 void lsm6dsv_status_get(void);
 int32_t lsm6dsv_temperature_get(float_t *tempCal);
 

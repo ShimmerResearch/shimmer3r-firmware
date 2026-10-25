@@ -30,6 +30,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app_usbx_device.h"
+#include "hal_PowerProfile.h"
 #include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
@@ -259,6 +260,10 @@ void Init()
 
   //Enable dock comms now that sensor is ready to communicate
   DockUart_enable();
+
+  /* DEV-1335: production test. If the dock armed a power-profile run, it runs
+   * here, on its own boot stage, before booting ends (hal_PowerProfile.c). */
+  PowerProfile_runIfArmed();
 
   shimmerStatus.booting = 0;
   LogAndStream_setBootStage(BOOT_STAGE_END);

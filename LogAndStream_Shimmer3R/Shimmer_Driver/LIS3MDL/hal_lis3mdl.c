@@ -445,20 +445,60 @@ float lis3mdl_get_sensor_freq_from_rate(lis3mdl_om_t rate)
 
 #endif
 
-void lis3mdl_restore_default_config(void)
+/* Returns 0, or -1 if the reset bit never cleared.
+ *
+ * The reset sets CTRL_REG2 (21h) SOFT_RST, which the device clears itself once
+ * its configuration and user registers are back at their defaults (LIS3MDL
+ * datasheet, CTRL_REG2). The wait used to spin until it saw it clear, so a
+ * part that was absent, unpowered or not answering - a register that reads
+ * 0xFF, or a failed transfer - hung the caller for ever. The reset is far
+ * quicker than LIS3MDL_RESET_TIMEOUT_MS, and running out of it is reported
+ * rather than waited through. */
+#define LIS3MDL_RESET_TIMEOUT_MS 10U
+
+int32_t lis3mdl_restore_default_config(void)
 {
-  uint8_t rst;
+  uint8_t rst = 1;
+  uint32_t start;
+  int32_t ret;
 
   /* Restore default configuration */
-  lis3mdl_reset_set(&lis3mdl_obj.Ctx, PROPERTY_ENABLE);
-
+  ret = lis3mdl_reset_set(&lis3mdl_obj.Ctx, PROPERTY_ENABLE);
+  start = HAL_GetTick();
   do
   {
-    lis3mdl_reset_get(&lis3mdl_obj.Ctx, &rst);
-  } while (rst);
+    if (lis3mdl_reset_get(&lis3mdl_obj.Ctx, &rst) != 0)
+    {
+      rst = 1;
+    }
+    if (!rst)
+    {
+      break;
+    }
+  } while ((HAL_GetTick() - start) <= LIS3MDL_RESET_TIMEOUT_MS);
+
+  if (ret != 0 || rst)
+  {
+    return -1;
+  }
 
   /* Enable Block Data Update */
   lis3mdl_block_data_update_set(&lis3mdl_obj.Ctx, PROPERTY_ENABLE);
+  return 0;
+}
+
+/* WHO_AM_I (0Fh) reads 3Dh on a LIS3MDL (LIS3MDL datasheet, WHO_AM_I). For
+ * the power-profile part probe; SPI2 must be initialised. */
+uint8_t lis3mdl_isDetected(void)
+{
+  uint8_t whoamI = 0;
+
+  lis3mdl_driver_init();
+  if (lis3mdl_device_id_get(&lis3mdl_obj.Ctx, &whoamI) != 0)
+  {
+    return 0;
+  }
+  return whoamI == LIS3MDL_ID;
 }
 
 void lis3mdl_spi_three_wire_set(void)

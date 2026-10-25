@@ -20,7 +20,8 @@ HAL_StatusTypeDef lis3mdl_mag_get(uint8_t *buf);
 bool lis3mdl_is_shimmer_freq_higher(float shimmerSamplingFreq, lis3mdl_om_t rate);
 float lis3mdl_get_sensor_freq_from_rate(lis3mdl_om_t rate);
 
-void lis3mdl_restore_default_config(void);
+int32_t lis3mdl_restore_default_config(void);
+uint8_t lis3mdl_isDetected(void);
 void lis3mdl_spi_three_wire_set(void);
 int32_t lis3mdl_temperature_get(float_t *tempCal);
 

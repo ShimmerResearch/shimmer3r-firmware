@@ -678,19 +678,46 @@ float lsm6dsv_get_sensor_freq_from_rate(lsm6dsv_data_rate_t rate)
   return sensorFreq;
 }
 
-void lsm6dsv_restore_default_config(void)
+/* Returns 0, or -1 if the reset bits never cleared.
+ *
+ * The reset sets CTRL3 (12h) SW_RESET, which the device clears itself when the
+ * control registers are back at their defaults (LSM6DSV datasheet, CTRL3;
+ * FUNC_CFG_ACCESS (01h) SW_POR is read back alongside it). The wait used to
+ * spin until it saw them clear, so a part that was absent, unpowered or not
+ * answering - every read 0x00 or 0xFF, or a failed transfer - hung the caller
+ * for ever. The reset takes microseconds; LSM6DSV_RESET_TIMEOUT_MS is far
+ * longer, and running out of it is reported rather than waited through. */
+#define LSM6DSV_RESET_TIMEOUT_MS 10U
+
+int32_t lsm6dsv_restore_default_config(void)
 {
-  lsm6dsv_reset_t rst;
+  lsm6dsv_reset_t rst = LSM6DSV_GLOBAL_RST;
+  uint32_t start;
+  int32_t ret;
 
   /* Restore default configuration */
-  lsm6dsv_reset_set(&lsm6dsv_obj.Ctx, LSM6DSV_RESTORE_CTRL_REGS);
+  ret = lsm6dsv_reset_set(&lsm6dsv_obj.Ctx, LSM6DSV_RESTORE_CTRL_REGS);
+  start = HAL_GetTick();
   do
   {
-    lsm6dsv_reset_get(&lsm6dsv_obj.Ctx, &rst);
-  } while (rst != LSM6DSV_READY);
+    if (lsm6dsv_reset_get(&lsm6dsv_obj.Ctx, &rst) != 0)
+    {
+      rst = LSM6DSV_GLOBAL_RST;
+    }
+    if (rst == LSM6DSV_READY)
+    {
+      break;
+    }
+  } while ((HAL_GetTick() - start) <= LSM6DSV_RESET_TIMEOUT_MS);
+
+  if (ret != 0 || rst != LSM6DSV_READY)
+  {
+    return -1;
+  }
 
   /* Enable Block Data Update */
   lsm6dsv_block_data_update_set(&lsm6dsv_obj.Ctx, PROPERTY_ENABLE);
+  return 0;
 }
 
 void lsm6dsv_status_get(void)
