@@ -664,6 +664,10 @@ bool btFactoryResetViaFw(void)
   return success;
 }
 
+/* Baud-rate fallbacks the last Bluetooth initialisation needed, for the boot
+ * report (platform_getBtBaudAttempts) */
+static uint8_t gBtBaudAttempts = 0U;
+
 void btCommWithDiffBaudRates(void)
 {
   uint8_t failCount = 0U;
@@ -758,6 +762,7 @@ void btCommWithDiffBaudRates(void)
       }
     }
   }
+  gBtBaudAttempts = failCount;
 }
 
 void BtStartDone(void)
@@ -980,6 +985,24 @@ bool platform_isDockUartInitialised(void)
 bool platform_isUsbUartInitialised(void)
 {
   return USBX_IsInitialised();
+}
+
+//Overrides weak function in LogAndStream driver (boot report)
+uint8_t platform_getBtBaudAttempts(void)
+{
+  return gBtBaudAttempts;
+}
+
+//Overrides weak function in LogAndStream driver (boot report)
+uint8_t platform_getLseDrive(void)
+{
+  return gRtcOnLsiFallback ? 0xFFU : (uint8_t) gLseDrvBits;
+}
+
+//Overrides weak function in LogAndStream driver (boot report)
+uint8_t platform_isRtcOnLsiFallback(void)
+{
+  return gRtcOnLsiFallback;
 }
 
 //Overrides weak function in LogAndStream driver
