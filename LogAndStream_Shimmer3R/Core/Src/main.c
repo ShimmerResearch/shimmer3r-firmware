@@ -218,8 +218,10 @@ void Init()
   /* Detect which pressure sensor is fitted (BMP390 vs BMP581) and, for the
    * BMP390, read its calibration data. This is done before the configuration
    * is loaded so that any sensor specific validation (e.g. the pressure
-   * oversampling range) is carried out against the correct sensor. */
-  PressureSensor_initOnBoot();
+   * oversampling range) is carried out against the correct sensor. The same
+   * sensing-rail window runs the part probe for the boot report
+   * (hal_PowerProfile.c). */
+  PartsProbe_atBoot();
   /* Calibration needs to be loaded after the chips have been detected in
    * order to know which default calib to set for attached chips.
    * It also needs to be loaded after the BT is initialised so that the

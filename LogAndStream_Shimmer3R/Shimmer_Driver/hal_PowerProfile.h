@@ -31,6 +31,23 @@
 #define PP_STEP_MS_LED          1000U
 #define PP_STEP_MS_BLUETOOTH    8000U
 
+/* The part probe (docs/SHIMMER3R_FACTORY_TEST_REPORT.md section 6.5): which
+ * of the SPI parts whose fitting varies by board answer, as PP_PART_* bits.
+ * It reads ID registers only, with bounded SPI timeouts, and never reaches
+ * Error_Handler() on a part that does not answer. */
+
+/* The parts the SR number says this board carries */
+uint16_t PartsProbe_expected(void);
+/* Probes the parts. Needs the sensing rail on and SPI1 initialised (which
+ * identifies the pressure sensor); initialises SPI2 and leaves it up. Where
+ * the SR number says ExG it brings the ADS1292R and SPI3 up and down again,
+ * which takes about 1 s. */
+uint16_t PartsProbe_run(void);
+/* Called once from Init(), before the configuration is loaded: powers the
+ * sensing rail, identifies the pressure sensor, runs the probe for the boot
+ * report, and powers the rail off again */
+void PartsProbe_atBoot(void);
+
 /* Called once from Init(), after the configuration is loaded and before
  * booting ends. Consumes an armed record: runs the sequence if the unit is
  * neither docked nor on USB, otherwise marks it SKIPPED. A record found

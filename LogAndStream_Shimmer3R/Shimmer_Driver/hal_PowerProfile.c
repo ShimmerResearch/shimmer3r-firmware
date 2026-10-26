@@ -124,6 +124,106 @@ static void PowerProfile_setExpansionPowerSwitch(uint8_t state)
   }
 }
 
+/* --- The part probe ------------------------------------------------------------ */
+
+/* What the part probe found at this boot, and what the SR number expected
+ * then, latched for the boot report */
+static uint16_t bootPartsFound;
+static uint16_t bootPartsExpected;
+
+uint16_t PartsProbe_expected(void)
+{
+  uint16_t expected = 0;
+
+  if (ShimBrd_isLis3mdlPresent())
+  {
+    expected |= PP_PART_LIS3MDL;
+  }
+  if (ShimBrd_isAdxl371Present())
+  {
+    expected |= PP_PART_ADXL371;
+  }
+  if (isAds7028Present())
+  {
+    expected |= PP_PART_ADS7028;
+  }
+  expected |= ShimBrd_isBmp581PresentPerSrNumber() ? PP_PART_BMP581 : PP_PART_BMP390;
+  if (ShimBrd_isAds1292Present())
+  {
+    expected |= PP_PART_ADS1292R;
+  }
+  return expected;
+}
+
+uint16_t PartsProbe_run(void)
+{
+  uint16_t found = 0;
+
+  /* SPI1: the ADXL371 and ADS7028 by their ID registers. The pressure
+   * sensor was identified when SPI1 was first initialised this boot, and a
+   * fallback to the SR number does not count as found. */
+  if (isAdxl371Detected())
+  {
+    found |= PP_PART_ADXL371;
+  }
+  if (isAds7028Present() && ads7028_factoryTestChipId() == SELF_TEST_PASS)
+  {
+    found |= PP_PART_ADS7028;
+  }
+  if (PressureSensor_wasIdentifiedByChipId())
+  {
+    found |= isBmp581InUse() ? PP_PART_BMP581 : PP_PART_BMP390;
+  }
+
+  MX_SPI2_Init();
+  if (lis3mdl_isDetected())
+  {
+    found |= PP_PART_LIS3MDL;
+  }
+
+  /* Only where the SR number says ExG: the driver's power-on wait is 1 s.
+   * Both chips must answer with the ADS1292R ID, as in S3R_TEST_0021. */
+  if (ShimBrd_isAds1292Present())
+  {
+    ADS1292_init();
+    MX_SPI3_Init();
+    if (EXG_init(&hspi3) == 0U && EXG_self_test() == 0U)
+    {
+      found |= PP_PART_ADS1292R;
+    }
+    EXG_powerOff();
+    SPI3_DeInit();
+  }
+  return found;
+}
+
+void PartsProbe_atBoot(void)
+{
+  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
+  /* Also identifies the pressure sensor (BMP390 or BMP581) and, for the
+   * BMP390, reads its calibration data */
+  MX_SPI1_Init();
+  bootPartsFound = PartsProbe_run();
+  bootPartsExpected = PartsProbe_expected();
+  SPI2_DeInit();
+  SPI1_DeInit();
+  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
+}
+
+/* Overrides the weak default in log-and-stream-common (boot report) */
+uint16_t platform_getBootPartsFound(void)
+{
+  return bootPartsFound;
+}
+
+/* Overrides the weak default in log-and-stream-common (boot report) */
+uint16_t platform_getBootPartsExpected(void)
+{
+  return bootPartsExpected;
+}
+
+/* --- The schedule, continued ------------------------------------------------------ */
+
 /* Overrides the weak default in log-and-stream-common: the one place the
  * schedule is built, for the run and for the dock readback alike. Which steps
  * run follows the board: the SR number's presence gates, and the pressure
@@ -136,24 +236,7 @@ uint8_t platform_powerProfileSchedule(pp_schedule_t *s)
   s->scheduleVer = PP_SCHEDULE_VER;
   s->markerId = PP_MARKER_NONCE16;
   s->baselineWindowMs = PP_BASELINE_WINDOW_MS;
-
-  if (ShimBrd_isLis3mdlPresent())
-  {
-    s->partsExpected |= PP_PART_LIS3MDL;
-  }
-  if (ShimBrd_isAdxl371Present())
-  {
-    s->partsExpected |= PP_PART_ADXL371;
-  }
-  if (isAds7028Present())
-  {
-    s->partsExpected |= PP_PART_ADS7028;
-  }
-  s->partsExpected |= ShimBrd_isBmp581PresentPerSrNumber() ? PP_PART_BMP581 : PP_PART_BMP390;
-  if (ShimBrd_isAds1292Present())
-  {
-    s->partsExpected |= PP_PART_ADS1292R;
-  }
+  s->partsExpected = PartsProbe_expected();
 
   ShimFactoryRecord_addPpStep(s, PP_STEP_MARKER, PP_MARKER_DURATION_MS);
   ShimFactoryRecord_addPpStep(s, PP_STEP_BASELINE, PP_STEP_MS_BASELINE);
@@ -195,45 +278,15 @@ uint8_t platform_powerProfileSchedule(pp_schedule_t *s)
 
 /* --- The steps ------------------------------------------------------------------ */
 
-/* Sensing rail on, then the part probe: the SPI parts whose fitting varies by
- * board. The BMP was identified at boot, the ADS1292R is probed only where the
- * SR number says ExG, and the microphone is not probed. Returns 1 if the rail
+/* Sensing rail on, then the part probe, the same one the boot runs. SPI1 and
+ * SPI2 are left initialised for the steps that follow. Returns 1 if the rail
  * came up and SPI1/SPI2 were initialised. */
 static uint8_t PowerProfile_sensingRailAndProbe(void)
 {
   Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
 
   MX_SPI1_Init();
-  if (isAdxl371Detected())
-  {
-    ppRecord.partsFound |= PP_PART_ADXL371;
-  }
-  if (isAds7028Present() && ads7028_factoryTestChipId() == SELF_TEST_PASS)
-  {
-    ppRecord.partsFound |= PP_PART_ADS7028;
-  }
-  if (PressureSensor_wasIdentifiedByChipId())
-  {
-    ppRecord.partsFound |= isBmp581InUse() ? PP_PART_BMP581 : PP_PART_BMP390;
-  }
-
-  MX_SPI2_Init();
-  if (lis3mdl_isDetected())
-  {
-    ppRecord.partsFound |= PP_PART_LIS3MDL;
-  }
-
-  if (ShimBrd_isAds1292Present())
-  {
-    ADS1292_init();
-    MX_SPI3_Init();
-    if (EXG_init(&hspi3) == 0U)
-    {
-      ppRecord.partsFound |= PP_PART_ADS1292R;
-    }
-    EXG_powerOff();
-    SPI3_DeInit();
-  }
+  ppRecord.partsFound = PartsProbe_run();
   return 1;
 }
 
