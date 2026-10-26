@@ -1701,15 +1701,4 @@ void ads7028_configureChannels(uint8_t *channel_contents_ptr)
 }
 #endif
 
-void PressureSensor_initOnBoot(void)
-{
-  /* Initialise SPI1 simply so that the fitted pressure sensor variant can be
-   * detected (BMP390 vs BMP581) and, for the BMP390, its calibration data can
-   * be read on boot. It is de-initialised straight after. */
-  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 1);
-  MX_SPI1_Init();
-  SPI1_DeInit();
-  Board_enableSensingPower(SENSE_PWR_FACTORY_TEST, 0);
-}
-
 /* USER CODE END 1 */

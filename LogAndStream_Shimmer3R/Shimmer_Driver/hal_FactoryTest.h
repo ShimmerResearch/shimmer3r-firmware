@@ -89,10 +89,12 @@ given above */
 
 /* Accepted BT module firmware versions, matched against the version string
  * BT_generateCyw20820FirmwareVersionStr() builds ("CYW20820 app=vXX.XX.XX.XX,
- * ..."). BOTH are shipping: one MCU image supports v1.4.16.16 (fielded units,
- * whose module firmware is not field-upgradeable) and v1.4.18.18 (current
- * production), choosing its BT data path from the version at boot. A single
- * expected version would fail the whole population on one side or the other.
+ * ..."). BOTH are accepted: v1.4.16.16 is the production module firmware, and
+ * what fielded units carry; v1.4.18.18 has gone only to particular customers,
+ * as a test build. One MCU image supports both, choosing its BT data path from
+ * the version at boot. A single expected version would fail units on one side
+ * or the other. A production test that needs the production version checks
+ * the printed version itself.
  * Add new entries here - and to the || chain in bt_module_test() - as Ezurio
  * releases module firmware we qualify. */
 #define TEST_BT_MODULE_FW_LEGACY                   "v01.04.16.16"

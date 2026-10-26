@@ -210,7 +210,6 @@ void SpiStepDone(void);
   bool areSpiChannelsEnabled(void);
 
   void ads7028_configureChannels(uint8_t *channel_contents_ptr);
-  void PressureSensor_initOnBoot(void);
 #endif
 
   /* USER CODE END Prototypes */

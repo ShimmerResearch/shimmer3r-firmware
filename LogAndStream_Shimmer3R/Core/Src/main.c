@@ -30,6 +30,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app_usbx_device.h"
+#include "hal_PowerProfile.h"
 #include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
@@ -217,8 +218,10 @@ void Init()
   /* Detect which pressure sensor is fitted (BMP390 vs BMP581) and, for the
    * BMP390, read its calibration data. This is done before the configuration
    * is loaded so that any sensor specific validation (e.g. the pressure
-   * oversampling range) is carried out against the correct sensor. */
-  PressureSensor_initOnBoot();
+   * oversampling range) is carried out against the correct sensor. The same
+   * sensing-rail window runs the part probe for the boot report
+   * (hal_PowerProfile.c). */
+  PartsProbe_atBoot();
   /* Calibration needs to be loaded after the chips have been detected in
    * order to know which default calib to set for attached chips.
    * It also needs to be loaded after the BT is initialised so that the
@@ -259,6 +262,10 @@ void Init()
 
   //Enable dock comms now that sensor is ready to communicate
   DockUart_enable();
+
+  /* DEV-1335: production test. If the dock armed a power-profile run, it runs
+   * here, on its own boot stage, before booting ends (hal_PowerProfile.c). */
+  PowerProfile_runIfArmed();
 
   shimmerStatus.booting = 0;
   LogAndStream_setBootStage(BOOT_STAGE_END);
@@ -664,6 +671,10 @@ bool btFactoryResetViaFw(void)
   return success;
 }
 
+/* Baud-rate fallbacks the last Bluetooth initialisation needed, for the boot
+ * report (platform_getBtBaudAttempts) */
+static uint8_t gBtBaudAttempts = 0U;
+
 void btCommWithDiffBaudRates(void)
 {
   uint8_t failCount = 0U;
@@ -758,6 +769,7 @@ void btCommWithDiffBaudRates(void)
       }
     }
   }
+  gBtBaudAttempts = failCount;
 }
 
 void BtStartDone(void)
@@ -980,6 +992,24 @@ bool platform_isDockUartInitialised(void)
 bool platform_isUsbUartInitialised(void)
 {
   return USBX_IsInitialised();
+}
+
+//Overrides weak function in LogAndStream driver (boot report)
+uint8_t platform_getBtBaudAttempts(void)
+{
+  return gBtBaudAttempts;
+}
+
+//Overrides weak function in LogAndStream driver (boot report)
+uint8_t platform_getLseDrive(void)
+{
+  return gRtcOnLsiFallback ? 0xFFU : (uint8_t) gLseDrvBits;
+}
+
+//Overrides weak function in LogAndStream driver (boot report)
+uint8_t platform_isRtcOnLsiFallback(void)
+{
+  return gRtcOnLsiFallback;
 }
 
 //Overrides weak function in LogAndStream driver
