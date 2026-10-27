@@ -443,8 +443,9 @@ uint8_t btNameTypeBeingRead;
 volatile bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
 static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
-  SPP_MTU_READ, SPP_MTU_WRITE, SPP_MTU_STORE, SPP_MTU_VERIFY, SPP_MTU_DONE,
-  CFG_04E_READ, CFG_04E_WRITE, CFG_04E_STORE, CFG_04E_VERIFY, CFG_04E_DONE,
+  SPP_MTU_READ, SPP_MTU_WRITE, SPP_MTU_STORE, SPP_MTU_VERIFY, SPP_MTU_DONE, CFG_04E_READ,
+  CFG_04E_WRITE, CFG_04E_STORE, CFG_04E_VERIFY, CFG_04E_DONE, CFG_MTU_1616_READ,
+  CFG_MTU_1616_WRITE, CFG_MTU_1616_STORE, CFG_MTU_1616_VERIFY, CFG_MTU_1616_DONE,
   ENTER_BINARY_MODE, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3, UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5,
   PING, GET_BT_PARAMETERS, STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1,
@@ -627,8 +628,13 @@ void btDeinit(void)
   deinitBtPins();
 }
 
-/* Config repairs after a module OTA: the SPP MTU (DEV-1173) and field 0x04E
- * (DEV-1350, further down). The SPP MTU first:
+/* Config repairs after a module OTA. An EZ-Serial OTA keeps the module's
+ * stored config block in both directions, so a module that changes version
+ * runs with the other version's values wherever v1.4.18.18 changed a default.
+ * Three repairs, each run only on the builds it names: the SPP MTU and field
+ * 0x04E after an upgrade to v1.4.18.18 (DEV-1173, DEV-1350), and the SPP MTU
+ * again after a downgrade to v1.4.16.16 (DEV-1350; further down). The SPP MTU
+ * first:
  *
  * v1.4.18.18 added a check on a stored SPP MTU (UINT16, default 990) before
  * each classic SPP send. An OTA from v1.4.16.16 or earlier keeps the module's
@@ -647,23 +653,33 @@ void btDeinit(void)
  * later sets in RAM. A valid MTU is left alone, so the flash write happens
  * once per module. Revisit when Infineon releases firmware that migrates the
  * fields itself. */
-static const char *const btCfgRepairBuilds[] = {
+static const char *const btCfgBuilds1818[] = {
   "V1.4.18.18 Nov 16 2025 11:37:32",          /* public release */
   "V1.4.18.18 test_254 Oct  8 2026 09:43:03", /* Infineon test images */
   "V1.4.18.18 test_255 Sep 29 2026 08:04:20",
 };
+/* v1.4.16.16 keeps the same config block at a different RAM base, 0x0021361E
+ * (found on the IF820 DVK by searching RAM for the dumped block; not yet
+ * confirmed by Infineon). */
+static const char *const btCfgBuilds1616[] = {
+  "V1.4.16.16 Mar 28 2024 07:01:13", /* production */
+};
 static const char btCfgStoreCmd[] = "/SCFG\r\n";
-/* Set at the first repair's READ step, while the boot banner is still in the
- * boot-message buffer; later repairs find a /RUD reply there instead. */
-static bool btCfgKnownBuild;
+/* Bit n set when repair n's builds include the running one. Set at the first
+ * repair's READ step, while the boot banner is still in the boot-message
+ * buffer; later repairs find a /RUD reply there instead. */
+static uint8_t btCfgKnownMask;
 static bool btCfgVerifyPending, btCfgStored;
 
-/* One repair: a 4-byte RAM read, the test for the stale value, and the write
- * that repairs it. Its five steps (READ, WRITE, STORE, VERIFY, DONE) are
- * consecutive values of enum BT_SET_COMMAND_STAGES, from stepRead. */
+/* One repair: the builds it applies to, a 4-byte RAM read, the test for the
+ * stale value, and the write that repairs it. Its five steps (READ, WRITE,
+ * STORE, VERIFY, DONE) are consecutive values of enum BT_SET_COMMAND_STAGES,
+ * from stepRead. */
 typedef struct
 {
   const char *label;
+  const char *const *builds;
+  uint8_t buildCount;
   uint8_t stepRead;
   const char *readCmd;
   uint16_t readLen;
@@ -709,11 +725,34 @@ static void cfg04eDescribe(const uint8_t b[4], char *out, size_t outLen)
   snprintf(out, outLen, "%02X%02X%02X%02X", b[0], b[1], b[2], b[3]);
 }
 
+/* SPP MTU after a downgrade to v1.4.16.16 (DEV-1350): its config block is at
+ * 0x0021361E, so dump offset 0x2FE is at 0x0021391C. v1.4.16.16 also reads the
+ * MTU, and a non-zero one - the v1.4.18.18 value an OTA keeps - costs it about
+ * a third of its classic rate: IF820 DVK, module to PC at 2 Mbaud, 79-86 KB/s
+ * with the MTU at 1011 against 127-140 KB/s with it at 0 (3 runs each); field
+ * 0x04E made no difference there. The write restores v1.4.16.16's own
+ * defaults for 0x2FE-0x301 (07 00 00 00). Production v1.4.16.16 modules have
+ * MTU 0, so this does nothing on them. */
+static const char sppMtu1616ReadCmd[] = "/RUD,M=8,O=0021391C,L=04\r\n";
+static const char sppMtu1616WriteCmd[] = "/WUD,M=8,O=0021391C,D=00000007\r\n";
+
+static bool sppMtu1616IsStale(const uint8_t b[4])
+{
+  return !sppMtuIsStale(b);
+}
+
+#define BT_CFG_BUILDS(list) (list), (uint8_t) (sizeof(list) / sizeof((list)[0]))
+
 static const BtCfgRepair_t btCfgRepairs[] = {
-  { "SPP MTU", SPP_MTU_READ, sppMtuReadCmd, sizeof(sppMtuReadCmd) - 1U,
-      sppMtuWriteCmd, sizeof(sppMtuWriteCmd) - 1U, sppMtuIsStale, sppMtuDescribe },
-  { "Config 0x04E", CFG_04E_READ, cfg04eReadCmd, sizeof(cfg04eReadCmd) - 1U,
-      cfg04eWriteCmd, sizeof(cfg04eWriteCmd) - 1U, cfg04eIsStale, cfg04eDescribe },
+  { "SPP MTU", BT_CFG_BUILDS(btCfgBuilds1818), SPP_MTU_READ, sppMtuReadCmd,
+      sizeof(sppMtuReadCmd) - 1U, sppMtuWriteCmd, sizeof(sppMtuWriteCmd) - 1U,
+      sppMtuIsStale, sppMtuDescribe },
+  { "Config 0x04E", BT_CFG_BUILDS(btCfgBuilds1818), CFG_04E_READ, cfg04eReadCmd,
+      sizeof(cfg04eReadCmd) - 1U, cfg04eWriteCmd, sizeof(cfg04eWriteCmd) - 1U,
+      cfg04eIsStale, cfg04eDescribe },
+  { "SPP MTU (v1.4.16.16)", BT_CFG_BUILDS(btCfgBuilds1616), CFG_MTU_1616_READ,
+      sppMtu1616ReadCmd, sizeof(sppMtu1616ReadCmd) - 1U, sppMtu1616WriteCmd,
+      sizeof(sppMtu1616WriteCmd) - 1U, sppMtu1616IsStale, sppMtuDescribe },
 };
 
 static bool btCfgSend(const BtCfgRepair_t *r, const char *cmd, uint16_t len)
@@ -786,18 +825,23 @@ static bool btCfgRepairStep(const BtCfgRepair_t *r)
   switch (btInitCmdsStep - r->stepRead)
   {
   case 0: /* READ */
-    if (r->stepRead == btCfgRepairs[0].stepRead)
+    if (r == &btCfgRepairs[0])
     {
-      btCfgKnownBuild = false;
-      for (uint8_t i = 0;
-           i < sizeof(btCfgRepairBuilds) / sizeof(btCfgRepairBuilds[0]); i++)
+      btCfgKnownMask = 0;
+      for (uint8_t n = 0; n < sizeof(btCfgRepairs) / sizeof(btCfgRepairs[0]); n++)
       {
-        btCfgKnownBuild = btCfgKnownBuild || (strstr(reply, btCfgRepairBuilds[i]) != NULL);
+        for (uint8_t i = 0; i < btCfgRepairs[n].buildCount; i++)
+        {
+          if (strstr(reply, btCfgRepairs[n].builds[i]) != NULL)
+          {
+            btCfgKnownMask |= (uint8_t) (1U << n);
+          }
+        }
       }
     }
     btCfgVerifyPending = false;
     btCfgStored = false;
-    if (!btCfgKnownBuild)
+    if ((btCfgKnownMask & (1U << (r - btCfgRepairs))) == 0U)
     {
       btCfgSkipRest(r);
       break;
