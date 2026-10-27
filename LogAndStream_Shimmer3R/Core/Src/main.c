@@ -805,17 +805,21 @@ bool isBtConnected(void)
  * connects and its commands reach this firmware, but every reply we send
  * (bench, SWD: CYSPP state set, pin low, CTS asserted, the TX ring fully
  * handed to DMA) is dropped by the module, until the module restarts. Classic
- * keeps working. A module restart through BtStop()/InitialiseBtAfterBoot()
- * clears it (bench, 27 Oct 2026, 7A62 on test_254).
+ * keeps working. A module restart clears it (bench, 27 Oct 2026): on 15BC
+ * moved to test_254, BtStop(), the off-time below and InitialiseBtAfterBoot()
+ * recovered 4 of 4; on 7A62, Bluetooth switched off over the dock and back on
+ * by a redock some minutes later also cleared it.
  *
  * So after a Classic session on such a module, restart the module once the
  * link has been down for a moment. The Classic session is learnt from the
  * module's own Classic connected event (BT_isTestBuildRearmPending()), which
  * nothing at a module start can produce, so a restart can never arm the next
- * one. An earlier version inferred Classic from a link up without a BLE
- * session; around a module power-cycle that restarted the module over and
- * over (bench, 27 Oct 2026). If the event is ever consumed as payload, the
- * restart simply does not happen - no worse than without this. Not while
+ * one. A first version inferred Classic from a link up without a BLE session;
+ * a pin glitch at a module power-cycle could look like that and re-arm a
+ * restart. That was the suspicion, not an observation: it failed on 7A62 the
+ * same way this version did there without the off-time. If the event is ever
+ * consumed as payload, the restart simply does not happen - no worse than
+ * without this. Not while
  * sensing (deferred until sensing stops) or in SD sync, and not while the
  * module is starting or being factory-reset. Polled from the main loop, so the
  * restart can wait for the loop's next wake-up. */
