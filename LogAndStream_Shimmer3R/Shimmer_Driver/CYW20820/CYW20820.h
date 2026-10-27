@@ -100,6 +100,21 @@ enum BT_SET_COMMAND_STAGES
   SPP_MTU_STORE,
   SPP_MTU_VERIFY,
   SPP_MTU_DONE,
+  /* Repair of config field 0x04E that an OTA to v1.4.18.18 leaves at
+   * 00000000 (DEV-1350). Same five-step shape as the MTU repair, and the
+   * five values must stay consecutive. */
+  CFG_04E_READ,
+  CFG_04E_WRITE,
+  CFG_04E_STORE,
+  CFG_04E_VERIFY,
+  CFG_04E_DONE,
+  /* Repair of the SPP MTU that an OTA from v1.4.18.18 back to v1.4.16.16 leaves
+   * non-zero (DEV-1350). Same shape; keep the five values consecutive. */
+  CFG_MTU_1616_READ,
+  CFG_MTU_1616_WRITE,
+  CFG_MTU_1616_STORE,
+  CFG_MTU_1616_VERIFY,
+  CFG_MTU_1616_DONE,
   ENTER_BINARY_MODE,
   UPDATE_UART_SETTINGS_STAGE1,
   UPDATE_UART_SETTINGS_STAGE2,
