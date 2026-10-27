@@ -444,6 +444,7 @@ volatile bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
 static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
   SPP_MTU_READ, SPP_MTU_WRITE, SPP_MTU_STORE, SPP_MTU_VERIFY, SPP_MTU_DONE,
+  CFG_04E_READ, CFG_04E_WRITE, CFG_04E_STORE, CFG_04E_VERIFY, CFG_04E_DONE,
   ENTER_BINARY_MODE, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3, UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5,
   PING, GET_BT_PARAMETERS, STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1,
@@ -626,7 +627,8 @@ void btDeinit(void)
   deinitBtPins();
 }
 
-/* SPP MTU repair (DEV-1173).
+/* Config repairs after a module OTA: the SPP MTU (DEV-1173) and field 0x04E
+ * (DEV-1350, further down). The SPP MTU first:
  *
  * v1.4.18.18 added a check on a stored SPP MTU (UINT16, default 990) before
  * each classic SPP send. An OTA from v1.4.16.16 or earlier keeps the module's
@@ -644,20 +646,77 @@ void btDeinit(void)
  * module's own boot config plus the repaired field - nothing this firmware
  * later sets in RAM. A valid MTU is left alone, so the flash write happens
  * once per module. Revisit when Infineon releases firmware that migrates the
- * field itself. */
-static const char *const sppMtuRepairBuilds[] = {
+ * fields itself. */
+static const char *const btCfgRepairBuilds[] = {
   "V1.4.18.18 Nov 16 2025 11:37:32",          /* public release */
   "V1.4.18.18 test_254 Oct  8 2026 09:43:03", /* Infineon test images */
   "V1.4.18.18 test_255 Sep 29 2026 08:04:20",
 };
-static const char sppMtuReadCmd[] = "/RUD,M=8,O=00213C18,L=04\r\n";
-/* Bytes 27 DE 03 00: 0x27 is the field before the MTU (also a v1.4.18.18
- * default), then MTU 0x03DE. The value Infineon gave. */
-static const char sppMtuWriteCmd[] = "/WUD,M=8,O=00213C18,D=0003DE27\r\n";
-static const char sppMtuStoreCmd[] = "/SCFG\r\n";
-static bool sppMtuVerifyPending, sppMtuStored;
+static const char btCfgStoreCmd[] = "/SCFG\r\n";
+/* Set at the first repair's READ step, while the boot banner is still in the
+ * boot-message buffer; later repairs find a /RUD reply there instead. */
+static bool btCfgKnownBuild;
+static bool btCfgVerifyPending, btCfgStored;
 
-static bool sppMtuSend(const char *cmd, uint16_t len)
+/* One repair: a 4-byte RAM read, the test for the stale value, and the write
+ * that repairs it. Its five steps (READ, WRITE, STORE, VERIFY, DONE) are
+ * consecutive values of enum BT_SET_COMMAND_STAGES, from stepRead. */
+typedef struct
+{
+  const char *label;
+  uint8_t stepRead;
+  const char *readCmd;
+  uint16_t readLen;
+  const char *writeCmd;
+  uint16_t writeLen;
+  bool (*isStale)(const uint8_t b[4]);
+  void (*describe)(const uint8_t b[4], char *out, size_t outLen);
+} BtCfgRepair_t;
+
+/* SPP MTU: bytes 27 DE 03 00 are 0x27, the field before the MTU (also a
+ * v1.4.18.18 default), then MTU 0x03DE. The value Infineon gave. */
+static const char sppMtuReadCmd[] = "/RUD,M=8,O=00213C18,L=04\r\n";
+static const char sppMtuWriteCmd[] = "/WUD,M=8,O=00213C18,D=0003DE27\r\n";
+
+static bool sppMtuIsStale(const uint8_t b[4])
+{
+  return (b[1] | (b[2] << 8)) == 0;
+}
+
+static void sppMtuDescribe(const uint8_t b[4], char *out, size_t outLen)
+{
+  snprintf(out, outLen, "%u", (unsigned) (b[1] | (b[2] << 8)));
+}
+
+/* Field 0x04E (DEV-1350): base 0x0021391A + 0x4E. v1.4.18.18's default is
+ * 80808080; older images, and so any module upgraded from one by OTA, have
+ * 00000000. With the stale value, test_254 stops passing UART data to a BLE
+ * CYSPP link after any classic SPP session, until the module restarts:
+ * reproduced on the IF820 DVK with no host MCU (00000000 failed 2 of 2 runs,
+ * 80808080 passed 4 of 4). What the field controls is not known yet - asked
+ * of Infineon - so only the known stale value is repaired, to the v1.4.18.18
+ * default, and any other value is left alone. PROTOTYPE. */
+static const char cfg04eReadCmd[] = "/RUD,M=8,O=00213968,L=04\r\n";
+static const char cfg04eWriteCmd[] = "/WUD,M=8,O=00213968,D=80808080\r\n";
+
+static bool cfg04eIsStale(const uint8_t b[4])
+{
+  return (b[0] | b[1] | b[2] | b[3]) == 0;
+}
+
+static void cfg04eDescribe(const uint8_t b[4], char *out, size_t outLen)
+{
+  snprintf(out, outLen, "%02X%02X%02X%02X", b[0], b[1], b[2], b[3]);
+}
+
+static const BtCfgRepair_t btCfgRepairs[] = {
+  { "SPP MTU", SPP_MTU_READ, sppMtuReadCmd, sizeof(sppMtuReadCmd) - 1U,
+      sppMtuWriteCmd, sizeof(sppMtuWriteCmd) - 1U, sppMtuIsStale, sppMtuDescribe },
+  { "Config 0x04E", CFG_04E_READ, cfg04eReadCmd, sizeof(cfg04eReadCmd) - 1U,
+      cfg04eWriteCmd, sizeof(cfg04eWriteCmd) - 1U, cfg04eIsStale, cfg04eDescribe },
+};
+
+static bool btCfgSend(const BtCfgRepair_t *r, const char *cmd, uint16_t len)
 {
   /* Arm the capture first: the reply can start before appOutput() returns */
   setWaitingForBtTextReply();
@@ -666,20 +725,20 @@ static bool sppMtuSend(const char *cmd, uint16_t len)
     return true;
   }
   setWaitingForBtBoot(0);
-  printf("SPP MTU: send refused\r\n");
+  printf("%s: send refused\r\n", r->label);
   return false;
 }
 
-/* Reads the MTU from a /RUD reply. The module's text replies start the line
- * with "@R,<length>," and keep the command's own slash, e.g. (bench, v1.4.18.18
- * test_254; the /RUD is from a module at its own default MTU, 0x03F3 = 1011 -
- * after the repair it reads D=27DE0300, MTU 990):
+/* Reads the four bytes of a /RUD reply. The module's text replies start the
+ * line with "@R,<length>," and keep the command's own slash, e.g. (bench,
+ * v1.4.18.18 test_254; the /RUD is from a module at its own default MTU,
+ * 0x03F3 = 1011 - after the repair it reads D=27DE0300, MTU 990):
  *   @R,0015,/RUD,0000,D=27F30300
  *   @R,000A,/WUD,0000
  *   @R,000B,/SCFG,0000
  * so matching "/RUD,0000,D=", "/WUD,0000" and "/SCFG,0000" finds the command
  * and its 0000 (success) result. */
-static bool sppMtuParse(const char *reply, uint16_t *mtu)
+static bool btCfgParse(const char *reply, uint8_t b[4])
 {
   const char *d = strstr(reply, "/RUD,0000,D=");
   if (d == NULL)
@@ -693,7 +752,6 @@ static bool sppMtuParse(const char *reply, uint16_t *mtu)
   {
     return false;
   }
-  uint8_t b[4];
   for (uint8_t i = 0; i < 4; i++)
   {
     char hex[3] = { d[2 * i], d[2 * i + 1], 0 };
@@ -704,135 +762,138 @@ static bool sppMtuParse(const char *reply, uint16_t *mtu)
       return false;
     }
   }
-  *mtu = (uint16_t) (b[1] | (b[2] << 8));
   return true;
 }
 
-static void sppMtuSkipRest(void)
+static void btCfgSkipRest(const BtCfgRepair_t *r)
 {
-  while (btInitCmdsStep != SPP_MTU_DONE)
+  while (btInitCmdsStep != r->stepRead + 4U)
   {
     incrementBtInitCmdsStep();
   }
 }
 
-/* One SPP MTU repair step. Each step first checks the reply to the previous
+/* One step of one repair. Each step first checks the reply to the previous
  * command (left in the boot-message buffer), then sends the next one. Returns
- * true while waiting on a reply, false once the sequence is over and the boot
+ * true while waiting on a reply, false once that repair is over and the boot
  * should carry on. */
-static bool btSppMtuRepairStep(void)
+static bool btCfgRepairStep(const BtCfgRepair_t *r)
 {
   const char *reply = getBtBootMsgPtr();
-  uint16_t mtu;
+  uint8_t b[4];
+  char value[12];
 
-  switch (btInitCmdsStep)
+  switch (btInitCmdsStep - r->stepRead)
   {
-  case SPP_MTU_READ:
-  {
-    bool known = false;
-    for (uint8_t i = 0;
-         i < sizeof(sppMtuRepairBuilds) / sizeof(sppMtuRepairBuilds[0]); i++)
+  case 0: /* READ */
+    if (r->stepRead == btCfgRepairs[0].stepRead)
     {
-      known = known || (strstr(reply, sppMtuRepairBuilds[i]) != NULL);
+      btCfgKnownBuild = false;
+      for (uint8_t i = 0;
+           i < sizeof(btCfgRepairBuilds) / sizeof(btCfgRepairBuilds[0]); i++)
+      {
+        btCfgKnownBuild = btCfgKnownBuild || (strstr(reply, btCfgRepairBuilds[i]) != NULL);
+      }
     }
-    sppMtuVerifyPending = false;
-    sppMtuStored = false;
-    if (!known)
+    btCfgVerifyPending = false;
+    btCfgStored = false;
+    if (!btCfgKnownBuild)
     {
-      sppMtuSkipRest();
+      btCfgSkipRest(r);
       break;
     }
     incrementBtInitCmdsStep();
-    if (sppMtuSend(sppMtuReadCmd, sizeof(sppMtuReadCmd) - 1U))
+    if (btCfgSend(r, r->readCmd, r->readLen))
     {
       return true;
     }
-    sppMtuSkipRest();
+    btCfgSkipRest(r);
     break;
-  }
 
-  case SPP_MTU_WRITE:
-    if (!sppMtuParse(reply, &mtu))
+  case 1: /* WRITE */
+    if (!btCfgParse(reply, b))
     {
-      printf("SPP MTU: unreadable (%s)\r\n", reply);
-      sppMtuSkipRest();
+      printf("%s: unreadable (%s)\r\n", r->label, reply);
+      btCfgSkipRest(r);
       break;
     }
-    if (mtu != 0U)
+    r->describe(b, value, sizeof(value));
+    if (!r->isStale(b))
     {
-      printf("SPP MTU: %u, ok\r\n", mtu);
-      sppMtuSkipRest();
+      printf("%s: %s, ok\r\n", r->label, value);
+      btCfgSkipRest(r);
       break;
     }
-    printf("SPP MTU: 0 (stale config after OTA), repairing\r\n");
+    printf("%s: %s (stale config after OTA), repairing\r\n", r->label, value);
     incrementBtInitCmdsStep();
-    if (sppMtuSend(sppMtuWriteCmd, sizeof(sppMtuWriteCmd) - 1U))
+    if (btCfgSend(r, r->writeCmd, r->writeLen))
     {
       return true;
     }
-    sppMtuSkipRest();
+    btCfgSkipRest(r);
     break;
 
-  case SPP_MTU_STORE:
+  case 2: /* STORE */
     if (strstr(reply, "/WUD,0000") == NULL)
     {
-      printf("SPP MTU: write failed (%s)\r\n", reply);
-      sppMtuSkipRest();
+      printf("%s: write failed (%s)\r\n", r->label, reply);
+      btCfgSkipRest(r);
       break;
     }
     incrementBtInitCmdsStep();
-    if (sppMtuSend(sppMtuStoreCmd, sizeof(sppMtuStoreCmd) - 1U))
+    if (btCfgSend(r, btCfgStoreCmd, sizeof(btCfgStoreCmd) - 1U))
     {
       return true;
     }
-    sppMtuSkipRest();
+    btCfgSkipRest(r);
     break;
 
-  case SPP_MTU_VERIFY:
+  case 3: /* VERIFY */
     /* Verify the RAM value either way, but remember whether it reached
      * flash: a failed /SCFG leaves this boot fixed and the next one stale. */
-    sppMtuStored = (strstr(reply, "/SCFG,0000") != NULL);
-    if (!sppMtuStored)
+    btCfgStored = (strstr(reply, "/SCFG,0000") != NULL);
+    if (!btCfgStored)
     {
-      printf("SPP MTU: store failed (%s)\r\n", reply);
+      printf("%s: store failed (%s)\r\n", r->label, reply);
     }
     incrementBtInitCmdsStep();
-    if (sppMtuSend(sppMtuReadCmd, sizeof(sppMtuReadCmd) - 1U))
+    if (btCfgSend(r, r->readCmd, r->readLen))
     {
-      sppMtuVerifyPending = true;
+      btCfgVerifyPending = true;
       return true;
     }
-    sppMtuSkipRest();
+    btCfgSkipRest(r);
     break;
 
   default:
     break;
   }
 
-  /* SPP_MTU_DONE */
-  if (sppMtuVerifyPending)
+  /* DONE */
+  if (btCfgVerifyPending)
   {
-    sppMtuVerifyPending = false;
-    if (sppMtuParse(reply, &mtu))
+    btCfgVerifyPending = false;
+    if (btCfgParse(reply, b))
     {
-      if (mtu == 0U)
+      r->describe(b, value, sizeof(value));
+      if (r->isStale(b))
       {
-        printf("SPP MTU: repair did not take, still 0\r\n");
+        printf("%s: repair did not take, still %s\r\n", r->label, value);
       }
-      else if (sppMtuStored)
+      else if (btCfgStored)
       {
-        printf("SPP MTU: repaired, now %u\r\n", mtu);
+        printf("%s: repaired, now %s\r\n", r->label, value);
       }
       else
       {
-        printf("SPP MTU: %u in RAM only - not stored, will repair again "
-               "next boot\r\n",
-            mtu);
+        printf(
+            "%s: %s in RAM only - not stored, will repair again next boot\r\n",
+            r->label, value);
       }
     }
     else
     {
-      printf("SPP MTU: verify unreadable (%s)\r\n", reply);
+      printf("%s: verify unreadable (%s)\r\n", r->label, reply);
     }
   }
   incrementBtInitCmdsStep();
@@ -864,11 +925,15 @@ void btInitCommands(void)
         (unsigned long) rsp_system_query_firmware_version.app);
   }
 
-  if (btInitCmdsStep >= SPP_MTU_READ && btInitCmdsStep <= SPP_MTU_DONE)
+  for (uint8_t i = 0; i < sizeof(btCfgRepairs) / sizeof(btCfgRepairs[0]); i++)
   {
-    if (btSppMtuRepairStep())
+    const BtCfgRepair_t *r = &btCfgRepairs[i];
+    if (btInitCmdsStep >= r->stepRead && btInitCmdsStep <= r->stepRead + 4U)
     {
-      return;
+      if (btCfgRepairStep(r))
+      {
+        return;
+      }
     }
   }
 
