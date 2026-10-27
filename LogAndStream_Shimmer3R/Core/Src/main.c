@@ -848,11 +848,15 @@ static void BT_serviceTestBuildRearm(void)
     printf("BT: test-build module after a Classic session - restarting it "
            "(DEV-1350)\r\n");
     BtStop(1);
-    /* Keep the module off for a moment before it starts again. Back to back
-     * worked on v1.4.16.16 but left test_254 unreachable (bench, 27 Oct 2026);
-     * the restart that did clear test_254 had the module off for minutes.
-     * Blocking is acceptable here: nothing is connected and nothing is being
-     * sensed. PROTOTYPE - a non-blocking delay is for the real change. */
+    /* Keep the module off for a moment before it starts again. Bench, 27 Oct
+     * 2026: with this off-time 15BC on test_254 recovered 3/3; a back-to-back
+     * restart (no off-time) left 7A62 on test_254 unreachable for 90 s or more,
+     * 3/3. Those are different units and nothing else was crossed over, so
+     * whether the off-time is what matters is NOT established - it may be the
+     * unit (7A62 came to test_254 by OTA from another test image). Kept as the
+     * cautious choice until both variants have run on one unit. Blocking is
+     * acceptable here: nothing is connected and nothing is being sensed.
+     * PROTOTYPE - a non-blocking delay is for the real change. */
     HAL_Delay(BT_TB_OFF_MS);
     InitialiseBtAfterBoot();
   }
