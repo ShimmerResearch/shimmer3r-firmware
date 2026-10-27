@@ -111,6 +111,7 @@ void HAL_Delay(uint32_t Delay);
 
 void BtStart(void);
 void BtStop(uint8_t isCalledFromMain);
+static void BT_serviceTestBuildRearm(void);
 float samplingClockFreqGet(void);
 uint8_t getDefaultBaudForBtVersion(void);
 void JumpToBootloaderIfRequired(void);
@@ -510,6 +511,9 @@ int main(void)
      * context (the BT UART interrupt only records it). */
     BT_serviceModuleRestart();
 
+    /* DEV-1350: restart a test-build module after a Classic session. */
+    BT_serviceTestBuildRearm();
+
     ShimTask_manage();
   }
   /* USER CODE END 3 */
@@ -793,6 +797,65 @@ void setBtConnectionState(bool state)
 bool isBtConnected(void)
 {
   return shimmerStatus.btConnected;
+}
+
+/* DEV-1350: Infineon's v1.4.18.18 test builds (test_254 and an earlier
+ * unnamed one; not v1.4.16.16, not the v1.4.18.18 release) stop forwarding
+ * UART data to BLE after any Classic SPP connection. A later BLE link still
+ * connects and its commands reach this firmware, but every reply we send
+ * (bench, SWD: CYSPP state set, pin low, CTS asserted, the TX ring fully
+ * handed to DMA) is dropped by the module, until the module restarts. Classic
+ * keeps working. A module restart through BtStop()/InitialiseBtAfterBoot()
+ * clears it (bench, 27 Oct 2026, 7A62 on test_254).
+ *
+ * So after a Classic session on such a module, restart the module once the
+ * link has been down for a moment. The Classic session is learnt from the
+ * module's own Classic connected event (BT_isTestBuildRearmPending()), which
+ * nothing at a module start can produce, so a restart can never arm the next
+ * one. An earlier version inferred Classic from a link up without a BLE
+ * session; around a module power-cycle that restarted the module over and
+ * over (bench, 27 Oct 2026). If the event is ever consumed as payload, the
+ * restart simply does not happen - no worse than without this. Not while
+ * sensing (deferred until sensing stops) or in SD sync, and not while the
+ * module is starting or being factory-reset. Polled from the main loop, so the
+ * restart can wait for the loop's next wake-up. */
+#define BT_TB_REARM_IDLE_MS 1000U
+#define BT_TB_OFF_MS        2000U
+
+static void BT_serviceTestBuildRearm(void)
+{
+  static bool linkUp = false;
+  static uint32_t linkSince = 0;
+
+  uint32_t now = HAL_GetTick();
+  bool connected = isBtConnected();
+  if (connected != linkUp)
+  {
+    linkUp = connected;
+    linkSince = now;
+  }
+
+  if (!BT_isTestBuildRearmPending() || connected || (now - linkSince) < BT_TB_REARM_IDLE_MS
+      || !shimmerStatus.btPowerOn || !shimmerStatus.btIsInitialised
+      || isBtInitCmdsRunning() || isBtFactoryResetCmdsRunning()
+      || shimmerStatus.btInSyncMode || shimmerStatus.sensing)
+  {
+    return;
+  }
+
+  if (BT_claimTestBuildRearm())
+  {
+    printf("BT: test-build module after a Classic session - restarting it "
+           "(DEV-1350)\r\n");
+    BtStop(1);
+    /* Keep the module off for a moment before it starts again. Back to back
+     * worked on v1.4.16.16 but left test_254 unreachable (bench, 27 Oct 2026);
+     * the restart that did clear test_254 had the module off for minutes.
+     * Blocking is acceptable here: nothing is connected and nothing is being
+     * sensed. PROTOTYPE - a non-blocking delay is for the real change. */
+    HAL_Delay(BT_TB_OFF_MS);
+    InitialiseBtAfterBoot();
+  }
 }
 
 #endif

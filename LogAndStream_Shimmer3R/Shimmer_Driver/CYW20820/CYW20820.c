@@ -251,6 +251,35 @@ uint8_t BT_isBleSessionActive(void)
   return btBleSessionActive;
 }
 
+/* Set from the boot banner at each module start (WAIT_FOR_BOOT_STAGE2). */
+static volatile uint8_t btModuleIsTestBuild = 0;
+/* Set by the module's Classic (BR/EDR) connected event; cleared at each module
+ * start and when the DEV-1350 restart is claimed. Only that event sets it, so
+ * nothing a module start does (pin glitches included) can. */
+static volatile uint8_t btClassicSessionSeen = 0;
+
+uint8_t BT_isTestBuildModule(void)
+{
+  return btModuleIsTestBuild;
+}
+
+uint8_t BT_isTestBuildRearmPending(void)
+{
+  return btModuleIsTestBuild && btClassicSessionSeen;
+}
+
+/* DEV-1350: true once per Classic session on a test-build module; claiming it
+ * clears it. */
+uint8_t BT_claimTestBuildRearm(void)
+{
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  uint8_t claim = btModuleIsTestBuild && btClassicSessionSeen;
+  btClassicSessionSeen = 0;
+  __set_PRIMASK(primask);
+  return claim;
+}
+
 /* The module restarted while this MCU was running and had finished setting it
  * up (DEV-1164). The usual cause is a host updating the module over BLE OTA:
  * after a good VERIFY the module resets onto the new image by itself. Nothing
@@ -858,6 +887,8 @@ void btInitCommands(void)
     printf("Boot Msgs=\r\n%s", getBtBootMsgPtr());
 
     BT_parseFwVersionFromBootBanner(getBtBootMsgPtr());
+    btModuleIsTestBuild = (strstr(getBtBootMsgPtr(), " test_") != NULL) ? 1U : 0U;
+    btClassicSessionSeen = 0;
     BT_selectDataPath();
     printf("BT data path: %s (module app version %08lX)\r\n",
         btTransparentMode ? "transparent bridge" : "SPP_SEND framing",
@@ -2136,6 +2167,8 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     printHex8(packet->payload.evt_bt_connected.type);
     printf("\r\n");
 #endif
+
+    btClassicSessionSeen = 1; /* DEV-1350 */
 
     if (btTransparentMode)
     {

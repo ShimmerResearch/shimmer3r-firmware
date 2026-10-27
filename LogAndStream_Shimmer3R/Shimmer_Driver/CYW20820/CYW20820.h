@@ -199,6 +199,13 @@ uint8_t BT_isTransparentMode(void);
  * every module version, so transmits must WAIT for the pipe rather than fall
  * back to SPP_SEND framing when it is momentarily paused. */
 uint8_t BT_isBleSessionActive(void);
+/* 1 when the module's boot banner names an Infineon test build ("test_"),
+ * e.g. "V1.4.18.18 test_254". Set at each module start. */
+uint8_t BT_isTestBuildModule(void);
+/* DEV-1350: a test-build module has had a Classic session since it started.
+ * Claiming it clears it. */
+uint8_t BT_isTestBuildRearmPending(void);
+uint8_t BT_claimTestBuildRearm(void);
 uint8_t *BT_getCyw20820MacAddressPtr(void);
 void BT_generateCyw20820FirmwareVersionStr(char *str);
 uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch);
