@@ -21,6 +21,7 @@
 #include "i2c.h"
 
 /* USER CODE BEGIN 0 */
+#include "gather_diag.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
 
@@ -114,6 +115,10 @@ void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   HAL_I2C_RegisterCallback(&hi2c1, HAL_I2C_MEM_RX_COMPLETE_CB_ID, I2C1_MemRxCpltCallback);
+#if GATHER_DIAG
+  /* Records only: an error still leaves the gather without its I2C stage. */
+  HAL_I2C_RegisterCallback(&hi2c1, HAL_I2C_ERROR_CB_ID, GatherDiag_i2cError);
+#endif
 
   hi2cMainBus = &hi2c1;
 
@@ -900,6 +905,9 @@ uint8_t I2cSens_sensorNext(I2CTypeDef *i2cSensingInfo)
         i2cSensingInfo->status = I2C_STAT_IDLE;
       }
       __set_PRIMASK(primask);
+#if GATHER_DIAG
+      GatherDiag_onI2cStart((uint8_t) halRet);
+#endif
       retVal = 1;
     }
     else
@@ -971,6 +979,9 @@ void I2C1_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
    * the bus idle. Taking it as a step would complete the current gather before
    * its data is in, or step past the end of a list it is not in (which hung the
    * unit). Its data belongs to no packet now, so it is dropped. */
+#if GATHER_DIAG
+  GatherDiag_onI2cRx((uint8_t) i2c1Sens.status);
+#endif
   if (i2c1Sens.status == I2C_STAT_IDLE)
   {
     i2cStaleCompletions++;

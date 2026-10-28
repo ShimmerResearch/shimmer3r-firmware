@@ -19,6 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32u5xx_it.h"
+#include "gather_diag.h"
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -211,6 +212,7 @@ void PendSV_Handler(void)
  */
 void SysTick_Handler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN SysTick_IRQn 0 */
 
   /* USER CODE END SysTick_IRQn 0 */
@@ -218,6 +220,7 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 1 */
 
   /* USER CODE END SysTick_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /******************************************************************************/
@@ -232,6 +235,8 @@ void SysTick_Handler(void)
  */
 void RTC_IRQHandler(void)
 {
+  GDIAG_RTC_ENTRY();
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN RTC_IRQn 0 */
 
   /* USER CODE END RTC_IRQn 0 */
@@ -240,6 +245,7 @@ void RTC_IRQHandler(void)
   /* USER CODE BEGIN RTC_IRQn 1 */
 
   /* USER CODE END RTC_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -247,6 +253,7 @@ void RTC_IRQHandler(void)
  */
 void EXTI1_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN EXTI1_IRQn 0 */
 
   /* USER CODE END EXTI1_IRQn 0 */
@@ -254,6 +261,7 @@ void EXTI1_IRQHandler(void)
   /* USER CODE BEGIN EXTI1_IRQn 1 */
 
   /* USER CODE END EXTI1_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -261,6 +269,7 @@ void EXTI1_IRQHandler(void)
  */
 void EXTI6_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN EXTI6_IRQn 0 */
 
   /* USER CODE END EXTI6_IRQn 0 */
@@ -268,6 +277,7 @@ void EXTI6_IRQHandler(void)
   /* USER CODE BEGIN EXTI6_IRQn 1 */
 
   /* USER CODE END EXTI6_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -275,6 +285,7 @@ void EXTI6_IRQHandler(void)
  */
 void GPDMA1_Channel0_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel0_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel0_IRQn 0 */
@@ -282,6 +293,7 @@ void GPDMA1_Channel0_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel0_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel0_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -289,6 +301,7 @@ void GPDMA1_Channel0_IRQHandler(void)
  */
 void GPDMA1_Channel1_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel1_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel1_IRQn 0 */
@@ -296,6 +309,7 @@ void GPDMA1_Channel1_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel1_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel1_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -303,6 +317,7 @@ void GPDMA1_Channel1_IRQHandler(void)
  */
 void GPDMA1_Channel2_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel2_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel2_IRQn 0 */
@@ -310,6 +325,7 @@ void GPDMA1_Channel2_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel2_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel2_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -317,6 +333,7 @@ void GPDMA1_Channel2_IRQHandler(void)
  */
 void GPDMA1_Channel4_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel4_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel4_IRQn 0 */
@@ -324,6 +341,7 @@ void GPDMA1_Channel4_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel4_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel4_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -331,6 +349,7 @@ void GPDMA1_Channel4_IRQHandler(void)
  */
 void GPDMA1_Channel5_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel5_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel5_IRQn 0 */
@@ -338,6 +357,7 @@ void GPDMA1_Channel5_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel5_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel5_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -345,6 +365,7 @@ void GPDMA1_Channel5_IRQHandler(void)
  */
 void GPDMA1_Channel6_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel6_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel6_IRQn 0 */
@@ -352,6 +373,7 @@ void GPDMA1_Channel6_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel6_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel6_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -359,6 +381,7 @@ void GPDMA1_Channel6_IRQHandler(void)
  */
 void GPDMA1_Channel7_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel7_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel7_IRQn 0 */
@@ -366,6 +389,7 @@ void GPDMA1_Channel7_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel7_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel7_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -373,6 +397,7 @@ void GPDMA1_Channel7_IRQHandler(void)
  */
 void ADC1_2_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN ADC1_2_IRQn 0 */
   if (hadc1.Instance != NULL && hadc2.Instance != NULL)
   {
@@ -390,6 +415,7 @@ void ADC1_2_IRQHandler(void)
     HAL_ADC_IRQHandler(&hadc2);
   }
   /* USER CODE END ADC1_2_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -397,6 +423,7 @@ void ADC1_2_IRQHandler(void)
  */
 void TIM6_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN TIM6_IRQn 0 */
 
   /* USER CODE END TIM6_IRQn 0 */
@@ -404,6 +431,7 @@ void TIM6_IRQHandler(void)
   /* USER CODE BEGIN TIM6_IRQn 1 */
 
   /* USER CODE END TIM6_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -411,6 +439,7 @@ void TIM6_IRQHandler(void)
  */
 void I2C1_EV_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN I2C1_EV_IRQn 0 */
 
   /* USER CODE END I2C1_EV_IRQn 0 */
@@ -418,6 +447,7 @@ void I2C1_EV_IRQHandler(void)
   /* USER CODE BEGIN I2C1_EV_IRQn 1 */
 
   /* USER CODE END I2C1_EV_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -425,6 +455,7 @@ void I2C1_EV_IRQHandler(void)
  */
 void I2C1_ER_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN I2C1_ER_IRQn 0 */
 
   /* USER CODE END I2C1_ER_IRQn 0 */
@@ -432,6 +463,7 @@ void I2C1_ER_IRQHandler(void)
   /* USER CODE BEGIN I2C1_ER_IRQn 1 */
 
   /* USER CODE END I2C1_ER_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -439,6 +471,7 @@ void I2C1_ER_IRQHandler(void)
  */
 void SPI1_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN SPI1_IRQn 0 */
 
   /* USER CODE END SPI1_IRQn 0 */
@@ -446,6 +479,7 @@ void SPI1_IRQHandler(void)
   /* USER CODE BEGIN SPI1_IRQn 1 */
 
   /* USER CODE END SPI1_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -453,6 +487,7 @@ void SPI1_IRQHandler(void)
  */
 void SPI2_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN SPI2_IRQn 0 */
 
   /* USER CODE END SPI2_IRQn 0 */
@@ -460,6 +495,7 @@ void SPI2_IRQHandler(void)
   /* USER CODE BEGIN SPI2_IRQn 1 */
 
   /* USER CODE END SPI2_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -467,6 +503,7 @@ void SPI2_IRQHandler(void)
  */
 void USART1_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN USART1_IRQn 0 */
 
   /* USER CODE END USART1_IRQn 0 */
@@ -474,6 +511,7 @@ void USART1_IRQHandler(void)
   /* USER CODE BEGIN USART1_IRQn 1 */
 
   /* USER CODE END USART1_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -481,6 +519,7 @@ void USART1_IRQHandler(void)
  */
 void USART3_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN USART3_IRQn 0 */
 
   /* USER CODE END USART3_IRQn 0 */
@@ -488,6 +527,7 @@ void USART3_IRQHandler(void)
   /* USER CODE BEGIN USART3_IRQn 1 */
 
   /* USER CODE END USART3_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -495,6 +535,7 @@ void USART3_IRQHandler(void)
  */
 void OTG_HS_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN OTG_HS_IRQn 0 */
 
   /* USER CODE END OTG_HS_IRQn 0 */
@@ -502,6 +543,7 @@ void OTG_HS_IRQHandler(void)
   /* USER CODE BEGIN OTG_HS_IRQn 1 */
 
   /* USER CODE END OTG_HS_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -509,6 +551,7 @@ void OTG_HS_IRQHandler(void)
  */
 void SDMMC1_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN SDMMC1_IRQn 0 */
 
   /* USER CODE END SDMMC1_IRQn 0 */
@@ -516,6 +559,7 @@ void SDMMC1_IRQHandler(void)
   /* USER CODE BEGIN SDMMC1_IRQn 1 */
 
   /* USER CODE END SDMMC1_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -523,6 +567,7 @@ void SDMMC1_IRQHandler(void)
  */
 void GPDMA1_Channel8_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel8_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel8_IRQn 0 */
@@ -530,6 +575,7 @@ void GPDMA1_Channel8_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel8_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel8_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -537,6 +583,7 @@ void GPDMA1_Channel8_IRQHandler(void)
  */
 void GPDMA1_Channel9_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel9_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel9_IRQn 0 */
@@ -544,6 +591,7 @@ void GPDMA1_Channel9_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel9_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel9_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -551,6 +599,7 @@ void GPDMA1_Channel9_IRQHandler(void)
  */
 void GPDMA1_Channel10_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel10_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel10_IRQn 0 */
@@ -558,6 +607,7 @@ void GPDMA1_Channel10_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel10_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel10_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -565,6 +615,7 @@ void GPDMA1_Channel10_IRQHandler(void)
  */
 void GPDMA1_Channel11_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN GPDMA1_Channel11_IRQn 0 */
 
   /* USER CODE END GPDMA1_Channel11_IRQn 0 */
@@ -572,6 +623,7 @@ void GPDMA1_Channel11_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel11_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel11_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -579,6 +631,7 @@ void GPDMA1_Channel11_IRQHandler(void)
  */
 void SPI3_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN SPI3_IRQn 0 */
 
   /* USER CODE END SPI3_IRQn 0 */
@@ -586,6 +639,7 @@ void SPI3_IRQHandler(void)
   /* USER CODE BEGIN SPI3_IRQn 1 */
 
   /* USER CODE END SPI3_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -593,6 +647,7 @@ void SPI3_IRQHandler(void)
  */
 void ADF1_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   /* USER CODE BEGIN ADF1_IRQn 0 */
 
   /* USER CODE END ADF1_IRQn 0 */
@@ -600,6 +655,7 @@ void ADF1_IRQHandler(void)
   /* USER CODE BEGIN ADF1_IRQn 1 */
 
   /* USER CODE END ADF1_IRQn 1 */
+  GDIAG_ISR_OUT();
 }
 
 /* USER CODE BEGIN 1 */
@@ -612,6 +668,7 @@ void ADF1_IRQHandler(void)
  */
 void EXTI0_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
   {
@@ -619,6 +676,7 @@ void EXTI0_IRQHandler(void)
   }
 #endif
   //HAL_GPIO_EXTI_IRQHandler(SD_DETECT_N_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -626,7 +684,9 @@ void EXTI0_IRQHandler(void)
  */
 void EXTI2_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   HAL_GPIO_EXTI_IRQHandler(LIS3MDL_DRDY_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -634,12 +694,14 @@ void EXTI2_IRQHandler(void)
  */
 void EXTI3_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
   {
     HAL_GPIO_EXTI_IRQHandler(SR48_6_0_BOOT0_USER_BTN_Pin);
   }
 #endif
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -647,7 +709,9 @@ void EXTI3_IRQHandler(void)
  */
 void EXTI4_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL1_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -655,6 +719,7 @@ void EXTI4_IRQHandler(void)
  */
 void EXTI5_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
 #if SUPPORT_SR48_6_0
   if (ShimBrd_isBoardSr48_6_0())
   {
@@ -663,6 +728,7 @@ void EXTI5_IRQHandler(void)
 #endif
   //No plans to use GPIO_INTERNAL2_Pin as interrupt
   //HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL2_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -670,7 +736,9 @@ void EXTI5_IRQHandler(void)
  */
 void EXTI7_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   HAL_GPIO_EXTI_IRQHandler(LSM6DSV_INT1_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -678,7 +746,9 @@ void EXTI7_IRQHandler(void)
  */
 void EXTI8_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   HAL_GPIO_EXTI_IRQHandler(BT_HOST_WAKE_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -686,8 +756,10 @@ void EXTI8_IRQHandler(void)
  */
 void EXTI9_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   //HAL_GPIO_EXTI_IRQHandler(GPIO_EXTERNAL_Pin);
   HAL_GPIO_EXTI_IRQHandler(USB_VBUS_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -695,7 +767,9 @@ void EXTI9_IRQHandler(void)
  */
 void EXTI10_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   HAL_GPIO_EXTI_IRQHandler(LIS2MDL_DRDY_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -703,7 +777,9 @@ void EXTI10_IRQHandler(void)
  */
 void EXTI11_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   HAL_GPIO_EXTI_IRQHandler(BMP390_INT_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -711,7 +787,9 @@ void EXTI11_IRQHandler(void)
  */
 void EXTI12_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   HAL_GPIO_EXTI_IRQHandler(LIS2DW12_INT1_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -719,7 +797,9 @@ void EXTI12_IRQHandler(void)
  */
 void EXTI13_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   HAL_GPIO_EXTI_IRQHandler(GPIO_INTERNAL0_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -727,7 +807,9 @@ void EXTI13_IRQHandler(void)
  */
 void EXTI14_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   HAL_GPIO_EXTI_IRQHandler(BT_CONNECTION_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /**
@@ -735,7 +817,9 @@ void EXTI14_IRQHandler(void)
  */
 void EXTI15_IRQHandler(void)
 {
+  GDIAG_ISR_IN();
   HAL_GPIO_EXTI_IRQHandler(BT_CYSPP_Pin);
+  GDIAG_ISR_OUT();
 }
 
 /* USER CODE END 1 */

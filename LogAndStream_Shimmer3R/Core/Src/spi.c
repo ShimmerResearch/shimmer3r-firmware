@@ -21,6 +21,7 @@
 #include "spi.h"
 
 /* USER CODE BEGIN 0 */
+#include "gather_diag.h"
 
 //TODO remove, needed until SW supports setting pressure sensor rate in config
 #include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
@@ -1021,6 +1022,9 @@ void SPI_startSensing()
 
 void SPI_pollSensors(void)
 {
+#if GATHER_DIAG
+  GatherDiag_onSpiPoll();
+#endif
   currentSpiBusCbFlags = 0;
   uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   //ExG (SPI)
@@ -1109,12 +1113,25 @@ void SPI_gatherDataCb(void (*done_cb)(void))
 #if defined(SHIMMER3R)
 void SPI_busGatherDataDone_cb(uint8_t flag)
 {
+#if GATHER_DIAG
+  /* Same test as below, with the values it saw kept for the trace. */
+  uint8_t before = currentSpiBusCbFlags;
+  uint8_t after;
+  currentSpiBusCbFlags |= flag;
+  after = currentSpiBusCbFlags;
+  if (after == expectedSpiBusCbFlags)
+  {
+    SPI_gatherDataDone_cb();
+  }
+  GatherDiag_onSpiBusDone(flag, before, after, after == expectedSpiBusCbFlags);
+#else
   //if all SPI buses complete, call main callback to sensing.c
   currentSpiBusCbFlags |= flag;
   if (currentSpiBusCbFlags == expectedSpiBusCbFlags)
   {
     SPI_gatherDataDone_cb();
   }
+#endif
 }
 #endif
 
@@ -1340,6 +1357,9 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 
 void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+#if GATHER_DIAG
+  GatherDiag_onSpiCplt(1U);
+#endif
   uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   switch (spi1Sens.sensorList[spi1Sens.sensorCnt])
   {
@@ -1491,6 +1511,9 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+#if GATHER_DIAG
+  GatherDiag_onSpiCplt(2U);
+#endif
   uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
   switch (spi2Sens.sensorList[spi2Sens.sensorCnt])
   {
@@ -1564,6 +1587,9 @@ void SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 #endif
 {
+#if GATHER_DIAG
+  GatherDiag_spiError(hspi);
+#endif
   __NOP();
   __NOP();
   __NOP();
