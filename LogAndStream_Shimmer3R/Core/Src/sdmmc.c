@@ -33,6 +33,13 @@ volatile uint8_t sdTransferDone = 0;
  * this flag an SD/DMA error is indistinguishable from a completed transfer,
  * so HAL_SD_SharedRead/Write would return HAL_OK over garbage data. */
 volatile uint8_t sdTransferError = 0;
+
+/* SDMMC_CK is the 48 MHz kernel clock divided by 2 x CLKDIV, or undivided at
+ * CLKDIV 0. Default Speed allows 25 MHz and High Speed 50 MHz, so a card runs
+ * at 24 MHz until it has been switched to High Speed, and only then at 48. */
+#define SD_CLKDIV_DEFAULT_SPEED 1U
+#define SD_CLKDIV_HIGH_SPEED    0U
+static uint8_t SD_enterHighSpeed(void);
 /* USER CODE END 0 */
 
 SD_HandleTypeDef hsd1;
@@ -59,7 +66,8 @@ void MX_SDMMC1_SD_Init(void)
     hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
     hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
     hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_ENABLE;
-    hsd1.Init.ClockDiv = 0;
+    /* SD_CLKDIV_DEFAULT_SPEED: see SD_enterHighSpeed() */
+    hsd1.Init.ClockDiv = 1;
     if (HAL_SD_Init(&hsd1) != HAL_OK)
     {
       /* Do not call Error_Handler() here — HAL_SD_Init can legitimately
@@ -71,12 +79,9 @@ void MX_SDMMC1_SD_Init(void)
     /* USER CODE BEGIN SDMMC1_Init 2 */
     else
     {
-      /* Negotiate the card into SDR High-Speed mode (up to 50 MHz on the
-       * SDMMC_CK pin). Without this, SD spec caps the bus at 25 MHz
-       * regardless of ClockDiv, so a 48 MHz peripheral clock is wasted.
-       * If the card or host does not support HS we fall through and keep
-       * running — SDR12/Default-Speed is still functional. */
-      (void) HAL_SD_ConfigSpeedBusOperation(&hsd1, SDMMC_SPEED_MODE_HIGH);
+      /* 48 MHz once the card is in High Speed. A card that cannot switch
+       * stays at 24 MHz in Default Speed, which still works. */
+      (void) SD_enterHighSpeed();
 
       shimmerStatus.sdBadFile = 0;
       shimmerStatus.sdPeripheralInit = 1;
@@ -183,6 +188,77 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef *sdHandle)
 
 /* USER CODE BEGIN 1 */
 
+/* Switches an initialised card to High Speed, and only then raises SDMMC_CK
+ * to 48 MHz. Returns 1 if the bus is now at 48 MHz.
+ *
+ * HAL_SD_Init() identifies the card and sets the clock from hsd1.Init.ClockDiv
+ * while the card is still in Default Speed (25 MHz max). Running that at
+ * 48 MHz (DEV-706's ClockDiv 0) was out of spec, and a SanDisk Ultra
+ * SDSQUA4-032G failed CMD16 with CMD_CRC_FAIL there, so it never initialised.
+ * FatFs re-identifies the card through BSP_SD_Init() on its first file access
+ * after boot, which puts it back in Default Speed, so that path comes through
+ * here as well. */
+static uint8_t SD_enterHighSpeed(void)
+{
+  HAL_SD_CardStatusTypeDef cardStatus;
+
+  /* HAL_OK alone does not mean the card switched: an SDSC card
+   * (CARD_NORMAL_SPEED) gets HAL_OK and stays in Default Speed. */
+  if (HAL_SD_ConfigSpeedBusOperation(&hsd1, SDMMC_SPEED_MODE_HIGH) != HAL_OK
+      || hsd1.SdCard.CardSpeed == CARD_NORMAL_SPEED)
+  {
+    return 0;
+  }
+
+  MODIFY_REG(hsd1.Instance->CLKCR, SDMMC_CLKCR_CLKDIV, SD_CLKDIV_HIGH_SPEED);
+
+  /* The HAL's SD_SwitchSpeed() reports a data timeout as success, so read
+   * the 64-byte SD status at the new clock before relying on it. */
+  if (HAL_SD_GetCardStatus(&hsd1, &cardStatus) != HAL_OK)
+  {
+    MODIFY_REG(hsd1.Instance->CLKCR, SDMMC_CLKCR_CLKDIV, SD_CLKDIV_DEFAULT_SPEED);
+    return 0;
+  }
+  return 1;
+}
+
+/* Overrides the weak CubeMX BSP_SD_Init() in FATFS/Target/bsp_driver_sd.c,
+ * which FatFs calls from disk_initialize() on its first file access after
+ * boot (with one volume, FATFS_LinkDriver() links once and the driver's
+ * is_initialized latch is never reset). When the card fails to initialise,
+ * MX_SDMMC1_SD_Init() leaves
+ * hsd1.Instance NULL; running HAL_SD_Init() on that handle reads SDMMC
+ * registers through the NULL pointer and HardFaults, so a card the firmware
+ * cannot initialise stopped the unit booting. Report it as not ready instead,
+ * and the file operation fails with FR_NOT_READY. */
+uint8_t BSP_SD_Init(void)
+{
+  uint8_t sd_state = MSD_OK;
+
+  if (hsd1.Instance == NULL)
+  {
+    return MSD_ERROR;
+  }
+  if (BSP_SD_IsDetected() != SD_PRESENT)
+  {
+    return MSD_ERROR_SD_NOT_PRESENT;
+  }
+  sd_state = HAL_SD_Init(&hsd1);
+  if (sd_state == MSD_OK)
+  {
+    if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK)
+    {
+      sd_state = MSD_ERROR;
+    }
+    else
+    {
+      (void) SD_enterHighSpeed();
+    }
+  }
+
+  return sd_state;
+}
+
 void mmc1DeInit(void)
 {
   if (shimmerStatus.sdPeripheralInit)
@@ -268,6 +344,13 @@ HAL_SD_SharedWrite(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t 
   uint32_t startTick = HAL_GetTick();
   uint32_t timeOut_ms = 1000;
 
+  //0. No card: a failed init leaves hsd1.Instance NULL, which the HAL
+  //would dereference
+  if (hsd1.Instance == NULL)
+  {
+    return HAL_ERROR;
+  }
+
   //1. Hardware/Mutex Busy Check
   //If someone else owns it, OR the HAL handle is busy, we wait.
   while (currentSdOwner != OWNER_IDLE || hsd1.State == HAL_SD_STATE_BUSY)
@@ -322,6 +405,13 @@ HAL_SD_SharedRead(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t b
 {
   uint32_t startTick = HAL_GetTick();
   uint32_t timeOut_ms = 1000;
+
+  //0. No card: a failed init leaves hsd1.Instance NULL, which the HAL
+  //would dereference
+  if (hsd1.Instance == NULL)
+  {
+    return HAL_ERROR;
+  }
 
   //1. Hardware/Mutex Busy Check
   //If someone else owns it, OR the HAL handle is busy, we wait.
@@ -378,12 +468,19 @@ HAL_SD_SharedRead(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t b
  * it can corrupt or hang that transfer. Readiness polls must therefore claim
  * the same mutex the read/write wrappers use, one status command per call.
  * Returns SD_TRANSFER_OK / SD_TRANSFER_BUSY; a mutex-wait timeout reports
- * SD_TRANSFER_BUSY and leaves retry policy to the caller's own timeout loop. */
+ * SD_TRANSFER_BUSY and leaves retry policy to the caller's own timeout loop,
+ * and so does a card that failed to initialise (hsd1.Instance NULL), without
+ * touching the bus. */
 uint8_t HAL_SD_SharedGetCardState(sdOwner_t requester)
 {
   uint32_t startTick = HAL_GetTick();
   uint32_t timeOut_ms = 1000;
   uint8_t cardState;
+
+  if (hsd1.Instance == NULL)
+  {
+    return SD_TRANSFER_BUSY;
+  }
 
   while (currentSdOwner != OWNER_IDLE || hsd1.State == HAL_SD_STATE_BUSY)
   {
