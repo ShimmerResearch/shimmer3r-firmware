@@ -49,7 +49,8 @@ Files known to carry hand-written code that generation removes (DEV-1017):
 |---|---|
 | `Core/Src/main.c` | DEV-866/DEV-1257 LSE start and recovery (fixed MEDIUMHIGH start, backup-domain reset, LSI fallback) — `Lse_tryDriveLevel/startAtMediumHigh/bringUp`. **Was misplaced; moved into `USER CODE BEGIN 0`** |
 | `Core/Src/rtc.c` | DEV-866 LSI limp-home — without it a board with a dead LSE hangs at boot |
-| `Core/Src/sdmmc.c` | The deliberate no-`Error_Handler()` path for hot-swap failures |
+| `Core/Src/sdmmc.c` | The deliberate no-`Error_Handler()` path for hot-swap failures; DEV-1390 `ClockDiv = 1` (24 MHz while the card is in Default Speed; the `.ioc` matches) and the call to `SD_enterHighSpeed()` |
+| `FATFS/Target/sd_diskio.c` | DEV-948 reads, writes and card-state polls through the `HAL_SD_Shared*` ownership wrappers; DEV-1390 fail fast when `hsd1.Instance` is NULL |
 | `Core/Src/usb_otg.c`, `Core/Inc/usb_otg.h` | `USB_getPcdSpeed()`, NVIC priority |
 | `USBX/App/app_usbx_device.c` | 32-byte D-cache line alignment of the USBX byte pool |
 | `USBX/App/ux_user.h` | `UX_SLAVE_REQUEST_DATA_MAX_LENGTH` 64 KB — the main MSC throughput knob |
