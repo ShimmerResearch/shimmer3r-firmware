@@ -20,8 +20,9 @@
 #include <stdint.h>
 
 #define AUDIO_CAPTURE_MAX_BLOCKS 64U /* nodes in the ring queue */
-/* Block stamps kept: a power of two; each new block overwrites the oldest */
-#define AUDIO_CAPTURE_STAMPS     32U
+/* Block stamps kept: a power of two; each new block overwrites the oldest.
+ * Enough for every block of the largest ring. */
+#define AUDIO_CAPTURE_STAMPS     64U
 
 typedef struct
 {

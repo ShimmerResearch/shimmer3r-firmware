@@ -30,6 +30,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app_usbx_device.h"
+#include "hal_AudioRecorder.h"
 #include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
@@ -509,6 +510,10 @@ int main(void)
     /* DEV-1164: arm the delayed MCU reboot after a BT module restart, in task
      * context (the BT UART interrupt only records it). */
     BT_serviceModuleRestart();
+
+    /* DEV-99: one block of audio ahead of every task, only if the capture
+     * ring has passed half full (TASK_AUDIO itself is the lowest priority) */
+    AudioRecorder_drainIfUrgent();
 
     ShimTask_manage();
   }
