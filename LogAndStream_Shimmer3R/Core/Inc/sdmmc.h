@@ -50,7 +50,6 @@ extern "C"
   /* USER CODE BEGIN Prototypes */
 
   void mmc1DeInit(void);
-  void printSdCardInfo(char *outputStr);
   void printSdCardSize(char *outputStr);
   void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd1);
   void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd1);

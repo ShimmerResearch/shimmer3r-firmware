@@ -799,6 +799,105 @@ void led_test(void)
 #endif
 }
 
+/* The company an SD card's CID manufacturer ID (MID) is assigned to, or NULL.
+ * The MID names the maker of the card's controller or NAND, not the brand on
+ * its label: Integral and Verbatim, for example, sell other makers' cards and
+ * report their MID (DEV-1398). */
+static const char *sdCardMakerName(uint8_t mid)
+{
+  switch (mid)
+  {
+  case 0x01:
+    return "Panasonic";
+  case 0x02:
+    return "Toshiba";
+  case 0x03:
+    return "SanDisk";
+  case 0x1b:
+    return "Samsung";
+  case 0x1d:
+    return "AData";
+  case 0x27:
+    return "Phison";
+  case 0x28:
+    return "Lexar";
+  case 0x31:
+    return "Silicon Power";
+  case 0x41:
+    return "Kingston";
+  case 0x74:
+    return "Transcend";
+  case 0x76:
+    return "Patriot";
+  case 0x82:
+  case 0x9c:
+    return "Sony";
+  default:
+    return NULL;
+  }
+}
+
+/* A CID text byte (OID, PNM) as a printable character, or '?'. */
+static char sdCidChar(uint32_t c)
+{
+  c &= 0xFF;
+  return (c >= 0x20 && c <= 0x7E) ? (char) c : '?';
+}
+
+/* Prints the card's identity as two lines, each its own report write since
+ * ShimFactoryTest_sendReport truncates at MAX_TEST_REPORT_LENGTH:
+ *  - Manufacturer: SanDisk, Manufacture Date=2023-05
+ *  - CID: MID=0x03, OID=SD, PNM=SC08G, PRV=8.0, PSN=0x1A2B3C4D, Size=7.45GB
+ * The first keeps the shape older reports had, which host parsers read. */
+static void sd_card_report_cid(void)
+{
+  HAL_SD_CardCIDTypeDef cid;
+  const char *maker;
+  char oid[3];
+  char pnm[6];
+
+  /* A card that failed to initialise leaves hsd1.Instance NULL, and hsd1.CID
+   * still holds the previous card's CID, or none. */
+  if (hsd1.Instance == NULL)
+  {
+    ShimFactoryTest_sendReport(
+        " - CID: unavailable (card not initialised)\r\n");
+    return;
+  }
+
+  HAL_SD_GetCardCID(&hsd1, &cid);
+
+  maker = sdCardMakerName(cid.ManufacturerID);
+  if (maker != NULL)
+  {
+    sprintf(buffer, " - Manufacturer: %s", maker);
+  }
+  else
+  {
+    sprintf(buffer, " - Manufacturer: Unknown (0x%02X)", cid.ManufacturerID);
+  }
+  /* MDT: year since 2000 in bits 11:4, month in bits 3:0 */
+  sprintf(buffer + strlen(buffer), ", Manufacture Date=%d-%02d\r\n",
+      (cid.ManufactDate >> 4) + 2000, cid.ManufactDate & 0x0F);
+  ShimFactoryTest_sendReport(buffer);
+
+  oid[0] = sdCidChar(cid.OEM_AppliID >> 8);
+  oid[1] = sdCidChar(cid.OEM_AppliID);
+  oid[2] = '\0';
+  pnm[0] = sdCidChar(cid.ProdName1 >> 24);
+  pnm[1] = sdCidChar(cid.ProdName1 >> 16);
+  pnm[2] = sdCidChar(cid.ProdName1 >> 8);
+  pnm[3] = sdCidChar(cid.ProdName1);
+  pnm[4] = sdCidChar(cid.ProdName2);
+  pnm[5] = '\0';
+  /* PRV is BCD n.m */
+  sprintf(buffer, " - CID: MID=0x%02X, OID=%s, PNM=%s, PRV=%u.%u, PSN=0x%08" PRIX32 ", Size=",
+      cid.ManufacturerID, oid, pnm, cid.ProdRev >> 4, cid.ProdRev & 0x0F, cid.ProdSN);
+  printSdCardSize(buffer + strlen(buffer));
+  strcat(buffer, "\r\n");
+  ShimFactoryTest_sendReport(buffer);
+}
+
 void sd_card_test(void)
 {
   ShimFactoryTest_sendReport("SD Card:\r\n");
@@ -815,9 +914,7 @@ void sd_card_test(void)
       HAL_Delay(120); //120ms
     }
 
-    ShimFactoryTest_sendReport(" - ");
-    printSdCardInfo(buffer);
-    ShimFactoryTest_sendReport(buffer);
+    sd_card_report_cid();
 
     shimmerStatus.testResult += ShimSd_test1() << 6;
     //SD_test_alternative();
