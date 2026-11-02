@@ -407,7 +407,9 @@ void gpioExtiCommon(uint16_t GPIO_Pin, uint8_t isRising)
     /* no break */
 #endif //SUPPORT_SR48_6_0
   case USER_BTN_Pin:
-    (void) ShimBtn_pressReleaseAction();
+    /* Active high: rising is a press. Only the edge and its time are taken
+     * here; the main loop does the rest. */
+    (void) ShimEvt_isrPushButtonEdge(isRising);
     break;
   case USB_VBUS_Pin:
     ShimTask_setDockOrUsbStateChange();
@@ -461,7 +463,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     LogAndStream_updateDockedStateAndCheckChanged();
     break;
   case USER_BTN_N_Pin:
-    (void) ShimBtn_pressReleaseAction();
+    /* Active low: falling is a press */
+    (void) ShimEvt_isrPushButtonEdge(!isRising);
     break;
   case SD_DETECT_N_Pin:
     CheckSdInslot();
