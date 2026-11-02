@@ -837,24 +837,48 @@ static const char *sdCardMakerName(uint8_t mid)
   }
 }
 
-/* A CID text byte (OID, PNM) as a printable character, or '?'. */
-static char sdCidChar(uint32_t c)
+/* A CID text field (OID, PNM) as its characters when every byte is printable,
+ * else as hex ("0x" and two digits a byte), so that no byte is lost:
+ * white-label cards often carry unprintable OID and PNM bytes (DEV-1398). out
+ * needs room for 2 + 2 * len + 1 characters. */
+static void sdCidField(char *out, const uint8_t *bytes, uint8_t len)
 {
-  c &= 0xFF;
-  return (c >= 0x20 && c <= 0x7E) ? (char) c : '?';
+  uint8_t i;
+
+  for (i = 0; i < len; i++)
+  {
+    if (bytes[i] < 0x20 || bytes[i] > 0x7E)
+    {
+      break;
+    }
+  }
+  if (i == len)
+  {
+    memcpy(out, bytes, len);
+    out[len] = '\0';
+    return;
+  }
+  out += sprintf(out, "0x");
+  for (i = 0; i < len; i++)
+  {
+    out += sprintf(out, "%02X", bytes[i]);
+  }
 }
 
 /* Prints the card's identity as two lines, each its own report write since
  * ShimFactoryTest_sendReport truncates at MAX_TEST_REPORT_LENGTH:
  *  - Manufacturer: SanDisk, Manufacture Date=2023-05
  *  - CID: MID=0x03, OID=SD, PNM=SC08G, PRV=8.0, PSN=0x1A2B3C4D, Size=7.45GB
- * The first keeps the shape older reports had, which host parsers read. */
+ * The first keeps the shape older reports had, which host parsers read. An
+ * OID or PNM with an unprintable byte prints as hex, e.g. OID=0x0303. */
 static void sd_card_report_cid(void)
 {
   HAL_SD_CardCIDTypeDef cid;
   const char *maker;
-  char oid[3];
-  char pnm[6];
+  uint8_t oidBytes[2];
+  uint8_t pnmBytes[5];
+  char oid[2 + 2 * sizeof(oidBytes) + 1];
+  char pnm[2 + 2 * sizeof(pnmBytes) + 1];
 
   /* A card that failed to initialise leaves hsd1.Instance NULL, and hsd1.CID
    * still holds the previous card's CID, or none. */
@@ -881,15 +905,15 @@ static void sd_card_report_cid(void)
       (cid.ManufactDate >> 4) + 2000, cid.ManufactDate & 0x0F);
   ShimFactoryTest_sendReport(buffer);
 
-  oid[0] = sdCidChar(cid.OEM_AppliID >> 8);
-  oid[1] = sdCidChar(cid.OEM_AppliID);
-  oid[2] = '\0';
-  pnm[0] = sdCidChar(cid.ProdName1 >> 24);
-  pnm[1] = sdCidChar(cid.ProdName1 >> 16);
-  pnm[2] = sdCidChar(cid.ProdName1 >> 8);
-  pnm[3] = sdCidChar(cid.ProdName1);
-  pnm[4] = sdCidChar(cid.ProdName2);
-  pnm[5] = '\0';
+  oidBytes[0] = (uint8_t) (cid.OEM_AppliID >> 8);
+  oidBytes[1] = (uint8_t) cid.OEM_AppliID;
+  pnmBytes[0] = (uint8_t) (cid.ProdName1 >> 24);
+  pnmBytes[1] = (uint8_t) (cid.ProdName1 >> 16);
+  pnmBytes[2] = (uint8_t) (cid.ProdName1 >> 8);
+  pnmBytes[3] = (uint8_t) cid.ProdName1;
+  pnmBytes[4] = (uint8_t) cid.ProdName2;
+  sdCidField(oid, oidBytes, sizeof(oidBytes));
+  sdCidField(pnm, pnmBytes, sizeof(pnmBytes));
   /* PRV is BCD n.m */
   sprintf(buffer, " - CID: MID=0x%02X, OID=%s, PNM=%s, PRV=%u.%u, PSN=0x%08" PRIX32 ", Size=",
       cid.ManufacturerID, oid, pnm, cid.ProdRev >> 4, cid.ProdRev & 0x0F, cid.ProdSN);
