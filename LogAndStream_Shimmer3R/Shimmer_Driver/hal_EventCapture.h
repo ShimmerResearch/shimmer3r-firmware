@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 void Board_evtTtlArm(uint8_t enable);
+void Board_evtTtlPause(void);
 uint8_t Board_evtTtlLevel(void);
 
 #endif /* HAL_EVENTCAPTURE_H_ */
