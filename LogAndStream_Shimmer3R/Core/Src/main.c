@@ -226,6 +226,9 @@ void Init()
    * MAC ID can be used for default Shimmer name and calibration file names.*/
   ShimConfig_loadSensorConfigAndCalib();
 
+  /* DEV-99: the audio fingerprint's tables, before anything samples */
+  AudioRecorder_init();
+
   /* Sample both dock and USB-VBUS pins so the ownership decision below has
    * the complete picture.  LogAndStream_updateDockedStateAndCheckChanged() was
    * already called earlier (line 152) but we re-read here for consistency.  We

@@ -59,7 +59,7 @@ shimmer3r-firmware/
 │   │   ├── hal_Infomem.*    # Info-memory (device config) read/write
 │   │   └── version.h        # Auto-generated firmware version header
 │   ├── log-and-stream-common/   # Shared LogAndStream protocol code (submodule)
-│   ├── Middlewares/         # USB, FATFS, ThreadX/USBX middleware
+│   ├── Middlewares/         # USB, FATFS, ThreadX/USBX middleware; the audio fingerprint and CMSIS-DSP's FFT
 │   └── LogAndStream_Shimmer3R_UBGA132_SMPS.ioc  # STM32CubeMX project file
 ├── test_proj/               # Standalone test and example projects
 │   ├── ADC_DMA_Transfer/
@@ -198,3 +198,9 @@ committed without the hook.
 
 Copyright © Shimmer Research, Ltd. All rights reserved.  
 Redistribution and use are governed by the BSD-style license found in each source file header.
+
+Third-party code keeps its own licence, in its folder. Two need naming wherever the firmware's
+notices are listed:
+- the audio fingerprint, a port of audfprint (Dan Ellis, Columbia University and Google, MIT):
+  `LogAndStream_Shimmer3R/Middlewares/Third_Party/AudioFingerprint/reference/LICENSE`;
+- CMSIS-DSP (Arm, Apache-2.0): `LogAndStream_Shimmer3R/Middlewares/Third_Party/CMSIS-DSP/LICENSE`.
