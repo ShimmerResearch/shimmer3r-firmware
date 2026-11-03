@@ -42,8 +42,14 @@
 
 #define REC_DECIMATION \
   24U /* sinc5 x reshape 4: 16 kHz from the 1.536 MHz PDM clock */
+/* ADF SCALE codes, about 3 dB a step (RM0456). The IM68D121JV01 on ".3" boards
+ * is 15 dB more sensitive than the MP23DB01HP, so each has its own: both then
+ * put a 94 dB SPL tone near -14 dBFS and clip near 105 dB SPL. Worked out from
+ * the datasheets, not yet measured (docs/SHIMMER3R_AUDIO.md §4). */
+#define REC_GAIN_MP23DB01HP 6 /* +18.1 dB */
+#define REC_GAIN_IM68D121   1 /* +3.5 dB */
 #define REC_GAIN \
-  6 /* ADF SCALE, the bench's; to be calibrated against a sound level */
+  (ShimBrd_isIm68d121PresentPerSrNumber() ? REC_GAIN_IM68D121 : REC_GAIN_MP23DB01HP)
 #define REC_BLOCK  2048U /* samples per DMA node: 128 ms, one interrupt each */
 #define REC_BLOCKS AUDIO_CAPTURE_MAX_BLOCKS
 #define REC_RING   (REC_BLOCK * REC_BLOCKS) /* 8.2 s */
