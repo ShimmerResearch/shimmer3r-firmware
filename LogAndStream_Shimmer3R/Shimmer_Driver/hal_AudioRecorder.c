@@ -222,6 +222,11 @@ static void closeFiles(void)
     {
       setFault(AUDIO_FAULT_WRITE);
     }
+    else
+    {
+      /* FatFs leaves the date at zero; dated as the data file is on close */
+      (void) ShimSd_setFileTimestamp(wavPath);
+    }
     wavOpen = 0;
   }
   if (afpOpen)
@@ -232,6 +237,10 @@ static void closeFiles(void)
     if (f_close(&afpFile) != FR_OK)
     {
       setFault(AUDIO_FAULT_WRITE);
+    }
+    else
+    {
+      (void) ShimSd_setFileTimestamp(afpPath);
     }
     afpOpen = 0;
   }
