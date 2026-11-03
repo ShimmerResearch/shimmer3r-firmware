@@ -212,10 +212,13 @@ static void closeFiles(void)
 {
   if (wavOpen)
   {
+    /* The file's last sample: its sample n is ring sample fileFirst + n */
+    uint32_t end = fileFirst + wavInfo.samples;
+
     summarise(&wavInfo);
-    if (tail > fileFirst && head() >= tail)
+    if (end > fileFirst && head() >= end)
     {
-      wavInfo.lastSampleTicks = sampleTicks(tail - 1U);
+      wavInfo.lastSampleTicks = sampleTicks(end - 1U);
     }
     (void) writeWavHeader();
     if (f_close(&wavFile) != FR_OK)
@@ -371,7 +374,6 @@ static uint8_t writeJob(uint8_t drain)
     lost = (lost + REC_WRITE - 1U) / REC_WRITE * REC_WRITE;
     tail += lost;
     silencePending += lost;
-    sessionSilence += lost;
     setFault(AUDIO_FAULT_OVERRUN);
     available = head() - tail;
   }
@@ -380,15 +382,12 @@ static uint8_t writeJob(uint8_t drain)
   {
     n = silencePending < REC_WRITE ? silencePending : REC_WRITE;
     src = silence;
-    silencePending -= n;
-    wavInfo.silenceSamples += n;
   }
   else if (available >= REC_WRITE || (drain && available != 0U))
   {
     n = available < REC_WRITE ? available : REC_WRITE;
     src = &ring[ringAt(tail)];
     AudioCapture_prepareRead(src, n);
-    tail += n;
   }
   else
   {
@@ -397,9 +396,21 @@ static uint8_t writeJob(uint8_t drain)
 
   if (f_write(&wavFile, src, n * sizeof(int16_t), &bw) != FR_OK || bw != n * sizeof(int16_t))
   {
+    /* Nothing of a failed write is counted, so the closing header's last
+     * sample, and the status's seconds, are those of what the file holds */
     writeErrors++;
     failSession(AUDIO_FAULT_WRITE);
     return 0;
+  }
+  if (src == silence)
+  {
+    silencePending -= n;
+    wavInfo.silenceSamples += n;
+    sessionSilence += n;
+  }
+  else
+  {
+    tail += n;
   }
   wavInfo.samples += n;
 
