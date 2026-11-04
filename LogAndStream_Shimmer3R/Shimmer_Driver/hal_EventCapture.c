@@ -81,6 +81,14 @@ void Board_evtTtlArm(uint8_t enable)
   }
 }
 
+/* Interrupt context. Only the capture interrupts go: PE9 keeps its AF mode and
+ * pull-down and TIM1 keeps counting, with no HAL call or RCC change here to
+ * race the main loop's. The next Board_evtTtlArm(1) sets TIM1 up afresh. */
+void Board_evtTtlPause(void)
+{
+  TIM1->DIER = 0;
+}
+
 uint8_t Board_evtTtlLevel(void)
 {
   return (HAL_GPIO_ReadPin(GPIO_EXTERNAL_GPIO_Port, GPIO_EXTERNAL_Pin) == GPIO_PIN_SET) ? 1U : 0U;
@@ -100,20 +108,28 @@ static void pushCapture(uint8_t level, uint16_t ageUs, uint64_t now, uint8_t fla
 void TIM1_CC_IRQHandler(void)
 {
   uint32_t sr = TIM1->SR;
-  uint16_t cnt = (uint16_t) TIM1->CNT;
-  uint64_t now = RTC_get64();
   uint8_t rise = (sr & TIM_SR_CC1IF) != 0U;
   uint8_t fall = (sr & TIM_SR_CC2IF) != 0U;
-  /* Reading CCRx clears its CCxIF */
-  uint16_t riseAge = rise ? (uint16_t) (cnt - (uint16_t) TIM1->CCR1) : 0U;
-  uint16_t fallAge = fall ? (uint16_t) (cnt - (uint16_t) TIM1->CCR2) : 0U;
+  /* The captures first, then the counter, then the RTC. A capture that lands
+   * on a channel still pending replaces CCRx; read after the counter, it would
+   * be later than the counter and its age would wrap to about 65 ms. Reading
+   * CCRx clears its CCxIF. */
+  uint16_t riseCcr = rise ? (uint16_t) TIM1->CCR1 : 0U;
+  uint16_t fallCcr = fall ? (uint16_t) TIM1->CCR2 : 0U;
+  /* After the reads, so a capture that replaced one before it was read is
+   * caught here, on this edge */
+  uint32_t overcapture = TIM1->SR & (TIM_SR_CC1OF | TIM_SR_CC2OF);
+  uint16_t cnt = (uint16_t) TIM1->CNT;
+  uint64_t now = RTC_get64();
+  uint16_t riseAge = rise ? (uint16_t) (cnt - riseCcr) : 0U;
+  uint16_t fallAge = fall ? (uint16_t) (cnt - fallCcr) : 0U;
   uint8_t flags = EVT_FLAG_HW_CAPTURE;
 
-  if (sr & (TIM_SR_CC1OF | TIM_SR_CC2OF))
+  if (overcapture != 0U)
   {
     /* A channel captured again before it was read: at least one edge lost */
     flags |= EVT_RAW_EDGES_LOST;
-    TIM1->SR = ~(TIM_SR_CC1OF | TIM_SR_CC2OF); /* rc_w0: the rest unchanged */
+    TIM1->SR = ~overcapture; /* rc_w0: the rest unchanged */
   }
 
   /* Both pending: the older went first */
