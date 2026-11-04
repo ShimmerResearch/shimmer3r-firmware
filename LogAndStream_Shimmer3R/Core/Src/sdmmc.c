@@ -268,16 +268,6 @@ void mmc1DeInit(void)
   }
 }
 
-/**
- * Formats the SD card size as a string with a "GB" suffix (e.g., "7.45GB").
- * Writes the result to outputStr.
- */
-void printSdCardSize(char *outputStr)
-{
-  sprintf(outputStr, "%.2lfGB",
-      (hsd1.SdCard.BlockSize * ((float) hsd1.SdCard.BlockNbr / 1024 / 1024 / 1024)));
-}
-
 HAL_StatusTypeDef
 HAL_SD_SharedWrite(sdOwner_t requester, uint8_t *pData, uint32_t addr, uint32_t blocks)
 {

@@ -16,6 +16,7 @@
 #include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
 #include "PCM/pcm_config.h"
+#include "SDCard/shimmer_sd_card_id.h"
 #include "ux_device_cdc_acm.h"
 char *buffer;
 
@@ -799,207 +800,32 @@ void led_test(void)
 #endif
 }
 
-/* The company an SD card's CID manufacturer ID (MID) is assigned to, or NULL.
- * The MID names the maker of the card's controller or NAND, not the brand on
- * its label: Integral and Verbatim, for example, sell other makers' cards and
- * report their MID (DEV-1398). */
-static const char *sdCardMakerName(uint8_t mid)
-{
-  switch (mid)
-  {
-  case 0x01:
-    return "Panasonic";
-  case 0x02:
-    return "Toshiba";
-  case 0x03:
-    return "SanDisk";
-  case 0x1b:
-    return "Samsung";
-  case 0x1d:
-    return "AData";
-  case 0x27:
-    return "Phison";
-  case 0x28:
-    return "Lexar";
-  case 0x31:
-    return "Silicon Power";
-  case 0x41:
-    return "Kingston";
-  case 0x74:
-    return "Transcend";
-  case 0x76:
-    return "Patriot";
-  case 0x82:
-  case 0x9c:
-    return "Sony";
-  default:
-    return NULL;
-  }
-}
-
-/* A card model the factory report names, recognised by its CID MID, OID and
- * PNM plus its nominal capacity. The values were read off the DEV-204
- * candidate cards and the current SanDisk card in November 2026 (DEV-1398).
- * Most of these brands sell other makers' cards and report that maker's MID,
- * and some signatures are generic (Phison SD08G), so another brand's card can
- * carry the same one: the report says a card matches a model, not that it is
- * one. Two models differ only in capacity, hence sizeGb. */
-typedef struct
-{
-  uint8_t mid;
-  char oid[2];
-  char pnm[5];
-  uint8_t sizeGb;
-  const char *brand;
-  const char *part;
-} sdCardModel_t;
-
-static const sdCardModel_t sdCardModels[] = {
-  { 0x03, "SD", "SS08G", 8, "SanDisk", "8GB SDSDQAB-008G" },
-  { 0x03, "SD", "SD32G", 32, "SanDisk", "Ultra 32GB SDSQUA4-032G" },
-  { 0x27, "PH", "SD08G", 8, "Integral", "UltimaPro 8GB INMSDH8G10-90U1" },
-  { 0x6F, "\x03\x03", "SDABC", 16, "Integral", "UltimaPro 16GB INMSDH16G10-90U1" },
-  { 0x9F, "TI", "SPCC ", 8, "Silicon Power", "8GB SP008GBSTHBU1V10SP" },
-  { 0x9F, "TI", "SPCC ", 16, "Silicon Power", "16GB SP016GBSTHBU1V10SP" },
-  { 0x9F, "TI", "00000", 16, "Verbatim", "16GB 44082" },
-  { 0x41, "42", "SD16G", 32, "Verbatim", "32GB 44083" },
-  /* Two 47041 cards bought together came from two suppliers */
-  { 0xFE, "42", "SD\x00\x00\x00", 32, "Verbatim", "32GB industrial 47041" },
-  { 0x9F, "TI", "SD\x00\x00\x00", 32, "Verbatim", "32GB industrial 47041" },
-};
-
-/* The card's capacity as sold: the smallest power of two GB (10^9 bytes) that
- * holds it, so 7.95e9 bytes is 8 and 31.3e9 is 32. */
-static uint8_t sdCardNominalGb(void)
-{
-  uint64_t bytes = (uint64_t) hsd1.SdCard.BlockNbr * hsd1.SdCard.BlockSize;
-  uint8_t gb = 1;
-
-  while ((uint64_t) gb * 1000000000ULL < bytes && gb < 128)
-  {
-    gb <<= 1;
-  }
-  return gb;
-}
-
-/* The model in sdCardModels the card matches, or NULL. */
-static const sdCardModel_t *sdCardModelFind(uint8_t mid, const uint8_t *oid, const uint8_t *pnm)
-{
-  uint8_t sizeGb = sdCardNominalGb();
-  uint8_t i;
-
-  for (i = 0; i < sizeof(sdCardModels) / sizeof(sdCardModels[0]); i++)
-  {
-    const sdCardModel_t *m = &sdCardModels[i];
-
-    if (m->mid == mid && memcmp(m->oid, oid, sizeof(m->oid)) == 0
-        && memcmp(m->pnm, pnm, sizeof(m->pnm)) == 0 && m->sizeGb == sizeGb)
-    {
-      return m;
-    }
-  }
-  return NULL;
-}
-
-/* A CID text field (OID, PNM) as its characters when every byte is printable,
- * else as hex ("0x" and two digits a byte), so that no byte is lost:
- * white-label cards often carry unprintable OID and PNM bytes (DEV-1398). out
- * needs room for 2 + 2 * len + 1 characters. */
-static void sdCidField(char *out, const uint8_t *bytes, uint8_t len)
-{
-  uint8_t i;
-
-  for (i = 0; i < len; i++)
-  {
-    if (bytes[i] < 0x20 || bytes[i] > 0x7E)
-    {
-      break;
-    }
-  }
-  if (i == len)
-  {
-    memcpy(out, bytes, len);
-    out[len] = '\0';
-    return;
-  }
-  out += sprintf(out, "0x");
-  for (i = 0; i < len; i++)
-  {
-    out += sprintf(out, "%02X", bytes[i]);
-  }
-}
-
-/* Prints the card's identity as three lines, each its own report write since
- * ShimFactoryTest_sendReport truncates at MAX_TEST_REPORT_LENGTH:
- *  - Manufacturer: SanDisk, Manufacture Date=2025-03
- *  - Model: matches SanDisk 8GB SDSDQAB-008G
- *  - CID: MID=0x03, OID=SD, PNM=SS08G, PRV=8.0, PSN=0x8197B4B3, Size=7.40GB
- * The first keeps the shape older reports had, which host parsers read. It
- * names the brand of a card in sdCardModels, else the company its MID is
- * assigned to. A card in no model prints "Model: not recognised". An OID or
- * PNM with an unprintable byte prints as hex, e.g. OID=0x0303. */
+/* Prints the card's identity lines from the CID its last initialisation read.
+ * log-and-stream-common formats them (SDCard/shimmer_sd_card_id.h), so both
+ * platforms print the same lines from one model table (DEV-1398). */
 static void sd_card_report_cid(void)
 {
-  HAL_SD_CardCIDTypeDef cid;
-  const sdCardModel_t *model;
-  const char *maker;
-  uint8_t oidBytes[2];
-  uint8_t pnmBytes[5];
-  char oid[2 + 2 * sizeof(oidBytes) + 1];
-  char pnm[2 + 2 * sizeof(pnmBytes) + 1];
+  uint8_t raw[SD_CID_LEN];
+  uint8_t i;
 
   /* A card that failed to initialise leaves hsd1.Instance NULL, and hsd1.CID
    * still holds the previous card's CID, or none. */
   if (hsd1.Instance == NULL)
   {
-    ShimFactoryTest_sendReport(
-        " - CID: unavailable (card not initialised)\r\n");
+    ShimSdCardId_unavailableLine(buffer, "card not initialised");
+    ShimFactoryTest_sendReport(buffer);
     return;
   }
 
-  HAL_SD_GetCardCID(&hsd1, &cid);
-
-  oidBytes[0] = (uint8_t) (cid.OEM_AppliID >> 8);
-  oidBytes[1] = (uint8_t) cid.OEM_AppliID;
-  pnmBytes[0] = (uint8_t) (cid.ProdName1 >> 24);
-  pnmBytes[1] = (uint8_t) (cid.ProdName1 >> 16);
-  pnmBytes[2] = (uint8_t) (cid.ProdName1 >> 8);
-  pnmBytes[3] = (uint8_t) cid.ProdName1;
-  pnmBytes[4] = (uint8_t) cid.ProdName2;
-  model = sdCardModelFind(cid.ManufacturerID, oidBytes, pnmBytes);
-
-  maker = (model != NULL) ? model->brand : sdCardMakerName(cid.ManufacturerID);
-  if (maker != NULL)
+  /* hsd1.CID holds the register as four words, most significant first */
+  for (i = 0; i < SD_CID_LEN; i++)
   {
-    sprintf(buffer, " - Manufacturer: %s", maker);
+    raw[i] = (uint8_t) (hsd1.CID[i / 4] >> (24 - 8 * (i % 4)));
   }
-  else
+  for (i = 0; ShimSdCardId_reportLine(buffer, i, raw, hsd1.SdCard.LogBlockNbr); i++)
   {
-    sprintf(buffer, " - Manufacturer: Unknown (0x%02X)", cid.ManufacturerID);
+    ShimFactoryTest_sendReport(buffer);
   }
-  /* MDT: year since 2000 in bits 11:4, month in bits 3:0 */
-  sprintf(buffer + strlen(buffer), ", Manufacture Date=%d-%02d\r\n",
-      (cid.ManufactDate >> 4) + 2000, cid.ManufactDate & 0x0F);
-  ShimFactoryTest_sendReport(buffer);
-
-  if (model != NULL)
-  {
-    sprintf(buffer, " - Model: matches %s %s\r\n", model->brand, model->part);
-  }
-  else
-  {
-    sprintf(buffer, " - Model: not recognised\r\n");
-  }
-  ShimFactoryTest_sendReport(buffer);
-
-  sdCidField(oid, oidBytes, sizeof(oidBytes));
-  sdCidField(pnm, pnmBytes, sizeof(pnmBytes));
-  /* PRV is BCD n.m */
-  sprintf(buffer, " - CID: MID=0x%02X, OID=%s, PNM=%s, PRV=%u.%u, PSN=0x%08" PRIX32 ", Size=",
-      cid.ManufacturerID, oid, pnm, cid.ProdRev >> 4, cid.ProdRev & 0x0F, cid.ProdSN);
-  printSdCardSize(buffer + strlen(buffer));
-  strcat(buffer, "\r\n");
-  ShimFactoryTest_sendReport(buffer);
 }
 
 void sd_card_test(void)
