@@ -44,6 +44,7 @@ extern "C"
 #define FACTORY_TEST_MIC_ERROR_CNT_THRESHOLD    500
 #define FACTORY_TEST_MIC_PASS                   0xFF
 #define FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER 0xFE
+#define FACTORY_TEST_MIC_FAIL_BUSY              0xFD /* recording owns the mic (DEV-99) */
 #define FACTORY_TEST_MIC_BUFFER_SKIP_COUNT      64
 
   /* USER CODE END Private defines */
@@ -53,11 +54,8 @@ extern "C"
   /* USER CODE BEGIN Prototypes */
 
   void MDF1_DeInit(void);
-  void micStartSensing(void);
   void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf);
   void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf);
-  void micStopSensing(void);
-  uint8_t micTest(void);
 
   /* USER CODE END Prototypes */
 

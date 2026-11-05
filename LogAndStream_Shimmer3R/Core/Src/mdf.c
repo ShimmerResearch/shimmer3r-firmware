@@ -23,18 +23,8 @@
 /* USER CODE BEGIN 0 */
 
 #include "gpdma.h"
+#include "hal_Audio.h"
 #include "hal_Board.h"
-#include <PCM/pcm_config.h>
-#include <PCM/pcm_lowlevel.h>
-
-int16_t micDataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE];
-uint16_t dataBuffer[DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U];
-MDF_DmaConfigTypeDef micDmaConfig;
-int Mic_CountSkip = 0;
-//volatile uint8_t counter = 0;
-
-static uint8_t micTestRunning = 0;
-static uint16_t micTestErrorCnt = 0;
 
 /* USER CODE END 0 */
 
@@ -102,10 +92,8 @@ void MX_ADF1_Init(void)
   /* Sinc5 gain is D^5, so D=64 is ~43 dB hotter than the original D=24.
    * Scale back by 14 x ~3 dB so a typical mic offset no longer saturates. */
   AdfFilterConfig0.Gain = -8;
-  //DMA & Linkedlist config
-  micDmaConfig.Address = (uint32_t) &micDataBuffer[0];
-  micDmaConfig.DataLength = (DEFAULT_AUDIO_IN_BUFFER_SIZE * 2U);
-  micDmaConfig.MsbOnly = ENABLE;
+  /* Decimation, gain and the DMA ring are set per capture by hal_Audio.c, which
+   * relinks channel 11 to its own queue (DEV-99) */
   micLinkedListConfig(&AdfHandle0);
 
   /* USER CODE END ADF1_Init 2 */
@@ -156,7 +144,7 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef *mdfHandle)
     HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
     /* ADF1 interrupt Init */
-    HAL_NVIC_SetPriority(ADF1_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(ADF1_IRQn, 7, 0);
     HAL_NVIC_EnableIRQ(ADF1_IRQn);
     /* USER CODE BEGIN ADF1_MspInit 1 */
 
@@ -202,133 +190,23 @@ void MDF1_DeInit(void)
   Board_setMicPower(0);
 }
 
-void micStartSensing(void)
-{
-  if (!shimmerStatus.micSensing)
-  {
-    Mic_CountSkip = 0;
-
-    if (HAL_MDF_AcqStart_DMA(&AdfHandle0, &AdfFilterConfig0, &micDmaConfig) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    if (HAL_MDF_GenerateTrgo(&AdfHandle0) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    shimmerStatus.micSensing = 1;
-  }
-}
-
-void micStopSensing(void)
-{
-  if (shimmerStatus.micSensing)
-  {
-    HAL_MDF_AcqStop_DMA(&AdfHandle0);
-    MDF1_DeInit();
-    //HAL_Delay(100);
-    shimmerStatus.micSensing = 0;
-  }
-}
-
+/* GPDMA1 channel 11 finished one block of the capture ring (one interrupt per
+ * node; half-transfer is disabled). hal_Audio.c owns the capture. */
 void HAL_MDF_AcqCpltCallback(MDF_HandleTypeDef *hmdf)
 {
   UNUSED(hmdf);
-
-  if (Mic_CountSkip < FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
-  {
-    ++Mic_CountSkip;
-    return;
-  }
-  for (uint32_t j = 0U;
-       j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++)
-  {
-    int32_t Z = ((micDataBuffer[j + ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT)])
-                    * 50U /*(int32_t)(PCM.Volume)*/)
-        / 100; //volume arbitrarily set to 100
-    dataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
-  }
+  AudioCapture_onDmaBlock();
 }
 
 void HAL_MDF_AcqHalfCpltCallback(MDF_HandleTypeDef *hmdf)
 {
   UNUSED(hmdf);
-
-  if (Mic_CountSkip < FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
-  {
-    ++Mic_CountSkip;
-    return;
-  }
-  for (uint32_t j = 0U;
-       j < ((AUDIO_IN_SAMPLING_FREQUENCY / 1000U) * N_MS_PER_INTERRUPT); j++)
-  {
-    int32_t Z = (micDataBuffer[j] * 50U /*(int32_t)(PCM.Volume)*/)
-        / 100; //volume arbitrarily set to 100
-    dataBuffer[j] = (uint16_t) SaturaLH(Z, -32760, 32760);
-  }
 }
 
 void HAL_MDF_ErrorCallback(MDF_HandleTypeDef *hmdf)
 {
-  //micStopSensing();
-
-  if (micTestRunning && Mic_CountSkip >= FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
-  {
-    micTestErrorCnt++;
-    if (micTestErrorCnt == FACTORY_TEST_MIC_ERROR_CNT_THRESHOLD)
-    {
-      micStopSensing();
-    }
-  }
-}
-
-uint8_t micTest(void)
-{
-  uint8_t micTestResult = MDF_ERROR_NONE;
-  micTestRunning = 1;
-  micTestErrorCnt = 0;
-  memset(dataBuffer, 0, sizeof(dataBuffer));
-
-  MX_ADF1_Init();
-  micStartSensing();
-
-  /* Wait up to 1s for microphone to begin recording */
-  for (uint8_t i = 0; i < 100; i++)
-  {
-    HAL_Delay(10);
-    if (Mic_CountSkip == FACTORY_TEST_MIC_BUFFER_SKIP_COUNT)
-    {
-      /* Wait further 100ms for settling time */
-      HAL_Delay(100);
-      break;
-    }
-  }
-
-  if (!shimmerStatus.micSensing)
-  {
-    micTestResult = AdfHandle0.ErrorCode;
-  }
-  else
-  {
-    micStopSensing();
-
-    micTestResult = FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER; //no data in buffer
-
-    for (uint8_t i = 0; i < (DEFAULT_AUDIO_IN_BUFFER_SIZE / 2U); i++)
-    {
-      if (dataBuffer[i] != 0)
-      {
-        //some data is present, so the microphone is working
-        micTestResult = FACTORY_TEST_MIC_PASS;
-        break;
-      }
-    }
-  }
-
-  micTestRunning = 0;
-  return micTestResult;
+  UNUSED(hmdf);
+  AudioCapture_onAdfError();
 }
 
 /* USER CODE END 1 */
