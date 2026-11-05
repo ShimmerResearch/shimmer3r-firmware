@@ -25,9 +25,14 @@
 
 #include <Boards/shimmer_boards.h>
 #include <LEDs/shimmer_leds.h>
+#include <LEDs/shimmer_leds_phase.h>
 #include <Platform/platform_api.h>
 #include <hal_Board.h>
 #include <log_and_stream_common.h>
+
+/* TIM6's normal reload, as MX_TIM6_Init sets it (htim6.Init.Period). The
+ * LED phase lock lengthens single periods past it; see platform_ledTickShift. */
+#define TIM6_BLINK_RELOAD 79U
 
 //static void ledBlinkTimerCallback(void);
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim);
@@ -438,6 +443,11 @@ void TIM_reinitLeds(void)
 
 static void ledBlinkTimerCallback(struct __TIM_HandleTypeDef *htim)
 {
+  /* A delay from platform_ledTickShift lengthens one period only. The longer
+   * reload it preloaded took effect at this tick, so put the normal one back
+   * for the next. */
+  __HAL_TIM_SET_AUTORELOAD(htim, TIM6_BLINK_RELOAD);
+
   /* pet the HW watchdog */
   petWatchdog();
 
@@ -454,20 +464,26 @@ uint16_t platform_ledTickElapsedRtcTicks(void)
   return (uint16_t) ((__HAL_TIM_GET_COUNTER(&htim6) * TIM6_RTC_TICKS_PER_COUNT_X100) / 100U);
 }
 
-/* Moves the next blink tick later (positive) or earlier (negative) by
- * stepping the counter back or forward. A shift larger than the period allows
- * is clipped, and the next second's sync finishes the job.
+/* Moves the next blink tick later (positive) or earlier (negative). Earlier
+ * steps the counter forward. Later lengthens one period instead, because the
+ * sync runs just after a tick, when there is no count to step back over
+ * (DEV-1417; ShimLedsPhase_counterTimerShift() has the whole story). ARR is
+ * preloaded (AutoReloadPreload in MX_TIM6_Init), so the longer reload written
+ * here takes effect at the next tick and ledBlinkTimerCallback() restores the
+ * normal one after it. A delay therefore lands one tick later than a counter
+ * step would, which the once-a-second sync does not mind.
  *
  * Masking interrupts does not stop TIM6, so the counter could wrap between the
  * read and the write, and the stale value would then undo the reload. The
  * read-to-write window is a few CPU cycles against 1.25 ms per count, so a
- * wrap inside it needs the counter to be on its last count when read. That
- * case is skipped; the next second's sync applies the shift instead. */
+ * wrap inside it needs the counter to be on its last count when read.
+ * ShimLedsPhase_counterTimerShift() leaves the counter alone then, and a delay
+ * never writes it at all. */
 void platform_ledTickShift(int16_t rtcTicks)
 {
   int32_t counts = ((int32_t) rtcTicks * 100) / TIM6_RTC_TICKS_PER_COUNT_X100;
-  int32_t arr = (int32_t) __HAL_TIM_GET_AUTORELOAD(&htim6);
-  int32_t now, cnt;
+  LedPhaseTimerShift_t shift;
+  uint16_t now;
   uint32_t primask;
 
   if (counts == 0)
@@ -477,19 +493,15 @@ void platform_ledTickShift(int16_t rtcTicks)
 
   primask = __get_PRIMASK();
   __disable_irq();
-  now = (int32_t) __HAL_TIM_GET_COUNTER(&htim6);
-  if (now < arr)
+  now = (uint16_t) __HAL_TIM_GET_COUNTER(&htim6);
+  shift = ShimLedsPhase_counterTimerShift(now, TIM6_BLINK_RELOAD, (int16_t) counts);
+  if (shift.counter != now)
   {
-    cnt = now - counts;
-    if (cnt < 0)
-    {
-      cnt = 0;
-    }
-    else if (cnt > arr)
-    {
-      cnt = arr;
-    }
-    __HAL_TIM_SET_COUNTER(&htim6, (uint32_t) cnt);
+    __HAL_TIM_SET_COUNTER(&htim6, shift.counter);
+  }
+  if (shift.periodExtra != 0U)
+  {
+    __HAL_TIM_SET_AUTORELOAD(&htim6, TIM6_BLINK_RELOAD + shift.periodExtra);
   }
   __set_PRIMASK(primask);
 }
