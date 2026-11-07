@@ -515,7 +515,8 @@ int main(void)
     BT_serviceModuleRestart();
 
     /* DEV-99: one block of audio ahead of every task, only if the capture
-     * ring has passed half full (TASK_AUDIO itself is the lowest priority) */
+     * ring has passed half full and not yet overrun (TASK_AUDIO itself is the
+     * lowest priority) */
     AudioRecorder_drainIfUrgent();
 
     ShimTask_manage();

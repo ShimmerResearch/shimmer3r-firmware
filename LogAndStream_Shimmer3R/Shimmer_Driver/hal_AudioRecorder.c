@@ -57,17 +57,22 @@
   2U /* the mic's start-up and the filters' settling: 256 ms dropped */
 #define REC_WRITE \
   1024U /* samples per f_write: 2 KB, whole sectors, one short job */
-#define REC_URGENT        (REC_RING / 2U)
-#define REC_JOB_BUDGET_MS 2U /* most one pass of the task spends working */
-#define REC_TICKS_PER_S   32768U
+#define REC_URGENT         (REC_RING / 2U)
+#define REC_JOB_BUDGET_MS  2U /* most one pass of the task spends working */
+/* Most a log stop spends writing out the WAV. A full ring takes about 0.4 s on
+ * a healthy card. A card that has slowed takes far longer, and the silence an
+ * overrun owes grows without bound behind it; what is left is dropped, so the
+ * file ends early rather than the dock waiting minutes for the card. */
+#define REC_STOP_BUDGET_MS 1000U
+#define REC_TICKS_PER_S    32768U
 
-#define FP_CHUNK          AUDIO_FP_CHUNK_SAMPLES
-#define FP_HOP            AUDIO_FP_CHUNK_HOP_SAMPLES
-#define FP_CARRY          (FP_CHUNK - FP_HOP) /* the overlap: 1 s */
+#define FP_CHUNK           AUDIO_FP_CHUNK_SAMPLES
+#define FP_HOP             AUDIO_FP_CHUNK_HOP_SAMPLES
+#define FP_CARRY           (FP_CHUNK - FP_HOP) /* the overlap: 1 s */
 /* How far behind the fingerprint may fall before it skips: two blocks short
  * of the ring, so GPDMA never overwrites a sample it has still to copy */
-#define FP_BEHIND         (REC_RING - 2U * REC_BLOCK)
-#define FP_OUT            2048U /* bytes per .AFP write */
+#define FP_BEHIND          (REC_RING - 2U * REC_BLOCK)
+#define FP_OUT             2048U /* bytes per .AFP write */
 
 #if (REC_RING & (REC_RING - 1U)) != 0U || (REC_BLOCK % REC_WRITE) != 0U
 #error "the ring must be a power of two and a block a whole number of writes"
@@ -171,6 +176,17 @@ static void setFault(uint8_t why)
   }
 }
 
+/* The status and the file headers carry these counts in 16 bits: they stop at
+ * the top rather than wrap back to small numbers (DEV-99 bench: a count of
+ * 35,061 for about 100,600 escape-hatch writes) */
+static void count16(uint16_t *c)
+{
+  if (*c != UINT16_MAX)
+  {
+    (*c)++;
+  }
+}
+
 /* Rewrites a header in place, leaving the file position at the end */
 static uint8_t rewriteHeader(FIL *f)
 {
@@ -180,7 +196,7 @@ static uint8_t rewriteHeader(FIL *f)
   if (f_lseek(f, 0) != FR_OK || f_write(f, header, AUDIO_FILE_HEADER_LEN, &bw) != FR_OK
       || bw != AUDIO_FILE_HEADER_LEN || f_lseek(f, end) != FR_OK)
   {
-    writeErrors++;
+    count16(&writeErrors);
     return 0;
   }
   return 1;
@@ -308,7 +324,7 @@ static uint8_t createFile(FIL *f, char *path, const char *ext)
   if (f_write(f, header, AUDIO_FILE_HEADER_LEN, &bw) != FR_OK || bw != AUDIO_FILE_HEADER_LEN)
   {
     (void) f_close(f);
-    writeErrors++;
+    count16(&writeErrors);
     failSession(AUDIO_FAULT_WRITE);
     return 0;
   }
@@ -404,7 +420,7 @@ static uint8_t writeJob(uint8_t drain)
   {
     /* Nothing of a failed write is counted, so the closing header's last
      * sample, and the status's seconds, are those of what the file holds */
-    writeErrors++;
+    count16(&writeErrors);
     failSession(AUDIO_FAULT_WRITE);
     return 0;
   }
@@ -553,7 +569,7 @@ static uint8_t fpEmitJob(void)
   }
   if (len != 0U && (f_write(&afpFile, fpOut, len, &bw) != FR_OK || bw != len))
   {
-    writeErrors++;
+    count16(&writeErrors);
     failSession(AUDIO_FAULT_WRITE);
     return 0;
   }
@@ -672,9 +688,21 @@ void PlatAudio_sessionStop(void)
   {
     /* Everything captured goes in before the card can go to a host. A chunk
      * already analysed is written; one still filling or being analysed is
-     * dropped, rather than hold the dock up for most of a second. */
+     * dropped, rather than hold the dock up for most of a second. The WAV
+     * gets REC_STOP_BUDGET_MS: past it, the rest is dropped and the file ends
+     * at its last sample written, which its header then gives. */
+    const uint32_t start = HAL_GetTick();
+
     while (wavOpen && writeJob(1))
     {
+      if (HAL_GetTick() - start >= REC_STOP_BUDGET_MS)
+      {
+        if (silencePending != 0U || head() != tail)
+        {
+          setFault(AUDIO_FAULT_OVERRUN);
+        }
+        break;
+      }
     }
     while (afpOpen && fpPhase == FP_EMIT && fpEmitJob())
     {
@@ -725,7 +753,7 @@ void PlatAudio_process(void)
       syncPending = 0;
       if ((wavOpen && f_sync(&wavFile) != FR_OK) || (afpOpen && f_sync(&afpFile) != FR_OK))
       {
-        writeErrors++;
+        count16(&writeErrors);
         failSession(AUDIO_FAULT_WRITE);
       }
     }
@@ -737,11 +765,19 @@ void PlatAudio_process(void)
   }
 }
 
+/* The escape hatch: one write ahead of the task list while the ring is past
+ * half full, so audio cannot be starved by busy higher tasks. Not once it has
+ * overrun: what writeJob() then owes first is silence, which frees nothing in
+ * the ring, so each write only made the pass longer - for as long as the card
+ * stayed slow. On the bench that kept every pass long enough for the sampling
+ * interrupts to have queued TASK_SAVEDATA again by its end, which starved
+ * TASK_SDWRITE and the dock for hours (DEV-99). TASK_AUDIO pays the silence. */
 void AudioRecorder_drainIfUrgent(void)
 {
-  if (state == AUDIO_STATE_RECORDING && wavOpen && head() - tail >= REC_URGENT)
+  if (state == AUDIO_STATE_RECORDING && wavOpen && silencePending == 0U
+      && head() - tail >= REC_URGENT)
   {
-    escapeDrains++;
+    count16(&escapeDrains);
     (void) writeJob(0);
   }
 }
