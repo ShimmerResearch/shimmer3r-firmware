@@ -163,6 +163,13 @@ static uint64_t sampleTicks(uint32_t s)
       - ((uint64_t) toEnd * REC_TICKS_PER_S) / AUDIO_FILE_RATE_HZ;
 }
 
+/* Whether ring sample s (s < head()) is in a block whose stamp is still held,
+ * with a block to spare for one completing meanwhile */
+static uint8_t stampHeld(uint32_t s)
+{
+  return head() / REC_BLOCK - s / REC_BLOCK < AUDIO_CAPTURE_STAMPS;
+}
+
 static void onBlock(void)
 {
   (void) ShimTask_set(TASK_AUDIO);
@@ -234,11 +241,15 @@ static void closeFiles(void)
 {
   if (wavOpen)
   {
-    /* The file's last sample: its sample n is ring sample fileFirst + n */
+    /* The file's last sample: its sample n is ring sample fileFirst + n. Its
+     * time is known only while its block's stamp is held. A WAV cut short at
+     * stop can end minutes behind the capture, and the stamp it would read
+     * then belongs to a later block: its header keeps 0 (DEV-99 bench, a
+     * 475 s file whose header claimed 1180 s). */
     uint32_t end = fileFirst + wavInfo.samples;
 
     summarise(&wavInfo);
-    if (end > fileFirst && head() >= end)
+    if (end > fileFirst && head() >= end && stampHeld(end - 1U))
     {
       wavInfo.lastSampleTicks = sampleTicks(end - 1U);
     }
@@ -690,7 +701,7 @@ void PlatAudio_sessionStop(void)
      * already analysed is written; one still filling or being analysed is
      * dropped, rather than hold the dock up for most of a second. The WAV
      * gets REC_STOP_BUDGET_MS: past it, the rest is dropped and the file ends
-     * at its last sample written, which its header then gives. */
+     * at its last sample written (closeFiles() says when its time is known). */
     const uint32_t start = HAL_GetTick();
 
     while (wavOpen && writeJob(1))
