@@ -106,6 +106,10 @@ require      "$B/Core/Src/tim.c"     "HAL_NVIC_SetPriority(TIM6_IRQn, 10, 0)" \
 require      "$B/Core/Src/main.c"    "PWR_SLEEPENTRY_WFI"            "DEV-1222 masked idle sleep (else the weak hook spins, never sleeps)"
 require_re   "$B/USBX/App/ux_user.h" '^#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH[[:space:]]' \
                                                                      "active 64 KB MSC transfer define (stock is commented out)"
+require      "$B/Core/Src/main.c"    "if (!USBX_IsDeviceConfigured())" \
+                                                                     "DEV-192 no idle sleep while a host has USB configured (else MSC ~6 MB/s)"
+require      "$B/USBX/App/app_usbx_device.c" "bool USBX_IsDeviceConfigured(void)" \
+                                                                     "DEV-192 configured-by-host check behind the idle sleep"
 
 echo
 echo "Code that must NOT come back:"

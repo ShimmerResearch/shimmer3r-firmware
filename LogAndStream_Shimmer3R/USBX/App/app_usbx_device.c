@@ -699,4 +699,13 @@ bool USBX_IsInitialised(void)
   return usbx_initialized;
 }
 
+/* True once a host has configured the device (SET_CONFIGURATION), until it is
+ * reset, suspended away or unplugged. A dock or charger with no host never
+ * gets this far. */
+bool USBX_IsDeviceConfigured(void)
+{
+  return usbx_initialized && _ux_system_slave != UX_NULL
+      && _ux_system_slave->ux_system_slave_device.ux_slave_device_state == UX_DEVICE_CONFIGURED;
+}
+
 /* USER CODE END 1 */
