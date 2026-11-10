@@ -85,6 +85,9 @@ require      "$B/Core/Src/rtc.c"     "(data->subseconds & 0x7FFFU)"  "DEV-1162 t
 require      "$B/Core/Src/rtc.c"     "RTC_SHIFTADD1S_RESET, (uint32_t) (32768 - delta)" \
                                                                      "DEV-1162 advance-only shift (ADD1S left clocks 1 s fast)"
 require      "$B/Core/Src/sdmmc.c"   "hsd1.Instance = NULL"          "hot-swap tolerance, no Error_Handler() on SD init"
+require      "$B/Core/Src/sdmmc.c"   "hsd1.Init.ClockDiv = 1;"       "DEV-1390 24 MHz while the card is in Default Speed (25 MHz max)"
+require      "$B/Core/Src/sdmmc.c"   "(void) SD_enterHighSpeed();"   "DEV-1390 48 MHz only after the card switches to High Speed"
+require      "$B/FATFS/Target/sd_diskio.c" "if (hsd1.Instance == NULL)" "DEV-1390 FatFs fails fast on a card that did not initialise"
 require      "$B/Core/Src/usb_otg.c" "Init.speed = USB_getPcdSpeed"  "PCD speed selection"
 require      "$B/USBX/App/app_usbx_device.c" "ALIGN_32BYTES"         "32-byte D-cache line alignment of the USBX pool"
 require      "$B/USBX/App/app_usbx_device.c" "UX_DEVICE_APP_MEM_POOL_SIZE, UX_NULL" \
