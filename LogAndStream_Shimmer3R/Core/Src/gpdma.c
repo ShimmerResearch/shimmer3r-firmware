@@ -64,7 +64,7 @@ void MX_GPDMA1_Init(void)
   HAL_NVIC_EnableIRQ(GPDMA1_Channel9_IRQn);
   HAL_NVIC_SetPriority(GPDMA1_Channel10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(GPDMA1_Channel10_IRQn);
-  HAL_NVIC_SetPriority(GPDMA1_Channel11_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(GPDMA1_Channel11_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(GPDMA1_Channel11_IRQn);
 
   /* USER CODE BEGIN GPDMA1_Init 1 */
@@ -119,7 +119,16 @@ void adcLinkedListConfig(ADC_HandleTypeDef *hadc)
 
 void micLinkedListConfig(MDF_HandleTypeDef *adfHandle)
 {
-  MX_MICQueue_Config();
+  /* MX_ADF1_Init() runs again on every factory mic test, and HAL_MDF_MspDeInit() leaves
+   * the queue alone. Building it again would insert MICNode into the queue it is already
+   * in, growing the queue's node count each time (DEV-99). Build it once; link it each time. */
+  static uint8_t micQueueBuilt = 0;
+
+  if (!micQueueBuilt)
+  {
+    MX_MICQueue_Config();
+    micQueueBuilt = 1;
+  }
   __HAL_LINKDMA(adfHandle, hdma, handle_GPDMA1_Channel11);
   if (HAL_DMAEx_List_LinkQ(&handle_GPDMA1_Channel11, &MICQueue) != HAL_OK)
   {

@@ -6,6 +6,7 @@
  */
 
 #include "hal_FactoryTest.h"
+#include "hal_Audio.h"
 
 #include <inttypes.h>
 #include <string.h>
@@ -1563,7 +1564,7 @@ uint8_t runMicrophoneTest(void)
 
   ShimFactoryTest_sendReport("Microphone:\r\n");
 
-  micResult = micTest();
+  micResult = AudioCapture_factoryTest();
 
   ShimFactoryTest_sendReport(" - S3R_TEST_0026 - ");
   const micTestResult_t *result = getMicTestResult(micResult);
@@ -1584,6 +1585,8 @@ const micTestResult_t *getMicTestResult(uint8_t micResult)
   static const micTestResult_t results[] = { [FACTORY_TEST_MIC_PASS] = { "PASS", SELF_TEST_PASS },
     [FACTORY_TEST_MIC_FAIL_NO_DATA_IN_BUFFER]
     = { "FAIL: Test buffer is empty", SELF_TEST_FAIL_SIGNAL_ISSUE },
+    [FACTORY_TEST_MIC_FAIL_BUSY]
+    = { "FAIL: Microphone busy recording", SELF_TEST_FAIL_SIGNAL_ISSUE },
     [MDF_ERROR_ACQUISITION_OVERFLOW]
     = { "FAIL: Acquisition Overflow Error", SELF_TEST_FAIL_CHIP_DETECTION },
     [MDF_ERROR_RSF_OVERRUN] = { "FAIL: RSF Overrun Error", SELF_TEST_FAIL_CHIP_DETECTION },

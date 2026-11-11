@@ -30,6 +30,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app_usbx_device.h"
+#include "hal_AudioRecorder.h"
 #include "log_and_stream_globals.h"
 #include "shimmer_definitions.h"
 #include "shimmer_include.h"
@@ -224,6 +225,9 @@ void Init()
    * It also needs to be loaded after the BT is initialised so that the
    * MAC ID can be used for default Shimmer name and calibration file names.*/
   ShimConfig_loadSensorConfigAndCalib();
+
+  /* DEV-99: the audio fingerprint's tables, before anything samples */
+  AudioRecorder_init();
 
   /* Sample both dock and USB-VBUS pins so the ownership decision below has
    * the complete picture.  LogAndStream_updateDockedStateAndCheckChanged() was
@@ -509,6 +513,11 @@ int main(void)
     /* DEV-1164: arm the delayed MCU reboot after a BT module restart, in task
      * context (the BT UART interrupt only records it). */
     BT_serviceModuleRestart();
+
+    /* DEV-99: one block of audio ahead of every task, only if the capture
+     * ring has passed half full and not yet overrun (TASK_AUDIO itself is the
+     * lowest priority) */
+    AudioRecorder_drainIfUrgent();
 
     ShimTask_manage();
   }

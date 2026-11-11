@@ -106,6 +106,14 @@ require      "$B/Core/Src/rtc.c"     "dr = READ_REG(RTC->DR)"        "DEV-338 re
 require      "$B/Core/Src/tim.c"     "platform_ledTickShift"         "DEV-338 LED blink phase-lock hooks"
 require      "$B/Core/Src/tim.c"     "HAL_NVIC_SetPriority(TIM6_IRQn, 10, 0)" \
                                                                      "DEV-338 blink timer below the sample interrupt"
+require      "$B/Core/Src/gpdma.c"   "HAL_NVIC_SetPriority(GPDMA1_Channel11_IRQn, 2, 0)" \
+                                                                     "DEV-99 mic capture DMA below the sample interrupt"
+require      "$B/Core/Src/mdf.c"     "HAL_NVIC_SetPriority(ADF1_IRQn, 7, 0)" \
+                                                                     "DEV-99 mic error interrupt below the sample interrupt"
+require      "$B/Core/Src/gpdma.c"   "micQueueBuilt"                 "DEV-99 mic DMA queue built once (else every mic test re-inserts its node)"
+require      "$B/Core/Src/main.c"    "AudioRecorder_drainIfUrgent();" "DEV-99 audio ring escape hatch ahead of the task list"
+require      "$B/Core/Src/main.c"    "AudioRecorder_init();"         "DEV-99 fingerprint tables built at boot, not mid-log"
+require      "$B/FATFS/Target/ffconf.h" "#define _FS_LOCK    8"        "DEV-99 data, event and audio files open together"
 require      "$B/Core/Src/main.c"    "PWR_SLEEPENTRY_WFI"            "DEV-1222 masked idle sleep (else the weak hook spins, never sleeps)"
 require_re   "$B/USBX/App/ux_user.h" '^#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH[[:space:]]' \
                                                                      "active 64 KB MSC transfer define (stock is commented out)"
