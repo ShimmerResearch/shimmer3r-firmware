@@ -843,8 +843,22 @@ void platform_sleepWhenNoTask(void)
 {
   if (USBX_IsInitialised())
   {
-    /* idle: sleep until next IRQ (SOF, UART RX, HAL_GetTick SysTick, etc.) */
-    __WFI();
+    /* DEV-192: while a host has the device configured, do not sleep. USBX
+     * runs standalone, and its mass storage class needs several passes of
+     * ux_device_stack_tasks_run() per SCSI command, some with no interrupt to
+     * wake the core for: a received CBW is decoded on one pass and acted on
+     * on the next, and a finished transfer is only moved on by the pass after
+     * it. Asleep, each of those passes waited for the next SysTick, about
+     * 4.8 ms per command, which held reads near 6 MB/s and writes near
+     * 6 MB/s. Polling instead measured 10.3-10.5 MB/s read and 7.9 MB/s
+     * write. USBX is only up while docked and idle (undocking, logging and
+     * streaming all deinitialise it), so this only costs current on USB
+     * power. With no host (a charging-only dock) the core still sleeps until
+     * the next interrupt (SOF, UART RX, SysTick, etc.). */
+    if (!USBX_IsDeviceConfigured())
+    {
+      __WFI();
+    }
     __enable_irq();
   }
   else
