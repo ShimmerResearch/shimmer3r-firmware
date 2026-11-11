@@ -13,6 +13,27 @@
 #ifndef HAL_AUDIORECORDER_H_
 #define HAL_AUDIORECORDER_H_
 
+#include <stdint.h>
+
+/* The 16 kHz capture: 2048-sample (128 ms) blocks, whose first two after a
+ * start are the mic's start-up and the filters' settling */
+#define AUDIO_REC_BLOCK_SAMPLES 2048U
+#define AUDIO_REC_SETTLE_BLOCKS 2U
+
+/* The capture is shared by recording and the sound level (hal_AudioLevel.c,
+ * DEV-1413). The first owner to acquire it starts it, at the recorder's
+ * settings, and the last to release it stops it. Acquire returns 0 if the
+ * capture would not start, or is running for something else (the factory
+ * test). */
+#define AUDIO_OWNER_RECORDER    0x01U
+#define AUDIO_OWNER_LEVEL       0x02U
+uint8_t AudioRecorder_captureAcquire(uint8_t owner);
+void AudioRecorder_captureRelease(uint8_t owner);
+/* Capture block n's AUDIO_REC_BLOCK_SAMPLES samples, for n among the last
+ * AUDIO_CAPTURE_MAX_BLOCKS - 1 completed (AudioCapture_blocksDone()). Call
+ * AudioCapture_prepareRead() before reading them. */
+const int16_t *AudioRecorder_captureBlock(uint32_t block);
+
 /* For the main loop, before the task list: writes one block of audio, ahead of
  * every task, when the capture ring has passed half full. TASK_AUDIO is the
  * lowest-priority task, so this is what keeps a long run of other work from

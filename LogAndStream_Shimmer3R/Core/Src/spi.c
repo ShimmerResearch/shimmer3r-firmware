@@ -24,6 +24,7 @@
 
 //TODO remove, needed until SW supports setting pressure sensor rate in config
 #include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
+#include "hal_AudioLevel.h"
 #define BOOT_TIME 20 //LIS2MDL = lis2dw12 = 20ms, LSM6DSV = 10
 
 #if defined(SHIMMER3R)
@@ -850,6 +851,20 @@ void SPI_configureChannels()
     }
   }
 
+#if defined(SHIMMER3R)
+  /* The sound level (DEV-1413). Before the ADS7028 block, so VBATT stays the
+   * last channel. SPI_pollSensors() writes it itself, so it adds no bus to
+   * wait for. */
+  sensing.ptr.soundLevel = 0;
+  if (ShimConfig_isSoundLevelEnabled())
+  {
+    *channel_contents_ptr++ = SOUND_LEVEL;
+    sensing.nbrSpiChans += 1;
+    sensing.ptr.soundLevel = sensing.dataLen;
+    sensing.dataLen += 2;
+  }
+#endif
+
   //External ADC ADS7028
   if (isAds7028Present())
   {
@@ -1023,6 +1038,15 @@ void SPI_pollSensors(void)
 {
   currentSpiBusCbFlags = 0;
   uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
+#if defined(SHIMMER3R)
+  if (sensing.ptr.soundLevel != 0U)
+  {
+    uint16_t lvl = (uint16_t) AudioLevel_get();
+
+    dataBufPtr[sensing.ptr.soundLevel] = (uint8_t) lvl;
+    dataBufPtr[sensing.ptr.soundLevel + 1U] = (uint8_t) (lvl >> 8);
+  }
+#endif
   //ExG (SPI)
   if (ShimBrd_isAds1292Present())
   {
@@ -1064,6 +1088,14 @@ void SPI_pollSensors(void)
   {
     SpiSensing(&spi2Sens, SPI_FIRST_SENSOR);
   }
+#if defined(SHIMMER3R)
+  /* The sound level on its own uses no bus, so nothing else would complete
+   * the packet's SPI stage */
+  if (expectedSpiBusCbFlags == 0U)
+  {
+    SPI_gatherDataDone_cb();
+  }
+#endif
 }
 
 void SPI_stopSensing()

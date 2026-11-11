@@ -17,6 +17,13 @@
  * (SDCard/shimmer_sd_companion.h): session start, split and the one-minute
  * sync are only queued here, and stop closes at once.
  *
+ * The capture is shared with the sound level (hal_AudioLevel.c, DEV-1413),
+ * which keeps it running for as long as the unit senses with the level on. A
+ * session that starts while it runs joins it: the session's sample 0 is the
+ * start of the block filling at that moment (baseBlock), and its ADF error
+ * counts are taken from there. A session that stops while it runs leaves it
+ * running, and drains the WAV no further than the capture had got.
+ *
  * Every WAV is one file whose sample n is ring sample fileFirst + n: a stretch
  * the card was too slow for is written as silence, so time and sample index
  * stay in step. Every chunk of the fingerprint is numbered from the session's
@@ -50,11 +57,10 @@
 #define REC_GAIN_IM68D121   1 /* +3.5 dB */
 #define REC_GAIN \
   (ShimBrd_isIm68d121PresentPerSrNumber() ? REC_GAIN_IM68D121 : REC_GAIN_MP23DB01HP)
-#define REC_BLOCK  2048U /* samples per DMA node: 128 ms, one interrupt each */
-#define REC_BLOCKS AUDIO_CAPTURE_MAX_BLOCKS
-#define REC_RING   (REC_BLOCK * REC_BLOCKS) /* 8.2 s */
-#define REC_SKIP_BLOCKS \
-  2U /* the mic's start-up and the filters' settling: 256 ms dropped */
+#define REC_BLOCK       AUDIO_REC_BLOCK_SAMPLES
+#define REC_BLOCKS      AUDIO_CAPTURE_MAX_BLOCKS
+#define REC_RING        (REC_BLOCK * REC_BLOCKS) /* 8.2 s */
+#define REC_SKIP_BLOCKS AUDIO_REC_SETTLE_BLOCKS
 #define REC_WRITE \
   1024U /* samples per f_write: 2 KB, whole sectors, one short job */
 #define REC_URGENT         (REC_RING / 2U)
@@ -139,17 +145,40 @@ static uint32_t fpRecords; /* landmarks of the analysed chunk that fit a record 
 static uint32_t emitIdx;
 static uint32_t chunksDone, chunksSkipped;
 
-/* Ring samples captured, not counting the skipped start-up blocks */
-static uint32_t head(void)
+/* Who holds the capture: AUDIO_OWNER_* bits. The first to acquire it starts it
+ * and the last to release it stops it. */
+static volatile uint8_t capOwners;
+/* The capture block the session's sample 0 starts: past the skipped start-up
+ * blocks when the session started the capture, else the block filling when it
+ * joined one already running */
+static uint32_t baseBlock = REC_SKIP_BLOCKS;
+/* How far a stop's drain may go: the capture's position at the stop. A
+ * capture kept running for the sound level goes on past it. */
+static uint32_t headLimit = UINT32_MAX;
+/* The capture's ADF error counts when the session joined it, and the
+ * session's own once it has stopped */
+static AudioCapture_Errors errBase, errSession;
+static uint8_t errFrozen;
+
+/* Ring samples captured from the session's sample 0, wherever GPDMA is */
+static uint32_t captured(void)
 {
   uint32_t blocks = AudioCapture_blocksDone();
 
-  return blocks > REC_SKIP_BLOCKS ? (blocks - REC_SKIP_BLOCKS) * REC_BLOCK : 0U;
+  return blocks > baseBlock ? (blocks - baseBlock) * REC_BLOCK : 0U;
+}
+
+/* Ring samples the session has to work with: captured(), up to a stop */
+static uint32_t head(void)
+{
+  uint32_t h = captured();
+
+  return h < headLimit ? h : headLimit;
 }
 
 static uint32_t ringAt(uint32_t sample)
 {
-  return (sample + REC_SKIP_BLOCKS * REC_BLOCK) & (REC_RING - 1U);
+  return (sample + baseBlock * REC_BLOCK) & (REC_RING - 1U);
 }
 
 /* The Shimmer clock of ring sample s, from the stamp of the block it is in.
@@ -159,7 +188,7 @@ static uint64_t sampleTicks(uint32_t s)
   uint32_t block = s / REC_BLOCK;
   uint32_t toEnd = (block + 1U) * REC_BLOCK - s;
 
-  return AudioCapture_blockEndTicks(block + REC_SKIP_BLOCKS)
+  return AudioCapture_blockEndTicks(block + baseBlock)
       - ((uint64_t) toEnd * REC_TICKS_PER_S) / AUDIO_FILE_RATE_HZ;
 }
 
@@ -167,12 +196,87 @@ static uint64_t sampleTicks(uint32_t s)
  * with a block to spare for one completing meanwhile */
 static uint8_t stampHeld(uint32_t s)
 {
-  return head() / REC_BLOCK - s / REC_BLOCK < AUDIO_CAPTURE_STAMPS;
+  return captured() / REC_BLOCK - s / REC_BLOCK < AUDIO_CAPTURE_STAMPS;
 }
 
 static void onBlock(void)
 {
-  (void) ShimTask_set(TASK_AUDIO);
+  if (capOwners & AUDIO_OWNER_RECORDER)
+  {
+    (void) ShimTask_set(TASK_AUDIO);
+  }
+  if (capOwners & AUDIO_OWNER_LEVEL)
+  {
+    (void) ShimTask_set(TASK_AUDIO_LEVEL);
+  }
+}
+
+uint8_t AudioRecorder_captureAcquire(uint8_t owner)
+{
+  if (capOwners == 0U)
+  {
+    const AudioCapture_Config cfg = { .decimation = REC_DECIMATION,
+      .gain = REC_GAIN,
+      .ring = ring,
+      .blockSamples = REC_BLOCK,
+      .blocks = REC_BLOCKS };
+
+    AudioCapture_setBlockCallback(onBlock);
+    if (!AudioCapture_start(&cfg))
+    {
+      AudioCapture_setBlockCallback(NULL);
+      return 0;
+    }
+  }
+  capOwners |= owner;
+  return 1;
+}
+
+void AudioRecorder_captureRelease(uint8_t owner)
+{
+  if (!(capOwners & owner))
+  {
+    return;
+  }
+  capOwners &= (uint8_t) ~owner;
+  if (capOwners == 0U)
+  {
+    AudioCapture_stop();
+    AudioCapture_setBlockCallback(NULL);
+  }
+}
+
+const int16_t *AudioRecorder_captureBlock(uint32_t block)
+{
+  return &ring[(block % REC_BLOCKS) * REC_BLOCK];
+}
+
+/* The capture's ADF error counts since the session joined it, or the session's
+ * final counts once it has stopped */
+static void sessionErrors(AudioCapture_Errors *e)
+{
+  if (errFrozen)
+  {
+    *e = errSession;
+    return;
+  }
+  AudioCapture_errors(e);
+  e->overflow -= errBase.overflow;
+  e->rsfOverrun -= errBase.rsfOverrun;
+  e->clockAbsence -= errBase.clockAbsence;
+  e->shortCircuit -= errBase.shortCircuit;
+  e->saturation -= errBase.saturation;
+  e->other -= errBase.other;
+}
+
+/* The session is giving up the capture: keep its counts as they stand */
+static void freezeErrors(void)
+{
+  if (!errFrozen)
+  {
+    sessionErrors(&errSession);
+    errFrozen = 1;
+  }
 }
 
 static void setFault(uint8_t why)
@@ -226,7 +330,7 @@ static void summarise(ShimAudioFileInfo *info)
 {
   AudioCapture_Errors e;
 
-  AudioCapture_errors(&e);
+  sessionErrors(&e);
   info->closed = 1;
   info->fault = fault;
   info->escapeDrains = escapeDrains;
@@ -286,7 +390,11 @@ static void closeFiles(void)
 static void failSession(uint8_t why)
 {
   setFault(why);
-  AudioCapture_stop();
+  if (capOwners & AUDIO_OWNER_RECORDER)
+  {
+    freezeErrors();
+    AudioRecorder_captureRelease(AUDIO_OWNER_RECORDER);
+  }
   closeFiles();
   openPending = splitPending = syncPending = 0;
   state = AUDIO_STATE_FAULT;
@@ -371,18 +479,27 @@ static void openFiles(void)
 
   if (openReason == AUDIO_FILE_OPEN_SESSION)
   {
-    const AudioCapture_Config cfg = { .decimation = REC_DECIMATION,
-      .gain = REC_GAIN,
-      .ring = ring,
-      .blockSamples = REC_BLOCK,
-      .blocks = REC_BLOCKS };
+    /* The sound level may already hold the capture: then join it */
+    uint8_t joining = capOwners != 0U;
 
-    AudioCapture_setBlockCallback(onBlock);
-    if (!AudioCapture_start(&cfg))
+    if (!AudioRecorder_captureAcquire(AUDIO_OWNER_RECORDER))
     {
       failSession(AUDIO_FAULT_CAPTURE);
       return;
     }
+    if (joining)
+    {
+      uint32_t blocks = AudioCapture_blocksDone();
+
+      baseBlock = blocks > REC_SKIP_BLOCKS ? blocks : REC_SKIP_BLOCKS;
+      AudioCapture_errors(&errBase);
+    }
+    else
+    {
+      baseBlock = REC_SKIP_BLOCKS;
+      memset(&errBase, 0, sizeof(errBase));
+    }
+    errFrozen = 0;
   }
   state = AUDIO_STATE_RECORDING;
 }
@@ -391,25 +508,30 @@ static void openFiles(void)
  * samples, else, when draining, whatever is left. Returns 1 if it wrote. */
 static uint8_t writeJob(uint8_t drain)
 {
-  uint32_t available = head() - tail;
+  uint32_t h = head();
+  uint32_t ahead = captured() - tail;
+  uint32_t available;
   uint32_t n;
-  uint32_t first = tail;
+  uint32_t first;
   const int16_t *src;
   UINT bw;
 
-  if (silencePending == 0U && available > REC_RING - REC_BLOCK)
+  if (silencePending == 0U && ahead > REC_RING - REC_BLOCK)
   {
     /* The card fell further behind than the ring holds: GPDMA is overwriting
      * what has not been written. Skip to two blocks inside the ring and owe
-     * the skipped samples as silence, so the file keeps time. */
-    uint32_t lost = available - (REC_RING - 2U * REC_BLOCK);
+     * the skipped samples as silence, so the file keeps time. Judged against
+     * where GPDMA is, not head(): after a stop a capture kept running for the
+     * sound level goes on overwriting the ring. */
+    uint32_t lost = ahead - (REC_RING - 2U * REC_BLOCK);
 
     lost = (lost + REC_WRITE - 1U) / REC_WRITE * REC_WRITE;
     tail += lost;
     silencePending += lost;
     setFault(AUDIO_FAULT_OVERRUN);
-    available = head() - tail;
   }
+  available = h > tail ? h - tail : 0U;
+  first = tail;
 
   if (silencePending != 0U)
   {
@@ -657,6 +779,7 @@ void PlatAudio_sessionStart(uint8_t newMode, uint64_t newDataFileTs)
   dataFileTs = newDataFileTs;
   openReason = AUDIO_FILE_OPEN_SESSION;
   fault = AUDIO_FAULT_NONE;
+  headLimit = UINT32_MAX;
   tail = fileFirst = 0U;
   silencePending = sessionSilence = 0U;
   escapeDrains = writeErrors = 0U;
@@ -694,7 +817,12 @@ void PlatAudio_sessionStop(void)
   {
     return;
   }
-  AudioCapture_stop();
+  if (capOwners & AUDIO_OWNER_RECORDER)
+  {
+    headLimit = head();
+    freezeErrors();
+    AudioRecorder_captureRelease(AUDIO_OWNER_RECORDER);
+  }
   if (state == AUDIO_STATE_RECORDING)
   {
     /* Everything captured goes in before the card can go to a host. A chunk
@@ -708,7 +836,7 @@ void PlatAudio_sessionStop(void)
     {
       if (HAL_GetTick() - start >= REC_STOP_BUDGET_MS)
       {
-        if (silencePending != 0U || head() != tail)
+        if (silencePending != 0U || head() > tail)
         {
           setFault(AUDIO_FAULT_OVERRUN);
         }
@@ -821,7 +949,7 @@ uint8_t PlatAudio_buildStatus(uint8_t *buf)
 {
   AudioCapture_Errors e;
 
-  AudioCapture_errors(&e);
+  sessionErrors(&e);
   buf[0] = 1U;
   buf[1] = ShimConfig_audioMode();
   buf[2] = state;
