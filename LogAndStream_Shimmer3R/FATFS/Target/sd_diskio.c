@@ -121,6 +121,14 @@ const Diskio_drvTypeDef  SD_Driver =
 static int SD_CheckStatusWithTimeout(uint32_t timeout)
 {
   uint32_t timer = HAL_GetTick();
+
+  /* A card that failed to initialise never becomes ready: fail now rather
+   * than poll it for the whole timeout (SD_TIMEOUT is 30 s) */
+  if (hsd1.Instance == NULL)
+  {
+    return -1;
+  }
+
   /* block until SDIO IP is ready again or a timeout occur */
   while(HAL_GetTick() - timer < timeout)
   {

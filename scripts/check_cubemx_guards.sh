@@ -85,6 +85,9 @@ require      "$B/Core/Src/rtc.c"     "(data->subseconds & 0x7FFFU)"  "DEV-1162 t
 require      "$B/Core/Src/rtc.c"     "RTC_SHIFTADD1S_RESET, (uint32_t) (32768 - delta)" \
                                                                      "DEV-1162 advance-only shift (ADD1S left clocks 1 s fast)"
 require      "$B/Core/Src/sdmmc.c"   "hsd1.Instance = NULL"          "hot-swap tolerance, no Error_Handler() on SD init"
+require      "$B/Core/Src/sdmmc.c"   "hsd1.Init.ClockDiv = 1;"       "DEV-1390 24 MHz while the card is in Default Speed (25 MHz max)"
+require      "$B/Core/Src/sdmmc.c"   "(void) SD_enterHighSpeed();"   "DEV-1390 48 MHz only after the card switches to High Speed"
+require      "$B/FATFS/Target/sd_diskio.c" "if (hsd1.Instance == NULL)" "DEV-1390 FatFs fails fast on a card that did not initialise"
 require      "$B/Core/Src/usb_otg.c" "Init.speed = USB_getPcdSpeed"  "PCD speed selection"
 require      "$B/USBX/App/app_usbx_device.c" "ALIGN_32BYTES"         "32-byte D-cache line alignment of the USBX pool"
 require      "$B/USBX/App/app_usbx_device.c" "UX_DEVICE_APP_MEM_POOL_SIZE, UX_NULL" \
@@ -114,6 +117,10 @@ require      "$B/FATFS/Target/ffconf.h" "#define _FS_LOCK    8"        "DEV-99 d
 require      "$B/Core/Src/main.c"    "PWR_SLEEPENTRY_WFI"            "DEV-1222 masked idle sleep (else the weak hook spins, never sleeps)"
 require_re   "$B/USBX/App/ux_user.h" '^#define UX_SLAVE_REQUEST_DATA_MAX_LENGTH[[:space:]]' \
                                                                      "active 64 KB MSC transfer define (stock is commented out)"
+require      "$B/Core/Src/main.c"    "if (!USBX_IsDeviceConfigured())" \
+                                                                     "DEV-192 no idle sleep while a host has USB configured (else MSC ~6 MB/s)"
+require      "$B/USBX/App/app_usbx_device.c" "bool USBX_IsDeviceConfigured(void)" \
+                                                                     "DEV-192 configured-by-host check behind the idle sleep"
 
 echo
 echo "Code that must NOT come back:"
