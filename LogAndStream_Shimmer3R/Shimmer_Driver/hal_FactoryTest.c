@@ -16,6 +16,7 @@
 #include "BMP3/BMP3_SensorAPI/bmp3_defs.h"
 #include "BMP3/BMP3_SensorAPI/self-test/bmp3_selftest.h"
 #include "PCM/pcm_config.h"
+#include "SDCard/shimmer_sd_card_id.h"
 #include "ux_device_cdc_acm.h"
 char *buffer;
 
@@ -799,6 +800,34 @@ void led_test(void)
 #endif
 }
 
+/* Prints the card's identity lines from the CID its last initialisation read.
+ * log-and-stream-common formats them (SDCard/shimmer_sd_card_id.h), so both
+ * platforms print the same lines from one model table (DEV-1398). */
+static void sd_card_report_cid(void)
+{
+  uint8_t raw[SD_CID_LEN];
+  uint8_t i;
+
+  /* A card that failed to initialise leaves hsd1.Instance NULL, and hsd1.CID
+   * still holds the previous card's CID, or none. */
+  if (hsd1.Instance == NULL)
+  {
+    ShimSdCardId_unavailableLine(buffer, "card not initialised");
+    ShimFactoryTest_sendReport(buffer);
+    return;
+  }
+
+  /* hsd1.CID holds the register as four words, most significant first */
+  for (i = 0; i < SD_CID_LEN; i++)
+  {
+    raw[i] = (uint8_t) (hsd1.CID[i / 4] >> (24 - 8 * (i % 4)));
+  }
+  for (i = 0; ShimSdCardId_reportLine(buffer, i, raw, hsd1.SdCard.LogBlockNbr); i++)
+  {
+    ShimFactoryTest_sendReport(buffer);
+  }
+}
+
 void sd_card_test(void)
 {
   ShimFactoryTest_sendReport("SD Card:\r\n");
@@ -815,9 +844,7 @@ void sd_card_test(void)
       HAL_Delay(120); //120ms
     }
 
-    ShimFactoryTest_sendReport(" - ");
-    printSdCardInfo(buffer);
-    ShimFactoryTest_sendReport(buffer);
+    sd_card_report_cid();
 
     shimmerStatus.testResult += ShimSd_test1() << 6;
     //SD_test_alternative();
