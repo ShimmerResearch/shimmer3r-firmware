@@ -340,6 +340,32 @@ static void RTC_shiftToTicks(uint64_t ticks)
   }
 }
 
+/* DEV-594: keep Alarm A's pending contexts the same time away across a clock
+ * set.
+ *
+ * Alarm A is programmed for one exact date and second (RTC_setNextRtcAlarmA,
+ * RTC_ALARMMASK_NONE), and only its own callback programs the next one. A set
+ * that moved the clock forward past that second skipped the only match, so
+ * the battery read never ran again until a reset or a dock/undock and the
+ * reported battery level froze. A set that moved it back delayed every pending
+ * context by the jump. Every Alarm A context counts from when it was set (the
+ * battery read, auto-stop, the two reboots), so each pending time moves by the
+ * calendar seconds the clock moved, and the alarm is programmed again;
+ * RTC_setNextRtcAlarmA still moves one already due to a second from now.
+ * Called with the RTC IRQ held (DEV-1162), so the alarm cannot fire part-way. */
+static void RTC_shiftAlarmsAfterSet(time_t shiftS)
+{
+  for (int i = 0; i < RTC_NUM_ALARMS; i++)
+  {
+    if (nextAlarms[i] != 0)
+    {
+      time_t t = nextAlarms[i] + shiftS;
+      nextAlarms[i] = (t > 0) ? t : 1; //0 means none pending
+    }
+  }
+  RTC_setNextRtcAlarmA(&hrtc);
+}
+
 uint8_t RTC_setDateTime(SHIM_RTC_t *data)
 {
   uint32_t format = RTC_FORMAT_BIN;
@@ -384,6 +410,10 @@ uint8_t RTC_setDateTime(SHIM_RTC_t *data)
 
   uint32_t irqHeld = RTC_irqHold();
 
+  /* DEV-594: the calendar second the clock leaves, to move Alarm A's pending
+   * times with it (RTC_shiftAlarmsAfterSet). */
+  time_t secondBefore = (time_t) (RTC_get64() / 32768U);
+
   sTime.Hours = data->hours;
   sTime.Minutes = data->minutes;
   sTime.Seconds = data->seconds;
@@ -398,6 +428,7 @@ uint8_t RTC_setDateTime(SHIM_RTC_t *data)
   HAL_RTC_SetDate(&hrtc, &sDate, format);
 
   RTC_shiftToTicks(data->ticks);
+  RTC_shiftAlarmsAfterSet((time_t) (data->ticks / 32768U) - secondBefore);
   ///**Enable the Alarm A
   //*/
   //sAlarm.AlarmTime.Hours = 0x0;
