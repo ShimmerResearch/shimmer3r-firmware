@@ -89,6 +89,7 @@ extern "C"
 
   void RTC_setupAndStartSdSyncAlarm(void);
   void RTC_stopSdSyncAlarm(void);
+  uint32_t RTC_takeSdSyncTicks(void);
   uint8_t RTC_isRwcTimeSet(void);
 
   /* USER CODE END Prototypes */
