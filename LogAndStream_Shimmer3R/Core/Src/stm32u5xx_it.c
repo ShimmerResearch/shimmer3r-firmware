@@ -234,6 +234,12 @@ void RTC_IRQHandler(void)
 {
   /* USER CODE BEGIN RTC_IRQn 0 */
 
+  /* DEV-1464: sample timer first. Its callback stamps the sample with the
+   * clock as read when it runs, so it must not wait behind an alarm callback
+   * (rtc.c, HAL_RTC_AlarmAEventCallback). The generated call below then finds
+   * the flag clear and does nothing, unless the timer fired again meanwhile. */
+  HAL_RTCEx_WakeUpTimerIRQHandler(&hrtc);
+
   /* USER CODE END RTC_IRQn 0 */
   HAL_RTC_AlarmIRQHandler(&hrtc);
   HAL_RTCEx_WakeUpTimerIRQHandler(&hrtc);
