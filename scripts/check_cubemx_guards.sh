@@ -103,6 +103,8 @@ require      "$B/USBX/App/ux_device_descriptors.h" "USBD_CDCACM_EPINCMD_HS_BINTE
                                                                      "CDC int-IN bInterval HS (Mac xHCI MSC-drop fix)"
 require      "$B/Core/Src/mdf.c"     "AdfFilterConfig0.Gain = -8"    "DEV-1154 mic gain headroom (+6 saturates at D=64)"
 require      "$B/Core/Src/rtc.c"     "dr = READ_REG(RTC->DR)"        "DEV-338 register-level RTC_get64 (every sample stamp)"
+require      "$B/Core/Src/stm32u5xx_it.c" "DEV-1464: sample timer first." \
+                                                                     "DEV-1464 RTC_IRQHandler stamps the sample before running the alarms"
 require      "$B/Core/Src/tim.c"     "platform_ledTickShift"         "DEV-338 LED blink phase-lock hooks"
 require      "$B/Core/Src/tim.c"     "HAL_NVIC_SetPriority(TIM6_IRQn, 10, 0)" \
                                                                      "DEV-338 blink timer below the sample interrupt"
@@ -127,6 +129,10 @@ echo "Code that must NOT come back:"
 forbid       "$B/Core/Src/main.c"    "MX_USBX_Device_Init"           "duplicate init - usb_otg.c already calls it"
 forbid       "$B/Core/Src/rtc.c"     "hrtc.Instance->SSR & 0x8000U"  "DEV-1162 bare SSR read locks the shadow regs (1 s RTC HAL lock)"
 forbid       "$B/Core/Src/rtc.c"     "RTC_SHIFTADD1S_SET"            "DEV-1162 ADD1S shift leaves the clock 1 s fast with PREDIV_S = 0x7FFF"
+forbid       "$B/Core/Src/rtc.c"     "mktime(&"                      "DEV-1464 libc time conversion in the alarm path (late sample stamps)"
+forbid       "$B/Core/Src/rtc.c"     "gmtime_r(&"                    "DEV-1464 libc time conversion in the alarm path (late sample stamps)"
+forbid       "$B/Core/Src/rtc.c"     "Small barrier to allow hardware to settle" \
+                                                                     "DEV-1464 1000-NOP loop in the alarm path (7 ticks of sample latency)"
 
 echo
 if [ "$fail" -ne 0 ]; then
