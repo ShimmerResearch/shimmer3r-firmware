@@ -157,12 +157,16 @@ uint8_t CAT24C16_test(cat24c16dev_ctx_t *ctx)
     return EEPROM_TEST_FAIL_INITIAL_BACKUP;
   }
 
+  //Seeded once, from the tick's value, so each pass writes a different
+  //pattern. A pass that wrote the previous pass's pattern again would read
+  //back correctly even if its write never happened.
+  srand(ctx->sys_tick ? (unsigned) ctx->sys_tick() : 1U);
+
   while (testResult == EEPROM_TEST_PASS && j++ < 3)
   {
-    srand((unsigned) ctx->sys_tick);
     for (i = 0; i < CAT24C16_TEST_SIZE; i++)
     {
-      test_eeprom_wr[i] = rand();
+      test_eeprom_wr[i] = (uint8_t) rand();
     }
     memset(test_eeprom_rd, 0, CAT24C16_TEST_SIZE);
 
