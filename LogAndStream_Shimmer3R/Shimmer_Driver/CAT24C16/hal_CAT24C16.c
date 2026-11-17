@@ -1,47 +1,49 @@
 /*
  * hal_CAT24C16.c
  *
+ * Shimmer3R's side of the CAT24C16 EEPROM: power, the I2C bus, and the bus
+ * callbacks the shared driver (log-and-stream-common EEPROM/cat24c16.c) reaches
+ * the part through. Two contexts: the expansion board's part on I2C1, and the
+ * factory test rig's on I2C4 (S3R_TEST_0024).
+ *
  *  Created on: Nov 7, 2024
  *      Author: MarkNolan
  */
 
 #include "hal_CAT24C16.h"
 
-#include "CAT24C16.h"
+#include "EEPROM/cat24c16.h"
 #include "hal_Board.h"
 #include "shimmer_include.h"
-
-#include <stdlib.h>
 
 cat24c16dev_ctx_t cat24c16_ctx;
 cat24c16dev_ctx_t cat24c16_alt_ctx;
 
-static int32_t platform_write(void *handle, uint16_t address, uint16_t length, uint8_t *data);
+static int32_t platform_write(void *handle, uint8_t devAddr, uint8_t *buf, uint16_t len);
 static int32_t
-platform_read(void *handle, uint16_t address, uint16_t length, uint8_t *outBuffer);
+platform_read(void *handle, uint8_t devAddr, uint8_t wordAddr, uint8_t *outBuffer, uint16_t len);
 static void platform_delay(uint32_t ms);
-static uint32_t get_sys_tick(void);
 
 #if !IS_CONNECTED_EEPROM
 uint8_t eepromContents[512] = { 0 };
 #endif
 
+static void eepromCtxInit(cat24c16dev_ctx_t *ctx, I2C_HandleTypeDef *hi2c)
+{
+  ctx->write = platform_write;
+  ctx->read = platform_read;
+  ctx->mdelay = platform_delay;
+  ctx->handle = hi2c;
+}
+
 void eepromInit(I2C_HandleTypeDef *hi2c)
 {
-  cat24c16_ctx.write = platform_write;
-  cat24c16_ctx.read = platform_read;
-  cat24c16_ctx.mdelay = platform_delay;
-  cat24c16_ctx.sys_tick = get_sys_tick;
-  cat24c16_ctx.handle = hi2c;
+  eepromCtxInit(&cat24c16_ctx, hi2c);
 }
 
 void altEepromInit(I2C_HandleTypeDef *hi2c)
 {
-  cat24c16_alt_ctx.write = platform_write;
-  cat24c16_alt_ctx.read = platform_read;
-  cat24c16_alt_ctx.mdelay = platform_delay;
-  cat24c16_alt_ctx.sys_tick = get_sys_tick;
-  cat24c16_alt_ctx.handle = hi2c;
+  eepromCtxInit(&cat24c16_alt_ctx, hi2c);
 }
 
 void eepromPowerOn(void)
@@ -115,34 +117,29 @@ void setMockExpansionBrdDetails(void)
 }
 #endif
 
-static int32_t platform_write(void *handle, uint16_t address, uint16_t length, uint8_t *data)
+static int32_t platform_write(void *handle, uint8_t devAddr, uint8_t *buf, uint16_t len)
 {
-  return HAL_I2C_Master_Transmit(handle, address, data, length, CAT24C16_TIMEOUT);
+  //The HAL takes the address already shifted, with the R/W bit clear
+  return HAL_I2C_Master_Transmit(handle, (uint16_t) (devAddr << 1), buf, len, CAT24C16_TIMEOUT);
 }
 
-static int32_t platform_read(void *handle, uint16_t address, uint16_t length, uint8_t *outBuffer)
+static int32_t
+platform_read(void *handle, uint8_t devAddr, uint8_t wordAddr, uint8_t *outBuffer, uint16_t len)
 {
-  uint8_t addr_hi = CAT24C16_ADDR | (address >> 8);
-  uint8_t addr_lo = address & 0xff;
-
   HAL_StatusTypeDef cat24c16_result;
-  cat24c16_result = HAL_I2C_Master_Transmit(handle, addr_hi << 1, &addr_lo, 1, CAT24C16_TIMEOUT);
+
+  cat24c16_result = HAL_I2C_Master_Transmit(
+      handle, (uint16_t) (devAddr << 1), &wordAddr, 1, CAT24C16_TIMEOUT);
   if (cat24c16_result != HAL_OK)
   {
     return cat24c16_result;
   }
-  cat24c16_result = HAL_I2C_Master_Receive(
-      handle, addr_hi << 1, outBuffer, length, CAT24C16_TIMEOUT);
-  return cat24c16_result;
+  return HAL_I2C_Master_Receive(
+      handle, (uint16_t) (devAddr << 1), outBuffer, len, CAT24C16_TIMEOUT);
 }
 
 static void platform_delay(uint32_t ms)
 {
   HAL_Delay(ms);
   __NOP();
-}
-
-static uint32_t get_sys_tick(void)
-{
-  return SysTick->VAL;
 }

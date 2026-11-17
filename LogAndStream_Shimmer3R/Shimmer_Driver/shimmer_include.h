@@ -54,8 +54,8 @@
 #include <LSM303DLHC/lsm303dlhc.h>
 #include <MPU9250/mpu9250.h>
 #endif
-#include "CAT24C16/CAT24C16.h"
 #include "CAT24C16/hal_CAT24C16.h"
+#include "EEPROM/cat24c16.h"
 #include "EXG/ads1292.h"
 #include "EXG/exg.h"
 #include "GSRTestRig/gsrTestRig.h"
