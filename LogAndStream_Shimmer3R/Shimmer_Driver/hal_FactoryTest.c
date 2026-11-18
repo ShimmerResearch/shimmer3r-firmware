@@ -907,6 +907,29 @@ void bt_module_test(void)
   }
 }
 
+#if defined(SHIMMER3R)
+/* S3R_TEST_0023 with why it failed and, when the test could not put the bytes
+ * it overwrote back, which ones now hold test data. Those are host offsets
+ * 0-127 of the daughter-card memory, which a host may have stored data in. */
+static void print_eeprom_test_result(uint8_t eeprom_result)
+{
+  const char *reason = CAT24C16_testFailReason(eeprom_result);
+
+  if (CAT24C16_testLeftTestData(eeprom_result))
+  {
+    sprintf(buffer, " - S3R_TEST_0023 - FAIL: CAT24C16%s - bytes %u-%u not restored\r\n",
+        reason, (unsigned) CAT24C16_TEST_OFFSET,
+        (unsigned) (CAT24C16_TEST_OFFSET + CAT24C16_TEST_SIZE - 1));
+  }
+  else
+  {
+    sprintf(buffer, " - S3R_TEST_0023 - %s: CAT24C16%s\r\n",
+        eeprom_result ? SELF_TEST_STR_FAIL : SELF_TEST_STR_PASS, reason);
+  }
+  ShimFactoryTest_sendReport(buffer);
+}
+#endif
+
 void I2C_test(void)
 {
   self_test_result_t self_test_result = SELF_TEST_PASS;
@@ -976,8 +999,7 @@ void I2C_test(void)
   }
 
   uint8_t eeprom_result = eepromTest();
-  sprintf(buffer, " - S3R_TEST_0023 - %s: CAT24C16\r\n", eeprom_result ? "FAIL" : "PASS");
-  ShimFactoryTest_sendReport(buffer);
+  print_eeprom_test_result(eeprom_result);
   if (eeprom_result)
   {
     shimmerStatus.testResult |= S3R_TEST_0023;
@@ -1034,7 +1056,9 @@ void I2C_test(void)
 
       sprintf(buffer, " - S3R_TEST_0024 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
       ShimFactoryTest_sendReport(buffer);
-      if (ShimBrd_isHwId(EXP_BRD_GSR_UNIFIED))
+      /* GSR+ is an expansion board ID, so check that, not the main board's
+       * hardware ID (DEV-1502) */
+      if (ShimBrd_isExpBrdId(EXP_BRD_GSR_UNIFIED))
       {
         ShimFactoryTest_sendReport(" - S3R_TEST_0025 - WARNING: GSR - Correct "
                                    "test rig not detected\r\n");
