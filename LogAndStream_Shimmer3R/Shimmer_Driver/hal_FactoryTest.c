@@ -1056,7 +1056,9 @@ void I2C_test(void)
 
       sprintf(buffer, " - S3R_TEST_0024 - %s: I2C4\r\n", i2c4_result ? "FAIL" : "PASS");
       ShimFactoryTest_sendReport(buffer);
-      if (ShimBrd_isHwId(EXP_BRD_GSR_UNIFIED))
+      /* GSR+ is an expansion board ID, so check that, not the main board's
+       * hardware ID (DEV-1502) */
+      if (ShimBrd_isExpBrdId(EXP_BRD_GSR_UNIFIED))
       {
         ShimFactoryTest_sendReport(" - S3R_TEST_0025 - WARNING: GSR - Correct "
                                    "test rig not detected\r\n");
