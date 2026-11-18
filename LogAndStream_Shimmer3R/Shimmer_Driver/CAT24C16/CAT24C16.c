@@ -103,7 +103,7 @@ int32_t CAT24C16_write(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length
     {
       break;
     }
-    ctx->mdelay(5);
+    ctx->mdelay(CAT24C16_WRITE_CYCLE_MS);
 
     mem_ptr += this_write;
     buf_offset += this_write;
@@ -118,50 +118,81 @@ int32_t CAT24C16_write(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length
   return result;
 }
 
+//Write the backed-up bytes back over the test region and read them back.
+//Returns 0 once the region holds the backup again, 1 if every try failed.
+static uint8_t CAT24C16_restoreTestRegion(cat24c16dev_ctx_t *ctx, uint8_t *backup, uint8_t *readBack)
+{
+  uint8_t tries;
+
+  for (tries = 0; tries < CAT24C16_TEST_RESTORE_TRIES; tries++)
+  {
+    //CAT24C16_write() waits out each write cycle it completes, but not one it
+    //abandons on an error. That cycle may still be running, and until it ends
+    //the device does not acknowledge its address, so the first page of the
+    //restore would be refused.
+    ctx->mdelay(CAT24C16_WRITE_CYCLE_MS);
+
+    if (CAT24C16_write(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, backup) == 0
+        && CAT24C16_read(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, readBack) == 0
+        && memcmp(backup, readBack, CAT24C16_TEST_SIZE) == 0)
+    {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
 uint8_t CAT24C16_test(cat24c16dev_ctx_t *ctx)
 {
-  int32_t result = 0;
+  uint8_t testResult = EEPROM_TEST_PASS;
   uint16_t i, j = 0;
   uint8_t test_eeprom_backup[CAT24C16_TEST_SIZE];
   uint8_t test_eeprom_wr[CAT24C16_TEST_SIZE];
   uint8_t test_eeprom_rd[CAT24C16_TEST_SIZE];
 
-  result = CAT24C16_read(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup);
-  if (result)
+  if (CAT24C16_read(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup))
   {
+    //Nothing has been written yet, so there is nothing to put back
     return EEPROM_TEST_FAIL_INITIAL_BACKUP;
   }
 
-  while (j++ < 3)
+  //Seeded once, from the tick's value, so each pass writes a different
+  //pattern. A pass that wrote the previous pass's pattern again would read
+  //back correctly even if its write never happened.
+  srand(ctx->sys_tick ? (unsigned) ctx->sys_tick() : 1U);
+
+  while (testResult == EEPROM_TEST_PASS && j++ < 3)
   {
-    srand((unsigned) ctx->sys_tick);
     for (i = 0; i < CAT24C16_TEST_SIZE; i++)
     {
-      test_eeprom_wr[i] = rand();
+      test_eeprom_wr[i] = (uint8_t) rand();
     }
     memset(test_eeprom_rd, 0, CAT24C16_TEST_SIZE);
-    result = CAT24C16_write(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_wr);
-    if (result)
-    {
-      return EEPROM_TEST_FAIL_WRITING_BUF;
-    }
-    result = CAT24C16_read(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_rd);
-    if (result)
-    {
-      return EEPROM_TEST_FAIL_READING_BUF;
-    }
 
-    if (memcmp(test_eeprom_wr, test_eeprom_rd, CAT24C16_TEST_SIZE))
+    if (CAT24C16_write(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_wr))
     {
-      return EEPROM_TEST_FAIL_BUF_COMPARISON;
+      testResult = EEPROM_TEST_FAIL_WRITING_BUF;
+    }
+    else if (CAT24C16_read(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_rd))
+    {
+      testResult = EEPROM_TEST_FAIL_READING_BUF;
+    }
+    else if (memcmp(test_eeprom_wr, test_eeprom_rd, CAT24C16_TEST_SIZE))
+    {
+      testResult = EEPROM_TEST_FAIL_BUF_COMPARISON;
     }
   }
 
-  result = CAT24C16_write(ctx, CAT24C16_TEST_OFFSET, CAT24C16_TEST_SIZE, test_eeprom_backup);
-  if (result)
+  //From the first write on, the test region may hold test data whatever
+  //happened after it, so every outcome puts the backup back (DEV-1494). Those
+  //bytes are host offsets 0-127 of the daughter-card memory.
+  if (CAT24C16_restoreTestRegion(ctx, test_eeprom_backup, test_eeprom_rd))
   {
-    return EEPROM_TEST_FAIL_RESTORING_BACKUP;
+    testResult = (testResult == EEPROM_TEST_PASS) ?
+        EEPROM_TEST_FAIL_RESTORING_BACKUP :
+        (uint8_t) (testResult | EEPROM_TEST_FAIL_NOT_RESTORED);
   }
 
-  return EEPROM_TEST_PASS;
+  return testResult;
 }

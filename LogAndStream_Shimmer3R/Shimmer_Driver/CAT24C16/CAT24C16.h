@@ -60,6 +60,13 @@
 #define CAT24C16_TEST_OFFSET         16
 #define CAT24C16_TEST_SIZE           (8 * CAT24C16_PAGE_SIZE)
 
+//Write cycle time, tWR: 5 ms max (CAT24C16 datasheet, A.C. Characteristics).
+//The device does not acknowledge its address until a write cycle has ended.
+#define CAT24C16_WRITE_CYCLE_MS      5
+
+//How many times CAT24C16_test() tries to put the test region back
+#define CAT24C16_TEST_RESTORE_TRIES  3
+
 #define CAT24C16_OUT_OF_BOUNDS_ERROR 1000
 
 enum CAT24C16_TEST
@@ -69,8 +76,14 @@ enum CAT24C16_TEST
   EEPROM_TEST_FAIL_WRITING_BUF,
   EEPROM_TEST_FAIL_READING_BUF,
   EEPROM_TEST_FAIL_BUF_COMPARISON,
+  //Every pass succeeded but the test region could not be put back
   EEPROM_TEST_FAIL_RESTORING_BACKUP,
 };
+
+//OR'd into EEPROM_TEST_FAIL_WRITING_BUF, _READING_BUF or _BUF_COMPARISON when,
+//after that failure, the test region could not be put back either. Its bytes
+//then hold test data, not what was there before the test.
+#define EEPROM_TEST_FAIL_NOT_RESTORED 0x80
 
 typedef int32_t (*cat24c16dev_write_ptr)(void *, uint16_t, uint16_t, uint8_t *);
 typedef int32_t (*cat24c16dev_read_ptr)(void *, uint16_t, uint16_t, uint8_t *);
@@ -109,6 +122,11 @@ int32_t CAT24C16_read(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length,
 //128 in the CAT24C16)
 int32_t CAT24C16_write(cat24c16dev_ctx_t *ctx, uint16_t address, uint16_t length, uint8_t *data);
 
+//Write/read test over CAT24C16_TEST_SIZE bytes from CAT24C16_TEST_OFFSET.
+//The bytes there are backed up first and, once anything has been written,
+//put back and verified whatever the outcome.
+//Returns EEPROM_TEST_PASS or an enum CAT24C16_TEST failure, with
+//EEPROM_TEST_FAIL_NOT_RESTORED set if the region could not be put back.
 uint8_t CAT24C16_test(cat24c16dev_ctx_t *ctx);
 
 #endif
