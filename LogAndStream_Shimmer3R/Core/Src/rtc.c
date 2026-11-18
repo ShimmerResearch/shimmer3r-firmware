@@ -604,24 +604,28 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
   UNUSED(hrtc);
 }
 
+/* DEV-1464: Alarm A shares RTC_IRQn with the sample timer and fires on a
+ * whole second - every 2 s while docked, for the battery read. A sample that
+ * falls due while its callback runs waits for it, and is stamped with the
+ * clock as read when it finally runs. The callback used to convert the time
+ * with HAL_RTC_GetTime/GetDate and mktime(), and re-arm with gmtime_r() after
+ * a 1000-iteration NOP "settle" loop: about 13 ticks at 48 MHz. A 1024 Hz
+ * stream whose sample grid sat a few ticks past the second therefore carried
+ * one stamp up to 13 ticks late every 2 s. The alarm path now works from
+ * RTC_get64(), which the sample stamps use too, and the integer conversion in
+ * RTC/shimmer_rtc.c, and RTC_IRQHandler (stm32u5xx_it.c) services the sample
+ * timer before the alarms. */
+static time_t RTC_nowSeconds(void)
+{
+  return (time_t) (RTC_get64() / 32768U);
+}
+
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
   __HAL_RTC_ALARMA_DISABLE(hrtc);
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
 
-  //Get current time
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
-  HAL_RTC_GetTime(hrtc, &sTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(hrtc, &sDate, RTC_FORMAT_BIN);
-
-  struct tm current_tm = { .tm_sec = sTime.Seconds,
-    .tm_min = sTime.Minutes,
-    .tm_hour = sTime.Hours,
-    .tm_mday = sDate.Date,
-    .tm_mon = sDate.Month - 1,
-    .tm_year = sDate.Year + 100 };
-  time_t now = mktime(&current_tm);
+  time_t now = RTC_nowSeconds();
 
   //Check all alarms
   for (int i = 0; i < RTC_NUM_ALARMS; i++)
@@ -714,7 +718,7 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
   }
 
   //Ensure alarm is in the future
-  time_t now = (time_t) RTC_get64() / 32768; //approx seconds from rtc64
+  time_t now = RTC_nowSeconds();
   if (nextAlarmTime <= now)
   {
     nextAlarmTime = now + RTC_MIN_ALARM_OFFSET_SECONDS;
@@ -724,67 +728,73 @@ void RTC_setNextRtcAlarmA(RTC_HandleTypeDef *hrtc)
   //SHIMMER_PRINTF("RTC: Setting Alarm A for context %d at time %lu (now %lu)\r\n",
   //    nextAlarmIdx, (unsigned long)nextAlarmTime, (unsigned long)now);
 
-  struct tm alarm_tm;
-  time_t t = nextAlarmTime;
-  gmtime_r(&t, &alarm_tm);
+  /* The integer conversion the clock set uses (ShimRtc_ticks2Rtc), not
+   * gmtime_r() (DEV-1464) */
+  SHIM_RTC_t alarmAt;
+  ShimRtc_unix2Rtc(&alarmAt, (uint32_t) nextAlarmTime);
 
   RTC_AlarmTypeDef sAlarm = { 0 };
-  sAlarm.AlarmTime.Hours = alarm_tm.tm_hour;
-  sAlarm.AlarmTime.Minutes = alarm_tm.tm_min;
-  sAlarm.AlarmTime.Seconds = alarm_tm.tm_sec;
-  sAlarm.AlarmDateWeekDay = alarm_tm.tm_mday;
+  sAlarm.AlarmTime.Hours = alarmAt.hours;
+  sAlarm.AlarmTime.Minutes = alarmAt.minutes;
+  sAlarm.AlarmTime.Seconds = alarmAt.seconds;
+  sAlarm.AlarmDateWeekDay = alarmAt.date;
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
   sAlarm.Alarm = RTC_ALARM_A;
 
-  //Disable Alarm A and its IRQ before reprogramming
+  /* Disable Alarm A and its IRQ before reprogramming. There is nothing to
+   * wait for: the U5 RTC has no ALRAWF, and HAL_RTC_SetAlarm_IT writes the
+   * alarm registers straight after clearing ALRAE. The 1000-iteration NOP
+   * "settle" loop that stood here cost about 7 ticks of sample interrupt
+   * latency (DEV-1464). */
   __HAL_RTC_ALARMA_DISABLE(hrtc);
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
-  //Small barrier to allow hardware to settle
-  for (volatile int i = 0; i < 1000; ++i)
-  {
-    __NOP();
-  }
 
   HAL_StatusTypeDef ret = HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN);
-  if (ret != HAL_OK)
+  if (ret != HAL_OK && __get_IPSR() == 0U)
   {
-    //retry once after a short delay
+    /* Retry once after a short delay, in task context only. In the RTC
+     * interrupt a retry cannot succeed (below), and the delay - about 2 ms -
+     * would hold off the sample timer for that long (DEV-1464). */
     for (volatile int i = 0; i < RTC_ALARM_RETRY_DELAY_CYCLES; ++i)
     {
       __NOP();
     }
     ret = HAL_RTC_SetAlarm_IT(hrtc, &sAlarm, RTC_FORMAT_BIN);
-    if (ret != HAL_OK)
+  }
+  if (ret != HAL_OK)
+  {
+    if (__get_IPSR() != 0U)
     {
-      if (__get_IPSR() != 0U)
-      {
-        /* DEV-1162: in the RTC interrupt the lock's owner cannot run until we
-         * return, so neither a retry nor Error_Handler() can help - the latter
-         * froze the device with interrupts masked. Nothing is lost by
-         * deferring:
-         * - HAL_RTC_AlarmAEventCallback has already queued every due context's
-         *   task (stop sensing, jump to bootloader, battery read) before
-         *   clearing that context's nextAlarms[] entry.
-         * - The contexts not yet due are untouched in nextAlarms[].
-         * TASK_BATT_READ re-arms Alarm A from task context, through
-         * RTC_setAlarmBattRead -> RTC_setAlarmAFromNow -> RTC_setNextRtcAlarmA,
-         * which picks the soonest of them. The only cost is one extra battery
-         * read. */
-        ShimTask_set(TASK_BATT_READ);
-      }
-      else
-      {
-        Error_Handler();
-      }
+      /* DEV-1162: in the RTC interrupt the lock's owner cannot run until we
+       * return, so neither a retry nor Error_Handler() can help - the latter
+       * froze the device with interrupts masked. Nothing is lost by
+       * deferring:
+       * - HAL_RTC_AlarmAEventCallback has already queued every due context's
+       *   task (stop sensing, jump to bootloader, battery read) before
+       *   clearing that context's nextAlarms[] entry.
+       * - The contexts not yet due are untouched in nextAlarms[].
+       * TASK_BATT_READ re-arms Alarm A from task context, through
+       * RTC_setAlarmBattRead -> RTC_setAlarmAFromNow -> RTC_setNextRtcAlarmA,
+       * which picks the soonest of them. The only cost is one extra battery
+       * read. */
+      ShimTask_set(TASK_BATT_READ);
+    }
+    else
+    {
+      Error_Handler();
     }
   }
 }
 
 void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
 {
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
+  /* Read the clock before taking the hold: RTC_get64() is safe against the
+   * sample interrupt on its own, and RTC_IRQn stays held only for the
+   * bookkeeping and the alarm write (DEV-1464). The old HAL_RTC_GetTime/
+   * GetDate + mktime() conversion ran inside the hold, holding off the sample
+   * timer for about as long as the alarm callback did. */
+  time_t now = RTC_nowSeconds();
   uint32_t irqHeld = RTC_irqHold();
 
   if (secondsFromNow == 0)
@@ -793,76 +803,49 @@ void RTC_setAlarmAFromNow(uint32_t secondsFromNow, RTC_AlarmB_Context_t context)
   }
   else
   {
-    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN); //Must be called after GetTime()
-
-    struct tm current_tm = {
-      .tm_sec = sTime.Seconds,
-      .tm_min = sTime.Minutes,
-      .tm_hour = sTime.Hours,
-      .tm_mday = sDate.Date,
-      .tm_mon = sDate.Month - 1,  //struct tm uses 0-11 for months
-      .tm_year = sDate.Year + 100 //struct tm uses years since 1900
-    };
-
-    //Add offset
-    time_t future_time = mktime(&current_tm) + secondsFromNow;
-    nextAlarms[context] = future_time; //Store the future time for this alarm
+    nextAlarms[context] = now + (time_t) secondsFromNow; //The future time for this alarm
   }
   RTC_setNextRtcAlarmA(&hrtc); //Set up the next alarm
   RTC_irqRelease(irqHeld);
 }
 
+/* SD sync's one-second ticks counted by Alarm B's interrupt and not yet run by
+ * TASK_SD_SYNC_TICK (DEV-1466) */
+static volatile uint32_t sdSyncTicksPending;
+
+/* Alarm B is SD sync's one-second tick (SDSync/shimmer_sd_sync.c). It shares
+ * RTC_IRQn with the sample timer, whose callback stamps each sample with the
+ * clock as read when it runs, so any work in the alarm's callback delays the
+ * stamp of a sample falling due meanwhile (DEV-1464, DEV-1466). The alarm is
+ * therefore armed once, to fire on every whole second (every calendar field
+ * masked, no sub-second comparison: RM0456 RTC alarms), and its callback only
+ * counts the tick and queues TASK_SD_SYNC_TICK. The sync state machine runs
+ * from that task. It used to run in the callback, and the callback then
+ * re-armed the alarm for the next second with HAL_RTC_GetTime/GetDate and
+ * HAL_RTC_SetAlarm_IT. On the ticks where the state machine stops the radio
+ * (BtStop: UART abort and de-init, pin de-init) or opens a connection
+ * (BT_connect), it held the sample timer off for longer than a 4096 Hz sample
+ * period. */
 void RTC_setupAndStartSdSyncAlarm(void)
 {
   /* DEV-1309: zeroed, as for Alarm A. HAL_RTC_SetAlarm_IT() writes every field,
    * not just the ones set below: AlarmSubSecondMask to RTC_ALRMBSSR,
    * AlarmTime.SubSeconds to RTC_ALRBBINR, and FlagAutoClr can set ALRBFCLR.
    * Left as stack garbage they could ask for a sub-second match that never
-   * comes, so the re-arm in HAL_RTCEx_AlarmBEventCallback() armed an alarm
-   * that never fired: SD sync stopped after its first one-second tick, with no
-   * offsets as centre or node. What the garbage was depended on what last used
-   * that stack, so unrelated changes turned it on and off (v1.01.022's deeper
-   * packet ring did). */
+   * comes, and the alarm never fires: SD sync stopped after its first
+   * one-second tick, with no offsets as centre or node. What the garbage was
+   * depended on what last used that stack, so unrelated changes turned it on
+   * and off (v1.01.022's deeper packet ring did). */
   RTC_AlarmTypeDef sAlarm = { 0 };
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
 
-  /* Get time added since it was randomly missing interrupt when using HAL_RTC_GetAlarm().*/
-  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-  /* From GetTime() notes : You must call HAL_RTC_GetDate() after HAL_RTC_GetTime() to unlock the values....*/
-  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-
-  uint8_t sec = sTime.Seconds + 1;
-  uint8_t min = sTime.Minutes;
-  uint8_t hr = sTime.Hours;
-
-  if (sec >= 60)
-  {
-    sec = 0;
-    min++;
-    if (min >= 60)
-    {
-      min = 0;
-      hr++;
-      if (hr >= 24)
-      {
-        hr = 0;
-      }
-    }
-  }
-
-  sAlarm.AlarmTime.Hours = hr;
-  sAlarm.AlarmTime.Minutes = min;
-  sAlarm.AlarmTime.Seconds = sec;
-
-  sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY; //Match Hours, Minutes, Seconds
-  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL; //No sub-second match
+  sAlarm.AlarmMask = RTC_ALARMMASK_ALL; //No calendar field compared
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL; //No sub-second match: every second
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.AlarmDateWeekDay = 1; //ignored due to mask
   sAlarm.Alarm = RTC_ALARM_B;
 
   uint32_t irqHeld = RTC_irqHold();
+  sdSyncTicksPending = 0U;
   if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
@@ -872,24 +855,30 @@ void RTC_setupAndStartSdSyncAlarm(void)
 
 void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  //stopAlarm(); //stopping from triggering the Alarm multiple times.
-  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0); //toggle to confirm the callback
-  //printf("Alarm B fired!\r\n");           // Debug print
-  //__HAL_RTC_ALARMB_DISABLE(&hrtc);
-  //__HAL_RTC_ALARM_DISABLE_IT(&hrtc, RTC_IT_ALRB);
-  //RTC_setupAndStartSdSyncAlarm(); //for the next interval (testing purposes)
+  UNUSED(hrtc);
 
-  RTC_stopSdSyncAlarm();
+  /* Count rather than flag: a main loop held for more than a second must not
+   * drop a tick, because the sync schedule counts them */
+  sdSyncTicksPending++;
+  ShimTask_set(TASK_SD_SYNC_TICK);
+}
 
-  ShimSdSync_handleSyncTimerTrigger();
-
-  RTC_setupAndStartSdSyncAlarm();
+uint32_t RTC_takeSdSyncTicks(void)
+{
+  uint32_t irqHeld = RTC_irqHold();
+  uint32_t ticks = sdSyncTicksPending;
+  sdSyncTicksPending = 0U;
+  RTC_irqRelease(irqHeld);
+  return ticks;
 }
 
 void RTC_stopSdSyncAlarm(void)
 {
+  uint32_t irqHeld = RTC_irqHold();
   __HAL_RTC_ALARMB_DISABLE(hrtc);                //disable Alarm B
   __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRB); //disable Alarm trigger
+  sdSyncTicksPending = 0U;                       //and drop any tick not yet run
+  RTC_irqRelease(irqHeld);
 }
 
 /* DEV-1161: "a host has set this clock since the backup domain last lost

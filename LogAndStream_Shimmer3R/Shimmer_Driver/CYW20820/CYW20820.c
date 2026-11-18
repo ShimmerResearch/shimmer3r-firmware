@@ -283,8 +283,9 @@ uint8_t BT_isBleSessionActive(void)
  * A deliberate stop or start of the module supersedes a pending recovery:
  * btInit() and btDeinit() bump btModuleEpoch, and an alarm armed under an
  * older epoch does nothing when it fires. (Cancelling the alarm there instead
- * would mean touching the RTC from btDeinit(), which SD sync can reach from
- * the RTC alarm-B interrupt.)
+ * would mean touching the RTC from btDeinit(), which SD sync reached from the
+ * RTC alarm-B interrupt until DEV-1466 moved its schedule to
+ * TASK_SD_SYNC_TICK.)
  *
  * Boots the MCU causes itself are not unexpected: power-up, the init
  * sequence's own resets and baud retries, BT switched back on for SD sync, and
@@ -315,7 +316,9 @@ void BT_handleUnexpectedModuleBoot(const char *how)
    * interrupt runs below the RTC alarm's priority, so without this an alarm-B
    * btDeinit() could stop the module (and bump the epoch, clearing the flag)
    * between the checks and the set, leaving a stale sign that a later
-   * btInit() would service under the new epoch. */
+   * btInit() would service under the new epoch. Since DEV-1466 SD sync stops
+   * the module from TASK_SD_SYNC_TICK, not from alarm B; the mask stays, as
+   * it costs nothing and covers any stop from a higher-priority interrupt. */
   uint32_t primask = __get_PRIMASK();
   __disable_irq();
   if (!shimmerStatus.btIsInitialised || btModuleStopping
@@ -333,8 +336,9 @@ void BT_handleUnexpectedModuleBoot(const char *how)
 }
 
 /* btModuleEpoch is bumped from task context and from btDeinit(), which SD
- * sync can reach from the RTC alarm-B interrupt, so the read-modify-write is
- * done with interrupts held off. */
+ * sync reached from the RTC alarm-B interrupt until DEV-1466 (now from
+ * TASK_SD_SYNC_TICK), so the read-modify-write is done with interrupts held
+ * off. */
 static void btBumpModuleEpoch(void)
 {
   uint32_t primask = __get_PRIMASK();
