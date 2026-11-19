@@ -532,12 +532,16 @@ static void BT_selectDataPath(void)
  *   STOP_BT_ADVERTISING step's echo of it is refused and resent without bit 2,
  *   and START_BT_ADVERTISING then stores that image's own flags.
  *
- * The flags are stored in the module's flash at first boot, written only when
- * the read-back differs, so it costs one flash write per change. */
+ * At first boot the flags are set in RAM (START_BT_ADVERTISING), and only once
+ * the module has accepted them are they stored in its flash
+ * (PERSIST_BT_FLAGS), and then only when the read-back differs: one flash
+ * write per change. A refused flash-scoped SBTP left a test_254 module's BLE
+ * at a third of its rate until the next reset, so the refusal has to happen
+ * in RAM scope. */
 #define BT_SBTP_FLAG_SNIFF_OFF   0x01U
 #define BT_SBTP_FLAG_SLAVE_ROLE  0x02U
 #define BT_SBTP_FLAG_NO_SPP_HOLD 0x04U
-static bool btSbtpNoHoldRefused;
+static bool btSbtpNoHoldRefused, btSbtpPersistPending;
 static uint8_t btSbtpFlagsSent;
 
 static uint8_t BT_sbtpFlags(void)
@@ -608,7 +612,7 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_S
 #endif
   GET_CONN_PARAMETERS, SET_CONN_PARAMETERS, GET_SECURITY_PARAMETERS, SET_SECURITY_PARAMETERS,
   GET_PIN_CODE, SET_PIN_CODE, SET_CYSPP_PACKETIZATION, START_BLE_ADVERTISING_STAGE1,
-  START_BLE_ADVERTISING_STAGE2, START_BT_ADVERTISING, FINISH };
+  START_BLE_ADVERTISING_STAGE2, START_BT_ADVERTISING, PERSIST_BT_FLAGS, FINISH };
 
 static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2, /* PING,*/
@@ -1412,6 +1416,7 @@ void btInitCommands(void)
   if (btInitCmdsStep == START_BT_ADVERTISING)
   {
     incrementBtInitCmdsStep();
+    btSbtpPersistPending = false;
     if (ShimBt_isBtClassicCurrentlyEnabled())
     {
       printf("Start BT Advertising\r\n");
@@ -1422,20 +1427,33 @@ void btInitCommands(void)
 
       rsp_bt_get_parameters.discoverable = BT_DISC_MODE_GENERAL_DISCOVERABLE;
       rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
-      /* Flash scope only when the read-back differs, so it costs one flash
-       * write per change, not one per boot. The GBTP "BT params:" boot print
-       * shows flags=07 once this has stuck. */
-      bool toFlash = (rsp_bt_get_parameters.flags != flags);
-      if (toFlash)
-      {
-        printf("Persisting SBTP flags %02X to module flash\r\n", flags);
-      }
-      BT_sendSbtp(flags, toFlash);
+      /* RAM scope first, and flash only in PERSIST_BT_FLAGS once the module
+       * has accepted the flags: a module without bit 2 that refused a
+       * flash-scoped SBTP was left with BLE at a third of its rate until the
+       * next reset (7A62 on test_254, 19 Nov 2026), while a refused RAM-scoped
+       * one is resent without the bit (BT_sbtpFlags). */
+      btSbtpPersistPending = (rsp_bt_get_parameters.flags != flags);
+      BT_sendSbtp(flags, false);
       return;
     }
     else
     {
       printf("BT disabled - Skipping start advertising\r\n");
+    }
+  }
+
+  /* Store the flags START_BT_ADVERTISING set, when they differ from the
+   * module's stored ones: one flash write per change, not one per boot. The
+   * GBTP "BT params:" boot print shows flags=07 once this has stuck. */
+  if (btInitCmdsStep == PERSIST_BT_FLAGS)
+  {
+    incrementBtInitCmdsStep();
+    if (btSbtpPersistPending)
+    {
+      btSbtpPersistPending = false;
+      printf("Persisting SBTP flags %02X to module flash\r\n", btSbtpFlagsSent);
+      BT_sendSbtp(btSbtpFlagsSent, true);
+      return;
     }
   }
 
