@@ -103,10 +103,6 @@ enum BT_SET_COMMAND_STAGES
   UPDATE_UART_SETTINGS_STAGE5,
   PING,
   GET_BT_PARAMETERS,
-  /* Radio restarts (subsequent boot): read the SBTP flags, then set the
-   * mode-dependent ones in RAM (DEV-1510). */
-  SYNC_BT_FLAGS_READ,
-  SYNC_BT_FLAGS_WRITE,
   STOP_BT_ADVERTISING,
   STOP_BLE_ADVERTISING_STAGE1,
   STOP_BLE_ADVERTISING_STAGE2,

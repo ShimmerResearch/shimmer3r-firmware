@@ -516,37 +516,38 @@ static void BT_selectDataPath(void)
  *   (DEV-742). Images without it, the v1.4.18.18 release included, accept and
  *   ignore it.
  * - Bit 2 (Infineon's test_251) turns off the classic SPP throughput
- *   optimization: a wait that holds a short UART write ~30 ms to fill an
- *   RFCOMM frame. The wait puts an SD-sync centre's time ~50 ms late at every
- *   node (DEV-1468) and slows every short reply, while setting the bit costs
- *   about 15% of bulk classic throughput (evaluation board: ~130 against ~150
- *   KB/s). So it is set only while the radio runs SD sync, where nothing
- *   streams (DEV-1510). Images without the bit refuse the whole command when
- *   it is set (020C: the v1.4.18.18 release, test_254), so a refusal is
- *   retried once without it and the bit is not sent again until the MCU
- *   restarts (btSbtpNoHoldRefused).
+ *   optimization: a wait that holds a short write from this MCU ~30 ms to fill
+ *   an RFCOMM frame. The wait puts an SD-sync centre's time ~50 ms late at
+ *   every node (DEV-1468), and every short reply to a host waits for it too:
+ *   46-55 ms per command against ~6 ms with the bit set. Setting it costs
+ *   about 17% of the classic data-rate test (154 against 128 KB/s on a
+ *   Shimmer3R, the same as v1.4.16.16), and nothing on 1024 Hz streams, four
+ *   at once included, or on BLE (bench, 19 Nov 2026). So it is always set
+ *   (DEV-1510).
+ *   Images without the bit refuse the whole command when it is set (020C:
+ *   v1.4.16.16, the v1.4.18.18 release, test_254), so a refusal is retried
+ *   once without it, and the bit is not sent again until the MCU restarts
+ *   (btSbtpNoHoldRefused). That also covers a module taken back from test_251
+ *   to an older image: the old image boots with the stored 07 and works, the
+ *   STOP_BT_ADVERTISING step's echo of it is refused and resent without bit 2,
+ *   and START_BT_ADVERTISING then stores that image's own flags.
  *
- * Bits 0 and 1 are stored in the module's flash at first boot, written only
- * when they differ. Bit 2 depends on the mode the radio runs in, which first
- * boot doesn't know yet (the stored config is read after it), so it is set in
- * RAM at each radio start (SYNC_BT_FLAGS_*) and never costs a flash write. */
+ * The flags are stored in the module's flash at first boot, written only when
+ * the read-back differs, so it costs one flash write per change. */
 #define BT_SBTP_FLAG_SNIFF_OFF   0x01U
 #define BT_SBTP_FLAG_SLAVE_ROLE  0x02U
 #define BT_SBTP_FLAG_NO_SPP_HOLD 0x04U
 static bool btSbtpNoHoldRefused;
 static uint8_t btSbtpFlagsSent;
 
-static uint8_t BT_storedSbtpFlags(void)
+static uint8_t BT_sbtpFlags(void)
 {
-  return BT_isFirmwareVersionAtLeast(1, 4, 17) ?
-      (uint8_t) (BT_SBTP_FLAG_SNIFF_OFF | BT_SBTP_FLAG_SLAVE_ROLE) :
-      0U;
-}
-
-static uint8_t BT_runtimeSbtpFlags(void)
-{
-  uint8_t flags = BT_storedSbtpFlags();
-  if (flags != 0U && shimmerStatus.btInSyncMode && !btSbtpNoHoldRefused)
+  if (!BT_isFirmwareVersionAtLeast(1, 4, 17))
+  {
+    return 0U;
+  }
+  uint8_t flags = BT_SBTP_FLAG_SNIFF_OFF | BT_SBTP_FLAG_SLAVE_ROLE;
+  if (!btSbtpNoHoldRefused)
   {
     flags |= BT_SBTP_FLAG_NO_SPP_HOLD;
   }
@@ -609,13 +610,9 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_S
   GET_PIN_CODE, SET_PIN_CODE, SET_CYSPP_PACKETIZATION, START_BLE_ADVERTISING_STAGE1,
   START_BLE_ADVERTISING_STAGE2, START_BT_ADVERTISING, FINISH };
 
-/* Radio restarts: SD sync, and a config change (InitialiseBtAfterBoot). Steps
- * run in this order and also in the order their blocks appear in
- * btInitCommands(), because a step with nothing to send falls through to the
- * next block. */
 static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2, /* PING,*/
-  ENTER_BINARY_MODE, SYNC_BT_FLAGS_READ, SYNC_BT_FLAGS_WRITE, GET_SECURITY_PARAMETERS,
+  ENTER_BINARY_MODE, GET_SECURITY_PARAMETERS,
   SET_SECURITY_PARAMETERS, //Any command to get module into binary command mode. Added set, get security parameters here to get SD sync working
   FINISH };
 
@@ -986,34 +983,6 @@ void btInitCommands(void)
     setExpectedResponse(EZS_IDX_RSP_BT_GET_PARAMETERS);
     ezs_cmd_bt_get_parameters();
     return;
-  }
-
-  /* Radio restarts: the SBTP flags for the mode the radio now runs in, set in
-   * RAM (see BT_runtimeSbtpFlags). Modules before v1.4.17 have no flags to set
-   * and skip both steps without sending anything. */
-  if (btInitCmdsStep == SYNC_BT_FLAGS_READ)
-  {
-    incrementBtInitCmdsStep();
-    if (BT_storedSbtpFlags() != 0U && ShimBt_isBtClassicCurrentlyEnabled())
-    {
-      setExpectedResponse(EZS_IDX_RSP_BT_GET_PARAMETERS);
-      ezs_cmd_bt_get_parameters();
-      return;
-    }
-    incrementBtInitCmdsStep();
-  }
-
-  if (btInitCmdsStep == SYNC_BT_FLAGS_WRITE)
-  {
-    incrementBtInitCmdsStep();
-    uint8_t flags = BT_runtimeSbtpFlags();
-    if (rsp_bt_get_parameters.flags != flags)
-    {
-      printf("SBTP flags %02X -> %02X in RAM (%s)\r\n", rsp_bt_get_parameters.flags,
-          flags, shimmerStatus.btInSyncMode ? "SD sync" : "normal");
-      BT_sendSbtp(flags, false);
-      return;
-    }
   }
 
   if (btInitCmdsStep == STOP_BT_ADVERTISING)
@@ -1447,15 +1416,15 @@ void btInitCommands(void)
     {
       printf("Start BT Advertising\r\n");
 
-      /* The stored SBTP flags (bits 0 and 1, see BT_storedSbtpFlags). Bit 2 is
-       * never stored: radio restarts set it in RAM when SD sync needs it. */
-      uint8_t flags = BT_storedSbtpFlags();
+      /* See BT_sbtpFlags: 07 on v1.4.17+, 03 on a module that refused bit 2,
+       * 00 below v1.4.17 */
+      uint8_t flags = BT_sbtpFlags();
 
       rsp_bt_get_parameters.discoverable = BT_DISC_MODE_GENERAL_DISCOVERABLE;
       rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
       /* Flash scope only when the read-back differs, so it costs one flash
        * write per change, not one per boot. The GBTP "BT params:" boot print
-       * shows flags=03 once this has stuck. */
+       * shows flags=07 once this has stuck. */
       bool toFlash = (rsp_bt_get_parameters.flags != flags);
       if (toFlash)
       {
@@ -2314,8 +2283,9 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
       printf(", flags=%02X\r\n", btSbtpFlagsSent);
       if ((btSbtpFlagsSent & BT_SBTP_FLAG_NO_SPP_HOLD) && !btSbtpNoHoldRefused && btInitCmdsRunning)
       {
-        /* A module without SBTP bit 2 refuses the whole command (020C on the
-         * v1.4.18.18 release and test_254), so send it again without */
+        /* A module without SBTP bit 2 refuses the whole command (020C on
+         * v1.4.16.16, the v1.4.18.18 release and test_254), so send it again
+         * without */
         printf("SBTP flag 04 refused, resending without it\r\n");
         btSbtpNoHoldRefused = true;
         BT_repeatLastInitStep();
