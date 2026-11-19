@@ -422,18 +422,86 @@ static void BT_parseFwVersionFromBootBanner(const char *msg)
          "module\r\n");
 }
 
+/* The module's build name, for GET_BT_VERSION_STR (DEV-1510). Every v1.4.18.18
+ * build reports the same app version (E=01041212), so only the boot banner's
+ * F= text tells them apart. Infineon's test builds put a name between the
+ * version and the build date, e.g.
+ *   F=EZ-Serial-VELA_IF820_INT_DVK V1.4.18.18 test_251 Nov 19 2026 05:21:19
+ * while public releases go straight to the date
+ *   F=EZ-Serial-VELA_IF820_INT_DVK V1.4.18.18 Nov 16 2025 11:37:32
+ * so the name is empty for a release, or when the banner has no version. */
+#define BT_BUILD_TAG_MAX_LEN 16U
+static char btModuleBuildTag[BT_BUILD_TAG_MAX_LEN + 1U];
+
+static bool btIsMonthAbbreviation(const char *s, size_t len)
+{
+  static const char months[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
+  if (len != 3U)
+  {
+    return false;
+  }
+  for (size_t i = 0; i < sizeof(months) - 1U; i += 3U)
+  {
+    if (strncmp(&months[i], s, 3U) == 0)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+static void BT_parseBuildTagFromBootBanner(const char *msg)
+{
+  btModuleBuildTag[0] = '\0';
+  const char *p = strstr(msg, "BOOT,");
+  p = p ? strstr(p, "F=") : NULL;
+  if (p == NULL)
+  {
+    return;
+  }
+  const char *lineEnd = p + strcspn(p, "\r\n");
+  /* The version token: " V" and a digit, on the banner's own line */
+  while (p < lineEnd && !(p[0] == ' ' && p[1] == 'V' && p[2] >= '0' && p[2] <= '9'))
+  {
+    p++;
+  }
+  if (p >= lineEnd)
+  {
+    return;
+  }
+  p += 1U + strcspn(p + 1, " \r\n");
+  while (p < lineEnd && *p == ' ')
+  {
+    p++;
+  }
+  size_t len = strcspn(p, " \r\n");
+  if (len == 0U || btIsMonthAbbreviation(p, len))
+  {
+    return;
+  }
+  if (len > BT_BUILD_TAG_MAX_LEN)
+  {
+    len = BT_BUILD_TAG_MAX_LEN;
+  }
+  memcpy(btModuleBuildTag, p, len);
+  btModuleBuildTag[len] = '\0';
+}
+
 /* THE POLICY. Transparent bridge everywhere except v1.4.17.x, a bench-only
  * module release that never ships, which keeps SPP_SEND framing.
  *
  * v1.4.18.x went to SPP_SEND because its transparent bridge sent one UART byte
- * per RFCOMM frame (~0.4 KB/s). That turned out to be the SPP MTU an OTA
- * leaves at 0 (DEV-1173, repaired at boot by the SPP_MTU_* steps), not the
- * bridge. With a valid MTU, the transparent bridge runs at about 76 KB/s on the
- * v1.4.18.18 release and about 160-170 KB/s on Infineon's test_254/test_255,
- * against about 70-75 KB/s for SPP_SEND framing on all of them. SPP_SEND
- * framing on v1.4.18.x also holds back the last two frames of a burst, so a
- * command's reply after a stream arrives late. Later releases are assumed to
- * keep the bridge working; exclude any that regress here. */
+ * per RFCOMM frame (~0.4 KB/s). That turned out to be the SPP MTU an OTA from
+ * v1.4.16.16 leaves at 0 (DEV-1173), not the bridge. Infineon's test_251 runs
+ * at full speed with that stale MTU (and the stale 0x04E field of DEV-1350),
+ * so the boot repairs this firmware had for the v1.4.18.18 release and the
+ * test_254/test_255 images, none of which shipped, were removed (DEV-1510).
+ * On those three builds a module upgraded from v1.4.16.16 is slow again. With
+ * a valid MTU the transparent bridge ran at about 76 KB/s on the v1.4.18.18
+ * release and about 150-170 KB/s on the test images, against about 70-75 KB/s
+ * for SPP_SEND framing, which on v1.4.18.x also holds back the last two frames
+ * of a burst. Later releases are assumed to keep the bridge working; exclude
+ * any that regress here. */
 static void BT_selectDataPath(void)
 {
   bool isV1_4_17 = BT_isFirmwareVersionAtLeast(1, 4, 17)
@@ -441,15 +509,88 @@ static void BT_selectDataPath(void)
   btTransparentMode = isV1_4_17 ? 0 : 1;
 }
 
+/* SBTP (bt_set_parameters) flags, from module firmware v1.4.17:
+ * - Bit 0 disables sniff mode.
+ * - Bit 1 makes the module accept incoming BR/EDR connections as slave instead
+ *   of requesting the master role, so a PC can hold more than three links
+ *   (DEV-742). Images without it, the v1.4.18.18 release included, accept and
+ *   ignore it.
+ * - Bit 2 (Infineon's test_251) turns off the classic SPP throughput
+ *   optimization: a wait that holds a short UART write ~30 ms to fill an
+ *   RFCOMM frame. The wait puts an SD-sync centre's time ~50 ms late at every
+ *   node (DEV-1468) and slows every short reply, while setting the bit costs
+ *   about 15% of bulk classic throughput (evaluation board: ~130 against ~150
+ *   KB/s). So it is set only while the radio runs SD sync, where nothing
+ *   streams (DEV-1510). Images without the bit refuse the whole command when
+ *   it is set (020C: the v1.4.18.18 release, test_254), so a refusal is
+ *   retried once without it and the bit is not sent again until the MCU
+ *   restarts (btSbtpNoHoldRefused).
+ *
+ * Bits 0 and 1 are stored in the module's flash at first boot, written only
+ * when they differ. Bit 2 depends on the mode the radio runs in, which first
+ * boot doesn't know yet (the stored config is read after it), so it is set in
+ * RAM at each radio start (SYNC_BT_FLAGS_*) and never costs a flash write. */
+#define BT_SBTP_FLAG_SNIFF_OFF   0x01U
+#define BT_SBTP_FLAG_SLAVE_ROLE  0x02U
+#define BT_SBTP_FLAG_NO_SPP_HOLD 0x04U
+static bool btSbtpNoHoldRefused;
+static uint8_t btSbtpFlagsSent;
+
+static uint8_t BT_storedSbtpFlags(void)
+{
+  return BT_isFirmwareVersionAtLeast(1, 4, 17) ?
+      (uint8_t) (BT_SBTP_FLAG_SNIFF_OFF | BT_SBTP_FLAG_SLAVE_ROLE) :
+      0U;
+}
+
+static uint8_t BT_runtimeSbtpFlags(void)
+{
+  uint8_t flags = BT_storedSbtpFlags();
+  if (flags != 0U && shimmerStatus.btInSyncMode && !btSbtpNoHoldRefused)
+  {
+    flags |= BT_SBTP_FLAG_NO_SPP_HOLD;
+  }
+  return flags;
+}
+
+/* SBTP with the parameters read back by GBTP and the given flags */
+static void BT_sendSbtp(uint8_t flags, bool toFlash)
+{
+  btSbtpFlagsSent = flags;
+  setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
+  if (toFlash)
+  {
+    ezs_fcmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
+        rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable, flags,
+        rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
+        rsp_bt_get_parameters.active_bt_connectability);
+  }
+  else
+  {
+    ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
+        rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable, flags,
+        rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
+        rsp_bt_get_parameters.active_bt_connectability);
+  }
+}
+
 uint8_t *btInitCmdsSteps;
 volatile uint8_t btInitCmdsRunning, btInitCmdsStep, btInitCmdsStepIdx, btFactoryResetCmdsRunning;
 uint8_t btNameTypeBeingRead;
 volatile bool btIsFactoryResetted, btCysppState, btUartSettingsChanged;
 
+/* Runs the step that sent the last command again: its response handler has
+ * found a reason to resend it differently (btSbtpNoHoldRefused). */
+static void BT_repeatLastInitStep(void)
+{
+  if (btInitCmdsStepIdx > 0U)
+  {
+    btInitCmdsStepIdx--;
+    btInitCmdsStep = btInitCmdsSteps[btInitCmdsStepIdx];
+  }
+}
+
 static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_STAGE2,
-  SPP_MTU_READ, SPP_MTU_WRITE, SPP_MTU_STORE, SPP_MTU_VERIFY, SPP_MTU_DONE, CFG_04E_READ,
-  CFG_04E_WRITE, CFG_04E_STORE, CFG_04E_VERIFY, CFG_04E_DONE, CFG_MTU_1616_READ,
-  CFG_MTU_1616_WRITE, CFG_MTU_1616_STORE, CFG_MTU_1616_VERIFY, CFG_MTU_1616_DONE,
   ENTER_BINARY_MODE, UPDATE_UART_SETTINGS_STAGE1, UPDATE_UART_SETTINGS_STAGE2,
   UPDATE_UART_SETTINGS_STAGE3, UPDATE_UART_SETTINGS_STAGE4, UPDATE_UART_SETTINGS_STAGE5,
   PING, GET_BT_PARAMETERS, STOP_BT_ADVERTISING, STOP_BLE_ADVERTISING_STAGE1,
@@ -468,9 +609,13 @@ static uint8_t btBootStagesFirstBoot[] = { WAIT_FOR_BOOT_STAGE1, WAIT_FOR_BOOT_S
   GET_PIN_CODE, SET_PIN_CODE, SET_CYSPP_PACKETIZATION, START_BLE_ADVERTISING_STAGE1,
   START_BLE_ADVERTISING_STAGE2, START_BT_ADVERTISING, FINISH };
 
+/* Radio restarts: SD sync, and a config change (InitialiseBtAfterBoot). Steps
+ * run in this order and also in the order their blocks appear in
+ * btInitCommands(), because a step with nothing to send falls through to the
+ * next block. */
 static uint8_t btBootStagesSubsequentBoot[] = { WAIT_FOR_BOOT_STAGE1,
   WAIT_FOR_BOOT_STAGE2, /* PING,*/
-  ENTER_BINARY_MODE, GET_SECURITY_PARAMETERS,
+  ENTER_BINARY_MODE, SYNC_BT_FLAGS_READ, SYNC_BT_FLAGS_WRITE, GET_SECURITY_PARAMETERS,
   SET_SECURITY_PARAMETERS, //Any command to get module into binary command mode. Added set, get security parameters here to get SD sync working
   FINISH };
 
@@ -632,322 +777,6 @@ void btDeinit(void)
   deinitBtPins();
 }
 
-/* Config repairs after a module OTA. An EZ-Serial OTA keeps the module's
- * stored config block in both directions, so a module that changes version
- * runs with the other version's values wherever v1.4.18.18 changed a default.
- * Three repairs, each run only on the builds it names: the SPP MTU and field
- * 0x04E after an upgrade to v1.4.18.18 (DEV-1173, DEV-1350), and the SPP MTU
- * again after a downgrade to v1.4.16.16 (DEV-1350; further down). The SPP MTU
- * first:
- *
- * v1.4.18.18 added a check on a stored SPP MTU (UINT16, default 990) before
- * each classic SPP send. An OTA from v1.4.16.16 or earlier keeps the module's
- * stored config, where that field is 0, so the module then sends one UART byte
- * per RFCOMM frame: under 1 KB/s in transparent mode, and SPP_SEND framing
- * slows too. /RFAC fixes it but changes the Bluetooth address and clears
- * bonds. Infineon (IFX-260908-2289766) gave a RAM write of the field followed
- * by /SCFG instead.
- *
- * The RAM address is internal to the module firmware and can move between
- * builds, so the repair only runs on builds whose boot banner is listed below
- * (all three share one config layout; its base address, 0x0021391A, is
- * referenced throughout each image). The steps are text commands, run while
- * the module is still in its power-on text mode, so /SCFG stores only the
- * module's own boot config plus the repaired field - nothing this firmware
- * later sets in RAM. A valid MTU is left alone, so the flash write happens
- * once per module. Revisit when Infineon releases firmware that migrates the
- * fields itself. */
-static const char *const btCfgBuilds1818[] = {
-  "V1.4.18.18 Nov 16 2025 11:37:32",          /* public release */
-  "V1.4.18.18 test_254 Oct  8 2026 09:43:03", /* Infineon test images */
-  "V1.4.18.18 test_255 Sep 29 2026 08:04:20",
-};
-/* v1.4.16.16 keeps the same config block at a different RAM base, 0x0021361E
- * (found on the IF820 DVK by searching RAM for the dumped block; not yet
- * confirmed by Infineon). */
-static const char *const btCfgBuilds1616[] = {
-  "V1.4.16.16 Mar 28 2024 07:01:13", /* production */
-};
-static const char btCfgStoreCmd[] = "/SCFG\r\n";
-/* Bit n set when repair n's builds include the running one. Set at the first
- * repair's READ step, while the boot banner is still in the boot-message
- * buffer; later repairs find a /RUD reply there instead. */
-static uint8_t btCfgKnownMask;
-static bool btCfgVerifyPending, btCfgStored;
-
-/* One repair: the builds it applies to, a 4-byte RAM read, the test for the
- * stale value, and the write that repairs it. Its five steps (READ, WRITE,
- * STORE, VERIFY, DONE) are consecutive values of enum BT_SET_COMMAND_STAGES,
- * from stepRead. */
-typedef struct
-{
-  const char *label;
-  const char *const *builds;
-  uint8_t buildCount;
-  uint8_t stepRead;
-  const char *readCmd;
-  uint16_t readLen;
-  const char *writeCmd;
-  uint16_t writeLen;
-  bool (*isStale)(const uint8_t b[4]);
-  void (*describe)(const uint8_t b[4], char *out, size_t outLen);
-} BtCfgRepair_t;
-
-/* SPP MTU: bytes 27 DE 03 00 are 0x27, the field before the MTU (also a
- * v1.4.18.18 default), then MTU 0x03DE. The value Infineon gave. */
-static const char sppMtuReadCmd[] = "/RUD,M=8,O=00213C18,L=04\r\n";
-static const char sppMtuWriteCmd[] = "/WUD,M=8,O=00213C18,D=0003DE27\r\n";
-
-static bool sppMtuIsStale(const uint8_t b[4])
-{
-  return (b[1] | (b[2] << 8)) == 0;
-}
-
-static void sppMtuDescribe(const uint8_t b[4], char *out, size_t outLen)
-{
-  snprintf(out, outLen, "%u", (unsigned) (b[1] | (b[2] << 8)));
-}
-
-/* Field 0x04E (DEV-1350): base 0x0021391A + 0x4E. v1.4.18.18's default is
- * 80808080; older images, and so any module upgraded from one by OTA, have
- * 00000000. With the stale value, test_254 stops passing UART data to a BLE
- * CYSPP link after any classic SPP session, until the module restarts:
- * reproduced on the IF820 DVK with no host MCU (00000000 failed 2 of 2 runs,
- * 80808080 passed 4 of 4). What the field controls is not known yet - asked
- * of Infineon - so only the known stale value is repaired, to the v1.4.18.18
- * default, and any other value is left alone. PROTOTYPE. */
-static const char cfg04eReadCmd[] = "/RUD,M=8,O=00213968,L=04\r\n";
-static const char cfg04eWriteCmd[] = "/WUD,M=8,O=00213968,D=80808080\r\n";
-
-static bool cfg04eIsStale(const uint8_t b[4])
-{
-  return (b[0] | b[1] | b[2] | b[3]) == 0;
-}
-
-static void cfg04eDescribe(const uint8_t b[4], char *out, size_t outLen)
-{
-  snprintf(out, outLen, "%02X%02X%02X%02X", b[0], b[1], b[2], b[3]);
-}
-
-/* SPP MTU after a downgrade to v1.4.16.16 (DEV-1350): its config block is at
- * 0x0021361E, so dump offset 0x2FE is at 0x0021391C. v1.4.16.16 also reads the
- * MTU, and a non-zero one - the v1.4.18.18 value an OTA keeps - costs it about
- * a third of its classic rate: IF820 DVK, module to PC at 2 Mbaud, 79-86 KB/s
- * with the MTU at 1011 against 127-140 KB/s with it at 0 (3 runs each); field
- * 0x04E made no difference there. The write restores v1.4.16.16's own
- * defaults for 0x2FE-0x301 (07 00 00 00). Production v1.4.16.16 modules have
- * MTU 0, so this does nothing on them. */
-static const char sppMtu1616ReadCmd[] = "/RUD,M=8,O=0021391C,L=04\r\n";
-static const char sppMtu1616WriteCmd[] = "/WUD,M=8,O=0021391C,D=00000007\r\n";
-
-static bool sppMtu1616IsStale(const uint8_t b[4])
-{
-  return !sppMtuIsStale(b);
-}
-
-#define BT_CFG_BUILDS(list) (list), (uint8_t) (sizeof(list) / sizeof((list)[0]))
-
-static const BtCfgRepair_t btCfgRepairs[] = {
-  { "SPP MTU", BT_CFG_BUILDS(btCfgBuilds1818), SPP_MTU_READ, sppMtuReadCmd,
-      sizeof(sppMtuReadCmd) - 1U, sppMtuWriteCmd, sizeof(sppMtuWriteCmd) - 1U,
-      sppMtuIsStale, sppMtuDescribe },
-  { "Config 0x04E", BT_CFG_BUILDS(btCfgBuilds1818), CFG_04E_READ, cfg04eReadCmd,
-      sizeof(cfg04eReadCmd) - 1U, cfg04eWriteCmd, sizeof(cfg04eWriteCmd) - 1U,
-      cfg04eIsStale, cfg04eDescribe },
-  { "SPP MTU (v1.4.16.16)", BT_CFG_BUILDS(btCfgBuilds1616), CFG_MTU_1616_READ,
-      sppMtu1616ReadCmd, sizeof(sppMtu1616ReadCmd) - 1U, sppMtu1616WriteCmd,
-      sizeof(sppMtu1616WriteCmd) - 1U, sppMtu1616IsStale, sppMtuDescribe },
-};
-
-static bool btCfgSend(const BtCfgRepair_t *r, const char *cmd, uint16_t len)
-{
-  /* Arm the capture first: the reply can start before appOutput() returns */
-  setWaitingForBtTextReply();
-  if (appOutput(len, (const uint8_t *) cmd) == EZS_OUTPUT_RESULT_DATA_WRITTEN)
-  {
-    return true;
-  }
-  setWaitingForBtBoot(0);
-  printf("%s: send refused\r\n", r->label);
-  return false;
-}
-
-/* Reads the four bytes of a /RUD reply. The module's text replies start the
- * line with "@R,<length>," and keep the command's own slash, e.g. (bench,
- * v1.4.18.18 test_254; the /RUD is from a module at its own default MTU,
- * 0x03F3 = 1011 - after the repair it reads D=27DE0300, MTU 990):
- *   @R,0015,/RUD,0000,D=27F30300
- *   @R,000A,/WUD,0000
- *   @R,000B,/SCFG,0000
- * so matching "/RUD,0000,D=", "/WUD,0000" and "/SCFG,0000" finds the command
- * and its 0000 (success) result. */
-static bool btCfgParse(const char *reply, uint8_t b[4])
-{
-  const char *d = strstr(reply, "/RUD,0000,D=");
-  if (d == NULL)
-  {
-    return false;
-  }
-  d += strlen("/RUD,0000,D=");
-  /* The capture is NUL-terminated but may be truncated: a prefix near the end
-   * of the buffer must not lead the reads below past it */
-  if (strnlen(d, 8) < 8)
-  {
-    return false;
-  }
-  for (uint8_t i = 0; i < 4; i++)
-  {
-    char hex[3] = { d[2 * i], d[2 * i + 1], 0 };
-    char *end;
-    b[i] = (uint8_t) strtoul(hex, &end, 16);
-    if (end != &hex[2])
-    {
-      return false;
-    }
-  }
-  return true;
-}
-
-static void btCfgSkipRest(const BtCfgRepair_t *r)
-{
-  while (btInitCmdsStep != r->stepRead + 4U)
-  {
-    incrementBtInitCmdsStep();
-  }
-}
-
-/* One step of one repair. Each step first checks the reply to the previous
- * command (left in the boot-message buffer), then sends the next one. Returns
- * true while waiting on a reply, false once that repair is over and the boot
- * should carry on. */
-static bool btCfgRepairStep(const BtCfgRepair_t *r)
-{
-  const char *reply = getBtBootMsgPtr();
-  uint8_t b[4];
-  char value[12];
-
-  switch (btInitCmdsStep - r->stepRead)
-  {
-  case 0: /* READ */
-    if (r == &btCfgRepairs[0])
-    {
-      btCfgKnownMask = 0;
-      for (uint8_t n = 0; n < sizeof(btCfgRepairs) / sizeof(btCfgRepairs[0]); n++)
-      {
-        for (uint8_t i = 0; i < btCfgRepairs[n].buildCount; i++)
-        {
-          if (strstr(reply, btCfgRepairs[n].builds[i]) != NULL)
-          {
-            btCfgKnownMask |= (uint8_t) (1U << n);
-          }
-        }
-      }
-    }
-    btCfgVerifyPending = false;
-    btCfgStored = false;
-    if ((btCfgKnownMask & (1U << (r - btCfgRepairs))) == 0U)
-    {
-      btCfgSkipRest(r);
-      break;
-    }
-    incrementBtInitCmdsStep();
-    if (btCfgSend(r, r->readCmd, r->readLen))
-    {
-      return true;
-    }
-    btCfgSkipRest(r);
-    break;
-
-  case 1: /* WRITE */
-    if (!btCfgParse(reply, b))
-    {
-      printf("%s: unreadable (%s)\r\n", r->label, reply);
-      btCfgSkipRest(r);
-      break;
-    }
-    r->describe(b, value, sizeof(value));
-    if (!r->isStale(b))
-    {
-      printf("%s: %s, ok\r\n", r->label, value);
-      btCfgSkipRest(r);
-      break;
-    }
-    printf("%s: %s (stale config after OTA), repairing\r\n", r->label, value);
-    incrementBtInitCmdsStep();
-    if (btCfgSend(r, r->writeCmd, r->writeLen))
-    {
-      return true;
-    }
-    btCfgSkipRest(r);
-    break;
-
-  case 2: /* STORE */
-    if (strstr(reply, "/WUD,0000") == NULL)
-    {
-      printf("%s: write failed (%s)\r\n", r->label, reply);
-      btCfgSkipRest(r);
-      break;
-    }
-    incrementBtInitCmdsStep();
-    if (btCfgSend(r, btCfgStoreCmd, sizeof(btCfgStoreCmd) - 1U))
-    {
-      return true;
-    }
-    btCfgSkipRest(r);
-    break;
-
-  case 3: /* VERIFY */
-    /* Verify the RAM value either way, but remember whether it reached
-     * flash: a failed /SCFG leaves this boot fixed and the next one stale. */
-    btCfgStored = (strstr(reply, "/SCFG,0000") != NULL);
-    if (!btCfgStored)
-    {
-      printf("%s: store failed (%s)\r\n", r->label, reply);
-    }
-    incrementBtInitCmdsStep();
-    if (btCfgSend(r, r->readCmd, r->readLen))
-    {
-      btCfgVerifyPending = true;
-      return true;
-    }
-    btCfgSkipRest(r);
-    break;
-
-  default:
-    break;
-  }
-
-  /* DONE */
-  if (btCfgVerifyPending)
-  {
-    btCfgVerifyPending = false;
-    if (btCfgParse(reply, b))
-    {
-      r->describe(b, value, sizeof(value));
-      if (r->isStale(b))
-      {
-        printf("%s: repair did not take, still %s\r\n", r->label, value);
-      }
-      else if (btCfgStored)
-      {
-        printf("%s: repaired, now %s\r\n", r->label, value);
-      }
-      else
-      {
-        printf(
-            "%s: %s in RAM only - not stored, will repair again next boot\r\n",
-            r->label, value);
-      }
-    }
-    else
-    {
-      printf("%s: verify unreadable (%s)\r\n", r->label, reply);
-    }
-  }
-  incrementBtInitCmdsStep();
-  return false;
-}
-
 //TODO set appropriate values for setDmaRx() calls
 void btInitCommands(void)
 {
@@ -967,22 +796,12 @@ void btInitCommands(void)
     printf("Boot Msgs=\r\n%s", getBtBootMsgPtr());
 
     BT_parseFwVersionFromBootBanner(getBtBootMsgPtr());
+    BT_parseBuildTagFromBootBanner(getBtBootMsgPtr());
     BT_selectDataPath();
-    printf("BT data path: %s (module app version %08lX)\r\n",
+    printf("BT data path: %s (module app version %08lX%s%s)\r\n",
         btTransparentMode ? "transparent bridge" : "SPP_SEND framing",
-        (unsigned long) rsp_system_query_firmware_version.app);
-  }
-
-  for (uint8_t i = 0; i < sizeof(btCfgRepairs) / sizeof(btCfgRepairs[0]); i++)
-  {
-    const BtCfgRepair_t *r = &btCfgRepairs[i];
-    if (btInitCmdsStep >= r->stepRead && btInitCmdsStep <= r->stepRead + 4U)
-    {
-      if (btCfgRepairStep(r))
-      {
-        return;
-      }
-    }
+        (unsigned long) rsp_system_query_firmware_version.app,
+        btModuleBuildTag[0] ? ", build " : "", btModuleBuildTag);
   }
 
   if (btInitCmdsStep == ENTER_BINARY_MODE)
@@ -1169,20 +988,48 @@ void btInitCommands(void)
     return;
   }
 
+  /* Radio restarts: the SBTP flags for the mode the radio now runs in, set in
+   * RAM (see BT_runtimeSbtpFlags). Modules before v1.4.17 have no flags to set
+   * and skip both steps without sending anything. */
+  if (btInitCmdsStep == SYNC_BT_FLAGS_READ)
+  {
+    incrementBtInitCmdsStep();
+    if (BT_storedSbtpFlags() != 0U && ShimBt_isBtClassicCurrentlyEnabled())
+    {
+      setExpectedResponse(EZS_IDX_RSP_BT_GET_PARAMETERS);
+      ezs_cmd_bt_get_parameters();
+      return;
+    }
+    incrementBtInitCmdsStep();
+  }
+
+  if (btInitCmdsStep == SYNC_BT_FLAGS_WRITE)
+  {
+    incrementBtInitCmdsStep();
+    uint8_t flags = BT_runtimeSbtpFlags();
+    if (rsp_bt_get_parameters.flags != flags)
+    {
+      printf("SBTP flags %02X -> %02X in RAM (%s)\r\n", rsp_bt_get_parameters.flags,
+          flags, shimmerStatus.btInSyncMode ? "SD sync" : "normal");
+      BT_sendSbtp(flags, false);
+      return;
+    }
+  }
+
   if (btInitCmdsStep == STOP_BT_ADVERTISING)
   {
     printf("Stop BT Advertising\r\n");
     incrementBtInitCmdsStep();
 
-    setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
-
     rsp_bt_get_parameters.discoverable = BT_DISC_MODE_NOT_DISCOVERABLE;
     rsp_bt_get_parameters.connectable = BT_CONN_MODE_NOT_CONNECTABLE;
-    ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
-        rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
-        rsp_bt_get_parameters.flags, rsp_bt_get_parameters.scn,
-        rsp_bt_get_parameters.active_bt_discoverability,
-        rsp_bt_get_parameters.active_bt_connectability);
+    /* The flags as read back, minus any the module has already refused */
+    uint8_t flags = rsp_bt_get_parameters.flags;
+    if (btSbtpNoHoldRefused)
+    {
+      flags &= (uint8_t) ~BT_SBTP_FLAG_NO_SPP_HOLD;
+    }
+    BT_sendSbtp(flags, false);
     return;
   }
 
@@ -1599,41 +1446,22 @@ void btInitCommands(void)
     if (ShimBt_isBtClassicCurrentlyEnabled())
     {
       printf("Start BT Advertising\r\n");
-      setExpectedResponse(EZS_IDX_RSP_BT_SET_PARAMETERS);
 
-      /* SBTP flags, from module firmware v1.4.17:
-       * - F=1 disables sniff mode (v1.4.17 and later).
-       * - F=2 makes the module accept incoming BR/EDR connections as slave
-       *   instead of requesting the master role. No public release has it yet:
-       *   it is in Infineon's test_254 image (IFX-261005-2321966) and expected
-       *   in a later release, possibly v1.4.19.19. Without it every link puts
-       *   the PC in a piconet of its own as slave, and an Intel AX201 then
-       *   refuses a 4th link (DEV-742).
-       * Images without F=2, v1.4.18.18 included, accept and store the bit but
-       * ignore it (bench, 2026-10-08), so it is safe to send ahead of support. */
-      uint8_t flags = BT_isFirmwareVersionAtLeast(1, 4, 17) ? (1 | 2) : 0;
+      /* The stored SBTP flags (bits 0 and 1, see BT_storedSbtpFlags). Bit 2 is
+       * never stored: radio restarts set it in RAM when SD sync needs it. */
+      uint8_t flags = BT_storedSbtpFlags();
 
       rsp_bt_get_parameters.discoverable = BT_DISC_MODE_GENERAL_DISCOVERABLE;
       rsp_bt_get_parameters.connectable = BT_CONN_MODE_CONNECTABLE;
-      if (rsp_bt_get_parameters.flags != flags)
+      /* Flash scope only when the read-back differs, so it costs one flash
+       * write per change, not one per boot. The GBTP "BT params:" boot print
+       * shows flags=03 once this has stuck. */
+      bool toFlash = (rsp_bt_get_parameters.flags != flags);
+      if (toFlash)
       {
-        /* Persist the SBTP flags (F=1 sniff disable, F=2 slave role) in the
-         * module's NV config (flash scope), guarded by the read-back above so
-         * it costs one flash write per change, not one per boot. The GBTP
-         * "BT params:" boot print shows flags=03 once this has stuck. */
         printf("Persisting SBTP flags %02X to module flash\r\n", flags);
-        ezs_fcmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
-            rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
-            flags, rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
-            rsp_bt_get_parameters.active_bt_connectability);
       }
-      else
-      {
-        ezs_cmd_bt_set_parameters(rsp_bt_get_parameters.link_super_time_out,
-            rsp_bt_get_parameters.discoverable, rsp_bt_get_parameters.connectable,
-            flags, rsp_bt_get_parameters.scn, rsp_bt_get_parameters.active_bt_discoverability,
-            rsp_bt_get_parameters.active_bt_connectability);
-      }
+      BT_sendSbtp(flags, toFlash);
       return;
     }
     else
@@ -2483,7 +2311,15 @@ void ezsHandlerShimmer(ezs_packet_t *packet)
     {
       printf("bt_set_parameters FAILED: result=");
       printHex16(packet->payload.rsp_bt_set_parameters.result);
-      printf("\r\n");
+      printf(", flags=%02X\r\n", btSbtpFlagsSent);
+      if ((btSbtpFlagsSent & BT_SBTP_FLAG_NO_SPP_HOLD) && !btSbtpNoHoldRefused && btInitCmdsRunning)
+      {
+        /* A module without SBTP bit 2 refuses the whole command (020C on the
+         * v1.4.18.18 release and test_254), so send it again without */
+        printf("SBTP flag 04 refused, resending without it\r\n");
+        btSbtpNoHoldRefused = true;
+        BT_repeatLastInitStep();
+      }
     }
     break;
 
@@ -2733,9 +2569,16 @@ uint8_t *BT_getCyw20820MacAddressPtr(void)
   return &rsp_system_get_bluetooth_address.address.addr[0];
 }
 
+/* GET_BT_VERSION_STR (0xA1), and the dock's equivalent, reply with this
+ * string from log-and-stream-common's btVerStrResponse[100]. Hosts take 99
+ * bytes as the longest reply (shimmer-web-sdk's stream framing rejects a longer
+ * 0xA2 response), so the string stays within 100 bytes with its terminator. */
+#define BT_VER_STR_SIZE 100U
+
 void BT_generateCyw20820FirmwareVersionStr(char *str)
 {
-  sprintf(str, "CYW20820 app=v%02d.%02d.%02d.%02d, stack=0x%08x, protocol=0x%04x, hardware=0x%02x",
+  static const char buildPrefix[] = ", build=";
+  int len = snprintf(str, BT_VER_STR_SIZE, "CYW20820 app=v%02d.%02d.%02d.%02d, stack=0x%08x, protocol=0x%04x, hardware=0x%02x",
       (uint8_t) (rsp_system_query_firmware_version.app >> 24),
       (uint8_t) (rsp_system_query_firmware_version.app >> 16),
       (uint8_t) (rsp_system_query_firmware_version.app >> 8),
@@ -2743,6 +2586,16 @@ void BT_generateCyw20820FirmwareVersionStr(char *str)
       (uint16_t) rsp_system_query_firmware_version.stack,
       rsp_system_query_firmware_version.protocol,
       rsp_system_query_firmware_version.hardware);
+  /* An Infineon test build's name (DEV-1510), e.g. ", build=test_251". It goes
+   * last so a host matching the fields above is unaffected, and a public
+   * release adds nothing. The base string is 75 characters, so a name of up
+   * to BT_BUILD_TAG_MAX_LEN always fits; the check guards the buffer anyway. */
+  if (btModuleBuildTag[0] != '\0' && len > 0
+      && (size_t) len + (sizeof(buildPrefix) - 1U) + strlen(btModuleBuildTag) < BT_VER_STR_SIZE)
+  {
+    strcat(str, buildPrefix);
+    strcat(str, btModuleBuildTag);
+  }
 }
 
 uint8_t BT_isFirmwareVersionAtLeast(uint8_t major, uint8_t minor, uint8_t patch)
