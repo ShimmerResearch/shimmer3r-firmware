@@ -93,13 +93,10 @@ uint8_t rxBuf[512];
 volatile uint16_t expectedByteCount;
 
 /* Text capture into btBootMsg: BT_TEXT_CAPTURE_BOOT ends after the two boot
- * lines, BT_TEXT_CAPTURE_REPLY after the first line starting '@' (the @R/@E
- * reply to a text command, whether or not the module echoed the command). */
-#define BT_TEXT_CAPTURE_OFF   0U
-#define BT_TEXT_CAPTURE_BOOT  1U
-#define BT_TEXT_CAPTURE_REPLY 2U
+ * lines. */
+#define BT_TEXT_CAPTURE_OFF  0U
+#define BT_TEXT_CAPTURE_BOOT 1U
 volatile uint8_t waitingForBtBoot = BT_TEXT_CAPTURE_OFF;
-volatile uint16_t btBootMsgLineStart = 0;
 /* The two boot lines (BOOT banner + ASC event). Measured 150 chars on
  * v1.4.12.12, 154 on v1.4.18.18 and 163 on a v1.4.18.18 test image, which
  * overflowed the previous 160-byte buffer: the index that follows it in RAM
@@ -480,44 +477,11 @@ void btUartDmaRxCpltCallback(UART_HandleTypeDef *huart)
       //SHIMMER_PRINTF("S0=0x%x '%c'\n", rxBuf[i], rxBuf[i]);
       uint8_t lineEnded = (btBootMsgPrevByte == 0x0D && bootByte == 0x0A);
       btBootMsgPrevByte = bootByte;
-      /* A full buffer ends a reply capture on any byte, line ending or not,
-       * so a reply that can never be recognised does not hold the sequence.
-       * A reply that never arrives at all is caught one level up, like an
-       * unanswered binary command: first-boot init runs under
-       * btCommWithDiffBaudRates(), which stops and restarts Bluetooth after
-       * 5 s per attempt (the restart re-arms boot capture at
-       * WAIT_FOR_BOOT_STAGE1) and reports BOOT_STAGE_BLUETOOTH_FAILURE after
-       * four retries. */
-      uint8_t replyBufferFull = (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY)
-          && (btBootMsgIndex >= (sizeof(btBootMsg) - 1U));
-      if (lineEnded || replyBufferFull)
+      if (lineEnded)
       {
-        uint8_t captureDone;
-        if (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY)
+        btBootMsgLineCount++;
+        if (btBootMsgLineCount == 2)
         {
-          captureDone = replyBufferFull || (btBootMsg[btBootMsgLineStart] == '@');
-        }
-        else
-        {
-          btBootMsgLineCount++;
-          captureDone = (btBootMsgLineCount == 2);
-        }
-        btBootMsgLineStart = btBootMsgIndex;
-        if (captureDone)
-        {
-          if (waitingForBtBoot == BT_TEXT_CAPTURE_REPLY)
-          {
-            /* The text reply answers the command appOutput() marked as
-             * pending; the binary parser that normally clears it never sees
-             * a text reply. As in appHandler(), stop the RTT sample too. */
-            if (pending_response != 0)
-            {
-              pending_response = 0;
-#if ENABLE_BT_CMD_RTT_STATS
-              btCmdRttStop();
-#endif
-            }
-          }
           setWaitingForBtBoot(0);
           //TODO fix architecture and function calling
           progressToNextBtInCmd();
@@ -903,31 +867,20 @@ void resetBtRxBuff(void)
   memset(rxBuf, 0, sizeof(rxBuf));
 }
 
-static void startBtTextCapture(uint8_t mode)
-{
-  memset(&btBootMsg[0], 0, sizeof(btBootMsg));
-  btBootMsgIndex = 0;
-  btBootMsgLineStart = 0;
-  btBootMsgLineCount = 0;
-  btBootMsgPrevByte = 0;
-  waitingForBtBoot = mode;
-}
-
 void setWaitingForBtBoot(uint8_t state)
 {
   if (state)
   {
-    startBtTextCapture(BT_TEXT_CAPTURE_BOOT);
+    memset(&btBootMsg[0], 0, sizeof(btBootMsg));
+    btBootMsgIndex = 0;
+    btBootMsgLineCount = 0;
+    btBootMsgPrevByte = 0;
+    waitingForBtBoot = BT_TEXT_CAPTURE_BOOT;
   }
   else
   {
     waitingForBtBoot = BT_TEXT_CAPTURE_OFF;
   }
-}
-
-void setWaitingForBtTextReply(void)
-{
-  startBtTextCapture(BT_TEXT_CAPTURE_REPLY);
 }
 
 void setSkippingBytesCount(uint8_t count)
