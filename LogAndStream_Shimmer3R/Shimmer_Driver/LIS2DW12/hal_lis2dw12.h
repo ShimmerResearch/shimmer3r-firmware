@@ -23,8 +23,10 @@ int32_t lis2dw12_configure(float shimmerSamplingFreq,
     lis2dw12_mode_t mode);
 HAL_StatusTypeDef lis2dw12_accel_get(uint8_t *buf);
 bool lis2dw12_is_drdy_int_enabled(void);
-bool lis2dw12_is_shimmer_freq_higher(float shimmerSamplingFreq, lis2dw12_odr_t rate);
-float lis2dw12_get_sensor_freq_from_rate(lis2dw12_odr_t rate);
+bool lis2dw12_is_shimmer_freq_higher(float shimmerSamplingFreq,
+    lis2dw12_odr_t rate,
+    lis2dw12_mode_t mode);
+float lis2dw12_get_sensor_freq_from_rate(lis2dw12_odr_t rate, lis2dw12_mode_t mode);
 
 int32_t lis2dw12_standby(void);
 int32_t lis2dw12_temperature_get(float_t *tempCal);
