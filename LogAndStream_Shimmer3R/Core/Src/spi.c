@@ -48,6 +48,14 @@ spi2ReadBuf spi2Sens_buf;
 static uint8_t bmpLastPress[3] = { 0 };
 static uint8_t bmpLastTemp[3] = { 0 };
 static uint8_t lis3mdlLastMag[6] = { 0 };
+/* DEV-1561: the same for the other DRDY-gated reads on SPI, which DEV-818
+ * missed. The wide-range accel (LIS2DW12) is gated whenever the sampling rate
+ * is above its output rate, which is any low-power mode above 200 Hz. The
+ * LSM6DSV cache holds gyro then accel when both are on, the order they sit in
+ * the packet. */
+static uint8_t lis2dw12LastAccel[6] = { 0 };
+static uint8_t lsm6dsvLastGyroAccel[12] = { 0 };
+static uint8_t adxl371LastAccel[6] = { 0 };
 spi3ReadBuf spi3Sens_buf;
 
 SPITypeDef spi1Sens;
@@ -903,6 +911,9 @@ void SPI_startSensing()
   memset(bmpLastPress, 0, sizeof(bmpLastPress));
   memset(bmpLastTemp, 0, sizeof(bmpLastTemp));
   memset(lis3mdlLastMag, 0, sizeof(lis3mdlLastMag));
+  memset(lis2dw12LastAccel, 0, sizeof(lis2dw12LastAccel));
+  memset(lsm6dsvLastGyroAccel, 0, sizeof(lsm6dsvLastGyroAccel));
+  memset(adxl371LastAccel, 0, sizeof(adxl371LastAccel));
   memset((uint8_t *) &spi2Sens_buf, 0, sizeof(spi2ReadBuf));
   memset((uint8_t *) &spi3Sens_buf, 0, sizeof(spi3ReadBuf));
 
@@ -1224,6 +1235,50 @@ void SpiSensing(SPITypeDef *spiSensingInfo, SPI_SENSING_TYPE start)
   }
 }
 
+/* DEV-1561: copy a sensor's held reading (DEV-818) into the packet being built,
+ * for a tick on which it delivers nothing - its data-ready gate is not
+ * satisfied, or its read could not be started. Nothing else writes the slot
+ * then, so it would carry what the packet ring last held there: zero early in
+ * a session, later the sample from DATA_BUF_QTY packets before.
+ *
+ * One step, for the reason lis2mdlHoldLastMag() in i2c.c is: a gather starts
+ * from the RTC interrupt or a task, below the SPI interrupts (priority 0) whose
+ * completions refresh these caches. Sensors with no cache are left alone. */
+static void SpiSens_holdLastSample(SPI_SENSOR sensor)
+{
+  uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  switch (sensor)
+  {
+  case SPI1_LSM6DSV_GYRO_AND_ACCEL:
+    memcpy(dataBufPtr + sensing.ptr.gyro, lsm6dsvLastGyroAccel, 12);
+    break;
+  case SPI1_LSM6DSV_GYRO_ONLY:
+    memcpy(dataBufPtr + sensing.ptr.gyro, lsm6dsvLastGyroAccel, 6);
+    break;
+  case SPI1_LSM6DSV_ACCEL_ONLY:
+    memcpy(dataBufPtr + sensing.ptr.accel1, lsm6dsvLastGyroAccel, 6);
+    break;
+  case SPI1_PRESSURE_TEMP:
+    memcpy(dataBufPtr + sensing.ptr.pressure, bmpLastPress, sizeof(bmpLastPress));
+    memcpy(dataBufPtr + sensing.ptr.temperature, bmpLastTemp, sizeof(bmpLastTemp));
+    break;
+  case SPI1_ADXL371_ACCEL:
+    memcpy(dataBufPtr + sensing.ptr.accel3, adxl371LastAccel, sizeof(adxl371LastAccel));
+    break;
+  case SPI2_LIS2DW12_ACCEL:
+    memcpy(dataBufPtr + sensing.ptr.accel2, lis2dw12LastAccel, sizeof(lis2dw12LastAccel));
+    break;
+  case SPI2_LIS3MDL_MAG:
+    memcpy(dataBufPtr + sensing.ptr.mag2, lis3mdlLastMag, sizeof(lis3mdlLastMag));
+    break;
+  default:
+    break;
+  }
+  __set_PRIMASK(primask);
+}
+
 uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 {
   uint8_t retVal = 0;
@@ -1231,12 +1286,22 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 
   switch (spiSensingInfo->sensorList[spiSensingInfo->sensorCnt])
   {
+  /* DEV-1561: every gated read below holds its last sample when it does not
+   * read. The LSM6DSV gate is on only above the part's output rate, which
+   * ShimConfig_checkAndCorrectConfig keeps at or above the packet rate up to
+   * 3840 Hz. The ADXL371 has no gate to switch off: it is read only when its
+   * status says a sample is ready, so a failed status read, or a packet rate
+   * close to its output rate (318.1 Hz against 320 Hz), leaves it unread. */
   case SPI1_LSM6DSV_GYRO_AND_ACCEL:
     if (!lsm6dsv_is_drdy_int_enabled() || LSM6DSV_DRDY)
     {
       spiSensingInfo->status = SPI_STAT_LSM6DSV_GYRO_AND_ACCEL_GET;
       halRet = lsm6dsv_gyro_accel_get(spi1Sens_buf.lsm6dsvGyroAndAccelBuf);
       retVal = 1;
+    }
+    else
+    {
+      SpiSens_holdLastSample(SPI1_LSM6DSV_GYRO_AND_ACCEL);
     }
     break;
   case SPI1_LSM6DSV_ACCEL_ONLY:
@@ -1246,6 +1311,10 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       halRet = lsm6dsv_accel_get(spi1Sens_buf.lsm6dsvAccelBuf);
       retVal = 1;
     }
+    else
+    {
+      SpiSens_holdLastSample(SPI1_LSM6DSV_ACCEL_ONLY);
+    }
     break;
   case SPI1_LSM6DSV_GYRO_ONLY:
     if (!lsm6dsv_is_drdy_int_enabled() || LSM6DSV_DRDY)
@@ -1254,6 +1323,10 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       halRet = lsm6dsv_gyro_get(spi1Sens_buf.lsm6dsvGyroBuf);
       retVal = 1;
     }
+    else
+    {
+      SpiSens_holdLastSample(SPI1_LSM6DSV_GYRO_ONLY);
+    }
     break;
   case SPI1_ADXL371_ACCEL:
     if (adxl371_is_data_rdy() == 1)
@@ -1261,6 +1334,11 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       spiSensingInfo->status = SPI_STAT_ADXL371_ACCEL_GET;
       halRet = adxl371_accel_get(spi1Sens_buf.adxl371Buf);
       retVal = 1;
+    }
+    else
+    {
+      /* Not ready, or the status read failed (a negative return). */
+      SpiSens_holdLastSample(SPI1_ADXL371_ACCEL);
     }
     break;
   case SPI1_PRESSURE_TEMP:
@@ -1279,9 +1357,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
        * pressure/temperature instead of leaving the zeroed packet slot (which
        * would log a spurious 0 kPa / 0 degC, most visibly during the sensor's
        * ~1s warm-up when its data-ready cadence is below the sampling rate). */
-      uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
-      memcpy(dataBufPtr + sensing.ptr.pressure, bmpLastPress, sizeof(bmpLastPress));
-      memcpy(dataBufPtr + sensing.ptr.temperature, bmpLastTemp, sizeof(bmpLastTemp));
+      SpiSens_holdLastSample(SPI1_PRESSURE_TEMP);
     }
     break;
   case SPI1_ADS7028_INT_EXP0:
@@ -1335,6 +1411,13 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
       retVal = 1;
 #if defined(LIS2DW12_INT1_Pin)
     }
+    else
+    {
+      /* DEV-1561: no fresh sample this tick. In a low-power mode the part
+       * delivers 200 Hz at most, so at 256 Hz this is about one tick in five;
+       * before this hold each of them sent an unfilled slot. */
+      SpiSens_holdLastSample(SPI2_LIS2DW12_ACCEL);
+    }
 #endif
     break;
   case SPI2_LIS3MDL_MAG:
@@ -1348,8 +1431,7 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
     {
       /* DEV-818: no fresh conversion this tick - sample-and-hold the last valid
        * magnetometer reading instead of leaving the zeroed packet slot. */
-      uint8_t *dataBufPtr = ShimSens_getDataBuffAtWrIdx();
-      memcpy(dataBufPtr + sensing.ptr.mag2, lis3mdlLastMag, sizeof(lis3mdlLastMag));
+      SpiSens_holdLastSample(SPI2_LIS3MDL_MAG);
     }
     break;
 
@@ -1365,6 +1447,9 @@ uint8_t SpiSens_sensorNext(SPITypeDef *spiSensingInfo)
 
     retVal = 0;
     spiSensingInfo->status = SPI_STAT_IDLE;
+    /* DEV-1561: a read that could not be started fills nothing either, so
+     * hold as for no fresh sample (as i2c.c does for the LIS2MDL, DEV-1229). */
+    SpiSens_holdLastSample(spiSensingInfo->sensorList[spiSensingInfo->sensorCnt]);
   }
 
   return retVal;
@@ -1380,22 +1465,27 @@ void SPI1_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     memcpy(dataBufPtr + sensing.ptr.gyro,
         &spi1Sens_buf.lsm6dsvGyroAndAccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvGyroAndAccelBuf) - SPI_DMA_TXRX_OFFSET);
+    /* DEV-1561: refresh the sample-and-hold cache from the freshly-read slot. */
+    memcpy(lsm6dsvLastGyroAccel, dataBufPtr + sensing.ptr.gyro, 12);
     break;
   case SPI1_LSM6DSV_ACCEL_ONLY:
     lsm6dsv_unselectDevice();
     memcpy(dataBufPtr + sensing.ptr.accel1,
         &spi1Sens_buf.lsm6dsvAccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvAccelBuf) - SPI_DMA_TXRX_OFFSET);
+    memcpy(lsm6dsvLastGyroAccel, dataBufPtr + sensing.ptr.accel1, 6);
     break;
   case SPI1_LSM6DSV_GYRO_ONLY:
     lsm6dsv_unselectDevice();
     memcpy(dataBufPtr + sensing.ptr.gyro, &spi1Sens_buf.lsm6dsvGyroBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.lsm6dsvGyroBuf) - SPI_DMA_TXRX_OFFSET);
+    memcpy(lsm6dsvLastGyroAccel, dataBufPtr + sensing.ptr.gyro, 6);
     break;
   case SPI1_ADXL371_ACCEL:
     adxl371_unselectDevice();
     memcpy(dataBufPtr + sensing.ptr.accel3, &spi1Sens_buf.adxl371Buf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi1Sens_buf.adxl371Buf) - SPI_DMA_TXRX_OFFSET);
+    memcpy(adxl371LastAccel, dataBufPtr + sensing.ptr.accel3, sizeof(adxl371LastAccel));
     break;
   case SPI1_PRESSURE_TEMP:
     /* Raise CS to complete the DMA data-burst transaction BEFORE the status
@@ -1531,6 +1621,8 @@ void SPI2_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     memcpy(dataBufPtr + sensing.ptr.accel2,
         &spi2Sens_buf.lis2dw12AccelBuf[SPI_DMA_TXRX_OFFSET],
         sizeof(spi2Sens_buf.lis2dw12AccelBuf) - SPI_DMA_TXRX_OFFSET);
+    /* DEV-1561: refresh the sample-and-hold cache from the freshly-read slot. */
+    memcpy(lis2dw12LastAccel, dataBufPtr + sensing.ptr.accel2, sizeof(lis2dw12LastAccel));
     break;
   case SPI2_LIS3MDL_MAG:
     lis3mdl_unselectDevice();
