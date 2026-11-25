@@ -437,7 +437,7 @@ int32_t lis2dw12_configure(float shimmerSamplingFreq,
   isDrdyIntEnabled = false;
   //TODO remove IF when fully switched from eval board to BGA variant
 #ifndef S3R_NUCLEO
-  if (lis2dw12_is_shimmer_freq_higher(shimmerSamplingFreq, rate))
+  if (lis2dw12_is_shimmer_freq_higher(shimmerSamplingFreq, rate, mode))
   {
     lis2dw12_int_notification_set(&(lis2dw12_obj.Ctx), LIS2DW12_INT_LATCHED);
     lis2dw12_ctrl4_int1_pad_ctrl_t int1_pad_ctrl = { 0 };
@@ -465,18 +465,28 @@ bool lis2dw12_is_drdy_int_enabled(void)
   return isDrdyIntEnabled;
 }
 
-bool lis2dw12_is_shimmer_freq_higher(float shimmerSamplingFreq, lis2dw12_odr_t rate)
+bool lis2dw12_is_shimmer_freq_higher(float shimmerSamplingFreq, lis2dw12_odr_t rate, lis2dw12_mode_t mode)
 {
-  return shimmerSamplingFreq > lis2dw12_get_sensor_freq_from_rate(rate);
+  return shimmerSamplingFreq > lis2dw12_get_sensor_freq_from_rate(rate, mode);
 }
 
-float lis2dw12_get_sensor_freq_from_rate(lis2dw12_odr_t rate)
+/* Output rate the part delivers for an ODR code in a power mode, in Hz.
+ *
+ * DEV-1561: mode-dependent (datasheet, CTRL1 (20h) ODR[3:0] data-rate table).
+ * Code 1 is 12.5 Hz in high performance and 1.6 Hz in low power, and a
+ * low-power mode runs codes 7-9 (400/800/1600 Hz) at 200 Hz. This agrees with
+ * ShimConfig_lis2dw12OdrToHz in log-and-stream-common, so the data-ready gate
+ * in lis2dw12_configure() is on exactly when the packet rate is above the rate
+ * the part delivers. High performance is MODE bit 2 (0x04), which
+ * ShimConfig_wrAccelModeGet() sets from the wrAccelHrMode bit. */
+float lis2dw12_get_sensor_freq_from_rate(lis2dw12_odr_t rate, lis2dw12_mode_t mode)
 {
+  bool isHighPerformance = ((uint8_t) mode & LIS2DW12_HIGH_PERFORMANCE) != 0U;
   float sensorFreq = 0.0;
   switch (rate)
   {
   case LIS2DW12_XL_ODR_1Hz6_LP_ONLY:
-    sensorFreq = 1.6;
+    sensorFreq = isHighPerformance ? 12.5 : 1.6;
     break;
   case LIS2DW12_XL_ODR_12Hz5:
     sensorFreq = 12.5;
@@ -494,13 +504,13 @@ float lis2dw12_get_sensor_freq_from_rate(lis2dw12_odr_t rate)
     sensorFreq = 200.0;
     break;
   case LIS2DW12_XL_ODR_400Hz:
-    sensorFreq = 400.0;
+    sensorFreq = isHighPerformance ? 400.0 : 200.0;
     break;
   case LIS2DW12_XL_ODR_800Hz:
-    sensorFreq = 800.0;
+    sensorFreq = isHighPerformance ? 800.0 : 200.0;
     break;
   case LIS2DW12_XL_ODR_1k6Hz:
-    sensorFreq = 1600.0;
+    sensorFreq = isHighPerformance ? 1600.0 : 200.0;
     break;
   default:
     sensorFreq = 0.0;
