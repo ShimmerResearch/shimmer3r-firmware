@@ -53,7 +53,9 @@ uint8_t AudioCapture_isRunning(void);
 /* Blocks completed since the start. Block n holds ring samples
  * (n % blocks) * blockSamples onward until GPDMA comes round again. */
 uint32_t AudioCapture_blocksDone(void);
-/* Shimmer clock (RTC_get64 ticks) when block n completed. Valid for the last
+/* Shimmer clock (RTC_get64 ticks) when block n completed: the clock in its
+ * interrupt, less the samples GPDMA had already moved into the next block, so
+ * a late interrupt does not make a late stamp (DEV-1588). Valid for the last
  * AUDIO_CAPTURE_STAMPS blocks only. */
 uint64_t AudioCapture_blockEndTicks(uint32_t block);
 void AudioCapture_errors(AudioCapture_Errors *out);

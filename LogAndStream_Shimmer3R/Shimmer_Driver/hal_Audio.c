@@ -32,9 +32,18 @@ static DMA_NodeTypeDef nodes[AUDIO_CAPTURE_MAX_BLOCKS] __attribute__((aligned(40
 static DMA_QListTypeDef ringQueue;
 static MDF_DmaConfigTypeDef dmaCfg;
 
+/* The ADF's sample rate is the PDM clock over the sinc5 ratio and the reshape
+ * filter's 4. The PDM clock is HAL_MDF_MspInit()'s PLL3 Q output (16 MHz HSE
+ * x 24 / 25 = 15.36 MHz) over MX_ADF1_Init()'s output clock divider of 10. */
+#define PDM_CLOCK_HZ   1536000U
+#define RSF_DECIMATION 4U
+#define TICKS_PER_S    32768U
+
 static volatile uint8_t running;
 static volatile uint32_t blocksDone;
 static volatile uint64_t stamps[AUDIO_CAPTURE_STAMPS];
+static uint32_t blockBytes; /* bytes per block, as GPDMA counts them (BNDT) */
+static uint32_t ticksPerSampleQ16; /* Shimmer clock ticks per sample, x 65536 */
 static volatile uint32_t errorEvents; /* error interrupts, whatever their flags */
 static volatile AudioCapture_Errors errors;
 static void (*volatile blockCallback)(void);
@@ -112,6 +121,10 @@ uint8_t AudioCapture_start(const AudioCapture_Config *cfg)
   dmaCfg.DataLength = cfg->blockSamples * sizeof(int16_t);
   dmaCfg.MsbOnly = ENABLE;
 
+  blockBytes = cfg->blockSamples * sizeof(int16_t);
+  ticksPerSampleQ16
+      = (uint32_t) ((((uint64_t) TICKS_PER_S * cfg->decimation * RSF_DECIMATION) << 16)
+          / PDM_CLOCK_HZ);
   blocksDone = 0U;
   for (i = 0U; i < AUDIO_CAPTURE_STAMPS; i++)
   {
@@ -185,16 +198,42 @@ void AudioCapture_prepareRead(const int16_t *samples, uint32_t count)
       &hdcache1, (const uint32_t *) samples, count * sizeof(int16_t));
 }
 
-/* GPDMA1 channel 11, one per block: stamp and count, nothing else */
+/* GPDMA1 channel 11, one per block: stamp and count, nothing else.
+ *
+ * The stamp is when the block ended, not when this interrupt ran (DEV-1588).
+ * The interrupt sits below the sensors' (I2C1 and GPDMA channels 0-10 at 0, the
+ * RTC at 1), so it can be taken a fraction of a millisecond late. Stamping with
+ * the clock alone put a fingerprint chunk now and then up to 8 ticks late.
+ *
+ * By the time the interrupt runs, GPDMA has moved on into the next block, and
+ * the channel's remaining byte count (GPDMA_CxBR1.BNDT, RM0456) says how far.
+ * The stamp is the clock less that many samples, which leaves it less than one
+ * sample (2 ticks) after the block's end, whatever held the interrupt off.
+ *
+ * The clock and the count are read with interrupts masked, so nothing runs
+ * between them. RTC_get64() masks its register reads anyway; this adds its
+ * constant-time conversion and one register read, well under a microsecond. */
 void AudioCapture_onDmaBlock(void)
 {
   void (*cb)(void);
+  uint32_t primask, left, moved;
+  uint64_t now;
 
   if (!running)
   {
     return;
   }
-  stamps[blocksDone % AUDIO_CAPTURE_STAMPS] = RTC_get64();
+  primask = __get_PRIMASK();
+  __disable_irq();
+  now = RTC_get64();
+  left = READ_REG(handle_GPDMA1_Channel11.Instance->CBR1) & DMA_CBR1_BNDT;
+  __set_PRIMASK(primask);
+  /* BNDT counts down through the block now filling, reloaded from its node when
+   * the last one ended. 0 is the moment before that reload: nothing of the new
+   * block has moved yet. */
+  moved = (left != 0U && left < blockBytes) ? (blockBytes - left) / sizeof(int16_t) : 0U;
+  stamps[blocksDone % AUDIO_CAPTURE_STAMPS]
+      = now - (((uint64_t) moved * ticksPerSampleQ16 + 0x8000U) >> 16);
   blocksDone++;
   cb = blockCallback;
   if (cb != NULL)
